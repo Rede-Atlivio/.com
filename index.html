@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - O primeiro Marketplace Híbrido do Mundo</title>
+    <title>Atlivio - Marketplace Híbrido</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -125,10 +125,9 @@
                     <h3 class="font-black text-gray-800 text-xs uppercase mb-2">Serviços Oficiais</h3>
                     <div class="bg-blue-600 text-white p-4 rounded-xl shadow-lg mb-4 cursor-pointer active:scale-95 transition">
                         <h4 class="font-black italic text-lg uppercase">Desenvolvimento Web</h4>
-                        <p class="text-[10px] opacity-80 mt-1">Sites Profissionais & Landing Pages.</p>
+                        <p class="text-[10px] opacity-80 mt-1">Soluções digitais premium.</p>
                         <span class="inline-block mt-2 bg-white text-blue-900 text-[9px] font-bold px-2 py-1 rounded">Garantia Atlivio 🛡️</span>
                     </div>
-                    
                     <h3 class="font-black text-gray-800 text-xs uppercase mb-2">Profissionais na Região</h3>
                     <div id="lista-profissionais-realtime"></div>
                 </div>
@@ -174,13 +173,46 @@
                 </div>
             </section>
 
-            <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="rodarSeedOportunidade()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">Seed Oportunidade</button>
-                    <button onclick="rodarSeedMissao()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">Seed Missão</button>
+            <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn pb-20">
+                <div id="admin-dashboard" class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-800 text-white p-3 rounded-lg">
+                        <p class="text-[9px] uppercase opacity-70">Total Usuários</p>
+                        <h3 id="metric-users" class="text-xl font-black">0</h3>
+                    </div>
+                    <div class="bg-blue-900 text-white p-3 rounded-lg">
+                        <p class="text-[9px] uppercase opacity-70">Prestadores</p>
+                        <h3 id="metric-providers" class="text-xl font-black">0</h3>
+                    </div>
+                    <div class="bg-green-900 text-white p-3 rounded-lg">
+                        <p class="text-[9px] uppercase opacity-70">Dinheiro (User)</p>
+                        <h3 id="metric-money" class="text-xl font-black">R$ 0,00</h3>
+                    </div>
+                    <div class="bg-yellow-600 text-white p-3 rounded-lg">
+                        <p class="text-[9px] uppercase opacity-70">Pendências</p>
+                        <h3 id="metric-pending" class="text-xl font-black">0</h3>
+                    </div>
                 </div>
-                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Validações</h3>
+
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3 border-b pb-2">Modo de Operação</h3>
+                    <div class="flex gap-2">
+                        <button id="btn-mode-public" onclick="adminToggleSistema('public')" class="bg-green-600 text-white p-2 rounded text-[10px] font-bold flex-1">🟢 Público</button>
+                        <button id="btn-mode-beta" onclick="adminToggleSistema('beta')" class="bg-yellow-500 text-white p-2 rounded text-[10px] font-bold flex-1">🟡 Beta</button>
+                        <button id="btn-mode-manutencao" onclick="adminToggleSistema('manutencao')" class="bg-red-600 text-white p-2 rounded text-[10px] font-bold flex-1">⚫ Manutenção</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-3 border-b pb-2">Intervenção</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="adminAjustarSaldo()" class="bg-gray-100 text-gray-700 p-3 rounded-lg text-[10px] font-bold border hover:bg-gray-200">💰 Ajustar Saldo</button>
+                        <button onclick="rodarSeedMissao()" class="bg-gray-100 text-gray-700 p-3 rounded-lg text-[10px] font-bold border hover:bg-gray-200">📍 Criar Missão</button>
+                        <button onclick="rodarSeedOportunidade()" class="bg-gray-100 text-gray-700 p-3 rounded-lg text-[10px] font-bold border hover:bg-gray-200">⚡ Criar Oferta</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Validações (Atlas)</h3>
                     <div id="admin-pending-list" class="space-y-4"></div>
                 </div>
             </section>
