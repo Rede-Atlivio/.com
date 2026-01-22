@@ -1,105 +1,96 @@
 import { db } from './app.js';
-import { collection, query, where, getDocs, updateDoc, doc, increment, serverTimestamp, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- 1. DASHBOARD (VISÃO GERAL) ---
-export async function carregarAdmin() {
-    const container = document.getElementById('admin-dashboard');
+// --- SEEDERS (Dados de Teste) ---
+window.rodarSeedMissao = async () => {
+    try {
+        await addDoc(collection(db, "missoes"), {
+            titulo: "Preço do Tomate",
+            descricao: "Vá ao mercado e fotografe o preço.",
+            recompensa: "5,00",
+            tenant_id: "atlivio_fsa_01",
+            status: "aberto",
+            created_at: serverTimestamp()
+        });
+        alert("Missão de teste criada!");
+    } catch (e) { alert("Erro: " + e.message); }
+};
+
+window.rodarSeedOportunidade = async () => {
+    try {
+        await addDoc(collection(db, "oportunidades"), {
+            titulo: "Bug do iFood",
+            descricao: "Cupom de R$ 30 liberado.",
+            link: "https://ifood.com.br",
+            is_premium: false,
+            created_at: serverTimestamp()
+        });
+        alert("Oportunidade criada!");
+    } catch (e) { alert("Erro: " + e.message); }
+};
+
+// --- LIMPEZA DE EMERGÊNCIA (RESET) ---
+window.limparMissoes = async () => {
+    if(!confirm("⚠️ PERIGO: Isso vai apagar TODAS as missões do banco de dados.\n\nUse isso apenas para limpar os serviços que entraram errado na aba errada.")) return;
+    
+    const btn = event.target;
+    btn.innerText = "Apagando...";
+    btn.disabled = true;
+
+    try {
+        const q = query(collection(db, "missoes"));
+        const snap = await getDocs(q);
+        
+        // Apaga um por um (Firestore não tem 'delete all' nativo simples no client)
+        const promises = snap.docs.map(docSnap => deleteDoc(doc(db, "missoes", docSnap.id)));
+        await Promise.all(promises);
+        
+        alert("✅ Limpeza concluída! A aba Missões deve estar vazia agora.");
+        location.reload();
+    } catch (e) {
+        alert("Erro ao limpar: " + e.message);
+        btn.innerText = "Erro (Tente de novo)";
+        btn.disabled = false;
+    }
+};
+
+// --- PAINEL DE VALIDAÇÃO ---
+function carregarValidacoes() {
+    const container = document.getElementById('admin-pending-list');
     if(!container) return;
 
-    // Métricas em Tempo Real (Simples e Cruas)
-    // Nota: Em escala, isso seria feito no Backend para não ler o banco todo.
-    const usersSnap = await getDocs(collection(db, "usuarios"));
-    const missionsSnap = await getDocs(collection(db, "mission_assignments"));
-    
-    let totalUsers = usersSnap.size;
-    let totalProviders = 0;
-    let totalSaldo = 0;
+    // Busca missões enviadas (submitted)
+    const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"), orderBy("submitted_at", "desc"));
 
-    usersSnap.forEach(u => {
-        const data = u.data();
-        if(data.is_provider) totalProviders++;
-        totalSaldo += (data.saldo || 0);
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        if(snap.empty) {
+            container.innerHTML = "<p class='text-xs text-gray-400'>Nada para validar.</p>";
+        } else {
+            snap.forEach(d => {
+                const item = d.data();
+                container.innerHTML += `
+                    <div class="border p-3 rounded-lg bg-gray-50 flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-xs uppercase">${item.mission_title}</span>
+                            <span class="text-[10px] bg-yellow-200 px-2 py-1 rounded">Pendente</span>
+                        </div>
+                        <p class="text-[10px] text-gray-500">User: ${item.profile_email}</p>
+                        <a href="${item.photo_url}" target="_blank" class="text-blue-600 text-[10px] underline">Ver Foto</a>
+                        
+                        <div class="flex gap-2 mt-2">
+                            <button onclick="validarMissao('${d.id}', true)" class="flex-1 bg-green-500 text-white py-2 rounded text-[10px] font-bold">APROVAR</button>
+                            <button onclick="validarMissao('${d.id}', false)" class="flex-1 bg-red-500 text-white py-2 rounded text-[10px] font-bold">REJEITAR</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
     });
-
-    let pendingMissions = 0;
-    missionsSnap.forEach(m => {
-        if(m.data().status === 'submitted') pendingMissions++;
-    });
-
-    // Renderiza o Painel de Números
-    document.getElementById('metric-users').innerText = totalUsers;
-    document.getElementById('metric-providers').innerText = totalProviders;
-    document.getElementById('metric-money').innerText = `R$ ${totalSaldo.toFixed(2)}`;
-    document.getElementById('metric-pending').innerText = pendingMissions;
-
-    carregarPendencias();
 }
 
-// --- 2. GESTÃO DE MISSÕES (ATLAS) ---
-function carregarPendencias() {
-    const container = document.getElementById('admin-pending-list');
-    const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
-    
-    // (Lógica de carregar lista - igual à anterior, mas encapsulada)
-    // ... mantendo a lógica visual simples por enquanto
-}
-
-// --- 3. GOD MODE (GESTÃO DE CARTEIRA) ---
-window.adminAjustarSaldo = async () => {
-    const email = prompt("Email do usuário para ajustar:");
-    if(!email) return;
-
-    // Busca usuário pelo email (Ineficiente, mas funcional pro MVP)
-    const q = query(collection(db, "usuarios"), where("email", "==", email));
-    const snap = await getDocs(q);
-
-    if(snap.empty) {
-        alert("Usuário não encontrado.");
-        return;
-    }
-
-    const userDoc = snap.docs[0];
-    const novoValor = prompt(`Saldo atual: R$ ${userDoc.data().saldo || 0}\nDigite o valor a ADICIONAR (use - para remover):`);
-    
-    if(novoValor) {
-        await updateDoc(doc(db, "usuarios", userDoc.id), {
-            saldo: increment(parseFloat(novoValor))
-        });
-        alert("Saldo atualizado.");
-        carregarAdmin(); // Recarrega números
-    }
-};
-
-// --- 4. MODOS DE OPERAÇÃO (ON/OFF GERAL) ---
-window.adminToggleSistema = async (modo) => {
-    // Salva uma flag no banco que o app.js lerá para bloquear acesso
-    const configRef = doc(db, "config", "geral");
-    await setDoc(configRef, { modo_operacao: modo }, { merge: true });
-    alert(`Sistema alterado para modo: ${modo}`);
-    
-    // Atualiza visual dos botões
-    document.getElementById('btn-mode-public').className = modo === 'public' ? "bg-green-600 text-white p-2 rounded text-[10px]" : "bg-gray-200 p-2 rounded text-[10px]";
-    document.getElementById('btn-mode-manutencao').className = modo === 'manutencao' ? "bg-red-600 text-white p-2 rounded text-[10px]" : "bg-gray-200 p-2 rounded text-[10px]";
-};
-
-// Funções de Aprovação (Mantidas)
-window.aprovarProva = async (docId, userId, valorBruto) => { 
-    if(!confirm(`Aprovar e pagar?`)) return; 
-    try { 
-        await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp() }); 
-        await updateDoc(doc(db, "usuarios", userId), { saldo: increment(valorBruto) });
-        carregarAdmin();
-    } catch (e) { alert(e.message); } 
-};
-
-window.rejeitarProva = async (docId) => { 
-    if(!confirm("Rejeitar?")) return; 
-    await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" });
-    carregarAdmin();
-};
-
-// Auto-Load quando abre a aba admin
-setInterval(() => {
-    const sec = document.getElementById('sec-admin');
-    if(sec && !sec.classList.contains('hidden')) carregarAdmin();
-}, 10000);
+// Inicializa o listener se estiver na aba admin
+setTimeout(() => {
+    const secAdmin = document.getElementById('sec-admin');
+    if(secAdmin) carregarValidacoes();
+}, 2000);
