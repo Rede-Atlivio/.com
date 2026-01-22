@@ -139,16 +139,17 @@
         let missaoAtualId = null;
         const COMISSAO_PLATAFORMA = 0.20; 
 
-        // 🔒 SEGURANÇA MÁXIMA: COLOQUE SEU EMAIL AQUI
-        // Exemplo: const ADMIN_EMAILS = ["joao@gmail.com", "maria@hotmail.com"];
-        const ADMIN_EMAILS = ["SEU_EMAIL_ADMIN@GMAIL.COM"]; 
+        // 🔒 SEGURANÇA MÁXIMA: APENAS ESSE EMAIL VÊ O PAINEL ADMIN
+        const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 // Monitoramento em TEMPO REAL do Usuário (Saldo e Perfil)
                 onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
                     if(!docSnap.exists()) {
-                        userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: 'user', saldo: 0, created_at: serverTimestamp() };
+                        // Se usuário não existe, cria com role baseada no email (Se for Gilvan, já nasce Admin)
+                        const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
+                        userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: roleInicial, saldo: 0, created_at: serverTimestamp() };
                         await setDoc(doc(db, "usuarios", user.uid), userProfile);
                     } else {
                         userProfile = docSnap.data();
@@ -180,8 +181,7 @@
             // ATUALIZA O SALDO NA TELA IMEDIATAMENTE
             document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
 
-            // 🔒 VERIFICAÇÃO DE ADMIN RIGOROSA (Por Email)
-            // A aba só aparece se o email estiver na lista ADMIN_EMAILS
+            // 🔒 VERIFICAÇÃO DE ADMIN RIGOROSA
             if(ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 carregarPendenciasAdmin();
@@ -196,7 +196,6 @@
 
         window.definirPerfil = async (tipo) => {
             await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true });
-            // Não recarrega a página, deixa o onSnapshot fazer o trabalho
         };
 
         window.switchTab = (tab) => {
@@ -273,7 +272,6 @@
 
         // --- ABA ADMIN REALTIME ---
         function carregarPendenciasAdmin() {
-            // Escuta pendências em tempo real
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             
             onSnapshot(q, (snap) => {
