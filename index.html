@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Super App (Blindado)</title>
+    <title>Atlivio - Super App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -12,18 +12,20 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
-        /* Aviso de Auditoria */
-        .audit-warning { background: #fff3cd; color: #856404; font-size: 10px; text-align: center; padding: 5px; border-bottom: 1px solid #ffeeba; }
+        
+        /* EFEITO DE CENSURA (FOMO) */
+        .blur-secret { filter: blur(5px); user-select: none; pointer-events: none; }
+        .premium-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: #b45309; background: rgba(255, 251, 235, 0.9); padding: 5px 10px; border-radius: 8px; font-size: 10px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Ecossistema de Oportunidades</p>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Marketplace Híbrido</p>
             <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
                 Entrar com Google
@@ -37,11 +39,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-6">
                 <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">💎</div>
-                    <div class="font-black text-blue-900 uppercase italic">Vantagens</div>
+                    <div class="font-black text-blue-900 uppercase italic">Quero Contratar</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Busco serviços e vantagens.</div>
                 </button>
                 <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🚀</div>
-                    <div class="font-black text-blue-900 uppercase italic">Renda Extra</div>
+                    <div class="font-black text-blue-900 uppercase italic">Quero Trabalhar</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Faço missões e serviços.</div>
                 </button>
             </div>
         </div>
@@ -49,33 +53,31 @@
 
     <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader mb-4"></div>
-        <h3 id="loader-text" class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+        <h3 id="loader-text" class="font-black uppercase italic text-xl animate-pulse">Enviando...</h3>
         <p id="loader-subtext" class="text-xs text-blue-200 mt-2"></p>
     </div>
 
     <div id="preview-modal" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
-        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Confira a Captura</h3>
+        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Foto Capturada</h3>
         <img id="img-preview" src="" class="max-h-[60vh] rounded-xl border-2 border-white mb-6 object-contain bg-gray-800">
         <div class="w-full max-w-md space-y-3">
-            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">✅ Enviar para Validação</button>
-            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">❌ Descartar</button>
+            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">✅ Confirmar e Enviar</button>
+            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">❌ Tentar de Novo</button>
         </div>
     </div>
 
     <div id="chat-modal" class="hidden fixed inset-0 bg-white z-50 flex flex-col text-gray-800 animate-fadeIn">
         <div class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
             <div>
-                <h3 class="font-bold text-sm uppercase italic">Negociação Segura</h3>
+                <h3 class="font-bold text-sm uppercase italic">Chat Seguro</h3>
                 <p class="text-[9px] opacity-75" id="chat-mission-title">...</p>
             </div>
             <button onclick="fecharChat()" class="text-2xl font-bold">&times;</button>
         </div>
-        <div class="audit-warning">
-            🛡️ <b>Ambiente Auditado:</b> A troca de telefones, e-mails ou pagamentos externos é bloqueada e monitorada por IA.
+        <div class="bg-yellow-50 text-yellow-800 text-[10px] text-center p-2 border-b border-yellow-200">
+            ⚠️ <b>Segurança:</b> Troca de telefones/emails é bloqueada. Negocie por aqui.
         </div>
-        
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
-        
         <div class="p-3 bg-white border-t border-gray-200 flex gap-2">
             <input type="text" id="chat-input" placeholder="Digite..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
             <button onclick="enviarMensagem()" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-sm hover:bg-blue-700">➤</button>
@@ -85,7 +87,7 @@
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
             <div>
-                <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio <span class="text-[10px] text-yellow-500 font-bold">BETA</span></h1>
+                <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio <span class="text-[10px] text-yellow-500 font-bold">V1.0</span></h1>
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                     <p id="user-role-display" class="text-[8px] font-bold text-gray-400 uppercase italic">...</p>
@@ -95,8 +97,8 @@
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('radar')" id="tab-radar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Radar 📡</button>
-            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Atlas 📍</button>
+            <button onclick="switchTab('radar')" id="tab-radar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Vantagens ⚡</button>
+            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Missões 📍</button>
             <button onclick="switchTab('chat')" id="tab-chat" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
             <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
@@ -109,15 +111,19 @@
                     <span class="text-2xl">⚡</span>
                     <div>
                         <p class="text-[10px] font-bold text-yellow-800 uppercase">Central de Oportunidades</p>
-                        <p class="text-[9px] text-yellow-600">Vantagens exclusivas em tempo real.</p>
+                        <p class="text-[9px] text-yellow-600">Chegue antes de todo mundo.</p>
                     </div>
                 </div>
                 <div id="lista-radar" class="grid gap-3"></div>
             </section>
 
             <section id="sec-atlas" class="hidden space-y-4 animate-fadeIn">
-                <div id="client-controls" class="hidden mb-4">
-                     <button onclick="rodarSeedAtlas()" class="w-full bg-blue-50 text-blue-800 py-4 rounded-xl font-black text-[10px] uppercase italic border border-blue-200 shadow-sm">➕ Criar Demanda (Simulação)</button>
+                <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3 mb-2">
+                    <span class="text-2xl">📍</span>
+                    <div>
+                        <p class="text-[10px] font-bold text-blue-800 uppercase">Microtarefas & Coletas</p>
+                        <p class="text-[9px] text-blue-600">Ganhe dinheiro capturando dados.</p>
+                    </div>
                 </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
@@ -129,19 +135,18 @@
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
                 <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                     <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
-                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo em Custódia</p>
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Disponível</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Validação Automática</p>
                 </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">⚡ Seed Radar</button>
-                    <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">📍 Seed Atlas</button>
+                    <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">Criar Vantagem (Teste)</button>
+                    <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">Criar Missão (Teste)</button>
                 </div>
                 <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Pendências & Moderação</h3>
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Aprovações Pendentes</h3>
                     <div id="admin-pending-list" class="space-y-4"></div>
                 </div>
             </section>
@@ -154,7 +159,7 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // CONFIGURAÇÃO BLAZE (OFICIAL)
+        // CONFIGURAÇÃO OFICIAL
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -176,8 +181,15 @@
         let currentLat = null, currentLng = null, currentAcc = null;
         let arquivoParaEnvio = null;
 
-        // 🔒 ADMIN
+        // 🔒 ADMIN OFICIAL
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
+
+        // CONFIGURAÇÃO DO INPUT DE ARQUIVO
+        const cameraInput = document.getElementById('camera-input');
+        // Gatilho robusto para correção de upload
+        cameraInput.addEventListener('change', (e) => {
+            mostrarPreview(cameraInput);
+        });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -210,24 +222,25 @@
         function iniciarApp(user) {
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            const tipoUsuario = userProfile.is_provider ? "Coletor" : "Membro";
+            const tipoUsuario = userProfile.is_provider ? "Prestador/Coletor" : "Cliente/Comprador";
             document.getElementById('user-role-display').innerText = `${tipoUsuario}`;
 
+            // INTERFACE DINÂMICA
             if (userProfile.is_provider) {
                 document.getElementById('tab-ganhar').classList.remove('hidden');
-                document.getElementById('client-controls').classList.add('hidden');
-                document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
             } else {
                 document.getElementById('tab-ganhar').classList.add('hidden');
-                document.getElementById('client-controls').classList.remove('hidden');
             }
 
+            // SEGURANÇA VISUAL DO ADMIN
             if(ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 carregarPendenciasAdmin();
             } else {
                 document.getElementById('tab-admin').classList.add('hidden');
+                document.getElementById('sec-admin').classList.add('hidden'); // Garante que fecha a section
             }
+            
             carregarRadar(); carregarAtlas(); carregarMeusChats();
         }
 
@@ -243,37 +256,54 @@
             });
         };
 
-        // --- SISTEMAS CORE ---
+        // --- VANTAGENS (ANTIGO RADAR) ---
         async function carregarRadar() {
             const container = document.getElementById('lista-radar');
             container.innerHTML = "";
             const q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"));
             const snap = await getDocs(q);
-            if(snap.empty) { container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Sem ofertas.</p></div>`; } 
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Sem vantagens no momento.</p></div>`; } 
             else {
                 snap.forEach(d => {
                     const op = d.data();
+                    // Simulação de "Conteúdo Bloqueado" para Free
+                    // No futuro: if(!userProfile.is_pro && op.premium)
+                    const isPremium = op.tipo === 'bug'; 
+                    const blurClass = isPremium ? "blur-secret" : "";
+                    const lockOverlay = isPremium ? `<div class="premium-lock">🔒 Exclusivo PRO</div>` : "";
+                    const linkAction = isPremium ? `onclick="alert('Assine o PRO para ver bugs de preço!')"` : `href="${op.link}" target="_blank"`;
+
                     const tipoBg = op.tipo === 'bug' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
                     const icon = op.tipo === 'bug' ? '🔥' : '🎟️';
-                    container.innerHTML += `<div class="${tipoBg} border p-4 rounded-xl shadow-sm mb-2"><h3 class="font-black text-sm italic uppercase">${icon} ${op.titulo}</h3><p class="text-[10px] text-gray-600">${op.descricao}</p><a href="${op.link}" target="_blank" class="block w-full text-center bg-white border border-gray-200 text-gray-700 py-2 rounded-lg font-bold text-[10px] mt-2 uppercase">Ver Oferta</a></div>`;
+                    
+                    container.innerHTML += `
+                        <div class="${tipoBg} border p-4 rounded-xl shadow-sm mb-2 relative overflow-hidden">
+                            ${lockOverlay}
+                            <div class="${blurClass}">
+                                <h3 class="font-black text-sm italic uppercase">${icon} ${op.titulo}</h3>
+                                <p class="text-[10px] text-gray-600">${op.descricao}</p>
+                            </div>
+                            <a ${linkAction} class="block w-full text-center bg-white border border-gray-200 text-gray-700 py-2 rounded-lg font-bold text-[10px] mt-2 uppercase cursor-pointer">Acessar</a>
+                        </div>`;
                 });
             }
         }
 
+        // --- MISSÕES (ANTIGO ATLAS) ---
         async function carregarAtlas() {
             const container = document.getElementById('lista-missoes');
             container.innerHTML = "";
             const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
             const snap = await getDocs(q);
-            if(snap.empty) { container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma coleta.</p></div>`; } 
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma missão disponível.</p></div>`; } 
             else {
                 snap.forEach(d => {
                     const m = d.data();
                     let btnAction = userProfile.is_provider 
-                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📡 Capturar Dado</button>`
-                        : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo Coletores</div>`;
+                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📷 Realizar Missão</button>`
+                        : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Disponível para Prestadores</div>`;
                     
-                    container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
+                    container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">Paga R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
                 });
             }
         }
@@ -281,15 +311,16 @@
         window.iniciarMissao = (id) => {
             missaoAtualId = id;
             if (navigator.geolocation) {
-                alert("📍 Obtendo GPS Auditável...");
+                alert("📍 Validando Localização...");
                 navigator.geolocation.getCurrentPosition(
-                    (p) => { currentLat = p.coords.latitude; currentLng = p.coords.longitude; currentAcc = p.coords.accuracy; document.getElementById('camera-input').click(); },
-                    (e) => { alert("GPS Obrigatório para validação."); },
+                    (p) => { currentLat = p.coords.latitude; currentLng = p.coords.longitude; currentAcc = p.coords.accuracy; cameraInput.click(); }, // Clica no input corrigido
+                    (e) => { alert("Localização obrigatória para provar a missão."); },
                     { enableHighAccuracy: true }
                 );
-            } else { alert("Sem suporte GPS."); }
+            } else { alert("GPS não suportado."); }
         };
 
+        // --- PREVIEW E UPLOAD ---
         window.mostrarPreview = (input) => {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -300,6 +331,7 @@
                     document.getElementById('preview-modal').classList.remove('hidden');
                 }
                 reader.readAsDataURL(file);
+                // Reset manual para garantir que o evento change dispare novamente se escolher a mesma foto
                 input.value = ''; 
             }
         };
@@ -310,10 +342,9 @@
             document.getElementById('preview-modal').classList.add('hidden');
             const loader = document.getElementById('upload-overlay');
             loader.classList.remove('hidden');
-            document.getElementById('loader-subtext').innerText = "Subindo Prova e Criando Ordem...";
-
+            
             try {
-                if(!arquivoParaEnvio) throw new Error("Sem arquivo.");
+                if(!arquivoParaEnvio) throw new Error("Erro: Foto não carregou.");
                 const timestamp = new Date().getTime();
                 const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
                 
@@ -322,7 +353,6 @@
                 const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
                 const valor = parseFloat(docMissao.data().recompensa.replace(',', '.'));
 
-                // CRIA O REGISTRO DO PEDIDO (ORDER/ASSIGNMENT)
                 const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
                     mission_id: missaoAtualId,
                     mission_title: docMissao.data().titulo,
@@ -336,23 +366,21 @@
                     gps_lat: currentLat, gps_lng: currentLng
                 });
 
-                // CRIA O CHAT VINCULADO (PREPARAÇÃO V1.5)
                 await setDoc(doc(db, "chats", assignmentRef.id), {
                     assignment_id: assignmentRef.id,
                     mission_title: docMissao.data().titulo,
                     participants: [auth.currentUser.uid, "ADMIN"], 
-                    last_message: "Prova enviada. Chat aberto para auditoria.",
-                    updated_at: serverTimestamp(),
-                    is_active: true
+                    last_message: "Missão enviada para análise.",
+                    updated_at: serverTimestamp()
                 });
 
-                alert("✅ Captura enviada! Acesse a aba CHAT para acompanhar.");
+                alert("✅ Missão Enviada! Aguarde a aprovação na Carteira.");
                 arquivoParaEnvio = null;
-            } catch (e) { alert("Erro: " + e.message); } 
+            } catch (e) { alert("Erro no envio: " + e.message); } 
             finally { loader.classList.add('hidden'); }
         };
 
-        // --- 🛡️ CHAT COM BLINDAGEM (REGEX) ---
+        // --- CHAT ---
         function carregarMeusChats() {
             const container = document.getElementById('lista-chats');
             let q = userProfile.role === 'admin' 
@@ -361,7 +389,7 @@
 
             onSnapshot(q, (snap) => {
                 container.innerHTML = "";
-                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Nenhuma negociação ativa.</p>";
+                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Sem mensagens.</p>";
                 else {
                     snap.forEach(d => {
                         const chat = d.data();
@@ -370,15 +398,8 @@
                 }
             });
         }
-
-        window.abrirChat = (chatId, title) => {
-            activeChatId = chatId;
-            document.getElementById('chat-modal').classList.remove('hidden');
-            document.getElementById('chat-mission-title').innerText = title;
-            carregarMensagens(chatId);
-        };
+        window.abrirChat = (chatId, title) => { activeChatId = chatId; document.getElementById('chat-modal').classList.remove('hidden'); document.getElementById('chat-mission-title').innerText = title; carregarMensagens(chatId); };
         window.fecharChat = () => { document.getElementById('chat-modal').classList.add('hidden'); activeChatId = null; };
-
         function carregarMensagens(chatId) {
             const container = document.getElementById('chat-messages');
             const q = query(collection(db, `chats/${chatId}/messages`), orderBy("timestamp", "asc"));
@@ -388,34 +409,25 @@
                     const msg = d.data();
                     const isMe = msg.sender_id === auth.currentUser.uid;
                     const bubbleClass = isMe ? "chat-bubble-me" : "chat-bubble-them";
-                    // Se a mensagem foi marcada como 'flagged' no futuro, esconderiamos aqui.
                     container.innerHTML += `<div class="flex w-full"><div class="p-3 text-[11px] max-w-[80%] ${bubbleClass} shadow-sm mb-2">${msg.text}</div></div>`;
                 });
                 container.scrollTop = container.scrollHeight;
             });
         }
-
         window.enviarMensagem = async () => {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if(!text || !activeChatId) return;
-
-            // 🛡️ BLINDAGEM ANTI-BYPASS
             const proibidos = [/\b\d{8,}\b/, /\b\d{2}\s\d{4,}\b/, /@/, /zap/i, /whatsapp/i, /\.com/i, /\.br/i];
             let bloqueado = false;
             proibidos.forEach(regex => { if(regex.test(text)) bloqueado = true; });
-
-            if(bloqueado) {
-                alert("⚠️ AÇÃO BLOQUEADA!\n\nTroca de contatos externos não é permitida. Negocie e pague pela plataforma para ter garantia.");
-                return;
-            }
-
+            if(bloqueado) { alert("⚠️ Bloqueado: Não envie contatos externos."); return; }
             await addDoc(collection(db, `chats/${activeChatId}/messages`), { text: text, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
             await updateDoc(doc(db, "chats", activeChatId), { last_message: text, updated_at: serverTimestamp() });
             input.value = "";
         };
 
-        // --- ADMIN ---
+        // --- GESTÃO (ADMIN) ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             onSnapshot(q, (snap) => {
@@ -424,14 +436,16 @@
                 snap.forEach(d => {
                     const data = d.data();
                     const gpsInfo = data.gps_lat ? `📍 ${data.gps_lat.toFixed(4)}, ${data.gps_lng.toFixed(4)}` : "⚠️ Sem GPS";
-                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Validar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Invalidar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Auditoria</button></div>`;
+                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Aprovar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Rejeitar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Conversar</button></div>`;
                 });
             });
         }
-        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Validar pagamento?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
+        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Pagar usuário?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
         window.rejeitarProva = async (docId) => { if(!confirm("Rejeitar?")) return; await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" }); };
-        window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: TV", descricao: "Magalu R$ 900.", tipo: "bug", link: "https://magalu.com", created_at: serverTimestamp() }); carregarRadar(); };
-        window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Coleta: Gasolina", descricao: "Foto painel.", recompensa: "2,50", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
+        
+        // SEEDS COM NOVOS NOMES
+        window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: iPhone", descricao: "Amazon por R$ 2000.", tipo: "bug", link: "https://amazon.com.br", created_at: serverTimestamp() }); carregarRadar(); };
+        window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Preço Gasolina Shell", descricao: "Foto do painel.", recompensa: "1,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
     </script>
 </body>
 </html>
