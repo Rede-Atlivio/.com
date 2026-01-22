@@ -2,7 +2,7 @@ import { auth, db, provider } from './app.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// CONFIGURAÇÕES
+// --- CONFIGURAÇÃO MESTRA DE ADMIN ---
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
@@ -93,20 +93,28 @@ function iniciarAppLogado(user) {
     const btnPerfil = document.getElementById('btn-trocar-perfil');
     const isAdmin = ADMIN_EMAILS.includes(user.email);
     
-    // SEGURANÇA DA ABA ADMIN
+    // --- TRAVA DE SEGURANÇA CRÍTICA (CORREÇÃO DO VAZAMENTO) ---
     if(isAdmin) {
+        // Se for admin, revela a aba
         document.getElementById('tab-admin').classList.remove('hidden');
     } else {
-        // Se não for admin, remove o elemento do DOM para garantir
+        // Se NÃO for admin, garante que está escondida e remove do fluxo
         const adminTab = document.getElementById('tab-admin');
-        if(adminTab) adminTab.classList.add('hidden');
+        const adminSec = document.getElementById('sec-admin');
+        
+        if(adminTab) {
+            adminTab.classList.add('hidden');
+            adminTab.style.display = 'none'; // Segurança extra
+        }
+        if(adminSec) {
+            adminSec.classList.add('hidden');
+        }
     }
 
     // APLICA O "CHAPÉU" (Lógica de Visão)
     if (userProfile.is_provider) {
         // --- VISÃO PRESTADOR ---
         
-        // Se for admin, mostra o selo vermelho
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Prestador)</span> 🔄`;
         } else {
@@ -127,13 +135,14 @@ function iniciarAppLogado(user) {
         document.getElementById('servicos-prestador').classList.remove('hidden');
         document.getElementById('servicos-cliente').classList.add('hidden');
 
-        // Abre na aba certa se nenhuma estiver ativa
-        if (!document.querySelector('.border-blue-600')) window.switchTab('servicos'); 
+        // Se estiver na aba errada, joga pra certa
+        if (!document.querySelector('.border-blue-600') || document.getElementById('sec-admin').classList.contains('hidden') === false) {
+             if(!isAdmin) window.switchTab('servicos'); 
+        }
 
     } else {
         // --- VISÃO CLIENTE ---
         
-        // Se for admin, mostra o selo vermelho
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Cliente)</span> 🔄`;
         } else {
@@ -154,7 +163,9 @@ function iniciarAppLogado(user) {
         document.getElementById('servicos-prestador').classList.add('hidden');
         document.getElementById('servicos-cliente').classList.remove('hidden');
         
-        // Abre na aba certa se nenhuma estiver ativa
-        if (!document.querySelector('.border-blue-600')) window.switchTab('oportunidades');
+        // Se estiver na aba errada, joga pra certa
+        if (!document.querySelector('.border-blue-600')) {
+             if(!isAdmin) window.switchTab('oportunidades');
+        }
     }
 }
