@@ -176,24 +176,64 @@
                 </div>
             </section>
 
-            <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="rodarSeedOportunidade()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">Seed Oportunidade</button>
-                    <button onclick="rodarSeedMissao()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">Seed Missão</button>
-                </div>
+            <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn pb-20">
                 
-                <div class="p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <h3 class="text-red-800 font-black text-xs uppercase mb-2">Zona de Perigo (Limpeza)</h3>
-                    <button onclick="limparMissoes()" class="w-full bg-red-600 text-white p-3 rounded-lg text-[10px] font-bold uppercase hover:bg-red-700 shadow-md">
-                        🗑️ Resetar/Apagar TODAS as Missões
-                    </button>
-                    <p class="text-[9px] text-red-500 mt-2 text-center">Use isso para limpar os serviços que entraram errado na aba Missões.</p>
+                <div class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 uppercase italic">Painel de Controle</h2>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest">Visão de Governança</p>
+                    </div>
+                    <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-[9px] font-bold border border-green-200">
+                        🟢 SISTEMA ONLINE
+                    </div>
                 </div>
 
-                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Validações Pendentes</h3>
-                    <div id="admin-pending-list" class="space-y-4"></div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Usuários Totais</p>
+                        <h3 class="text-2xl font-black text-blue-900" id="dash-total-users">-</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Prestadores Ativos</p>
+                        <h3 class="text-2xl font-black text-green-600" id="dash-active-providers">-</h3>
+                    </div>
                 </div>
+
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 text-xs uppercase">Validações Pendentes</h3>
+                        <span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full" id="count-pending">0</span>
+                    </div>
+                    <div id="admin-pending-list" class="space-y-4 p-4 min-h-[100px]">
+                        <p class="text-center text-xs text-gray-400 py-4">Tudo limpo por aqui.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">
+                        ⏸️ Pausar Oportunidades
+                    </button>
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">
+                        🔐 Travar Saques
+                    </button>
+                </div>
+
+                <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <h3 class="text-red-800 font-black text-xs uppercase mb-2">Zona de Perigo (Manutenção)</h3>
+                    <button onclick="limparMissoes()" class="w-full bg-red-600 text-white p-3 rounded-lg text-[10px] font-bold uppercase hover:bg-red-700 shadow-md flex items-center justify-center gap-2">
+                        🗑️ Resetar Base de Missões
+                    </button>
+                    <p class="text-[9px] text-red-500 mt-2 text-center opacity-70">Ação irreversível. Use com cautela.</p>
+                </div>
+
+                <div class="opacity-50 hover:opacity-100 transition duration-300 border-t pt-4 mt-4">
+                     <p class="text-[8px] text-center text-gray-400 uppercase mb-2">Ferramentas de Teste (Seeds)</p>
+                     <div class="grid grid-cols-2 gap-2">
+                        <button onclick="rodarSeedOportunidade()" class="bg-white border text-gray-500 p-2 rounded text-[9px]">Seed Oportunidade</button>
+                        <button onclick="rodarSeedMissao()" class="bg-white border text-gray-500 p-2 rounded text-[9px]">Seed Missão</button>
+                    </div>
+                </div>
+
             </section>
         </main>
     </div>
