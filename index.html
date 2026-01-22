@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Super App</title>
+    <title>Atlivio - Super App (Blindado)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -12,6 +12,8 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
+        /* Aviso de Auditoria */
+        .audit-warning { background: #fff3cd; color: #856404; font-size: 10px; text-align: center; padding: 5px; border-bottom: 1px solid #ffeeba; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -21,7 +23,7 @@
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Central de Vantagens & Renda</p>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Ecossistema de Oportunidades</p>
             <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
                 Entrar com Google
@@ -52,28 +54,28 @@
     </div>
 
     <div id="preview-modal" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
-        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Confira a Foto</h3>
+        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Confira a Captura</h3>
         <img id="img-preview" src="" class="max-h-[60vh] rounded-xl border-2 border-white mb-6 object-contain bg-gray-800">
-        
         <div class="w-full max-w-md space-y-3">
-            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">
-                ✅ Confirmar Envio
-            </button>
-            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">
-                ❌ Tirar Outra
-            </button>
+            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">✅ Enviar para Validação</button>
+            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">❌ Descartar</button>
         </div>
     </div>
 
     <div id="chat-modal" class="hidden fixed inset-0 bg-white z-50 flex flex-col text-gray-800 animate-fadeIn">
         <div class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
             <div>
-                <h3 class="font-bold text-sm uppercase italic">Chat da Missão</h3>
+                <h3 class="font-bold text-sm uppercase italic">Negociação Segura</h3>
                 <p class="text-[9px] opacity-75" id="chat-mission-title">...</p>
             </div>
             <button onclick="fecharChat()" class="text-2xl font-bold">&times;</button>
         </div>
+        <div class="audit-warning">
+            🛡️ <b>Ambiente Auditado:</b> A troca de telefones, e-mails ou pagamentos externos é bloqueada e monitorada por IA.
+        </div>
+        
         <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
+        
         <div class="p-3 bg-white border-t border-gray-200 flex gap-2">
             <input type="text" id="chat-input" placeholder="Digite..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
             <button onclick="enviarMensagem()" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-sm hover:bg-blue-700">➤</button>
@@ -106,8 +108,8 @@
                 <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3 mb-2">
                     <span class="text-2xl">⚡</span>
                     <div>
-                        <p class="text-[10px] font-bold text-yellow-800 uppercase">Oportunidades</p>
-                        <p class="text-[9px] text-yellow-600">Ofertas relâmpago.</p>
+                        <p class="text-[10px] font-bold text-yellow-800 uppercase">Central de Oportunidades</p>
+                        <p class="text-[9px] text-yellow-600">Vantagens exclusivas em tempo real.</p>
                     </div>
                 </div>
                 <div id="lista-radar" class="grid gap-3"></div>
@@ -115,7 +117,7 @@
 
             <section id="sec-atlas" class="hidden space-y-4 animate-fadeIn">
                 <div id="client-controls" class="hidden mb-4">
-                     <button onclick="rodarSeedAtlas()" class="w-full bg-blue-50 text-blue-800 py-4 rounded-xl font-black text-[10px] uppercase italic border border-blue-200 shadow-sm">➕ Criar Demanda Atlas</button>
+                     <button onclick="rodarSeedAtlas()" class="w-full bg-blue-50 text-blue-800 py-4 rounded-xl font-black text-[10px] uppercase italic border border-blue-200 shadow-sm">➕ Criar Demanda (Simulação)</button>
                 </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
@@ -127,18 +129,19 @@
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
                 <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                     <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
-                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo em Custódia</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Validação Automática</p>
                 </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">⚡ Radar Seed</button>
-                    <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">📍 Atlas Seed</button>
+                    <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">⚡ Seed Radar</button>
+                    <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">📍 Seed Atlas</button>
                 </div>
                 <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Pendências Atlas</h3>
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Pendências & Moderação</h3>
                     <div id="admin-pending-list" class="space-y-4"></div>
                 </div>
             </section>
@@ -151,6 +154,7 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+        // CONFIGURAÇÃO BLAZE (OFICIAL)
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -170,9 +174,9 @@
         const DEFAULT_TENANT = "atlivio_fsa_01"; 
         let missaoAtualId = null, activeChatId = null;
         let currentLat = null, currentLng = null, currentAcc = null;
-        // ARQUIVO TEMPORÁRIO PARA PREVIEW
         let arquivoParaEnvio = null;
 
+        // 🔒 ADMIN
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 
         onAuthStateChanged(auth, async (user) => {
@@ -224,7 +228,6 @@
             } else {
                 document.getElementById('tab-admin').classList.add('hidden');
             }
-            
             carregarRadar(); carregarAtlas(); carregarMeusChats();
         }
 
@@ -240,6 +243,7 @@
             });
         };
 
+        // --- SISTEMAS CORE ---
         async function carregarRadar() {
             const container = document.getElementById('lista-radar');
             container.innerHTML = "";
@@ -266,7 +270,7 @@
                 snap.forEach(d => {
                     const m = d.data();
                     let btnAction = userProfile.is_provider 
-                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📡 Capturar</button>`
+                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📡 Capturar Dado</button>`
                         : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo Coletores</div>`;
                     
                     container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
@@ -277,49 +281,39 @@
         window.iniciarMissao = (id) => {
             missaoAtualId = id;
             if (navigator.geolocation) {
-                alert("📍 Obtendo GPS...");
+                alert("📍 Obtendo GPS Auditável...");
                 navigator.geolocation.getCurrentPosition(
                     (p) => { currentLat = p.coords.latitude; currentLng = p.coords.longitude; currentAcc = p.coords.accuracy; document.getElementById('camera-input').click(); },
-                    (e) => { alert("GPS Obrigatório."); },
+                    (e) => { alert("GPS Obrigatório para validação."); },
                     { enableHighAccuracy: true }
                 );
             } else { alert("Sem suporte GPS."); }
         };
 
-        // --- 📸 NOVO FLUXO DE PREVIEW ---
         window.mostrarPreview = (input) => {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                arquivoParaEnvio = file; // Salva na memória global temporariamente
-                
-                // Mostra a imagem no modal
+                arquivoParaEnvio = file;
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     document.getElementById('img-preview').src = e.target.result;
                     document.getElementById('preview-modal').classList.remove('hidden');
                 }
                 reader.readAsDataURL(file);
-                
-                // Reseta o input para permitir selecionar a mesma foto se cancelar
                 input.value = ''; 
             }
         };
 
-        window.cancelarPreview = () => {
-            document.getElementById('preview-modal').classList.add('hidden');
-            arquivoParaEnvio = null;
-        };
+        window.cancelarPreview = () => { document.getElementById('preview-modal').classList.add('hidden'); arquivoParaEnvio = null; };
 
         window.enviarFotoReal = async () => {
-            // Fecha preview, abre loader
             document.getElementById('preview-modal').classList.add('hidden');
             const loader = document.getElementById('upload-overlay');
             loader.classList.remove('hidden');
-            document.getElementById('loader-subtext').innerText = "Subindo Prova Blindada...";
+            document.getElementById('loader-subtext').innerText = "Subindo Prova e Criando Ordem...";
 
             try {
-                if(!arquivoParaEnvio) throw new Error("Nenhum arquivo.");
-                
+                if(!arquivoParaEnvio) throw new Error("Sem arquivo.");
                 const timestamp = new Date().getTime();
                 const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
                 
@@ -328,6 +322,7 @@
                 const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
                 const valor = parseFloat(docMissao.data().recompensa.replace(',', '.'));
 
+                // CRIA O REGISTRO DO PEDIDO (ORDER/ASSIGNMENT)
                 const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
                     mission_id: missaoAtualId,
                     mission_title: docMissao.data().titulo,
@@ -341,22 +336,23 @@
                     gps_lat: currentLat, gps_lng: currentLng
                 });
 
-                // Cria Chat
+                // CRIA O CHAT VINCULADO (PREPARAÇÃO V1.5)
                 await setDoc(doc(db, "chats", assignmentRef.id), {
                     assignment_id: assignmentRef.id,
                     mission_title: docMissao.data().titulo,
                     participants: [auth.currentUser.uid, "ADMIN"], 
-                    last_message: "Prova enviada. Aguardando análise.",
-                    updated_at: serverTimestamp()
+                    last_message: "Prova enviada. Chat aberto para auditoria.",
+                    updated_at: serverTimestamp(),
+                    is_active: true
                 });
 
-                alert("✅ Sucesso! Chat de suporte aberto.");
-                arquivoParaEnvio = null; // Limpa memória
+                alert("✅ Captura enviada! Acesse a aba CHAT para acompanhar.");
+                arquivoParaEnvio = null;
             } catch (e) { alert("Erro: " + e.message); } 
             finally { loader.classList.add('hidden'); }
         };
 
-        // --- CHAT & ADMIN ---
+        // --- 🛡️ CHAT COM BLINDAGEM (REGEX) ---
         function carregarMeusChats() {
             const container = document.getElementById('lista-chats');
             let q = userProfile.role === 'admin' 
@@ -365,7 +361,7 @@
 
             onSnapshot(q, (snap) => {
                 container.innerHTML = "";
-                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Nenhum chat.</p>";
+                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Nenhuma negociação ativa.</p>";
                 else {
                     snap.forEach(d => {
                         const chat = d.data();
@@ -392,20 +388,34 @@
                     const msg = d.data();
                     const isMe = msg.sender_id === auth.currentUser.uid;
                     const bubbleClass = isMe ? "chat-bubble-me" : "chat-bubble-them";
+                    // Se a mensagem foi marcada como 'flagged' no futuro, esconderiamos aqui.
                     container.innerHTML += `<div class="flex w-full"><div class="p-3 text-[11px] max-w-[80%] ${bubbleClass} shadow-sm mb-2">${msg.text}</div></div>`;
                 });
                 container.scrollTop = container.scrollHeight;
             });
         }
+
         window.enviarMensagem = async () => {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if(!text || !activeChatId) return;
+
+            // 🛡️ BLINDAGEM ANTI-BYPASS
+            const proibidos = [/\b\d{8,}\b/, /\b\d{2}\s\d{4,}\b/, /@/, /zap/i, /whatsapp/i, /\.com/i, /\.br/i];
+            let bloqueado = false;
+            proibidos.forEach(regex => { if(regex.test(text)) bloqueado = true; });
+
+            if(bloqueado) {
+                alert("⚠️ AÇÃO BLOQUEADA!\n\nTroca de contatos externos não é permitida. Negocie e pague pela plataforma para ter garantia.");
+                return;
+            }
+
             await addDoc(collection(db, `chats/${activeChatId}/messages`), { text: text, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
             await updateDoc(doc(db, "chats", activeChatId), { last_message: text, updated_at: serverTimestamp() });
             input.value = "";
         };
 
+        // --- ADMIN ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             onSnapshot(q, (snap) => {
@@ -414,12 +424,12 @@
                 snap.forEach(d => {
                     const data = d.data();
                     const gpsInfo = data.gps_lat ? `📍 ${data.gps_lat.toFixed(4)}, ${data.gps_lng.toFixed(4)}` : "⚠️ Sem GPS";
-                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Validar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Invalidar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Chat</button></div>`;
+                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Validar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Invalidar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Auditoria</button></div>`;
                 });
             });
         }
-        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Validar?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
-        window.rejeitarProva = async (docId) => { if(!confirm("Invalidar?")) return; await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" }); };
+        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Validar pagamento?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
+        window.rejeitarProva = async (docId) => { if(!confirm("Rejeitar?")) return; await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" }); };
         window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: TV", descricao: "Magalu R$ 900.", tipo: "bug", link: "https://magalu.com", created_at: serverTimestamp() }); carregarRadar(); };
         window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Coleta: Gasolina", descricao: "Foto painel.", recompensa: "2,50", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
     </script>
