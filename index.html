@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Oficial Realtime</title>
+    <title>Atlivio - Atlas Vivo</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -19,7 +19,7 @@
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Rede de Sensores Econômicos</p>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Rede de Inteligência Geográfica</p>
             <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
                 Entrar com Google
@@ -31,17 +31,17 @@
     <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
             <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
-            <p class="text-gray-400 text-xs mb-8">Quem é você na rede?</p>
+            <p class="text-gray-400 text-xs mb-8">Qual seu objetivo na rede?</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">🛍️</div>
-                    <div class="font-black text-blue-900 uppercase italic">Sou Cliente</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar.</div>
+                    <div class="text-4xl mb-3">🏢</div>
+                    <div class="font-black text-blue-900 uppercase italic">Comprador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Busco dados do mercado.</div>
                 </button>
                 <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">🛠️</div>
-                    <div class="font-black text-blue-900 uppercase italic">Sou Prestador</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar.</div>
+                    <div class="text-4xl mb-3">📡</div>
+                    <div class="font-black text-blue-900 uppercase italic">Coletor</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Capturo dados e ganho.</div>
                 </button>
             </div>
         </div>
@@ -49,13 +49,14 @@
 
     <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader mb-4"></div>
-        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+        <h3 class="font-black uppercase italic text-xl animate-pulse">Sincronizando Dados...</h3>
+        <p id="gps-status" class="text-xs text-blue-200 mt-2">Validando Geo-Hash...</p>
     </div>
 
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
             <div>
-                <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio</h1>
+                <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio <span class="text-[10px] text-gray-400 font-normal">Atlas</span></h1>
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                     <p id="user-role-display" class="text-[8px] font-bold text-gray-400 uppercase italic">...</p>
@@ -65,7 +66,7 @@
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Atlas 🌍</button>
+            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Missões 📍</button>
             <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
         </nav>
@@ -74,29 +75,31 @@
             
             <section id="sec-atlas" class="space-y-4 animate-fadeIn">
                 <div id="client-controls" class="hidden mb-4">
-                     <button onclick="rodarSeed()" class="w-full bg-blue-100 text-blue-800 py-3 rounded-xl font-black text-[10px] uppercase italic border border-blue-200">➕ Criar Novo Pedido (Simulação)</button>
+                     <button onclick="rodarSeed()" class="w-full bg-blue-50 text-blue-800 py-4 rounded-xl font-black text-[10px] uppercase italic border border-blue-200 hover:bg-blue-100 transition shadow-sm">
+                        ➕ Criar Demanda de Coleta
+                     </button>
                 </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
             
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-gradient-to-r from-blue-900 to-slate-900 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
-                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Confirmado</p>
+                <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">📡</div>
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Rendimento Atlas</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Taxa Plataforma: 20%</p>
+                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Taxa de Validação: 20%</p>
                 </div>
                 
-                <h3 class="font-bold text-gray-400 text-xs uppercase mt-6 mb-2">Extrato</h3>
+                <h3 class="font-bold text-gray-400 text-xs uppercase mt-6 mb-2">Dados Vendidos</h3>
                 <div class="text-xs text-gray-500 bg-white p-4 rounded-xl border border-gray-100 text-center italic">
-                    Histórico de serviços realizados.
+                    Seus dados validados aparecerão aqui.
                 </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
                 <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl shadow-sm">
-                    <h2 class="font-black text-red-900 text-sm uppercase">Painel do Dono</h2>
-                    <p class="text-[10px] text-red-700">Aprovações de pagamento.</p>
+                    <h2 class="font-black text-red-900 text-sm uppercase">Painel Atlas</h2>
+                    <p class="text-[10px] text-red-700">Validação de Proof-of-Capture.</p>
                 </div>
                 <div id="admin-pending-list" class="space-y-4"></div>
             </section>
@@ -109,7 +112,7 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // CHAVES OFICIAIS
+        // CONFIGURAÇÃO OFICIAL (BLAZE)
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -130,6 +133,11 @@
         let missaoAtualId = null;
         const COMISSAO_PLATAFORMA = 0.20; 
 
+        // VARIÁVEIS PARA O ATLAS VIVO (GPS REAL)
+        let currentLat = null;
+        let currentLng = null;
+        let currentAcc = null;
+
         // 🔒 ADMIN HARDCODED
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 
@@ -137,6 +145,7 @@
             if (user) {
                 onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
                     if(!docSnap.exists()) {
+                        // Se for Admin, nasce Admin. Senão, nasce User.
                         const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                         userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: roleInicial, saldo: 0, is_provider: false };
                         await setDoc(doc(db, "usuarios", user.uid), userProfile);
@@ -165,17 +174,17 @@
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             
-            const tipoUsuario = userProfile.is_provider ? "Prestador" : "Cliente";
+            const tipoUsuario = userProfile.is_provider ? "Coletor" : "Comprador";
             document.getElementById('user-role-display').innerText = `${tipoUsuario} | ${user.email}`;
 
-            // LÓGICA DE INTERFACE POR PAPEL
+            // INTERFACE ADAPTATIVA
             if (userProfile.is_provider) {
-                // PRESTADOR: Vê Carteira
+                // COLETOR (Vê Carteira e Botões de Ação)
                 document.getElementById('tab-ganhar').classList.remove('hidden');
                 document.getElementById('client-controls').classList.add('hidden');
                 document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
             } else {
-                // CLIENTE: Não vê Carteira, Vê botão de Criar
+                // COMPRADOR (Vê Botão de Criar Demanda)
                 document.getElementById('tab-ganhar').classList.add('hidden');
                 document.getElementById('client-controls').classList.remove('hidden');
             }
@@ -208,27 +217,30 @@
         async function carregarMissoes() {
             const container = document.getElementById('lista-missoes');
             container.innerHTML = "";
-            // Busca apenas missões "abertas" (open) para não poluir
             const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
             const snap = await getDocs(q);
             
             if(snap.empty) {
-                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Sem missões disponíveis.</p></div>`;
+                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma coleta disponível na área.</p></div>`;
             } else {
                 snap.forEach(d => {
                     const m = d.data();
-                    // LÓGICA CRÍTICA: Botão só aparece se for PRESTADOR
                     let btnAction = "";
+                    
+                    // BOTÃO INTELIGENTE: Só o Coletor pode capturar
                     if(userProfile.is_provider) {
-                        btnAction = `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2 hover:bg-blue-700">📸 Aceitar e Capturar</button>`;
+                        btnAction = `
+                            <button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2 hover:bg-blue-700 shadow-md">
+                                <span>📡 Capturar Dado</span>
+                            </button>`;
                     } else {
-                        btnAction = `<div class="w-full bg-gray-100 text-gray-400 py-3 rounded-xl font-bold text-[10px] text-center italic border border-gray-200">Aguardando Prestador...</div>`;
+                        btnAction = `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Aguardando Coleta...</div>`;
                     }
 
                     container.innerHTML += `
                         <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4">
                             <div class="flex justify-between items-start mb-3">
-                                <h3 class="font-black text-blue-900 text-sm uppercase italic">${m.titulo}</h3>
+                                <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3>
                                 <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
                             </div>
                             <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
@@ -238,17 +250,46 @@
             }
         }
 
+        // --- SISTEMA DE CAPTURA ATLAS (GPS + FOTO) ---
         window.iniciarMissao = (id) => {
             missaoAtualId = id;
-            document.getElementById('camera-input').click();
+            
+            // 1. Solicita GPS antes de abrir câmera
+            if (navigator.geolocation) {
+                alert("📍 Solicitando sua localização para validar a prova...");
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // SUCESSO NO GPS
+                        currentLat = position.coords.latitude;
+                        currentLng = position.coords.longitude;
+                        currentAcc = position.coords.accuracy;
+                        console.log("GPS Capturado:", currentLat, currentLng);
+                        
+                        // 2. Abre a Câmera
+                        document.getElementById('camera-input').click();
+                    },
+                    (error) => {
+                        alert("⚠️ Erro: Precisamos do GPS para validar o dado. Ative a localização.");
+                    },
+                    { enableHighAccuracy: true }
+                );
+            } else {
+                alert("Seu dispositivo não suporta GPS.");
+            }
         };
 
         window.processarFoto = async (input) => {
             if (input.files && input.files[0]) {
-                document.getElementById('upload-overlay').classList.remove('hidden');
+                const loader = document.getElementById('upload-overlay');
+                const statusTxt = document.getElementById('gps-status');
+                
+                loader.classList.remove('hidden');
+                statusTxt.innerText = `Anexando Geo-Tags: ${currentLat.toFixed(5)}, ${currentLng.toFixed(5)}...`;
+
                 try {
                     const file = input.files[0];
                     const timestamp = new Date().getTime();
+                    // Caminho no Storage
                     const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
                     
                     const snap = await uploadBytes(refStorage, file);
@@ -256,6 +297,7 @@
                     const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
                     const valorMissao = parseFloat(docMissao.data().recompensa.replace(',', '.'));
 
+                    // GRAVAÇÃO NO BANCO COM DADOS RICOS (ATLAS VIVO)
                     await addDoc(collection(db, "mission_assignments"), {
                         mission_id: missaoAtualId,
                         mission_title: docMissao.data().titulo,
@@ -265,42 +307,50 @@
                         valor_bruto: valorMissao,
                         status: "submitted",
                         submitted_at: serverTimestamp(),
-                        tenant_id: userProfile.tenant_id
+                        tenant_id: userProfile.tenant_id,
+                        
+                        // 🛰️ DADOS DE SENSOR (VALOR DO DADO)
+                        gps_lat: currentLat,
+                        gps_lng: currentLng,
+                        gps_accuracy: currentAcc,
+                        device_agent: navigator.userAgent
                     });
-                    
-                    // Opcional: Marcar missão como "em_analise" para sumir da lista pública
-                    // await updateDoc(doc(db, "missoes", missaoAtualId), { status: "em_analise" });
 
-                    alert("✅ Prova enviada! Aguarde a aprovação.");
+                    alert("✅ Dado Capturado e Geo-Referenciado com Sucesso!");
                     input.value = '';
                 } catch (e) {
-                    alert("Erro: " + e.message);
+                    alert("Erro no envio: " + e.message);
                 } finally {
-                    document.getElementById('upload-overlay').classList.add('hidden');
+                    loader.classList.add('hidden');
                 }
             }
         };
 
+        // --- PAINEL ADMIN ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             onSnapshot(q, (snap) => {
                 const container = document.getElementById('admin-pending-list');
                 container.innerHTML = "";
                 if(snap.empty) {
-                    container.innerHTML = "<p class='text-center text-xs text-gray-400 py-4'>Sem pendências.</p>";
+                    container.innerHTML = "<p class='text-center text-xs text-gray-400 py-4'>Sem dados pendentes.</p>";
                 } else {
                     snap.forEach(d => {
                         const data = d.data();
+                        // Mostra GPS na tela do Admin
+                        const gpsInfo = data.gps_lat ? `📍 GPS: ${data.gps_lat.toFixed(4)}, ${data.gps_lng.toFixed(4)} (±${data.gps_accuracy}m)` : "⚠️ Sem GPS";
+                        
                         container.innerHTML += `
                             <div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 animate-fadeIn">
                                 <p class="font-bold text-xs text-blue-900 mb-1">${data.mission_title}</p>
-                                <p class="text-[9px] text-gray-500 mb-2">${data.profile_email}</p>
+                                <p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p>
+                                <p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p>
                                 <a href="${data.photo_url}" target="_blank">
                                     <img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3 hover:opacity-90">
                                 </a>
                                 <div class="flex gap-2">
-                                    <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-700">Aprovar (R$ ${data.valor_bruto})</button>
-                                    <button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-50">Rejeitar</button>
+                                    <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-700">Validar (R$ ${data.valor_bruto})</button>
+                                    <button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-50">Invalidar</button>
                                 </div>
                             </div>`;
                     });
@@ -309,26 +359,23 @@
         }
 
         window.aprovarProva = async (docId, userId, valorBruto) => {
-            if(!confirm(`Confirma pagamento?`)) return;
+            if(!confirm(`O dado é válido e legível?`)) return;
             const comissao = valorBruto * COMISSAO_PLATAFORMA;
             const liquido = valorBruto - comissao;
 
             try {
                 await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido });
                 await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) });
-                // Atualiza a missão original para concluída
-                // const assignment = await getDoc(doc(db, "mission_assignments", docId));
-                // await updateDoc(doc(db, "missoes", assignment.data().mission_id), { status: "concluido" });
             } catch (e) { alert("Erro: " + e.message); }
         };
 
         window.rejeitarProva = async (docId) => {
-            if(!confirm("Rejeitar?")) return;
+            if(!confirm("Dado inválido?")) return;
             await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" });
         };
 
         window.rodarSeed = async () => {
-            const seeds = [{ titulo: "Instalação 220v", descricao: "Trocar tomada.", recompensa: "100,00", tenant_id: DEFAULT_TENANT, status: "aberto" }];
+            const seeds = [{ titulo: "Coleta: Preço Gasolina Posto BR", descricao: "Foto nítida do painel de preços.", recompensa: "2,00", tenant_id: DEFAULT_TENANT, status: "aberto" }];
             await addDoc(collection(db, "missoes"), seeds[0]);
             location.reload();
         };
