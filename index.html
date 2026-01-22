@@ -36,7 +36,7 @@
                 <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🛍️</div>
                     <div class="font-black text-blue-900 uppercase italic">Sou Cliente</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero pedir serviços.</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar.</div>
                 </button>
                 <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🛠️</div>
@@ -58,7 +58,7 @@
                 <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio</h1>
                 <div class="flex items-center gap-2">
                     <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                    <p id="user-email-display" class="text-[8px] font-bold text-gray-400 uppercase italic">...</p>
+                    <p id="user-role-display" class="text-[8px] font-bold text-gray-400 uppercase italic">...</p>
                 </div>
             </div>
             <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg">Sair</button>
@@ -66,13 +66,16 @@
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
             <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Atlas 🌍</button>
-            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
             
             <section id="sec-atlas" class="space-y-4 animate-fadeIn">
+                <div id="client-controls" class="hidden mb-4">
+                     <button onclick="rodarSeed()" class="w-full bg-blue-100 text-blue-800 py-3 rounded-xl font-black text-[10px] uppercase italic border border-blue-200">➕ Criar Novo Pedido (Simulação)</button>
+                </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
             
@@ -81,33 +84,21 @@
                     <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
                     <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Confirmado</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Atualizado em tempo real</p>
+                    <p class="text-[9px] mt-2 opacity-60 bg-white/10 inline-block px-2 py-1 rounded">Taxa Plataforma: 20%</p>
                 </div>
                 
-                <h3 class="font-bold text-gray-400 text-xs uppercase mt-6 mb-2">Histórico de Transações</h3>
-                <div id="user-history" class="space-y-2 text-xs text-gray-500 bg-white p-4 rounded-xl border border-gray-100">
-                    <p class="text-center italic opacity-50">Suas movimentações aparecerão aqui.</p>
+                <h3 class="font-bold text-gray-400 text-xs uppercase mt-6 mb-2">Extrato</h3>
+                <div class="text-xs text-gray-500 bg-white p-4 rounded-xl border border-gray-100 text-center italic">
+                    Histórico de serviços realizados.
                 </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
                 <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl shadow-sm">
-                    <h2 class="font-black text-red-900 text-sm uppercase flex items-center gap-2">
-                        <span>🛡️</span> Área Restrita
-                    </h2>
-                    <p class="text-[10px] text-red-700">Apenas o Fundador pode ver e aprovar pagamentos.</p>
+                    <h2 class="font-black text-red-900 text-sm uppercase">Painel do Dono</h2>
+                    <p class="text-[10px] text-red-700">Aprovações de pagamento.</p>
                 </div>
-
-                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Provas Pendentes</h3>
-                    <div id="admin-pending-list" class="space-y-4">
-                        <p class="text-xs text-gray-400 text-center py-4">Nenhuma prova aguardando análise.</p>
-                    </div>
-                </div>
-
-                <div class="p-4 bg-white rounded-xl border border-gray-200">
-                    <button onclick="rodarSeed()" class="text-[10px] bg-blue-50 text-blue-600 px-3 py-2 rounded font-bold w-full text-left hover:bg-blue-100 transition border border-blue-100">🌱 Criar Missões de Teste</button>
-                </div>
+                <div id="admin-pending-list" class="space-y-4"></div>
             </section>
         </main>
     </div>
@@ -118,7 +109,7 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // CHAVES DO PROJETO OFICIAL
+        // CHAVES OFICIAIS
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -139,17 +130,15 @@
         let missaoAtualId = null;
         const COMISSAO_PLATAFORMA = 0.20; 
 
-        // 🔒 SEGURANÇA MÁXIMA: APENAS ESSE EMAIL VÊ O PAINEL ADMIN
+        // 🔒 ADMIN HARDCODED
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Monitoramento em TEMPO REAL do Usuário (Saldo e Perfil)
                 onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
                     if(!docSnap.exists()) {
-                        // Se usuário não existe, cria com role baseada no email (Se for Gilvan, já nasce Admin)
                         const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
-                        userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: roleInicial, saldo: 0, created_at: serverTimestamp() };
+                        userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: roleInicial, saldo: 0, is_provider: false };
                         await setDoc(doc(db, "usuarios", user.uid), userProfile);
                     } else {
                         userProfile = docSnap.data();
@@ -165,7 +154,6 @@
 
         function atualizarInterfaceUsuario(user) {
             document.getElementById('auth-container').classList.add('hidden');
-            
             if(!userProfile.perfil_completo) {
                 document.getElementById('role-selection').classList.remove('hidden');
             } else {
@@ -176,12 +164,23 @@
         function iniciarApp(user) {
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('user-email-display').innerText = user.email;
             
-            // ATUALIZA O SALDO NA TELA IMEDIATAMENTE
-            document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
+            const tipoUsuario = userProfile.is_provider ? "Prestador" : "Cliente";
+            document.getElementById('user-role-display').innerText = `${tipoUsuario} | ${user.email}`;
 
-            // 🔒 VERIFICAÇÃO DE ADMIN RIGOROSA
+            // LÓGICA DE INTERFACE POR PAPEL
+            if (userProfile.is_provider) {
+                // PRESTADOR: Vê Carteira
+                document.getElementById('tab-ganhar').classList.remove('hidden');
+                document.getElementById('client-controls').classList.add('hidden');
+                document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
+            } else {
+                // CLIENTE: Não vê Carteira, Vê botão de Criar
+                document.getElementById('tab-ganhar').classList.add('hidden');
+                document.getElementById('client-controls').classList.remove('hidden');
+            }
+
+            // ADMIN
             if(ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 carregarPendenciasAdmin();
@@ -209,14 +208,23 @@
         async function carregarMissoes() {
             const container = document.getElementById('lista-missoes');
             container.innerHTML = "";
-            const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id));
+            // Busca apenas missões "abertas" (open) para não poluir
+            const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
             const snap = await getDocs(q);
             
             if(snap.empty) {
-                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Sem missões.</p></div>`;
+                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Sem missões disponíveis.</p></div>`;
             } else {
                 snap.forEach(d => {
                     const m = d.data();
+                    // LÓGICA CRÍTICA: Botão só aparece se for PRESTADOR
+                    let btnAction = "";
+                    if(userProfile.is_provider) {
+                        btnAction = `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2 hover:bg-blue-700">📸 Aceitar e Capturar</button>`;
+                    } else {
+                        btnAction = `<div class="w-full bg-gray-100 text-gray-400 py-3 rounded-xl font-bold text-[10px] text-center italic border border-gray-200">Aguardando Prestador...</div>`;
+                    }
+
                     container.innerHTML += `
                         <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4">
                             <div class="flex justify-between items-start mb-3">
@@ -224,7 +232,7 @@
                                 <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
                             </div>
                             <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
-                            <button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2">📸 Capturar Prova</button>
+                            ${btnAction}
                         </div>`;
                 });
             }
@@ -259,8 +267,11 @@
                         submitted_at: serverTimestamp(),
                         tenant_id: userProfile.tenant_id
                     });
+                    
+                    // Opcional: Marcar missão como "em_analise" para sumir da lista pública
+                    // await updateDoc(doc(db, "missoes", missaoAtualId), { status: "em_analise" });
 
-                    alert("✅ Prova enviada! Aguarde a aprovação do Admin.");
+                    alert("✅ Prova enviada! Aguarde a aprovação.");
                     input.value = '';
                 } catch (e) {
                     alert("Erro: " + e.message);
@@ -270,65 +281,56 @@
             }
         };
 
-        // --- ABA ADMIN REALTIME ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
-            
             onSnapshot(q, (snap) => {
                 const container = document.getElementById('admin-pending-list');
                 container.innerHTML = "";
-                
                 if(snap.empty) {
-                    container.innerHTML = "<p class='text-center text-xs text-gray-400 py-4'>Tudo limpo! Nenhuma prova pendente.</p>";
+                    container.innerHTML = "<p class='text-center text-xs text-gray-400 py-4'>Sem pendências.</p>";
                 } else {
                     snap.forEach(d => {
                         const data = d.data();
                         container.innerHTML += `
                             <div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 animate-fadeIn">
                                 <p class="font-bold text-xs text-blue-900 mb-1">${data.mission_title}</p>
-                                <p class="text-[9px] text-gray-500 mb-2">Prestador: ${data.profile_email}</p>
+                                <p class="text-[9px] text-gray-500 mb-2">${data.profile_email}</p>
                                 <a href="${data.photo_url}" target="_blank">
-                                    <img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3 border border-gray-200 hover:opacity-90 transition">
+                                    <img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3 hover:opacity-90">
                                 </a>
                                 <div class="flex gap-2">
-                                    <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-700 shadow-sm">Aprovar (R$ ${data.valor_bruto})</button>
+                                    <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-700">Aprovar (R$ ${data.valor_bruto})</button>
                                     <button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-50">Rejeitar</button>
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                     });
                 }
             });
         }
 
         window.aprovarProva = async (docId, userId, valorBruto) => {
-            if(!confirm(`Confirma pagamento para o usuário?`)) return;
+            if(!confirm(`Confirma pagamento?`)) return;
             const comissao = valorBruto * COMISSAO_PLATAFORMA;
             const liquido = valorBruto - comissao;
 
             try {
-                await updateDoc(doc(db, "mission_assignments", docId), {
-                    status: "approved",
-                    approved_at: serverTimestamp(),
-                    valor_liquido: liquido,
-                    comissao_plataforma: comissao
-                });
+                await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido });
                 await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) });
-                alert(`✅ Pagamento Liberado!\nUsuário recebeu R$ ${liquido.toFixed(2)}`);
-            } catch (e) {
-                alert("Erro: " + e.message);
-            }
+                // Atualiza a missão original para concluída
+                // const assignment = await getDoc(doc(db, "mission_assignments", docId));
+                // await updateDoc(doc(db, "missoes", assignment.data().mission_id), { status: "concluido" });
+            } catch (e) { alert("Erro: " + e.message); }
         };
 
         window.rejeitarProva = async (docId) => {
-            if(!confirm("Rejeitar prova?")) return;
+            if(!confirm("Rejeitar?")) return;
             await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" });
         };
 
         window.rodarSeed = async () => {
-            const seeds = [{ titulo: "Instalação 220v", descricao: "Trocar tomada.", recompensa: "100,00", tenant_id: DEFAULT_TENANT }];
+            const seeds = [{ titulo: "Instalação 220v", descricao: "Trocar tomada.", recompensa: "100,00", tenant_id: DEFAULT_TENANT, status: "aberto" }];
             await addDoc(collection(db, "missoes"), seeds[0]);
-            alert("Missão criada!");
+            location.reload();
         };
     </script>
 </body>
