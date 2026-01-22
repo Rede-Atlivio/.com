@@ -10,14 +10,13 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        /* Chat Styles */
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processarFoto(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this)">
 
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
@@ -52,6 +51,20 @@
         <p id="loader-subtext" class="text-xs text-blue-200 mt-2"></p>
     </div>
 
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
+        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Confira a Foto</h3>
+        <img id="img-preview" src="" class="max-h-[60vh] rounded-xl border-2 border-white mb-6 object-contain bg-gray-800">
+        
+        <div class="w-full max-w-md space-y-3">
+            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">
+                ✅ Confirmar Envio
+            </button>
+            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">
+                ❌ Tirar Outra
+            </button>
+        </div>
+    </div>
+
     <div id="chat-modal" class="hidden fixed inset-0 bg-white z-50 flex flex-col text-gray-800 animate-fadeIn">
         <div class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
             <div>
@@ -60,10 +73,9 @@
             </div>
             <button onclick="fecharChat()" class="text-2xl font-bold">&times;</button>
         </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
         <div class="p-3 bg-white border-t border-gray-200 flex gap-2">
-            <input type="text" id="chat-input" placeholder="Digite sua mensagem..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+            <input type="text" id="chat-input" placeholder="Digite..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
             <button onclick="enviarMensagem()" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-sm hover:bg-blue-700">➤</button>
         </div>
     </div>
@@ -94,8 +106,8 @@
                 <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3 mb-2">
                     <span class="text-2xl">⚡</span>
                     <div>
-                        <p class="text-[10px] font-bold text-yellow-800 uppercase">Central de Oportunidades</p>
-                        <p class="text-[9px] text-yellow-600">Ofertas relâmpago e renda passiva.</p>
+                        <p class="text-[10px] font-bold text-yellow-800 uppercase">Oportunidades</p>
+                        <p class="text-[9px] text-yellow-600">Ofertas relâmpago.</p>
                     </div>
                 </div>
                 <div id="lista-radar" class="grid gap-3"></div>
@@ -118,16 +130,9 @@
                     <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
                 </div>
-                <div class="text-xs text-gray-500 bg-white p-4 rounded-xl border border-gray-100 text-center italic mt-4">
-                    Extrato detalhado em construção.
-                </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
-                <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl shadow-sm">
-                    <h2 class="font-black text-red-900 text-sm uppercase">Painel Admin</h2>
-                    <p class="text-[10px] text-red-700">Controle total da rede.</p>
-                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">⚡ Radar Seed</button>
                     <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">📍 Atlas Seed</button>
@@ -163,11 +168,11 @@
 
         let userProfile = null;
         const DEFAULT_TENANT = "atlivio_fsa_01"; 
-        let missaoAtualId = null;
-        let activeChatId = null;
-        
+        let missaoAtualId = null, activeChatId = null;
         let currentLat = null, currentLng = null, currentAcc = null;
-        // 🔒 ADMIN EMAIL (TROQUE SE NECESSÁRIO)
+        // ARQUIVO TEMPORÁRIO PARA PREVIEW
+        let arquivoParaEnvio = null;
+
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 
         onAuthStateChanged(auth, async (user) => {
@@ -201,11 +206,9 @@
         function iniciarApp(user) {
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            
             const tipoUsuario = userProfile.is_provider ? "Coletor" : "Membro";
             document.getElementById('user-role-display').innerText = `${tipoUsuario}`;
 
-            // INTERFACE
             if (userProfile.is_provider) {
                 document.getElementById('tab-ganhar').classList.remove('hidden');
                 document.getElementById('client-controls').classList.add('hidden');
@@ -222,17 +225,12 @@
                 document.getElementById('tab-admin').classList.add('hidden');
             }
             
-            carregarRadar(); 
-            carregarAtlas();
-            carregarMeusChats(); // Carrega lista de conversas
+            carregarRadar(); carregarAtlas(); carregarMeusChats();
         }
 
         window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
         window.logout = () => signOut(auth).then(() => location.reload());
-
-        window.definirPerfil = async (tipo) => {
-            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true });
-        };
+        window.definirPerfil = async (tipo) => { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); };
 
         window.switchTab = (tab) => {
             ['radar', 'atlas', 'ganhar', 'admin', 'chat'].forEach(t => {
@@ -242,58 +240,36 @@
             });
         };
 
-        // --- 📡 RADAR ---
         async function carregarRadar() {
             const container = document.getElementById('lista-radar');
             container.innerHTML = "";
             const q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"));
             const snap = await getDocs(q);
-            if(snap.empty) {
-                container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Sem ofertas no momento.</p></div>`;
-            } else {
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Sem ofertas.</p></div>`; } 
+            else {
                 snap.forEach(d => {
                     const op = d.data();
                     const tipoBg = op.tipo === 'bug' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-                    const tipoText = op.tipo === 'bug' ? 'text-red-700' : 'text-green-700';
                     const icon = op.tipo === 'bug' ? '🔥' : '🎟️';
-                    container.innerHTML += `
-                        <div class="${tipoBg} border p-4 rounded-xl shadow-sm relative overflow-hidden group">
-                            <div class="flex justify-between items-start">
-                                <span class="text-2xl">${icon}</span>
-                                <span class="text-[9px] font-bold uppercase bg-white px-2 py-1 rounded border border-gray-100 shadow-sm">⏳ Expira em breve</span>
-                            </div>
-                            <h3 class="font-black ${tipoText} text-sm mt-2 leading-tight uppercase italic">${op.titulo}</h3>
-                            <p class="text-[10px] text-gray-600 mt-1 mb-3">${op.descricao}</p>
-                            <a href="${op.link}" target="_blank" class="block w-full text-center bg-white border border-gray-200 text-gray-700 py-2 rounded-lg font-bold text-[10px] uppercase hover:bg-gray-50">Acessar</a>
-                        </div>`;
+                    container.innerHTML += `<div class="${tipoBg} border p-4 rounded-xl shadow-sm mb-2"><h3 class="font-black text-sm italic uppercase">${icon} ${op.titulo}</h3><p class="text-[10px] text-gray-600">${op.descricao}</p><a href="${op.link}" target="_blank" class="block w-full text-center bg-white border border-gray-200 text-gray-700 py-2 rounded-lg font-bold text-[10px] mt-2 uppercase">Ver Oferta</a></div>`;
                 });
             }
         }
 
-        // --- 📍 ATLAS ---
         async function carregarAtlas() {
             const container = document.getElementById('lista-missoes');
             container.innerHTML = "";
             const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
             const snap = await getDocs(q);
-            if(snap.empty) {
-                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma coleta disponível.</p></div>`;
-            } else {
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma coleta.</p></div>`; } 
+            else {
                 snap.forEach(d => {
                     const m = d.data();
                     let btnAction = userProfile.is_provider 
                         ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📡 Capturar</button>`
                         : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo Coletores</div>`;
                     
-                    container.innerHTML += `
-                        <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4">
-                            <div class="flex justify-between items-start mb-3">
-                                <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3>
-                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
-                            </div>
-                            <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
-                            ${btnAction}
-                        </div>`;
+                    container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
                 });
             }
         }
@@ -310,77 +286,90 @@
             } else { alert("Sem suporte GPS."); }
         };
 
-        window.processarFoto = async (input) => {
+        // --- 📸 NOVO FLUXO DE PREVIEW ---
+        window.mostrarPreview = (input) => {
             if (input.files && input.files[0]) {
-                const loader = document.getElementById('upload-overlay');
-                loader.classList.remove('hidden');
-                document.getElementById('loader-subtext').innerText = "Enviando e Criando Chat...";
-                try {
-                    const file = input.files[0];
-                    const timestamp = new Date().getTime();
-                    const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
-                    const snap = await uploadBytes(refStorage, file);
-                    const url = await getDownloadURL(snap.ref);
-                    const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
-                    const valor = parseFloat(docMissao.data().recompensa.replace(',', '.'));
-
-                    // 1. Cria a submissão (Mission Assignment)
-                    const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
-                        mission_id: missaoAtualId,
-                        mission_title: docMissao.data().titulo,
-                        profile_id: auth.currentUser.uid,
-                        profile_email: auth.currentUser.email,
-                        photo_url: url,
-                        valor_bruto: valor,
-                        status: "submitted",
-                        submitted_at: serverTimestamp(),
-                        tenant_id: userProfile.tenant_id,
-                        gps_lat: currentLat, gps_lng: currentLng
-                    });
-
-                    // 2. CRIA O CHAT AUTOMATICAMENTE VINCULADO
-                    await setDoc(doc(db, "chats", assignmentRef.id), {
-                        assignment_id: assignmentRef.id,
-                        mission_title: docMissao.data().titulo,
-                        participants: [auth.currentUser.uid, "ADMIN"], // "ADMIN" é um placeholder, o admin vê tudo
-                        last_message: "Prova enviada. Aguardando análise.",
-                        updated_at: serverTimestamp()
-                    });
-
-                    alert("✅ Captura enviada! Chat de suporte aberto.");
-                    input.value = '';
-                } catch (e) { alert("Erro: " + e.message); } 
-                finally { loader.classList.add('hidden'); }
+                const file = input.files[0];
+                arquivoParaEnvio = file; // Salva na memória global temporariamente
+                
+                // Mostra a imagem no modal
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('img-preview').src = e.target.result;
+                    document.getElementById('preview-modal').classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+                
+                // Reseta o input para permitir selecionar a mesma foto se cancelar
+                input.value = ''; 
             }
         };
 
-        // --- 💬 SISTEMA DE CHAT ---
+        window.cancelarPreview = () => {
+            document.getElementById('preview-modal').classList.add('hidden');
+            arquivoParaEnvio = null;
+        };
+
+        window.enviarFotoReal = async () => {
+            // Fecha preview, abre loader
+            document.getElementById('preview-modal').classList.add('hidden');
+            const loader = document.getElementById('upload-overlay');
+            loader.classList.remove('hidden');
+            document.getElementById('loader-subtext').innerText = "Subindo Prova Blindada...";
+
+            try {
+                if(!arquivoParaEnvio) throw new Error("Nenhum arquivo.");
+                
+                const timestamp = new Date().getTime();
+                const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
+                
+                const snap = await uploadBytes(refStorage, arquivoParaEnvio);
+                const url = await getDownloadURL(snap.ref);
+                const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
+                const valor = parseFloat(docMissao.data().recompensa.replace(',', '.'));
+
+                const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
+                    mission_id: missaoAtualId,
+                    mission_title: docMissao.data().titulo,
+                    profile_id: auth.currentUser.uid,
+                    profile_email: auth.currentUser.email,
+                    photo_url: url,
+                    valor_bruto: valor,
+                    status: "submitted",
+                    submitted_at: serverTimestamp(),
+                    tenant_id: userProfile.tenant_id,
+                    gps_lat: currentLat, gps_lng: currentLng
+                });
+
+                // Cria Chat
+                await setDoc(doc(db, "chats", assignmentRef.id), {
+                    assignment_id: assignmentRef.id,
+                    mission_title: docMissao.data().titulo,
+                    participants: [auth.currentUser.uid, "ADMIN"], 
+                    last_message: "Prova enviada. Aguardando análise.",
+                    updated_at: serverTimestamp()
+                });
+
+                alert("✅ Sucesso! Chat de suporte aberto.");
+                arquivoParaEnvio = null; // Limpa memória
+            } catch (e) { alert("Erro: " + e.message); } 
+            finally { loader.classList.add('hidden'); }
+        };
+
+        // --- CHAT & ADMIN ---
         function carregarMeusChats() {
             const container = document.getElementById('lista-chats');
-            // Busca chats onde sou participante (simplificado para MVP: pega assignments submetidos)
-            // Para o Admin, a lógica seria ver TODOS. Para User, ver OS SEUS.
-            let q;
-            if(userProfile.role === 'admin') {
-                q = query(collection(db, "chats"), orderBy("updated_at", "desc"));
-            } else {
-                q = query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
-            }
+            let q = userProfile.role === 'admin' 
+                ? query(collection(db, "chats"), orderBy("updated_at", "desc"))
+                : query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
 
             onSnapshot(q, (snap) => {
                 container.innerHTML = "";
-                if(snap.empty) {
-                    container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Nenhum chat ativo.</p>";
-                } else {
+                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Nenhum chat.</p>";
+                else {
                     snap.forEach(d => {
                         const chat = d.data();
-                        container.innerHTML += `
-                            <div onclick="abrirChat('${d.id}', '${chat.mission_title}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm active:bg-gray-50 flex justify-between items-center cursor-pointer">
-                                <div>
-                                    <p class="font-bold text-xs text-blue-900 uppercase italic">${chat.mission_title}</p>
-                                    <p class="text-[10px] text-gray-500 truncate w-48">${chat.last_message}</p>
-                                </div>
-                                <span class="text-xl">💬</span>
-                            </div>`;
+                        container.innerHTML += `<div onclick="abrirChat('${d.id}', '${chat.mission_title}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center cursor-pointer mb-2"><div><p class="font-bold text-xs text-blue-900 uppercase italic">${chat.mission_title}</p><p class="text-[10px] text-gray-500 truncate w-48">${chat.last_message}</p></div><span class="text-xl">💬</span></div>`;
                     });
                 }
             });
@@ -392,56 +381,31 @@
             document.getElementById('chat-mission-title').innerText = title;
             carregarMensagens(chatId);
         };
-
-        window.fecharChat = () => {
-            document.getElementById('chat-modal').classList.add('hidden');
-            activeChatId = null;
-        };
+        window.fecharChat = () => { document.getElementById('chat-modal').classList.add('hidden'); activeChatId = null; };
 
         function carregarMensagens(chatId) {
             const container = document.getElementById('chat-messages');
             const q = query(collection(db, `chats/${chatId}/messages`), orderBy("timestamp", "asc"));
-            
             onSnapshot(q, (snap) => {
                 container.innerHTML = "";
                 snap.forEach(d => {
                     const msg = d.data();
                     const isMe = msg.sender_id === auth.currentUser.uid;
                     const bubbleClass = isMe ? "chat-bubble-me" : "chat-bubble-them";
-                    container.innerHTML += `
-                        <div class="flex w-full">
-                            <div class="p-3 text-[11px] max-w-[80%] ${bubbleClass} shadow-sm mb-2">
-                                ${msg.text}
-                            </div>
-                        </div>`;
+                    container.innerHTML += `<div class="flex w-full"><div class="p-3 text-[11px] max-w-[80%] ${bubbleClass} shadow-sm mb-2">${msg.text}</div></div>`;
                 });
-                // Auto scroll
                 container.scrollTop = container.scrollHeight;
             });
         }
-
         window.enviarMensagem = async () => {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
             if(!text || !activeChatId) return;
-
-            try {
-                // Adiciona mensagem
-                await addDoc(collection(db, `chats/${activeChatId}/messages`), {
-                    text: text,
-                    sender_id: auth.currentUser.uid,
-                    timestamp: serverTimestamp()
-                });
-                // Atualiza topo do chat
-                await updateDoc(doc(db, "chats", activeChatId), {
-                    last_message: text,
-                    updated_at: serverTimestamp()
-                });
-                input.value = "";
-            } catch(e) { console.error(e); }
+            await addDoc(collection(db, `chats/${activeChatId}/messages`), { text: text, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
+            await updateDoc(doc(db, "chats", activeChatId), { last_message: text, updated_at: serverTimestamp() });
+            input.value = "";
         };
 
-        // --- PAINEL ADMIN ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             onSnapshot(q, (snap) => {
@@ -450,35 +414,14 @@
                 snap.forEach(d => {
                     const data = d.data();
                     const gpsInfo = data.gps_lat ? `📍 ${data.gps_lat.toFixed(4)}, ${data.gps_lng.toFixed(4)}` : "⚠️ Sem GPS";
-                    container.innerHTML += `
-                        <div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50">
-                            <p class="font-bold text-xs text-blue-900">${data.mission_title}</p>
-                            <p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p>
-                            <p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p>
-                            <a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a>
-                            <div class="flex gap-2 mb-2">
-                                <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Validar</button>
-                                <button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Invalidar</button>
-                            </div>
-                            <button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-200">💬 Discutir Detalhes</button>
-                        </div>`;
+                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Validar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Invalidar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Chat</button></div>`;
                 });
             });
         }
-
-        window.aprovarProva = async (docId, userId, valorBruto) => {
-            if(!confirm(`Validar?`)) return;
-            const comissao = valorBruto * 0.20;
-            const liquido = valorBruto - comissao;
-            try {
-                await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido });
-                await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) });
-            } catch (e) { alert("Erro: " + e.message); }
-        };
+        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Validar?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
         window.rejeitarProva = async (docId) => { if(!confirm("Invalidar?")) return; await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" }); };
-
-        window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: TV 50pol", descricao: "Magazine Luiza por R$ 900. Corre!", tipo: "bug", link: "https://magalu.com.br", created_at: serverTimestamp() }); carregarRadar(); };
-        window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Coleta: Preço Gasolina", descricao: "Foto do painel.", recompensa: "2,50", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
+        window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: TV", descricao: "Magalu R$ 900.", tipo: "bug", link: "https://magalu.com", created_at: serverTimestamp() }); carregarRadar(); };
+        window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Coleta: Gasolina", descricao: "Foto painel.", recompensa: "2,50", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
     </script>
 </body>
 </html>
