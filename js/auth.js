@@ -1,32 +1,48 @@
 import { auth, db, provider } from './app.js';
 import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // CONFIGURAÇÕES
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
-export let userProfile = null; // Perfil global
+export let userProfile = null;
 
-// FUNÇÕES DE LOGIN (Disponíveis no window para o HTML clicar)
+// LOGIN
 window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
 window.logout = () => signOut(auth).then(() => location.reload());
 
+// DEFINIR PERFIL INICIAL
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
-    await setDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+    await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
         is_provider: tipo === 'prestador', 
         perfil_completo: true 
-    }, { merge: true });
+    });
     location.reload();
 };
 
-// OBSERVADOR DE ESTADO (O SEGURANÇA)
+// --- NOVA FUNÇÃO: TROCAR DE PERFIL (Botão Mágico) ---
+window.alternarPerfil = async () => {
+    if(!userProfile) return;
+    
+    const novoTipo = userProfile.is_provider ? "CLIENTE" : "PRESTADOR";
+    const msg = userProfile.is_provider 
+        ? "🔄 Mudar para CLIENTE?\n\nVocê verá serviços para contratar e produtos para comprar." 
+        : "🔄 Mudar para PRESTADOR?\n\nVocê verá missões, chamados e sua carteira.";
+
+    if(confirm(msg)) {
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            is_provider: !userProfile.is_provider 
+        });
+        location.reload(); // Recarrega para limpar a visão antiga
+    }
+};
+
+// OBSERVADOR DE ESTADO
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // Escuta mudanças no perfil do usuário em tempo real
         onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
             if(!docSnap.exists()) {
-                // Cria perfil se não existir
                 const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                 userProfile = { 
                     email: user.email, 
@@ -64,28 +80,49 @@ function atualizarInterface(user) {
     iniciarAppLogado(user);
 }
 
+// AQUI ESTÁ A LÓGICA DE SEGURANÇA VISUAL
 function iniciarAppLogado(user) {
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
     
     const tipoUsuario = userProfile.is_provider ? "Prestador" : "Cliente";
-    document.getElementById('user-role-display').innerText = `${tipoUsuario}`;
+    // Atualiza o texto do botão de troca
+    document.getElementById('btn-trocar-perfil').innerText = `Modo: ${tipoUsuario} 🔄`;
 
-    // Lógica de UI baseada no perfil
-    if (userProfile.is_provider) {
-        document.getElementById('tab-ganhar').classList.remove('hidden');
-        if(document.getElementById('servicos-prestador')) document.getElementById('servicos-prestador').classList.remove('hidden');
-    } else {
-        document.getElementById('tab-ganhar').classList.add('hidden');
-        if(document.getElementById('servicos-cliente')) document.getElementById('servicos-cliente').classList.remove('hidden');
-    }
-
-    // Admin
-    if(ADMIN_EMAILS.includes(user.email)) {
+    // 1. SEGURANÇA ADMIN (Correção do Vazamento)
+    const isAdmin = ADMIN_EMAILS.includes(user.email);
+    if(isAdmin) {
         document.getElementById('tab-admin').classList.remove('hidden');
-        document.getElementById('sec-admin').classList.remove('hidden');
     } else {
         document.getElementById('tab-admin').classList.add('hidden');
-        document.getElementById('sec-admin').classList.add('hidden');
+        document.getElementById('sec-admin').classList.add('hidden'); // Garante que fecha
+    }
+
+    // 2. LÓGICA DE ABAS POR PERFIL (Limpeza Mental)
+    if (userProfile.is_provider) {
+        // MODO PRESTADOR (Ganhar Dinheiro)
+        document.getElementById('tab-missoes').classList.remove('hidden'); // Vê Missões
+        document.getElementById('tab-ganhar').classList.remove('hidden');  // Vê Carteira
+        document.getElementById('tab-produtos').classList.add('hidden');   // Não Vê Loja (Foco em trabalho)
+        
+        // Botão Online: APARECE
+        document.getElementById('status-toggle-container').classList.remove('hidden');
+        
+        // Aba Serviços: Mostra visão de Trabalho
+        document.getElementById('servicos-prestador').classList.remove('hidden');
+        document.getElementById('servicos-cliente').classList.add('hidden');
+
+    } else {
+        // MODO CLIENTE (Gastar Dinheiro)
+        document.getElementById('tab-missoes').classList.add('hidden');    // Não Vê Missões
+        document.getElementById('tab-ganhar').classList.add('hidden');     // Não Vê Carteira
+        document.getElementById('tab-produtos').classList.remove('hidden');// Vê Loja
+        
+        // Botão Online: SOME
+        document.getElementById('status-toggle-container').classList.add('hidden');
+
+        // Aba Serviços: Mostra visão de Contratação
+        document.getElementById('servicos-prestador').classList.add('hidden');
+        document.getElementById('servicos-cliente').classList.remove('hidden');
     }
 }
