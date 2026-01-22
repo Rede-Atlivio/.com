@@ -13,9 +13,11 @@
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
         
-        /* EFEITO DE CENSURA (FOMO) */
-        .blur-secret { filter: blur(5px); user-select: none; pointer-events: none; }
-        .premium-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: #b45309; background: rgba(255, 251, 235, 0.9); padding: 5px 10px; border-radius: 8px; font-size: 10px; text-transform: uppercase; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        /* TOGGLE SWITCH (ONLINE/OFFLINE) */
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        
+        .blur-secret { filter: blur(4px); pointer-events: none; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -25,7 +27,7 @@
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Marketplace Híbrido</p>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">O Primeiro Marketplace Híbrido</p>
             <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
                 Entrar com Google
@@ -39,13 +41,13 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-6">
                 <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">💎</div>
-                    <div class="font-black text-blue-900 uppercase italic">Quero Contratar</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Busco serviços e vantagens.</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Busco resolver problemas.</div>
                 </button>
                 <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">🚀</div>
-                    <div class="font-black text-blue-900 uppercase italic">Quero Trabalhar</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Faço missões e serviços.</div>
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Faço serviços e missões.</div>
                 </button>
             </div>
         </div>
@@ -53,87 +55,102 @@
 
     <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader mb-4"></div>
-        <h3 id="loader-text" class="font-black uppercase italic text-xl animate-pulse">Enviando...</h3>
-        <p id="loader-subtext" class="text-xs text-blue-200 mt-2"></p>
+        <h3 id="loader-text" class="font-black uppercase italic text-xl animate-pulse">Aguarde...</h3>
     </div>
 
     <div id="preview-modal" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
-        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Foto Capturada</h3>
+        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Validar Foto</h3>
         <img id="img-preview" src="" class="max-h-[60vh] rounded-xl border-2 border-white mb-6 object-contain bg-gray-800">
+        <div id="gps-status" class="text-xs text-yellow-400 mb-4 animate-pulse">🛰️ Buscando GPS preciso...</div>
         <div class="w-full max-w-md space-y-3">
-            <button onclick="enviarFotoReal()" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg active:scale-95 transition">✅ Confirmar e Enviar</button>
-            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">❌ Tentar de Novo</button>
-        </div>
-    </div>
-
-    <div id="chat-modal" class="hidden fixed inset-0 bg-white z-50 flex flex-col text-gray-800 animate-fadeIn">
-        <div class="bg-blue-900 text-white p-4 flex justify-between items-center shadow-md">
-            <div>
-                <h3 class="font-bold text-sm uppercase italic">Chat Seguro</h3>
-                <p class="text-[9px] opacity-75" id="chat-mission-title">...</p>
-            </div>
-            <button onclick="fecharChat()" class="text-2xl font-bold">&times;</button>
-        </div>
-        <div class="bg-yellow-50 text-yellow-800 text-[10px] text-center p-2 border-b border-yellow-200">
-            ⚠️ <b>Segurança:</b> Troca de telefones/emails é bloqueada. Negocie por aqui.
-        </div>
-        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50"></div>
-        <div class="p-3 bg-white border-t border-gray-200 flex gap-2">
-            <input type="text" id="chat-input" placeholder="Digite..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
-            <button onclick="enviarMensagem()" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-sm hover:bg-blue-700">➤</button>
+            <button id="btn-confirmar-foto" onclick="enviarFotoReal()" class="w-full bg-gray-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg cursor-not-allowed opacity-50" disabled>📡 Aguardando GPS...</button>
+            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">❌ Cancelar</button>
         </div>
     </div>
 
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
-        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
-            <div>
-                <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio <span class="text-[10px] text-yellow-500 font-bold">V1.0</span></h1>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        
+        <header class="bg-white shadow-sm p-4 z-30 sticky top-0">
+            <div class="flex justify-between items-center mb-2">
+                <div>
+                    <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio <span class="text-[10px] text-yellow-500 font-bold">V8.0</span></h1>
                     <p id="user-role-display" class="text-[8px] font-bold text-gray-400 uppercase italic">...</p>
                 </div>
+                <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg">Sair</button>
             </div>
-            <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg">Sair</button>
+            
+            <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex justify-between items-center">
+                <span class="text-[10px] font-bold text-gray-600 uppercase">Receber Chamados</span>
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                    <label for="online-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+            </div>
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('radar')" id="tab-radar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Vantagens ⚡</button>
-            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Missões 📍</button>
-            <button onclick="switchTab('chat')" id="tab-chat" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
-            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Missões 📷</button>
+            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
             
-            <section id="sec-radar" class="space-y-4 animate-fadeIn">
+            <section id="sec-oportunidades" class="space-y-4 animate-fadeIn">
                 <div class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3 mb-2">
                     <span class="text-2xl">⚡</span>
                     <div>
                         <p class="text-[10px] font-bold text-yellow-800 uppercase">Central de Oportunidades</p>
-                        <p class="text-[9px] text-yellow-600">Chegue antes de todo mundo.</p>
+                        <p class="text-[9px] text-yellow-600">Erros de preço, cupons e vagas.</p>
                     </div>
                 </div>
-                <div id="lista-radar" class="grid gap-3"></div>
+                <div id="lista-oportunidades" class="grid gap-3"></div>
             </section>
 
-            <section id="sec-atlas" class="hidden space-y-4 animate-fadeIn">
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
                 <div class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3 mb-2">
-                    <span class="text-2xl">📍</span>
+                    <span class="text-2xl">📷</span>
                     <div>
-                        <p class="text-[10px] font-bold text-blue-800 uppercase">Microtarefas & Coletas</p>
-                        <p class="text-[9px] text-blue-600">Ganhe dinheiro capturando dados.</p>
+                        <p class="text-[10px] font-bold text-blue-800 uppercase">Ganhe Já</p>
+                        <p class="text-[9px] text-blue-600">Tarefas rápidas. Pagamento por dado capturado.</p>
                     </div>
                 </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
 
-            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
-                <div id="lista-chats" class="space-y-2"></div>
+            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+                <div id="servicos-cliente" class="hidden space-y-4">
+                    <h3 class="font-black text-gray-800 text-sm uppercase italic">O que você precisa hoje?</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center aspect-square active:scale-95 transition cursor-pointer hover:border-blue-500">
+                            <span class="text-3xl mb-2">⚡</span>
+                            <span class="text-[10px] font-bold uppercase">Eletricista</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center justify-center aspect-square active:scale-95 transition cursor-pointer hover:border-blue-500">
+                            <span class="text-3xl mb-2">🚿</span>
+                            <span class="text-[10px] font-bold uppercase">Encanador</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 p-4 bg-gray-100 rounded-xl text-center">
+                        <p class="text-xs text-gray-500">Histórico de Pedidos (Vazio)</p>
+                    </div>
+                </div>
+
+                <div id="servicos-prestador" class="hidden space-y-4">
+                    <div id="status-msg" class="text-center p-8 text-gray-400">
+                        <p class="text-4xl mb-2">😴</p>
+                        <p class="text-xs font-bold uppercase">Você está Offline</p>
+                        <p class="text-[9px]">Ative o botão no topo para receber chamados.</p>
+                    </div>
+                    <div id="lista-chamados" class="hidden space-y-3">
+                        </div>
+                </div>
             </section>
             
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-gradient-to-br from-blue-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
+                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
                     <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
                     <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Disponível</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
@@ -142,11 +159,11 @@
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="rodarSeedRadar()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">Criar Vantagem (Teste)</button>
-                    <button onclick="rodarSeedAtlas()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">Criar Missão (Teste)</button>
+                    <button onclick="rodarSeedOportunidade()" class="bg-yellow-100 text-yellow-800 p-3 rounded-lg text-[10px] font-bold border border-yellow-200">Criar Oportunidade</button>
+                    <button onclick="rodarSeedMissao()" class="bg-blue-100 text-blue-800 p-3 rounded-lg text-[10px] font-bold border border-blue-200">Criar Missão</button>
                 </div>
                 <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Aprovações Pendentes</h3>
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4 border-b pb-2">Validações (Missões)</h3>
                     <div id="admin-pending-list" class="space-y-4"></div>
                 </div>
             </section>
@@ -159,7 +176,6 @@
         import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // CONFIGURAÇÃO OFICIAL
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -177,18 +193,29 @@
 
         let userProfile = null;
         const DEFAULT_TENANT = "atlivio_fsa_01"; 
-        let missaoAtualId = null, activeChatId = null;
+        let missaoAtualId = null;
         let currentLat = null, currentLng = null, currentAcc = null;
         let arquivoParaEnvio = null;
 
-        // 🔒 ADMIN OFICIAL
         const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
-
-        // CONFIGURAÇÃO DO INPUT DE ARQUIVO
         const cameraInput = document.getElementById('camera-input');
-        // Gatilho robusto para correção de upload
+
+        // GATILHO DE CÂMERA (CORRIGIDO: NÃO PEDE GPS ANTES)
         cameraInput.addEventListener('change', (e) => {
             mostrarPreview(cameraInput);
+        });
+
+        // TOGGLE ONLINE/OFFLINE
+        document.getElementById('online-toggle').addEventListener('change', async (e) => {
+            const isOnline = e.target.checked;
+            const container = document.getElementById('status-msg');
+            if(isOnline) {
+                container.innerHTML = `<p class="text-4xl mb-2 animate-bounce">📡</p><p class="text-xs font-bold uppercase text-green-600">Você está Online</p><p class="text-[9px]">Aguardando chamados...</p>`;
+                // Futuro: await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { status: "online" });
+            } else {
+                container.innerHTML = `<p class="text-4xl mb-2">😴</p><p class="text-xs font-bold uppercase text-gray-400">Você está Offline</p><p class="text-[9px]">Ative o botão no topo para receber chamados.</p>`;
+                // Futuro: await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { status: "offline" });
+            }
         });
 
         onAuthStateChanged(auth, async (user) => {
@@ -222,26 +249,30 @@
         function iniciarApp(user) {
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
-            const tipoUsuario = userProfile.is_provider ? "Prestador/Coletor" : "Cliente/Comprador";
-            document.getElementById('user-role-display').innerText = `${tipoUsuario}`;
-
-            // INTERFACE DINÂMICA
+            
+            // CONFIGURAÇÃO DINÂMICA
             if (userProfile.is_provider) {
                 document.getElementById('tab-ganhar').classList.remove('hidden');
+                document.getElementById('status-toggle-container').classList.remove('hidden');
+                document.getElementById('servicos-prestador').classList.remove('hidden');
+                document.getElementById('user-role-display').innerText = "Prestador";
             } else {
                 document.getElementById('tab-ganhar').classList.add('hidden');
+                document.getElementById('status-toggle-container').classList.add('hidden');
+                document.getElementById('servicos-cliente').classList.remove('hidden');
+                document.getElementById('user-role-display').innerText = "Cliente";
             }
 
-            // SEGURANÇA VISUAL DO ADMIN
             if(ADMIN_EMAILS.includes(user.email)) {
                 document.getElementById('tab-admin').classList.remove('hidden');
                 carregarPendenciasAdmin();
             } else {
                 document.getElementById('tab-admin').classList.add('hidden');
-                document.getElementById('sec-admin').classList.add('hidden'); // Garante que fecha a section
+                document.getElementById('sec-admin').classList.add('hidden');
             }
             
-            carregarRadar(); carregarAtlas(); carregarMeusChats();
+            carregarOportunidades(); 
+            carregarMissoes();
         }
 
         window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
@@ -249,78 +280,63 @@
         window.definirPerfil = async (tipo) => { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); };
 
         window.switchTab = (tab) => {
-            ['radar', 'atlas', 'ganhar', 'admin', 'chat'].forEach(t => {
+            ['oportunidades', 'missoes', 'servicos', 'ganhar', 'admin'].forEach(t => {
                 document.getElementById(`sec-${t}`).classList.toggle('hidden', t !== tab);
                 const btn = document.getElementById(`tab-${t}`);
                 if(btn) btn.className = t === tab ? "flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic transition-colors" : "flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 hover:text-gray-600 uppercase italic transition-colors";
             });
         };
 
-        // --- VANTAGENS (ANTIGO RADAR) ---
-        async function carregarRadar() {
-            const container = document.getElementById('lista-radar');
+        // --- 1. OPORTUNIDADES ---
+        async function carregarOportunidades() {
+            const container = document.getElementById('lista-oportunidades');
             container.innerHTML = "";
             const q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"));
             const snap = await getDocs(q);
-            if(snap.empty) { container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Sem vantagens no momento.</p></div>`; } 
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-xs">Nada por aqui.</p></div>`; } 
             else {
                 snap.forEach(d => {
                     const op = d.data();
-                    // Simulação de "Conteúdo Bloqueado" para Free
-                    // No futuro: if(!userProfile.is_pro && op.premium)
                     const isPremium = op.tipo === 'bug'; 
                     const blurClass = isPremium ? "blur-secret" : "";
-                    const lockOverlay = isPremium ? `<div class="premium-lock">🔒 Exclusivo PRO</div>` : "";
-                    const linkAction = isPremium ? `onclick="alert('Assine o PRO para ver bugs de preço!')"` : `href="${op.link}" target="_blank"`;
-
-                    const tipoBg = op.tipo === 'bug' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200';
-                    const icon = op.tipo === 'bug' ? '🔥' : '🎟️';
-                    
+                    const lockMsg = isPremium ? `<div class="absolute inset-0 flex items-center justify-center bg-white/50 z-10"><span class="bg-yellow-100 text-yellow-800 text-[9px] font-bold px-2 py-1 rounded">🔒 SÓ PRO</span></div>` : "";
                     container.innerHTML += `
-                        <div class="${tipoBg} border p-4 rounded-xl shadow-sm mb-2 relative overflow-hidden">
-                            ${lockOverlay}
+                        <div class="bg-white border border-gray-100 p-4 rounded-xl shadow-sm mb-2 relative overflow-hidden">
+                            ${lockMsg}
                             <div class="${blurClass}">
-                                <h3 class="font-black text-sm italic uppercase">${icon} ${op.titulo}</h3>
+                                <h3 class="font-black text-sm italic uppercase">⚡ ${op.titulo}</h3>
                                 <p class="text-[10px] text-gray-600">${op.descricao}</p>
                             </div>
-                            <a ${linkAction} class="block w-full text-center bg-white border border-gray-200 text-gray-700 py-2 rounded-lg font-bold text-[10px] mt-2 uppercase cursor-pointer">Acessar</a>
                         </div>`;
                 });
             }
         }
 
-        // --- MISSÕES (ANTIGO ATLAS) ---
-        async function carregarAtlas() {
+        // --- 2. MISSÕES (ATLAS) ---
+        async function carregarMissoes() {
             const container = document.getElementById('lista-missoes');
             container.innerHTML = "";
             const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
             const snap = await getDocs(q);
-            if(snap.empty) { container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma missão disponível.</p></div>`; } 
+            if(snap.empty) { container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma missão.</p></div>`; } 
             else {
                 snap.forEach(d => {
                     const m = d.data();
                     let btnAction = userProfile.is_provider 
-                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📷 Realizar Missão</button>`
-                        : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Disponível para Prestadores</div>`;
+                        ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📷 Capturar (R$ ${m.recompensa})</button>`
+                        : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Área de Coletores</div>`;
                     
-                    container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">Paga R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
+                    container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
                 });
             }
         }
 
+        // --- LÓGICA DE UPLOAD CORRIGIDA (PRIMEIRO CÂMERA, DEPOIS GPS) ---
         window.iniciarMissao = (id) => {
             missaoAtualId = id;
-            if (navigator.geolocation) {
-                alert("📍 Validando Localização...");
-                navigator.geolocation.getCurrentPosition(
-                    (p) => { currentLat = p.coords.latitude; currentLng = p.coords.longitude; currentAcc = p.coords.accuracy; cameraInput.click(); }, // Clica no input corrigido
-                    (e) => { alert("Localização obrigatória para provar a missão."); },
-                    { enableHighAccuracy: true }
-                );
-            } else { alert("GPS não suportado."); }
+            cameraInput.click(); // ABRE A CÂMERA DIRETO (SEM WAIT)
         };
 
-        // --- PREVIEW E UPLOAD ---
         window.mostrarPreview = (input) => {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -329,12 +345,40 @@
                 reader.onload = function(e) {
                     document.getElementById('img-preview').src = e.target.result;
                     document.getElementById('preview-modal').classList.remove('hidden');
+                    buscarGPSemBackground(); // BUSCA GPS AGORA
                 }
                 reader.readAsDataURL(file);
-                // Reset manual para garantir que o evento change dispare novamente se escolher a mesma foto
                 input.value = ''; 
             }
         };
+
+        function buscarGPSemBackground() {
+            const btn = document.getElementById('btn-confirmar-foto');
+            const status = document.getElementById('gps-status');
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (p) => {
+                        currentLat = p.coords.latitude;
+                        currentLng = p.coords.longitude;
+                        currentAcc = p.coords.accuracy;
+                        status.innerText = `✅ GPS Fixado: Precisão ${currentAcc.toFixed(0)}m`;
+                        status.classList.remove('text-yellow-400', 'animate-pulse');
+                        status.classList.add('text-green-400');
+                        btn.innerText = "✅ ENVIAR PROVA AGORA";
+                        btn.disabled = false;
+                        btn.classList.remove('bg-gray-500', 'cursor-not-allowed', 'opacity-50');
+                        btn.classList.add('bg-green-500', 'active:scale-95');
+                    },
+                    (e) => {
+                        status.innerText = "⚠️ Erro no GPS. Tente novamente em local aberto.";
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                status.innerText = "GPS não suportado.";
+            }
+        }
 
         window.cancelarPreview = () => { document.getElementById('preview-modal').classList.add('hidden'); arquivoParaEnvio = null; };
 
@@ -344,7 +388,7 @@
             loader.classList.remove('hidden');
             
             try {
-                if(!arquivoParaEnvio) throw new Error("Erro: Foto não carregou.");
+                if(!arquivoParaEnvio) throw new Error("Erro na foto.");
                 const timestamp = new Date().getTime();
                 const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
                 
@@ -353,7 +397,7 @@
                 const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
                 const valor = parseFloat(docMissao.data().recompensa.replace(',', '.'));
 
-                const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
+                await addDoc(collection(db, "mission_assignments"), {
                     mission_id: missaoAtualId,
                     mission_title: docMissao.data().titulo,
                     profile_id: auth.currentUser.uid,
@@ -366,68 +410,13 @@
                     gps_lat: currentLat, gps_lng: currentLng
                 });
 
-                await setDoc(doc(db, "chats", assignmentRef.id), {
-                    assignment_id: assignmentRef.id,
-                    mission_title: docMissao.data().titulo,
-                    participants: [auth.currentUser.uid, "ADMIN"], 
-                    last_message: "Missão enviada para análise.",
-                    updated_at: serverTimestamp()
-                });
-
-                alert("✅ Missão Enviada! Aguarde a aprovação na Carteira.");
+                alert("✅ Missão Enviada! Dinheiro em análise.");
                 arquivoParaEnvio = null;
-            } catch (e) { alert("Erro no envio: " + e.message); } 
+            } catch (e) { alert("Erro: " + e.message); } 
             finally { loader.classList.add('hidden'); }
         };
 
-        // --- CHAT ---
-        function carregarMeusChats() {
-            const container = document.getElementById('lista-chats');
-            let q = userProfile.role === 'admin' 
-                ? query(collection(db, "chats"), orderBy("updated_at", "desc"))
-                : query(collection(db, "chats"), where("participants", "array-contains", auth.currentUser.uid));
-
-            onSnapshot(q, (snap) => {
-                container.innerHTML = "";
-                if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Sem mensagens.</p>";
-                else {
-                    snap.forEach(d => {
-                        const chat = d.data();
-                        container.innerHTML += `<div onclick="abrirChat('${d.id}', '${chat.mission_title}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center cursor-pointer mb-2"><div><p class="font-bold text-xs text-blue-900 uppercase italic">${chat.mission_title}</p><p class="text-[10px] text-gray-500 truncate w-48">${chat.last_message}</p></div><span class="text-xl">💬</span></div>`;
-                    });
-                }
-            });
-        }
-        window.abrirChat = (chatId, title) => { activeChatId = chatId; document.getElementById('chat-modal').classList.remove('hidden'); document.getElementById('chat-mission-title').innerText = title; carregarMensagens(chatId); };
-        window.fecharChat = () => { document.getElementById('chat-modal').classList.add('hidden'); activeChatId = null; };
-        function carregarMensagens(chatId) {
-            const container = document.getElementById('chat-messages');
-            const q = query(collection(db, `chats/${chatId}/messages`), orderBy("timestamp", "asc"));
-            onSnapshot(q, (snap) => {
-                container.innerHTML = "";
-                snap.forEach(d => {
-                    const msg = d.data();
-                    const isMe = msg.sender_id === auth.currentUser.uid;
-                    const bubbleClass = isMe ? "chat-bubble-me" : "chat-bubble-them";
-                    container.innerHTML += `<div class="flex w-full"><div class="p-3 text-[11px] max-w-[80%] ${bubbleClass} shadow-sm mb-2">${msg.text}</div></div>`;
-                });
-                container.scrollTop = container.scrollHeight;
-            });
-        }
-        window.enviarMensagem = async () => {
-            const input = document.getElementById('chat-input');
-            const text = input.value.trim();
-            if(!text || !activeChatId) return;
-            const proibidos = [/\b\d{8,}\b/, /\b\d{2}\s\d{4,}\b/, /@/, /zap/i, /whatsapp/i, /\.com/i, /\.br/i];
-            let bloqueado = false;
-            proibidos.forEach(regex => { if(regex.test(text)) bloqueado = true; });
-            if(bloqueado) { alert("⚠️ Bloqueado: Não envie contatos externos."); return; }
-            await addDoc(collection(db, `chats/${activeChatId}/messages`), { text: text, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
-            await updateDoc(doc(db, "chats", activeChatId), { last_message: text, updated_at: serverTimestamp() });
-            input.value = "";
-        };
-
-        // --- GESTÃO (ADMIN) ---
+        // --- ADMIN ---
         function carregarPendenciasAdmin() {
             const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
             onSnapshot(q, (snap) => {
@@ -435,17 +424,16 @@
                 container.innerHTML = "";
                 snap.forEach(d => {
                     const data = d.data();
-                    const gpsInfo = data.gps_lat ? `📍 ${data.gps_lat.toFixed(4)}, ${data.gps_lng.toFixed(4)}` : "⚠️ Sem GPS";
-                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><p class="text-[9px] text-blue-600 font-bold mb-2">${gpsInfo}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Aprovar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Rejeitar</button></div><button onclick="abrirChat('${d.id}', '${data.mission_title}')" class="w-full bg-blue-100 text-blue-800 py-2 rounded-lg text-[10px] font-bold uppercase">💬 Conversar</button></div>`;
+                    container.innerHTML += `<div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50 mb-2"><p class="font-bold text-xs text-blue-900">${data.mission_title}</p><p class="text-[9px] text-gray-500 mb-1">${data.profile_email}</p><a href="${data.photo_url}" target="_blank"><img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3"></a><div class="flex gap-2 mb-2"><button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase">Aprovar</button><button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-white border border-red-200 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase">Rejeitar</button></div></div>`;
                 });
             });
         }
-        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Pagar usuário?`)) return; const comissao = valorBruto * 0.20; const liquido = valorBruto - comissao; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved", approved_at: serverTimestamp(), valor_liquido: liquido }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert("Erro: " + e.message); } };
+        window.aprovarProva = async (docId, userId, valorBruto) => { if(!confirm(`Pagar?`)) return; const liquido = valorBruto; try { await updateDoc(doc(db, "mission_assignments", docId), { status: "approved" }); await updateDoc(doc(db, "usuarios", userId), { saldo: increment(liquido) }); } catch (e) { alert(e.message); } };
         window.rejeitarProva = async (docId) => { if(!confirm("Rejeitar?")) return; await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" }); };
         
-        // SEEDS COM NOVOS NOMES
-        window.rodarSeedRadar = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "🔥 Erro de Preço: iPhone", descricao: "Amazon por R$ 2000.", tipo: "bug", link: "https://amazon.com.br", created_at: serverTimestamp() }); carregarRadar(); };
-        window.rodarSeedAtlas = async () => { await addDoc(collection(db, "missoes"), { titulo: "Preço Gasolina Shell", descricao: "Foto do painel.", recompensa: "1,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarAtlas(); };
+        // SEEDS
+        window.rodarSeedOportunidade = async () => { await addDoc(collection(db, "oportunidades"), { titulo: "Bug: TV Samsung", descricao: "FastShop R$ 1000", tipo: "bug", created_at: serverTimestamp() }); carregarOportunidades(); };
+        window.rodarSeedMissao = async () => { await addDoc(collection(db, "missoes"), { titulo: "Gasolina Shell", descricao: "Foto do preço.", recompensa: "1,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }); carregarMissoes(); };
     </script>
 </body>
 </html>
