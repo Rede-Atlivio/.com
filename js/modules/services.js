@@ -2,6 +2,9 @@ import { db, auth } from '../app.js';
 import { userProfile } from '../auth.js';
 import { collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Variável de controle para evitar múltiplos ouvintes do Firebase
+let listenerAtivo = false;
+
 // --- LÓGICA DO PRESTADOR ---
 
 export async function toggleOnlineStatus(isOnline) {
@@ -10,16 +13,15 @@ export async function toggleOnlineStatus(isOnline) {
     const statusMsg = document.getElementById('status-msg');
     
     if(isOnline) {
-        // Pergunta simples para configurar o anúncio rápido
         const especialidade = prompt("Qual serviço você vai prestar agora? (Ex: Eletricista, Frete)");
-        const preco = prompt("Qual seu valor base? (Ex: R$ 50 visita)");
+        const preco = prompt("Qual seu valor base? (Ex: R$ 50 a visita)");
 
         if(!especialidade || !preco) {
             document.getElementById('online-toggle').checked = false;
             return;
         }
 
-        // Atualiza status no banco
+        // Atualiza status no banco para ONLINE
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             status: "online",
             profissao_atual: especialidade,
@@ -34,49 +36,35 @@ export async function toggleOnlineStatus(isOnline) {
                 <p class="text-xs text-gray-500">Aparecendo como: <b>${especialidade}</b></p>
                 <p class="text-[9px] mt-2">Aguarde o chamado tocar aqui.</p>
             </div>`;
-            
-        monitorarChamados();
 
     } else {
-        // Fica Offline
+        // Atualiza status no banco para OFFLINE
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { status: "offline" });
         
         if(statusMsg) statusMsg.innerHTML = `
             <p class="text-4xl mb-2">😴</p>
             <p class="font-bold text-sm text-gray-400">Você está Offline</p>
-            <p class="text-xs text-gray-500">Ative o botão "Trabalhar" para aparecer no mapa.</p>`;
+            <p class="text-xs text-gray-500">Ative o botão "Trabalhar" no topo para aparecer.</p>`;
     }
-}
-
-// Escuta chamados recebidos (Futuro: Tocar som)
-function monitorarChamados() {
-    const container = document.getElementById('lista-chamados');
-    if(!container) return;
-
-    // Aqui entra a query de "Pedidos direcionados a mim"
-    // Por enquanto, deixamos preparado.
-    container.innerHTML = `<p class="text-xs text-center mt-4 text-gray-400">Buscando clientes na região...</p>`;
-    container.classList.remove('hidden');
 }
 
 
 // --- LÓGICA DO CLIENTE ---
 
 export function carregarPrestadoresOnline() {
-    const container = document.getElementById('servicos-cliente');
-    if(!container || !userProfile) return;
+    const containerPrincipal = document.getElementById('servicos-cliente'); // ID da seção pai
+    if(!containerPrincipal || !userProfile) return;
 
-    // Limpa apenas a lista de profissionais, mantendo o destaque oficial
-    // Vamos criar um container dinâmico se não existir
-    let listaDinamica = document.getElementById('lista-profissionais-realtime');
-    if(!listaDinamica) {
-        listaDinamica = document.createElement('div');
-        listaDinamica.id = 'lista-profissionais-realtime';
-        listaDinamica.className = 'grid grid-cols-2 gap-3 mt-4';
-        container.appendChild(listaDinamica);
+    // ROBUSTEZ: Verifica se o container da lista existe, se não, cria.
+    let listaContainer = document.getElementById('lista-profissionais-realtime');
+    if(!listaContainer) {
+        listaContainer = document.createElement('div');
+        listaContainer.id = 'lista-profissionais-realtime';
+        listaContainer.className = 'grid grid-cols-2 gap-3 mt-4'; // Grid para cards
+        containerPrincipal.appendChild(listaContainer);
     }
 
-    // Busca apenas quem está ONLINE e é da mesma cidade
+    // Busca apenas quem está ONLINE, é PRESTADOR e é da mesma CIDADE
     const q = query(
         collection(db, "usuarios"), 
         where("is_provider", "==", true),
@@ -84,41 +72,42 @@ export function carregarPrestadoresOnline() {
         where("tenant_id", "==", userProfile.tenant_id)
     );
 
+    // INICIA O LISTENNER (TEMPO REAL)
     onSnapshot(q, (snap) => {
-        listaDinamica.innerHTML = "";
+        listaContainer.innerHTML = "";
         
         if(snap.empty) {
-            listaDinamica.innerHTML = `<div class="col-span-2 text-center py-8 text-gray-400 text-xs bg-gray-50 rounded-xl border border-gray-100"><p>Nenhum prestador online agora.</p></div>`;
+            listaContainer.innerHTML = `<div class="col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100 text-center text-gray-400 text-xs"><p>Nenhum profissional online na sua região agora.</p></div>`;
         } else {
             snap.forEach(d => {
                 const p = d.data();
-                // Card do Prestador
-                listaDinamica.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between h-32 hover:border-blue-500 transition cursor-pointer" onclick="iniciarContratacao('${d.id}', '${p.profissao_atual}')">
-                        <div class="flex justify-between items-start">
+                // Renderiza o Card
+                listaContainer.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between mb-0 hover:border-blue-500 transition cursor-pointer h-full" onclick="iniciarContratacao('${d.id}', '${p.profissao_atual}')">
+                        <div class="flex justify-between items-start mb-2">
                             <span class="text-2xl bg-blue-50 rounded-lg p-1">🛠️</span>
                             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                         </div>
                         <div>
-                            <h4 class="font-bold text-xs uppercase text-blue-900 leading-tight">${p.profissao_atual}</h4>
-                            <p class="text-[10px] text-gray-500 mt-1">${p.preco_base}</p>
+                            <h4 class="font-bold text-xs uppercase text-blue-900 leading-tight">${p.profissao_atual || 'Prestador'}</h4>
+                            <p class="text-[10px] text-gray-500 mt-1">${p.preco_base || 'A combinar'}</p>
                         </div>
-                        <button class="w-full bg-blue-600 text-white text-[9px] font-bold py-1 rounded mt-2 uppercase">Contratar</button>
+                        <button class="w-full bg-blue-600 text-white text-[9px] font-bold py-2 rounded mt-3 uppercase shadow-sm">Contratar</button>
                     </div>`;
             });
         }
     });
 }
 
-// Função global para iniciar contratação (Abre Chat)
-window.iniciarContratacao = async (prestadorId, servicoNome) => {
-    // 1. Cria uma "Order" (Pedido)
-    // 2. Abre o chat vinculado a essa Order
-    // (Implementaremos na próxima fase de "Chat Transacional")
-    alert(`Iniciando negociação com ${servicoNome}... (Chat abrirá em breve)`);
-};
+// Função placeholder para evitar erro ao clicar (Mantido da versão anterior para não quebrar)
+window.iniciarContratacao = (id, nome) => {
+    alert(`O sistema de chat com ${nome} será ativado na próxima etapa.`);
+}
 
-// Inicializa escuta do botão toggle
+
+// --- INICIALIZAÇÃO SEGURA ---
+
+// 1. Botão Toggle (Prestador)
 const toggleBtn = document.getElementById('online-toggle');
 if(toggleBtn) {
     toggleBtn.addEventListener('change', (e) => {
@@ -126,10 +115,16 @@ if(toggleBtn) {
     });
 }
 
-// Auto-carregar para clientes
+// 2. Monitoramento de Tela (Cliente)
+// Verifica a cada 2s se a tela de serviços apareceu. 
+// SE aparecer E ainda não tiver ativado o listener, ele ativa UMA VEZ.
 setInterval(() => {
     const sec = document.getElementById('sec-servicos');
-    if(sec && !sec.classList.contains('hidden') && !userProfile.is_provider) {
+    
+    // Condições: Seção visível + Usuário não é prestador + Listener nunca foi ativado
+    if(sec && !sec.classList.contains('hidden') && !userProfile.is_provider && !listenerAtivo) {
+        console.log("Auditor: Iniciando monitoramento em tempo real de prestadores...");
         carregarPrestadoresOnline();
+        listenerAtivo = true; // TRAVA DE SEGURANÇA: Impede que rode novamente
     }
-}, 5000);
+}, 2000);
