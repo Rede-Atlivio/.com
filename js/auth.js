@@ -7,11 +7,11 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
-// LOGIN
+// LOGIN & LOGOUT
 window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
 window.logout = () => signOut(auth).then(() => location.reload());
 
-// DEFINIR PERFIL INICIAL
+// DEFINIR PERFIL INICIAL (Para usuários novos)
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
     await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
@@ -21,28 +21,38 @@ window.definirPerfil = async (tipo) => {
     location.reload();
 };
 
-// --- NOVA FUNÇÃO: TROCAR DE PERFIL (Botão Mágico) ---
+// --- FUNÇÃO: TROCAR DE PERFIL ---
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
-    const novoTipo = userProfile.is_provider ? "CLIENTE" : "PRESTADOR";
-    const msg = userProfile.is_provider 
-        ? "🔄 Mudar para CLIENTE?\n\nVocê verá serviços para contratar e produtos para comprar." 
-        : "🔄 Mudar para PRESTADOR?\n\nVocê verá missões, chamados e sua carteira.";
+    const btn = document.getElementById('btn-trocar-perfil');
+    const isAtualmentePrestador = userProfile.is_provider;
+    
+    // Feedback visual
+    btn.innerText = "🔄 Trocando...";
+    btn.disabled = true;
 
-    if(confirm(msg)) {
+    try {
+        // Inverte o status no banco de dados
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
-            is_provider: !userProfile.is_provider 
+            is_provider: !isAtualmentePrestador 
         });
-        location.reload(); // Recarrega para limpar a visão antiga
+        
+        // Recarrega a página para limpar a memória e recarregar a UI correta
+        location.reload(); 
+    } catch (error) {
+        alert("Erro ao trocar perfil: " + error.message);
+        btn.innerText = "Erro ❌";
+        btn.disabled = false;
     }
 };
 
-// OBSERVADOR DE ESTADO
+// OBSERVADOR DE ESTADO (Onde tudo começa)
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
             if(!docSnap.exists()) {
+                // Cria usuário se não existir
                 const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                 userProfile = { 
                     email: user.email, 
@@ -80,49 +90,72 @@ function atualizarInterface(user) {
     iniciarAppLogado(user);
 }
 
-// AQUI ESTÁ A LÓGICA DE SEGURANÇA VISUAL
+// --- LÓGICA MESTRA DE INTERFACE ---
 function iniciarAppLogado(user) {
     document.getElementById('role-selection').classList.add('hidden');
     document.getElementById('app-container').classList.remove('hidden');
     
-    const tipoUsuario = userProfile.is_provider ? "Prestador" : "Cliente";
-    // Atualiza o texto do botão de troca
-    document.getElementById('btn-trocar-perfil').innerText = `Modo: ${tipoUsuario} 🔄`;
-
-    // 1. SEGURANÇA ADMIN (Correção do Vazamento)
-    const isAdmin = ADMIN_EMAILS.includes(user.email);
-    if(isAdmin) {
+    // Configura Botão de Perfil
+    const btnPerfil = document.getElementById('btn-trocar-perfil');
+    
+    // Verifica Admin
+    if(ADMIN_EMAILS.includes(user.email)) {
         document.getElementById('tab-admin').classList.remove('hidden');
-    } else {
-        document.getElementById('tab-admin').classList.add('hidden');
-        document.getElementById('sec-admin').classList.add('hidden'); // Garante que fecha
     }
 
-    // 2. LÓGICA DE ABAS POR PERFIL (Limpeza Mental)
+    // APLICA O "CHAPÉU" (Lógica de Visão)
     if (userProfile.is_provider) {
-        // MODO PRESTADOR (Ganhar Dinheiro)
-        document.getElementById('tab-missoes').classList.remove('hidden'); // Vê Missões
-        document.getElementById('tab-ganhar').classList.remove('hidden');  // Vê Carteira
-        document.getElementById('tab-produtos').classList.add('hidden');   // Não Vê Loja (Foco em trabalho)
+        // ============================
+        // VISÃO: PRESTADOR
+        // ============================
+        btnPerfil.innerHTML = `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         
-        // Botão Online: APARECE
+        // 1. Abas Visíveis (Trabalho)
+        document.getElementById('tab-missoes').classList.remove('hidden'); 
+        document.getElementById('tab-ganhar').classList.remove('hidden');  
+        document.getElementById('tab-servicos').classList.remove('hidden');
+        
+        // 2. Abas Ocultas (Consumo)
+        document.getElementById('tab-loja').classList.add('hidden');    
+        document.getElementById('tab-oportunidades').classList.add('hidden');
+        
+        // 3. Header: Botão "Trabalhar" visível
         document.getElementById('status-toggle-container').classList.remove('hidden');
         
-        // Aba Serviços: Mostra visão de Trabalho
+        // 4. Seção Serviços: Visão de quem recebe chamados
         document.getElementById('servicos-prestador').classList.remove('hidden');
         document.getElementById('servicos-cliente').classList.add('hidden');
 
+        // Abre na aba de Serviços por padrão
+        if (!document.querySelector('.border-blue-600')) {
+             window.switchTab('servicos'); 
+        }
+
     } else {
-        // MODO CLIENTE (Gastar Dinheiro)
-        document.getElementById('tab-missoes').classList.add('hidden');    // Não Vê Missões
-        document.getElementById('tab-ganhar').classList.add('hidden');     // Não Vê Carteira
-        document.getElementById('tab-produtos').classList.remove('hidden');// Vê Loja
+        // ============================
+        // VISÃO: CLIENTE
+        // ============================
+        btnPerfil.innerHTML = `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
+
+        // 1. Abas Visíveis (Consumo)
+        document.getElementById('tab-oportunidades').classList.remove('hidden');
+        document.getElementById('tab-servicos').classList.remove('hidden');
+        document.getElementById('tab-loja').classList.remove('hidden');
         
-        // Botão Online: SOME
+        // 2. Abas Ocultas (Trabalho)
+        document.getElementById('tab-missoes').classList.add('hidden');    
+        document.getElementById('tab-ganhar').classList.add('hidden');      
+        
+        // 3. Header: Botão "Trabalhar" oculto
         document.getElementById('status-toggle-container').classList.add('hidden');
 
-        // Aba Serviços: Mostra visão de Contratação
+        // 4. Seção Serviços: Visão de quem contrata
         document.getElementById('servicos-prestador').classList.add('hidden');
         document.getElementById('servicos-cliente').classList.remove('hidden');
+        
+        // Abre na aba de Oportunidades por padrão
+        if (!document.querySelector('.border-blue-600')) {
+            window.switchTab('oportunidades');
+        }
     }
 }
