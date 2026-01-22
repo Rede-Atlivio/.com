@@ -20,22 +20,19 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// EXPORTAÇÃO PARA OUTROS MÓDULOS
+// EXPORTAÇÃO PARA OUTROS MÓDULOS USAREM
 export { app, auth, db, storage, provider };
 
 // --- SISTEMA DE ABAS (MAESTRO) ---
 window.switchTab = (tab) => {
-    // Lista de abas estáveis (sem produtos/loja para não travar)
-    const abas = ['oportunidades', 'missoes', 'servicos', 'ganhar', 'admin', 'chat'];
-
-    // Esconde todas
-    abas.forEach(t => {
+    // Esconde todas as seções
+    ['oportunidades', 'missoes', 'servicos', 'ganhar', 'admin', 'chat'].forEach(t => {
         const section = document.getElementById(`sec-${t}`);
         const btn = document.getElementById(`tab-${t}`);
         
         if (section) section.classList.add('hidden');
         if (btn) {
-            // Remove estilo ativo (cinza)
+            // Remove estilo ativo
             btn.className = "flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 hover:text-gray-600 uppercase italic transition-colors";
         }
     });
