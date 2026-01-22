@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Resolva Agora</title>
+    <title>Atlivio - Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
@@ -12,90 +12,92 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-blue-900 text-white font-sans selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden" onchange="processarFoto(this)">
 
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Marketplace Híbrido</p>
-            
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Rede de Sensores Econômicos</p>
             <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
                 Entrar com Google
             </button>
-            <p class="text-[9px] text-gray-300 uppercase font-bold tracking-widest mt-4">Ambiente Seguro Google Cloud</p>
             <p id="error-msg" class="text-red-500 text-xs mt-4 hidden"></p>
         </div>
     </div>
 
-    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-blue-900 p-4">
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
             <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase mb-8">Como você deseja atuar hoje?</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-50 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition group">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-8">
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🛍️</div>
                     <div class="font-black text-blue-900 uppercase italic">Cliente</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços.</div>
                 </button>
-                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-50 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition group">
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🛠️</div>
                     <div class="font-black text-blue-900 uppercase italic">Prestador</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero realizar missões.</div>
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="upload-overlay" class="hidden fixed inset-0 bg-blue-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
         <div class="loader mb-4"></div>
-        <h3 class="font-black uppercase italic text-xl animate-pulse">Enviando Prova...</h3>
-        <p class="text-xs text-blue-200 mt-2">Salvando na nuvem segura.</p>
+        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
     </div>
 
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
             <div>
                 <h1 class="text-xl font-black text-blue-900 italic uppercase tracking-tight">Atlivio</h1>
-                <p id="tenant-label" class="text-[8px] font-bold text-gray-400 uppercase italic">Conectado</p>
+                <p id="tenant-label" class="text-[8px] font-bold text-gray-400 uppercase italic">Carregando...</p>
             </div>
-            <button onclick="logout()" class="text-red-400 font-black text-[10px] uppercase italic border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 transition">Sair</button>
+            <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg">Sair</button>
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic transition-colors">Atlas 🌍</button>
-            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 hover:text-gray-600 uppercase italic transition-colors">Ganhar 💸</button>
-            <button onclick="switchTab('chat')" id="tab-chat" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 hover:text-gray-600 uppercase italic transition-colors">Chat 💬</button>
-            <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-400 hover:text-red-600 uppercase italic transition-colors">Gestão 🛡️</button>
+            <button onclick="switchTab('atlas')" id="tab-atlas" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic">Atlas 🌍</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Carteira 💸</button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 text-red-400 uppercase italic">Gestão 🛡️</button>
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            
             <section id="sec-atlas" class="space-y-4 animate-fadeIn">
-                <div id="loading-missoes" class="hidden text-center py-8">
-                    <p class="text-[10px] text-gray-400 font-bold uppercase animate-pulse">Carregando missões...</p>
-                </div>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
             
-            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn text-center py-10 opacity-50">
-                <p class="text-4xl mb-2">💸</p><p class="text-xs font-bold text-gray-400 uppercase">Sem ofertas ativas</p>
-            </section>
-            
-            <section id="sec-chat" class="hidden animate-fadeIn text-center py-10 opacity-50">
-                <p class="text-4xl mb-2">💬</p><p class="text-xs font-bold text-gray-400 uppercase">Chat Indisponível</p>
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-gradient-to-r from-blue-900 to-slate-900 p-6 rounded-2xl text-white shadow-lg">
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo a Receber</p>
+                    <h2 class="text-3xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+                    <p class="text-[9px] mt-2 opacity-60">Valores liberados após aprovação da prova.</p>
+                </div>
+                
+                <h3 class="font-bold text-gray-400 text-xs uppercase mt-6 mb-2">Histórico Recente</h3>
+                <div id="user-history" class="space-y-2">
+                    <p class="text-center text-xs text-gray-400 py-4">Nenhuma movimentação.</p>
+                </div>
             </section>
 
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn">
-                <div class="bg-gradient-to-br from-red-600 to-red-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-20 text-6xl">🛡️</div>
-                    <h2 class="font-black uppercase italic text-sm relative z-10">Painel do Fundador</h2>
-                    <p class="text-[9px] opacity-80 mt-1 relative z-10">Gestão Total Atlivio</p>
+                <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-xl">
+                    <h2 class="font-black text-red-900 text-sm uppercase">Central de Comando</h2>
+                    <p class="text-[10px] text-red-700">Aprovar missões gera dívida financeira real.</p>
                 </div>
+
+                <div class="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+                    <h3 class="font-bold text-gray-700 text-xs uppercase mb-4">Provas Pendentes</h3>
+                    <div id="admin-pending-list" class="space-y-4">
+                        <p class="text-xs text-gray-400 text-center">Tudo limpo por aqui.</p>
+                    </div>
+                </div>
+
                 <div class="p-4 bg-white rounded-xl border border-gray-200">
-                    <p class="text-[10px] text-gray-500 uppercase font-bold mb-2">Setup Inicial</p>
-                    <button onclick="rodarSeed()" class="text-[10px] bg-blue-50 text-blue-600 px-3 py-2 rounded font-bold w-full text-left hover:bg-blue-100 transition">🌱 Criar Missões de Teste (Novo Banco)</button>
+                    <button onclick="rodarSeed()" class="text-[10px] bg-blue-50 text-blue-600 px-3 py-2 rounded font-bold w-full text-left">🌱 Criar Missões de Teste</button>
                 </div>
             </section>
         </main>
@@ -104,10 +106,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // --- CONFIGURAÇÃO ATLIVIO OFICIAL (BLAZE) ---
+        // CHAVES DO PROJETO OFICIAL (BLAZE)
         const firebaseConfig = {
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -117,48 +119,29 @@
             appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
         };
 
-        let app, auth, db, storage, provider;
-
-        try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            storage = getStorage(app); 
-            provider = new GoogleAuthProvider();
-            console.log("🔥 Atlivio Online: Conectado ao Projeto Oficial");
-        } catch (e) {
-            console.error(e);
-            document.getElementById('error-msg').innerText = "Erro Crítico: " + e.message;
-            document.getElementById('error-msg').classList.remove('hidden');
-        }
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+        const provider = new GoogleAuthProvider();
 
         let userProfile = null;
         const DEFAULT_TENANT = "atlivio_fsa_01"; 
-        let missaoAtualId = null; 
+        let missaoAtualId = null;
+        const COMISSAO_PLATAFORMA = 0.20; // 20%
 
-        // AUTENTICAÇÃO
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                try {
-                    const snap = await getDoc(doc(db, "usuarios", user.uid));
-                    if(!snap.exists()) {
-                        // Cria usuário novo no banco novo
-                        userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: 'user', created_at: serverTimestamp() };
-                        await setDoc(doc(db, "usuarios", user.uid), userProfile);
-                    } else {
-                        userProfile = snap.data();
-                    }
-                    document.getElementById('auth-container').classList.add('hidden');
-                    
-                    if(!userProfile.perfil_completo) {
-                        document.getElementById('role-selection').classList.remove('hidden');
-                    } else {
-                        iniciarApp();
-                    }
-                } catch (error) {
-                    console.error("Erro no Auth:", error);
-                    alert("Erro de conexão. Verifique o console.");
+                const snap = await getDoc(doc(db, "usuarios", user.uid));
+                if(!snap.exists()) {
+                    userProfile = { email: user.email, tenant_id: DEFAULT_TENANT, perfil_completo: false, role: 'user', saldo: 0, created_at: serverTimestamp() };
+                    await setDoc(doc(db, "usuarios", user.uid), userProfile);
+                } else {
+                    userProfile = snap.data();
                 }
+                document.getElementById('auth-container').classList.add('hidden');
+                if(!userProfile.perfil_completo) document.getElementById('role-selection').classList.remove('hidden');
+                else iniciarApp();
             } else {
                 document.getElementById('auth-container').classList.remove('hidden');
                 document.getElementById('role-selection').classList.add('hidden');
@@ -170,157 +153,173 @@
             document.getElementById('role-selection').classList.add('hidden');
             document.getElementById('app-container').classList.remove('hidden');
             document.getElementById('tenant-label').innerText = `Rede: ${userProfile.tenant_id}`;
-            // Libera aba admin se for o dono (lógica simples)
-            if(userProfile.role === 'admin') document.getElementById('tab-admin').classList.remove('hidden');
-            else document.getElementById('tab-admin').classList.add('hidden'); 
             
+            // Renderiza Saldo
+            document.getElementById('user-balance').innerText = (userProfile.saldo || 0).toFixed(2).replace('.', ',');
+
+            if(userProfile.role === 'admin') {
+                document.getElementById('tab-admin').classList.remove('hidden');
+                carregarPendenciasAdmin();
+            } else {
+                document.getElementById('tab-admin').classList.add('hidden');
+            }
             carregarMissoes();
         }
 
-        window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert("Erro: " + e.message));
+        window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
         window.logout = () => signOut(auth).then(() => location.reload());
-        
+
         window.definirPerfil = async (tipo) => {
-            const btn = event.currentTarget;
-            btn.innerHTML = "Salvando...";
-            // Define admin se for seu email (ajuste isso para seu email real)
-            const role = (auth.currentUser.email.includes("borges")) ? 'admin' : 'user'; 
-            
-            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
-                is_provider: tipo === 'prestador', 
-                perfil_completo: true,
-                role: role 
-            });
+            const role = (auth.currentUser.email.includes("borges")) ? 'admin' : 'user';
+            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true, role: role });
             location.reload();
         };
 
         window.switchTab = (tab) => {
-            ['atlas', 'ganhar', 'chat', 'admin'].forEach(t => {
+            ['atlas', 'ganhar', 'admin'].forEach(t => {
                 document.getElementById(`sec-${t}`).classList.toggle('hidden', t !== tab);
                 const btn = document.getElementById(`tab-${t}`);
                 if(btn) btn.className = t === tab ? "flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-blue-600 text-blue-600 uppercase italic transition-colors" : "flex-1 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 hover:text-gray-600 uppercase italic transition-colors";
             });
         };
 
-        // --- CORE: ATLAS VIVO ---
+        // --- ABA ATLAS (USUÁRIO) ---
         async function carregarMissoes() {
             const container = document.getElementById('lista-missoes');
-            const loading = document.getElementById('loading-missoes');
             container.innerHTML = "";
-            loading.classList.remove('hidden');
-
-            try {
-                // Tenta buscar missões
-                // NOTA: Se der erro de "requires an index", abra o link no console!
-                const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id));
-                const snap = await getDocs(q);
-                
-                if(snap.empty) {
-                    container.innerHTML = `
-                        <div class="text-center py-12 text-gray-400">
-                            <p class="text-3xl mb-2">🦗</p>
-                            <p class="text-[10px] uppercase font-bold">Nenhuma missão aqui</p>
-                            <p class="text-[9px]">Vá em Admin > Setup Inicial para criar algumas.</p>
-                        </div>
-                    `;
-                    // Se for admin, mostra a aba admin para facilitar o seed
-                    document.getElementById('tab-admin').classList.remove('hidden');
-                } else {
-                    snap.forEach(d => {
-                        const m = d.data();
-                        container.innerHTML += `
-                            <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm hover:shadow-md transition mb-4">
-                                <div class="flex justify-between items-start mb-3">
-                                    <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[70%]">${m.titulo}</h3>
-                                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px] italic">R$ ${m.recompensa}</span>
-                                </div>
-                                <p class="text-[10px] text-gray-500 mb-4 line-clamp-2">${m.descricao}</p>
-                                <button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2 hover:bg-blue-700 shadow-lg">
-                                    📸 Capturar Prova
-                                </button>
-                            </div>`;
-                    });
-                }
-            } catch (error) {
-                console.error("Erro ao carregar:", error);
-                if(error.code === 'failed-precondition') {
-                     container.innerHTML = `<p class="text-red-500 text-xs text-center p-4">⚠️ Falta Índice no Firestore. Abra o console (F12) e clique no link gerado pelo Firebase.</p>`;
-                } else {
-                     container.innerHTML = `<p class="text-red-500 text-xs text-center p-4">Erro de conexão.</p>`;
-                }
-            } finally {
-                loading.classList.add('hidden');
+            const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id));
+            const snap = await getDocs(q);
+            
+            if(snap.empty) {
+                container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Sem missões.</p></div>`;
+            } else {
+                snap.forEach(d => {
+                    const m = d.data();
+                    container.innerHTML += `
+                        <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="font-black text-blue-900 text-sm uppercase italic">${m.titulo}</h3>
+                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
+                            <button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic active:scale-95 transition flex items-center justify-center gap-2">📸 Capturar Prova</button>
+                        </div>`;
+                });
             }
         }
 
         window.iniciarMissao = (id) => {
             missaoAtualId = id;
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    () => document.getElementById('camera-input').click(),
-                    (err) => alert("⚠️ GPS Necessário: Permita o acesso à localização para validar a prova.")
-                );
-            } else {
-                alert("Seu dispositivo não suporta GPS.");
-            }
+            document.getElementById('camera-input').click();
         };
 
         window.processarFoto = async (input) => {
             if (input.files && input.files[0]) {
-                const file = input.files[0];
-                const loader = document.getElementById('upload-overlay');
-                loader.classList.remove('hidden');
-
+                document.getElementById('upload-overlay').classList.remove('hidden');
                 try {
+                    const file = input.files[0];
                     const timestamp = new Date().getTime();
-                    // Estrutura organizada: tenant / usuario / missao / arquivo
-                    const caminhoArquivo = `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${missaoAtualId}_${timestamp}.jpg`;
-                    const storageRef = ref(storage, caminhoArquivo);
+                    const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
+                    
+                    const snap = await uploadBytes(refStorage, file);
+                    const url = await getDownloadURL(snap.ref);
 
-                    console.log("Iniciando upload para:", caminhoArquivo);
-                    
-                    // Upload
-                    const snapshot = await uploadBytes(storageRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-                    
-                    // Registro no Banco
+                    // Pega o valor da missão
+                    const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
+                    const valorMissao = parseFloat(docMissao.data().recompensa.replace(',', '.'));
+
                     await addDoc(collection(db, "mission_assignments"), {
                         mission_id: missaoAtualId,
+                        mission_title: docMissao.data().titulo,
                         profile_id: auth.currentUser.uid,
-                        photo_url: downloadURL,
-                        status: "submitted",
+                        profile_email: auth.currentUser.email,
+                        photo_url: url,
+                        valor_bruto: valorMissao,
+                        status: "submitted", // Pendente de aprovação
                         submitted_at: serverTimestamp(),
-                        tenant_id: userProfile.tenant_id,
-                        gps_lat: "validado" // Futuramente pegaremos as coords exatas aqui
+                        tenant_id: userProfile.tenant_id
                     });
 
-                    loader.classList.add('hidden');
-                    alert("✅ PROVA ENVIADA COM SUCESSO!\n\nO Administrador analisará sua foto em breve.");
-                    input.value = ''; // Limpa para próxima
-
-                } catch (error) {
-                    console.error("Erro no upload:", error);
-                    loader.classList.add('hidden');
-                    alert("❌ Falha no envio: " + error.message);
+                    alert("✅ Prova enviada! Aguarde a aprovação do Admin para receber.");
+                    input.value = '';
+                } catch (e) {
+                    alert("Erro: " + e.message);
+                } finally {
+                    document.getElementById('upload-overlay').classList.add('hidden');
                 }
             }
         };
 
-        // --- FUNÇÃO DE SEED (Cria dados falsos para teste) ---
-        window.rodarSeed = async () => {
-            if(!confirm("Criar 3 missões de teste agora?")) return;
-            const seeds = [
-                { titulo: "Instalação 220v", descricao: "Trocar tomada para AirFryer.", recompensa: "80,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() },
-                { titulo: "Formatação PC", descricao: "Windows 11 + Drivers.", recompensa: "120,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() },
-                { titulo: "Entrega Expressa", descricao: "Levar envelope ao centro.", recompensa: "25,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }
-            ];
+        // --- ABA ADMIN (BLINDAGEM FINANCEIRA) ---
+        async function carregarPendenciasAdmin() {
+            const container = document.getElementById('admin-pending-list');
+            container.innerHTML = "<p class='text-center text-xs animate-pulse'>Carregando pendências...</p>";
+            
+            const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"));
+            const snap = await getDocs(q);
+            
+            container.innerHTML = "";
+            if(snap.empty) {
+                container.innerHTML = "<p class='text-center text-xs text-gray-400'>Nenhuma prova para analisar.</p>";
+            } else {
+                snap.forEach(d => {
+                    const data = d.data();
+                    container.innerHTML += `
+                        <div class="border border-gray-100 p-4 rounded-xl shadow-sm bg-gray-50">
+                            <p class="font-bold text-xs text-blue-900 mb-1">${data.mission_title}</p>
+                            <p class="text-[9px] text-gray-500 mb-2">Prestador: ${data.profile_email}</p>
+                            <img src="${data.photo_url}" class="w-full h-32 object-cover rounded-lg mb-3 border border-gray-200">
+                            <div class="flex gap-2">
+                                <button onclick="aprovarProva('${d.id}', '${data.profile_id}', ${data.valor_bruto})" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-green-700">Aprovar (R$ ${data.valor_bruto})</button>
+                                <button onclick="rejeitarProva('${d.id}')" class="flex-1 bg-red-100 text-red-600 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-red-200">Rejeitar</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        window.aprovarProva = async (docId, userId, valorBruto) => {
+            if(!confirm(`Confirma aprovação? Isso creditará o usuário.`)) return;
+            
+            const comissao = valorBruto * COMISSAO_PLATAFORMA;
+            const liquido = valorBruto - comissao;
+
             try {
-                for(const s of seeds) await addDoc(collection(db, "missoes"), s);
-                alert("Missões criadas! Recarregando...");
-                location.reload();
-            } catch(e) { alert("Erro ao criar: " + e.message); }
+                // 1. Atualiza status da prova
+                await updateDoc(doc(db, "mission_assignments", docId), {
+                    status: "approved",
+                    approved_at: serverTimestamp(),
+                    valor_liquido: liquido,
+                    comissao_plataforma: comissao
+                });
+
+                // 2. Credita na carteira do usuário (Split Manual via Banco)
+                await updateDoc(doc(db, "usuarios", userId), {
+                    saldo: increment(liquido)
+                });
+
+                alert(`✅ Aprovado!\n\nPrestador recebeu: R$ ${liquido.toFixed(2)}\nAtlivio reteve: R$ ${comissao.toFixed(2)}`);
+                carregarPendenciasAdmin();
+            } catch (e) {
+                alert("Erro ao aprovar: " + e.message);
+            }
         };
 
+        window.rejeitarProva = async (docId) => {
+            if(!confirm("Tem certeza que a foto é inválida?")) return;
+            await updateDoc(doc(db, "mission_assignments", docId), { status: "rejected" });
+            carregarPendenciasAdmin();
+        };
+
+        window.rodarSeed = async () => {
+            const seeds = [
+                { titulo: "Instalação 220v", descricao: "Trocar tomada.", recompensa: "100,00", tenant_id: DEFAULT_TENANT, status: "aberto", created_at: serverTimestamp() }
+            ];
+            await addDoc(collection(db, "missoes"), seeds[0]);
+            alert("Missão de R$ 100,00 criada!");
+            location.reload();
+        };
     </script>
 </body>
 </html>
