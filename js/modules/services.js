@@ -1,11 +1,11 @@
 import { db, auth } from '../app.js';
 import { userProfile } from '../auth.js';
-import { collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, onSnapshot, doc, updateDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Variável de controle para evitar múltiplos ouvintes do Firebase
+// Variável de controle (Trava de Segurança de Memória)
 let listenerAtivo = false;
 
-// --- LÓGICA DO PRESTADOR ---
+// --- LÓGICA DO PRESTADOR (BOTÃO TRABALHAR) ---
 
 export async function toggleOnlineStatus(isOnline) {
     if(!auth.currentUser || !userProfile) return;
@@ -21,7 +21,7 @@ export async function toggleOnlineStatus(isOnline) {
             return;
         }
 
-        // Atualiza status no banco para ONLINE
+        // Fica ONLINE
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             status: "online",
             profissao_atual: especialidade,
@@ -38,7 +38,7 @@ export async function toggleOnlineStatus(isOnline) {
             </div>`;
 
     } else {
-        // Atualiza status no banco para OFFLINE
+        // Fica OFFLINE
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { status: "offline" });
         
         if(statusMsg) statusMsg.innerHTML = `
@@ -49,22 +49,20 @@ export async function toggleOnlineStatus(isOnline) {
 }
 
 
-// --- LÓGICA DO CLIENTE ---
+// --- LÓGICA DO CLIENTE (LISTA EM TEMPO REAL) ---
 
 export function carregarPrestadoresOnline() {
-    const containerPrincipal = document.getElementById('servicos-cliente'); // ID da seção pai
+    const containerPrincipal = document.getElementById('servicos-cliente');
     if(!containerPrincipal || !userProfile) return;
 
-    // ROBUSTEZ: Verifica se o container da lista existe, se não, cria.
     let listaContainer = document.getElementById('lista-profissionais-realtime');
     if(!listaContainer) {
         listaContainer = document.createElement('div');
         listaContainer.id = 'lista-profissionais-realtime';
-        listaContainer.className = 'grid grid-cols-2 gap-3 mt-4'; // Grid para cards
+        listaContainer.className = 'grid grid-cols-2 gap-3 mt-4';
         containerPrincipal.appendChild(listaContainer);
     }
 
-    // Busca apenas quem está ONLINE, é PRESTADOR e é da mesma CIDADE
     const q = query(
         collection(db, "usuarios"), 
         where("is_provider", "==", true),
@@ -72,7 +70,6 @@ export function carregarPrestadoresOnline() {
         where("tenant_id", "==", userProfile.tenant_id)
     );
 
-    // INICIA O LISTENNER (TEMPO REAL)
     onSnapshot(q, (snap) => {
         listaContainer.innerHTML = "";
         
@@ -81,9 +78,10 @@ export function carregarPrestadoresOnline() {
         } else {
             snap.forEach(d => {
                 const p = d.data();
-                // Renderiza o Card
+                const prestadorUid = d.id; 
+                
                 listaContainer.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between mb-0 hover:border-blue-500 transition cursor-pointer h-full" onclick="iniciarContratacao('${d.id}', '${p.profissao_atual}')">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-between mb-0 hover:border-blue-500 transition cursor-pointer h-full" onclick="iniciarContratacao('${prestadorUid}', '${p.profissao_atual}')">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-2xl bg-blue-50 rounded-lg p-1">🛠️</span>
                             <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -99,15 +97,66 @@ export function carregarPrestadoresOnline() {
     });
 }
 
-// Função placeholder para evitar erro ao clicar (Mantido da versão anterior para não quebrar)
-window.iniciarContratacao = (id, nome) => {
-    alert(`O sistema de chat com ${nome} será ativado na próxima etapa.`);
-}
+// --- FUNÇÃO CORE: INICIAR CONTRATAÇÃO (GLOBAL) ---
+// Essa função é chamada pelo onclick do HTML injetado acima
+
+window.iniciarContratacao = async (prestadorId, servicoNome) => {
+    // 1. Validações Básicas
+    if(!auth.currentUser) return alert("Erro: Você precisa estar logado.");
+    if(prestadorId === auth.currentUser.uid) return alert("Você não pode contratar seus próprios serviços.");
+
+    const confirmacao = confirm(`Deseja iniciar uma negociação para: ${servicoNome}?`);
+    if(!confirmacao) return;
+
+    try {
+        console.log("Iniciando criação de sala de chat...");
+
+        // 2. Cria a sala de Chat (Parent Document)
+        const chatRef = await addDoc(collection(db, "chats"), {
+            participants: [auth.currentUser.uid, prestadorId], // Array de participantes para filtro
+            mission_title: `Serviço: ${servicoNome}`,
+            last_message: "👋 Olá! Tenho interesse no serviço.",
+            updated_at: serverTimestamp(),
+            created_at: serverTimestamp(),
+            status: "open",
+            client_id: auth.currentUser.uid,
+            provider_id: prestadorId,
+            tenant_id: userProfile.tenant_id // Mantém isolamento por cidade
+        });
+
+        // 3. Insere a primeira mensagem automática (Subcollection)
+        await addDoc(collection(db, `chats/${chatRef.id}/messages`), {
+            text: `Olá! Gostaria de contratar o serviço de ${servicoNome}. Podemos negociar?`,
+            sender_id: auth.currentUser.uid,
+            timestamp: serverTimestamp()
+        });
+
+        // 4. Redirecionamento e UX
+        alert("✅ Solicitação enviada! Abrindo chat...");
+        
+        // Verifica se a função de navegação existe
+        if(window.switchTab) {
+            window.switchTab('chat');
+        } else {
+            console.warn("Função switchTab não encontrada. Atualize a página.");
+        }
+        
+        // Tenta abrir o chat específico após um delay (tempo para o listener do chat atualizar)
+        setTimeout(() => {
+            if(window.abrirChat) {
+                window.abrirChat(chatRef.id, `Serviço: ${servicoNome}`);
+            }
+        }, 800);
+
+    } catch (e) {
+        console.error("Erro fatal ao criar contrato:", e);
+        alert("Não foi possível conectar ao prestador. Tente novamente.");
+    }
+};
 
 
-// --- INICIALIZAÇÃO SEGURA ---
+// --- INICIALIZAÇÃO E LISTENERS ---
 
-// 1. Botão Toggle (Prestador)
 const toggleBtn = document.getElementById('online-toggle');
 if(toggleBtn) {
     toggleBtn.addEventListener('change', (e) => {
@@ -115,16 +164,12 @@ if(toggleBtn) {
     });
 }
 
-// 2. Monitoramento de Tela (Cliente)
-// Verifica a cada 2s se a tela de serviços apareceu. 
-// SE aparecer E ainda não tiver ativado o listener, ele ativa UMA VEZ.
+// Monitoramento seguro da aba ativa
 setInterval(() => {
     const sec = document.getElementById('sec-servicos');
-    
-    // Condições: Seção visível + Usuário não é prestador + Listener nunca foi ativado
+    // Só carrega se: Aba visível + Usuário é Cliente + Listener nunca rodou
     if(sec && !sec.classList.contains('hidden') && !userProfile.is_provider && !listenerAtivo) {
-        console.log("Auditor: Iniciando monitoramento em tempo real de prestadores...");
         carregarPrestadoresOnline();
-        listenerAtivo = true; // TRAVA DE SEGURANÇA: Impede que rode novamente
+        listenerAtivo = true;
     }
 }, 2000);
