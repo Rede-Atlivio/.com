@@ -1,16 +1,18 @@
 import { db, auth } from '../app.js';
 import { doc, setDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// VARIÁVEL PARA GUARDAR QUEM ESTAMOS CONTRATANDO
+// VARIÁVEL PARA GUARDAR CONTEXTO
 let targetProviderId = null;
 let targetProviderEmail = null;
+let orderIdParaAvaliar = null;
+let targetUserIdParaAvaliar = null; // Quem será avaliado? (Cliente ou Prestador)
 
 // --- INICIALIZAÇÃO ---
 setTimeout(() => {
     configurarBotaoOnline();
     carregarPrestadoresOnline(); 
-    escutarMeusChamados(); // Visão do Prestador
-    escutarMeusPedidos();  // Visão do Cliente (NOVO)
+    escutarMeusChamados(); // Visão Prestador
+    escutarMeusPedidos();  // Visão Cliente
     
     const tabServicos = document.getElementById('tab-servicos');
     if(tabServicos) {
@@ -21,7 +23,7 @@ setTimeout(() => {
 }, 1000);
 
 // ======================================================
-// 1. PRESTADOR: FICAR ONLINE & RECEBER CHAMADOS
+// 1. PRESTADOR
 // ======================================================
 
 function configurarBotaoOnline() {
@@ -73,7 +75,9 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
-// --- VISÃO DO PRESTADOR: GERENCIAR PEDIDOS ---
+// --- VISÃO PRESTADOR (COM SOM E AVALIAÇÃO BILATERAL) ---
+let totalChamadosAntigo = 0;
+
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
@@ -86,8 +90,16 @@ function escutarMeusChamados() {
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
+        // SOM DE NOTIFICAÇÃO ("PLIM")
+        // Se a quantidade de pedidos aumentou, toca o som.
+        if (snap.size > totalChamadosAntigo) {
+             const audio = document.getElementById('notification-sound');
+             if(audio) audio.play().catch(e => console.log("Audio play blocked:", e));
+        }
+        totalChamadosAntigo = snap.size;
+
         const lista = document.getElementById('lista-chamados');
-        lista.innerHTML = ""; // Limpa para evitar duplicidade visual
+        lista.innerHTML = "";
         
         if (snap.empty) {
             lista.classList.add('hidden');
@@ -98,7 +110,7 @@ function escutarMeusChamados() {
             snap.forEach(d => {
                 const pedido = d.data();
                 
-                // CARD 1: PEDIDO RESERVADO (PAGO) - MOSTRA CAMPO DE VALIDAÇÃO
+                // 1. EM ANDAMENTO
                 if (pedido.status === 'reserved') {
                     lista.innerHTML += `
                     <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
@@ -132,20 +144,225 @@ function escutarMeusChamados() {
                     </div>`;
                 }
                 
-                // CARD 2: PEDIDO CONCLUÍDO
+                // 2. CONCLUÍDO (VERIFICA SE PRESTADOR JÁ AVALIOU)
                 else if (pedido.status === 'completed') {
-                    lista.innerHTML += `
-                    <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
-                        <p class="font-bold text-xs text-gray-600">✅ Serviço Finalizado</p>
-                        <p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p>
-                    </div>`;
+                    // Lógica Bilateral: Prestador avaliou?
+                    const euAvaliei = pedido.provider_reviewed === true;
+
+                    if (!euAvaliei) {
+                        // POPUP AUTOMÁTICO (Se não tiver modal aberto)
+                        if(document.getElementById('review-modal').classList.contains('hidden')) {
+                            abrirModalAvaliacao(d.id, pedido.client_id, 'client');
+                        }
+
+                        lista.innerHTML += `
+                        <div class="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm mb-2">
+                            <p class="font-bold text-xs text-purple-900 mb-2">Serviço Encerrado. Avalie o Cliente!</p>
+                            <button onclick="abrirModalAvaliacao('${d.id}', '${pedido.client_id}', 'client')" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold text-xs uppercase animate-pulse">
+                                ⭐ AVALIAR CLIENTE
+                            </button>
+                        </div>`;
+                    } else {
+                        // Já avaliado (Histórico)
+                        lista.innerHTML += `
+                        <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
+                            <p class="font-bold text-xs text-gray-600">✅ Finalizado & Avaliado</p>
+                            <p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p>
+                        </div>`;
+                    }
                 }
             });
         }
     });
 }
 
-// --- LÓGICA DE VALIDAÇÃO (PRESTADOR) ---
+// --- VISÃO CLIENTE (COM HISTÓRICO E AVALIAÇÃO BILATERAL) ---
+function escutarMeusPedidos() {
+    if(!auth.currentUser) return;
+    
+    const parent = document.getElementById('servicos-cliente');
+    if(parent && !document.getElementById('meus-pedidos-container')) {
+        const div = document.createElement('div');
+        div.id = 'meus-pedidos-container';
+        div.className = "mb-6 hidden"; 
+        parent.insertBefore(div, parent.firstChild);
+    }
+    
+    const container = document.getElementById('meus-pedidos-container');
+    if(!container) return;
+
+    // REMOVIDO o filtro 'where status == reserved'. Agora pegamos TUDO para ver histórico.
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
+
+    onSnapshot(q, (snap) => {
+        if(snap.empty) {
+            container.classList.add('hidden');
+            container.innerHTML = "";
+        } else {
+            container.classList.remove('hidden');
+            container.innerHTML = "";
+            
+            // SEPARAÇÃO: ATIVOS vs HISTÓRICO
+            let htmlAtivos = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços em Andamento</h3>`;
+            let htmlHistorico = `<h3 class="font-black text-gray-400 text-xs uppercase mt-6 mb-2">Histórico (Finalizados)</h3>`;
+            let temAtivos = false;
+            let temHistorico = false;
+
+            snap.forEach(d => {
+                const pedido = d.data();
+                
+                // --- EM ANDAMENTO ---
+                if (pedido.status === 'reserved') {
+                    temAtivos = true;
+                    const temCodigo = pedido.finalization_code ? true : false;
+                    
+                    htmlAtivos += `
+                        <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${pedido.provider_email}</span>
+                                <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
+                            </div>
+                            <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
+                            
+                            <div class="flex gap-2">
+                                <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
+                                    Chat
+                                </button>
+                                <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
+                                    ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
+                                </button>
+                            </div>
+                        </div>`;
+                } 
+                
+                // --- FINALIZADOS (AVALIAÇÃO) ---
+                else if (pedido.status === 'completed') {
+                    temHistorico = true;
+                    // Lógica Bilateral: Cliente avaliou?
+                    const euAvaliei = pedido.client_reviewed === true;
+
+                    if (!euAvaliei) {
+                        // POPUP AUTOMÁTICO
+                        if(document.getElementById('review-modal').classList.contains('hidden')) {
+                            abrirModalAvaliacao(d.id, pedido.provider_id, 'provider');
+                        }
+
+                        htmlHistorico += `
+                        <div class="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm mb-2">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-[10px] font-bold uppercase text-gray-500">Serviço Concluído</span>
+                                <span class="text-[9px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">AGUARDANDO AVALIAÇÃO</span>
+                            </div>
+                            <button onclick="abrirModalAvaliacao('${d.id}', '${pedido.provider_id}', 'provider')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-xs uppercase animate-pulse">
+                                ⭐ AVALIAR PRESTADOR
+                            </button>
+                        </div>`;
+                    } else {
+                        htmlHistorico += `
+                        <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2 opacity-60">
+                            <p class="font-bold text-xs text-gray-600">✅ Concluído</p>
+                            <p class="text-[10px] text-gray-400">${pedido.service_date} - R$ ${pedido.service_value}</p>
+                        </div>`;
+                    }
+                }
+            });
+
+            if(temAtivos) container.innerHTML += htmlAtivos;
+            if(temHistorico) container.innerHTML += htmlHistorico;
+        }
+    });
+}
+
+// --- FUNÇÕES DE AVALIAÇÃO (BILATERAL) ---
+window.abrirModalAvaliacao = (orderId, targetId, type) => {
+    orderIdParaAvaliar = orderId;
+    targetUserIdParaAvaliar = targetId;
+    
+    const title = document.getElementById('review-modal-title');
+    
+    // Título Dinâmico
+    if (type === 'client') {
+        title.innerText = "Avaliar Cliente";
+    } else {
+        title.innerText = "Avaliar Prestador";
+    }
+    
+    document.getElementById('review-modal').classList.remove('hidden');
+};
+
+function contemOfensa(texto) {
+    const mensagemLimpa = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const listaNegra = ['vagabunda', 'vagabundo', 'ladrao', 'ladra', 'roubo', 'corno', 'corna', 'porra', 'caralho', 'merda', 'bosta', 'puta', 'puto', 'viado', 'fuder', 'foder', 'idiota', 'imbecil', 'retardado', 'burro', 'picareta', 'golpista', 'safado', 'pilantra', 'otario', 'trouxa', 'cu', 'bunda'];
+    for (let termo of listaNegra) { if (mensagemLimpa.includes(termo)) return true; }
+    return false;
+}
+
+window.enviarAvaliacao = async () => {
+    // Coleta dados
+    let stars = 0;
+    document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val')));
+    
+    if(stars === 0) return alert("Selecione pelo menos 1 estrela.");
+
+    const comment = document.getElementById('review-comment').value.trim();
+    if(comment && contemOfensa(comment)) return alert("Comentário bloqueado por termos ofensivos.");
+
+    const tags = [];
+    document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText));
+
+    const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes';
+
+    // Salva
+    const btn = event.target;
+    btn.innerText = "Enviando...";
+    btn.disabled = true;
+
+    try {
+        // 1. Salva Avaliação
+        await addDoc(collection(db, "reviews"), {
+            order_id: orderIdParaAvaliar,
+            reviewed_user_id: targetUserIdParaAvaliar, // Quem foi avaliado
+            reviewer_user_id: auth.currentUser.uid, // Quem avaliou
+            stars: parseInt(stars),
+            tags: tags,
+            comment: comment,
+            recommended: recommend,
+            created_at: serverTimestamp()
+        });
+
+        // 2. Atualiza a flag correta no Pedido (Lógica Bilateral)
+        // Precisamos saber se sou Cliente ou Prestador nesse pedido
+        // Consultamos o pedido rapidinho ou inferimos pelo contexto.
+        // Pelo 'targetUserIdParaAvaliar': Se eu estou avaliando o Cliente, então eu sou Prestador.
+        
+        const orderRef = doc(db, "orders", orderIdParaAvaliar);
+        const orderSnap = await getDoc(orderRef);
+        const orderData = orderSnap.data();
+
+        if (auth.currentUser.uid == orderData.client_id) {
+            // Sou Cliente avaliando Prestador
+            await updateDoc(orderRef, { client_reviewed: true });
+        } else {
+            // Sou Prestador avaliando Cliente
+            await updateDoc(orderRef, { provider_reviewed: true });
+        }
+
+        document.getElementById('review-modal').classList.add('hidden');
+        alert("✅ Avaliação Enviada!\nObrigado.");
+        btn.innerText = "Enviar Avaliação"; // Reset
+        btn.disabled = false;
+
+        // Limpa campos
+        document.getElementById('review-comment').value = "";
+        document.querySelectorAll('.rate-star').forEach(s => s.classList.remove('active'));
+
+    } catch (e) {
+        alert("Erro: " + e.message);
+        btn.innerText = "Tentar Novamente";
+        btn.disabled = false;
+    }
+};
+
 window.validarTokenPrestador = async (orderId, valorTotal) => {
     const input = document.getElementById(`token-${orderId}`);
     const tokenDigitado = input.value.trim();
@@ -165,27 +382,21 @@ window.validarTokenPrestador = async (orderId, valorTotal) => {
         const realToken = orderSnap.data().finalization_code;
 
         if (tokenDigitado === realToken) {
-            // SUCESSO!
-            
-            // 1. Atualiza Pedido
             await updateDoc(orderRef, {
                 status: 'completed',
                 completed_at: serverTimestamp()
             });
 
-            // 2. Libera Saldo na Carteira (Simulação de Valor Liberado)
-            // No MVP, liberamos o valor simbólico da reserva (R$ 30) ou o total. 
-            // Vamos liberar o valor da "Segurança" que estava travado.
             const valorLiberado = orderSnap.data().amount_security || 0;
             
             await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
                 saldo: increment(valorLiberado)
             });
 
-            alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.\n\nR$ ${valorLiberado.toFixed(2)} liberados na sua carteira.`);
+            alert(`✅ SUCESSO!\n\nServiço Encerrado.\nR$ ${valorLiberado.toFixed(2)} liberados.`);
             
         } else {
-            alert("❌ CÓDIGO INVÁLIDO.\nPeça ao cliente o código de 4 dígitos que aparece na tela dele.");
+            alert("❌ CÓDIGO INVÁLIDO.\nPeça ao cliente o código de 4 dígitos.");
             input.value = "";
             btn.innerText = "VALIDAR & RECEBER";
             btn.disabled = false;
@@ -205,12 +416,9 @@ window.aceitarChamado = (orderId, chatId, clientName) => {
     }, 500);
 };
 
-
 // ======================================================
-// 2. CLIENTE: BUSCAR, CONTRATAR E GERAR TOKEN
+// 2. CLIENTE E AUXILIARES
 // ======================================================
-
-let listenerPrestadoresAtivo = false;
 
 function carregarPrestadoresOnline() {
     const listaContainer = document.getElementById('lista-prestadores-realtime');
@@ -220,12 +428,12 @@ function carregarPrestadoresOnline() {
         return;
     }
 
-    if(listenerPrestadoresAtivo) return;
+    if(window.listenerPrestadoresAtivo) return; // Evita duplicação de listener
 
     const q = query(collection(db, "active_providers")); 
 
     onSnapshot(q, (snap) => {
-        listenerPrestadoresAtivo = true;
+        window.listenerPrestadoresAtivo = true;
         listaContainer.innerHTML = ""; 
         
         if (snap.empty) {
@@ -256,59 +464,6 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// --- NOVA FUNÇÃO: CLIENTE VÊ SEUS PEDIDOS E GERA TOKEN ---
-function escutarMeusPedidos() {
-    if(!auth.currentUser) return;
-    
-    // Injeta container de "Meus Pedidos" se não existir
-    const parent = document.getElementById('servicos-cliente');
-    if(parent && !document.getElementById('meus-pedidos-container')) {
-        const div = document.createElement('div');
-        div.id = 'meus-pedidos-container';
-        div.className = "mb-6 hidden"; 
-        parent.insertBefore(div, parent.firstChild); // Coloca no topo
-    }
-    
-    const container = document.getElementById('meus-pedidos-container');
-    if(!container) return; // Segurança
-
-    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), where("status", "==", "reserved"));
-
-    onSnapshot(q, (snap) => {
-        if(snap.empty) {
-            container.classList.add('hidden');
-            container.innerHTML = "";
-        } else {
-            container.classList.remove('hidden');
-            container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços em Andamento</h3>`;
-            
-            snap.forEach(d => {
-                const pedido = d.data();
-                const temCodigo = pedido.finalization_code ? true : false;
-                
-                container.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${pedido.provider_email}</span>
-                            <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
-                        </div>
-                        <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
-                        
-                        <div class="flex gap-2">
-                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
-                                Chat
-                            </button>
-                            <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
-                                ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
-                            </button>
-                        </div>
-                    </div>`;
-            });
-        }
-    });
-}
-
-// --- LÓGICA DE GERAR TOKEN (CLIENTE) ---
 window.gerarTokenCliente = async (orderId) => {
     const btn = event.target;
     btn.disabled = true;
@@ -319,9 +474,8 @@ window.gerarTokenCliente = async (orderId) => {
         
         let code = docSnap.data().finalization_code;
 
-        // Se não tem código, gera um novo
         if (!code) {
-            code = Math.floor(1000 + Math.random() * 9000).toString(); // Gera 4 dígitos (ex: 4821)
+            code = Math.floor(1000 + Math.random() * 9000).toString(); 
             await updateDoc(orderRef, { finalization_code: code });
         }
 
@@ -334,11 +488,6 @@ window.gerarTokenCliente = async (orderId) => {
         btn.disabled = false;
     }
 };
-
-
-// ======================================================
-// 3. FLUXO DE SOLICITAÇÃO (MODAL)
-// ======================================================
 
 window.abrirModalSolicitacao = (uid, email) => {
     if(!auth.currentUser) return alert("Faça login.");
@@ -379,16 +528,17 @@ window.confirmarSolicitacao = async () => {
             amount_total_reservation: reservaTotal,
             amount_security: seguranca,
             amount_fee: taxa,
-            status: "reserved", // MVP: Já cria como reservado para pular pagamento real
+            status: "reserved",
             chat_id: chatRoomId,
-            created_at: serverTimestamp()
+            created_at: serverTimestamp(),
+            // NOVOS CAMPOS PARA CONTROLE DE AVALIAÇÃO
+            client_reviewed: false,
+            provider_reviewed: false
         });
 
-        // Feedback Visual
         document.getElementById('request-modal').classList.add('hidden');
         alert(`✅ Reserva Confirmada!\n\nValor Pago (Simulado): R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
         
-        // Cria Sala de Chat
         const chatRef = doc(db, "chats", chatRoomId);
         await setDoc(chatRef, {
             participants: [auth.currentUser.uid, targetProviderId],
