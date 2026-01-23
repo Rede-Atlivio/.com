@@ -14,11 +14,18 @@ export function carregarMeusChats() {
 
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        if(snap.empty) container.innerHTML = "<p class='text-center text-xs text-gray-400 py-10'>Sem mensagens.</p>";
+        if(snap.empty) container.innerHTML = "<div class='text-center py-10'><span class='text-4xl grayscale opacity-30'>💬</span><p class='text-xs text-gray-400 mt-2'>Nenhuma conversa ativa.</p></div>";
         else {
             snap.forEach(d => {
                 const chat = d.data();
-                container.innerHTML += `<div onclick="abrirChat('${d.id}', '${chat.mission_title}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center cursor-pointer mb-2"><div><p class="font-bold text-xs text-blue-900 uppercase italic">${chat.mission_title}</p><p class="text-[10px] text-gray-500 truncate w-48">${chat.last_message}</p></div><span class="text-xl">💬</span></div>`;
+                container.innerHTML += `
+                    <div onclick="abrirChat('${d.id}', '${chat.mission_title}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center cursor-pointer mb-2 hover:bg-blue-50 transition">
+                        <div>
+                            <p class="font-bold text-xs text-blue-900 uppercase italic">${chat.mission_title || 'Conversa'}</p>
+                            <p class="text-[10px] text-gray-500 truncate w-48">${chat.last_message}</p>
+                        </div>
+                        <span class="text-xl">➔</span>
+                    </div>`;
             });
         }
     });
@@ -27,7 +34,7 @@ export function carregarMeusChats() {
 window.abrirChat = (chatId, title) => {
     activeChatId = chatId;
     document.getElementById('chat-modal').classList.remove('hidden');
-    document.getElementById('chat-mission-title').innerText = title;
+    document.getElementById('chat-mission-title').innerText = title || "Negociação";
     carregarMensagens(chatId);
 };
 
@@ -51,33 +58,20 @@ function carregarMensagens(chatId) {
     });
 }
 
-// --- SANITIZADOR INTELIGENTE (ANTI-GAMBIARRA) ---
-function contemContato(texto) {
-    // 1. Normaliza: minúsculas e remove acentos
-    let limpo = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+// --- FILTRO DE RESPEITO (ANTI-ABUSO) ---
+function contemOfensa(texto) {
+    const mensagem = texto.toLowerCase();
     
-    // 2. Mapa de conversão (palavra -> número)
-    const mapa = {
-        'zero': '0', 'um': '1', 'dois': '2', 'tres': '3', 'quatro': '4',
-        'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9',
-        'zap': '9', 'whats': '9', 'contato': '9', 'ligar': '9'
-    };
+    // Lista básica de termos ofensivos/agressivos para manter a comunidade saudável
+    const termosProibidos = [
+        'idiota', 'imbecil', 'burro', 'estupido', 'retardado', 
+        'merda', 'bosta', 'caralho', 'porra', 'fuder', 
+        'lixo', 'golpe', 'ladrao', 'picareta'
+    ];
 
-    // 3. Substitui palavras por números
-    Object.keys(mapa).forEach(key => {
-        limpo = limpo.replaceAll(key, mapa[key]);
-    });
-
-    // 4. Remove tudo que NÃO é número
-    const soNumeros = limpo.replace(/\D/g, "");
-
-    // 5. Verifica padrões proibidos
-    // - Sequência de 8 ou mais dígitos (telefone)
-    // - Email (@)
-    // - Links (.com)
-    if (soNumeros.length >= 8) return true;
-    if (texto.includes('@') || texto.includes('.com') || texto.includes('.br')) return true;
-
+    for (let termo of termosProibidos) {
+        if (mensagem.includes(termo)) return true;
+    }
     return false;
 }
 
@@ -86,10 +80,9 @@ window.enviarMensagem = async () => {
     const text = input.value.trim();
     if(!text || !activeChatId) return;
 
-    // APLICA O FILTRO AVANÇADO
-    if(contemContato(text)) {
-        alert("🚫 BLOQUEADO PELO SISTEMA\n\nTentativa de burlar a plataforma detectada.\nNão é permitido enviar contatos, telefones ou links.");
-        input.value = ""; // Limpa a tentativa
+    // VERIFICAÇÃO APENAS DE OFENSAS
+    if(contemOfensa(text)) {
+        alert("🚫 MENSAGEM BLOQUEADA\n\nPor favor, mantenha o respeito na negociação.\nTermos ofensivos não são permitidos.");
         return;
     }
 
