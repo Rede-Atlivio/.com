@@ -71,7 +71,9 @@ function configurarBotoesHistorico() {
 function configurarBotaoOnline() {
     const toggle = document.getElementById('online-toggle');
     if(!toggle) return;
-    toggle.checked = false;
+    
+    // Evita resetar se já estiver checado visualmente
+    // toggle.checked = false; 
 
     toggle.addEventListener('change', async (e) => {
         const statusMsg = document.getElementById('status-msg');
@@ -127,6 +129,9 @@ let totalChamadosAntigo = 0;
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
+    // --- TRAVA DE SEGURANÇA (EVITA DUPLICIDADE) ---
+    if(window.listenerChamadosAtivos) return;
+
     const container = document.getElementById('lista-chamados');
     const containerHist = document.getElementById('historico-prestador-container');
     const btnToggle = document.getElementById('btn-toggle-history-provider');
@@ -139,6 +144,8 @@ function escutarMeusChamados() {
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
+        window.listenerChamadosAtivos = true; // Confirma que o listener está ativo
+
         // SOM DE NOTIFICAÇÃO
         if (snap.size > totalChamadosAntigo) {
              const audio = document.getElementById('notification-sound');
@@ -234,6 +241,9 @@ function escutarMeusChamados() {
 function escutarMeusPedidos() {
     if(!auth.currentUser) return;
     
+    // --- TRAVA DE SEGURANÇA (EVITA DUPLICIDADE) ---
+    if(window.listenerPedidosAtivos) return;
+
     const container = document.getElementById('meus-pedidos-container');
     const containerHist = document.getElementById('historico-cliente-container');
     
@@ -242,11 +252,15 @@ function escutarMeusPedidos() {
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
+        window.listenerPedidosAtivos = true; // Confirma que o listener está ativo
+
         if(snap.empty) {
             container.classList.add('hidden');
             container.innerHTML = "";
+            containerHist.innerHTML = "";
         } else {
             container.classList.remove('hidden');
+            // LIMPA ANTES DE DESENHAR TUDO NOVAMENTE
             container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">🚀 Meus Serviços Ativos</h3>`;
             containerHist.innerHTML = ""; // Limpa histórico
             
