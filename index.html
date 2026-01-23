@@ -26,6 +26,8 @@
         .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
         .filter-pill { white-space: nowrap; transition: all 0.2s; }
         .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; }
+        .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -183,16 +185,38 @@
             
             <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
                 <div id="servicos-cliente" class="hidden">
-                    <div id="meus-pedidos-container" class="mb-6 hidden"></div>
                     
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-black text-gray-800 text-xs uppercase">Profissionais Online</h3>
-                        <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
+                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div>
+                                <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
+                                <p class="text-[9px] text-gray-400">Bem-vindo ao Atlivio</p>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('provider-setup-modal').classList.remove('hidden')" id="btn-edit-profile" class="hidden text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
+                            ✎ EDITAR PERFIL
+                        </button>
                     </div>
 
-                    <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters"></div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
+                        <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
+                        <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+                    </div>
 
-                    <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+                    <div id="view-contratar">
+                        <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters"></div>
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+                    </div>
+
+                    <div id="view-andamento" class="hidden space-y-2">
+                        <div id="meus-pedidos-andamento" class="space-y-3"></div>
+                    </div>
+
+                    <div id="view-historico" class="hidden space-y-2">
+                        <div id="meus-pedidos-historico" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <div id="servicos-prestador" class="hidden text-center py-4">
@@ -201,11 +225,6 @@
                         <p class="font-bold text-sm">Você está Offline</p>
                         <p class="text-xs">Ative o botão "Trabalhar" no topo para aparecer no mapa.</p>
                     </div>
-                    
-                    <div class="flex justify-end mb-2 px-4">
-                        <button id="btn-toggle-history-provider" class="hidden text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
-                    </div>
-                    
                     <div id="lista-chamados" class="hidden mt-4 text-left"></div>
                 </div>
             </section>
@@ -275,13 +294,11 @@
         <div class="bg-white w-full max-w-sm rounded-2xl p-6">
             <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Perfil Profissional</h3>
             <p class="text-xs text-gray-400 mb-6">Defina como você aparecerá para os clientes.</p>
-
             <div class="space-y-4">
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Artístico / Profissional</label>
                     <input type="text" id="setup-name" placeholder="Ex: João Eletricista" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
                 </div>
-
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria</label>
                     <select id="setup-category" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
@@ -296,7 +313,6 @@
                         <option value="Outros">Outros</option>
                     </select>
                 </div>
-
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Preço Base (A partir de)</label>
                     <div class="relative">
@@ -305,19 +321,13 @@
                     </div>
                     <p class="text-[9px] text-gray-400 mt-1">Valor inicial para referência.</p>
                 </div>
-
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Descrição Curta</label>
                     <textarea id="setup-desc" rows="2" placeholder="Ex: Especialista em drinks tropicais e caipirinhas." class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900"></textarea>
                 </div>
             </div>
-
-            <button onclick="salvarSetupPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase mt-6 shadow-lg hover:bg-blue-700 transition">
-                Salvar e Ficar Online
-            </button>
-            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden'); document.getElementById('online-toggle').checked = false;" class="w-full mt-3 text-gray-400 text-xs underline">
-                Cancelar
-            </button>
+            <button onclick="salvarSetupPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase mt-6 shadow-lg hover:bg-blue-700 transition">Salvar e Ficar Online</button>
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden'); document.getElementById('online-toggle').checked = false;" class="w-full mt-3 text-gray-400 text-xs underline">Cancelar</button>
         </div>
     </div>
 
@@ -327,50 +337,26 @@
                 <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
                 <p class="text-xs opacity-75">Defina o valor e pague a reserva.</p>
             </div>
-            
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
                 <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="text-[9px] font-bold text-gray-500 uppercase">Data</label>
-                        <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label>
-                        <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                    </div>
+                    <div><label class="text-[9px] font-bold text-gray-500 uppercase">Data</label><input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white"></div>
+                    <div><label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label><input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white"></div>
                 </div>
-                <div>
-                    <label class="text-[9px] font-bold text-gray-500 uppercase">Local</label>
-                    <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                </div>
-
+                <div><label class="text-[9px] font-bold text-gray-500 uppercase">Local</label><input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white"></div>
                 <div class="pt-2 border-t border-gray-100">
                     <p class="text-[10px] font-bold text-blue-900 uppercase mb-2">Quanto você quer pagar?</p>
-                    
                     <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 mb-2">
                         <input type="radio" name="price-option" id="price-option-base" value="base" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(false)">
-                        <div>
-                            <span class="block text-xs font-bold text-gray-800" id="label-base-price">Preço do Prestador</span>
-                            <span class="block text-[9px] text-gray-500">Aceitar valor sugerido</span>
-                        </div>
+                        <div><span class="block text-xs font-bold text-gray-800" id="label-base-price">Preço do Prestador</span><span class="block text-[9px] text-gray-500">Aceitar valor sugerido</span></div>
                     </label>
-
                     <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
                         <input type="radio" name="price-option" id="price-option-custom" value="custom" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(true)">
-                        <div>
-                            <span class="block text-xs font-bold text-gray-800">Fazer outra oferta</span>
-                            <span class="block text-[9px] text-gray-500">Sugerir meu valor</span>
-                        </div>
+                        <div><span class="block text-xs font-bold text-gray-800">Fazer outra oferta</span><span class="block text-[9px] text-gray-500">Sugerir meu valor</span></div>
                     </label>
-
                     <div id="custom-price-container" class="mt-2 hidden">
-                        <div class="relative">
-                            <span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span>
-                            <input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-2 pl-10 rounded-lg text-lg font-bold text-blue-900 bg-white outline-none" oninput="calcularReserva(this.value)">
-                        </div>
+                        <div class="relative"><span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span><input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-2 pl-10 rounded-lg text-lg font-bold text-blue-900 bg-white outline-none" oninput="calcularReserva(this.value)"></div>
                     </div>
                 </div>
-
                 <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden">
                     <div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
                     <div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
@@ -378,7 +364,6 @@
                     <p class="text-[9px] text-center text-gray-500 mt-2 italic">Ao pagar, o pedido vai para aprovação do prestador.</p>
                 </div>
             </div>
-
             <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
                 <button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
                 <button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR E ENVIAR 🔒</button>
@@ -390,13 +375,7 @@
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center">
             <h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3>
             <p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p>
-            <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container">
-                <span class="rate-star" data-val="1">★</span>
-                <span class="rate-star" data-val="2">★</span>
-                <span class="rate-star" data-val="3">★</span>
-                <span class="rate-star" data-val="4">★</span>
-                <span class="rate-star" data-val="5">★</span>
-            </div>
+            <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container"><span class="rate-star" data-val="1">★</span><span class="rate-star" data-val="2">★</span><span class="rate-star" data-val="3">★</span><span class="rate-star" data-val="4">★</span><span class="rate-star" data-val="5">★</span></div>
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button>
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button>
@@ -404,14 +383,8 @@
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button>
             </div>
             <div class="flex items-center justify-center gap-4 mb-6">
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="recommend" value="yes" class="accent-blue-600" checked>
-                    <span class="text-xs font-bold text-gray-700">👍 Recomendo</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="recommend" value="no" class="accent-red-600">
-                    <span class="text-xs font-bold text-gray-700">👎 Não Indico</span>
-                </label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="yes" class="accent-blue-600" checked><span class="text-xs font-bold text-gray-700">👍 Recomendo</span></label>
+                <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="no" class="accent-red-600"><span class="text-xs font-bold text-gray-700">👎 Não Indico</span></label>
             </div>
             <textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea>
             <button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button>
@@ -430,81 +403,28 @@
     <script type="module" src="./js/admin.js"></script>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err));
-            });
-        }
-        let deferredPrompt;
-        const btnInstall = document.getElementById('btn-install-app');
-        const iosModal = document.getElementById('ios-install-modal');
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden');
-        });
-        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
+        let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent); const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
-        btnInstall.addEventListener('click', async () => {
-            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { iosModal.classList.remove('hidden'); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
-        });
+        btnInstall.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { iosModal.classList.remove('hidden'); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); } });
 
-        // --- LÓGICA DE PREÇO E BOTÃO (CORRIGIDA) ---
+        // --- LÓGICA DE PREÇO ---
         let basePriceAtual = 0;
-
         window.togglePriceInput = (isCustom) => {
-            const inputContainer = document.getElementById('custom-price-container');
-            const input = document.getElementById('req-value');
-            
-            if (isCustom) {
-                inputContainer.classList.remove('hidden');
-                input.value = "";
-                // Zera o botão ao trocar para custom, força usuario a digitar
-                window.calcularReserva(0);
-            } else {
-                inputContainer.classList.add('hidden');
-                // Se o usuário seleciona "Preço do Prestador", JÁ CALCULA E DESTRAVA O BOTÃO
-                input.value = basePriceAtual;
-                if(basePriceAtual > 0) {
-                    window.calcularReserva(basePriceAtual);
-                }
-            }
+            const inputContainer = document.getElementById('custom-price-container'); const input = document.getElementById('req-value');
+            if (isCustom) { inputContainer.classList.remove('hidden'); input.value = ""; window.calcularReserva(0); } else { inputContainer.classList.add('hidden'); input.value = basePriceAtual; if(basePriceAtual > 0) window.calcularReserva(basePriceAtual); }
         };
-
         window.calcularReserva = (valorInput) => {
-            const valor = parseFloat(valorInput);
-            const summary = document.getElementById('financial-summary');
-            const btn = document.getElementById('btn-confirm-req');
-
-            if (!valor || valor <= 0) {
-                summary.classList.add('hidden');
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                return;
-            }
-
-            summary.classList.remove('hidden');
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-
-            const seguranca = valor * 0.30;
-            const taxa = valor * 0.10;
-            const reservaTotal = seguranca + taxa;
-
-            document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`;
-            document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`;
-            document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`;
+            const valor = parseFloat(valorInput); const summary = document.getElementById('financial-summary'); const btn = document.getElementById('btn-confirm-req');
+            if (!valor || valor <= 0) { summary.classList.add('hidden'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); return; }
+            summary.classList.remove('hidden'); btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            const seguranca = valor * 0.30; const taxa = valor * 0.10; const reservaTotal = seguranca + taxa;
+            document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`; document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`; document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`;
         };
-
         window.fecharModalSolicitacao = () => { document.getElementById('request-modal').classList.add('hidden'); };
-
-        // --- LÓGICA DAS ESTRELAS E TAGS ---
-        let currentRating = 0;
-        document.querySelectorAll('.rate-star').forEach(star => {
-            star.addEventListener('click', function() {
-                currentRating = this.getAttribute('data-val');
-                document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); });
-            });
-        });
+        let currentRating = 0; document.querySelectorAll('.rate-star').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
     </script>
 </body>
