@@ -1,18 +1,16 @@
 import { db, auth } from '../app.js';
 import { doc, setDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// VARIÁVEL PARA GUARDAR CONTEXTO
+// VARIÁVEL PARA GUARDAR QUEM ESTAMOS CONTRATANDO
 let targetProviderId = null;
 let targetProviderEmail = null;
-let orderIdParaAvaliar = null;
-let providerIdParaAvaliar = null;
 
 // --- INICIALIZAÇÃO ---
 setTimeout(() => {
     configurarBotaoOnline();
     carregarPrestadoresOnline(); 
-    escutarMeusChamados(); 
-    escutarMeusPedidos();  
+    escutarMeusChamados(); // Visão do Prestador
+    escutarMeusPedidos();  // Visão do Cliente (NOVO)
     
     const tabServicos = document.getElementById('tab-servicos');
     if(tabServicos) {
@@ -23,7 +21,7 @@ setTimeout(() => {
 }, 1000);
 
 // ======================================================
-// 1. PRESTADOR
+// 1. PRESTADOR: FICAR ONLINE & RECEBER CHAMADOS
 // ======================================================
 
 function configurarBotaoOnline() {
@@ -75,6 +73,7 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
+// --- VISÃO DO PRESTADOR: GERENCIAR PEDIDOS ---
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
@@ -88,7 +87,7 @@ function escutarMeusChamados() {
 
     onSnapshot(q, (snap) => {
         const lista = document.getElementById('lista-chamados');
-        lista.innerHTML = "";
+        lista.innerHTML = ""; // Limpa para evitar duplicidade visual
         
         if (snap.empty) {
             lista.classList.add('hidden');
@@ -99,6 +98,7 @@ function escutarMeusChamados() {
             snap.forEach(d => {
                 const pedido = d.data();
                 
+                // CARD 1: PEDIDO RESERVADO (PAGO) - MOSTRA CAMPO DE VALIDAÇÃO
                 if (pedido.status === 'reserved') {
                     lista.innerHTML += `
                     <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
@@ -131,6 +131,8 @@ function escutarMeusChamados() {
                         </div>
                     </div>`;
                 }
+                
+                // CARD 2: PEDIDO CONCLUÍDO
                 else if (pedido.status === 'completed') {
                     lista.innerHTML += `
                     <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
@@ -143,6 +145,7 @@ function escutarMeusChamados() {
     });
 }
 
+// --- LÓGICA DE VALIDAÇÃO (PRESTADOR) ---
 window.validarTokenPrestador = async (orderId, valorTotal) => {
     const input = document.getElementById(`token-${orderId}`);
     const tokenDigitado = input.value.trim();
@@ -162,11 +165,17 @@ window.validarTokenPrestador = async (orderId, valorTotal) => {
         const realToken = orderSnap.data().finalization_code;
 
         if (tokenDigitado === realToken) {
+            // SUCESSO!
+            
+            // 1. Atualiza Pedido
             await updateDoc(orderRef, {
                 status: 'completed',
                 completed_at: serverTimestamp()
             });
 
+            // 2. Libera Saldo na Carteira (Simulação de Valor Liberado)
+            // No MVP, liberamos o valor simbólico da reserva (R$ 30) ou o total. 
+            // Vamos liberar o valor da "Segurança" que estava travado.
             const valorLiberado = orderSnap.data().amount_security || 0;
             
             await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
@@ -198,8 +207,10 @@ window.aceitarChamado = (orderId, chatId, clientName) => {
 
 
 // ======================================================
-// 2. CLIENTE
+// 2. CLIENTE: BUSCAR, CONTRATAR E GERAR TOKEN
 // ======================================================
+
+let listenerPrestadoresAtivo = false;
 
 function carregarPrestadoresOnline() {
     const listaContainer = document.getElementById('lista-prestadores-realtime');
@@ -245,23 +256,23 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// --- ATUALIZAÇÃO V19: BOTÃO DE AVALIAR ---
+// --- NOVA FUNÇÃO: CLIENTE VÊ SEUS PEDIDOS E GERA TOKEN ---
 function escutarMeusPedidos() {
     if(!auth.currentUser) return;
     
+    // Injeta container de "Meus Pedidos" se não existir
     const parent = document.getElementById('servicos-cliente');
     if(parent && !document.getElementById('meus-pedidos-container')) {
         const div = document.createElement('div');
         div.id = 'meus-pedidos-container';
         div.className = "mb-6 hidden"; 
-        parent.insertBefore(div, parent.firstChild);
+        parent.insertBefore(div, parent.firstChild); // Coloca no topo
     }
     
     const container = document.getElementById('meus-pedidos-container');
-    if(!container) return;
+    if(!container) return; // Segurança
 
-    // Escuta pedidos Reservados e Completados (para avaliar)
-    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), where("status", "==", "reserved"));
 
     onSnapshot(q, (snap) => {
         if(snap.empty) {
@@ -269,115 +280,35 @@ function escutarMeusPedidos() {
             container.innerHTML = "";
         } else {
             container.classList.remove('hidden');
-            container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços</h3>`;
+            container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços em Andamento</h3>`;
             
             snap.forEach(d => {
                 const pedido = d.data();
                 const temCodigo = pedido.finalization_code ? true : false;
                 
-                if (pedido.status === 'reserved') {
-                    container.innerHTML += `
-                        <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${pedido.provider_email}</span>
-                                <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
-                            </div>
-                            <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
-                            
-                            <div class="flex gap-2">
-                                <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
-                                    Chat
-                                </button>
-                                <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
-                                    ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
-                                </button>
-                            </div>
-                        </div>`;
-                } else if (pedido.status === 'completed' && !pedido.is_reviewed) {
-                    // BOTÃO DE AVALIAR
-                    container.innerHTML += `
-                        <div class="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm mb-2">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold uppercase text-gray-500">Serviço Concluído</span>
-                                <span class="text-[9px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">AGUARDANDO AVALIAÇÃO</span>
-                            </div>
-                            <button onclick="abrirModalAvaliacao('${d.id}', '${pedido.provider_id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-xs uppercase animate-pulse">
-                                ⭐ AVALIAR PRESTADOR
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${pedido.provider_email}</span>
+                            <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
+                        </div>
+                        <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
+                                Chat
                             </button>
-                        </div>`;
-                }
+                            <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
+                                ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
+                            </button>
+                        </div>
+                    </div>`;
             });
         }
     });
 }
 
-// --- FUNÇÕES DE AVALIAÇÃO (NOVO) ---
-window.abrirModalAvaliacao = (orderId, providerId) => {
-    orderIdParaAvaliar = orderId;
-    providerIdParaAvaliar = providerId;
-    document.getElementById('review-modal').classList.remove('hidden');
-};
-
-function contemOfensa(texto) {
-    const mensagemLimpa = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const listaNegra = ['vagabunda', 'vagabundo', 'ladrao', 'ladra', 'roubo', 'corno', 'corna', 'porra', 'caralho', 'merda', 'bosta', 'puta', 'puto', 'viado', 'fuder', 'foder', 'idiota', 'imbecil', 'retardado', 'burro', 'picareta', 'golpista', 'safado', 'pilantra', 'otario', 'trouxa', 'cu', 'bunda'];
-    for (let termo of listaNegra) { if (mensagemLimpa.includes(termo)) return true; }
-    return false;
-}
-
-window.enviarAvaliacao = async () => {
-    // Coleta dados
-    let stars = 0;
-    document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val')));
-    
-    if(stars === 0) return alert("Selecione pelo menos 1 estrela.");
-
-    const comment = document.getElementById('review-comment').value.trim();
-    if(comment && contemOfensa(comment)) return alert("Comentário bloqueado por termos ofensivos.");
-
-    const tags = [];
-    document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText));
-
-    const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes';
-
-    // Salva
-    const btn = event.target;
-    btn.innerText = "Enviando...";
-    btn.disabled = true;
-
-    try {
-        // 1. Salva Avaliação
-        await addDoc(collection(db, "reviews"), {
-            order_id: orderIdParaAvaliar,
-            provider_id: providerIdParaAvaliar,
-            client_id: auth.currentUser.uid,
-            stars: parseInt(stars),
-            tags: tags,
-            comment: comment,
-            recommended: recommend,
-            created_at: serverTimestamp()
-        });
-
-        // 2. Marca pedido como avaliado (para sumir o botão)
-        await updateDoc(doc(db, "orders", orderIdParaAvaliar), {
-            is_reviewed: true
-        });
-
-        // 3. Atualiza Média do Prestador (Simples)
-        // Idealmente isso seria Cloud Function, mas faremos no front pro MVP
-        // Se der tempo, implementamos a leitura e recálculo da média.
-        // Por enquanto, apenas salva o dado bruto.
-
-        document.getElementById('review-modal').classList.add('hidden');
-        alert("✅ Avaliação Enviada!\nObrigado por contribuir com a comunidade.");
-
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "Tentar Novamente";
-        btn.disabled = false;
-    }
-};
-
+// --- LÓGICA DE GERAR TOKEN (CLIENTE) ---
 window.gerarTokenCliente = async (orderId) => {
     const btn = event.target;
     btn.disabled = true;
@@ -388,8 +319,9 @@ window.gerarTokenCliente = async (orderId) => {
         
         let code = docSnap.data().finalization_code;
 
+        // Se não tem código, gera um novo
         if (!code) {
-            code = Math.floor(1000 + Math.random() * 9000).toString(); 
+            code = Math.floor(1000 + Math.random() * 9000).toString(); // Gera 4 dígitos (ex: 4821)
             await updateDoc(orderRef, { finalization_code: code });
         }
 
@@ -402,6 +334,11 @@ window.gerarTokenCliente = async (orderId) => {
         btn.disabled = false;
     }
 };
+
+
+// ======================================================
+// 3. FLUXO DE SOLICITAÇÃO (MODAL)
+// ======================================================
 
 window.abrirModalSolicitacao = (uid, email) => {
     if(!auth.currentUser) return alert("Faça login.");
@@ -442,14 +379,16 @@ window.confirmarSolicitacao = async () => {
             amount_total_reservation: reservaTotal,
             amount_security: seguranca,
             amount_fee: taxa,
-            status: "reserved",
+            status: "reserved", // MVP: Já cria como reservado para pular pagamento real
             chat_id: chatRoomId,
             created_at: serverTimestamp()
         });
 
+        // Feedback Visual
         document.getElementById('request-modal').classList.add('hidden');
         alert(`✅ Reserva Confirmada!\n\nValor Pago (Simulado): R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
         
+        // Cria Sala de Chat
         const chatRef = doc(db, "chats", chatRoomId);
         await setDoc(chatRef, {
             participants: [auth.currentUser.uid, targetProviderId],
