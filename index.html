@@ -171,7 +171,7 @@
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
         </nav>
 
-        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-32">
             <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
                 <div id="lista-oportunidades" class="grid gap-3"></div>
             </section>
@@ -179,23 +179,24 @@
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
             
-            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
-                <div id="servicos-cliente" class="hidden space-y-6">
-                    <div id="meus-pedidos-container" class="hidden"></div>
+            <section id="sec-servicos" class="hidden space-y-6 animate-fadeIn">
+                <div id="servicos-cliente" class="hidden flex flex-col gap-6">
                     
-                    <div>
-                        <h3 class="font-black text-gray-800 text-xs uppercase mb-2">📍 Profissionais Online</h3>
+                    <div id="meus-pedidos-container" class="hidden w-full"></div>
+                    
+                    <div class="w-full">
+                        <h3 class="font-black text-gray-800 text-xs uppercase mb-3 pl-1 border-l-4 border-blue-600">📍 Profissionais Online</h3>
                         <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
                     </div>
 
-                    <div class="border-t pt-4">
-                        <div class="flex items-center justify-between mb-2">
+                    <div class="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm mt-4">
+                        <div class="flex items-center justify-between">
                             <h3 class="font-black text-gray-400 text-xs uppercase">Histórico</h3>
                             <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition">
                                 📜 Ver Finalizados
                             </button>
                         </div>
-                        <div id="historico-cliente-container" class="hidden space-y-2"></div>
+                        <div id="historico-cliente-container" class="hidden mt-3 space-y-2 border-t border-gray-100 pt-2"></div>
                     </div>
                 </div>
 
