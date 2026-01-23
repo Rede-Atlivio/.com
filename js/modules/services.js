@@ -1,5 +1,5 @@
 import { db, auth } from '../app.js';
-import { doc, setDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, setDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // VARIÁVEL PARA GUARDAR QUEM ESTAMOS CONTRATANDO
 let targetProviderId = null;
@@ -9,7 +9,8 @@ let targetProviderEmail = null;
 setTimeout(() => {
     configurarBotaoOnline();
     carregarPrestadoresOnline(); 
-    escutarMeusChamados();
+    escutarMeusChamados(); // Visão do Prestador
+    escutarMeusPedidos();  // Visão do Cliente (NOVO)
     
     const tabServicos = document.getElementById('tab-servicos');
     if(tabServicos) {
@@ -19,7 +20,10 @@ setTimeout(() => {
     }
 }, 1000);
 
-// 1. PRESTADOR: FICAR ONLINE
+// ======================================================
+// 1. PRESTADOR: FICAR ONLINE & RECEBER CHAMADOS
+// ======================================================
+
 function configurarBotaoOnline() {
     const toggle = document.getElementById('online-toggle');
     if(!toggle) return;
@@ -69,7 +73,7 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
-// 2. PRESTADOR: ESCUTAR CHAMADOS
+// --- VISÃO DO PRESTADOR: GERENCIAR PEDIDOS ---
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
@@ -83,26 +87,116 @@ function escutarMeusChamados() {
 
     onSnapshot(q, (snap) => {
         const lista = document.getElementById('lista-chamados');
+        lista.innerHTML = ""; // Limpa para evitar duplicidade visual
+        
         if (snap.empty) {
             lista.classList.add('hidden');
         } else {
             lista.classList.remove('hidden');
-            lista.innerHTML = `<h3 class="font-black text-blue-900 text-xs uppercase mb-2">🔔 Pedidos</h3>`;
+            lista.innerHTML = `<h3 class="font-black text-blue-900 text-xs uppercase mb-2">🔔 Gerenciador de Pedidos</h3>`;
+            
             snap.forEach(d => {
                 const pedido = d.data();
+                
+                // CARD 1: PEDIDO RESERVADO (PAGO) - MOSTRA CAMPO DE VALIDAÇÃO
                 if (pedido.status === 'reserved') {
                     lista.innerHTML += `
-                    <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-2 animate-fadeIn">
-                        <div class="flex justify-between items-start">
-                            <div><p class="font-bold text-sm text-green-900">RESERVA PAGA! 💰</p><p class="text-[10px] text-green-700">Chat liberado.</p></div>
+                    <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <p class="font-bold text-sm text-green-900">RESERVA PAGA! 💰</p>
+                                <p class="text-[10px] text-green-700">Cliente: ${pedido.client_email}</p>
+                            </div>
+                            <span class="text-xl">🔒</span>
                         </div>
-                        <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.client_email}')" class="w-full mt-3 bg-green-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-sm">ABRIR CHAT</button>
+                        
+                        <div class="grid grid-cols-2 gap-2 mb-3">
+                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.client_email}')" class="bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
+                                💬 Abrir Chat
+                            </button>
+                            <div class="text-center">
+                                <p class="text-[8px] text-gray-500 uppercase font-bold">A receber fora:</p>
+                                <p class="font-black text-gray-800">R$ ${(pedido.service_value - pedido.amount_total_reservation).toFixed(2)}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-lg border border-green-200">
+                            <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Finalizar Serviço (Peça o código ao cliente)</label>
+                            <div class="flex gap-2">
+                                <input type="tel" id="token-${d.id}" placeholder="0000" maxlength="4" class="w-16 text-center font-black text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 outline-none text-gray-800">
+                                <button onclick="validarTokenPrestador('${d.id}', ${pedido.service_value})" class="flex-1 bg-green-600 text-white font-bold text-xs rounded-lg hover:bg-green-700 transition">
+                                    VALIDAR & RECEBER
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                
+                // CARD 2: PEDIDO CONCLUÍDO
+                else if (pedido.status === 'completed') {
+                    lista.innerHTML += `
+                    <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
+                        <p class="font-bold text-xs text-gray-600">✅ Serviço Finalizado</p>
+                        <p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p>
                     </div>`;
                 }
             });
         }
     });
 }
+
+// --- LÓGICA DE VALIDAÇÃO (PRESTADOR) ---
+window.validarTokenPrestador = async (orderId, valorTotal) => {
+    const input = document.getElementById(`token-${orderId}`);
+    const tokenDigitado = input.value.trim();
+
+    if(tokenDigitado.length !== 4) return alert("O código deve ter 4 dígitos.");
+
+    const btn = event.target;
+    btn.innerText = "Verificando...";
+    btn.disabled = true;
+
+    try {
+        const orderRef = doc(db, "orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+        
+        if(!orderSnap.exists()) throw new Error("Pedido não encontrado.");
+        
+        const realToken = orderSnap.data().finalization_code;
+
+        if (tokenDigitado === realToken) {
+            // SUCESSO!
+            
+            // 1. Atualiza Pedido
+            await updateDoc(orderRef, {
+                status: 'completed',
+                completed_at: serverTimestamp()
+            });
+
+            // 2. Libera Saldo na Carteira (Simulação de Valor Liberado)
+            // No MVP, liberamos o valor simbólico da reserva (R$ 30) ou o total. 
+            // Vamos liberar o valor da "Segurança" que estava travado.
+            const valorLiberado = orderSnap.data().amount_security || 0;
+            
+            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
+                saldo: increment(valorLiberado)
+            });
+
+            alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.\n\nR$ ${valorLiberado.toFixed(2)} liberados na sua carteira.`);
+            
+        } else {
+            alert("❌ CÓDIGO INVÁLIDO.\nPeça ao cliente o código de 4 dígitos que aparece na tela dele.");
+            input.value = "";
+            btn.innerText = "VALIDAR & RECEBER";
+            btn.disabled = false;
+        }
+
+    } catch (e) {
+        alert("Erro: " + e.message);
+        btn.innerText = "Erro";
+        btn.disabled = false;
+    }
+};
 
 window.aceitarChamado = (orderId, chatId, clientName) => {
     window.switchTab('chat');
@@ -111,7 +205,11 @@ window.aceitarChamado = (orderId, chatId, clientName) => {
     }, 500);
 };
 
-// 3. CLIENTE: LISTA E NOVO FLUXO
+
+// ======================================================
+// 2. CLIENTE: BUSCAR, CONTRATAR E GERAR TOKEN
+// ======================================================
+
 let listenerPrestadoresAtivo = false;
 
 function carregarPrestadoresOnline() {
@@ -158,6 +256,90 @@ function carregarPrestadoresOnline() {
     });
 }
 
+// --- NOVA FUNÇÃO: CLIENTE VÊ SEUS PEDIDOS E GERA TOKEN ---
+function escutarMeusPedidos() {
+    if(!auth.currentUser) return;
+    
+    // Injeta container de "Meus Pedidos" se não existir
+    const parent = document.getElementById('servicos-cliente');
+    if(parent && !document.getElementById('meus-pedidos-container')) {
+        const div = document.createElement('div');
+        div.id = 'meus-pedidos-container';
+        div.className = "mb-6 hidden"; 
+        parent.insertBefore(div, parent.firstChild); // Coloca no topo
+    }
+    
+    const container = document.getElementById('meus-pedidos-container');
+    if(!container) return; // Segurança
+
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), where("status", "==", "reserved"));
+
+    onSnapshot(q, (snap) => {
+        if(snap.empty) {
+            container.classList.add('hidden');
+            container.innerHTML = "";
+        } else {
+            container.classList.remove('hidden');
+            container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços em Andamento</h3>`;
+            
+            snap.forEach(d => {
+                const pedido = d.data();
+                const temCodigo = pedido.finalization_code ? true : false;
+                
+                container.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${pedido.provider_email}</span>
+                            <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
+                        </div>
+                        <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
+                        
+                        <div class="flex gap-2">
+                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
+                                Chat
+                            </button>
+                            <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
+                                ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
+                            </button>
+                        </div>
+                    </div>`;
+            });
+        }
+    });
+}
+
+// --- LÓGICA DE GERAR TOKEN (CLIENTE) ---
+window.gerarTokenCliente = async (orderId) => {
+    const btn = event.target;
+    btn.disabled = true;
+
+    try {
+        const orderRef = doc(db, "orders", orderId);
+        const docSnap = await getDoc(orderRef);
+        
+        let code = docSnap.data().finalization_code;
+
+        // Se não tem código, gera um novo
+        if (!code) {
+            code = Math.floor(1000 + Math.random() * 9000).toString(); // Gera 4 dígitos (ex: 4821)
+            await updateDoc(orderRef, { finalization_code: code });
+        }
+
+        alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`);
+        btn.innerText = "VER CÓDIGO 🔑";
+        btn.disabled = false;
+
+    } catch (e) {
+        alert("Erro: " + e.message);
+        btn.disabled = false;
+    }
+};
+
+
+// ======================================================
+// 3. FLUXO DE SOLICITAÇÃO (MODAL)
+// ======================================================
+
 window.abrirModalSolicitacao = (uid, email) => {
     if(!auth.currentUser) return alert("Faça login.");
     targetProviderId = uid;
@@ -165,7 +347,6 @@ window.abrirModalSolicitacao = (uid, email) => {
     document.getElementById('request-modal').classList.remove('hidden');
 };
 
-// --- CORREÇÃO DE FECHAMENTO ---
 window.confirmarSolicitacao = async () => {
     const data = document.getElementById('req-date').value;
     const hora = document.getElementById('req-time').value;
@@ -198,18 +379,16 @@ window.confirmarSolicitacao = async () => {
             amount_total_reservation: reservaTotal,
             amount_security: seguranca,
             amount_fee: taxa,
-            status: "pending_payment",
+            status: "reserved", // MVP: Já cria como reservado para pular pagamento real
             chat_id: chatRoomId,
             created_at: serverTimestamp()
         });
 
-        // 1. FECHA O MODAL IMEDIATAMENTE (Correção Visual)
+        // Feedback Visual
         document.getElementById('request-modal').classList.add('hidden');
+        alert(`✅ Reserva Confirmada!\n\nValor Pago (Simulado): R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
         
-        // 2. Feedback Rápido
-        alert(`✅ Reserva Confirmada!\n\nValor Pago: R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
-        
-        // 3. Simulação de Liberação
+        // Cria Sala de Chat
         const chatRef = doc(db, "chats", chatRoomId);
         await setDoc(chatRef, {
             participants: [auth.currentUser.uid, targetProviderId],
@@ -219,12 +398,9 @@ window.confirmarSolicitacao = async () => {
             is_service_chat: true
         });
 
-        // 4. Redirecionamento Seguro
         window.switchTab('chat');
         setTimeout(() => { 
             if(window.abrirChat) window.abrirChat(chatRoomId, `Prestador: ${targetProviderEmail}`); 
-            
-            // Reset do botão para próxima vez
             btn.innerText = "PAGAR RESERVA 🔒";
             btn.disabled = false;
         }, 500);
