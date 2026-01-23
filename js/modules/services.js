@@ -72,9 +72,6 @@ function configurarBotaoOnline() {
     const toggle = document.getElementById('online-toggle');
     if(!toggle) return;
     
-    // Evita resetar se já estiver checado visualmente
-    // toggle.checked = false; 
-
     toggle.addEventListener('change', async (e) => {
         const statusMsg = document.getElementById('status-msg');
         if (e.target.checked) {
@@ -94,7 +91,6 @@ async function ficarOnline() {
         return;
     }
     
-    // Tenta usar o Nome do perfil, se não tiver, usa o começo do email
     const nomeExibicao = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
 
     if (navigator.geolocation) {
@@ -102,7 +98,7 @@ async function ficarOnline() {
             await setDoc(doc(db, "active_providers", auth.currentUser.uid), {
                 uid: auth.currentUser.uid,
                 email: auth.currentUser.email,
-                displayName: nomeExibicao, // SALVA O NOME
+                displayName: nomeExibicao, 
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
                 tenant_id: 'atlivio_fsa_01', 
@@ -129,7 +125,6 @@ let totalChamadosAntigo = 0;
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
-    // --- TRAVA DE SEGURANÇA (EVITA DUPLICIDADE) ---
     if(window.listenerChamadosAtivos) return;
 
     const container = document.getElementById('lista-chamados');
@@ -144,9 +139,8 @@ function escutarMeusChamados() {
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
-        window.listenerChamadosAtivos = true; // Confirma que o listener está ativo
+        window.listenerChamadosAtivos = true; 
 
-        // SOM DE NOTIFICAÇÃO
         if (snap.size > totalChamadosAntigo) {
              const audio = document.getElementById('notification-sound');
              if(audio) audio.play().catch(e => console.log("Audio play blocked:", e));
@@ -165,7 +159,6 @@ function escutarMeusChamados() {
             
             snap.forEach(d => {
                 const pedido = d.data();
-                // Usa Nome salvo ou Email formatado
                 const nomeCliente = pedido.client_name || pedido.client_email.split('@')[0];
                 
                 // 1. ATIVOS (RESERVED)
@@ -207,7 +200,6 @@ function escutarMeusChamados() {
                     const euAvaliei = pedido.provider_reviewed === true;
 
                     if (!euAvaliei) {
-                        // PENDENTE DE AVALIAÇÃO (MOSTRA NO TOPO COMO ATIVO)
                         container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm mb-2 animate-pulse">
                             <div class="flex justify-between items-center mb-2">
@@ -220,7 +212,6 @@ function escutarMeusChamados() {
                             </button>
                         </div>`;
                     } else {
-                        // JÁ AVALIADO (VAI PRO HISTÓRICO ESCONDIDO)
                         containerHist.innerHTML += `
                         <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
                             <div class="flex justify-between">
@@ -241,7 +232,6 @@ function escutarMeusChamados() {
 function escutarMeusPedidos() {
     if(!auth.currentUser) return;
     
-    // --- TRAVA DE SEGURANÇA (EVITA DUPLICIDADE) ---
     if(window.listenerPedidosAtivos) return;
 
     const container = document.getElementById('meus-pedidos-container');
@@ -252,7 +242,7 @@ function escutarMeusPedidos() {
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
-        window.listenerPedidosAtivos = true; // Confirma que o listener está ativo
+        window.listenerPedidosAtivos = true; 
 
         if(snap.empty) {
             container.classList.add('hidden');
@@ -260,13 +250,11 @@ function escutarMeusPedidos() {
             containerHist.innerHTML = "";
         } else {
             container.classList.remove('hidden');
-            // LIMPA ANTES DE DESENHAR TUDO NOVAMENTE
             container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">🚀 Meus Serviços Ativos</h3>`;
-            containerHist.innerHTML = ""; // Limpa histórico
+            containerHist.innerHTML = ""; 
             
             snap.forEach(d => {
                 const pedido = d.data();
-                // Usa Nome salvo ou Email formatado
                 const nomePrestador = pedido.provider_name || pedido.provider_email.split('@')[0];
                 
                 // 1. EM ANDAMENTO
@@ -297,7 +285,6 @@ function escutarMeusPedidos() {
                     const euAvaliei = pedido.client_reviewed === true;
 
                     if (!euAvaliei) {
-                        // PENDENTE (MOSTRA NOS ATIVOS PARA FORÇAR AVALIAÇÃO)
                         container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm mb-2 animate-pulse">
                             <div class="flex justify-between items-center mb-2">
@@ -309,7 +296,6 @@ function escutarMeusPedidos() {
                             </button>
                         </div>`;
                     } else {
-                        // JÁ AVALIADO (VAI PRO HISTÓRICO ESCONDIDO)
                         containerHist.innerHTML += `
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2 opacity-60">
                             <div class="flex justify-between">
@@ -326,11 +312,35 @@ function escutarMeusPedidos() {
     });
 }
 
-// --- FUNÇÕES DE AVALIAÇÃO (BILATERAL) ---
+// --- FUNÇÕES DE AVALIAÇÃO VISUAL (NOVAS) ---
+window.selecionarEstrela = (valor) => {
+    document.querySelectorAll('.rate-star').forEach(s => {
+        s.classList.remove('active', 'text-yellow-400');
+        s.classList.add('text-gray-200');
+        
+        if(s.getAttribute('data-val') <= valor) {
+            s.classList.add('active', 'text-yellow-400');
+            s.classList.remove('text-gray-200');
+        }
+    });
+};
+
+window.toggleTag = (btn) => {
+    btn.classList.toggle('selected');
+    if(btn.classList.contains('selected')) {
+        btn.classList.add('bg-blue-100', 'border-blue-500', 'text-blue-900');
+        btn.classList.remove('border-gray-200', 'text-gray-500');
+    } else {
+        btn.classList.remove('bg-blue-100', 'border-blue-500', 'text-blue-900');
+        btn.classList.add('border-gray-200', 'text-gray-500');
+    }
+};
+
+// --- FUNÇÕES DE AVALIAÇÃO LOGICA ---
 window.abrirModalAvaliacao = (orderId, targetId, type) => {
     orderIdParaAvaliar = orderId;
     targetUserIdParaAvaliar = targetId;
-    currentUserRole = type; // 'client' ou 'provider'
+    currentUserRole = type; 
     
     const title = document.getElementById('review-modal-title');
     
@@ -340,6 +350,14 @@ window.abrirModalAvaliacao = (orderId, targetId, type) => {
         title.innerText = "Avaliar Prestador";
     }
     
+    // Reseta visual
+    window.selecionarEstrela(0);
+    document.getElementById('review-comment').value = '';
+    document.querySelectorAll('.tag-select').forEach(t => {
+        t.classList.remove('selected', 'bg-blue-100', 'border-blue-500', 'text-blue-900');
+        t.classList.add('border-gray-200', 'text-gray-500');
+    });
+
     document.getElementById('review-modal').classList.remove('hidden');
 };
 
@@ -350,7 +368,7 @@ function contemOfensa(texto) {
     return false;
 }
 
-window.enviarAvaliacao = async () => {
+window.enviarAvaliacao = async (event) => {
     let stars = 0;
     document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val')));
     
@@ -364,7 +382,7 @@ window.enviarAvaliacao = async () => {
 
     const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes';
 
-    const btn = event.target;
+    const btn = event.target || document.getElementById('btn-send-review');
     btn.innerText = "Enviando...";
     btn.disabled = true;
 
@@ -380,7 +398,7 @@ window.enviarAvaliacao = async () => {
             created_at: serverTimestamp()
         });
 
-        // TENTA ATUALIZAR O PEDIDO (Se falhar, avisa mas não trava)
+        // TENTA ATUALIZAR O PEDIDO
         const orderRef = doc(db, "orders", orderIdParaAvaliar);
         const updateData = currentUserRole === 'provider' ? { client_reviewed: true } : { provider_reviewed: true };
         
@@ -388,16 +406,12 @@ window.enviarAvaliacao = async () => {
 
         document.getElementById('review-modal').classList.add('hidden');
         alert("✅ Avaliação Enviada com Sucesso!");
-        
-        document.getElementById('review-comment').value = "";
-        document.querySelectorAll('.rate-star').forEach(s => s.classList.remove('active'));
 
     } catch (e) {
         console.error(e);
         document.getElementById('review-modal').classList.add('hidden');
-        // Mensagem amigável se for erro de permissão
         if(e.code === 'permission-denied') {
-             alert("Avaliação registrada! (A atualização do ícone falhou por permissão, mas o voto contou).");
+             alert("Avaliação registrada! (Erro visual de permissão, mas o voto contou).");
         } else {
              alert("Erro ao enviar: " + e.message);
         }
@@ -490,7 +504,6 @@ function carregarPrestadoresOnline() {
         } else {
             snap.forEach(d => {
                 const p = d.data();
-                // Tenta usar nome, senão email
                 const nomeExibicao = p.displayName || (p.email ? p.email.split('@')[0] : 'Prestador');
 
                 listaContainer.innerHTML += `
@@ -540,7 +553,6 @@ window.abrirModalSolicitacao = (uid, email, nome) => {
     if(!auth.currentUser) return alert("Faça login.");
     targetProviderId = uid;
     targetProviderEmail = email;
-    // Opcional: guardar o nome do alvo também se quiser exibir no modal
     document.getElementById('request-modal').classList.remove('hidden');
 };
 
@@ -564,17 +576,15 @@ window.confirmarSolicitacao = async () => {
         const ids = [auth.currentUser.uid, targetProviderId].sort();
         const chatRoomId = `${ids[0]}_${ids[1]}`;
         
-        // Pega meu nome para salvar no pedido
         const meuNome = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
 
         await addDoc(collection(db, "orders"), {
             client_id: auth.currentUser.uid,
             client_email: auth.currentUser.email,
-            client_name: meuNome, // SALVA O NOME
+            client_name: meuNome, 
             
             provider_id: targetProviderId,
             provider_email: targetProviderEmail,
-            // provider_name: Não temos aqui fácil, mas o display do prestador já trata isso
             
             service_date: data,
             service_time: hora,
