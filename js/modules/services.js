@@ -200,7 +200,7 @@ function escutarMeusChamados() {
             snap.forEach(d => {
                 const pedido = d.data();
                 
-                // --- MUDANÇA: STATUS PENDENTE DE ACEITE ---
+                // PENDENTE: MOSTRA BOTÕES DE ACEITE
                 if (pedido.status === 'pending_acceptance') {
                     lista.innerHTML += `
                     <div class="bg-yellow-50 p-4 rounded-xl border-l-4 border-yellow-500 shadow-md mb-4 animate-fadeIn">
@@ -209,13 +209,13 @@ function escutarMeusChamados() {
                             <p class="text-[10px] text-yellow-800">Cliente: ${pedido.client_email}</p>
                             <p class="text-[10px] text-yellow-800 font-bold mt-1">Oferta: R$ ${pedido.service_value} <span class="font-normal">(Reserva já paga)</span></p>
                         </div>
-                        
                         <div class="flex gap-2">
                             <button onclick="recusarPedido('${d.id}')" class="flex-1 bg-red-100 text-red-700 py-2 rounded-lg font-bold text-[10px] uppercase">Recusar</button>
                             <button onclick="aceitarPedido('${d.id}')" class="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">ACEITAR ✅</button>
                         </div>
                     </div>`;
                 }
+                // RESERVADO (ACEITO): MOSTRA CHAT E CÓDIGO
                 else if (pedido.status === 'reserved') {
                     lista.innerHTML += `
                     <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
@@ -226,7 +226,6 @@ function escutarMeusChamados() {
                             </div>
                             <span class="text-xl">🔒</span>
                         </div>
-                        
                         <div class="grid grid-cols-2 gap-2 mb-3">
                             <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.client_email}')" class="bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
                                 💬 Abrir Chat
@@ -236,7 +235,6 @@ function escutarMeusChamados() {
                                 <p class="font-black text-gray-800">R$ ${(pedido.service_value - pedido.amount_total_reservation).toFixed(2)}</p>
                             </div>
                         </div>
-
                         <div class="bg-white p-3 rounded-lg border border-green-200">
                             <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Finalizar Serviço (Peça o código)</label>
                             <div class="flex gap-2">
@@ -249,11 +247,7 @@ function escutarMeusChamados() {
                     </div>`;
                 }
                 else if (pedido.status === 'completed') {
-                    lista.innerHTML += `
-                    <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
-                        <p class="font-bold text-xs text-gray-600">✅ Serviço Finalizado</p>
-                        <p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p>
-                    </div>`;
+                    lista.innerHTML += `<div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2"><p class="font-bold text-xs text-gray-600">✅ Serviço Finalizado</p><p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p></div>`;
                 }
             });
         }
@@ -268,10 +262,10 @@ window.aceitarPedido = async (orderId) => {
         const orderSnap = await getDoc(orderRef);
         const pedido = orderSnap.data();
 
-        // Atualiza status para 'reserved' (libera fluxo normal)
+        // 1. Atualiza status para 'reserved' (libera fluxo normal)
         await updateDoc(orderRef, { status: "reserved" });
 
-        // CRIA O CHAT AGORA (Só após aceite)
+        // 2. CRIA O CHAT AGORA (Só após aceite)
         const chatRef = doc(db, "chats", pedido.chat_id);
         await setDoc(chatRef, {
             participants: [pedido.client_id, pedido.provider_id],
@@ -296,69 +290,37 @@ window.recusarPedido = async (orderId) => {
 window.validarTokenPrestador = async (orderId, valorTotal) => {
     const input = document.getElementById(`token-${orderId}`);
     const tokenDigitado = input.value.trim();
-
     if(tokenDigitado.length !== 4) return alert("O código deve ter 4 dígitos.");
-
     const btn = event.target;
     btn.innerText = "Verificando...";
     btn.disabled = true;
-
     try {
         const orderRef = doc(db, "orders", orderId);
         const orderSnap = await getDoc(orderRef);
-        
         if(!orderSnap.exists()) throw new Error("Pedido não encontrado.");
-        
-        const realToken = orderSnap.data().finalization_code;
-
-        if (tokenDigitado === realToken) {
-            await updateDoc(orderRef, {
-                status: 'completed',
-                completed_at: serverTimestamp()
-            });
-
-            const valorLiberado = orderSnap.data().amount_security || 0;
-            
-            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-                saldo: increment(valorLiberado)
-            });
-
-            alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.\n\nR$ ${valorLiberado.toFixed(2)} liberados na sua carteira.`);
-            
+        if (tokenDigitado === orderSnap.data().finalization_code) {
+            await updateDoc(orderRef, { status: 'completed', completed_at: serverTimestamp() });
+            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { saldo: increment(orderSnap.data().amount_security || 0) });
+            alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.`);
         } else {
-            alert("❌ CÓDIGO INVÁLIDO.\nPeça ao cliente o código de 4 dígitos que aparece na tela dele.");
-            input.value = "";
-            btn.innerText = "VALIDAR & RECEBER";
-            btn.disabled = false;
+            alert("❌ CÓDIGO INVÁLIDO.");
+            input.value = ""; btn.innerText = "VALIDAR & RECEBER"; btn.disabled = false;
         }
-
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "Erro";
-        btn.disabled = false;
-    }
+    } catch (e) { alert("Erro: " + e.message); btn.innerText = "Erro"; btn.disabled = false; }
 };
 
 window.aceitarChamado = (orderId, chatId, clientName) => {
     window.switchTab('chat');
-    setTimeout(() => { 
-        if(window.abrirChat) window.abrirChat(chatId, `Negociação com ${clientName}`); 
-    }, 500);
+    setTimeout(() => { if(window.abrirChat) window.abrirChat(chatId, `Negociação com ${clientName}`); }, 500);
 };
 
-
 // ======================================================
-// 2. CLIENTE (MODO CONTRATAR) - VITRINE
+// 2. CLIENTE (MODO CONTRATAR)
 // ======================================================
 
 function carregarPrestadoresOnline(forcar = false) {
     const listaContainer = document.getElementById('lista-prestadores-realtime');
-    
-    if(!listaContainer) {
-        setTimeout(carregarPrestadoresOnline, 1000);
-        return;
-    }
-
+    if(!listaContainer) { setTimeout(carregarPrestadoresOnline, 1000); return; }
     if(listenerPrestadoresAtivo && !forcar) return;
     if(forcar) listaContainer.innerHTML = "";
 
@@ -384,7 +346,6 @@ function carregarPrestadoresOnline(forcar = false) {
                 const inicial = nomeExibicao.charAt(0).toUpperCase();
                 const precoExibicao = p.preco_base ? `R$ ${p.preco_base}` : "A combinar";
 
-                // --- MODIFICAÇÃO: BOTÃO PASSA O PREÇO BASE AGORA ---
                 listaContainer.innerHTML += `
                     <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex flex-col items-center relative group hover:shadow-md transition">
                         <div class="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -392,7 +353,6 @@ function carregarPrestadoresOnline(forcar = false) {
                         <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded-full uppercase mb-1">${categoriaExibicao}</span>
                         <h4 class="font-bold text-sm text-gray-800 text-center leading-tight mb-1 truncate w-full">${nomeExibicao}</h4>
                         <p class="text-[10px] text-gray-500 mb-3 font-bold">A partir de: ${precoExibicao}</p>
-                        
                         <button onclick="abrirModalSolicitacao('${p.uid}', '${nomeExibicao}', '${p.preco_base || 0}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-700 transition shadow-sm">Solicitar</button>
                     </div>`;
             });
@@ -425,7 +385,6 @@ function escutarMeusPedidos() {
                 const pedido = d.data();
                 const nomePrestadorHistorico = pedido.provider_email || "Prestador"; 
                 
-                // --- NOVO STATUS PENDENTE ---
                 if (pedido.status === 'pending_acceptance') {
                     container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-gray-300 shadow-sm mb-2 opacity-80">
@@ -465,19 +424,16 @@ function escutarMeusPedidos() {
     });
 }
 
-// ... (AVALIAÇÃO E GERAR TOKEN MANTIDOS) ...
+// ... (RESTANTE MANTIDO IGUAL) ...
 window.abrirModalAvaliacao = (orderId, providerId) => { orderIdParaAvaliar = orderId; providerIdParaAvaliar = providerId; document.getElementById('review-modal').classList.remove('hidden'); };
-window.enviarAvaliacao = async () => { /* Mantido igual */ let stars = 0; document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val'))); if(stars === 0) return alert("Selecione pelo menos 1 estrela."); const comment = document.getElementById('review-comment').value.trim(); const tags = []; document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText)); const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes'; const btn = event.target; btn.innerText = "Enviando..."; btn.disabled = true; try { await addDoc(collection(db, "reviews"), { order_id: orderIdParaAvaliar, provider_id: providerIdParaAvaliar, client_id: auth.currentUser.uid, stars: parseInt(stars), tags: tags, comment: comment, recommended: recommend, created_at: serverTimestamp() }); await updateDoc(doc(db, "orders", orderIdParaAvaliar), { is_reviewed: true }); document.getElementById('review-modal').classList.add('hidden'); alert("✅ Avaliação Enviada!"); } catch (e) { alert("Erro: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
+window.enviarAvaliacao = async () => { /* Mantido */ let stars = 0; document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val'))); if(stars === 0) return alert("Selecione pelo menos 1 estrela."); const comment = document.getElementById('review-comment').value.trim(); const tags = []; document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText)); const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes'; const btn = event.target; btn.innerText = "Enviando..."; btn.disabled = true; try { await addDoc(collection(db, "reviews"), { order_id: orderIdParaAvaliar, provider_id: providerIdParaAvaliar, client_id: auth.currentUser.uid, stars: parseInt(stars), tags: tags, comment: comment, recommended: recommend, created_at: serverTimestamp() }); await updateDoc(doc(db, "orders", orderIdParaAvaliar), { is_reviewed: true }); document.getElementById('review-modal').classList.add('hidden'); alert("✅ Avaliação Enviada!"); } catch (e) { alert("Erro: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
 window.gerarTokenCliente = async (orderId) => { const btn = event.target; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const docSnap = await getDoc(orderRef); let code = docSnap.data().finalization_code; if (!code) { code = Math.floor(1000 + Math.random() * 9000).toString(); await updateDoc(orderRef, { finalization_code: code }); } alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`); btn.innerText = "VER CÓDIGO 🔑"; btn.disabled = false; } catch (e) { alert("Erro: " + e.message); btn.disabled = false; } };
-
-// --- FUNÇÕES DE SOLICITAÇÃO (ATUALIZADAS) ---
 
 window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => {
     if(!auth.currentUser) return alert("Faça login.");
     targetProviderId = uid;
     targetProviderEmail = nomePrestador; 
     
-    // Configura o modal com o preço base do prestador
     if(window.togglePriceInput) {
         document.getElementById('label-base-price').innerText = `Aceitar valor (R$ ${precoBase})`;
         document.getElementById('price-option-base').checked = false;
@@ -486,11 +442,8 @@ window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => {
         document.getElementById('financial-summary').classList.add('hidden');
         document.getElementById('btn-confirm-req').disabled = true;
         document.getElementById('btn-confirm-req').classList.add('opacity-50');
-        
-        // Salva global para usar no toggle
         window.basePriceAtual = parseFloat(precoBase);
     }
-
     document.getElementById('request-modal').classList.remove('hidden');
 };
 
@@ -498,14 +451,9 @@ window.confirmarSolicitacao = async () => {
     const data = document.getElementById('req-date').value;
     const hora = document.getElementById('req-time').value;
     const local = document.getElementById('req-local').value;
-    
-    // Pega o valor correto (Customizado ou Base)
     let valor = 0;
-    if (document.getElementById('price-option-base').checked) {
-        valor = window.basePriceAtual;
-    } else {
-        valor = parseFloat(document.getElementById('req-value').value);
-    }
+    if (document.getElementById('price-option-base').checked) { valor = window.basePriceAtual; } 
+    else { valor = parseFloat(document.getElementById('req-value').value); }
 
     if(!data || !hora || !local || !valor) return alert("Preencha tudo e selecione um valor!");
 
@@ -517,11 +465,10 @@ window.confirmarSolicitacao = async () => {
         const seguranca = valor * 0.30;
         const taxa = valor * 0.10;
         const reservaTotal = seguranca + taxa;
-
         const ids = [auth.currentUser.uid, targetProviderId].sort();
         const chatRoomId = `${ids[0]}_${ids[1]}`;
 
-        // CRIA PEDIDO COM STATUS 'PENDING_ACCEPTANCE'
+        // CRIA PEDIDO: STATUS PENDING_ACCEPTANCE (NÃO CRIA CHAT)
         await addDoc(collection(db, "orders"), {
             client_id: auth.currentUser.uid,
             client_email: auth.currentUser.email,
@@ -534,26 +481,15 @@ window.confirmarSolicitacao = async () => {
             amount_total_reservation: reservaTotal,
             amount_security: seguranca,
             amount_fee: taxa,
-            
-            status: "pending_acceptance", // MUDANÇA CRÍTICA AQUI
-            
+            status: "pending_acceptance",
             chat_id: chatRoomId,
             created_at: serverTimestamp()
         });
 
         document.getElementById('request-modal').classList.add('hidden');
         alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`);
-        
-        // NÃO CRIA CHAT AQUI MAIS. O PRESTADOR QUE VAI CRIAR AO ACEITAR.
-
-        // Limpa form
         btn.innerText = "PAGAR E ENVIAR 🔒";
         btn.disabled = false;
 
-    } catch (e) {
-        console.error(e);
-        alert("Erro técnico: " + e.message);
-        btn.innerText = "Tentar Novamente";
-        btn.disabled = false;
-    }
+    } catch (e) { console.error(e); alert("Erro técnico: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; }
 };
