@@ -180,14 +180,23 @@
             </section>
             
             <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
-                <div id="servicos-cliente" class="hidden">
-                    <div id="meus-pedidos-container" class="mb-6 hidden"></div>
+                <div id="servicos-cliente" class="hidden space-y-6">
+                    <div id="meus-pedidos-container" class="hidden"></div>
                     
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-black text-gray-800 text-xs uppercase">Profissionais Online</h3>
-                        <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
+                    <div>
+                        <h3 class="font-black text-gray-800 text-xs uppercase mb-2">📍 Profissionais Online</h3>
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
                     </div>
-                    <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+
+                    <div class="border-t pt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-black text-gray-400 text-xs uppercase">Histórico</h3>
+                            <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition">
+                                📜 Ver Finalizados
+                            </button>
+                        </div>
+                        <div id="historico-cliente-container" class="hidden space-y-2"></div>
+                    </div>
                 </div>
 
                 <div id="servicos-prestador" class="hidden text-center py-4">
@@ -197,11 +206,14 @@
                         <p class="text-xs">Ative o botão "Trabalhar" no topo para aparecer no mapa.</p>
                     </div>
                     
-                    <div class="flex justify-end mb-2 px-4">
-                        <button id="btn-toggle-history-provider" class="hidden text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
+                    <div id="lista-chamados" class="hidden mt-4 text-left space-y-3"></div>
+
+                    <div class="flex justify-center mt-6 border-t pt-4">
+                        <button id="btn-toggle-history-provider" class="hidden text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition">
+                            📜 Ver Histórico de Serviços
+                        </button>
                     </div>
-                    
-                    <div id="lista-chamados" class="hidden mt-4 text-left"></div>
+                    <div id="historico-prestador-container" class="hidden mt-4 text-left space-y-2"></div>
                 </div>
             </section>
 
