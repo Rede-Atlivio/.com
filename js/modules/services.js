@@ -8,6 +8,9 @@ let orderIdParaAvaliar = null;
 let providerIdParaAvaliar = null;
 let listenerPrestadoresAtivo = false;
 
+// DADOS LOCAIS DO PRESTADOR (CACHE)
+let meuPerfilProfissional = null;
+
 // INICIALIZAÇÃO
 setTimeout(() => {
     configurarBotaoOnline();
@@ -34,15 +37,54 @@ function configurarBotaoOnline() {
 
     toggle.addEventListener('change', async (e) => {
         const statusMsg = document.getElementById('status-msg');
+        
         if (e.target.checked) {
-            if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2 animate-pulse">📡</p><p class="font-bold text-green-500">Buscando Clientes...</p><p class="text-xs text-gray-400">Mantenha o app aberto.</p>`;
-            await ficarOnline();
+            // VERIFICA SE JÁ TEM PERFIL CONFIGURADO
+            if (!meuPerfilProfissional) {
+                // Tenta buscar do banco se já salvou antes (recuperação)
+                // Se não tiver, abre o modal
+                document.getElementById('provider-setup-modal').classList.remove('hidden');
+                // Deixa o toggle desligado visualmente até ele salvar o form
+                e.target.checked = false; 
+            } else {
+                // Já tem perfil, liga direto
+                if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2 animate-pulse">📡</p><p class="font-bold text-green-500">Buscando Clientes...</p><p class="text-xs text-gray-400">Mantenha o app aberto.</p>`;
+                await ficarOnline();
+            }
         } else {
             if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2">😴</p><p class="font-bold text-gray-400">Você está Offline</p><p class="text-xs">Ative o botão "Trabalhar" no topo.</p>`;
             await ficarOffline();
         }
     });
 }
+
+// NOVA FUNÇÃO: SALVAR O SETUP
+window.salvarSetupPrestador = async () => {
+    const nome = document.getElementById('setup-name').value.trim();
+    const categoria = document.getElementById('setup-category').value;
+    const preco = document.getElementById('setup-price').value;
+    const desc = document.getElementById('setup-desc').value.trim();
+
+    if(!nome || !categoria || !preco) return alert("Preencha Nome, Categoria e Preço Base.");
+
+    // Salva na memória
+    meuPerfilProfissional = {
+        nome: nome,
+        categoria: categoria,
+        precoBase: preco,
+        descricao: desc
+    };
+
+    // Fecha modal
+    document.getElementById('provider-setup-modal').classList.add('hidden');
+    
+    // Liga o toggle visualmente e ativa
+    document.getElementById('online-toggle').checked = true;
+    const statusMsg = document.getElementById('status-msg');
+    if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2 animate-pulse">📡</p><p class="font-bold text-green-500">Buscando Clientes...</p><p class="text-xs text-gray-400">Mantenha o app aberto.</p>`;
+    
+    await ficarOnline();
+};
 
 async function ficarOnline() {
     if (!auth.currentUser) {
@@ -53,13 +95,20 @@ async function ficarOnline() {
     
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (position) => {
+            // AGORA SALVA OS DADOS DO SETUP TAMBÉM
             await setDoc(doc(db, "active_providers", auth.currentUser.uid), {
                 uid: auth.currentUser.uid,
                 email: auth.currentUser.email,
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
                 tenant_id: 'atlivio_fsa_01', 
-                profissao: "Prestador Atlivio",
+                
+                // Novos campos:
+                nome_profissional: meuPerfilProfissional.nome,
+                categoria: meuPerfilProfissional.categoria,
+                preco_base: meuPerfilProfissional.precoBase,
+                descricao: meuPerfilProfissional.descricao,
+                
                 last_seen: serverTimestamp()
             });
         }, (error) => {
