@@ -1,600 +1,394 @@
-import { db, auth } from '../app.js';
-import { doc, setDoc, deleteDoc, collection, query, where, onSnapshot, serverTimestamp, addDoc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// VARIÁVEL PARA GUARDAR CONTEXTO
-let targetProviderId = null;
-let targetProviderEmail = null;
-let orderIdParaAvaliar = null;
-let targetUserIdParaAvaliar = null; 
-let currentUserRole = null; 
-
-// VARIÁVEIS DE ESTADO (HISTÓRICO)
-let mostrarHistoricoCliente = false;
-let mostrarHistoricoPrestador = false;
-
-// --- INICIALIZAÇÃO ---
-setTimeout(() => {
-    configurarBotaoOnline();
-    carregarPrestadoresOnline(); 
-    escutarMeusChamados(); 
-    escutarMeusPedidos();  
-    configurarBotoesHistorico();
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlivio - Marketplace Híbrido</title>
     
-    const tabServicos = document.getElementById('tab-servicos');
-    if(tabServicos) {
-        tabServicos.addEventListener('click', () => {
-            carregarPrestadoresOnline();
-        });
-    }
-}, 1000);
-
-function configurarBotoesHistorico() {
-    // Botão Cliente
-    const btnClient = document.getElementById('btn-toggle-history-client');
-    if(btnClient) {
-        btnClient.addEventListener('click', () => {
-            mostrarHistoricoCliente = !mostrarHistoricoCliente;
-            const containerHist = document.getElementById('historico-cliente-container');
-            
-            if(mostrarHistoricoCliente) {
-                btnClient.innerText = "🙈 Ocultar";
-                containerHist.classList.remove('hidden');
-            } else {
-                btnClient.innerText = "📜 Ver Finalizados";
-                containerHist.classList.add('hidden');
-            }
-        });
-    }
-
-    // Botão Prestador
-    const btnProvider = document.getElementById('btn-toggle-history-provider');
-    if(btnProvider) {
-        btnProvider.addEventListener('click', () => {
-            mostrarHistoricoPrestador = !mostrarHistoricoPrestador;
-            const containerHist = document.getElementById('historico-prestador-container');
-            
-            if(mostrarHistoricoPrestador) {
-                btnProvider.innerText = "🙈 Ocultar";
-                containerHist.classList.remove('hidden');
-            } else {
-                btnProvider.innerText = "📜 Ver Histórico de Serviços";
-                containerHist.classList.add('hidden');
-            }
-        });
-    }
-}
-
-// ======================================================
-// 1. PRESTADOR
-// ======================================================
-
-function configurarBotaoOnline() {
-    const toggle = document.getElementById('online-toggle');
-    if(!toggle) return;
-    toggle.checked = false;
-
-    toggle.addEventListener('change', async (e) => {
-        const statusMsg = document.getElementById('status-msg');
-        if (e.target.checked) {
-            if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2 animate-pulse">📡</p><p class="font-bold text-green-500">Buscando Clientes...</p><p class="text-xs text-gray-400">Mantenha o app aberto.</p>`;
-            await ficarOnline();
-        } else {
-            if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2">😴</p><p class="font-bold text-gray-400">Você está Offline</p><p class="text-xs">Ative o botão "Trabalhar" no topo.</p>`;
-            await ficarOffline();
-        }
-    });
-}
-
-async function ficarOnline() {
-    if (!auth.currentUser) {
-        alert("Erro: Faça login novamente.");
-        document.getElementById('online-toggle').checked = false;
-        return;
-    }
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
     
-    // Tenta usar o Nome do perfil, se não tiver, usa o começo do email
-    const nomeExibicao = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
+        .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Estrelas e Tags agora são controladas pelo reviews.js, mas o CSS fica aqui */
+        .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
+        .rate-star.active { color: #fbbf24; }
+        .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
+    </style>
+</head>
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-            await setDoc(doc(db, "active_providers", auth.currentUser.uid), {
-                uid: auth.currentUser.uid,
-                email: auth.currentUser.email,
-                displayName: nomeExibicao, // SALVA O NOME
-                lat: position.coords.latitude,
-                lng: position.coords.longitude,
-                tenant_id: 'atlivio_fsa_01', 
-                profissao: "Prestador Atlivio",
-                last_seen: serverTimestamp()
-            });
-        }, (error) => {
-            alert("Erro de GPS: " + error.message);
-            document.getElementById('online-toggle').checked = false;
-        });
-    } else {
-        alert("Seu navegador não suporta GPS.");
-    }
-}
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
 
-async function ficarOffline() {
-    if (!auth.currentUser) return;
-    await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
-}
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
-// --- VISÃO PRESTADOR ---
-let totalChamadosAntigo = 0;
+    <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
+            <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Marketplace Híbrido</p>
+            <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
+                Entrar com Google
+            </button>
+        </div>
+    </div>
 
-function escutarMeusChamados() {
-    if(!auth.currentUser) return;
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
+            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
+            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">💎</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços e comprar.</div>
+                </button>
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar e cumprir missões.</div>
+                </button>
+            </div>
+        </div>
+    </div>
 
-    const container = document.getElementById('lista-chamados');
-    const containerHist = document.getElementById('historico-prestador-container');
-    const btnToggle = document.getElementById('btn-toggle-history-provider');
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
+        <div class="loader mb-4"></div>
+        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+    </div>
 
-    if(!container) {
-        setTimeout(escutarMeusChamados, 1000);
-        return;
-    }
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center p-4">
+        <h3 class="text-white text-sm font-bold uppercase italic mb-4">Validar Foto</h3>
+        <img id="img-preview" src="" class="max-h-[60vh] rounded-xl border-2 border-white mb-6 object-contain bg-gray-800">
+        <div id="gps-status" class="text-xs text-yellow-400 mb-4 animate-pulse">🛰️ Buscando GPS...</div>
+        <div class="w-full max-w-md space-y-3">
+            <button id="btn-confirmar-foto" onclick="enviarFotoReal(event)" class="w-full bg-gray-500 text-white py-4 rounded-xl font-black text-sm uppercase italic shadow-lg cursor-not-allowed opacity-50" disabled>Aguarde GPS...</button>
+            <button onclick="cancelarPreview()" class="w-full bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20">Cancelar</button>
+        </div>
+    </div>
 
-    const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid));
+    <div id="ios-install-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+        <div class="bg-white text-gray-800 p-6 rounded-t-2xl md:rounded-2xl w-full max-w-sm text-center pb-10">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="font-black text-lg text-blue-900 uppercase italic">Instalar App</h3>
+                <button onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="text-gray-400 font-bold text-xl">&times;</button>
+            </div>
+            <p class="text-sm text-gray-500 mb-6">Para instalar o Atlivio no seu iPhone e ter acesso rápido:</p>
+            <div class="space-y-4 text-left bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">1️⃣</span>
+                    <p class="text-xs font-bold">Toque no botão <span class="text-blue-600">Compartilhar</span> <br><span class="text-[9px] text-gray-400">(Quadrado com seta, na barra inferior)</span></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">2️⃣</span>
+                    <p class="text-xs font-bold">Role para cima e toque em <br><span class="text-gray-800 border p-1 rounded bg-white">Adicionar à Tela de Início ➕</span></p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="mt-6 text-blue-600 text-xs font-bold uppercase">Entendi</button>
+        </div>
+    </div>
 
-    onSnapshot(q, (snap) => {
-        // SOM DE NOTIFICAÇÃO
-        if (snap.size > totalChamadosAntigo) {
-             const audio = document.getElementById('notification-sound');
-             if(audio) audio.play().catch(e => console.log("Audio play blocked:", e));
-        }
-        totalChamadosAntigo = snap.size;
+    <div id="chat-modal" class="hidden fixed inset-0 bg-white z-50 flex flex-col text-gray-800 animate-fadeIn">
+        <div class="bg-white border-b border-gray-200 shadow-sm z-10">
+            <div class="bg-blue-900 text-white p-3 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">💬</div>
+                    <div>
+                        <h3 class="font-black text-xs uppercase italic tracking-wide">Sala de Negociação</h3>
+                        <p class="text-[9px] opacity-75" id="chat-mission-title">Carregando...</p>
+                    </div>
+                </div>
+                <button onclick="fecharChat()" class="text-xl font-bold px-2 hover:bg-white/10 rounded">&times;</button>
+            </div>
+            <div class="flex justify-between items-center p-2 bg-yellow-50 text-yellow-800 border-b border-yellow-100">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-yellow-500 rounded-full animate-pulse"></div>
+                    <span class="text-[9px] font-bold uppercase">Status: Em Aberto</span>
+                </div>
+                <span class="text-[8px] border border-yellow-200 px-2 py-0.5 rounded uppercase font-bold">Orçamento</span>
+            </div>
+        </div>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 bg-[url('https://www.transparenttextures.com/patterns/subtle-white-feathers.png')]"></div>
+        <div class="p-3 bg-white border-t border-gray-200 flex gap-2 items-center">
+            <button class="text-gray-400 text-xl px-2">+</button>
+            <input type="text" id="chat-input" placeholder="Digite sua proposta..." class="flex-1 border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-gray-900">
+            <button onclick="enviarMensagem()" class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-sm hover:bg-blue-700 transition transform active:scale-95">➤</button>
+        </div>
+    </div>
 
-        container.innerHTML = "";
-        containerHist.innerHTML = "";
+    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         
-        if (snap.empty) {
-            container.classList.add('hidden');
-            if(btnToggle) btnToggle.classList.add('hidden');
-        } else {
-            container.classList.remove('hidden');
-            if(btnToggle) btnToggle.classList.remove('hidden');
-            
-            snap.forEach(d => {
-                const pedido = d.data();
-                const nomeCliente = pedido.client_name || pedido.client_email.split('@')[0];
+        <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
+            <div class="flex flex-col">
+                <div class="flex flex-col md:flex-row md:items-baseline gap-1">
+                    <h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1>
+                    <span class="text-[8px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest border-l-0 md:border-l md:pl-2 border-gray-300">
+                        O Primeiro Marketplace Híbrido do Mundo
+                    </span>
+                </div>
                 
-                // 1. ATIVOS (RESERVED) - TOPO
-                if (pedido.status === 'reserved') {
-                    container.innerHTML += `
-                    <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <p class="font-bold text-sm text-green-900">RESERVA PAGA! 💰</p>
-                                <p class="text-[10px] text-green-700 font-bold uppercase">👤 ${nomeCliente}</p>
-                            </div>
-                            <span class="text-xl">🔒</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-2 gap-2 mb-3">
-                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${nomeCliente}')" class="bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
-                                💬 Abrir Chat
+                <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">
+                    🔄 Carregando...
+                </button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
+                    <span class="text-[8px] font-bold text-gray-500 uppercase mr-2">Trabalhar</span>
+                    <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                        <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1">
+                    <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">
+                        📲 SALVE SEU ACESSO
+                    </button>
+                    <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full">
+                        Sair
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
+            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Produtos Recomendados 🛒</button>
+            <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
+            <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
+        </nav>
+
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-32">
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-oportunidades" class="grid gap-3"></div>
+            </section>
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-missoes" class="grid gap-4"></div>
+            </section>
+            
+            <section id="sec-servicos" class="hidden space-y-6 animate-fadeIn">
+                <div id="servicos-cliente" class="hidden flex flex-col gap-6">
+                    
+                    <div id="meus-pedidos-container" class="hidden w-full"></div>
+                    
+                    <div class="w-full">
+                        <h3 class="font-black text-gray-800 text-xs uppercase mb-3 pl-1 border-l-4 border-blue-600">📍 Profissionais Online</h3>
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+                    </div>
+
+                    <div class="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm mt-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-black text-gray-400 text-xs uppercase">Histórico / Avaliações</h3>
+                            <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition">
+                                📜 Ver Finalizados
                             </button>
-                            <div class="text-center">
-                                <p class="text-[8px] text-gray-500 uppercase font-bold">A receber fora:</p>
-                                <p class="font-black text-gray-800">R$ ${(pedido.service_value - pedido.amount_total_reservation).toFixed(2)}</p>
-                            </div>
                         </div>
+                        <div id="historico-cliente-container" class="hidden mt-3 space-y-2 border-t border-gray-100 pt-2"></div>
+                    </div>
+                </div>
 
-                        <div class="bg-white p-3 rounded-lg border border-green-200">
-                            <label class="text-[9px] font-bold text-gray-500 uppercase block mb-1">Finalizar Serviço (Peça o código)</label>
-                            <div class="flex gap-2">
-                                <input type="tel" id="token-${d.id}" placeholder="0000" maxlength="4" class="w-16 text-center font-black text-lg border-2 border-gray-200 rounded-lg focus:border-green-500 outline-none text-gray-800">
-                                <button onclick="validarTokenPrestador('${d.id}', ${pedido.service_value})" class="flex-1 bg-green-600 text-white font-bold text-xs rounded-lg hover:bg-green-700 transition">
-                                    VALIDAR
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
-                }
-                
-                // 2. CONCLUÍDOS - TUDO PRO HISTÓRICO (SEMPRE)
-                else if (pedido.status === 'completed') {
-                    const euAvaliei = pedido.provider_reviewed === true;
+                <div id="servicos-prestador" class="hidden text-center py-4">
+                    <div id="status-msg" class="text-gray-400 mb-4">
+                        <p class="text-4xl mb-2">😴</p>
+                        <p class="font-bold text-sm">Você está Offline</p>
+                        <p class="text-xs">Ative o botão "Trabalhar" no topo para aparecer no mapa.</p>
+                    </div>
                     
-                    let botaoAvaliarHTML = '';
-                    if (!euAvaliei) {
-                        botaoAvaliarHTML = `
-                        <button onclick="abrirModalAvaliacao('${d.id}', '${pedido.client_id}', 'client')" class="w-full bg-purple-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-md hover:bg-purple-700 mt-2">
-                            ⭐ AVALIAR AGORA
-                        </button>`;
-                    } else {
-                        botaoAvaliarHTML = `<p class="text-[9px] text-green-600 font-bold mt-2 text-center">✅ Avaliado</p>`;
-                    }
+                    <div id="lista-chamados" class="hidden mt-4 text-left space-y-3"></div>
 
-                    // ADICIONA NO CONTAINER DE HISTÓRICO (OCULTO POR PADRÃO)
-                    containerHist.innerHTML += `
-                    <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm mb-2">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-bold uppercase text-gray-500">👤 ${nomeCliente}</span>
-                            <span class="text-[9px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-bold">FINALIZADO</span>
-                        </div>
-                        <p class="text-[10px] text-gray-400 mt-1">${pedido.service_date}</p>
-                        ${botaoAvaliarHTML}
-                    </div>`;
-                }
-            });
-        }
-    });
-}
-
-// --- VISÃO CLIENTE ---
-function escutarMeusPedidos() {
-    if(!auth.currentUser) return;
-    
-    const container = document.getElementById('meus-pedidos-container');
-    const containerHist = document.getElementById('historico-cliente-container');
-    
-    if(!container) return;
-
-    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
-
-    onSnapshot(q, (snap) => {
-        if(snap.empty) {
-            container.classList.add('hidden');
-            container.innerHTML = "";
-        } else {
-            container.classList.remove('hidden');
-            // Limpa containers antes de popular
-            container.innerHTML = ""; 
-            containerHist.innerHTML = ""; 
-            
-            let temAtivos = false;
-
-            snap.forEach(d => {
-                const pedido = d.data();
-                const nomePrestador = pedido.provider_name || pedido.provider_email.split('@')[0];
-                
-                // 1. EM ANDAMENTO (TOPO DA TELA)
-                if (pedido.status === 'reserved') {
-                    temAtivos = true;
-                    const temCodigo = pedido.finalization_code ? true : false;
-                    
-                    container.innerHTML += `
-                        <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-[10px] font-bold uppercase text-gray-500">🛠️ ${nomePrestador}</span>
-                                <span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>
-                            </div>
-                            <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
-                            
-                            <div class="flex gap-2">
-                                <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${nomePrestador}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
-                                    Chat
-                                </button>
-                                <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
-                                    ${temCodigo ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}
-                                </button>
-                            </div>
-                        </div>`;
-                } 
-                
-                // 2. CONCLUÍDOS - TUDO PRO HISTÓRICO (SEMPRE)
-                else if (pedido.status === 'completed') {
-                    const euAvaliei = pedido.client_reviewed === true;
-                    
-                    let botaoAvaliarHTML = '';
-                    if (!euAvaliei) {
-                        botaoAvaliarHTML = `
-                        <button onclick="abrirModalAvaliacao('${d.id}', '${pedido.provider_id}', 'provider')" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-md hover:bg-blue-700 mt-2 animate-pulse">
-                            ⭐ AVALIAR PRESTADOR
-                        </button>`;
-                    } else {
-                        botaoAvaliarHTML = `<p class="text-[9px] text-green-600 font-bold mt-2 text-center">✅ Avaliado</p>`;
-                    }
-
-                    // ADICIONA NO CONTAINER DE HISTÓRICO
-                    containerHist.innerHTML += `
-                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2 opacity-60">
-                        <div class="flex justify-between">
-                            <p class="font-bold text-xs text-gray-600">✅ Concluído</p>
-                            <span class="text-[10px] text-green-600 font-bold">Finalizado</span>
-                        </div>
-                        <p class="text-[10px] text-gray-400 font-bold mt-1">🛠️ ${nomePrestador}</p>
-                        <p class="text-[10px] text-gray-400">${pedido.service_date} - R$ ${pedido.service_value}</p>
-                        ${botaoAvaliarHTML}
-                    </div>`;
-                }
-            });
-
-            // Se não tem ativos, adiciona cabeçalho ou esconde
-            if(temAtivos) {
-                const header = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2 pl-1 border-l-4 border-yellow-400">🚀 Pedido em Andamento</h3>`;
-                container.innerHTML = header + container.innerHTML;
-            } else {
-                container.classList.add('hidden');
-            }
-        }
-    });
-}
-
-// --- FUNÇÕES DE AVALIAÇÃO (BILATERAL) ---
-window.abrirModalAvaliacao = (orderId, targetId, type) => {
-    orderIdParaAvaliar = orderId;
-    targetUserIdParaAvaliar = targetId;
-    currentUserRole = type; 
-    
-    const title = document.getElementById('review-modal-title');
-    
-    if (type === 'client') {
-        title.innerText = "Avaliar Cliente";
-    } else {
-        title.innerText = "Avaliar Prestador";
-    }
-    
-    document.getElementById('review-modal').classList.remove('hidden');
-};
-
-function contemOfensa(texto) {
-    const mensagemLimpa = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const listaNegra = ['vagabunda', 'vagabundo', 'ladrao', 'ladra', 'roubo', 'corno', 'corna', 'porra', 'caralho', 'merda', 'bosta', 'puta', 'puto', 'viado', 'fuder', 'foder', 'idiota', 'imbecil', 'retardado', 'burro', 'picareta', 'golpista', 'safado', 'pilantra', 'otario', 'trouxa', 'cu', 'bunda'];
-    for (let termo of listaNegra) { if (mensagemLimpa.includes(termo)) return true; }
-    return false;
-}
-
-window.enviarAvaliacao = async () => {
-    let stars = 0;
-    document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val')));
-    
-    if(stars === 0) return alert("Selecione pelo menos 1 estrela.");
-
-    const comment = document.getElementById('review-comment').value.trim();
-    if(comment && contemOfensa(comment)) return alert("Comentário bloqueado por termos ofensivos.");
-
-    const tags = [];
-    document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText));
-
-    const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes';
-
-    const btn = event.target;
-    btn.innerText = "Enviando...";
-    btn.disabled = true;
-
-    try {
-        await addDoc(collection(db, "reviews"), {
-            order_id: orderIdParaAvaliar,
-            reviewed_user_id: targetUserIdParaAvaliar,
-            reviewer_user_id: auth.currentUser.uid, 
-            stars: parseInt(stars),
-            tags: tags,
-            comment: comment,
-            recommended: recommend,
-            created_at: serverTimestamp()
-        });
-
-        const orderRef = doc(db, "orders", orderIdParaAvaliar);
-        const updateData = currentUserRole === 'provider' ? { client_reviewed: true } : { provider_reviewed: true };
-        
-        await updateDoc(orderRef, updateData);
-
-        document.getElementById('review-modal').classList.add('hidden');
-        alert("✅ Avaliação Enviada com Sucesso!");
-        
-        document.getElementById('review-comment').value = "";
-        document.querySelectorAll('.rate-star').forEach(s => s.classList.remove('active'));
-
-    } catch (e) {
-        console.error(e);
-        document.getElementById('review-modal').classList.add('hidden');
-        if(e.code === 'permission-denied') {
-             alert("Avaliação registrada! (A atualização do ícone falhou por permissão, mas o voto contou).");
-        } else {
-             alert("Erro ao enviar: " + e.message);
-        }
-    } finally {
-        btn.innerText = "Enviar Avaliação"; 
-        btn.disabled = false;
-    }
-};
-
-window.validarTokenPrestador = async (orderId, valorTotal) => {
-    const input = document.getElementById(`token-${orderId}`);
-    const tokenDigitado = input.value.trim();
-
-    if(tokenDigitado.length !== 4) return alert("O código deve ter 4 dígitos.");
-
-    const btn = event.target;
-    btn.innerText = "Verificando...";
-    btn.disabled = true;
-
-    try {
-        const orderRef = doc(db, "orders", orderId);
-        const orderSnap = await getDoc(orderRef);
-        
-        if(!orderSnap.exists()) throw new Error("Pedido não encontrado.");
-        
-        const realToken = orderSnap.data().finalization_code;
-
-        if (tokenDigitado === realToken) {
-            await updateDoc(orderRef, {
-                status: 'completed',
-                completed_at: serverTimestamp()
-            });
-
-            const valorLiberado = orderSnap.data().amount_security || 0;
-            
-            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-                saldo: increment(valorLiberado)
-            });
-
-            alert(`✅ SUCESSO!\n\nServiço Encerrado.\nR$ ${valorLiberado.toFixed(2)} liberados.`);
-            
-        } else {
-            alert("❌ CÓDIGO INVÁLIDO.\nPeça ao cliente o código de 4 dígitos.");
-            input.value = "";
-            btn.innerText = "VALIDAR";
-            btn.disabled = false;
-        }
-
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "Erro";
-        btn.disabled = false;
-    }
-};
-
-window.aceitarChamado = (orderId, chatId, clientName) => {
-    window.switchTab('chat');
-    setTimeout(() => { 
-        if(window.abrirChat) window.abrirChat(chatId, `Negociação com ${clientName}`); 
-    }, 500);
-};
-
-// ======================================================
-// 2. CLIENTE E AUXILIARES
-// ======================================================
-
-function carregarPrestadoresOnline() {
-    const listaContainer = document.getElementById('lista-prestadores-realtime');
-    
-    if(!listaContainer) {
-        setTimeout(carregarPrestadoresOnline, 1000);
-        return;
-    }
-
-    if(window.listenerPrestadoresAtivo) return; 
-
-    const q = query(collection(db, "active_providers")); 
-
-    onSnapshot(q, (snap) => {
-        window.listenerPrestadoresAtivo = true;
-        listaContainer.innerHTML = ""; 
-        
-        if (snap.empty) {
-            listaContainer.innerHTML = `
-                <div class="col-span-2 text-center text-gray-400 text-xs py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                    <p class="text-2xl mb-2">🔍</p>
-                    <p class="font-bold">Nenhum prestador online.</p>
-                    <p class="text-[9px] mt-1 opacity-70">Fique online em outra conta para testar.</p>
-                </div>`;
-        } else {
-            snap.forEach(d => {
-                const p = d.data();
-                const nomeExibicao = p.displayName || (p.email ? p.email.split('@')[0] : 'Prestador');
-
-                listaContainer.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex flex-col items-center relative group hover:shadow-md transition">
-                        <div class="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full mb-2 flex items-center justify-center text-xl font-bold border border-blue-100">
-                            ${nomeExibicao.charAt(0).toUpperCase()}
-                        </div>
-                        <h4 class="font-bold text-xs text-blue-900 uppercase text-center leading-tight mb-1">${p.profissao || 'Profissional'}</h4>
-                        <p class="text-[9px] text-gray-400 mb-3 truncate w-full text-center">${nomeExibicao}</p>
-                        
-                        <button onclick="abrirModalSolicitacao('${p.uid}', '${p.email}', '${nomeExibicao}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-700 transition shadow-sm">
-                            Solicitar
+                    <div class="flex justify-center mt-6 border-t pt-4">
+                        <button id="btn-toggle-history-provider" class="hidden text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-3 py-1 rounded-full hover:bg-blue-50 transition">
+                            📜 Ver Histórico de Serviços
                         </button>
-                    </div>`;
+                    </div>
+                    <div id="historico-prestador-container" class="hidden mt-4 text-left space-y-2"></div>
+                </div>
+            </section>
+
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+                <div id="sec-produtos"></div>
+            </section>
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-chats" class="space-y-2"></div>
+            </section>
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
+                    <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+                </div>
+            </section>
+            <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn pb-20">
+                <div class="flex justify-between items-center border-b pb-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 uppercase italic">Painel de Controle</h2>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest">Visão de Governança</p>
+                    </div>
+                    <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-[9px] font-bold border border-green-200">🟢 SISTEMA ONLINE</div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Usuários Totais</p>
+                        <h3 class="text-2xl font-black text-blue-900" id="dash-total-users">-</h3>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Prestadores Ativos</p>
+                        <h3 class="text-2xl font-black text-green-600" id="dash-active-providers">-</h3>
+                    </div>
+                </div>
+                <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-700 text-xs uppercase">Validações Pendentes</h3>
+                        <span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full" id="count-pending">0</span>
+                    </div>
+                    <div id="admin-pending-list" class="space-y-4 p-4 min-h-[100px]">
+                        <p class="text-center text-xs text-gray-400 py-4">Tudo limpo por aqui.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">⏸️ Pausar Oportunidades</button>
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">🔐 Travar Saques</button>
+                </div>
+                <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <h3 class="text-red-800 font-black text-xs uppercase mb-2">Zona de Perigo (Manutenção)</h3>
+                    <button onclick="limparMissoes()" class="w-full bg-red-600 text-white p-3 rounded-lg text-[10px] font-bold uppercase hover:bg-red-700 shadow-md flex items-center justify-center gap-2">🗑️ Resetar Base de Missões</button>
+                    <p class="text-[9px] text-red-500 mt-2 text-center opacity-70">Ação irreversível. Use com cautela.</p>
+                </div>
+                <div class="opacity-50 hover:opacity-100 transition duration-300 border-t pt-4 mt-4">
+                     <p class="text-[8px] text-center text-gray-400 uppercase mb-2">Ferramentas de Teste (Seeds)</p>
+                     <div class="grid grid-cols-3 gap-2">
+                        <button onclick="rodarSeedOportunidade()" class="bg-white border text-gray-500 p-2 rounded text-[9px] hover:bg-yellow-50 hover:text-yellow-700">Seed Oportunidade</button>
+                        <button onclick="rodarSeedMissao()" class="bg-white border text-gray-500 p-2 rounded text-[9px] hover:bg-blue-50 hover:text-blue-700">Seed Missão</button>
+                        <button onclick="rodarSeedProdutos()" class="bg-white border text-gray-500 p-2 rounded text-[9px] hover:bg-purple-50 hover:text-purple-700">Seed Produtos</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl">
+                <h3 class="font-black text-lg uppercase italic">Solicitar Serviço</h3>
+                <p class="text-xs opacity-75">Preencha para calcular a reserva.</p>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data do Serviço</label>
+                    <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Horário</label>
+                    <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Local (Endereço)</label>
+                    <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase text-blue-600">💰 Valor Combinado/Proposto (R$)</label>
+                    <input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-3 rounded-lg text-lg font-bold text-blue-900 bg-white focus:outline-none focus:border-blue-500" oninput="calcularReserva(this.value)">
+                </div>
+                <div id="financial-summary" class="bg-gray-50 p-4 rounded-xl border border-gray-200 hidden">
+                    <div class="flex justify-between text-xs mb-1 text-gray-800"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-3 border-b border-gray-300 pb-2 text-gray-800"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
+                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA (40%)</span><span id="calc-total-reserva">R$ 0,00</span></div>
+                    <p class="text-[9px] text-center text-gray-500 mt-2 italic">O restante (R$ <span id="calc-restante">0,00</span>) você paga direto ao prestador.</p>
+                </div>
+            </div>
+            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
+                <button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
+                <button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR RESERVA 🔒</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./js/modules/reviews.js"></script>
+
+    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/auth.js"></script>
+    <script type="module" src="./js/modules/missions.js"></script>
+    <script type="module" src="./js/modules/opportunities.js"></script>
+    <script type="module" src="./js/modules/services.js"></script>
+    <script type="module" src="./js/modules/products.js"></script>
+    <script type="module" src="./js/chat.js"></script>
+    <script type="module" src="./js/wallet.js"></script>
+    <script type="module" src="./js/admin.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado!', reg))
+                    .catch(err => console.log('SW falhou:', err));
             });
         }
-    });
-}
-
-window.gerarTokenCliente = async (orderId) => {
-    const btn = event.target;
-    btn.disabled = true;
-
-    try {
-        const orderRef = doc(db, "orders", orderId);
-        const docSnap = await getDoc(orderRef);
-        
-        let code = docSnap.data().finalization_code;
-
-        if (!code) {
-            code = Math.floor(1000 + Math.random() * 9000).toString(); 
-            await updateDoc(orderRef, { finalization_code: code });
-        }
-
-        alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`);
-        btn.innerText = "VER CÓDIGO 🔑";
-        btn.disabled = false;
-
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.disabled = false;
-    }
-};
-
-window.abrirModalSolicitacao = (uid, email, nome) => {
-    if(!auth.currentUser) return alert("Faça login.");
-    targetProviderId = uid;
-    targetProviderEmail = email;
-    document.getElementById('request-modal').classList.remove('hidden');
-};
-
-window.confirmarSolicitacao = async () => {
-    const data = document.getElementById('req-date').value;
-    const hora = document.getElementById('req-time').value;
-    const local = document.getElementById('req-local').value;
-    const valor = parseFloat(document.getElementById('req-value').value);
-
-    if(!data || !hora || !local || !valor) return alert("Preencha tudo!");
-
-    const btn = document.getElementById('btn-confirm-req');
-    btn.innerText = "Processando...";
-    btn.disabled = true;
-
-    try {
-        const seguranca = valor * 0.30;
-        const taxa = valor * 0.10;
-        const reservaTotal = seguranca + taxa;
-
-        const ids = [auth.currentUser.uid, targetProviderId].sort();
-        const chatRoomId = `${ids[0]}_${ids[1]}`;
-        
-        const meuNome = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
-
-        await addDoc(collection(db, "orders"), {
-            client_id: auth.currentUser.uid,
-            client_email: auth.currentUser.email,
-            client_name: meuNome, 
-            
-            provider_id: targetProviderId,
-            provider_email: targetProviderEmail,
-            
-            service_date: data,
-            service_time: hora,
-            service_location: local,
-            service_value: valor,
-            amount_total_reservation: reservaTotal,
-            amount_security: seguranca,
-            amount_fee: taxa,
-            status: "reserved",
-            chat_id: chatRoomId,
-            created_at: serverTimestamp(),
-            client_reviewed: false,
-            provider_reviewed: false
+        let deferredPrompt;
+        const btnInstall = document.getElementById('btn-install-app');
+        const iosModal = document.getElementById('ios-install-modal');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            btnInstall.classList.remove('hidden');
+        });
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
+        btnInstall.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                if (outcome === 'accepted') { btnInstall.classList.add('hidden'); }
+            } else if (isIos) { iosModal.classList.remove('hidden'); } 
+            else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
 
-        document.getElementById('request-modal').classList.add('hidden');
-        alert(`✅ Reserva Confirmada!\n\nValor Pago (Simulado): R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
-        
-        const chatRef = doc(db, "chats", chatRoomId);
-        await setDoc(chatRef, {
-            participants: [auth.currentUser.uid, targetProviderId],
-            mission_title: `Serviço: R$ ${valor} (Reserva Paga)`,
-            last_message: "Reserva confirmada. Podem negociar.",
-            updated_at: serverTimestamp(),
-            is_service_chat: true
-        });
+        // --- CÁLCULO RESERVA ---
+        window.calcularReserva = (valorInput) => {
+            const valor = parseFloat(valorInput);
+            const summary = document.getElementById('financial-summary');
+            const btn = document.getElementById('btn-confirm-req');
 
-        window.switchTab('chat');
-        setTimeout(() => { 
-            if(window.abrirChat) window.abrirChat(chatRoomId, `Prestador: ${targetProviderEmail.split('@')[0]}`); 
-            btn.innerText = "PAGAR RESERVA 🔒";
+            if (!valor || valor <= 0) {
+                summary.classList.add('hidden');
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            summary.classList.remove('hidden');
             btn.disabled = false;
-        }, 500);
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
 
-    } catch (e) {
-        console.error(e);
-        alert("Erro técnico: " + e.message);
-        btn.innerText = "Tentar Novamente";
-        btn.disabled = false;
-    }
-};
+            const seguranca = valor * 0.30;
+            const taxa = valor * 0.10;
+            const reservaTotal = seguranca + taxa;
+            const restante = valor - reservaTotal;
+
+            document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`;
+            document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`;
+            document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`;
+            document.getElementById('calc-restante').innerText = restante.toFixed(2);
+        };
+
+        window.fecharModalSolicitacao = () => {
+            document.getElementById('request-modal').classList.add('hidden');
+        };
+    </script>
+</body>
+</html>
