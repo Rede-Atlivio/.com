@@ -6,29 +6,39 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
+// Login com Google
 window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+
+// Logout seguro
 window.logout = () => signOut(auth).then(() => location.reload());
 
+// Definição de Perfil Inicial (Primeiro Acesso)
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
     
-    // Define o perfil inicial
     await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
         is_provider: tipo === 'prestador', 
         perfil_completo: true 
     });
 
-    // Se escolheu prestador, forçamos o reload para cair na verificação de setup
     location.reload();
 };
 
+// Troca de Contexto (Cliente <-> Prestador) sem Logout
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
     const isAtualmentePrestador = userProfile.is_provider;
+    
     btn.innerText = "🔄 Trocando...";
     btn.disabled = true;
+    
     try {
+        // Se for virar prestador, verifica se tem setup
+        if (!isAtualmentePrestador) {
+             // Lógica opcional: checar se já tem serviços cadastrados
+        }
+
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             is_provider: !isAtualmentePrestador 
         });
@@ -40,26 +50,41 @@ window.alternarPerfil = async () => {
     }
 };
 
+// Monitor de Autenticação (O CÉREBRO DA IDENTIDADE)
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        onSnapshot(doc(db, "usuarios", user.uid), async (docSnap) => {
+        const userRef = doc(db, "usuarios", user.uid);
+        
+        onSnapshot(userRef, async (docSnap) => {
             if(!docSnap.exists()) {
+                // --- CRIAÇÃO DE NOVO USUÁRIO ---
                 const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                 userProfile = { 
                     email: user.email, 
+                    displayName: user.displayName, // Salva nome do Google
+                    photoURL: user.photoURL,       // Salva foto do Google
                     tenant_id: DEFAULT_TENANT, 
                     perfil_completo: false, 
                     role: roleInicial, 
                     saldo: 0, 
                     is_provider: false 
                 };
-                await setDoc(doc(db, "usuarios", user.uid), userProfile);
+                await setDoc(userRef, userProfile);
             } else {
+                // --- USUÁRIO EXISTENTE (SINCRONIZAÇÃO) ---
                 userProfile = docSnap.data();
+                
+                // Atualiza foto/nome se mudou no Google (mantém identidade fresca)
+                if (user.photoURL !== userProfile.photoURL || user.displayName !== userProfile.displayName) {
+                    await updateDoc(userRef, {
+                        displayName: user.displayName,
+                        photoURL: user.photoURL
+                    });
+                }
+
                 atualizarInterface(user);
                 
-                // --- NOVO: VERIFICAÇÃO DE PERFIL PROFISSIONAL ---
-                // Se for prestador, verifica se já tem o setup feito
+                // Verifica Setup se for prestador
                 if (userProfile.is_provider) {
                     verificarPendenciaPerfil(user.uid);
                 }
@@ -70,24 +95,14 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// NOVA FUNÇÃO: OBRIGA O SETUP
+// Verifica se o prestador tem Nome Profissional configurado
 async function verificarPendenciaPerfil(uid) {
-    // Verifica na coleção active_providers se o usuário já tem dados salvos
-    // (Mesmo estando offline, podemos checar se ele já salvou o setup antes no localStorage ou numa coleção de perfis)
-    // Para simplificar no MVP e corrigir seu erro AGORA: 
-    // Vamos checar se o usuário tem os dados salvos localmente ou abrir o modal.
-    
-    // Como os dados do setup (Nome, Categoria) ficam no 'active_providers' (que apaga quando fica offline),
-    // precisamos de um lugar persistente.
-    // CORREÇÃO IMEDIATA: Vamos salvar o setup no próprio documento do usuário ('usuarios/{uid}') também, 
-    // para saber se ele já configurou.
-    
+    // Se não tiver nome profissional ou setup_ok, abre o modal de gestão
     if (!userProfile.setup_profissional_ok) {
-        // Se não tem a flag de setup ok, ABRE O MODAL
         const modal = document.getElementById('provider-setup-modal');
         if(modal) {
             modal.classList.remove('hidden');
-            // Preenche o campo de nome com o nome do Google se estiver vazio
+            // Preenche nome automático
             const inputNome = document.getElementById('setup-name');
             if(inputNome && !inputNome.value) inputNome.value = auth.currentUser.displayName || "";
         }
@@ -102,10 +117,13 @@ function mostrarLogin() {
 
 function atualizarInterface(user) {
     document.getElementById('auth-container').classList.add('hidden');
+    
+    // Se perfil incompleto (novo user que não escolheu lado)
     if(!userProfile.perfil_completo) {
         document.getElementById('role-selection').classList.remove('hidden');
         return;
     }
+    
     iniciarAppLogado(user);
 }
 
@@ -128,55 +146,55 @@ function iniciarAppLogado(user) {
     }
 
     if (userProfile.is_provider) {
-        // --- PRESTADOR ---
+        // --- MODO PRESTADOR ---
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Prestador)</span> 🔄`;
         } else {
              btnPerfil.innerHTML = `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         }
         
-        // RENOMEIA ABA PRINCIPAL
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
 
-        // EXIBIÇÃO DE ABAS
+        // Exibe abas de trabalho
         document.getElementById('tab-servicos').classList.remove('hidden');
         document.getElementById('tab-missoes').classList.remove('hidden'); 
         document.getElementById('tab-oportunidades').classList.remove('hidden');
         document.getElementById('tab-ganhar').classList.remove('hidden');  
         
+        // Esconde abas de consumo
         document.getElementById('tab-loja').classList.add('hidden');    
         
+        // Configura tela de Serviços
         document.getElementById('status-toggle-container').classList.remove('hidden');
         document.getElementById('servicos-prestador').classList.remove('hidden');
         document.getElementById('servicos-cliente').classList.add('hidden');
 
-        // Foco inicial
         if (!document.querySelector('.border-blue-600')) window.switchTab('servicos'); 
 
     } else {
-        // --- CLIENTE ---
+        // --- MODO CLIENTE ---
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Cliente)</span> 🔄`;
         } else {
              btnPerfil.innerHTML = `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
         }
 
-        // RENOMEIA ABA PRINCIPAL
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
 
-        // EXIBIÇÃO DE ABAS
+        // Exibe abas de consumo
         document.getElementById('tab-servicos').classList.remove('hidden');
         document.getElementById('tab-oportunidades').classList.remove('hidden');
         document.getElementById('tab-loja').classList.remove('hidden');
         
+        // Esconde abas de trabalho
         document.getElementById('tab-missoes').classList.add('hidden');    
         document.getElementById('tab-ganhar').classList.add('hidden');       
         
+        // Configura tela de Serviços
         document.getElementById('status-toggle-container').classList.add('hidden');
         document.getElementById('servicos-prestador').classList.add('hidden');
         document.getElementById('servicos-cliente').classList.remove('hidden');
         
-        // Foco inicial
         if (!document.querySelector('.border-blue-600')) window.switchTab('servicos');
     }
 }
