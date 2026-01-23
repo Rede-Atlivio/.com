@@ -7,11 +7,18 @@ let missaoAtualId = null;
 let arquivoParaEnvio = null;
 let currentLat = null, currentLng = null;
 
-// CARREGAR MISSÕES (Atlas)
 export async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
     if(!container) return;
-    container.innerHTML = "";
+    
+    // VISUAL DE RADAR (NOVO)
+    container.innerHTML = `
+        <div class="text-center py-4 bg-blue-50 rounded-xl border border-blue-100 mb-4">
+            <p class="text-3xl animate-pulse">📡</p>
+            <p class="text-xs font-bold text-blue-900 mt-1">Radar Ligado</p>
+            <p class="text-[9px] text-gray-500">Buscando micro tarefas na região...</p>
+        </div>
+    `;
     
     if(!userProfile) return;
 
@@ -19,26 +26,32 @@ export async function carregarMissoes() {
     const snap = await getDocs(q);
     
     if(snap.empty) { 
-        container.innerHTML = `<div class="text-center py-12 text-gray-400"><p>Nenhuma missão disponível.</p></div>`; 
+        container.innerHTML += `<div class="text-center py-4 text-gray-400 text-xs"><p>Nenhuma tarefa encontrada no radar.</p></div>`; 
     } else {
         snap.forEach(d => {
             const m = d.data();
             let btnAction = userProfile.is_provider 
-                ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md">📷 Capturar (R$ ${m.recompensa})</button>`
-                : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Área de Coletores</div>`;
+                ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md hover:bg-blue-700 transition">📷 Capturar (R$ ${m.recompensa})</button>`
+                : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo para Coletores</div>`;
             
-            container.innerHTML += `<div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4"><div class="flex justify-between items-start mb-3"><h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3><span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span></div><p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>${btnAction}</div>`;
+            container.innerHTML += `
+                <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4 animate-fadeIn">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3>
+                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
+                    ${btnAction}
+                </div>`;
         });
     }
 }
 
-// INICIALIZAÇÃO
 window.iniciarMissao = (id) => {
     missaoAtualId = id;
     document.getElementById('camera-input').click();
 };
 
-// PREVIEW E GPS
 window.mostrarPreview = (input) => {
     if (input.files && input.files[0]) {
         arquivoParaEnvio = input.files[0];
@@ -80,8 +93,8 @@ window.cancelarPreview = () => {
     arquivoParaEnvio = null;
 };
 
-// UPLOAD REAL
-window.enviarFotoReal = async () => {
+window.enviarFotoReal = async (event) => {
+    if(event) event.preventDefault();
     document.getElementById('preview-modal').classList.add('hidden');
     document.getElementById('upload-overlay').classList.remove('hidden');
     
@@ -107,7 +120,6 @@ window.enviarFotoReal = async () => {
             gps_lat: currentLat, gps_lng: currentLng
         });
 
-        // Cria Chat Vinculado
         await setDoc(doc(db, "chats", assignmentRef.id), {
             assignment_id: assignmentRef.id,
             mission_title: docMissao.data().titulo,
@@ -116,10 +128,20 @@ window.enviarFotoReal = async () => {
             updated_at: serverTimestamp()
         });
 
-        alert("✅ Missão Enviada!");
+        alert("✅ Micro Tarefa Enviada!");
     } catch (e) { alert("Erro: " + e.message); } 
     finally { document.getElementById('upload-overlay').classList.add('hidden'); }
 };
 
-// Auto-Load
-setInterval(() => { if(!document.getElementById('sec-missoes').classList.contains('hidden')) carregarMissoes(); }, 10000);
+// AUTO-LOAD MAIS INTELIGENTE
+// Só recarrega se a aba estiver visível para economizar dados
+setInterval(() => { 
+    const sec = document.getElementById('sec-missoes');
+    if(sec && !sec.classList.contains('hidden')) carregarMissoes(); 
+}, 15000);
+
+// Listener do Input
+const camInput = document.getElementById('camera-input');
+if(camInput) {
+    camInput.addEventListener('change', function() { window.mostrarPreview(this); });
+}
