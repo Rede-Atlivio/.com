@@ -195,7 +195,7 @@
                             </div>
                         </div>
                         <button onclick="document.getElementById('provider-setup-modal').classList.remove('hidden')" id="btn-edit-profile" class="hidden text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
-                            ✎ EDITAR PERFIL
+                            ✎ GERIR SERVIÇOS
                         </button>
                     </div>
 
@@ -291,43 +291,65 @@
     </div>
 
     <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6">
-            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Perfil Profissional</h3>
-            <p class="text-xs text-gray-400 mb-6">Defina como você aparecerá para os clientes.</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Artístico / Profissional</label>
-                    <input type="text" id="setup-name" placeholder="Ex: João Eletricista" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria</label>
-                    <select id="setup-category" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
-                        <option value="" disabled selected>Selecione...</option>
-                        <option value="Barman">Barman / Bartender</option>
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Meus Serviços</h3>
+            <p class="text-xs text-gray-400 mb-6">Adicione as categorias que você atende.</p>
+
+            <div id="my-services-list" class="space-y-3 mb-6 max-h-40 overflow-y-auto">
+                <p class="text-center text-gray-300 text-xs italic py-4">Nenhum serviço adicionado.</p>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
+                <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <select id="new-service-category" class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800">
+                        <option value="" disabled selected>Categoria...</option>
+                        <option value="Barman">Barman</option>
                         <option value="Garçom">Garçom</option>
-                        <option value="Segurança">Segurança de Eventos</option>
-                        <option value="Limpeza">Limpeza / Diarista</option>
+                        <option value="Segurança">Segurança</option>
+                        <option value="Limpeza">Limpeza</option>
                         <option value="Eletricista">Eletricista</option>
                         <option value="Encanador">Encanador</option>
-                        <option value="Montador">Montador de Móveis</option>
+                        <option value="Montador">Montador</option>
                         <option value="Outros">Outros</option>
                     </select>
+                    <input type="number" id="new-service-price" placeholder="Preço (R$)" class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800">
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Preço Base (A partir de)</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span>
-                        <input type="number" id="setup-price" placeholder="100,00" class="w-full border p-3 pl-10 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
+                <textarea id="new-service-desc" rows="1" placeholder="Ex: Especialista em drinks..." class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800 mb-2"></textarea>
+                <button onclick="addServiceLocal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-sm hover:bg-blue-700">+ Adicionar à Lista</button>
+            </div>
+
+            <button onclick="saveServicesAndGoOnline()" class="w-full bg-green-600 text-white py-3 rounded-xl font-black uppercase shadow-lg hover:bg-green-700 transition">
+                Salvar e Ficar Online 📡
+            </button>
+        </div>
+    </div>
+
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div class="bg-blue-900 h-20 relative">
+                <button onclick="document.getElementById('provider-profile-modal').classList.add('hidden')" class="absolute top-4 right-4 text-white/50 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+            <div class="px-6 pb-6 text-center -mt-10">
+                <img id="public-profile-photo" src="" class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md bg-gray-200">
+                <h3 id="public-profile-name" class="font-black text-lg text-gray-800 uppercase mt-2">Nome do Prestador</h3>
+                <div class="flex justify-center items-center gap-1 text-yellow-500 text-sm mb-4">
+                    <span>★</span> <span id="public-profile-rating" class="font-bold text-gray-600">5.0</span>
+                </div>
+                
+                <div class="text-left">
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b pb-1">Serviços Oferecidos</h4>
+                    <div id="public-services-list" class="space-y-2 max-h-60 overflow-y-auto">
+                        <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center">
+                            <div>
+                                <span class="block font-bold text-xs text-blue-900">CARREGANDO...</span>
+                            </div>
+                        </div>
                     </div>
-                    <p class="text-[9px] text-gray-400 mt-1">Valor inicial para referência.</p>
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Descrição Curta</label>
-                    <textarea id="setup-desc" rows="2" placeholder="Ex: Especialista em drinks tropicais e caipirinhas." class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900"></textarea>
                 </div>
             </div>
-            <button onclick="salvarSetupPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase mt-6 shadow-lg hover:bg-blue-700 transition">Salvar e Ficar Online</button>
-            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden'); document.getElementById('online-toggle').checked = false;" class="w-full mt-3 text-gray-400 text-xs underline">Cancelar</button>
         </div>
     </div>
 
