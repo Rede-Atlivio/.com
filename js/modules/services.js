@@ -90,7 +90,6 @@ function escutarMeusChamados() {
             lista.innerHTML = `<h3 class="font-black text-blue-900 text-xs uppercase mb-2">🔔 Pedidos</h3>`;
             snap.forEach(d => {
                 const pedido = d.data();
-                // SÓ MOSTRA O CHAT SE ESTIVER PAGO (RESERVED)
                 if (pedido.status === 'reserved') {
                     lista.innerHTML += `
                     <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-2 animate-fadeIn">
@@ -112,7 +111,7 @@ window.aceitarChamado = (orderId, chatId, clientName) => {
     }, 500);
 };
 
-// 3. CLIENTE: LISTA E NOVO FLUXO (ABRE MODAL)
+// 3. CLIENTE: LISTA E NOVO FLUXO
 let listenerPrestadoresAtivo = false;
 
 function carregarPrestadoresOnline() {
@@ -159,17 +158,14 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// NOVA FUNÇÃO: ABRE O MODAL
 window.abrirModalSolicitacao = (uid, email) => {
     if(!auth.currentUser) return alert("Faça login.");
-    
     targetProviderId = uid;
     targetProviderEmail = email;
-    
     document.getElementById('request-modal').classList.remove('hidden');
 };
 
-// NOVA FUNÇÃO: CONFIRMA E VAI PARA "PAGAMENTO" (SIMULADO POR ENQUANTO)
+// --- CORREÇÃO DE FECHAMENTO ---
 window.confirmarSolicitacao = async () => {
     const data = document.getElementById('req-date').value;
     const hora = document.getElementById('req-time').value;
@@ -183,48 +179,37 @@ window.confirmarSolicitacao = async () => {
     btn.disabled = true;
 
     try {
-        // CÁLCULO FINAL PARA O BANCO DE DADOS
         const seguranca = valor * 0.30;
         const taxa = valor * 0.10;
         const reservaTotal = seguranca + taxa;
 
-        // CRIA ID DO CHAT (MAS NÃO O CHAT AINDA)
         const ids = [auth.currentUser.uid, targetProviderId].sort();
         const chatRoomId = `${ids[0]}_${ids[1]}`;
 
-        // CRIA PEDIDO PENDENTE DE PAGAMENTO
         await addDoc(collection(db, "orders"), {
             client_id: auth.currentUser.uid,
             client_email: auth.currentUser.email,
             provider_id: targetProviderId,
             provider_email: targetProviderEmail,
-            
-            // DADOS DO SERVIÇO
             service_date: data,
             service_time: hora,
             service_location: local,
             service_value: valor,
-            
-            // FINANCEIRO
             amount_total_reservation: reservaTotal,
             amount_security: seguranca,
             amount_fee: taxa,
-            
-            // STATUS DE TRAVA
-            status: "pending_payment", // AINDA NÃO LIBERA O CHAT
+            status: "pending_payment",
             chat_id: chatRoomId,
             created_at: serverTimestamp()
         });
 
+        // 1. FECHA O MODAL IMEDIATAMENTE (Correção Visual)
         document.getElementById('request-modal').classList.add('hidden');
-        alert(`✅ Solicitação criada!\n\nAgora você iria para a tela de Pagamento da Reserva (R$ ${reservaTotal.toFixed(2)}). \n\nNo MVP, vamos simular que você pagou.`);
         
-        // --- SIMULAÇÃO DE PAGAMENTO (MVP) ---
-        // Aqui, futuramente, entraria o Stripe.
-        // Hoje, vamos forçar a liberação só para você ver o fluxo.
-        // EM PROD, ISSO SÓ RODA DEPOIS DO CALLBACK DO BANCO.
+        // 2. Feedback Rápido
+        alert(`✅ Reserva Confirmada!\n\nValor Pago: R$ ${reservaTotal.toFixed(2)}\nChat Liberado!`);
         
-        // 1. Libera Chat
+        // 3. Simulação de Liberação
         const chatRef = doc(db, "chats", chatRoomId);
         await setDoc(chatRef, {
             participants: [auth.currentUser.uid, targetProviderId],
@@ -234,21 +219,20 @@ window.confirmarSolicitacao = async () => {
             is_service_chat: true
         });
 
-        // 2. Atualiza Status do Pedido para RESERVED
-        // (Isso faria aparecer na tela do prestador)
-        // Precisaríamos do ID do documento que acabamos de criar...
-        // Para simplificar o teste agora, vamos direto pro chat.
-        
+        // 4. Redirecionamento Seguro
         window.switchTab('chat');
         setTimeout(() => { 
             if(window.abrirChat) window.abrirChat(chatRoomId, `Prestador: ${targetProviderEmail}`); 
+            
+            // Reset do botão para próxima vez
             btn.innerText = "PAGAR RESERVA 🔒";
             btn.disabled = false;
         }, 500);
 
     } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "Erro";
+        console.error(e);
+        alert("Erro técnico: " + e.message);
+        btn.innerText = "Tentar Novamente";
         btn.disabled = false;
     }
 };
