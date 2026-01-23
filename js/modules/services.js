@@ -56,7 +56,6 @@ window.switchServiceSubTab = (tab) => {
 };
 
 window.switchProviderSubTab = (tabName) => {
-    // 1. Desativa todos os botões e esconde todas as views
     const views = ['radar', 'ativos', 'historico'];
     views.forEach(t => {
         const viewEl = document.getElementById(`pview-${t}`);
@@ -66,7 +65,6 @@ window.switchProviderSubTab = (tabName) => {
         if(btnEl) btnEl.classList.remove('active');
     });
 
-    // 2. Ativa o selecionado
     const targetView = document.getElementById(`pview-${tabName}`);
     const targetBtn = document.getElementById(`ptab-${tabName}-btn`);
 
@@ -304,16 +302,28 @@ function escutarMeusChamados() {
 }
 
 // ======================================================
-// UTILS E HEADER (MANTIDOS)
+// UTILS E HEADER (ATUALIZADO PARA FOTO DO PRESTADOR)
 // ======================================================
 
 function renderizarCabecalhoUsuario() {
     if(!auth.currentUser) return;
+    
+    // 1. Header Cliente
     const container = document.getElementById('user-header-services');
-    if(!container) return;
-    container.classList.remove('hidden');
-    document.getElementById('header-user-name').innerText = auth.currentUser.displayName || "Usuário";
-    if(auth.currentUser.photoURL) { const img = document.getElementById('header-user-pic'); if(img) img.src = auth.currentUser.photoURL; }
+    if(container) {
+        container.classList.remove('hidden');
+        document.getElementById('header-user-name').innerText = auth.currentUser.displayName || "Usuário";
+        if(auth.currentUser.photoURL) { const img = document.getElementById('header-user-pic'); if(img) img.src = auth.currentUser.photoURL; }
+    }
+
+    // 2. Header Prestador (NOVO)
+    const providerPic = document.getElementById('provider-header-pic');
+    const providerName = document.getElementById('provider-header-name');
+    
+    if(providerPic && auth.currentUser.photoURL) providerPic.src = auth.currentUser.photoURL;
+    if(providerName) providerName.innerText = auth.currentUser.displayName || "Prestador";
+
+    // Botão Editar
     const toggle = document.getElementById('online-toggle');
     if(toggle) { 
         const btnEdit = document.getElementById('btn-edit-profile');
