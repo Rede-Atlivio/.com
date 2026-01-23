@@ -11,10 +11,14 @@ window.logout = () => signOut(auth).then(() => location.reload());
 
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
+    
+    // Define o perfil inicial
     await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
         is_provider: tipo === 'prestador', 
         perfil_completo: true 
     });
+
+    // Se escolheu prestador, forçamos o reload para cair na verificação de setup
     location.reload();
 };
 
@@ -53,12 +57,42 @@ onAuthStateChanged(auth, async (user) => {
             } else {
                 userProfile = docSnap.data();
                 atualizarInterface(user);
+                
+                // --- NOVO: VERIFICAÇÃO DE PERFIL PROFISSIONAL ---
+                // Se for prestador, verifica se já tem o setup feito
+                if (userProfile.is_provider) {
+                    verificarPendenciaPerfil(user.uid);
+                }
             }
         });
     } else {
         mostrarLogin();
     }
 });
+
+// NOVA FUNÇÃO: OBRIGA O SETUP
+async function verificarPendenciaPerfil(uid) {
+    // Verifica na coleção active_providers se o usuário já tem dados salvos
+    // (Mesmo estando offline, podemos checar se ele já salvou o setup antes no localStorage ou numa coleção de perfis)
+    // Para simplificar no MVP e corrigir seu erro AGORA: 
+    // Vamos checar se o usuário tem os dados salvos localmente ou abrir o modal.
+    
+    // Como os dados do setup (Nome, Categoria) ficam no 'active_providers' (que apaga quando fica offline),
+    // precisamos de um lugar persistente.
+    // CORREÇÃO IMEDIATA: Vamos salvar o setup no próprio documento do usuário ('usuarios/{uid}') também, 
+    // para saber se ele já configurou.
+    
+    if (!userProfile.setup_profissional_ok) {
+        // Se não tem a flag de setup ok, ABRE O MODAL
+        const modal = document.getElementById('provider-setup-modal');
+        if(modal) {
+            modal.classList.remove('hidden');
+            // Preenche o campo de nome com o nome do Google se estiver vazio
+            const inputNome = document.getElementById('setup-name');
+            if(inputNome && !inputNome.value) inputNome.value = auth.currentUser.displayName || "";
+        }
+    }
+}
 
 function mostrarLogin() {
     document.getElementById('auth-container').classList.remove('hidden');
@@ -106,7 +140,7 @@ function iniciarAppLogado(user) {
 
         // EXIBIÇÃO DE ABAS
         document.getElementById('tab-servicos').classList.remove('hidden');
-        document.getElementById('tab-missoes').classList.remove('hidden'); // Micro Tarefas
+        document.getElementById('tab-missoes').classList.remove('hidden'); 
         document.getElementById('tab-oportunidades').classList.remove('hidden');
         document.getElementById('tab-ganhar').classList.remove('hidden');  
         
@@ -136,7 +170,7 @@ function iniciarAppLogado(user) {
         document.getElementById('tab-loja').classList.remove('hidden');
         
         document.getElementById('tab-missoes').classList.add('hidden');    
-        document.getElementById('tab-ganhar').classList.add('hidden');      
+        document.getElementById('tab-ganhar').classList.add('hidden');       
         
         document.getElementById('status-toggle-container').classList.add('hidden');
         document.getElementById('servicos-prestador').classList.add('hidden');
