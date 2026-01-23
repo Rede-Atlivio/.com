@@ -266,6 +266,56 @@
         </main>
     </div>
 
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6">
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Perfil Profissional</h3>
+            <p class="text-xs text-gray-400 mb-6">Defina como você aparecerá para os clientes.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Artístico / Profissional</label>
+                    <input type="text" id="setup-name" placeholder="Ex: João Eletricista" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria</label>
+                    <select id="setup-category" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="Barman">Barman / Bartender</option>
+                        <option value="Garçom">Garçom</option>
+                        <option value="Segurança">Segurança de Eventos</option>
+                        <option value="Limpeza">Limpeza / Diarista</option>
+                        <option value="Eletricista">Eletricista</option>
+                        <option value="Encanador">Encanador</option>
+                        <option value="Montador">Montador de Móveis</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Preço Base (A partir de)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span>
+                        <input type="number" id="setup-price" placeholder="100,00" class="w-full border p-3 pl-10 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold">
+                    </div>
+                    <p class="text-[9px] text-gray-400 mt-1">Valor inicial para referência.</p>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Descrição Curta</label>
+                    <textarea id="setup-desc" rows="2" placeholder="Ex: Especialista em drinks tropicais e caipirinhas." class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900"></textarea>
+                </div>
+            </div>
+
+            <button onclick="salvarSetupPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black uppercase mt-6 shadow-lg hover:bg-blue-700 transition">
+                Salvar e Ficar Online
+            </button>
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden'); document.getElementById('online-toggle').checked = false;" class="w-full mt-3 text-gray-400 text-xs underline">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
             <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl">
