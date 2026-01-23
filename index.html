@@ -21,6 +21,11 @@
         .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Estrelas de Avaliação */
+        .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
+        .rate-star.active { color: #fbbf24; }
+        /* Tags de Seleção */
+        .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -250,51 +255,64 @@
 
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl pb-4 flex flex-col max-h-[90vh]">
-            
             <div class="bg-blue-900 p-4 text-white flex-shrink-0">
                 <h3 class="font-black text-lg uppercase italic">Solicitar Serviço</h3>
                 <p class="text-xs opacity-75">Preencha para calcular a reserva.</p>
             </div>
-            
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data do Serviço</label>
-                    <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Horário</label>
-                    <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Local (Endereço)</label>
-                    <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase text-blue-600">💰 Valor Combinado/Proposto (R$)</label>
-                    <input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-3 rounded-lg text-lg font-bold text-blue-900 bg-white focus:outline-none focus:border-blue-500" oninput="calcularReserva(this.value)">
-                </div>
-
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase">Data do Serviço</label><input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase">Horário</label><input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase">Local (Endereço)</label><input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"></div>
+                <div><label class="text-[10px] font-bold text-gray-500 uppercase text-blue-600">💰 Valor Combinado/Proposto (R$)</label><input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-3 rounded-lg text-lg font-bold text-blue-900 bg-white focus:outline-none focus:border-blue-500" oninput="calcularReserva(this.value)"></div>
                 <div id="financial-summary" class="bg-gray-50 p-4 rounded-xl border border-gray-200 hidden">
-                    <div class="flex justify-between text-xs mb-1 text-gray-800">
-                        <span>Reserva Segurança (30%)</span>
-                        <span class="font-bold" id="calc-security">R$ 0,00</span>
-                    </div>
-                    <div class="flex justify-between text-xs mb-3 border-b border-gray-300 pb-2 text-gray-800">
-                        <span>Taxa Atlivio (10%)</span>
-                        <span class="font-bold" id="calc-fee">R$ 0,00</span>
-                    </div>
-                    <div class="flex justify-between text-sm text-blue-900 font-black">
-                        <span>PAGAR AGORA (40%)</span>
-                        <span id="calc-total-reserva">R$ 0,00</span>
-                    </div>
+                    <div class="flex justify-between text-xs mb-1 text-gray-800"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-3 border-b border-gray-300 pb-2 text-gray-800"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
+                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA (40%)</span><span id="calc-total-reserva">R$ 0,00</span></div>
                     <p class="text-[9px] text-center text-gray-500 mt-2 italic">O restante (R$ <span id="calc-restante">0,00</span>) você paga direto ao prestador.</p>
                 </div>
             </div>
-
             <div class="p-4 pt-0 bg-white flex gap-2 flex-shrink-0">
                 <button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
                 <button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR RESERVA 🔒</button>
             </div>
+        </div>
+    </div>
+
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center">
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi o serviço?</h3>
+            <p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p>
+            
+            <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container">
+                <span class="rate-star" data-val="1">★</span>
+                <span class="rate-star" data-val="2">★</span>
+                <span class="rate-star" data-val="3">★</span>
+                <span class="rate-star" data-val="4">★</span>
+                <span class="rate-star" data-val="5">★</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-6">
+                <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button>
+                <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button>
+                <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button>
+                <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button>
+            </div>
+
+            <div class="flex items-center justify-center gap-4 mb-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="recommend" value="yes" class="accent-blue-600" checked>
+                    <span class="text-xs font-bold text-gray-700">👍 Recomendo</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="recommend" value="no" class="accent-red-600">
+                    <span class="text-xs font-bold text-gray-700">👎 Não Indico</span>
+                </label>
+            </div>
+
+            <textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea>
+
+            <button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button>
+            <button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button>
         </div>
     </div>
 
@@ -337,6 +355,7 @@
             else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
 
+        // --- CÁLCULO RESERVA ---
         window.calcularReserva = (valorInput) => {
             const valor = parseFloat(valorInput);
             const summary = document.getElementById('financial-summary');
@@ -366,6 +385,22 @@
 
         window.fecharModalSolicitacao = () => {
             document.getElementById('request-modal').classList.add('hidden');
+        };
+
+        // --- LÓGICA DAS ESTRELAS E TAGS ---
+        let currentRating = 0;
+        document.querySelectorAll('.rate-star').forEach(star => {
+            star.addEventListener('click', function() {
+                currentRating = this.getAttribute('data-val');
+                document.querySelectorAll('.rate-star').forEach(s => {
+                    s.classList.remove('active');
+                    if(s.getAttribute('data-val') <= currentRating) s.classList.add('active');
+                });
+            });
+        });
+
+        window.toggleTag = (btn) => {
+            btn.classList.toggle('selected');
         };
     </script>
 </body>
