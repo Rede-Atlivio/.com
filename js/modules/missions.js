@@ -7,34 +7,63 @@ let missaoAtualId = null;
 let arquivoParaEnvio = null;
 let currentLat = null, currentLng = null;
 
-export async function carregarMissoes() {
+// GATILHO DE CLIQUE NA ABA (Resposta Imediata)
+const tabMissoes = document.getElementById('tab-missoes');
+if(tabMissoes) {
+    tabMissoes.addEventListener('click', () => {
+        carregarMissoes(true); // true = força o visual de carregamento
+    });
+}
+
+// INICIALIZAÇÃO
+setTimeout(() => {
+    const sec = document.getElementById('sec-missoes');
+    if(sec && !sec.classList.contains('hidden')) carregarMissoes();
+}, 1500);
+
+export async function carregarMissoes(forcarLoading = false) {
     const container = document.getElementById('lista-missoes');
     if(!container) return;
     
-    // VISUAL DE RADAR (NOVO)
-    container.innerHTML = `
-        <div class="text-center py-4 bg-blue-50 rounded-xl border border-blue-100 mb-4">
-            <p class="text-3xl animate-pulse">📡</p>
-            <p class="text-xs font-bold text-blue-900 mt-1">Radar Ligado</p>
-            <p class="text-[9px] text-gray-500">Buscando micro tarefas na região...</p>
-        </div>
-    `;
+    // 1. VISUAL DE CARREGAMENTO (RADAR + SPINNER)
+    // Se forçar loading ou se o container estiver vazio, mostra o load
+    if (forcarLoading || container.innerHTML.trim() === "") {
+        container.innerHTML = `
+            <div class="text-center py-6 bg-blue-50 rounded-xl border border-blue-100 mb-4 animate-fadeIn">
+                <div class="loader mx-auto mb-3 border-blue-200 border-t-blue-600"></div>
+                <p class="text-xs font-bold text-blue-900 mt-1 uppercase">Radar Ligado</p>
+                <p class="text-[9px] text-gray-500">Buscando micro tarefas...</p>
+            </div>
+        `;
+    }
     
     if(!userProfile) return;
 
+    // 2. BUSCA DADOS
     const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
     const snap = await getDocs(q);
     
+    // 3. RENDERIZA RESULTADO (MANTENDO O RADAR NO TOPO)
+    // Cabeçalho fixo do Radar
+    const radarHeader = `
+        <div class="text-center py-4 bg-blue-50 rounded-xl border border-blue-100 mb-4">
+            <p class="text-3xl animate-pulse">📡</p>
+            <p class="text-xs font-bold text-blue-900 mt-1">Radar Ligado</p>
+            <p class="text-[9px] text-gray-500">Monitorando região...</p>
+        </div>
+    `;
+
     if(snap.empty) { 
-        container.innerHTML += `<div class="text-center py-4 text-gray-400 text-xs"><p>Nenhuma tarefa encontrada no radar.</p></div>`; 
+        container.innerHTML = radarHeader + `<div class="text-center py-4 text-gray-400 text-xs animate-fadeIn"><p>Nenhuma tarefa encontrada agora.</p></div>`; 
     } else {
+        let listaHTML = "";
         snap.forEach(d => {
             const m = d.data();
             let btnAction = userProfile.is_provider 
                 ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md hover:bg-blue-700 transition">📷 Capturar (R$ ${m.recompensa})</button>`
                 : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo para Coletores</div>`;
             
-            container.innerHTML += `
+            listaHTML += `
                 <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4 animate-fadeIn">
                     <div class="flex justify-between items-start mb-3">
                         <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3>
@@ -44,6 +73,7 @@ export async function carregarMissoes() {
                     ${btnAction}
                 </div>`;
         });
+        container.innerHTML = radarHeader + listaHTML;
     }
 }
 
@@ -133,14 +163,12 @@ window.enviarFotoReal = async (event) => {
     finally { document.getElementById('upload-overlay').classList.add('hidden'); }
 };
 
-// AUTO-LOAD MAIS INTELIGENTE
-// Só recarrega se a aba estiver visível para economizar dados
+// AUTO-LOAD SILENCIOSO (SÓ RODA SE A ABA ESTIVER VISÍVEL)
 setInterval(() => { 
     const sec = document.getElementById('sec-missoes');
-    if(sec && !sec.classList.contains('hidden')) carregarMissoes(); 
+    if(sec && !sec.classList.contains('hidden')) carregarMissoes(false); 
 }, 15000);
 
-// Listener do Input
 const camInput = document.getElementById('camera-input');
 if(camInput) {
     camInput.addEventListener('change', function() { window.mostrarPreview(this); });
