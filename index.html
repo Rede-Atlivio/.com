@@ -190,8 +190,7 @@
                         <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
                     </div>
 
-                    <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters">
-                        </div>
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters"></div>
 
                     <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
                 </div>
@@ -325,36 +324,64 @@
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
             <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl">
-                <h3 class="font-black text-lg uppercase italic">Solicitar Serviço</h3>
-                <p class="text-xs opacity-75">Preencha para calcular a reserva.</p>
+                <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                <p class="text-xs opacity-75">Defina o valor e pague a reserva.</p>
             </div>
+            
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data do Serviço</label>
-                    <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Data</label>
+                        <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label>
+                        <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                    </div>
                 </div>
                 <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Horário</label>
-                    <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+                    <label class="text-[9px] font-bold text-gray-500 uppercase">Local</label>
+                    <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Local (Endereço)</label>
-                    <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500">
+
+                <div class="pt-2 border-t border-gray-100">
+                    <p class="text-[10px] font-bold text-blue-900 uppercase mb-2">Quanto você quer pagar?</p>
+                    
+                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 mb-2">
+                        <input type="radio" name="price-option" id="price-option-base" value="base" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(false)">
+                        <div>
+                            <span class="block text-xs font-bold text-gray-800" id="label-base-price">Preço do Prestador</span>
+                            <span class="block text-[9px] text-gray-500">Aceitar valor sugerido</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="price-option" id="price-option-custom" value="custom" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(true)">
+                        <div>
+                            <span class="block text-xs font-bold text-gray-800">Fazer outra oferta</span>
+                            <span class="block text-[9px] text-gray-500">Sugerir meu valor</span>
+                        </div>
+                    </label>
+
+                    <div id="custom-price-container" class="mt-2 hidden">
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span>
+                            <input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-2 pl-10 rounded-lg text-lg font-bold text-blue-900 bg-white outline-none" oninput="calcularReserva(this.value)">
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase text-blue-600">💰 Valor Combinado/Proposto (R$)</label>
-                    <input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-3 rounded-lg text-lg font-bold text-blue-900 bg-white focus:outline-none focus:border-blue-500" oninput="calcularReserva(this.value)">
-                </div>
-                <div id="financial-summary" class="bg-gray-50 p-4 rounded-xl border border-gray-200 hidden">
-                    <div class="flex justify-between text-xs mb-1 text-gray-800"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
-                    <div class="flex justify-between text-xs mb-3 border-b border-gray-300 pb-2 text-gray-800"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
+
+                <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden">
+                    <div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
                     <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA (40%)</span><span id="calc-total-reserva">R$ 0,00</span></div>
-                    <p class="text-[9px] text-center text-gray-500 mt-2 italic">O restante (R$ <span id="calc-restante">0,00</span>) você paga direto ao prestador.</p>
+                    <p class="text-[9px] text-center text-gray-500 mt-2 italic">Ao pagar, o pedido vai para aprovação do prestador.</p>
                 </div>
             </div>
+
             <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
                 <button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-                <button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR RESERVA 🔒</button>
+                <button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR E ENVIAR 🔒</button>
             </div>
         </div>
     </div>
@@ -436,7 +463,24 @@
             else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
 
-        // --- CÁLCULO RESERVA ---
+        // --- LÓGICA DE PREÇO (OFERTA) ---
+        let basePriceAtual = 0;
+
+        window.togglePriceInput = (isCustom) => {
+            const inputContainer = document.getElementById('custom-price-container');
+            const input = document.getElementById('req-value');
+            
+            if (isCustom) {
+                inputContainer.classList.remove('hidden');
+                input.value = "";
+                window.calcularReserva(0);
+            } else {
+                inputContainer.classList.add('hidden');
+                input.value = basePriceAtual;
+                window.calcularReserva(basePriceAtual);
+            }
+        };
+
         window.calcularReserva = (valorInput) => {
             const valor = parseFloat(valorInput);
             const summary = document.getElementById('financial-summary');
@@ -456,12 +500,10 @@
             const seguranca = valor * 0.30;
             const taxa = valor * 0.10;
             const reservaTotal = seguranca + taxa;
-            const restante = valor - reservaTotal;
 
             document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`;
             document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`;
             document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`;
-            document.getElementById('calc-restante').innerText = restante.toFixed(2);
         };
 
         window.fecharModalSolicitacao = () => {
