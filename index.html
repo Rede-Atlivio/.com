@@ -31,8 +31,6 @@
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
-    
-    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
 
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
@@ -282,8 +280,8 @@
 
     <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center">
-            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1" id="review-title">Avaliar</h3>
-            <p class="text-xs text-gray-400 mb-6">Ajude a comunidade.</p>
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi o serviço?</h3>
+            <p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p>
             
             <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container">
                 <span class="rate-star" data-val="1">★</span>
@@ -357,6 +355,7 @@
             else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
 
+        // --- CÁLCULO RESERVA ---
         window.calcularReserva = (valorInput) => {
             const valor = parseFloat(valorInput);
             const summary = document.getElementById('financial-summary');
@@ -388,6 +387,7 @@
             document.getElementById('request-modal').classList.add('hidden');
         };
 
+        // --- LÓGICA DAS ESTRELAS E TAGS ---
         let currentRating = 0;
         document.querySelectorAll('.rate-star').forEach(star => {
             star.addEventListener('click', function() {
