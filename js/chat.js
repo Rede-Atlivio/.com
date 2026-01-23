@@ -51,18 +51,45 @@ function carregarMensagens(chatId) {
     });
 }
 
+// --- SANITIZADOR INTELIGENTE (ANTI-GAMBIARRA) ---
+function contemContato(texto) {
+    // 1. Normaliza: minúsculas e remove acentos
+    let limpo = texto.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    
+    // 2. Mapa de conversão (palavra -> número)
+    const mapa = {
+        'zero': '0', 'um': '1', 'dois': '2', 'tres': '3', 'quatro': '4',
+        'cinco': '5', 'seis': '6', 'sete': '7', 'oito': '8', 'nove': '9',
+        'zap': '9', 'whats': '9', 'contato': '9', 'ligar': '9'
+    };
+
+    // 3. Substitui palavras por números
+    Object.keys(mapa).forEach(key => {
+        limpo = limpo.replaceAll(key, mapa[key]);
+    });
+
+    // 4. Remove tudo que NÃO é número
+    const soNumeros = limpo.replace(/\D/g, "");
+
+    // 5. Verifica padrões proibidos
+    // - Sequência de 8 ou mais dígitos (telefone)
+    // - Email (@)
+    // - Links (.com)
+    if (soNumeros.length >= 8) return true;
+    if (texto.includes('@') || texto.includes('.com') || texto.includes('.br')) return true;
+
+    return false;
+}
+
 window.enviarMensagem = async () => {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if(!text || !activeChatId) return;
 
-    // BLINDAGEM (REGEX)
-    const proibidos = [/\b\d{8,}\b/, /\b\d{2}\s\d{4,}\b/, /@/, /zap/i, /whatsapp/i, /\.com/i, /\.br/i];
-    let bloqueado = false;
-    proibidos.forEach(regex => { if(regex.test(text)) bloqueado = true; });
-
-    if(bloqueado) {
-        alert("⚠️ Bloqueado: Troca de contatos externos não é permitida.");
+    // APLICA O FILTRO AVANÇADO
+    if(contemContato(text)) {
+        alert("🚫 BLOQUEADO PELO SISTEMA\n\nTentativa de burlar a plataforma detectada.\nNão é permitido enviar contatos, telefones ou links.");
+        input.value = ""; // Limpa a tentativa
         return;
     }
 
