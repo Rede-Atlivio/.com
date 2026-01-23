@@ -11,23 +11,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
-        /* Animações Suaves */
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Loader Giratório */
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Balões de Chat */
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
-        
-        /* Botão Toggle (Online/Offline) */
         .toggle-checkbox:checked { right: 0; border-color: #68D391; }
         .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
-        
-        /* Esconder barra de rolagem horizontal na nav */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -88,7 +79,6 @@
                 <button onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="text-gray-400 font-bold text-xl">&times;</button>
             </div>
             <p class="text-sm text-gray-500 mb-6">Para instalar o Atlivio no seu iPhone e ter acesso rápido:</p>
-            
             <div class="space-y-4 text-left bg-gray-50 p-4 rounded-xl border border-gray-100">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">1️⃣</span>
@@ -139,7 +129,7 @@
             
             <div class="flex items-center gap-2">
                 <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[9px] font-black uppercase px-3 py-2 rounded-lg shadow-md hover:bg-purple-700 transition animate-pulse flex items-center gap-1">
-                    📲 <span class="hidden md:inline">Salve seu Acesso</span><span class="md:hidden">App</span>
+                    ⭐ <span class="hidden md:inline">Salve seu Acesso</span><span class="md:hidden">Salvar</span>
                 </button>
 
                 <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
@@ -155,10 +145,14 @@
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
-            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Missões 📷</button>
             <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            
             <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Produtos Recomendados 🛒</button>
+            
             <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
             <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
             <button onclick="switchTab('admin')" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic">Gestão 🛡️</button>
@@ -212,11 +206,8 @@
                         <h2 class="text-2xl font-black text-slate-800 uppercase italic">Painel de Controle</h2>
                         <p class="text-[10px] text-slate-500 uppercase tracking-widest">Visão de Governança</p>
                     </div>
-                    <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-[9px] font-bold border border-green-200">
-                        🟢 SISTEMA ONLINE
-                    </div>
+                    <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-[9px] font-bold border border-green-200">🟢 SISTEMA ONLINE</div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
                     <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                         <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Usuários Totais</p>
@@ -227,7 +218,6 @@
                         <h3 class="text-2xl font-black text-green-600" id="dash-active-providers">-</h3>
                     </div>
                 </div>
-
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                     <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
                         <h3 class="font-bold text-slate-700 text-xs uppercase">Validações Pendentes</h3>
@@ -237,24 +227,15 @@
                         <p class="text-center text-xs text-gray-400 py-4">Tudo limpo por aqui.</p>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-3">
-                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">
-                        ⏸️ Pausar Oportunidades
-                    </button>
-                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">
-                        🔐 Travar Saques
-                    </button>
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">⏸️ Pausar Oportunidades</button>
+                    <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">🔐 Travar Saques</button>
                 </div>
-
                 <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
                     <h3 class="text-red-800 font-black text-xs uppercase mb-2">Zona de Perigo (Manutenção)</h3>
-                    <button onclick="limparMissoes()" class="w-full bg-red-600 text-white p-3 rounded-lg text-[10px] font-bold uppercase hover:bg-red-700 shadow-md flex items-center justify-center gap-2">
-                        🗑️ Resetar Base de Missões
-                    </button>
+                    <button onclick="limparMissoes()" class="w-full bg-red-600 text-white p-3 rounded-lg text-[10px] font-bold uppercase hover:bg-red-700 shadow-md flex items-center justify-center gap-2">🗑️ Resetar Base de Missões</button>
                     <p class="text-[9px] text-red-500 mt-2 text-center opacity-70">Ação irreversível. Use com cautela.</p>
                 </div>
-
                 <div class="opacity-50 hover:opacity-100 transition duration-300 border-t pt-4 mt-4">
                      <p class="text-[8px] text-center text-gray-400 uppercase mb-2">Ferramentas de Teste (Seeds)</p>
                      <div class="grid grid-cols-2 gap-2">
@@ -262,25 +243,21 @@
                         <button onclick="rodarSeedMissao()" class="bg-white border text-gray-500 p-2 rounded text-[9px]">Seed Missão</button>
                     </div>
                 </div>
-
             </section>
         </main>
     </div>
 
     <script type="module" src="./js/app.js"></script>
     <script type="module" src="./js/auth.js"></script>
-    
     <script type="module" src="./js/modules/missions.js"></script>
     <script type="module" src="./js/modules/opportunities.js"></script>
     <script type="module" src="./js/modules/services.js"></script>
     <script type="module" src="./js/modules/products.js"></script>
-    
     <script type="module" src="./js/chat.js"></script>
     <script type="module" src="./js/wallet.js"></script>
     <script type="module" src="./js/admin.js"></script>
 
     <script>
-        // 1. Registrar o Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -288,40 +265,26 @@
                     .catch(err => console.log('SW falhou:', err));
             });
         }
-
-        // 2. Lógica do Botão de Instalação
         let deferredPrompt;
         const btnInstall = document.getElementById('btn-install-app');
         const iosModal = document.getElementById('ios-install-modal');
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            btnInstall.classList.remove('hidden'); // MOSTRA O BOTÃO NO ANDROID/DESKTOP
+            btnInstall.classList.remove('hidden');
         });
-
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
         const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-        if (isIos && !isInStandalone) {
-            btnInstall.classList.remove('hidden'); // MOSTRA O BOTÃO NO IPHONE
-        }
-
+        if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
         btnInstall.addEventListener('click', async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
                 deferredPrompt = null;
-                if (outcome === 'accepted') {
-                    btnInstall.classList.add('hidden');
-                }
-            } else if (isIos) {
-                iosModal.classList.remove('hidden');
-            } else {
-                alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador.");
-            }
+                if (outcome === 'accepted') { btnInstall.classList.add('hidden'); }
+            } else if (isIos) { iosModal.classList.remove('hidden'); } 
+            else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
     </script>
-
 </body>
 </html>
