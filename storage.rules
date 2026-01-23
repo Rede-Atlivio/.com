@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Provas das Missões: Só cria quem envia. Ninguém edita/deleta (só admin).
+    match /provas/{tenantId}/{userId}/{fileName} {
+      allow read: if request.auth != null; // Auditores podem ver
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update, delete: if false; // Imutável (Audit Log)
+    }
+    
+    // Fotos de Perfil (Futuro)
+    match /users/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
