@@ -390,7 +390,6 @@
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center">
             <h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3>
             <p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p>
-            
             <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container">
                 <span class="rate-star" data-val="1">★</span>
                 <span class="rate-star" data-val="2">★</span>
@@ -398,14 +397,12 @@
                 <span class="rate-star" data-val="4">★</span>
                 <span class="rate-star" data-val="5">★</span>
             </div>
-
             <div class="grid grid-cols-2 gap-2 mb-6">
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button>
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button>
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button>
                 <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button>
             </div>
-
             <div class="flex items-center justify-center gap-4 mb-6">
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="recommend" value="yes" class="accent-blue-600" checked>
@@ -416,9 +413,7 @@
                     <span class="text-xs font-bold text-gray-700">👎 Não Indico</span>
                 </label>
             </div>
-
             <textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea>
-
             <button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button>
             <button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button>
         </div>
@@ -437,33 +432,23 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado!', reg))
-                    .catch(err => console.log('SW falhou:', err));
+                navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err));
             });
         }
         let deferredPrompt;
         const btnInstall = document.getElementById('btn-install-app');
         const iosModal = document.getElementById('ios-install-modal');
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            btnInstall.classList.remove('hidden');
+            e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden');
         });
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
         const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
         btnInstall.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                deferredPrompt = null;
-                if (outcome === 'accepted') { btnInstall.classList.add('hidden'); }
-            } else if (isIos) { iosModal.classList.remove('hidden'); } 
-            else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { iosModal.classList.remove('hidden'); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); }
         });
 
-        // --- LÓGICA DE PREÇO (OFERTA) ---
+        // --- LÓGICA DE PREÇO E BOTÃO (CORRIGIDA) ---
         let basePriceAtual = 0;
 
         window.togglePriceInput = (isCustom) => {
@@ -473,11 +458,15 @@
             if (isCustom) {
                 inputContainer.classList.remove('hidden');
                 input.value = "";
+                // Zera o botão ao trocar para custom, força usuario a digitar
                 window.calcularReserva(0);
             } else {
                 inputContainer.classList.add('hidden');
+                // Se o usuário seleciona "Preço do Prestador", JÁ CALCULA E DESTRAVA O BOTÃO
                 input.value = basePriceAtual;
-                window.calcularReserva(basePriceAtual);
+                if(basePriceAtual > 0) {
+                    window.calcularReserva(basePriceAtual);
+                }
             }
         };
 
@@ -506,25 +495,17 @@
             document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`;
         };
 
-        window.fecharModalSolicitacao = () => {
-            document.getElementById('request-modal').classList.add('hidden');
-        };
+        window.fecharModalSolicitacao = () => { document.getElementById('request-modal').classList.add('hidden'); };
 
         // --- LÓGICA DAS ESTRELAS E TAGS ---
         let currentRating = 0;
         document.querySelectorAll('.rate-star').forEach(star => {
             star.addEventListener('click', function() {
                 currentRating = this.getAttribute('data-val');
-                document.querySelectorAll('.rate-star').forEach(s => {
-                    s.classList.remove('active');
-                    if(s.getAttribute('data-val') <= currentRating) s.classList.add('active');
-                });
+                document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); });
             });
         });
-
-        window.toggleTag = (btn) => {
-            btn.classList.toggle('selected');
-        };
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
     </script>
 </body>
 </html>
