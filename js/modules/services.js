@@ -6,7 +6,7 @@ let targetProviderId = null;
 let targetProviderEmail = null;
 let orderIdParaAvaliar = null;
 let targetUserIdParaAvaliar = null; 
-let currentUserRole = null; // 'client' ou 'provider' no momento da avaliação
+let currentUserRole = null; 
 
 // VARIÁVEIS DE ESTADO (HISTÓRICO)
 let mostrarHistoricoCliente = false;
@@ -16,9 +16,9 @@ let mostrarHistoricoPrestador = false;
 setTimeout(() => {
     configurarBotaoOnline();
     carregarPrestadoresOnline(); 
-    escutarMeusChamados(); // Visão Prestador
-    escutarMeusPedidos();  // Visão Cliente
-    configurarBotoesHistorico(); // Novo: Configura os botões de toggle
+    escutarMeusChamados(); 
+    escutarMeusPedidos();  
+    configurarBotoesHistorico();
     
     const tabServicos = document.getElementById('tab-servicos');
     if(tabServicos) {
@@ -34,8 +34,15 @@ function configurarBotoesHistorico() {
     if(btnClient) {
         btnClient.addEventListener('click', () => {
             mostrarHistoricoCliente = !mostrarHistoricoCliente;
-            btnClient.innerText = mostrarHistoricoCliente ? "🙈 Ocultar Histórico" : "📜 Ver Histórico";
-            escutarMeusPedidos(); // Recarrega a view
+            const containerHist = document.getElementById('historico-cliente-container');
+            
+            if(mostrarHistoricoCliente) {
+                btnClient.innerText = "🙈 Ocultar";
+                containerHist.classList.remove('hidden');
+            } else {
+                btnClient.innerText = "📜 Ver Finalizados";
+                containerHist.classList.add('hidden');
+            }
         });
     }
 
@@ -44,8 +51,15 @@ function configurarBotoesHistorico() {
     if(btnProvider) {
         btnProvider.addEventListener('click', () => {
             mostrarHistoricoPrestador = !mostrarHistoricoPrestador;
-            btnProvider.innerText = mostrarHistoricoPrestador ? "🙈 Ocultar Histórico" : "📜 Ver Histórico";
-            escutarMeusChamados(); // Recarrega a view
+            const containerHist = document.getElementById('historico-prestador-container');
+            
+            if(mostrarHistoricoPrestador) {
+                btnProvider.innerText = "🙈 Ocultar";
+                containerHist.classList.remove('hidden');
+            } else {
+                btnProvider.innerText = "📜 Ver Histórico de Serviços";
+                containerHist.classList.add('hidden');
+            }
         });
     }
 }
@@ -78,11 +92,15 @@ async function ficarOnline() {
         return;
     }
     
+    // Tenta usar o Nome do perfil, se não tiver, usa o começo do email
+    const nomeExibicao = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (position) => {
             await setDoc(doc(db, "active_providers", auth.currentUser.uid), {
                 uid: auth.currentUser.uid,
                 email: auth.currentUser.email,
+                displayName: nomeExibicao, // SALVA O NOME
                 lat: position.coords.latitude,
                 lng: position.coords.longitude,
                 tenant_id: 'atlivio_fsa_01', 
@@ -103,13 +121,16 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
-// --- VISÃO PRESTADOR (COM SOM E AVALIAÇÃO BILATERAL) ---
+// --- VISÃO PRESTADOR ---
 let totalChamadosAntigo = 0;
 
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
 
     const container = document.getElementById('lista-chamados');
+    const containerHist = document.getElementById('historico-prestador-container');
+    const btnToggle = document.getElementById('btn-toggle-history-provider');
+
     if(!container) {
         setTimeout(escutarMeusChamados, 1000);
         return;
@@ -126,7 +147,7 @@ function escutarMeusChamados() {
         totalChamadosAntigo = snap.size;
 
         container.innerHTML = "";
-        const btnToggle = document.getElementById('btn-toggle-history-provider');
+        containerHist.innerHTML = "";
         
         if (snap.empty) {
             container.classList.add('hidden');
@@ -135,31 +156,25 @@ function escutarMeusChamados() {
             container.classList.remove('hidden');
             if(btnToggle) btnToggle.classList.remove('hidden');
             
-            // SEPARAÇÃO DE ESTADO
-            let htmlAtivos = `<h3 class="font-black text-blue-900 text-xs uppercase mb-2">🔔 Pedidos Ativos</h3>`;
-            let htmlHistorico = `<h3 class="font-black text-gray-400 text-xs uppercase mt-6 mb-2">Histórico</h3>`;
-            let temAtivos = false;
-            let temHistorico = false;
-
             snap.forEach(d => {
                 const pedido = d.data();
-                const nomeCliente = pedido.client_email; // Melhorar se tiver nome
+                // Usa Nome salvo ou Email formatado
+                const nomeCliente = pedido.client_name || pedido.client_email.split('@')[0];
                 
-                // 1. EM ANDAMENTO (RESERVED)
+                // 1. ATIVOS (RESERVED)
                 if (pedido.status === 'reserved') {
-                    temAtivos = true;
-                    htmlAtivos += `
+                    container.innerHTML += `
                     <div class="bg-green-50 p-4 rounded-xl border-l-4 border-green-600 shadow-md mb-4 animate-fadeIn">
                         <div class="flex justify-between items-start mb-2">
                             <div>
                                 <p class="font-bold text-sm text-green-900">RESERVA PAGA! 💰</p>
-                                <p class="text-[10px] text-green-700 font-bold">👤 ${nomeCliente}</p>
+                                <p class="text-[10px] text-green-700 font-bold uppercase">👤 ${nomeCliente}</p>
                             </div>
                             <span class="text-xl">🔒</span>
                         </div>
                         
                         <div class="grid grid-cols-2 gap-2 mb-3">
-                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.client_email}')" class="bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
+                            <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${nomeCliente}')" class="bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
                                 💬 Abrir Chat
                             </button>
                             <div class="text-center">
@@ -180,20 +195,13 @@ function escutarMeusChamados() {
                     </div>`;
                 }
                 
-                // 2. CONCLUÍDO (COMPLETED)
+                // 2. CONCLUÍDOS
                 else if (pedido.status === 'completed') {
-                    // Se não avaliou, mostra SEMPRE (como prioridade)
                     const euAvaliei = pedido.provider_reviewed === true;
 
                     if (!euAvaliei) {
-                        temAtivos = true; // Conta como ativo para aparecer no topo
-                        
-                        // POPUP AUTOMÁTICO
-                        if(document.getElementById('review-modal').classList.contains('hidden')) {
-                            abrirModalAvaliacao(d.id, pedido.client_id, 'client');
-                        }
-
-                        htmlAtivos += `
+                        // PENDENTE DE AVALIAÇÃO (MOSTRA NO TOPO COMO ATIVO)
+                        container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-purple-500 shadow-sm mb-2 animate-pulse">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-[10px] font-bold uppercase text-gray-500">👤 ${nomeCliente}</span>
@@ -204,10 +212,9 @@ function escutarMeusChamados() {
                                 ⭐ AVALIAR CLIENTE
                             </button>
                         </div>`;
-                    } else if (mostrarHistoricoPrestador) {
-                        // Só mostra no histórico se o botão estiver ativado
-                        temHistorico = true;
-                        htmlHistorico += `
+                    } else {
+                        // JÁ AVALIADO (VAI PRO HISTÓRICO ESCONDIDO)
+                        containerHist.innerHTML += `
                         <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
                             <div class="flex justify-between">
                                 <p class="font-bold text-xs text-gray-600">✅ Finalizado</p>
@@ -219,30 +226,17 @@ function escutarMeusChamados() {
                     }
                 }
             });
-
-            if(temAtivos) container.innerHTML += htmlAtivos;
-            if(temHistorico && mostrarHistoricoPrestador) container.innerHTML += htmlHistorico;
-            
-            if(!temAtivos && !temHistorico) {
-                container.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Nenhum pedido ativo.</p>`;
-            }
         }
     });
 }
 
-// --- VISÃO CLIENTE (COM HISTÓRICO E AVALIAÇÃO BILATERAL) ---
+// --- VISÃO CLIENTE ---
 function escutarMeusPedidos() {
     if(!auth.currentUser) return;
     
-    const parent = document.getElementById('servicos-cliente');
-    if(parent && !document.getElementById('meus-pedidos-container')) {
-        const div = document.createElement('div');
-        div.id = 'meus-pedidos-container';
-        div.className = "mb-6 hidden"; 
-        parent.insertBefore(div, parent.firstChild);
-    }
-    
     const container = document.getElementById('meus-pedidos-container');
+    const containerHist = document.getElementById('historico-cliente-container');
+    
     if(!container) return;
 
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid));
@@ -253,23 +247,19 @@ function escutarMeusPedidos() {
             container.innerHTML = "";
         } else {
             container.classList.remove('hidden');
-            container.innerHTML = "";
+            container.innerHTML = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">🚀 Meus Serviços Ativos</h3>`;
+            containerHist.innerHTML = ""; // Limpa histórico
             
-            let htmlAtivos = `<h3 class="font-black text-gray-800 text-xs uppercase mb-2">Meus Serviços em Andamento</h3>`;
-            let htmlHistorico = `<h3 class="font-black text-gray-400 text-xs uppercase mt-6 mb-2">Histórico (Finalizados)</h3>`;
-            let temAtivos = false;
-            let temHistorico = false;
-
             snap.forEach(d => {
                 const pedido = d.data();
-                const nomePrestador = pedido.provider_email; // Melhorar se tiver nome
+                // Usa Nome salvo ou Email formatado
+                const nomePrestador = pedido.provider_name || pedido.provider_email.split('@')[0];
                 
-                // --- EM ANDAMENTO ---
+                // 1. EM ANDAMENTO
                 if (pedido.status === 'reserved') {
-                    temAtivos = true;
                     const temCodigo = pedido.finalization_code ? true : false;
                     
-                    htmlAtivos += `
+                    container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-yellow-400 shadow-sm mb-2">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-[10px] font-bold uppercase text-gray-500">🛠️ ${nomePrestador}</span>
@@ -278,7 +268,7 @@ function escutarMeusPedidos() {
                             <h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>
                             
                             <div class="flex gap-2">
-                                <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${pedido.provider_email}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
+                                <button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${nomePrestador}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">
                                     Chat
                                 </button>
                                 <button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">
@@ -288,19 +278,13 @@ function escutarMeusPedidos() {
                         </div>`;
                 } 
                 
-                // --- FINALIZADOS (AVALIAÇÃO) ---
+                // 2. CONCLUÍDOS
                 else if (pedido.status === 'completed') {
                     const euAvaliei = pedido.client_reviewed === true;
 
                     if (!euAvaliei) {
-                        temAtivos = true; // Mostra como pendencia ativa
-                        
-                        // POPUP AUTOMÁTICO
-                        if(document.getElementById('review-modal').classList.contains('hidden')) {
-                            abrirModalAvaliacao(d.id, pedido.provider_id, 'provider');
-                        }
-
-                        htmlAtivos += `
+                        // PENDENTE (MOSTRA NOS ATIVOS PARA FORÇAR AVALIAÇÃO)
+                        container.innerHTML += `
                         <div class="bg-white p-4 rounded-xl border-l-4 border-blue-500 shadow-sm mb-2 animate-pulse">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-[10px] font-bold uppercase text-gray-500">🛠️ ${nomePrestador}</span>
@@ -310,9 +294,9 @@ function escutarMeusPedidos() {
                                 ⭐ AVALIAR PRESTADOR
                             </button>
                         </div>`;
-                    } else if (mostrarHistoricoCliente) {
-                        temHistorico = true;
-                        htmlHistorico += `
+                    } else {
+                        // JÁ AVALIADO (VAI PRO HISTÓRICO ESCONDIDO)
+                        containerHist.innerHTML += `
                         <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 mb-2 opacity-60">
                             <div class="flex justify-between">
                                 <p class="font-bold text-xs text-gray-600">✅ Concluído</p>
@@ -324,9 +308,6 @@ function escutarMeusPedidos() {
                     }
                 }
             });
-
-            if(temAtivos) container.innerHTML += htmlAtivos;
-            if(temHistorico && mostrarHistoricoCliente) container.innerHTML += htmlHistorico;
         }
     });
 }
@@ -356,7 +337,6 @@ function contemOfensa(texto) {
 }
 
 window.enviarAvaliacao = async () => {
-    // Coleta dados
     let stars = 0;
     document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val')));
     
@@ -370,13 +350,11 @@ window.enviarAvaliacao = async () => {
 
     const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes';
 
-    // Salva
     const btn = event.target;
     btn.innerText = "Enviando...";
     btn.disabled = true;
 
     try {
-        // 1. Salva Avaliação
         await addDoc(collection(db, "reviews"), {
             order_id: orderIdParaAvaliar,
             reviewed_user_id: targetUserIdParaAvaliar,
@@ -388,32 +366,27 @@ window.enviarAvaliacao = async () => {
             created_at: serverTimestamp()
         });
 
-        // 2. Atualiza a flag no Pedido (CORREÇÃO DO TRAVAMENTO)
+        // TENTA ATUALIZAR O PEDIDO (Se falhar, avisa mas não trava)
         const orderRef = doc(db, "orders", orderIdParaAvaliar);
+        const updateData = currentUserRole === 'provider' ? { client_reviewed: true } : { provider_reviewed: true };
         
-        // Usamos a variável currentUserRole definida no abrirModal para saber quem sou eu
-        if (currentUserRole === 'provider') {
-            // Sou Cliente avaliando Prestador (type='provider' significa target é provider)
-            await updateDoc(orderRef, { client_reviewed: true });
-        } else {
-            // Sou Prestador avaliando Cliente
-            await updateDoc(orderRef, { provider_reviewed: true });
-        }
+        await updateDoc(orderRef, updateData);
 
         document.getElementById('review-modal').classList.add('hidden');
         alert("✅ Avaliação Enviada com Sucesso!");
         
-        // Limpa campos
         document.getElementById('review-comment').value = "";
         document.querySelectorAll('.rate-star').forEach(s => s.classList.remove('active'));
 
     } catch (e) {
         console.error(e);
-        // Se der erro, tenta forçar update local ou avisa
-        // Em alguns casos de permissão, o update falha mas a review foi criada.
-        // Vamos apenas fechar para não travar o usuário.
         document.getElementById('review-modal').classList.add('hidden');
-        alert("Avaliação registrada (Nota: " + e.message + ")");
+        // Mensagem amigável se for erro de permissão
+        if(e.code === 'permission-denied') {
+             alert("Avaliação registrada! (A atualização do ícone falhou por permissão, mas o voto contou).");
+        } else {
+             alert("Erro ao enviar: " + e.message);
+        }
     } finally {
         btn.innerText = "Enviar Avaliação"; 
         btn.disabled = false;
@@ -503,16 +476,19 @@ function carregarPrestadoresOnline() {
         } else {
             snap.forEach(d => {
                 const p = d.data();
+                // Tenta usar nome, senão email
+                const nomeExibicao = p.displayName || (p.email ? p.email.split('@')[0] : 'Prestador');
+
                 listaContainer.innerHTML += `
                     <div class="bg-white p-4 rounded-xl border border-blue-100 shadow-sm flex flex-col items-center relative group hover:shadow-md transition">
                         <div class="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                         <div class="w-12 h-12 bg-blue-50 text-blue-500 rounded-full mb-2 flex items-center justify-center text-xl font-bold border border-blue-100">
-                            ${p.email ? p.email.charAt(0).toUpperCase() : '?'}
+                            ${nomeExibicao.charAt(0).toUpperCase()}
                         </div>
                         <h4 class="font-bold text-xs text-blue-900 uppercase text-center leading-tight mb-1">${p.profissao || 'Profissional'}</h4>
-                        <p class="text-[9px] text-gray-400 mb-3 truncate w-full text-center">${p.email}</p>
+                        <p class="text-[9px] text-gray-400 mb-3 truncate w-full text-center">${nomeExibicao}</p>
                         
-                        <button onclick="abrirModalSolicitacao('${p.uid}', '${p.email}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-700 transition shadow-sm">
+                        <button onclick="abrirModalSolicitacao('${p.uid}', '${p.email}', '${nomeExibicao}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-blue-700 transition shadow-sm">
                             Solicitar
                         </button>
                     </div>`;
@@ -546,10 +522,11 @@ window.gerarTokenCliente = async (orderId) => {
     }
 };
 
-window.abrirModalSolicitacao = (uid, email) => {
+window.abrirModalSolicitacao = (uid, email, nome) => {
     if(!auth.currentUser) return alert("Faça login.");
     targetProviderId = uid;
     targetProviderEmail = email;
+    // Opcional: guardar o nome do alvo também se quiser exibir no modal
     document.getElementById('request-modal').classList.remove('hidden');
 };
 
@@ -572,12 +549,19 @@ window.confirmarSolicitacao = async () => {
 
         const ids = [auth.currentUser.uid, targetProviderId].sort();
         const chatRoomId = `${ids[0]}_${ids[1]}`;
+        
+        // Pega meu nome para salvar no pedido
+        const meuNome = auth.currentUser.displayName || auth.currentUser.email.split('@')[0];
 
         await addDoc(collection(db, "orders"), {
             client_id: auth.currentUser.uid,
             client_email: auth.currentUser.email,
+            client_name: meuNome, // SALVA O NOME
+            
             provider_id: targetProviderId,
             provider_email: targetProviderEmail,
+            // provider_name: Não temos aqui fácil, mas o display do prestador já trata isso
+            
             service_date: data,
             service_time: hora,
             service_location: local,
@@ -606,7 +590,7 @@ window.confirmarSolicitacao = async () => {
 
         window.switchTab('chat');
         setTimeout(() => { 
-            if(window.abrirChat) window.abrirChat(chatRoomId, `Prestador: ${targetProviderEmail}`); 
+            if(window.abrirChat) window.abrirChat(chatRoomId, `Prestador: ${targetProviderEmail.split('@')[0]}`); 
             btn.innerText = "PAGAR RESERVA 🔒";
             btn.disabled = false;
         }, 500);
