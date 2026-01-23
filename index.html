@@ -24,6 +24,8 @@
         .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
         .rate-star.active { color: #fbbf24; }
         .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
+        .filter-pill { white-space: nowrap; transition: all 0.2s; }
+        .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -187,6 +189,10 @@
                         <h3 class="font-black text-gray-800 text-xs uppercase">Profissionais Online</h3>
                         <button id="btn-toggle-history-client" class="text-[9px] font-bold text-blue-600 uppercase border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">📜 Ver Histórico</button>
                     </div>
+
+                    <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters">
+                        </div>
+
                     <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
                 </div>
 
