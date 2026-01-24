@@ -1,5 +1,5 @@
 import { db } from './app.js';
-import { collection, addDoc, getDocs, getCountFromServer, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs, getCountFromServer, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- DASHBOARD ---
 export async function carregarDashboard() {
@@ -53,11 +53,13 @@ function carregarValidacoes() {
             if(badge) { badge.innerText = snap.size; badge.classList.replace('bg-gray-400', 'bg-red-500'); }
             snap.forEach(d => {
                 const item = d.data();
+                const valorFormatado = item.valor_bruto ? item.valor_bruto.toFixed(2) : "0.00";
+                
                 container.innerHTML += `
                     <div class="border p-3 rounded-lg bg-white shadow-sm flex flex-col gap-2">
                         <div class="flex justify-between items-center border-b pb-2">
                             <span class="font-bold text-xs uppercase text-blue-900">${item.mission_title}</span>
-                            <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">AGUARDANDO</span>
+                            <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">R$ ${valorFormatado}</span>
                         </div>
                         <div class="flex justify-between items-end">
                             <div class="text-[10px] text-gray-500">
@@ -65,8 +67,8 @@ function carregarValidacoes() {
                                 <a href="${item.photo_url}" target="_blank" class="text-blue-600 underline mt-1 block">📸 Ver Foto</a>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="validarMissao('${d.id}', false)" class="bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded text-[9px] font-bold">REJEITAR</button>
-                                <button onclick="validarMissao('${d.id}', true)" class="bg-green-600 text-white px-3 py-1.5 rounded text-[9px] font-bold shadow-sm">APROVAR</button>
+                                <button onclick="validarMissao('${d.id}', false, '${item.profile_id}', 0)" class="bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded text-[9px] font-bold">REJEITAR</button>
+                                <button onclick="validarMissao('${d.id}', true, '${item.profile_id}', ${item.valor_bruto})" class="bg-green-600 text-white px-3 py-1.5 rounded text-[9px] font-bold shadow-sm">APROVAR</button>
                             </div>
                         </div>
                     </div>`;
@@ -74,6 +76,52 @@ function carregarValidacoes() {
         }
     });
 }
+
+// --- FUNÇÃO DE APROVAÇÃO/REJEIÇÃO (FALTAVA ANTES) ---
+window.validarMissao = async (docId, aprovado, userId, valor) => {
+    const btn = event.target;
+    const textoOriginal = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "⏳";
+
+    try {
+        const assignmentRef = doc(db, "mission_assignments", docId);
+        
+        if (aprovado) {
+            if(!confirm(`Aprovar e enviar R$ ${valor} para o usuário?`)) {
+                 btn.disabled = false; btn.innerText = textoOriginal; return; 
+            }
+
+            // 1. Atualiza Status da Missão
+            await updateDoc(assignmentRef, {
+                status: "approved",
+                approved_at: serverTimestamp()
+            });
+
+            // 2. Adiciona Saldo ao Usuário
+            const userRef = doc(db, "usuarios", userId);
+            await updateDoc(userRef, {
+                saldo: increment(valor)
+            });
+
+            alert("✅ Aprovado! Saldo creditado.");
+        } else {
+            const motivo = prompt("Motivo da rejeição:");
+            if(motivo === null) { btn.disabled = false; btn.innerText = textoOriginal; return; }
+
+            await updateDoc(assignmentRef, {
+                status: "rejected",
+                rejection_reason: motivo,
+                rejected_at: serverTimestamp()
+            });
+            alert("❌ Rejeitado.");
+        }
+    } catch (e) {
+        alert("Erro: " + e.message);
+        btn.disabled = false;
+        btn.innerText = textoOriginal;
+    }
+};
 
 // --- SEEDERS (FERRAMENTAS DE TESTE) ---
 window.rodarSeedMissao = async () => {
@@ -96,13 +144,12 @@ window.rodarSeedOportunidade = async () => {
     } catch (e) { alert("Erro: " + e.message); }
 };
 
-// NOVO: SEED DE PRODUTOS PARA A LOJA
 window.rodarSeedProdutos = async () => {
     try {
         const produtosExemplo = [
-            { nome: "iPhone 15 Pro Max", preco: "8.500,00", categoria: "Eletrônicos", imagem: "https://http2.mlstatic.com/D_NQ_NP_2X_759904-MLA71783266948_092023-F.webp", link: "#", destaque: true },
-            { nome: "Curso Marketing Digital", preco: "97,00", categoria: "Infoproduto", imagem: "https://img.freepik.com/fotos-gratis/marketing-digital-com-icones-de-negocios-e-tecnologia_53876-47820.jpg", link: "#", destaque: false },
-            { nome: "Fone Bluetooth Pro", preco: "129,90", categoria: "Acessórios", imagem: "https://m.media-amazon.com/images/I/51+u0M-8tJL._AC_UF894,1000_QL80_.jpg", link: "#", destaque: false }
+            { nome: "iPhone 15 Pro Max", preco: 8500.00, categoria: "Eletrônicos", img: "https://http2.mlstatic.com/D_NQ_NP_2X_759904-MLA71783266948_092023-F.webp", desc: "Original Lacrado", destaque: true },
+            { nome: "Curso Marketing Digital", preco: 97.00, categoria: "Infoproduto", img: "https://img.freepik.com/fotos-gratis/marketing-digital-com-icones-de-negocios-e-tecnologia_53876-47820.jpg", desc: "Venda Todo Dia", destaque: false },
+            { nome: "Fone Bluetooth Pro", preco: 129.90, categoria: "Acessórios", img: "https://m.media-amazon.com/images/I/51+u0M-8tJL._AC_UF894,1000_QL80_.jpg", desc: "Grave Potente", destaque: false }
         ];
 
         for (const p of produtosExemplo) {
@@ -121,6 +168,7 @@ setInterval(() => {
 }, 5000);
 
 setTimeout(() => {
+    // Verifica periodicamente se a seção admin apareceu para iniciar o listener de validações
     const secAdmin = document.getElementById('sec-admin');
     if(secAdmin) carregarValidacoes();
 }, 2000);
