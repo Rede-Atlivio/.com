@@ -34,9 +34,10 @@
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
-    <audio id="online-sound" src="https://actions.google.com/sounds/v1/science_fiction/scifi_laser.ogg" preload="auto"></audio>
+    <audio id="notification-sound" src="https://www.soundjay.com/phone/sounds/cell-phone-1-nr0.mp3" preload="auto"></audio>
+    <audio id="online-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
 
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
     <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
@@ -179,10 +180,14 @@
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            
             <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Vagas exclusivas e bicos rápidos perto de você</p>
                 <div id="lista-oportunidades" class="grid gap-3"></div>
             </section>
+            
             <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões rápidas e garanta uma renda extra</p>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
             
@@ -190,10 +195,13 @@
                 <div id="servicos-cliente" class="hidden">
                     <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
                         <div class="flex items-center gap-3">
-                            <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
                             <div>
                                 <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
-                                <p class="text-[9px] text-gray-400">Bem-vindo ao Atlivio</p>
+                                <p class="text-[9px] text-gray-400">Mude o perfil para ver missões</p>
                             </div>
                         </div>
                     </div>
@@ -225,7 +233,10 @@
                 <div id="servicos-prestador" class="hidden">
                     <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
                         <div class="flex items-center gap-3">
-                            <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
                             <div>
                                 <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
                                 <p class="text-[9px] text-gray-400">Modo Prestador Ativo</p>
@@ -268,18 +279,23 @@
             </section>
 
             <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados para aumentar sua produtividade</p>
                 <div id="sec-produtos"></div>
             </section>
+            
             <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
                 <div id="lista-chats" class="space-y-2"></div>
             </section>
+            
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
                 <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
                     <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
                     <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
                 </div>
             </section>
+            
             <section id="sec-admin" class="hidden space-y-6 text-black animate-fadeIn pb-20">
                 <div class="flex justify-between items-center border-b pb-4">
                     <div>
@@ -289,23 +305,12 @@
                     <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-[9px] font-bold border border-green-200">🟢 SISTEMA ONLINE</div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Usuários Totais</p>
-                        <h3 class="text-2xl font-black text-blue-900" id="dash-total-users">-</h3>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                        <p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Prestadores Ativos</p>
-                        <h3 class="text-2xl font-black text-green-600" id="dash-active-providers">-</h3>
-                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Usuários Totais</p><h3 class="text-2xl font-black text-blue-900" id="dash-total-users">-</h3></div>
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><p class="text-[9px] text-gray-400 uppercase font-bold mb-1">Prestadores Ativos</p><h3 class="text-2xl font-black text-green-600" id="dash-active-providers">-</h3></div>
                 </div>
                 <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="font-bold text-slate-700 text-xs uppercase">Validações Pendentes</h3>
-                        <span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full" id="count-pending">0</span>
-                    </div>
-                    <div id="admin-pending-list" class="space-y-4 p-4 min-h-[100px]">
-                        <p class="text-center text-xs text-gray-400 py-4">Tudo limpo por aqui.</p>
-                    </div>
+                    <div class="bg-slate-50 px-4 py-3 border-b border-gray-200 flex justify-between items-center"><h3 class="font-bold text-slate-700 text-xs uppercase">Validações Pendentes</h3><span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full" id="count-pending">0</span></div>
+                    <div id="admin-pending-list" class="space-y-4 p-4 min-h-[100px]"><p class="text-center text-xs text-gray-400 py-4">Tudo limpo por aqui.</p></div>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-[10px] font-bold border border-slate-200 hover:bg-slate-200">⏸️ Pausar Oportunidades</button>
@@ -375,15 +380,15 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=9.0"></script>
-    <script type="module" src="./js/auth.js?v=9.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=9.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=9.0"></script>
-    <script type="module" src="./js/modules/services.js?v=9.0"></script>
-    <script type="module" src="./js/modules/products.js?v=9.0"></script>
-    <script type="module" src="./js/chat.js?v=9.0"></script>
-    <script type="module" src="./js/wallet.js?v=9.0"></script>
-    <script type="module" src="./js/admin.js?v=9.0"></script>
+    <script type="module" src="./js/app.js?v=10.0"></script>
+    <script type="module" src="./js/auth.js?v=10.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=10.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=10.0"></script>
+    <script type="module" src="./js/modules/services.js?v=10.0"></script>
+    <script type="module" src="./js/modules/products.js?v=10.0"></script>
+    <script type="module" src="./js/chat.js?v=10.0"></script>
+    <script type="module" src="./js/wallet.js?v=10.0"></script>
+    <script type="module" src="./js/admin.js?v=10.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
@@ -400,7 +405,7 @@
         let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
 
-        // === CORREÇÃO NUCLEAR DO VAZAMENTO DA LOJA (v9.0) ===
+        // === CORREÇÃO NUCLEAR DAS ABAS E DO VAZAMENTO DA LOJA (v10.0) ===
         window.switchTab = (tabName) => {
             // 1. ESCONDE TUDO NA FORÇA BRUTA (Itera sobre todas as seções do main)
             document.querySelectorAll('main > section').forEach(el => {
