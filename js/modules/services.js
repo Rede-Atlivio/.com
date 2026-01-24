@@ -2,36 +2,35 @@ import { db, auth } from '../app.js';
 import { doc, setDoc, collection, query, where, onSnapshot, serverTimestamp, getDoc, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- 1. CONFIGURAÇÕES ---
+// --- 1. CONFIGURAÇÕES E CATEGORIAS ---
 const categoriasDisponiveis = ["Barman", "Garçom", "Segurança", "Limpeza", "Eletricista", "Encanador", "Montador", "Outros"];
 let categoriaAtiva = 'Todos';
 let meusServicos = [];
 
-// --- 2. EXPOSIÇÃO GLOBAL (FIX PARA O BOTÃO SOLICITAR) ---
+// --- 2. EXPOSIÇÃO GLOBAL IMEDIATA (PARA O HTML ENXERGAR OS BOTÕES) ---
 
-window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => {
-    if (!auth.currentUser) return alert("Faça login para solicitar!");
+window.abrirConfiguracaoServicos = () => {
+    const modal = document.getElementById('provider-setup-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        renderMyServicesList();
+    }
+};
 
-    const modal = document.getElementById('request-modal');
-    if (!modal) return console.error("Modal de solicitação não encontrado no HTML!");
+window.switchServiceSubTab = (tab) => {
+    const abas = ['contratar', 'andamento', 'historico', 'carteira'];
+    abas.forEach(t => {
+        document.getElementById(`view-${t}`)?.classList.toggle('hidden', t !== tab);
+        document.getElementById(`subtab-${t}-btn`)?.classList.toggle('active', t === tab);
+    });
+};
 
-    // Preenche os campos de controle
-    const targetIdInput = document.getElementById('target-provider-id');
-    const basePriceInput = document.getElementById('service-base-price');
-    if (targetIdInput) targetIdInput.value = uid;
-    if (basePriceInput) basePriceInput.value = precoBase;
-
-    // Reseta visual do modal de negociação
-    const reqValue = document.getElementById('req-value');
-    if (reqValue) { reqValue.value = ""; reqValue.disabled = true; }
-    
-    const radioCustom = document.getElementById('radio-custom');
-    if (radioCustom) radioCustom.checked = false;
-
-    const btnConfirm = document.getElementById('btn-confirm-req');
-    if (btnConfirm) { btnConfirm.disabled = true; btnConfirm.classList.add('opacity-50'); }
-
-    modal.classList.remove('hidden');
+window.switchProviderSubTab = (tabName) => {
+    const abasP = ['radar', 'ativos', 'historico', 'carteira'];
+    abasP.forEach(t => {
+        document.getElementById(`pview-${t}`)?.classList.toggle('hidden', t !== tabName);
+        document.getElementById(`ptab-${t}-btn`)?.classList.toggle('active', t === tabName);
+    });
 };
 
 window.addServiceLocal = () => {
@@ -39,44 +38,11 @@ window.addServiceLocal = () => {
     const price = document.getElementById('new-service-price')?.value;
     if (!cat || !price) return alert("Selecione categoria e preço!");
 
-    meusServicos.push({
-        category: cat,
-        price: parseFloat(price),
-        visible: true
-    });
-
+    meusServicos.push({ category: cat, price: parseFloat(price), visible: true });
     renderMyServicesList();
 };
 
-function renderMyServicesList() {
-    const list = document.getElementById('my-services-list');
-    if (!list) return;
-    list.innerHTML = meusServicos.length === 0 ? `<p class="text-center text-gray-400 text-xs py-4">Nenhum serviço.</p>` : "";
-    meusServicos.forEach((srv, index) => {
-        list.innerHTML += `<div class="bg-gray-50 p-2 rounded mb-1 flex justify-between text-xs font-bold">
-            <span>${srv.category} - R$ ${srv.price.toFixed(2)}</span>
-            <button onclick="window.removeServiceLocal(${index})" class="text-red-500">❌</button>
-        </div>`;
-    });
-}
-
 window.removeServiceLocal = (index) => { meusServicos.splice(index, 1); renderMyServicesList(); };
-
-window.switchServiceSubTab = (tab) => {
-    ['contratar', 'andamento', 'historico'].forEach(t => {
-        document.getElementById(`view-${t}`)?.classList.toggle('hidden', t !== tab);
-        document.getElementById(`subtab-${t}-btn`)?.classList.toggle('active', t === tab);
-    });
-};
-
-window.switchProviderSubTab = (tabName) => {
-    ['radar', 'ativos', 'historico'].forEach(t => {
-        document.getElementById(`pview-${t}`)?.classList.toggle('hidden', t !== tabName);
-        document.getElementById(`ptab-${t}-btn`)?.classList.toggle('active', t === tabName);
-    });
-};
-
-// --- 3. LÓGICA DE RADAR E STATUS ---
 
 window.alternarStatusOnline = async (isOnline) => {
     if (!auth.currentUser) return;
@@ -94,13 +60,26 @@ window.alternarStatusOnline = async (isOnline) => {
                 categories: meusServicos.map(s => s.category),
                 last_seen: serverTimestamp()
             }, { merge: true });
+            document.getElementById('online-sound')?.play().catch(()=>{});
         } else {
             await updateDoc(activeRef, { is_online: false, last_seen: serverTimestamp() });
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error("Erro status:", e); }
 };
 
-// --- 4. CATÁLOGO ---
+// --- 3. LÓGICA DE INTERFACE ---
+
+function renderMyServicesList() {
+    const list = document.getElementById('my-services-list');
+    if (!list) return;
+    list.innerHTML = meusServicos.length === 0 ? `<p class="text-center text-gray-400 text-xs py-4">Nenhum serviço.</p>` : "";
+    meusServicos.forEach((srv, index) => {
+        list.innerHTML += `<div class="bg-gray-50 p-2 rounded mb-1 flex justify-between text-xs font-bold">
+            <span>${srv.category} - R$ ${srv.price.toFixed(2)}</span>
+            <button onclick="window.removeServiceLocal(${index})" class="text-red-500">❌</button>
+        </div>`;
+    });
+}
 
 function carregarPrestadoresOnline() {
     const container = document.getElementById('lista-prestadores-realtime');
@@ -133,7 +112,7 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// --- 5. MONITOR DE ESTADO ---
+// --- 4. MONITOR DE ESTADO ---
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
