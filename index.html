@@ -70,7 +70,13 @@
         </div>
     </div>
 
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
+        <div class="loader mb-4"></div>
+        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+    </div>
+
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+        
         <header class="bg-white shadow-sm p-4 flex justify-between items-center z-30 sticky top-0">
             <div class="flex flex-col">
                 <div class="flex flex-col md:flex-row md:items-baseline gap-1">
@@ -79,8 +85,9 @@
                         O Primeiro Marketplace Híbrido do Mundo
                     </span>
                 </div>
+                
                 <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">
-                    🔄 Trocar Perfil
+                    🔄 Carregando...
                 </button>
             </div>
             
@@ -92,21 +99,53 @@
                         <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
                     </div>
                 </div>
-                <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50">Sair</button>
+                <div class="flex flex-col items-end gap-1">
+                    <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">
+                        📲 SALVE SEU ACESSO
+                    </button>
+                    <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full">
+                        Sair
+                    </button>
+                </div>
             </div>
         </header>
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
             <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
-            <button onclick="switchTab('missoes')" id="tab-missoes" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
-            <button onclick="switchTab('loja')" id="tab-loja" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Loja 🛒</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Produtos Recomendados 🛒</button>
             <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
-            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos, Cashback e Apps que pagam por indicação</p>
+                <div id="lista-oportunidades" class="grid gap-3"></div>
+            </section>
+            
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões rápidas e garanta uma renda extra</p>
+                <div id="lista-missoes" class="grid gap-4"></div>
+            </section>
+            
             <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
                 <div id="servicos-cliente" class="hidden">
+                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
                         <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
                         <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
@@ -114,131 +153,238 @@
                     </div>
 
                     <div id="view-contratar">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Encontre e contrate profissionais agora</p>
                         <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters"></div>
-                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3">
+                            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center skeleton h-40"></div>
+                            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center skeleton h-40"></div>
+                        </div>
+                    </div>
+                    <div id="view-andamento" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Acompanhe seus pedidos em tempo real</p>
+                        <div id="meus-pedidos-andamento" class="space-y-3"></div>
+                    </div>
+                    <div id="view-historico" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus serviços anteriores</p>
+                        <div id="meus-pedidos-historico" class="space-y-3"></div>
                     </div>
                 </div>
 
                 <div id="servicos-prestador" class="hidden">
-                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center">
-                        <h3 class="font-black text-xs text-blue-900 uppercase">Seu Painel</h3>
-                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg">✎ CONFIGURAR</button>
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                            </div>
+                        </div>
+                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
+                            ✎ MEUS SERVIÇOS
+                        </button>
                     </div>
-                    <div id="pview-radar" class="text-center py-10"></div>
+
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
+                        <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
+                        <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
+                    </div>
+
+                    <div id="pview-radar" class="text-center py-10">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-4 tracking-widest">Aguarde chamados aqui</p>
+                        <div id="status-msg" class="text-gray-400 mb-4">
+                            <p class="text-4xl mb-2">😴</p>
+                            <p class="font-bold text-sm">Você está Offline</p>
+                            <p class="text-xs">Ative o botão "Trabalhar" no topo.</p>
+                        </div>
+                    </div>
+                    <div id="pview-ativos" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
+                        <div id="lista-chamados-ativos">
+                            <p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>
+                        </div>
+                    </div>
+                    <div id="pview-historico" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus trabalhos concluídos</p>
+                        <div id="lista-chamados-historico">
+                            <p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados para aumentar sua produtividade</p>
+                <div id="sec-produtos"></div>
+            </section>
+            
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-chats" class="space-y-2"></div>
+            </section>
+            
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
                 <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
                     <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
                     <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
                 </div>
-                <button onclick="window.rodarSeedSistema()" class="w-full mt-10 bg-orange-600 text-white py-2 rounded-lg font-black text-[10px] uppercase">
-                    ⚡ POPULAR SISTEMA (TESTE)
-                </button>
             </section>
         </main>
     </div>
 
-    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4">
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
-            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 text-xl font-bold">&times;</button>
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
             <h3 class="font-black text-xl text-blue-900 uppercase italic mb-4">Meus Serviços</h3>
-            <div class="mb-4"><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Profissional</label><input type="text" id="setup-name" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-900"></div>
-            <div id="my-services-list" class="space-y-3 mb-6 max-h-40 overflow-y-auto"></div>
-            <div class="bg-gray-50 p-4 rounded-xl border mb-4">
-                <div class="grid grid-cols-2 gap-2 mb-2">
-                    <select id="new-service-category" class="w-full border p-2 rounded-lg text-xs">
-                        <option value="Barman">Barman</option><option value="Garçom">Garçom</option><option value="Segurança">Segurança</option><option value="Limpeza">Limpeza</option><option value="Eletricista">Eletricista</option>
-                    </select>
-                    <input type="number" id="new-service-price" placeholder="R$" class="w-full border p-2 rounded-lg text-xs">
-                </div>
-                <button onclick="addServiceLocal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase">+ Adicionar</button>
-            </div>
-            <button onclick="saveServicesAndGoOnline()" class="w-full bg-green-600 text-white py-3 rounded-xl font-black uppercase shadow-lg">Salvar e Ficar Online 📡</button>
+            <div class="mb-4"><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Profissional</label><input type="text" id="setup-name" placeholder="Ex: Gilvan Borges" class="w-full border p-3 rounded-xl text-sm bg-gray-50 focus:border-blue-500 focus:bg-white outline-none text-gray-900 font-bold"></div>
+            <p class="text-xs text-gray-400 mb-2">Adicione as categorias que você atende:</p>
+            <div id="my-services-list" class="space-y-3 mb-6 max-h-40 overflow-y-auto"><p class="text-center text-gray-300 text-xs italic py-4">Nenhum serviço adicionado.</p></div>
+            <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4"><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p><div class="grid grid-cols-2 gap-2 mb-2"><select id="new-service-category" class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800"><option value="" disabled selected>Categoria...</option><option value="Barman">Barman</option><option value="Garçom">Garçom</option><option value="Segurança">Segurança</option><option value="Limpeza">Limpeza</option><option value="Eletricista">Eletricista</option><option value="Encanador">Encanador</option><option value="Montador">Montador</option><option value="Outros">Outros</option></select><input type="number" id="new-service-price" placeholder="Preço (R$)" class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800"></div><textarea id="new-service-desc" rows="1" placeholder="Ex: Especialista em drinks..." class="w-full border p-2 rounded-lg text-xs bg-white text-gray-800 mb-2"></textarea><button onclick="addServiceLocal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-sm hover:bg-blue-700">+ Adicionar à Lista</button></div>
+            <button onclick="saveServicesAndGoOnline()" class="w-full bg-green-600 text-white py-3 rounded-xl font-black uppercase shadow-lg hover:bg-green-700 transition">Salvar e Ficar Online 📡</button>
         </div>
     </div>
 
-    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col">
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div class="bg-blue-900 h-20 relative"><button onclick="document.getElementById('provider-profile-modal').classList.add('hidden')" class="absolute top-4 right-4 text-white/50 hover:text-white text-xl font-bold">&times;</button></div>
+            <div class="px-6 pb-6 text-center -mt-10"><img id="public-profile-photo" src="" class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md bg-gray-200"><h3 id="public-profile-name" class="font-black text-lg text-gray-800 uppercase mt-2">Nome do Prestador</h3><div class="flex justify-center items-center gap-1 text-yellow-500 text-sm mb-4"><span>★</span> <span id="public-profile-rating" class="font-bold text-gray-600">5.0</span></div><div class="text-left"><h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b pb-1">Serviços Oferecidos</h4><div id="public-services-list" class="space-y-2 max-h-60 overflow-y-auto"><div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center"><div><span class="block font-bold text-xs text-blue-900">CARREGANDO...</span></div></div></div></div></div>
+        </div>
+    </div>
+
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <input type="hidden" id="target-provider-id">
             <input type="hidden" id="service-base-price">
-            <div class="bg-blue-900 p-4 text-white flex justify-between items-start rounded-t-2xl">
-                <div><h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3><p class="text-xs opacity-75">Cálculo de reserva automático.</p></div>
+            
+            <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
+                <div>
+                    <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                    <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
+                </div>
                 <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
             </div>
-            <div class="p-6 space-y-4">
-                <div class="grid grid-cols-3 gap-2">
-                    <button onclick="selecionarDesconto(0.05)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs">-5%</button>
-                    <button onclick="selecionarDesconto(0.10)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs">-10%</button>
-                    <button onclick="selecionarDesconto(0.15)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs">-15%</button>
-                </div>
-                <div class="bg-gray-50 p-3 rounded-xl border">
-                    <div class="flex justify-between items-center mb-2">
-                        <label class="flex items-center gap-2"><input type="radio" name="price-type" id="radio-custom" onchange="ativarInputPersonalizado()"><span class="text-xs font-bold">Outro Valor</span></label>
+
+            <div class="p-6 space-y-5 overflow-y-auto flex-1">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Data</label>
+                        <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
                     </div>
-                    <div class="relative"><span class="absolute left-3 top-2.5 text-gray-500 font-bold text-sm">R$</span><input type="number" id="req-value" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black bg-gray-100"></div>
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label>
+                        <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                    </div>
                 </div>
+                <div>
+                    <label class="text-[9px] font-bold text-gray-500 uppercase">Local</label>
+                    <input type="text" id="req-local" placeholder="Endereço do serviço" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                </div>
+
+                <div class="border-t border-gray-100 pt-2"></div>
+
+                <div>
+                    <p class="text-[10px] font-bold text-blue-900 uppercase mb-3">Quanto você quer ofertar?</p>
+                    
+                    <div class="mb-4">
+                        <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="selecionarDesconto(0.05)" id="btn-desc-5" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
+                            <button onclick="selecionarDesconto(0.10)" id="btn-desc-10" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
+                            <button onclick="selecionarDesconto(0.15)" id="btn-desc-15" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="ativarInputPersonalizado()">
+                                <span class="text-xs font-bold text-gray-700">✏️ Outro Valor</span>
+                            </label>
+                            <span class="text-[8px] text-gray-400">(Min: -20% | Max: +30%)</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-gray-500 font-bold text-sm">R$</span>
+                            <input type="number" id="req-value" placeholder="0,00" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-400 bg-gray-100 outline-none transition" oninput="validarOferta(this.value)">
+                        </div>
+                        <p id="msg-erro-valor" class="hidden text-[9px] text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-100 font-bold text-center">
+                            Para manter a qualidade, a oferta mínima é R$ <span id="val-min">00</span>.
+                        </p>
+                    </div>
+                </div>
+
                 <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden">
-                    <div class="flex justify-between text-xs mb-1"><span>Reserva (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
-                    <div class="flex justify-between text-xs mb-3 border-b pb-2"><span>Taxa (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
-                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>TOTAL A PAGAR</span><span id="calc-total-reserva">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
+                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA</span><span id="calc-total-reserva">R$ 0,00</span></div>
                 </div>
-                <button id="btn-confirm-req" disabled class="w-full py-3 text-xs font-bold text-white bg-blue-600 rounded-xl opacity-50 cursor-not-allowed uppercase">Enviar Proposta 🚀</button>
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
+                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
+                <button onclick="enviarPropostaAgora()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>ENVIAR PROPOSTA 🚀</button>
             </div>
         </div>
     </div>
 
-    <script type="module" src="./js/app.js"></script>
-    <script type="module" src="./js/auth.js"></script>
-    <script type="module" src="./js/modules/services.js"></script>
-    <script type="module" src="./js/modules/products.js"></script>
-    <script type="module" src="./js/chat.js"></script>
-    <script type="module" src="./js/wallet.js"></script>
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p><div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container"><span class="rate-star" data-val="1">★</span><span class="rate-star" data-val="2">★</span><span class="rate-star" data-val="3">★</span><span class="rate-star" data-val="4">★</span><span class="rate-star" data-val="5">★</span></div><div class="grid grid-cols-2 gap-2 mb-6"><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button></div><div class="flex items-center justify-center gap-4 mb-6"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="yes" class="accent-blue-600" checked><span class="text-xs font-bold text-gray-700">👍 Recomendo</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="no" class="accent-red-600"><span class="text-xs font-bold text-gray-700">👎 Não Indico</span></label></div><textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea><button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button><button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button></div>
+    </div>
 
     <script>
-        // Gerenciamento Geral de Abas
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log("Service Worker DESTRUÍDO.");
+                }
+            });
+        }
+    </script>
+    <script type="module" src="./js/app.js?v=15.0"></script>
+    <script type="module" src="./js/auth.js?v=15.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=15.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=15.0"></script>
+    <script type="module" src="./js/modules/services.js?v=15.0"></script>
+    <script type="module" src="./js/modules/products.js?v=15.0"></script>
+    <script type="module" src="./js/chat.js?v=15.0"></script>
+    <script type="module" src="./js/wallet.js?v=15.0"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
+        let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent); const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
+        btnInstall.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { iosModal.classList.remove('hidden'); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); } });
+        
+        let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
+
+        // === CORREÇÃO NUCLEAR DAS ABAS (v15.0) ===
         window.switchTab = (tabName) => {
-            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(`sec-${tabName}`).classList.remove('hidden');
-            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('border-blue-600', 'text-blue-900', 'active'));
-            document.getElementById(`tab-${tabName}`).classList.add('border-blue-600', 'text-blue-900', 'active');
+            document.querySelectorAll('main > section').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+            const alvo = document.getElementById(`sec-${tabName}`);
+            if(alvo) {
+                alvo.classList.remove('hidden');
+                alvo.style.display = 'block';
+            }
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+            }
         };
-
-        // Lógica de UI para Propostas e Cálculos (Modelo B)
-        window.selecionarDesconto = (percentual) => {
-            const basePrice = parseFloat(document.getElementById('service-base-price').value || 0);
-            const novoValor = basePrice * (1 - percentual);
-            document.getElementById('req-value').value = novoValor.toFixed(2);
-            document.getElementById('radio-custom').checked = false;
-            document.getElementById('req-value').disabled = true;
-            window.calcularReserva(novoValor);
-        };
-
-        window.ativarInputPersonalizado = () => {
-            const input = document.getElementById('req-value');
-            input.disabled = false; input.focus();
-            input.classList.remove('bg-gray-100');
-            input.classList.add('bg-white');
-        };
-
-        window.calcularReserva = (valorTotal) => {
-            if (!valorTotal || valorTotal <= 0) return;
-            const seguranca = valorTotal * 0.30;
-            const taxa = valorTotal * 0.10;
-            const totalPagar = seguranca + taxa;
-
-            document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`;
-            document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`;
-            document.getElementById('calc-total-reserva').innerText = `R$ ${totalPagar.toFixed(2)}`;
-            document.getElementById('financial-summary').classList.remove('hidden');
-            
-            const btn = document.getElementById('btn-confirm-req');
-            btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed');
-        };
-
-        document.getElementById('req-value')?.addEventListener('input', (e) => {
-            window.calcularReserva(parseFloat(e.target.value));
-        });
     </script>
 </body>
 </html>
