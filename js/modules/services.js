@@ -41,7 +41,7 @@ window.switchProviderSubTab = (tabName) => {
 // --- 2. INICIALIZAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // CORREÇÃO CRÍTICA 1: Força atualização visual imediata
+        // CORREÇÃO CRÍTICA 1: Força atualização visual imediata (Mata o "Carregando...")
         forcarAtualizacaoInterface(user);
         
         configurarBotaoOnline();
@@ -65,10 +65,10 @@ onAuthStateChanged(auth, async (user) => {
 
 // --- 3. CORREÇÃO VISUAL (FOTO/NOME) ---
 async function forcarAtualizacaoInterface(user) {
-    // Tenta dados do Auth primeiro
+    // 1. Tenta dados do Auth (Rápido)
     atualizarElementosCabecalho(user.displayName, user.photoURL);
 
-    // Busca dados frescos do Firestore para garantir
+    // 2. Busca dados frescos do Firestore (Preciso e Persistente)
     try {
         const docSnap = await getDoc(doc(db, "usuarios", user.uid));
         if (docSnap.exists()) {
@@ -106,13 +106,13 @@ function configurarBotaoOnline() {
     const toggle = document.getElementById('online-toggle'); 
     if(!toggle) return; 
     
-    // Remove listeners antigos para evitar duplicação (clone)
+    // Remove listeners antigos (Clone para limpar memória)
     const newToggle = toggle.cloneNode(true);
     toggle.parentNode.replaceChild(newToggle, toggle);
 
     newToggle.addEventListener('change', async (e) => { 
         if (e.target.checked) { 
-            // CORREÇÃO CRÍTICA 2: Recarrega serviços antes de ficar online
+            // CORREÇÃO CRÍTICA 2: Busca fresca no banco antes de decidir
             await carregarMeusServicosDoBanco(auth.currentUser.uid);
             
             if (meusServicos.length > 0) { 
@@ -146,7 +146,7 @@ async function ficarOnline() {
         last_seen: serverTimestamp() 
     }; 
 
-    // Recupera nome profissional
+    // Recupera nome profissional atualizado
     const userDoc = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
     if(userDoc.exists()) updateData.nome_profissional = userDoc.data().nome_profissional || userDoc.data().displayName;
 
@@ -189,7 +189,7 @@ async function verificarStatusOnline(uid) {
             if(data.is_online && toggle) { 
                 toggle.checked = true; 
                 meusServicos = data.services || []; 
-                ficarOnline(); // Atualiza timestamp
+                ficarOnline(); // Renova sessão
             } 
         } 
     } catch (e) { console.log("Status check:", e); } 
@@ -202,7 +202,7 @@ function carregarPrestadoresOnline(forcar = false) {
     if(listenerPrestadoresAtivo && !forcar) return; 
     if(forcar) listaContainer.innerHTML = ""; 
     
-    // CORREÇÃO CRÍTICA 3: Query simplificada se não tiver categoria
+    // CORREÇÃO CRÍTICA 3: Query robusta
     let q = query(collection(db, "active_providers"), orderBy("is_online", "desc"), orderBy("last_seen", "desc")); 
     
     if (categoriaAtiva !== 'Todos') { 
@@ -218,11 +218,9 @@ function carregarPrestadoresOnline(forcar = false) {
         } else { 
             snap.forEach(d => { 
                 const p = d.data(); 
-                // Não mostra a si mesmo
                 if(auth.currentUser && p.uid === auth.currentUser.uid) return; 
                 if (!p.services || p.services.length === 0) return; 
                 
-                // Filtro visual
                 let servicoExibido = null; 
                 if (categoriaAtiva !== 'Todos') { 
                     servicoExibido = p.services.find(s => s.category === categoriaAtiva); 
@@ -267,7 +265,7 @@ function carregarPrestadoresOnline(forcar = false) {
     }); 
 }
 
-// --- 6. NEGOCIAÇÃO E SETUP (MANTIDOS E CORRIGIDOS) ---
+// --- 6. NEGOCIAÇÃO E SETUP (MANTIDOS E FUNCIONAIS) ---
 window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => { 
     if(!auth.currentUser) return alert("Faça login."); 
     const hiddenId = document.getElementById('target-provider-id'); 
@@ -368,7 +366,6 @@ window.saveServicesAndGoOnline = async () => { if(meusServicos.length === 0) ret
 window.abrirPerfilPublico = async (uid) => { const modal = document.getElementById('provider-profile-modal'); const listaServicos = document.getElementById('public-services-list'); modal.classList.remove('hidden'); listaServicos.innerHTML = '<div class="loader mx-auto my-4"></div>'; try { const docSnap = await getDoc(doc(db, "active_providers", uid)); if(!docSnap.exists()) return; const p = docSnap.data(); document.getElementById('public-profile-name').innerText = p.nome_profissional; if(p.foto_perfil) document.getElementById('public-profile-photo').src = p.foto_perfil; listaServicos.innerHTML = ""; p.services.forEach(s => { if(!s.visible) return; listaServicos.innerHTML += `<div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-2"><div class="flex justify-between items-start mb-2"><span class="font-black text-xs text-blue-900 uppercase bg-blue-50 px-2 py-1 rounded">${s.category}</span><span class="font-black text-sm text-green-600">R$ ${s.price}</span></div><p class="text-xs text-gray-600 leading-relaxed mb-3">${s.description || "Profissional experiente pronto para atender."}</p><button onclick="document.getElementById('provider-profile-modal').classList.add('hidden'); abrirModalSolicitacao('${p.uid}', '${p.nome_profissional}', '${s.price}')" class="w-full bg-blue-600 text-white font-bold text-xs py-2 rounded-lg hover:bg-blue-700">CONTRATAR ESTE SERVIÇO</button></div>`; }); } catch (e) { console.error(e); listaServicos.innerHTML = '<p class="text-red-500 text-xs">Erro ao carregar perfil.</p>'; } };
 function renderEmptyState(container) { container.innerHTML = `<div class="col-span-2 text-center text-gray-400 text-xs py-10 bg-gray-50 rounded-xl border border-dashed border-gray-200"><p class="text-2xl mb-2">🔍</p><p class="font-bold">Nenhum prestador encontrado.</p><p class="text-[9px] mt-1 opacity-70">Tente outra categoria.</p></div>`; }
 function escutarMeusPedidos() { if(!auth.currentUser) return; const containerAndamento = document.getElementById('meus-pedidos-andamento'); const containerHistorico = document.getElementById('meus-pedidos-historico'); if(!containerAndamento || !containerHistorico) return; const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid)); onSnapshot(q, (snap) => { containerAndamento.innerHTML = ""; containerHistorico.innerHTML = ""; let hasAndamento = false; let hasHistorico = false; if(!snap.empty) { snap.forEach(d => { const pedido = d.data(); const nomePrestadorHistorico = pedido.provider_email || "Prestador"; if (pedido.status === 'pending_acceptance' || pedido.status === 'reserved') { hasAndamento = true; let badge = pedido.status === 'pending_acceptance' ? `<span class="text-[9px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold">AGUARDANDO ACEITE</span>` : `<span class="text-[9px] bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-bold">EM ANDAMENTO</span>`; let actions = pedido.status === 'reserved' ? `<div class="flex gap-2"><button onclick="aceitarChamado('${d.id}', '${pedido.chat_id}', '${nomePrestadorHistorico}')" class="flex-1 bg-gray-100 text-gray-600 py-2 rounded-lg font-bold text-[10px] uppercase">Chat</button><button onclick="gerarTokenCliente('${d.id}')" class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-bold text-[10px] uppercase shadow-sm">${pedido.finalization_code ? 'VER CÓDIGO 🔑' : 'FINALIZAR SERVIÇO ✅'}</button></div>` : `<p class="text-[9px] text-gray-400 italic">O prestador precisa aceitar para liberar o chat.</p>`; containerAndamento.innerHTML += `<div class="bg-white p-4 rounded-xl border-l-4 ${pedido.status === 'reserved' ? 'border-yellow-400' : 'border-gray-300'} shadow-sm mb-2"><div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${nomePrestadorHistorico}</span>${badge}</div><h4 class="font-black text-gray-800 text-sm mb-3">R$ ${pedido.service_value}</h4>${actions}</div>`; } else if (pedido.status === 'completed' || pedido.status === 'rejected') { hasHistorico = true; let badge = pedido.status === 'completed' ? `<span class="text-[9px] bg-green-100 text-green-800 px-2 py-0.5 rounded font-bold">CONCLUÍDO</span>` : `<span class="text-[9px] bg-red-100 text-red-800 px-2 py-0.5 rounded font-bold">RECUSADO</span>`; let reviewBtn = (pedido.status === 'completed' && !pedido.is_reviewed) ? `<button onclick="abrirModalAvaliacao('${d.id}', '${pedido.provider_id}')" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold text-xs uppercase animate-pulse mt-2">⭐ AVALIAR PRESTADOR</button>` : ''; containerHistorico.innerHTML += `<div class="bg-white p-4 rounded-xl border-l-4 ${pedido.status === 'completed' ? 'border-green-500' : 'border-red-500'} shadow-sm mb-2"><div class="flex justify-between items-center mb-2"><span class="text-[10px] font-bold uppercase text-gray-500">Prestador: ${nomePrestadorHistorico}</span>${badge}</div>${reviewBtn}</div>`; } }); } if(!hasAndamento) containerAndamento.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Nenhum serviço em andamento.</p>`; if(!hasHistorico) containerHistorico.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>`; }); }
-// ... (demais funções de apoio mantidas e já incorporadas acima)
 window.aceitarPedido = async (orderId) => { if(!confirm("Aceitar proposta e iniciar serviço?")) return; try { const orderRef = doc(db, "orders", orderId); const orderSnap = await getDoc(orderRef); const pedido = orderSnap.data(); await updateDoc(orderRef, { status: "reserved" }); const chatRef = doc(db, "chats", pedido.chat_id); await setDoc(chatRef, { participants: [pedido.client_id, pedido.provider_id], mission_title: `Serviço: R$ ${pedido.service_value} (Em Andamento)`, last_message: "Proposta aceita! O chat está liberado.", updated_at: serverTimestamp(), is_service_chat: true }); alert("✅ Serviço Aceito! O chat foi liberado."); if(window.switchProviderSubTab) window.switchProviderSubTab('ativos'); } catch(e) { alert("Erro: " + e.message); } };
 window.recusarPedido = async (orderId) => { if(!confirm("Recusar proposta?")) return; try { await updateDoc(doc(db, "orders", orderId), { status: "rejected" }); alert("❌ Proposta recusada."); } catch(e) { alert("Erro: " + e.message); } };
 window.validarTokenPrestador = async (orderId, valorTotal) => { const input = document.getElementById(`token-${orderId}`); const tokenDigitado = input.value.trim(); if(tokenDigitado.length !== 4) return alert("O código deve ter 4 dígitos."); const btn = event.target; btn.innerText = "Verificando..."; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const orderSnap = await getDoc(orderRef); if(!orderSnap.exists()) throw new Error("Pedido não encontrado."); if (tokenDigitado === orderSnap.data().finalization_code) { await updateDoc(orderRef, { status: 'completed', completed_at: serverTimestamp() }); await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { saldo: increment(orderSnap.data().amount_security || 0) }); alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.`); } else { alert("❌ CÓDIGO INVÁLIDO."); input.value = ""; btn.innerText = "VALIDAR & RECEBER"; btn.disabled = false; } } catch (e) { alert("Erro: " + e.message); btn.innerText = "Erro"; btn.disabled = false; } };
