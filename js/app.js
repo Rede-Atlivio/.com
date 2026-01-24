@@ -20,13 +20,10 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// EXPOSIÇÃO GLOBAL
+// EXPOSIÇÃO GLOBAL (Obrigatório para os scripts de teste e console funcionarem)
 window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
-
-// Importação do módulo de Seeds (Sementes de dados)
-import './seeds.js';
 
 export { app, auth, db, storage, provider };
