@@ -242,7 +242,7 @@
                                 <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
                             </div>
                         </div>
-                        <button onclick="document.getElementById('provider-setup-modal').classList.remove('hidden')" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
+                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
                             ✎ MEUS SERVIÇOS
                         </button>
                     </div>
@@ -380,15 +380,15 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=11.0"></script>
-    <script type="module" src="./js/auth.js?v=11.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=11.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=11.0"></script>
-    <script type="module" src="./js/modules/services.js?v=11.0"></script>
-    <script type="module" src="./js/modules/products.js?v=11.0"></script>
-    <script type="module" src="./js/chat.js?v=11.0"></script>
-    <script type="module" src="./js/wallet.js?v=11.0"></script>
-    <script type="module" src="./js/admin.js?v=11.0"></script>
+    <script type="module" src="./js/app.js?v=12.0"></script>
+    <script type="module" src="./js/auth.js?v=12.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=12.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=12.0"></script>
+    <script type="module" src="./js/modules/services.js?v=12.0"></script>
+    <script type="module" src="./js/modules/products.js?v=12.0"></script>
+    <script type="module" src="./js/chat.js?v=12.0"></script>
+    <script type="module" src="./js/wallet.js?v=12.0"></script>
+    <script type="module" src="./js/admin.js?v=12.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
@@ -405,7 +405,7 @@
         let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
 
-        // === CORREÇÃO NUCLEAR DAS ABAS E DO VAZAMENTO DA LOJA (v11.0) ===
+        // === CORREÇÃO NUCLEAR DAS ABAS E DO VAZAMENTO DA LOJA (v12.0) ===
         window.switchTab = (tabName) => {
             // 1. ESCONDE TUDO NA FORÇA BRUTA (Itera sobre todas as seções do main)
             document.querySelectorAll('main > section').forEach(el => {
