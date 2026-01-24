@@ -34,8 +34,8 @@
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    <audio id="notification-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
-    <audio id="online-sound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3" preload="auto"></audio>
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+    <audio id="online-sound" src="https://actions.google.com/sounds/v1/science_fiction/scifi_laser.ogg" preload="auto"></audio>
 
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
@@ -375,18 +375,17 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=8.0"></script>
-    <script type="module" src="./js/auth.js?v=8.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=8.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=8.0"></script>
-    <script type="module" src="./js/modules/services.js?v=8.0"></script>
-    <script type="module" src="./js/modules/products.js?v=8.0"></script>
-    <script type="module" src="./js/chat.js?v=8.0"></script>
-    <script type="module" src="./js/wallet.js?v=8.0"></script>
-    <script type="module" src="./js/admin.js?v=8.0"></script>
+    <script type="module" src="./js/app.js?v=9.0"></script>
+    <script type="module" src="./js/auth.js?v=9.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=9.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=9.0"></script>
+    <script type="module" src="./js/modules/services.js?v=9.0"></script>
+    <script type="module" src="./js/modules/products.js?v=9.0"></script>
+    <script type="module" src="./js/chat.js?v=9.0"></script>
+    <script type="module" src="./js/wallet.js?v=9.0"></script>
+    <script type="module" src="./js/admin.js?v=9.0"></script>
 
     <script>
-        // ... RESTO DO JS (COM A CORREÇÃO CRÍTICA DO switchTab) ...
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
         let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
@@ -401,18 +400,20 @@
         let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
 
-        // === CORREÇÃO DO VAZAMENTO DA LOJA ===
+        // === CORREÇÃO NUCLEAR DO VAZAMENTO DA LOJA (v9.0) ===
         window.switchTab = (tabName) => {
-            // 1. ESCONDE TUDO PRIMEIRO (INCLUINDO A LOJA sec-produtos)
-            const todasSecoes = ['sec-servicos', 'sec-missoes', 'sec-oportunidades', 'sec-loja', 'sec-chat', 'sec-ganhar', 'sec-admin'];
-            todasSecoes.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.classList.add('hidden');
+            // 1. ESCONDE TUDO NA FORÇA BRUTA (Itera sobre todas as seções do main)
+            document.querySelectorAll('main > section').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none'; // Garante que CSS inline seja sobrescrito
             });
 
             // 2. MOSTRA SÓ O ALVO
             const alvo = document.getElementById(`sec-${tabName}`);
-            if(alvo) alvo.classList.remove('hidden');
+            if(alvo) {
+                alvo.classList.remove('hidden');
+                alvo.style.display = 'block'; // Garante visibilidade
+            }
 
             // 3. ATUALIZA A BARRA DE NAVEGAÇÃO
             document.querySelectorAll('nav button').forEach(btn => {
