@@ -27,7 +27,7 @@ setTimeout(() => {
     escutarMeusPedidos(); 
     escutarMeusChamados();
     
-    // Inicializa abas
+    // Inicializa abas (Cliente: Contratar | Prestador: Radar)
     if(window.switchServiceSubTab) window.switchServiceSubTab('contratar');
     if(window.switchProviderSubTab) window.switchProviderSubTab('radar');
     
@@ -40,7 +40,7 @@ setTimeout(() => {
 }, 1000);
 
 // ======================================================
-// LÓGICA DE SUB-ABAS (CLIENTE E PRESTADOR) - BLINDADA
+// LÓGICA DE SUB-ABAS (CLIENTE E PRESTADOR)
 // ======================================================
 window.switchServiceSubTab = (tab) => {
     ['contratar', 'andamento', 'historico'].forEach(t => {
@@ -155,7 +155,7 @@ window.saveServicesAndGoOnline = async () => {
 };
 
 // ======================================================
-// PRESTADOR ONLINE (LÓGICA HÍBRIDA)
+// PRESTADOR ONLINE
 // ======================================================
 function configurarBotaoOnline() {
     const toggle = document.getElementById('online-toggle');
@@ -221,11 +221,10 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
-// --- ESCUTAR CHAMADOS (DISTRIBUÍDO NAS ABAS DO PRESTADOR) ---
+// --- ESCUTA DE PEDIDOS DO PRESTADOR ---
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
     
-    // Containers das abas
     const containerAtivos = document.getElementById('lista-chamados-ativos');
     const containerHistorico = document.getElementById('lista-chamados-historico');
     
@@ -244,7 +243,7 @@ function escutarMeusChamados() {
             snap.forEach(d => {
                 const pedido = d.data();
                 
-                // === PEDIDOS ATIVOS (Aguardando Aceite ou Em Andamento) ===
+                // PEDIDOS ATIVOS
                 if (pedido.status === 'pending_acceptance' || pedido.status === 'reserved') {
                     hasAtivos = true;
                     
@@ -284,31 +283,35 @@ function escutarMeusChamados() {
                     }
                     containerAtivos.innerHTML += content;
                 } 
-                // === PEDIDOS HISTÓRICO ===
+                // HISTÓRICO
                 else if (pedido.status === 'completed' || pedido.status === 'rejected') {
                     hasHistorico = true;
+                    let icon = pedido.status === 'completed' ? '✅ Finalizado' : '❌ Recusado';
                     containerHistorico.innerHTML += `
                     <div class="bg-gray-100 p-3 rounded-xl border border-gray-200 opacity-70 mb-2">
-                        <p class="font-bold text-xs text-gray-600">${pedido.status === 'completed' ? '✅ Serviço Finalizado' : '❌ Recusado'}</p>
+                        <p class="font-bold text-xs text-gray-600">${icon}</p>
                         <p class="text-[10px] text-gray-400">${pedido.service_date} - ${pedido.client_email}</p>
                     </div>`;
                 }
             });
         }
 
-        if(!hasAtivos) containerAtivos.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Nenhum pedido ativo.</p>`;
+        if(!hasAtivos) {
+            containerAtivos.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>`;
+            // Se estiver na aba ativos e não tiver pedidos, tenta voltar pro radar, mas só se não tiver clicado
+        }
         if(!hasHistorico) containerHistorico.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>`;
     });
 }
 
 // ======================================================
-// UTILS E HEADER (ATUALIZADO PARA FOTO DO PRESTADOR)
+// UTILS
 // ======================================================
 
 function renderizarCabecalhoUsuario() {
     if(!auth.currentUser) return;
     
-    // 1. Header Cliente
+    // Header Cliente
     const container = document.getElementById('user-header-services');
     if(container) {
         container.classList.remove('hidden');
@@ -316,14 +319,13 @@ function renderizarCabecalhoUsuario() {
         if(auth.currentUser.photoURL) { const img = document.getElementById('header-user-pic'); if(img) img.src = auth.currentUser.photoURL; }
     }
 
-    // 2. Header Prestador (NOVO)
+    // Header Prestador
     const providerPic = document.getElementById('provider-header-pic');
     const providerName = document.getElementById('provider-header-name');
     
     if(providerPic && auth.currentUser.photoURL) providerPic.src = auth.currentUser.photoURL;
     if(providerName) providerName.innerText = auth.currentUser.displayName || "Prestador";
 
-    // Botão Editar
     const toggle = document.getElementById('online-toggle');
     if(toggle) { 
         const btnEdit = document.getElementById('btn-edit-profile');
@@ -420,7 +422,7 @@ function escutarMeusPedidos() {
     });
 }
 
-// Funções Globais (Mantidas)
+// Funções Globais
 window.aceitarPedido = async (orderId) => { if(!confirm("Aceitar proposta e iniciar serviço?")) return; try { const orderRef = doc(db, "orders", orderId); const orderSnap = await getDoc(orderRef); const pedido = orderSnap.data(); await updateDoc(orderRef, { status: "reserved" }); const chatRef = doc(db, "chats", pedido.chat_id); await setDoc(chatRef, { participants: [pedido.client_id, pedido.provider_id], mission_title: `Serviço: R$ ${pedido.service_value} (Em Andamento)`, last_message: "Proposta aceita! O chat está liberado.", updated_at: serverTimestamp(), is_service_chat: true }); alert("✅ Serviço Aceito! O chat foi liberado."); } catch(e) { alert("Erro: " + e.message); } };
 window.recusarPedido = async (orderId) => { if(!confirm("Recusar proposta?")) return; try { await updateDoc(doc(db, "orders", orderId), { status: "rejected" }); alert("❌ Proposta recusada."); } catch(e) { alert("Erro: " + e.message); } };
 window.validarTokenPrestador = async (orderId, valorTotal) => { const input = document.getElementById(`token-${orderId}`); const tokenDigitado = input.value.trim(); if(tokenDigitado.length !== 4) return alert("O código deve ter 4 dígitos."); const btn = event.target; btn.innerText = "Verificando..."; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const orderSnap = await getDoc(orderRef); if(!orderSnap.exists()) throw new Error("Pedido não encontrado."); if (tokenDigitado === orderSnap.data().finalization_code) { await updateDoc(orderRef, { status: 'completed', completed_at: serverTimestamp() }); await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { saldo: increment(orderSnap.data().amount_security || 0) }); alert(`✅ SUCESSO!\n\nCódigo Validado Corretamente.\nServiço Encerrado.`); } else { alert("❌ CÓDIGO INVÁLIDO."); input.value = ""; btn.innerText = "VALIDAR & RECEBER"; btn.disabled = false; } } catch (e) { alert("Erro: " + e.message); btn.innerText = "Erro"; btn.disabled = false; } };
@@ -429,4 +431,60 @@ window.abrirModalAvaliacao = (orderId, providerId) => { orderIdParaAvaliar = ord
 window.enviarAvaliacao = async () => { let stars = 0; document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val'))); if(stars === 0) return alert("Selecione pelo menos 1 estrela."); const comment = document.getElementById('review-comment').value.trim(); const tags = []; document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText)); const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes'; const btn = event.target; btn.innerText = "Enviando..."; btn.disabled = true; try { await addDoc(collection(db, "reviews"), { order_id: orderIdParaAvaliar, provider_id: providerIdParaAvaliar, client_id: auth.currentUser.uid, stars: parseInt(stars), tags: tags, comment: comment, recommended: recommend, created_at: serverTimestamp() }); await updateDoc(doc(db, "orders", orderIdParaAvaliar), { is_reviewed: true }); document.getElementById('review-modal').classList.add('hidden'); alert("✅ Avaliação Enviada!"); } catch (e) { alert("Erro: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
 window.gerarTokenCliente = async (orderId) => { const btn = event.target; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const docSnap = await getDoc(orderRef); let code = docSnap.data().finalization_code; if (!code) { code = Math.floor(1000 + Math.random() * 9000).toString(); await updateDoc(orderRef, { finalization_code: code }); } alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`); btn.innerText = "VER CÓDIGO 🔑"; btn.disabled = false; } catch (e) { alert("Erro: " + e.message); btn.disabled = false; } };
 window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => { if(!auth.currentUser) return alert("Faça login."); targetProviderId = uid; targetProviderEmail = nomePrestador; if(window.togglePriceInput) { document.getElementById('label-base-price').innerText = `Aceitar valor (R$ ${precoBase})`; document.getElementById('price-option-base').checked = false; document.getElementById('price-option-custom').checked = false; document.getElementById('custom-price-container').classList.add('hidden'); document.getElementById('financial-summary').classList.add('hidden'); document.getElementById('btn-confirm-req').disabled = true; document.getElementById('btn-confirm-req').classList.add('opacity-50'); window.basePriceAtual = parseFloat(precoBase); } document.getElementById('request-modal').classList.remove('hidden'); };
-window.confirmarSolicitacao = async () => { const data = document.getElementById('req-date').value; const hora = document.getElementById('req-time').value; const local = document.getElementById('req-local').value; let valor = 0; if (document.getElementById('price-option-base').checked) { valor = window.basePriceAtual; } else { valor = parseFloat(document.getElementById('req-value').value); } if(!data || !hora || !local || !valor) return alert("Preencha tudo e selecione um valor!"); const btn = document.getElementById('btn-confirm-req'); btn.innerText = "Enviando Proposta..."; btn.disabled = true; try { const seguranca = valor * 0.30; const taxa = valor * 0.10; const reservaTotal = seguranca + taxa; const ids = [auth.currentUser.uid, targetProviderId].sort(); const chatRoomId = `${ids[0]}_${ids[1]}`; await addDoc(collection(db, "orders"), { client_id: auth.currentUser.uid, client_email: auth.currentUser.email, provider_id: targetProviderId, provider_email: targetProviderEmail, service_date: data, service_time: hora, service_location: local, service_value: valor, amount_total_reservation: reservaTotal, amount_security: seguranca, amount_fee: taxa, status: "pending_acceptance", chat_id: chatRoomId, created_at: serverTimestamp() }); document.getElementById('request-modal').classList.add('hidden'); alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`); btn.innerText = "PAGAR E ENVIAR 🔒"; btn.disabled = false; } catch (e) { console.error(e); alert("Erro técnico: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
+
+// ======================================================
+// A CORREÇÃO FINAL: SWITCH DE ABA AUTOMÁTICO
+// ======================================================
+window.confirmarSolicitacao = async () => { 
+    const data = document.getElementById('req-date').value; 
+    const hora = document.getElementById('req-time').value; 
+    const local = document.getElementById('req-local').value; 
+    let valor = 0; 
+    if (document.getElementById('price-option-base').checked) { valor = window.basePriceAtual; } 
+    else { valor = parseFloat(document.getElementById('req-value').value); } 
+    
+    if(!data || !hora || !local || !valor) return alert("Preencha tudo e selecione um valor!"); 
+    
+    const btn = document.getElementById('btn-confirm-req'); 
+    btn.innerText = "Enviando Proposta..."; 
+    btn.disabled = true; 
+    
+    try { 
+        const seguranca = valor * 0.30; 
+        const taxa = valor * 0.10; 
+        const reservaTotal = seguranca + taxa; 
+        const ids = [auth.currentUser.uid, targetProviderId].sort(); 
+        const chatRoomId = `${ids[0]}_${ids[1]}`; 
+        
+        await addDoc(collection(db, "orders"), { 
+            client_id: auth.currentUser.uid, 
+            client_email: auth.currentUser.email, 
+            provider_id: targetProviderId, 
+            provider_email: targetProviderEmail, 
+            service_date: data, 
+            service_time: hora, 
+            service_location: local, 
+            service_value: valor, 
+            amount_total_reservation: reservaTotal, 
+            amount_security: seguranca, 
+            amount_fee: taxa, 
+            status: "pending_acceptance", 
+            chat_id: chatRoomId, 
+            created_at: serverTimestamp() 
+        }); 
+        
+        document.getElementById('request-modal').classList.add('hidden'); 
+        alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`); 
+        
+        // --- A MÁGICA: JOGA O CLIENTE PARA A ABA DE ESPERA ---
+        if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
+        
+        btn.innerText = "PAGAR E ENVIAR 🔒"; 
+        btn.disabled = false; 
+    } catch (e) { 
+        console.error(e); 
+        alert("Erro técnico: " + e.message); 
+        btn.innerText = "Tentar Novamente"; 
+        btn.disabled = false; 
+    } 
+};
