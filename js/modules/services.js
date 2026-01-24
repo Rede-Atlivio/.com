@@ -2,21 +2,29 @@ import { db, auth } from '../app.js';
 import { doc, setDoc, collection, query, where, onSnapshot, serverTimestamp, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- 1. CONFIGURAÇÕES E ESTADOS ---
 const categoriasDisponiveis = ["Barman", "Garçom", "Segurança", "Limpeza", "Eletricista", "Encanador", "Montador", "Outros"];
 let categoriaAtiva = 'Todos';
 let meusServicos = [];
 
-// --- 2. FUNÇÕES VISUAIS DO RADAR ---
 function atualizarVisualRadar(isOnline) {
     const container = document.getElementById('pview-radar');
     if (!container) return;
     container.innerHTML = isOnline ? 
-        `<div class="text-gray-400 mb-4 py-10 animate-fadeIn text-center"><p class="text-6xl mb-4 animate-pulse">📡</p><p class="font-bold text-lg text-green-500 uppercase">Buscando Clientes...</p><p class="text-[10px] text-gray-400 mt-2">Sincronizado.</p></div>` :
+        `<div class="text-gray-400 mb-4 py-10 animate-fadeIn text-center"><p class="text-6xl mb-4 animate-pulse">📡</p><p class="font-bold text-lg text-green-500 uppercase">Buscando Clientes...</p></div>` :
         `<div class="text-gray-400 mb-4 py-10 animate-fadeIn text-center"><p class="text-6xl mb-4">😴</p><p class="font-bold text-lg uppercase text-gray-500">Você está Offline</p></div>`;
 }
 
-// --- 3. EXPOSIÇÃO GLOBAL (TODO O CIRCUITO ATLIVIO) ---
+window.renderMyServicesList = () => {
+    const list = document.getElementById('my-services-list');
+    if (!list) return;
+    list.innerHTML = meusServicos.length === 0 ? `<p class="text-center text-gray-300 py-4 italic text-xs">Nenhum serviço adicionado.</p>` : "";
+    meusServicos.forEach((srv, index) => {
+        list.innerHTML += `<div class="bg-gray-50 p-3 rounded-lg mb-2 flex justify-between border border-gray-100 items-center">
+            <span class="font-bold text-blue-900 text-xs">${srv.category} - R$ ${srv.price}</span>
+            <button onclick="window.removeServiceLocal(${index})" class="text-red-400 font-bold px-2 text-lg">×</button>
+        </div>`;
+    });
+};
 
 window.switchServiceSubTab = (tab) => {
     ['contratar', 'andamento', 'historico', 'carteira'].forEach(t => {
@@ -64,18 +72,6 @@ window.removeServiceLocal = (index) => {
     window.renderMyServicesList();
 };
 
-window.renderMyServicesList = () => {
-    const list = document.getElementById('my-services-list');
-    if (!list) return;
-    list.innerHTML = meusServicos.length === 0 ? `<p class="text-center text-gray-300 py-4 italic text-xs">Nenhum serviço.</p>` : "";
-    meusServicos.forEach((srv, index) => {
-        list.innerHTML += `<div class="bg-gray-50 p-3 rounded mb-2 flex justify-between border border-gray-100 items-center">
-            <span class="font-bold text-blue-900 text-xs">${srv.category} - R$ ${srv.price}</span>
-            <button onclick="window.removeServiceLocal(${index})" class="text-red-400 font-bold px-2 text-lg">×</button>
-        </div>`;
-    });
-};
-
 window.saveServicesAndGoOnline = async () => {
     if (!auth.currentUser) return;
     try {
@@ -90,9 +86,9 @@ window.saveServicesAndGoOnline = async () => {
 window.renderizarFiltros = () => {
     const container = document.getElementById('category-filters');
     if(!container) return;
-    let html = `<button onclick="window.filtrarCategoria('Todos')" class="filter-pill active px-4 py-2 rounded-full border border-blue-100 bg-white text-blue-900 text-[10px] font-bold uppercase">Todos</button>`;
+    let html = `<button onclick="window.filtrarCategoria('Todos')" class="filter-pill active px-4 py-2 rounded-full border border-blue-100 bg-white text-blue-900 text-[10px] font-bold uppercase shadow-sm">Todos</button>`;
     categoriasDisponiveis.forEach(cat => {
-        html += `<button onclick="window.filtrarCategoria('${cat}')" class="filter-pill px-4 py-2 rounded-full border border-blue-100 bg-white text-gray-500 text-[10px] font-bold uppercase">${cat}</button>`;
+        html += `<button onclick="window.filtrarCategoria('${cat}')" class="filter-pill px-4 py-2 rounded-full border border-blue-100 bg-white text-gray-500 text-[10px] font-bold uppercase shadow-sm">${cat}</button>`;
     });
     container.innerHTML = html;
 };
@@ -103,13 +99,12 @@ window.filtrarCategoria = (cat) => {
     carregarPrestadoresOnline();
 };
 
-// --- 4. CATÁLOGO EM TEMPO REAL ---
 function carregarPrestadoresOnline() {
     const container = document.getElementById('lista-prestadores-realtime');
     if (!container) return;
     const q = query(collection(db, "active_providers"), where("is_online", "==", true));
     onSnapshot(q, (snap) => {
-        container.innerHTML = snap.empty ? `<div class="col-span-2 text-center text-gray-400 py-10">Procurando...</div>` : "";
+        container.innerHTML = snap.empty ? `<div class="col-span-2 text-center text-gray-400 py-10">Procurando profissionais...</div>` : "";
         snap.forEach(d => {
             const p = d.data();
             if (auth.currentUser && p.uid === auth.currentUser.uid) return;
@@ -125,7 +120,6 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// --- 5. INICIALIZAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const userDoc = await getDoc(doc(db, "usuarios", user.uid));
