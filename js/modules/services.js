@@ -2,12 +2,9 @@ import { db, auth } from '../app.js';
 import { doc, setDoc, collection, query, where, onSnapshot, serverTimestamp, getDoc, updateDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- 1. CONFIGURAÇÕES E CATEGORIAS ---
 const categoriasDisponiveis = ["Barman", "Garçom", "Segurança", "Limpeza", "Eletricista", "Encanador", "Montador", "Outros"];
 let categoriaAtiva = 'Todos';
 let meusServicos = [];
-
-// --- 2. EXPOSIÇÃO GLOBAL IMEDIATA (PARA O HTML ENXERGAR OS BOTÕES) ---
 
 window.abrirConfiguracaoServicos = () => {
     const modal = document.getElementById('provider-setup-modal');
@@ -20,16 +17,20 @@ window.abrirConfiguracaoServicos = () => {
 window.switchServiceSubTab = (tab) => {
     const abas = ['contratar', 'andamento', 'historico', 'carteira'];
     abas.forEach(t => {
-        document.getElementById(`view-${t}`)?.classList.toggle('hidden', t !== tab);
-        document.getElementById(`subtab-${t}-btn`)?.classList.toggle('active', t === tab);
+        const view = document.getElementById(`view-${t}`);
+        const btn = document.getElementById(`subtab-${t}-btn`);
+        if (view) view.classList.toggle('hidden', t !== tab);
+        if (btn) btn.classList.toggle('active', t === tab);
     });
 };
 
 window.switchProviderSubTab = (tabName) => {
     const abasP = ['radar', 'ativos', 'historico', 'carteira'];
     abasP.forEach(t => {
-        document.getElementById(`pview-${t}`)?.classList.toggle('hidden', t !== tabName);
-        document.getElementById(`ptab-${t}-btn`)?.classList.toggle('active', t === tabName);
+        const view = document.getElementById(`pview-${t}`);
+        const btn = document.getElementById(`ptab-${t}-btn`);
+        if (view) view.classList.toggle('hidden', t !== tabName);
+        if (btn) btn.classList.toggle('active', t === tabName);
     });
 };
 
@@ -37,7 +38,6 @@ window.addServiceLocal = () => {
     const cat = document.getElementById('new-service-category')?.value;
     const price = document.getElementById('new-service-price')?.value;
     if (!cat || !price) return alert("Selecione categoria e preço!");
-
     meusServicos.push({ category: cat, price: parseFloat(price), visible: true });
     renderMyServicesList();
 };
@@ -67,7 +67,16 @@ window.alternarStatusOnline = async (isOnline) => {
     } catch (e) { console.error("Erro status:", e); }
 };
 
-// --- 3. LÓGICA DE INTERFACE ---
+window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => {
+    if (!auth.currentUser) return alert("Faça login para solicitar!");
+    const modal = document.getElementById('request-modal');
+    if (!modal) return;
+    const targetIdInput = document.getElementById('target-provider-id');
+    const basePriceInput = document.getElementById('service-base-price');
+    if (targetIdInput) targetIdInput.value = uid;
+    if (basePriceInput) basePriceInput.value = precoBase;
+    modal.classList.remove('hidden');
+};
 
 function renderMyServicesList() {
     const list = document.getElementById('my-services-list');
@@ -84,7 +93,6 @@ function renderMyServicesList() {
 function carregarPrestadoresOnline() {
     const container = document.getElementById('lista-prestadores-realtime');
     if (!container) return;
-
     const q = query(collection(db, "active_providers"), where("is_online", "==", true));
     onSnapshot(q, (snap) => {
         container.innerHTML = snap.empty ? `<div class="col-span-2 text-center text-gray-400 py-10">Procurando profissionais...</div>` : "";
@@ -93,7 +101,6 @@ function carregarPrestadoresOnline() {
             if (auth.currentUser && p.uid === auth.currentUser.uid) return;
             const srv = p.services?.[0];
             if (!srv) return;
-
             container.innerHTML += `
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative mb-4">
                 <div class="h-16 w-full bg-blue-600 relative">
@@ -112,7 +119,23 @@ function carregarPrestadoresOnline() {
     });
 }
 
-// --- 4. MONITOR DE ESTADO ---
+window.renderizarFiltros = () => {
+    const container = document.getElementById('category-filters');
+    if(!container) return;
+    let html = `<button onclick="filtrarCategoria('Todos')" class="filter-pill active px-4 py-2 rounded-full border border-blue-100 bg-white text-blue-900 text-[10px] font-bold uppercase shadow-sm">Todos</button>`;
+    categoriasDisponiveis.forEach(cat => {
+        html += `<button onclick="filtrarCategoria('${cat}')" class="filter-pill px-4 py-2 rounded-full border border-blue-100 bg-white text-gray-500 text-[10px] font-bold uppercase shadow-sm">${cat}</button>`;
+    });
+    container.innerHTML = html;
+};
+
+window.filtrarCategoria = (cat) => {
+    categoriaAtiva = cat;
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.toUpperCase() === cat.toUpperCase());
+    });
+    carregarPrestadoresOnline();
+};
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -123,15 +146,14 @@ onAuthStateChanged(auth, async (user) => {
             document.querySelectorAll('#header-user-name, #provider-header-name').forEach(el => el.innerText = d.nome_profissional || user.displayName);
             document.querySelectorAll('#header-user-pic, #provider-header-pic').forEach(el => el.src = d.photoURL || user.photoURL);
         }
-
-        window.switchServiceSubTab('contratar');
-        carregarPrestadoresOnline();
-
         const toggle = document.getElementById('online-toggle');
         if (toggle) {
             const activeSnap = await getDoc(doc(db, "active_providers", user.uid));
-            toggle.checked = activeSnap.exists() && activeSnap.data().is_online;
+            toggle.checked = activeSnap.exists() && activeSnap.data().is_online === true;
             toggle.onchange = (e) => window.alternarStatusOnline(e.target.checked);
         }
+        window.switchServiceSubTab('contratar');
+        window.renderizarFiltros();
+        carregarPrestadoresOnline();
     }
 });
