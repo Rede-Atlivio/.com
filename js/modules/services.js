@@ -40,7 +40,7 @@ setTimeout(() => {
 }, 1000);
 
 // ======================================================
-// LÓGICA DE SUB-ABAS
+// LÓGICA DE SUB-ABAS (CLIENTE E PRESTADOR)
 // ======================================================
 window.switchServiceSubTab = (tab) => {
     ['contratar', 'andamento', 'historico'].forEach(t => {
@@ -173,13 +173,15 @@ function configurarBotaoOnline() {
                 meusServicos = userData.services_offered;
                 document.getElementById('setup-name').value = userData.nome_profissional || "";
                 renderMyServicesList(); 
-                // A mensagem padrão do radar será gerida pelo listener
+                
+                if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2 animate-pulse">📡</p><p class="font-bold text-green-500">Buscando Clientes...</p><p class="text-xs text-gray-400">Atuando em: ${meusServicos.map(s=>s.category).join(', ')}</p>`;
                 await ficarOnline();
             } else {
                 document.getElementById('provider-setup-modal').classList.remove('hidden');
                 e.target.checked = false; 
             }
         } else {
+            if(statusMsg) statusMsg.innerHTML = `<p class="text-4xl mb-2">😴</p><p class="font-bold text-gray-400">Você está Offline</p><p class="text-xs">Ative o botão "Trabalhar" no topo.</p>`;
             await ficarOffline();
         }
     });
@@ -232,7 +234,6 @@ function escutarMeusChamados() {
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid));
 
     onSnapshot(q, (snap) => {
-        // Limpa containers de lista
         containerAtivos.innerHTML = "";
         containerHistorico.innerHTML = "";
         
@@ -244,12 +245,9 @@ function escutarMeusChamados() {
             snap.forEach(d => {
                 const pedido = d.data();
                 
-                // 1. PEDIDO PENDENTE (TOQUE NO RADAR!)
                 if (pedido.status === 'pending_acceptance') {
                     pedidoPendente = { id: d.id, ...pedido };
                 }
-                
-                // 2. PEDIDO ACEITO/ATIVO
                 else if (pedido.status === 'reserved') {
                     hasAtivos = true;
                     containerAtivos.innerHTML += `
@@ -271,8 +269,6 @@ function escutarMeusChamados() {
                         </div>
                     </div>`;
                 } 
-                
-                // 3. HISTÓRICO
                 else if (pedido.status === 'completed' || pedido.status === 'rejected') {
                     hasHistorico = true;
                     let icon = pedido.status === 'completed' ? '✅ Finalizado' : '❌ Recusado';
@@ -285,42 +281,31 @@ function escutarMeusChamados() {
             });
         }
 
-        // --- LÓGICA DO RADAR (EFEITO UBER) ---
         const toggle = document.getElementById('online-toggle');
         const isOnline = toggle && toggle.checked;
 
         if (pedidoPendente) {
-            // TOCA O SOM E MOSTRA O CARD DE ACEITE NO RADAR
-            if(window.switchProviderSubTab) window.switchProviderSubTab('radar'); // Força a tela pro Radar
+            if(window.switchProviderSubTab) window.switchProviderSubTab('radar'); 
             
             containerRadar.innerHTML = `
                 <div class="bg-white border-4 border-yellow-400 p-6 rounded-2xl shadow-2xl animate-pulse">
                     <div class="text-4xl mb-4">🔔</div>
                     <h2 class="text-2xl font-black text-blue-900 uppercase mb-2">NOVA SOLICITAÇÃO!</h2>
                     <p class="text-gray-500 text-sm mb-4">Cliente: ${pedidoPendente.client_email}</p>
-                    
                     <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 mb-6">
                         <p class="text-xs font-bold text-gray-400 uppercase">Oferta:</p>
                         <p class="text-3xl font-black text-green-600">R$ ${pedidoPendente.service_value}</p>
                         <p class="text-[10px] text-gray-400 mt-1">Reserva de 40% já garantida.</p>
                     </div>
-
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="recusarPedido('${pedidoPendente.id}')" class="bg-red-100 text-red-600 py-4 rounded-xl font-black uppercase hover:bg-red-200">
-                            RECUSAR ✖
-                        </button>
-                        <button onclick="aceitarPedido('${pedidoPendente.id}')" class="bg-green-600 text-white py-4 rounded-xl font-black uppercase shadow-lg hover:bg-green-700 transform hover:scale-105 transition">
-                            ACEITAR ✅
-                        </button>
+                        <button onclick="recusarPedido('${pedidoPendente.id}')" class="bg-red-100 text-red-600 py-4 rounded-xl font-black uppercase hover:bg-red-200">RECUSAR ✖</button>
+                        <button onclick="aceitarPedido('${pedidoPendente.id}')" class="bg-green-600 text-white py-4 rounded-xl font-black uppercase shadow-lg hover:bg-green-700 transform hover:scale-105 transition">ACEITAR ✅</button>
                     </div>
                 </div>`;
-            
-            // Toca som (se permitido)
             const audio = document.getElementById('notification-sound');
             if(audio) audio.play().catch(()=>{});
 
         } else {
-            // VOLTA PARA "BUSCANDO CLIENTES" (Se estiver online)
             if (isOnline) {
                 containerRadar.innerHTML = `
                     <div id="status-msg" class="text-gray-400 mb-4 py-10">
@@ -338,15 +323,10 @@ function escutarMeusChamados() {
             }
         }
 
-        // Empty States das outras abas
         if(!hasAtivos) containerAtivos.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Nenhum pedido em execução.</p>`;
         if(!hasHistorico) containerHistorico.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>`;
     });
 }
-
-// ======================================================
-// UTILS
-// ======================================================
 
 function renderizarCabecalhoUsuario() {
     if(!auth.currentUser) return;
@@ -491,4 +471,57 @@ window.abrirModalAvaliacao = (orderId, providerId) => { orderIdParaAvaliar = ord
 window.enviarAvaliacao = async () => { let stars = 0; document.querySelectorAll('.rate-star.active').forEach(s => stars = Math.max(stars, s.getAttribute('data-val'))); if(stars === 0) return alert("Selecione pelo menos 1 estrela."); const comment = document.getElementById('review-comment').value.trim(); const tags = []; document.querySelectorAll('.tag-select.selected').forEach(t => tags.push(t.innerText)); const recommend = document.querySelector('input[name="recommend"]:checked').value === 'yes'; const btn = event.target; btn.innerText = "Enviando..."; btn.disabled = true; try { await addDoc(collection(db, "reviews"), { order_id: orderIdParaAvaliar, provider_id: providerIdParaAvaliar, client_id: auth.currentUser.uid, stars: parseInt(stars), tags: tags, comment: comment, recommended: recommend, created_at: serverTimestamp() }); await updateDoc(doc(db, "orders", orderIdParaAvaliar), { is_reviewed: true }); document.getElementById('review-modal').classList.add('hidden'); alert("✅ Avaliação Enviada!"); } catch (e) { alert("Erro: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
 window.gerarTokenCliente = async (orderId) => { const btn = event.target; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const docSnap = await getDoc(orderRef); let code = docSnap.data().finalization_code; if (!code) { code = Math.floor(1000 + Math.random() * 9000).toString(); await updateDoc(orderRef, { finalization_code: code }); } alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`); btn.innerText = "VER CÓDIGO 🔑"; btn.disabled = false; } catch (e) { alert("Erro: " + e.message); btn.disabled = false; } };
 window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => { if(!auth.currentUser) return alert("Faça login."); targetProviderId = uid; targetProviderEmail = nomePrestador; if(window.togglePriceInput) { document.getElementById('label-base-price').innerText = `Aceitar valor (R$ ${precoBase})`; document.getElementById('price-option-base').checked = false; document.getElementById('price-option-custom').checked = false; document.getElementById('custom-price-container').classList.add('hidden'); document.getElementById('financial-summary').classList.add('hidden'); document.getElementById('btn-confirm-req').disabled = true; document.getElementById('btn-confirm-req').classList.add('opacity-50'); window.basePriceAtual = parseFloat(precoBase); } document.getElementById('request-modal').classList.remove('hidden'); };
-window.confirmarSolicitacao = async () => { const data = document.getElementById('req-date').value; const hora = document.getElementById('req-time').value; const local = document.getElementById('req-local').value; let valor = 0; if (document.getElementById('price-option-base').checked) { valor = window.basePriceAtual; } else { valor = parseFloat(document.getElementById('req-value').value); } if(!data || !hora || !local || !valor) return alert("Preencha tudo e selecione um valor!"); const btn = document.getElementById('btn-confirm-req'); btn.innerText = "Enviando Proposta..."; btn.disabled = true; try { const seguranca = valor * 0.30; const taxa = valor * 0.10; const reservaTotal = seguranca + taxa; const ids = [auth.currentUser.uid, targetProviderId].sort(); const chatRoomId = `${ids[0]}_${ids[1]}`; await addDoc(collection(db, "orders"), { client_id: auth.currentUser.uid, client_email: auth.currentUser.email, provider_id: targetProviderId, provider_email: targetProviderEmail, service_date: data, service_time: hora, service_location: local, service_value: valor, amount_total_reservation: reservaTotal, amount_security: seguranca, amount_fee: taxa, status: "pending_acceptance", chat_id: chatRoomId, created_at: serverTimestamp() }); document.getElementById('request-modal').classList.add('hidden'); alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`); if(window.switchServiceSubTab) window.switchServiceSubTab('andamento'); btn.innerText = "PAGAR E ENVIAR 🔒"; btn.disabled = false; } catch (e) { console.error(e); alert("Erro técnico: " + e.message); btn.innerText = "Tentar Novamente"; btn.disabled = false; } };
+
+window.confirmarSolicitacao = async () => { 
+    const data = document.getElementById('req-date').value; 
+    const hora = document.getElementById('req-time').value; 
+    const local = document.getElementById('req-local').value; 
+    let valor = 0; 
+    if (document.getElementById('price-option-base').checked) { valor = window.basePriceAtual; } 
+    else { valor = parseFloat(document.getElementById('req-value').value); } 
+    
+    if(!data || !hora || !local || !valor) return alert("Preencha tudo e selecione um valor!"); 
+    
+    const btn = document.getElementById('btn-confirm-req'); 
+    btn.innerText = "Enviando Proposta..."; 
+    btn.disabled = true; 
+    
+    try { 
+        const seguranca = valor * 0.30; 
+        const taxa = valor * 0.10; 
+        const reservaTotal = seguranca + taxa; 
+        const ids = [auth.currentUser.uid, targetProviderId].sort(); 
+        const chatRoomId = `${ids[0]}_${ids[1]}`; 
+        
+        await addDoc(collection(db, "orders"), { 
+            client_id: auth.currentUser.uid, 
+            client_email: auth.currentUser.email, 
+            provider_id: targetProviderId, 
+            provider_email: targetProviderEmail, 
+            service_date: data, 
+            service_time: hora, 
+            service_location: local, 
+            service_value: valor, 
+            amount_total_reservation: reservaTotal, 
+            amount_security: seguranca, 
+            amount_fee: taxa, 
+            status: "pending_acceptance", 
+            chat_id: chatRoomId, 
+            created_at: serverTimestamp() 
+        }); 
+        
+        document.getElementById('request-modal').classList.add('hidden'); 
+        alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`); 
+        
+        // JOGA O CLIENTE PARA A ABA DE ESPERA
+        if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
+        
+        btn.innerText = "PAGAR E ENVIAR 🔒"; 
+        btn.disabled = false; 
+    } catch (e) { 
+        console.error(e); 
+        alert("Erro técnico: " + e.message); 
+        btn.innerText = "Tentar Novamente"; 
+        btn.disabled = false; 
+    } 
+};
