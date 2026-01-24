@@ -358,18 +358,17 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=4.0"></script>
-    <script type="module" src="./js/auth.js?v=4.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=4.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=4.0"></script>
-    <script type="module" src="./js/modules/services.js?v=4.0"></script>
-    <script type="module" src="./js/modules/products.js?v=4.0"></script>
-    <script type="module" src="./js/chat.js?v=4.0"></script>
-    <script type="module" src="./js/wallet.js?v=4.0"></script>
-    <script type="module" src="./js/admin.js?v=4.0"></script>
+    <script type="module" src="./js/app.js?v=5.0"></script>
+    <script type="module" src="./js/auth.js?v=5.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=5.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=5.0"></script>
+    <script type="module" src="./js/modules/services.js?v=5.0"></script>
+    <script type="module" src="./js/modules/products.js?v=5.0"></script>
+    <script type="module" src="./js/chat.js?v=5.0"></script>
+    <script type="module" src="./js/wallet.js?v=5.0"></script>
+    <script type="module" src="./js/admin.js?v=5.0"></script>
 
     <script>
-        // ... RESTO DO JS IGUAL ...
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
         let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
