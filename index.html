@@ -28,6 +28,8 @@
         .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -202,11 +204,21 @@
                     </div>
 
                     <div id="view-contratar">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Encontre e contrate profissionais agora</p>
                         <div class="flex gap-2 overflow-x-auto no-scrollbar mb-4 py-2" id="category-filters"></div>
-                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3"></div>
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3">
+                            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center skeleton h-40"></div>
+                            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center skeleton h-40"></div>
+                        </div>
                     </div>
-                    <div id="view-andamento" class="hidden space-y-2"><div id="meus-pedidos-andamento" class="space-y-3"></div></div>
-                    <div id="view-historico" class="hidden space-y-2"><div id="meus-pedidos-historico" class="space-y-3"></div></div>
+                    <div id="view-andamento" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Acompanhe seus pedidos em tempo real</p>
+                        <div id="meus-pedidos-andamento" class="space-y-3"></div>
+                    </div>
+                    <div id="view-historico" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus serviços anteriores</p>
+                        <div id="meus-pedidos-historico" class="space-y-3"></div>
+                    </div>
                 </div>
 
                 <div id="servicos-prestador" class="hidden">
@@ -230,6 +242,7 @@
                     </div>
 
                     <div id="pview-radar" class="text-center py-10">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-4 tracking-widest">Aguarde chamados aqui</p>
                         <div id="status-msg" class="text-gray-400 mb-4">
                             <p class="text-4xl mb-2">😴</p>
                             <p class="font-bold text-sm">Você está Offline</p>
@@ -238,12 +251,14 @@
                     </div>
 
                     <div id="pview-ativos" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
                         <div id="lista-chamados-ativos">
                             <p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>
                         </div>
                     </div>
 
                     <div id="pview-historico" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus trabalhos concluídos</p>
                         <div id="lista-chamados-historico">
                             <p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>
                         </div>
@@ -334,7 +349,6 @@
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
             <input type="hidden" id="target-provider-id">
-            
             <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl"><h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3><p class="text-xs opacity-75">Defina o valor e pague a reserva.</p></div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
                 <div class="grid grid-cols-2 gap-2"><div><label class="text-[9px] font-bold text-gray-500 uppercase">Data</label><input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white"></div><div><label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label><input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white"></div></div>
@@ -360,42 +374,25 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=6.0"></script>
-    <script type="module" src="./js/auth.js?v=6.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=6.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=6.0"></script>
-    <script type="module" src="./js/modules/services.js?v=6.0"></script>
-    <script type="module" src="./js/modules/products.js?v=6.0"></script>
-    <script type="module" src="./js/chat.js?v=6.0"></script>
-    <script type="module" src="./js/wallet.js?v=6.0"></script>
-    <script type="module" src="./js/admin.js?v=6.0"></script>
+    <script type="module" src="./js/app.js?v=7.0"></script>
+    <script type="module" src="./js/auth.js?v=7.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=7.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=7.0"></script>
+    <script type="module" src="./js/modules/services.js?v=7.0"></script>
+    <script type="module" src="./js/modules/products.js?v=7.0"></script>
+    <script type="module" src="./js/chat.js?v=7.0"></script>
+    <script type="module" src="./js/wallet.js?v=7.0"></script>
+    <script type="module" src="./js/admin.js?v=7.0"></script>
 
     <script>
-        // ... RESTO DO JS CORRIGIDO ...
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
         let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent); const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
         if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
         btnInstall.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { iosModal.classList.remove('hidden'); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); } });
-        
-        // CORREÇÃO: Removida a declaração 'let basePriceAtual = 0;' que causava conflito.
-        // Agora usamos window.basePriceAtual diretamente ou definimos globalmente.
-        window.togglePriceInput = (isCustom) => { 
-            const inputContainer = document.getElementById('custom-price-container'); 
-            const input = document.getElementById('req-value'); 
-            if (isCustom) { 
-                inputContainer.classList.remove('hidden'); 
-                input.value = ""; 
-                window.calcularReserva(0); 
-            } else { 
-                inputContainer.classList.add('hidden'); 
-                // AQUI ESTAVA O ERRO: Agora lê do window
-                const preco = window.basePriceAtual || 0;
-                input.value = preco; 
-                if(preco > 0) window.calcularReserva(preco); 
-            } 
-        };
+        let basePriceAtual = 0;
+        window.togglePriceInput = (isCustom) => { const inputContainer = document.getElementById('custom-price-container'); const input = document.getElementById('req-value'); if (isCustom) { inputContainer.classList.remove('hidden'); input.value = ""; window.calcularReserva(0); } else { inputContainer.classList.add('hidden'); const preco = window.basePriceAtual || 0; input.value = preco; if(preco > 0) window.calcularReserva(preco); } };
         window.calcularReserva = (valorInput) => { const valor = parseFloat(valorInput); const summary = document.getElementById('financial-summary'); const btn = document.getElementById('btn-confirm-req'); if (!valor || valor <= 0) { summary.classList.add('hidden'); btn.disabled = true; btn.classList.add('opacity-50', 'cursor-not-allowed'); return; } summary.classList.remove('hidden'); btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); const seguranca = valor * 0.30; const taxa = valor * 0.10; const reservaTotal = seguranca + taxa; document.getElementById('calc-security').innerText = `R$ ${seguranca.toFixed(2)}`; document.getElementById('calc-fee').innerText = `R$ ${taxa.toFixed(2)}`; document.getElementById('calc-total-reserva').innerText = `R$ ${reservaTotal.toFixed(2)}`; };
         window.fecharModalSolicitacao = () => { document.getElementById('request-modal').classList.add('hidden'); };
         let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
