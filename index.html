@@ -340,7 +340,7 @@
                 <div class="pt-2 border-t border-gray-100"><p class="text-[10px] font-bold text-blue-900 uppercase mb-2">Quanto você quer pagar?</p><label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 mb-2"><input type="radio" name="price-option" id="price-option-base" value="base" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(false)"><div><span class="block text-xs font-bold text-gray-800" id="label-base-price">Preço do Prestador</span><span class="block text-[9px] text-gray-500">Aceitar valor sugerido</span></div></label><label class="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50"><input type="radio" name="price-option" id="price-option-custom" value="custom" class="accent-blue-600 w-4 h-4" onchange="togglePriceInput(true)"><div><span class="block text-xs font-bold text-gray-800">Fazer outra oferta</span><span class="block text-[9px] text-gray-500">Sugerir meu valor</span></div></label><div id="custom-price-container" class="mt-2 hidden"><div class="relative"><span class="absolute left-3 top-3 text-gray-500 font-bold text-sm">R$</span><input type="number" id="req-value" placeholder="0,00" class="w-full border-2 border-blue-100 p-2 pl-10 rounded-lg text-lg font-bold text-blue-900 bg-white outline-none" oninput="calcularReserva(this.value)"></div></div></div>
                 <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden"><div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva Segurança (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div><div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa Atlivio (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div><div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA (40%)</span><span id="calc-total-reserva">R$ 0,00</span></div><p class="text-[9px] text-center text-gray-500 mt-2 italic">Ao pagar, o pedido vai para aprovação do prestador.</p></div>
             </div>
-            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl"><button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button><button onclick="confirmarSolicitacao()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR E ENVIAR 🔒</button></div>
+            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl"><button onclick="fecharModalSolicitacao()" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button><button onclick="enviarPropostaAgora()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>PAGAR E ENVIAR 🔒</button></div>
         </div>
     </div>
 
@@ -349,28 +349,28 @@
     </div>
 
     <script>
-        // SERVICE WORKER KILLER (LIMPA O CACHE VELHO)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) {
                     registration.unregister();
-                    console.log("Service Worker Desregistrado (Cache Limpo).");
+                    console.log("Service Worker DESTRUÍDO.");
                 }
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=3.0"></script>
-    <script type="module" src="./js/auth.js?v=3.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=3.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=3.0"></script>
-    <script type="module" src="./js/modules/services.js?v=3.0"></script>
-    <script type="module" src="./js/modules/products.js?v=3.0"></script>
-    <script type="module" src="./js/chat.js?v=3.0"></script>
-    <script type="module" src="./js/wallet.js?v=3.0"></script>
-    <script type="module" src="./js/admin.js?v=3.0"></script>
+    <script type="module" src="./js/app.js?v=4.0"></script>
+    <script type="module" src="./js/auth.js?v=4.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=4.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=4.0"></script>
+    <script type="module" src="./js/modules/services.js?v=4.0"></script>
+    <script type="module" src="./js/modules/products.js?v=4.0"></script>
+    <script type="module" src="./js/chat.js?v=4.0"></script>
+    <script type="module" src="./js/wallet.js?v=4.0"></script>
+    <script type="module" src="./js/admin.js?v=4.0"></script>
 
     <script>
-        // ... (RESTANTE DOS SCRIPTS DE UI IGUAL) ...
+        // ... RESTO DO JS IGUAL ...
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
         let deferredPrompt; const btnInstall = document.getElementById('btn-install-app'); const iosModal = document.getElementById('ios-install-modal');
         window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
         const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent); const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
