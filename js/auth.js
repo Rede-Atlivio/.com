@@ -8,136 +8,150 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
-// Login com Google
-window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert(e.message));
+// --- LOGIN / LOGOUT ---
+window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => {
+    alert("Erro no login: " + e.message);
+    console.error(e);
+});
 
-// Logout seguro
 window.logout = () => signOut(auth).then(() => location.reload());
 
-// Definição de Perfil Inicial
+// --- GESTÃO DE PERFIL ---
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
-    await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
-        is_provider: tipo === 'prestador', 
-        perfil_completo: true 
-    });
-    location.reload();
+    try {
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            is_provider: tipo === 'prestador', 
+            perfil_completo: true 
+        });
+        location.reload();
+    } catch(e) {
+        alert("Erro ao salvar perfil: " + e.message);
+    }
 };
 
-// Troca de Contexto
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
-    btn.innerText = "🔄 Trocando...";
-    btn.disabled = true;
+    if(btn) {
+        btn.innerText = "🔄 Trocando...";
+        btn.disabled = true;
+    }
     try {
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             is_provider: !userProfile.is_provider 
         });
-        // O onSnapshot vai pegar a mudança e recarregar, mas forçamos para garantir
-        setTimeout(() => location.reload(), 1000);
+        // Força recarregamento para aplicar mudanças limpas
+        setTimeout(() => location.reload(), 500);
     } catch (error) {
         alert("Erro: " + error.message);
-        btn.disabled = false;
+        if(btn) btn.disabled = false;
     }
 };
 
-// --- NOVA FUNÇÃO: UPLOAD DE FOTO DE PERFIL ---
+// --- UPLOAD DE FOTO (COM TRATAMENTO DE ERRO) ---
 window.uploadFotoPerfil = async (input) => {
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
     const user = auth.currentUser;
     if (!user) return;
 
-    // 1. Mostra Loading
     const overlay = document.getElementById('upload-overlay');
     if(overlay) overlay.classList.remove('hidden');
 
     try {
-        // 2. Cria referência no Storage: perfil/UID/foto.jpg
         const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`);
-        
-        // 3. Faz o Upload
         await uploadBytes(storageRef, file);
-        
-        // 4. Pega o Link da imagem
         const downloadURL = await getDownloadURL(storageRef);
 
-        // 5. Atualiza no Auth (Sessão atual)
-        await updateProfile(user, { photoURL: downloadURL });
+        // Atualiza tudo em paralelo
+        const promises = [
+            updateProfile(user, { photoURL: downloadURL }),
+            updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL })
+        ];
 
-        // 6. Atualiza no Firestore (Perfil do Usuário)
-        await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL });
-
-        // 7. Se for prestador, atualiza no Radar também (Active Providers)
-        // Isso garante que o cliente veja a foto nova imediatamente na lista
+        // Tenta atualizar active_providers se existir (sem travar se não existir)
         const activeRef = doc(db, "active_providers", user.uid);
-        const activeSnap = await getDoc(activeRef);
-        if (activeSnap.exists()) {
-            await updateDoc(activeRef, { foto_perfil: downloadURL });
-        }
+        getDoc(activeRef).then(snap => {
+            if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL });
+        });
 
-        // 8. Atualiza visualmente agora (sem recarregar)
+        await Promise.all(promises);
+
+        // Atualiza visual
         document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => {
             img.src = downloadURL;
         });
 
-        alert("✅ Foto de perfil atualizada com sucesso!");
+        alert("✅ Foto atualizada!");
 
     } catch (error) {
-        console.error("Erro no upload:", error);
-        alert("Erro ao atualizar foto. Tente novamente.\n(Verifique se é uma imagem leve).");
+        console.error("Erro upload:", error);
+        alert("Não foi possível atualizar a foto. Verifique se o arquivo é uma imagem válida.");
     } finally {
         if(overlay) overlay.classList.add('hidden');
-        input.value = ""; // Limpa o input para permitir enviar a mesma foto se quiser
+        input.value = "";
     }
 };
 
-// Monitor de Autenticação
+// --- NÚCLEO DE AUTENTICAÇÃO (BLINDADO) ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        // Usuário detectado -> Garante que a tela de login suma
+        const authContainer = document.getElementById('auth-container');
+        if(authContainer) authContainer.classList.add('hidden');
+
         const userRef = doc(db, "usuarios", user.uid);
         
         onSnapshot(userRef, async (docSnap) => {
-            if(!docSnap.exists()) {
-                const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
-                userProfile = { 
-                    email: user.email, 
-                    displayName: user.displayName, 
-                    photoURL: user.photoURL,       
-                    tenant_id: DEFAULT_TENANT, 
-                    perfil_completo: false, 
-                    role: roleInicial, 
-                    saldo: 0, 
-                    is_provider: false 
-                };
-                await setDoc(userRef, userProfile);
-            } else {
-                userProfile = docSnap.data();
-                // Sincronia básica de dados do Google se mudarem
-                if ((user.photoURL && user.photoURL !== userProfile.photoURL && !userProfile.photoURL.includes('firebasestorage')) || user.displayName !== userProfile.displayName) {
-                    await updateDoc(userRef, { displayName: user.displayName, photoURL: user.photoURL });
+            try {
+                if(!docSnap.exists()) {
+                    // Criação inicial
+                    const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
+                    userProfile = { 
+                        email: user.email, 
+                        displayName: user.displayName, 
+                        photoURL: user.photoURL,       
+                        tenant_id: DEFAULT_TENANT, 
+                        perfil_completo: false, 
+                        role: roleInicial, 
+                        saldo: 0, 
+                        is_provider: false,
+                        created_at: new Date()
+                    };
+                    await setDoc(userRef, userProfile);
+                } else {
+                    userProfile = docSnap.data();
+                    
+                    // Sincronia de foto (silenciosa)
+                    if ((user.photoURL && user.photoURL !== userProfile.photoURL && !userProfile.photoURL.includes('firebasestorage'))) {
+                        updateDoc(userRef, { displayName: user.displayName, photoURL: user.photoURL }).catch(()=>{});
+                    }
+                    
+                    // Lança a interface
+                    iniciarAppLogado(user);
+                    
+                    // Verifica setup do prestador (se necessário)
+                    if (userProfile.is_provider && !userProfile.setup_profissional_ok) {
+                        const modal = document.getElementById('provider-setup-modal');
+                        if(modal) {
+                            modal.classList.remove('hidden');
+                            const inputNome = document.getElementById('setup-name');
+                            if(inputNome && !inputNome.value) inputNome.value = user.displayName || "";
+                        }
+                    }
                 }
-                atualizarInterface(user);
-                if (userProfile.is_provider) { verificarPendenciaPerfil(); }
+            } catch (err) {
+                console.error("Erro crítico no perfil:", err);
+                // Em caso de erro de dados, tenta carregar a app mesmo assim para não travar no login
+                iniciarAppLogado(user); 
             }
         });
     } else {
+        // Sem usuário -> Mostra Login
         mostrarLogin();
     }
 });
-
-function verificarPendenciaPerfil() {
-    if (userProfile && !userProfile.setup_profissional_ok) {
-        const modal = document.getElementById('provider-setup-modal');
-        if(modal && !modal.classList.contains('hidden')) return; // Já está aberto
-        if(modal) {
-            modal.classList.remove('hidden');
-            const inputNome = document.getElementById('setup-name');
-            if(inputNome && !inputNome.value) inputNome.value = auth.currentUser.displayName || "";
-        }
-    }
-}
 
 function mostrarLogin() {
     document.getElementById('auth-container').classList.remove('hidden');
@@ -145,73 +159,90 @@ function mostrarLogin() {
     document.getElementById('app-container').classList.add('hidden');
 }
 
-function atualizarInterface(user) {
+function iniciarAppLogado(user) {
+    // 1. Esconde Login e Seleção
     document.getElementById('auth-container').classList.add('hidden');
-    if(!userProfile.perfil_completo) {
+    
+    // 2. Verifica se perfil está completo
+    if(!userProfile || !userProfile.perfil_completo) {
+        document.getElementById('app-container').classList.add('hidden');
         document.getElementById('role-selection').classList.remove('hidden');
         return;
     }
-    iniciarAppLogado(user);
-}
 
-function iniciarAppLogado(user) {
     document.getElementById('role-selection').classList.add('hidden');
-    document.getElementById('app-container').classList.remove('hidden');
+    const appContainer = document.getElementById('app-container');
+    appContainer.classList.remove('hidden'); // Garante que o app apareça
     
+    // 3. Configurações de UI
     const btnPerfil = document.getElementById('btn-trocar-perfil');
     const isAdmin = ADMIN_EMAILS.includes(user.email);
     const tabServicos = document.getElementById('tab-servicos');
+    const adminTab = document.getElementById('tab-admin');
+    const adminSec = document.getElementById('sec-admin');
 
-    // Configuração Admin
+    // 4. SEGURANÇA: Controle da Aba Admin
     if(isAdmin) {
-        document.getElementById('tab-admin').classList.remove('hidden');
+        if(adminTab) adminTab.classList.remove('hidden');
     } else {
-        const adminTab = document.getElementById('tab-admin');
-        const adminSec = document.getElementById('sec-admin');
         if(adminTab) adminTab.classList.add('hidden');
         if(adminSec) adminSec.classList.add('hidden');
     }
 
-    // Configuração Visual Baseada no Perfil (Provider vs Client)
+    // 5. Configuração Visual Baseada no Perfil
     if (userProfile.is_provider) {
-        btnPerfil.innerHTML = isAdmin 
+        // PRESTADOR
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin 
             ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Prestador)</span> 🔄`
             : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
         
-        // Exibe abas de prestador
-        document.getElementById('tab-servicos').classList.remove('hidden');
-        document.getElementById('tab-missoes').classList.remove('hidden'); 
-        document.getElementById('tab-oportunidades').classList.remove('hidden');
-        document.getElementById('tab-ganhar').classList.remove('hidden');  
-        document.getElementById('tab-loja').classList.add('hidden');    
+        mostrarElemento('tab-servicos');
+        mostrarElemento('tab-missoes');
+        mostrarElemento('tab-oportunidades');
+        mostrarElemento('tab-ganhar');
+        esconderElemento('tab-loja');
         
-        document.getElementById('status-toggle-container').classList.remove('hidden');
-        document.getElementById('servicos-prestador').classList.remove('hidden');
-        document.getElementById('servicos-cliente').classList.add('hidden');
+        mostrarElemento('status-toggle-container');
+        mostrarElemento('servicos-prestador');
+        esconderElemento('servicos-cliente');
         
-        // Se não estiver em nenhuma aba, vai para serviços
-        if (!document.querySelector('nav button.border-blue-600')) window.switchTab('servicos'); 
+        // Garante aba inicial se nenhuma estiver ativa
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) {
+            window.switchTab('servicos'); 
+        }
 
     } else {
-        btnPerfil.innerHTML = isAdmin 
+        // CLIENTE
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin 
             ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Cliente)</span> 🔄`
             : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
             
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
         
-        // Exibe abas de cliente
-        document.getElementById('tab-servicos').classList.remove('hidden');
-        document.getElementById('tab-oportunidades').classList.remove('hidden');
-        document.getElementById('tab-loja').classList.remove('hidden');
-        document.getElementById('tab-missoes').classList.add('hidden');    
-        document.getElementById('tab-ganhar').classList.add('hidden');       
+        mostrarElemento('tab-servicos');
+        mostrarElemento('tab-oportunidades');
+        mostrarElemento('tab-loja');
+        esconderElemento('tab-missoes');
+        esconderElemento('tab-ganhar');
         
-        document.getElementById('status-toggle-container').classList.add('hidden');
-        document.getElementById('servicos-prestador').classList.add('hidden');
-        document.getElementById('servicos-cliente').classList.remove('hidden');
+        esconderElemento('status-toggle-container');
+        esconderElemento('servicos-prestador');
+        mostrarElemento('servicos-cliente');
         
-        if (!document.querySelector('nav button.border-blue-600')) window.switchTab('servicos');
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) {
+            window.switchTab('servicos');
+        }
     }
+}
+
+// Helpers para evitar erro se elemento não existir
+function mostrarElemento(id) {
+    const el = document.getElementById(id);
+    if(el) el.classList.remove('hidden');
+}
+function esconderElemento(id) {
+    const el = document.getElementById(id);
+    if(el) el.classList.add('hidden');
 }
