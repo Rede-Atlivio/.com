@@ -4,16 +4,13 @@ import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const storage = getStorage();
+// SEGURANÇA: Email exato do Admin
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
 // --- LOGIN / LOGOUT ---
-window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => {
-    alert("Erro no login: " + e.message);
-    console.error(e);
-});
-
+window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert("Erro login: " + e.message));
 window.logout = () => signOut(auth).then(() => location.reload());
 
 // --- GESTÃO DE PERFIL ---
@@ -25,31 +22,22 @@ window.definirPerfil = async (tipo) => {
             perfil_completo: true 
         });
         location.reload();
-    } catch(e) {
-        alert("Erro ao salvar perfil: " + e.message);
-    }
+    } catch(e) { alert("Erro ao salvar perfil: " + e.message); }
 };
 
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
-    if(btn) {
-        btn.innerText = "🔄 Trocando...";
-        btn.disabled = true;
-    }
+    if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
     try {
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             is_provider: !userProfile.is_provider 
         });
-        // Força recarregamento para aplicar mudanças limpas
         setTimeout(() => location.reload(), 500);
-    } catch (error) {
-        alert("Erro: " + error.message);
-        if(btn) btn.disabled = false;
-    }
+    } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- UPLOAD DE FOTO (COM TRATAMENTO DE ERRO) ---
+// --- UPLOAD FOTO ---
 window.uploadFotoPerfil = async (input) => {
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
@@ -64,49 +52,40 @@ window.uploadFotoPerfil = async (input) => {
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
 
-        // Atualiza tudo em paralelo
-        const promises = [
-            updateProfile(user, { photoURL: downloadURL }),
-            updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL })
-        ];
+        await updateProfile(user, { photoURL: downloadURL });
+        await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL });
 
-        // Tenta atualizar active_providers se existir (sem travar se não existir)
+        // Atualiza no radar se for prestador
         const activeRef = doc(db, "active_providers", user.uid);
         getDoc(activeRef).then(snap => {
             if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL });
         });
 
-        await Promise.all(promises);
-
-        // Atualiza visual
-        document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => {
-            img.src = downloadURL;
-        });
-
+        document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL);
         alert("✅ Foto atualizada!");
-
     } catch (error) {
-        console.error("Erro upload:", error);
-        alert("Não foi possível atualizar a foto. Verifique se o arquivo é uma imagem válida.");
+        console.error(error);
+        alert("Erro no upload. Tente outra imagem.");
     } finally {
         if(overlay) overlay.classList.add('hidden');
         input.value = "";
     }
 };
 
-// --- NÚCLEO DE AUTENTICAÇÃO (BLINDADO) ---
+// --- TRAVA DE SEGURANÇA INICIAL ---
+// Garante que o Admin comece oculto antes de qualquer verificação
+const adminTabInicial = document.getElementById('tab-admin');
+if(adminTabInicial) adminTabInicial.classList.add('hidden');
+
+// --- NÚCLEO DE AUTENTICAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        // Usuário detectado -> Garante que a tela de login suma
-        const authContainer = document.getElementById('auth-container');
-        if(authContainer) authContainer.classList.add('hidden');
-
+        document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
         
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    // Criação inicial
                     const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                     userProfile = { 
                         email: user.email, 
@@ -122,16 +101,11 @@ onAuthStateChanged(auth, async (user) => {
                     await setDoc(userRef, userProfile);
                 } else {
                     userProfile = docSnap.data();
-                    
-                    // Sincronia de foto (silenciosa)
                     if ((user.photoURL && user.photoURL !== userProfile.photoURL && !userProfile.photoURL.includes('firebasestorage'))) {
                         updateDoc(userRef, { displayName: user.displayName, photoURL: user.photoURL }).catch(()=>{});
                     }
-                    
-                    // Lança a interface
                     iniciarAppLogado(user);
                     
-                    // Verifica setup do prestador (se necessário)
                     if (userProfile.is_provider && !userProfile.setup_profissional_ok) {
                         const modal = document.getElementById('provider-setup-modal');
                         if(modal) {
@@ -142,28 +116,18 @@ onAuthStateChanged(auth, async (user) => {
                     }
                 }
             } catch (err) {
-                console.error("Erro crítico no perfil:", err);
-                // Em caso de erro de dados, tenta carregar a app mesmo assim para não travar no login
-                iniciarAppLogado(user); 
+                console.error("Erro crítico perfil:", err);
+                iniciarAppLogado(user); // Tenta carregar mesmo com erro para não travar
             }
         });
     } else {
-        // Sem usuário -> Mostra Login
-        mostrarLogin();
+        document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('role-selection').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
     }
 });
 
-function mostrarLogin() {
-    document.getElementById('auth-container').classList.remove('hidden');
-    document.getElementById('role-selection').classList.add('hidden');
-    document.getElementById('app-container').classList.add('hidden');
-}
-
 function iniciarAppLogado(user) {
-    // 1. Esconde Login e Seleção
-    document.getElementById('auth-container').classList.add('hidden');
-    
-    // 2. Verifica se perfil está completo
     if(!userProfile || !userProfile.perfil_completo) {
         document.getElementById('app-container').classList.add('hidden');
         document.getElementById('role-selection').classList.remove('hidden');
@@ -171,78 +135,70 @@ function iniciarAppLogado(user) {
     }
 
     document.getElementById('role-selection').classList.add('hidden');
-    const appContainer = document.getElementById('app-container');
-    appContainer.classList.remove('hidden'); // Garante que o app apareça
+    document.getElementById('app-container').classList.remove('hidden');
     
-    // 3. Configurações de UI
     const btnPerfil = document.getElementById('btn-trocar-perfil');
-    const isAdmin = ADMIN_EMAILS.includes(user.email);
+    // SEGURANÇA REFORÇADA: Verifica email com trim e lowercase para evitar erro
+    const isAdmin = ADMIN_EMAILS.some(email => email.toLowerCase() === user.email.toLowerCase().trim());
     const tabServicos = document.getElementById('tab-servicos');
     const adminTab = document.getElementById('tab-admin');
     const adminSec = document.getElementById('sec-admin');
 
-    // 4. SEGURANÇA: Controle da Aba Admin
+    // CONTROLE VISUAL DO ADMIN
     if(isAdmin) {
         if(adminTab) adminTab.classList.remove('hidden');
     } else {
+        // Se não for admin, garante que está oculto e remove do fluxo visual
         if(adminTab) adminTab.classList.add('hidden');
         if(adminSec) adminSec.classList.add('hidden');
     }
 
-    // 5. Configuração Visual Baseada no Perfil
     if (userProfile.is_provider) {
         // PRESTADOR
         if(btnPerfil) btnPerfil.innerHTML = isAdmin 
-            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Prestador)</span> 🔄`
+            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
             : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
         
-        mostrarElemento('tab-servicos');
-        mostrarElemento('tab-missoes');
-        mostrarElemento('tab-oportunidades');
-        mostrarElemento('tab-ganhar');
-        esconderElemento('tab-loja');
+        toggleDisplay('tab-servicos', true);
+        toggleDisplay('tab-missoes', true);
+        toggleDisplay('tab-oportunidades', true);
+        toggleDisplay('tab-ganhar', true);
+        toggleDisplay('tab-loja', false);
         
-        mostrarElemento('status-toggle-container');
-        mostrarElemento('servicos-prestador');
-        esconderElemento('servicos-cliente');
+        toggleDisplay('status-toggle-container', true);
+        toggleDisplay('servicos-prestador', true);
+        toggleDisplay('servicos-cliente', false);
         
-        // Garante aba inicial se nenhuma estiver ativa
-        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) {
-            window.switchTab('servicos'); 
-        }
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos'); 
 
     } else {
         // CLIENTE
         if(btnPerfil) btnPerfil.innerHTML = isAdmin 
-            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Cliente)</span> 🔄`
+            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
             : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
             
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
         
-        mostrarElemento('tab-servicos');
-        mostrarElemento('tab-oportunidades');
-        mostrarElemento('tab-loja');
-        esconderElemento('tab-missoes');
-        esconderElemento('tab-ganhar');
+        toggleDisplay('tab-servicos', true);
+        toggleDisplay('tab-oportunidades', true);
+        toggleDisplay('tab-loja', true);
+        toggleDisplay('tab-missoes', false);
+        toggleDisplay('tab-ganhar', false);
         
-        esconderElemento('status-toggle-container');
-        esconderElemento('servicos-prestador');
-        mostrarElemento('servicos-cliente');
+        toggleDisplay('status-toggle-container', false);
+        toggleDisplay('servicos-prestador', false);
+        toggleDisplay('servicos-cliente', true);
         
-        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) {
-            window.switchTab('servicos');
-        }
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos');
     }
 }
 
-// Helpers para evitar erro se elemento não existir
-function mostrarElemento(id) {
+function toggleDisplay(id, show) {
     const el = document.getElementById(id);
-    if(el) el.classList.remove('hidden');
-}
-function esconderElemento(id) {
-    const el = document.getElementById(id);
-    if(el) el.classList.add('hidden');
+    if(el) {
+        if(show) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    }
 }
