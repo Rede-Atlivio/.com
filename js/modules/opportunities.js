@@ -1,6 +1,6 @@
 import { db } from '../app.js';
 import { userProfile } from '../auth.js';
-import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let listenerOportunidadesAtivo = false;
 
@@ -33,7 +33,22 @@ export function carregarOportunidades() {
 
     if(listenerOportunidadesAtivo) return;
 
-    const q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"));
+    // --- CORREÇÃO DE SEGURANÇA (FIREBASE RULES COMPLIANCE) ---
+    // Verifica se é PRO ou ADMIN para decidir qual query fazer
+    const isPro = userProfile && (userProfile.role === 'admin' || userProfile.is_pro);
+    let q;
+
+    if (isPro) {
+        // PRO: Pode ver todo o histórico
+        q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"));
+    } else {
+        // FREE: Só pode ler itens antigos (> 5 min)
+        // Isso impede que o Firestore bloqueie a requisição por "Permissão Negada"
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+        q = query(collection(db, "oportunidades"), 
+                  where("created_at", "<", fiveMinAgo), 
+                  orderBy("created_at", "desc"));
+    }
 
     onSnapshot(q, (snap) => {
         listenerOportunidadesAtivo = true;
@@ -43,26 +58,12 @@ export function carregarOportunidades() {
             container.innerHTML = `
                 <div class="text-center py-10 text-gray-400 text-xs flex flex-col items-center">
                     <span class="text-4xl grayscale opacity-50 mb-2">⚡</span>
-                    <p>Nenhuma oportunidade no momento.</p>
+                    <p>Nenhuma oportunidade disponível.</p>
+                    ${!isPro ? '<p class="text-[9px] mt-1 opacity-60">(Itens muito recentes são exclusivos PRO)</p>' : ''}
                 </div>`;
         } else {
-            // Lógica do FEED PRO (Tempo Real no Cliente)
-            const isPro = userProfile && (userProfile.role === 'admin' || userProfile.is_pro);
-            const agora = new Date();
-
             snap.forEach(d => {
                 const op = d.data();
-                
-                // --- FILTRO DE TEMPO (5 MINUTOS) ---
-                if (!isPro && op.created_at) {
-                    const dataCriacao = op.created_at.toDate();
-                    const diffMinutos = (agora - dataCriacao) / 1000 / 60;
-                    
-                    // Se não é PRO e a oportunidade tem menos de 5 min, PULA (Não mostra)
-                    if (diffMinutos < 5) return;
-                }
-                // -----------------------------------
-
                 const isPremium = op.is_premium || false;
                 const blurClass = (isPremium && !isPro) ? "blur-sm select-none pointer-events-none" : "";
                 
@@ -83,14 +84,9 @@ export function carregarOportunidades() {
                         </div>
                     </div>`;
             });
-
-            if (container.innerHTML === "") {
-                 container.innerHTML = `
-                <div class="text-center py-10 text-gray-400 text-xs flex flex-col items-center">
-                    <p>Novas oportunidades chegando...</p>
-                    <p class="text-[8px] opacity-60">(Aguardando liberação para Free)</p>
-                </div>`;
-            }
         }
+    }, (error) => {
+        console.error("Erro Oportunidades:", error);
+        container.innerHTML = `<p class="text-red-500 text-xs text-center">Erro ao carregar. Tente recarregar a página.</p>`;
     });
 }
