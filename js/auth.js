@@ -34,11 +34,6 @@ window.alternarPerfil = async () => {
     btn.disabled = true;
     
     try {
-        // Se for virar prestador, verifica se tem setup
-        if (!isAtualmentePrestador) {
-             // Lógica opcional: checar se já tem serviços cadastrados
-        }
-
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             is_provider: !isAtualmentePrestador 
         });
@@ -57,12 +52,11 @@ onAuthStateChanged(auth, async (user) => {
         
         onSnapshot(userRef, async (docSnap) => {
             if(!docSnap.exists()) {
-                // --- CRIAÇÃO DE NOVO USUÁRIO ---
                 const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
                 userProfile = { 
                     email: user.email, 
-                    displayName: user.displayName, // Salva nome do Google
-                    photoURL: user.photoURL,       // Salva foto do Google
+                    displayName: user.displayName, 
+                    photoURL: user.photoURL,       
                     tenant_id: DEFAULT_TENANT, 
                     perfil_completo: false, 
                     role: roleInicial, 
@@ -71,23 +65,12 @@ onAuthStateChanged(auth, async (user) => {
                 };
                 await setDoc(userRef, userProfile);
             } else {
-                // --- USUÁRIO EXISTENTE (SINCRONIZAÇÃO) ---
                 userProfile = docSnap.data();
-                
-                // Atualiza foto/nome se mudou no Google (mantém identidade fresca)
                 if (user.photoURL !== userProfile.photoURL || user.displayName !== userProfile.displayName) {
-                    await updateDoc(userRef, {
-                        displayName: user.displayName,
-                        photoURL: user.photoURL
-                    });
+                    await updateDoc(userRef, { displayName: user.displayName, photoURL: user.photoURL });
                 }
-
                 atualizarInterface(user);
-                
-                // Verifica Setup se for prestador
-                if (userProfile.is_provider) {
-                    verificarPendenciaPerfil(user.uid);
-                }
+                if (userProfile.is_provider) { verificarPendenciaPerfil(user.uid); }
             }
         });
     } else {
@@ -95,14 +78,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Verifica se o prestador tem Nome Profissional configurado
 async function verificarPendenciaPerfil(uid) {
-    // Se não tiver nome profissional ou setup_ok, abre o modal de gestão
     if (!userProfile.setup_profissional_ok) {
         const modal = document.getElementById('provider-setup-modal');
         if(modal) {
             modal.classList.remove('hidden');
-            // Preenche nome automático
             const inputNome = document.getElementById('setup-name');
             if(inputNome && !inputNome.value) inputNome.value = auth.currentUser.displayName || "";
         }
@@ -117,13 +97,10 @@ function mostrarLogin() {
 
 function atualizarInterface(user) {
     document.getElementById('auth-container').classList.add('hidden');
-    
-    // Se perfil incompleto (novo user que não escolheu lado)
     if(!userProfile.perfil_completo) {
         document.getElementById('role-selection').classList.remove('hidden');
         return;
     }
-    
     iniciarAppLogado(user);
 }
 
@@ -135,7 +112,6 @@ function iniciarAppLogado(user) {
     const isAdmin = ADMIN_EMAILS.includes(user.email);
     const tabServicos = document.getElementById('tab-servicos');
 
-    // SEGURANÇA ADMIN
     if(isAdmin) {
         document.getElementById('tab-admin').classList.remove('hidden');
     } else {
@@ -146,55 +122,37 @@ function iniciarAppLogado(user) {
     }
 
     if (userProfile.is_provider) {
-        // --- MODO PRESTADOR ---
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Prestador)</span> 🔄`;
         } else {
              btnPerfil.innerHTML = `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         }
-        
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
-
-        // Exibe abas de trabalho
         document.getElementById('tab-servicos').classList.remove('hidden');
         document.getElementById('tab-missoes').classList.remove('hidden'); 
         document.getElementById('tab-oportunidades').classList.remove('hidden');
         document.getElementById('tab-ganhar').classList.remove('hidden');  
-        
-        // Esconde abas de consumo
         document.getElementById('tab-loja').classList.add('hidden');    
-        
-        // Configura tela de Serviços
         document.getElementById('status-toggle-container').classList.remove('hidden');
         document.getElementById('servicos-prestador').classList.remove('hidden');
         document.getElementById('servicos-cliente').classList.add('hidden');
-
         if (!document.querySelector('.border-blue-600')) window.switchTab('servicos'); 
 
     } else {
-        // --- MODO CLIENTE ---
         if(isAdmin) {
              btnPerfil.innerHTML = `🛡️ <span class="text-red-600 font-black">ADMIN</span> <span class="text-[8px] text-gray-400">(Visão Cliente)</span> 🔄`;
         } else {
              btnPerfil.innerHTML = `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
         }
-
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
-
-        // Exibe abas de consumo
         document.getElementById('tab-servicos').classList.remove('hidden');
         document.getElementById('tab-oportunidades').classList.remove('hidden');
         document.getElementById('tab-loja').classList.remove('hidden');
-        
-        // Esconde abas de trabalho
         document.getElementById('tab-missoes').classList.add('hidden');    
         document.getElementById('tab-ganhar').classList.add('hidden');       
-        
-        // Configura tela de Serviços
         document.getElementById('status-toggle-container').classList.add('hidden');
         document.getElementById('servicos-prestador').classList.add('hidden');
         document.getElementById('servicos-cliente').classList.remove('hidden');
-        
         if (!document.querySelector('.border-blue-600')) window.switchTab('servicos');
     }
 }
