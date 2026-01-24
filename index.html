@@ -34,7 +34,7 @@
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    <audio id="notification-sound" src="https://www.soundjay.com/phone/sounds/cell-phone-1-nr0.mp3" preload="auto"></audio>
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
     <audio id="online-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
 
     <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
@@ -182,7 +182,7 @@
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
             
             <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
-                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Vagas exclusivas e bicos rápidos perto de você</p>
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos, Cashback e Apps que pagam por indicação</p>
                 <div id="lista-oportunidades" class="grid gap-3"></div>
             </section>
             
@@ -201,7 +201,7 @@
                             </div>
                             <div>
                                 <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
-                                <p class="text-[9px] text-gray-400">Mude o perfil para ver missões</p>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
                             </div>
                         </div>
                     </div>
@@ -239,7 +239,7 @@
                             </div>
                             <div>
                                 <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
-                                <p class="text-[9px] text-gray-400">Modo Prestador Ativo</p>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
                             </div>
                         </div>
                         <button onclick="document.getElementById('provider-setup-modal').classList.remove('hidden')" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
@@ -380,15 +380,15 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=10.0"></script>
-    <script type="module" src="./js/auth.js?v=10.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=10.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=10.0"></script>
-    <script type="module" src="./js/modules/services.js?v=10.0"></script>
-    <script type="module" src="./js/modules/products.js?v=10.0"></script>
-    <script type="module" src="./js/chat.js?v=10.0"></script>
-    <script type="module" src="./js/wallet.js?v=10.0"></script>
-    <script type="module" src="./js/admin.js?v=10.0"></script>
+    <script type="module" src="./js/app.js?v=11.0"></script>
+    <script type="module" src="./js/auth.js?v=11.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=11.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=11.0"></script>
+    <script type="module" src="./js/modules/services.js?v=11.0"></script>
+    <script type="module" src="./js/modules/products.js?v=11.0"></script>
+    <script type="module" src="./js/chat.js?v=11.0"></script>
+    <script type="module" src="./js/wallet.js?v=11.0"></script>
+    <script type="module" src="./js/admin.js?v=11.0"></script>
 
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
@@ -405,7 +405,7 @@
         let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
 
-        // === CORREÇÃO NUCLEAR DAS ABAS E DO VAZAMENTO DA LOJA (v10.0) ===
+        // === CORREÇÃO NUCLEAR DAS ABAS E DO VAZAMENTO DA LOJA (v11.0) ===
         window.switchTab = (tabName) => {
             // 1. ESCONDE TUDO NA FORÇA BRUTA (Itera sobre todas as seções do main)
             document.querySelectorAll('main > section').forEach(el => {
