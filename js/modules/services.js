@@ -27,7 +27,7 @@ setTimeout(() => {
     escutarMeusPedidos(); 
     escutarMeusChamados();
     
-    // Inicializa abas (Cliente: Contratar | Prestador: Radar)
+    // Inicializa abas
     if(window.switchServiceSubTab) window.switchServiceSubTab('contratar');
     if(window.switchProviderSubTab) window.switchProviderSubTab('radar');
     
@@ -221,7 +221,7 @@ async function ficarOffline() {
     await deleteDoc(doc(db, "active_providers", auth.currentUser.uid));
 }
 
-// --- ESCUTA DE PEDIDOS DO PRESTADOR ---
+// --- ESCUTA DE PEDIDOS DO PRESTADOR (COM AUTO-TAB) ---
 function escutarMeusChamados() {
     if(!auth.currentUser) return;
     
@@ -238,6 +238,7 @@ function escutarMeusChamados() {
         
         let hasAtivos = false;
         let hasHistorico = false;
+        let temNovaProposta = false;
 
         if(!snap.empty) {
             snap.forEach(d => {
@@ -249,6 +250,7 @@ function escutarMeusChamados() {
                     
                     let content = "";
                     if (pedido.status === 'pending_acceptance') {
+                        temNovaProposta = true; // Flag para trocar de aba
                         content = `
                         <div class="bg-yellow-50 p-4 rounded-xl border-l-4 border-yellow-500 shadow-md mb-4 animate-fadeIn">
                             <div class="mb-2">
@@ -298,9 +300,18 @@ function escutarMeusChamados() {
 
         if(!hasAtivos) {
             containerAtivos.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>`;
-            // Se estiver na aba ativos e não tiver pedidos, tenta voltar pro radar, mas só se não tiver clicado
         }
         if(!hasHistorico) containerHistorico.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>`;
+
+        // A MÁGICA 2: SE TIVER NOVA PROPOSTA, JOGA PRESTADOR PRO LUGAR CERTO
+        // Só muda se estivermos no Radar, para não atrapalhar se ele já estiver vendo
+        const radarView = document.getElementById('pview-radar');
+        if (temNovaProposta && !radarView.classList.contains('hidden') && window.switchProviderSubTab) {
+            window.switchProviderSubTab('ativos');
+            // Toca som se quiser (opcional)
+            const audio = document.getElementById('notification-sound');
+            if(audio) audio.play().catch(e=>console.log("Audio bloqueado"));
+        }
     });
 }
 
@@ -432,9 +443,6 @@ window.enviarAvaliacao = async () => { let stars = 0; document.querySelectorAll(
 window.gerarTokenCliente = async (orderId) => { const btn = event.target; btn.disabled = true; try { const orderRef = doc(db, "orders", orderId); const docSnap = await getDoc(orderRef); let code = docSnap.data().finalization_code; if (!code) { code = Math.floor(1000 + Math.random() * 9000).toString(); await updateDoc(orderRef, { finalization_code: code }); } alert(`🔑 CÓDIGO DE FINALIZAÇÃO: ${code}\n\nINSTRUÇÃO:\nSó passe este código ao prestador quando o serviço estiver 100% concluído.\nAssim que ele validar, o serviço encerra.`); btn.innerText = "VER CÓDIGO 🔑"; btn.disabled = false; } catch (e) { alert("Erro: " + e.message); btn.disabled = false; } };
 window.abrirModalSolicitacao = (uid, nomePrestador, precoBase) => { if(!auth.currentUser) return alert("Faça login."); targetProviderId = uid; targetProviderEmail = nomePrestador; if(window.togglePriceInput) { document.getElementById('label-base-price').innerText = `Aceitar valor (R$ ${precoBase})`; document.getElementById('price-option-base').checked = false; document.getElementById('price-option-custom').checked = false; document.getElementById('custom-price-container').classList.add('hidden'); document.getElementById('financial-summary').classList.add('hidden'); document.getElementById('btn-confirm-req').disabled = true; document.getElementById('btn-confirm-req').classList.add('opacity-50'); window.basePriceAtual = parseFloat(precoBase); } document.getElementById('request-modal').classList.remove('hidden'); };
 
-// ======================================================
-// A CORREÇÃO FINAL: SWITCH DE ABA AUTOMÁTICO
-// ======================================================
 window.confirmarSolicitacao = async () => { 
     const data = document.getElementById('req-date').value; 
     const hora = document.getElementById('req-time').value; 
@@ -476,7 +484,7 @@ window.confirmarSolicitacao = async () => {
         document.getElementById('request-modal').classList.add('hidden'); 
         alert(`✅ Proposta Enviada!\n\nReserva Paga (Simulado): R$ ${reservaTotal.toFixed(2)}\nAguarde o aceite do prestador.`); 
         
-        // --- A MÁGICA: JOGA O CLIENTE PARA A ABA DE ESPERA ---
+        // JOGA O CLIENTE PARA A ABA DE ESPERA
         if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
         
         btn.innerText = "PAGAR E ENVIAR 🔒"; 
