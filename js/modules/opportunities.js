@@ -8,7 +8,8 @@ export async function carregarOportunidades() {
     container.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600"></div>`;
 
     try {
-        const q = query(collection(db, "opportunities"), orderBy("created_at", "desc"), limit(20));
+        // --- AQUI ESTAVA O ERRO: Mudado de "opportunities" para "oportunidades" ---
+        const q = query(collection(db, "oportunidades"), orderBy("created_at", "desc"), limit(20));
         const querySnapshot = await getDocs(q);
 
         container.innerHTML = "";
@@ -36,7 +37,7 @@ export async function carregarOportunidades() {
             if (isDemo) {
                 badgeDemo = `<span class="ml-2 bg-gray-200 text-gray-500 text-[8px] px-2 py-0.5 rounded border border-gray-300 uppercase tracking-wide">Exemplo</span>`;
                 
-                // AQUI ESTÁ O QUE VOCÊ PEDIU:
+                // Frase discreta no rodapé
                 footerDemo = `
                     <div class="mt-3 pt-2 border-t border-gray-100 text-center">
                         <p class="text-[8px] text-gray-400 italic">
