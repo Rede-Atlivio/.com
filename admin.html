@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio God Mode | Sniper Edition</title>
+    <title>Atlivio God Mode | v8.0 Control</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,41 +11,27 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* ESTÉTICA SNIPER (NÃO MEXER) */
         body { background-color: #0b0c15; color: #a5b4fc; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0c15 80%); overflow: hidden; }
-        .glass-panel { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; }
+        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; }
         
-        .metric-value { font-size: 1.5rem; font-weight: 800; color: white; }
-        .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; }
-        
-        .funnel-step { position: relative; padding-left: 20px; border-left: 2px solid #334155; margin-bottom: 20px; }
-        .funnel-step.active { border-left-color: #10b981; }
-        .funnel-step::before { content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; background: #334155; border-radius: 50%; }
-        .funnel-step.active::before { background: #10b981; box-shadow: 0 0 10px #10b981; }
-        .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
-
-        .hidden-details { display: none; animation: slideDown 0.3s ease-out; }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* SCROLLBAR */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0b0c15; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
 
-        /* INPUTS ESTILO SNIPER */
         input, select, textarea {
             background-color: #0f172a !important; 
             border: 1px solid #334155 !important;
             color: #e2e8f0 !important;
             outline: none;
         }
-        input:focus, select:focus, textarea:focus { border-color: #6366f1 !important; }
+        input:focus { border-color: #6366f1 !important; }
 
-        /* NAVEGAÇÃO */
         .nav-item { cursor: pointer; transition: all 0.2s; border-left: 2px solid transparent; padding: 12px; color: #64748b; }
         .nav-item:hover { background: rgba(255,255,255,0.03); color: #a5b4fc; }
-        .nav-item.active { border-left-color: #6366f1; background: rgba(99, 102, 241, 0.1); color: white; font-weight: bold; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
+        .nav-item.active { border-left-color: #6366f1; background: rgba(99, 102, 241, 0.1); color: white; font-weight: bold; }
+
+        /* CHECKBOX CUSTOM */
+        .custom-checkbox { accent-color: #6366f1; width: 16px; height: 16px; cursor: pointer; }
     </style>
 </head>
 <body class="flex h-screen">
@@ -53,41 +39,22 @@
     <aside class="w-64 bg-[#05060a] border-r border-[#1e293b] flex flex-col justify-between z-20">
         <div>
             <div class="p-6 flex items-center gap-3 border-b border-[#1e293b]">
-                <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center font-black text-white text-lg shadow-[0_0_15px_rgba(79,70,229,0.5)]">A</div>
-                <div>
-                    <h1 class="font-bold text-white tracking-tight text-sm">ATLIVIO <span class="text-indigo-500">GOD</span></h1>
-                    <p class="text-[9px] text-slate-500 font-mono">SNIPER CORE v9.3</p>
-                </div>
+                <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center font-black text-white text-lg">A</div>
+                <div><h1 class="font-bold text-white tracking-tight text-sm">ATLIVIO <span class="text-indigo-500">GOD</span></h1><p class="text-[9px] text-slate-500">CONTROL CENTER</p></div>
             </div>
-
             <nav class="mt-4 space-y-1 px-2">
-                <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="activity" size="16"></i> Visão Geral
-                </div>
-                <div onclick="switchView('links')" id="nav-links" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="link" size="16"></i> Fábrica de Links
-                </div>
-                <div onclick="switchView('users')" id="nav-users" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="users" size="16"></i> Baleias (Users)
-                </div>
-                <div onclick="switchView('rh')" id="nav-rh" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="briefcase" size="16"></i> RH & Vagas
-                </div>
-                <div onclick="switchView('loja')" id="nav-loja" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="shopping-cart" size="16"></i> Loja & Opps
-                </div>
-                <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
-                    <i data-lucide="wallet" size="16"></i> Financeiro
-                </div>
-                <div onclick="switchView('tools')" id="nav-tools" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest text-amber-500">
-                    <i data-lucide="zap" size="16"></i> Impulso (Seed)
-                </div>
+                <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="activity" size="16"></i> Visão Geral</div>
+                <div onclick="switchView('links')" id="nav-links" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="link" size="16"></i> Fábrica de Links</div>
+                <div onclick="switchView('users')" id="nav-users" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="users" size="16"></i> Baleias (Users)</div>
+                <div onclick="switchView('rh')" id="nav-rh" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="briefcase" size="16"></i> RH & Vagas</div>
+                <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="wallet" size="16"></i> Financeiro</div>
+                <div onclick="switchView('loja')" id="nav-loja" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest"><i data-lucide="shopping-cart" size="16"></i> Loja & Opps</div>
+                <div onclick="switchView('tools')" id="nav-tools" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest text-amber-500"><i data-lucide="zap" size="16"></i> Impulso (Seed)</div>
             </nav>
         </div>
         <div class="p-4 border-t border-[#1e293b]">
-            <button onclick="location.href='index.html'" class="w-full bg-[#0f172a] hover:bg-[#1e293b] text-slate-400 py-3 rounded text-[10px] font-bold transition flex items-center justify-center gap-2 border border-[#334155]">
-                <i data-lucide="log-out" size="12"></i> VOLTAR AO APP
-            </button>
+            <button onclick="exportarDadosGeral()" class="w-full bg-slate-800 text-slate-300 py-2 rounded text-[10px] font-bold mb-2 border border-slate-700 hover:bg-slate-700">📥 DOWNLOAD DADOS</button>
+            <button onclick="location.href='index.html'" class="w-full bg-[#0f172a] text-slate-400 py-2 rounded text-[10px] font-bold border border-[#334155]">VOLTAR AO APP</button>
         </div>
     </aside>
 
@@ -95,108 +62,109 @@
         
         <header class="flex justify-between items-end mb-8 border-b border-indigo-900/30 pb-4">
             <div>
-                <h2 class="text-2xl font-black text-white tracking-tight mb-1" id="page-title">DASHBOARD</h2>
-                <p class="text-xs text-indigo-400 font-mono">Monitoramento em Tempo Real</p>
+                <h2 class="text-2xl font-black text-white tracking-tight mb-1" id="page-title">VISÃO GERAL</h2>
+                <p class="text-xs text-indigo-400 font-mono">Status do Sistema: ONLINE</p>
             </div>
-            
             <div class="flex items-center gap-3 bg-slate-900/50 p-2 rounded-lg border border-slate-700">
                 <span id="mode-label" class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">DADOS REAIS</span>
                 <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="toggle-test" class="sr-only peer" onchange="window.loadData()">
-                    <div class="w-9 h-5 bg-emerald-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                    <div class="w-9 h-5 bg-emerald-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-amber-500"></div>
                 </label>
             </div>
         </header>
 
+        <div id="bulk-action-bar" class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-900/90 text-white px-6 py-3 rounded-xl shadow-2xl border border-red-500 z-50 flex items-center gap-4 backdrop-blur-md">
+            <span class="font-bold text-sm"><span id="bulk-count">0</span> itens selecionados</span>
+            <button onclick="executarExclusaoEmMassa()" class="bg-white text-red-900 px-4 py-1 rounded font-bold text-xs hover:bg-gray-200">🗑️ EXCLUIR TUDO</button>
+            <button onclick="fecharBulkActions()" class="text-white/70 hover:text-white">&times;</button>
+        </div>
+
         <div id="view-dashboard" class="space-y-6 animate-fadeIn">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-4 border-l-2 border-indigo-500"><p class="metric-label">Tráfego Total</p><p id="kpi-views" class="metric-value">0</p></div>
-                <div class="glass-panel p-4 border-l-2 border-emerald-500"><p class="metric-label">Conversões</p><p id="kpi-sales" class="metric-value text-emerald-400">0</p></div>
-                <div class="glass-panel p-4 border-l-2 border-pink-500"><p class="metric-label">Engajamento</p><p id="kpi-actions" class="metric-value">0</p></div>
-                <div class="glass-panel p-4 border-l-2 border-amber-500"><p class="metric-label">Links Ativos</p><p id="kpi-links" class="text-lg font-bold text-white truncate mt-1">0</p></div>
+                <div class="glass-panel p-4 border-l-2 border-indigo-500"><p class="metric-label">Tráfego</p><p id="kpi-views" class="metric-value">...</p></div>
+                <div class="glass-panel p-4 border-l-2 border-emerald-500"><p class="metric-label">Conversões</p><p id="kpi-sales" class="metric-value text-emerald-400">...</p></div>
+                <div class="glass-panel p-4 border-l-2 border-pink-500"><p class="metric-label">Interações</p><p id="kpi-actions" class="metric-value">...</p></div>
+                <div class="glass-panel p-4 border-l-2 border-amber-500"><p class="metric-label">Links Ativos</p><p id="kpi-links" class="text-lg font-bold text-white mt-1">...</p></div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="glass-panel p-6 lg:col-span-2">
-                    <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-widest">
-                        <i data-lucide="filter" size="16" class="text-indigo-400"></i> FUNIL DE VENDAS
-                    </h2>
-                    <div id="funnel-container" class="space-y-6">
-                        </div>
+                    <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="filter" size="16"></i> FUNIL</h2>
+                    <div class="h-64 w-full"><canvas id="funnelChart"></canvas></div>
                 </div>
-
-                <div class="glass-panel p-0 overflow-hidden flex flex-col h-[600px]">
+                <div class="glass-panel p-0 overflow-hidden flex flex-col h-[400px]">
                     <div class="p-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-white flex items-center gap-2">
-                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> RASTREAMENTO DE GESTOS
-                        </h3>
-                        <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">REAL</span>
+                        <h3 class="text-xs font-bold text-white flex items-center gap-2"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> LIVE FEED</h3>
                     </div>
-                    <div class="overflow-y-auto p-4 space-y-3" id="live-feed">
-                        </div>
+                    <div class="overflow-y-auto p-4 space-y-3" id="live-feed"></div>
                 </div>
             </div>
         </div>
 
         <div id="view-links" class="hidden space-y-6 animate-fadeIn">
-            <div class="glass-panel p-6 mb-10 border border-emerald-500/30">
-                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">🔗 Encurtador Operacional</h2>
+            <div class="glass-panel p-6 mb-6 border border-emerald-500/30">
+                <h2 class="text-lg font-bold text-white mb-4">🔗 Criar Link</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div class="md:col-span-2">
-                        <div class="flex">
-                            <span class="bg-slate-800 text-slate-400 p-3 text-xs rounded-l border border-slate-700 font-mono">/index.html?trk=</span>
-                            <input type="text" id="link-slug" placeholder="slug-unico" class="w-full text-xs p-3 rounded-r">
-                        </div>
-                    </div>
-                    <div><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Destino: Serviços</option><option value="empregos">Destino: Empregos</option><option value="oportunidades">Destino: Oportunidades</option></select></div>
-                    <div><input type="text" id="link-source" placeholder="Origem (Ex: WhatsApp)" class="w-full text-xs p-3 rounded"></div>
+                    <div class="md:col-span-2 flex"><span class="bg-slate-800 text-slate-400 p-3 text-xs rounded-l border border-slate-700 font-mono">/index.html?trk=</span><input type="text" id="link-slug" placeholder="slug-unico" class="w-full text-xs p-3 rounded-r"></div>
+                    <div><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Serviços</option><option value="empregos">Empregos</option><option value="oportunidades">Oportunidades</option></select></div>
+                    <div><input type="text" id="link-source" placeholder="Origem (Ex: Zap)" class="w-full text-xs p-3 rounded"></div>
                 </div>
-                <button onclick="criarLinkRastreado()" id="btnSaveLink" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition mb-4 shadow-[0_0_15px_rgba(16,185,129,0.3)]">💾 GERAR LINK RASTREADO</button>
-                <div id="codeResult" class="hidden flex justify-between items-center bg-black/50 p-4 rounded border border-slate-700">
-                    <code id="finalLinkDisplay" class="text-emerald-400 text-xs font-mono">...</code>
-                    <button onclick="copiarLinkGerado()" class="text-[10px] bg-slate-700 text-white px-3 py-1 rounded">COPIAR</button>
-                </div>
+                <button onclick="criarLinkRastreado()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded text-xs">💾 GERAR LINK</button>
+                <div id="link-result" class="hidden mt-4 bg-black/50 p-4 rounded flex justify-between"><code id="finalLinkDisplay" class="text-emerald-400 text-xs font-mono">...</code><button onclick="copiarLink()" class="text-[10px] bg-slate-700 text-white px-3 py-1 rounded">COPIAR</button></div>
             </div>
+            <div class="flex justify-between items-center mb-2"><h3 class="text-xs font-bold text-slate-400 uppercase">Links Ativos</h3><button onclick="selecionarTodos('links')" class="text-[10px] text-slate-500 hover:text-white">Selecionar Todos</button></div>
             <div id="links-list" class="space-y-2"></div>
         </div>
 
-        <div id="view-tools" class="hidden space-y-6 animate-fadeIn">
-            <h2 class="text-xl font-bold text-amber-500 border-b border-amber-900/30 pb-4 mb-6">Ferramentas de Impulso</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-panel p-6 border-l-4 border-blue-600">
-                    <h3 class="text-white font-bold mb-2 text-sm uppercase">Prestadores (Aquecimento)</h3>
-                    <p class="text-xs text-slate-400 mb-6">Cria 3 perfis realistas (com foto e nome BR) marcados como "Demo".</p>
-                    <button onclick="gerarDemonstracao('servico')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase shadow-lg">Gerar +3 Prestadores</button>
-                </div>
-                <div class="glass-panel p-6 border-l-4 border-purple-600">
-                    <h3 class="text-white font-bold mb-2 text-sm uppercase">Vagas (Volume)</h3>
-                    <p class="text-xs text-slate-400 mb-6">Cria 3 vagas comuns (Atendente, Auxiliar) para preencher a lista.</p>
-                    <button onclick="gerarDemonstracao('vaga')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded text-xs uppercase shadow-lg">Gerar +3 Vagas</button>
-                </div>
-            </div>
-            
-            <div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6 flex justify-between items-center mt-10">
-                <div><h3 class="text-red-500 font-bold text-sm mb-1 uppercase flex items-center gap-2"><i data-lucide="alert-triangle" size="16"></i> Zona de Perigo</h3><p class="text-xs text-slate-500">Zerar banco de dados (Modo Brutal).</p></div>
-                <button onclick="confirmWipe()" class="bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"><i data-lucide="trash-2" size="14"></i> LIMPAR TUDO</button>
+        <div id="view-users" class="hidden space-y-6 animate-fadeIn">
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-white">Gestão de Usuários</h2><button onclick="selecionarTodos('users')" class="text-xs text-slate-400">Select All</button></div>
+            <div id="user-ranking-list" class="space-y-2"></div>
+        </div>
+
+        <div id="view-rh" class="hidden space-y-6 animate-fadeIn">
+            <div class="glass-panel p-6">
+                <div class="flex justify-between mb-4"><h3 class="font-bold text-white">Currículos</h3><button onclick="carregarCandidaturas()" class="text-xs bg-slate-700 px-3 py-1 rounded">Refresh</button></div>
+                <div id="rh-cv-list" class="space-y-2"></div>
             </div>
         </div>
 
-        <div id="view-users" class="hidden animate-fadeIn"><h2 class="text-xl font-bold text-white mb-4">Ranking de Usuários</h2><div id="user-ranking-list" class="space-y-2"></div></div>
-        <div id="view-rh" class="hidden animate-fadeIn"><div class="glass-panel p-6"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Currículos Pendentes</h3><button onclick="carregarCandidaturas()" class="text-xs bg-slate-700 px-3 py-1 rounded">Refresh</button></div><div id="rh-cv-list" class="space-y-2"></div></div></div>
-        <div id="view-financeiro" class="hidden animate-fadeIn"><div class="glass-panel p-6"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Validações</h3><button onclick="carregarValidacoes()" class="text-xs bg-slate-700 px-3 py-1 rounded">Refresh</button></div><div id="fin-mission-list" class="space-y-2"></div></div></div>
-        
-        <div id="view-loja" class="hidden animate-fadeIn">
-            <div class="glass-panel p-6 mb-6">
-                <h3 class="font-bold text-white mb-4">Novo Produto</h3>
-                <div class="grid grid-cols-2 gap-4 mb-4"><input id="prod-nome" placeholder="Nome"><input id="prod-preco" placeholder="Preço"><input id="prod-link" placeholder="Link" class="col-span-2"><input id="prod-img" placeholder="Imagem URL" class="col-span-2"></div>
-                <button onclick="adicionarProduto()" class="w-full bg-green-600 py-3 rounded text-xs font-bold text-white">SALVAR</button>
+        <div id="view-financeiro" class="hidden space-y-6 animate-fadeIn">
+            <div class="glass-panel p-6"><h3 class="font-bold text-white mb-4">Solicitações Financeiras</h3><div id="fin-mission-list" class="space-y-2"></div></div>
+        </div>
+
+        <div id="view-loja" class="hidden space-y-6 animate-fadeIn">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-white mb-4">Adicionar Produto</h3>
+                    <div class="grid grid-cols-2 gap-2 mb-2"><input id="prod-nome" placeholder="Nome"><input id="prod-preco" placeholder="Preço"></div>
+                    <input id="prod-link" placeholder="Link" class="w-full mb-2 p-2 text-xs rounded"><input id="prod-img" placeholder="Img URL" class="w-full mb-2 p-2 text-xs rounded">
+                    <button onclick="adicionarProduto()" class="w-full bg-green-600 py-2 rounded text-xs font-bold text-white">SALVAR PRODUTO</button>
+                </div>
+                <div class="glass-panel p-6">
+                    <h3 class="font-bold text-white mb-4">Adicionar Oportunidade</h3>
+                    <input id="opp-titulo" placeholder="Título" class="w-full mb-2 p-2 text-xs rounded"><input id="opp-link" placeholder="Link" class="w-full mb-2 p-2 text-xs rounded">
+                    <textarea id="opp-desc" placeholder="Descrição" class="w-full mb-2 p-2 text-xs rounded"></textarea>
+                    <button onclick="adicionarOportunidade()" class="w-full bg-yellow-600 py-2 rounded text-xs font-bold text-white">PUBLICAR OPP</button>
+                </div>
             </div>
             <div id="loja-list" class="grid grid-cols-2 gap-4"></div>
+            <div id="opps-list" class="space-y-2 mt-4"></div>
+        </div>
+
+        <div id="view-tools" class="hidden space-y-6 animate-fadeIn">
+            <h2 class="text-xl font-bold text-amber-500 mb-6">Impulso & Controle</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6 border-l-4 border-blue-600"><h3 class="text-white font-bold mb-2">Prestadores Demo</h3><button onclick="gerarDemonstracao('servico')" class="w-full bg-blue-600 text-white font-bold py-3 rounded text-xs">Gerar +3 Prestadores</button></div>
+                <div class="glass-panel p-6 border-l-4 border-purple-600"><h3 class="text-white font-bold mb-2">Vagas Demo</h3><button onclick="gerarDemonstracao('vaga')" class="w-full bg-purple-600 text-white font-bold py-3 rounded text-xs">Gerar +3 Vagas</button></div>
+            </div>
+            <div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6 flex justify-between items-center mt-10">
+                <div><h3 class="text-red-500 font-bold text-sm mb-1">Zona de Perigo</h3><p class="text-xs text-slate-500">Zerar banco.</p></div>
+                <button onclick="confirmWipe()" class="bg-red-900/20 text-red-400 border border-red-900/50 px-4 py-2 rounded text-xs font-bold">LIMPAR TUDO</button>
+            </div>
         </div>
 
     </main>
-
     <script>lucide.createIcons();</script>
-    <script type="module" src="./js/admin.js?v=9.0"></script>
+    <script type="module" src="./js/admin.js?v=9.5"></script>
 </body>
 </html>
