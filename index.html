@@ -30,6 +30,11 @@
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* --- CORREÇÃO DO TEXTO INVISÍVEL --- */
+        input, textarea, select {
+            color: #111827 !important; /* Força cor preta (Gray-900) */
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -408,13 +413,16 @@
             <label class="text-[9px] font-bold text-gray-500 uppercase">Nome Completo</label>
             <input type="text" id="cv-nome" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
             
-            <label class="text-[9px] font-bold text-gray-500 uppercase">WhatsApp para Contato</label>
+            <label class="text-[9px] font-bold text-gray-500 uppercase">WhatsApp</label>
             <input type="tel" id="cv-telefone" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="(75) 9...">
             
-            <label class="text-[9px] font-bold text-gray-500 uppercase">Habilidades / Experiência</label>
-            <textarea id="cv-habilidades" rows="3" class="w-full border p-2 rounded-lg mb-4 text-sm bg-gray-50" placeholder="Ex: Tenho moto, experiência em vendas..."></textarea>
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Habilidades / Resumo</label>
+            <textarea id="cv-habilidades" rows="2" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Ex: Tenho moto, experiência..."></textarea>
             
-            <button onclick="salvarCurriculo()" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-green-700">SALVAR E CONTINUAR</button>
+            <label class="text-[9px] font-bold text-blue-600 uppercase">📎 Anexar Currículo (PDF)</label>
+            <input type="file" id="cv-arquivo" accept="application/pdf" class="w-full border p-2 rounded-lg mb-4 text-xs bg-blue-50 text-blue-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+            
+            <button onclick="salvarCurriculo()" id="btn-save-cv" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-green-700">SALVAR E CONTINUAR</button>
         </div>
     </div>
 
