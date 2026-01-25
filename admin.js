@@ -8,25 +8,20 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
-
-// --- CORREÇÃO DO LINK (Apontando para a pasta correta) ---
 const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
 window.db = db;
 let currentView = 'dashboard', dataMode = 'real', currentCollectionName = '';
 
-// --- LOGIN ---
 window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
 window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
-// --- NAVEGAÇÃO ---
 window.switchView = (viewName) => {
     currentView = viewName;
     ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById('page-title').innerText = viewName.toUpperCase();
     document.getElementById('bulk-actions').classList.remove('visible');
-
     if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
     else if(viewName === 'generator') { document.getElementById('view-generator').classList.remove('hidden'); }
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
@@ -45,201 +40,93 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- CRIAÇÃO DIRETA (CORREÇÃO DO TRAVAMENTO) ---
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    modal.classList.remove('hidden');
-    title.innerText = "NOVO ITEM (Direto)";
-    content.innerHTML = ""; 
-
-    // Campos Dinâmicos
-    const fields = [
-        { key: 'titulo', label: 'Título / Nome', type: 'text' },
-        { key: 'descricao', label: 'Descrição', type: 'text' },
-        { key: 'status', label: 'Status', type: 'text', val: 'ativo' },
-        { key: 'is_demo', label: 'Modo Demonstração?', type: 'checkbox', val: dataMode === 'demo' }
-    ];
-
+    modal.classList.remove('hidden'); title.innerText = "NOVO ITEM"; content.innerHTML = ""; 
+    const fields = [{ key: 'titulo', label: 'Título / Nome', type: 'text' }, { key: 'descricao', label: 'Descrição', type: 'text' }, { key: 'status', label: 'Status', type: 'text', val: 'ativo' }, { key: 'is_demo', label: 'Demo?', type: 'checkbox', val: dataMode === 'demo' }];
     if(type === 'jobs') fields.push({ key: 'salario', label: 'Salário', type: 'text' });
     if(type === 'missions' || type === 'services') fields.push({ key: 'valor', label: 'Valor (R$)', type: 'number' });
-    if(type === 'opps') fields.push({ key: 'link', label: 'Link Externo', type: 'text' });
-
+    if(type === 'opps') fields.push({ key: 'link', label: 'Link', type: 'text' });
     fields.forEach(f => {
-        let inputHtml = f.type === 'checkbox' ? 
-            `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
-            `<div class="mb-2"><label class="inp-label">${f.label}</label><input type="${f.type}" id="new-${f.key}" value="${f.val||''}" class="inp-editor"></div>`;
+        let inputHtml = f.type === 'checkbox' ? `<div class="flex justify-between bg-slate-800 p-2 rounded mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` : `<div class="mb-2"><label class="inp-label">${f.label}</label><input type="${f.type}" id="new-${f.key}" value="${f.val||''}" class="inp-editor"></div>`;
         content.innerHTML += inputHtml;
     });
-
-    // Ação de Salvar Real
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
         const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp(), visibility_score: 100 };
-        
-        fields.forEach(f => {
-            const el = document.getElementById(`new-${f.key}`);
-            if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value);
-        });
-        
-        // Compatibilidade de nomes
-        if(newData.titulo) newData.nome = newData.titulo; 
-        if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
-        
+        fields.forEach(f => { const el = document.getElementById(`new-${f.key}`); if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value); });
+        if(newData.titulo) newData.nome = newData.titulo; if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
         await addDoc(collection(db, coll), newData);
     };
 };
 
-// --- EDITOR UNIVERSAL ---
 window.openUniversalEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    modal.classList.remove('hidden'); title.innerText = "EDITAR";
-    content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
-    
+    modal.classList.remove('hidden'); title.innerText = "EDITAR"; content.innerHTML = `<p class="text-center text-gray-500">Carregando...</p>`;
     try {
-        const docSnap = await getDoc(doc(db, collectionName, id));
-        if (!docSnap.exists()) return;
+        const docSnap = await getDoc(doc(db, collectionName, id)); if (!docSnap.exists()) return;
         const data = docSnap.data(); content.innerHTML = ""; 
-        
         Object.keys(data).sort().forEach(key => {
-            const val = data[key];
             if (key === 'created_at' || key === 'updated_at') return;
-            let inputHtml = typeof val === 'boolean' ? 
-                `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${key}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
-                `<div class="mb-2"><label class="inp-label">${key}</label><input type="${typeof val==='number'?'number':'text'}" id="field-${key}" value="${val}" class="inp-editor"></div>`;
+            const val = data[key];
+            let inputHtml = typeof val === 'boolean' ? `<div class="flex justify-between bg-slate-800 p-2 rounded mb-2"><label class="inp-label">${key}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` : `<div class="mb-2"><label class="inp-label">${key}</label><input type="${typeof val==='number'?'number':'text'}" id="field-${key}" value="${val}" class="inp-editor"></div>`;
             content.innerHTML += inputHtml;
         });
-
         window.saveCallback = async () => {
             const updates = { updated_at: serverTimestamp() };
-            Object.keys(data).forEach(key => {
-                if (key === 'created_at' || key === 'updated_at') return;
-                const field = document.getElementById(`field-${key}`);
-                if (field) updates[key] = field.type === 'checkbox' ? field.checked : (field.type === 'number' ? parseFloat(field.value) : field.value);
-            });
+            Object.keys(data).forEach(key => { if (key === 'created_at' || key === 'updated_at') return; const field = document.getElementById(`field-${key}`); if (field) updates[key] = field.type === 'checkbox' ? field.checked : (field.type === 'number' ? parseFloat(field.value) : field.value); });
             await updateDoc(doc(db, collectionName, id), updates);
         };
     } catch (e) { alert(e.message); }
 };
 
-window.saveModalData = async () => {
-    try { if(window.saveCallback) await window.saveCallback(); alert("✅ Salvo!"); window.closeModal(); window.forceRefresh(); } 
-    catch(e) { alert("Erro: " + e.message); }
-};
+window.saveModalData = async () => { try { if(window.saveCallback) await window.saveCallback(); alert("✅ Salvo!"); window.closeModal(); window.forceRefresh(); } catch(e) { alert(e.message); } };
 
-// --- GERADOR DE LINKS CORRIGIDO ---
 window.saveLinkToFirebase = async () => {
-    const idInput = document.getElementById('linkName');
-    let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
+    const id = document.getElementById('linkName').value.trim().replace(/\s+/g, '-').toLowerCase();
     if(!id) return alert("Digite um nome.");
-    idInput.value = id;
-
     const source = document.getElementById('utmSource').value || 'direct';
-    const isTest = document.getElementById('is-test-link').checked;
-    
-    // URL Corrigida com SITE_URL
+    const isTest = document.getElementById('is-test-link') ? document.getElementById('is-test-link').checked : false;
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
-
-    try {
-        await setDoc(doc(db, "short_links", id), {
-            target: finalLink,
-            source: source,
-            is_test: isTest,
-            clicks: 0,
-            created_at: serverTimestamp()
-        });
-        document.getElementById('finalLinkDisplay').innerText = finalLink;
-        document.getElementById('link-result').classList.remove('hidden');
-        alert("✅ Link Gerado!");
-    } catch(e) { alert("Erro: " + e.message); }
+    try { await setDoc(doc(db, "short_links", id), { target: finalLink, source, is_test: isTest, created_at: serverTimestamp() }); document.getElementById('finalLinkDisplay').innerText = finalLink; document.getElementById('link-result').classList.remove('hidden'); alert("✅ Link Gerado!"); } catch(e) { alert(e.message); }
 };
 
-// --- LISTAGEM ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
     tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
-    
     let colName = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
     currentCollectionName = colName;
-    
-    let constraints = [];
-    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
-    else constraints.push(where("is_demo", "!=", true)); 
-
+    let constraints = []; if (dataMode === 'demo') constraints.push(where("is_demo", "==", true)); else constraints.push(where("is_demo", "!=", true)); 
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
     let headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"];
     let fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 text-xs text-gray-500">${d.id.substring(0,6)}</td><td class="p-3 font-bold text-white">${d.titulo||d.nome||d.nome_profissional||'Sem Nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`;
-
     if(type === 'users') { headers = [chk, "NOME", "TIPO", "SALDO", "STATUS", "AÇÕES"]; }
-    
     if(thead) thead.innerHTML = headers.join('');
-    
-    try {
-        const q = query(collection(db, colName), ...constraints, limit(50));
-        const snap = await getDocs(q);
-        tbody.innerHTML = "";
-        if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Vazio.</td></tr>";
-        snap.forEach(docSnap => { 
-            const d = { id: docSnap.id, ...docSnap.data() }; 
-            tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; 
-        });
-    } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro: ${e.message}</td></tr>`; }
-    
-    const btnAdd = document.getElementById('btn-add-new'); 
-    if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
+    try { const q = query(collection(db, colName), ...constraints, limit(50)); const snap = await getDocs(q); tbody.innerHTML = ""; if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Vazio.</td></tr>"; snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; }); } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro: ${e.message}</td></tr>`; }
+    const btnAdd = document.getElementById('btn-add-new'); if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MASS GENERATOR (COM VARIEDADE DE STATUS) ---
 window.runMassGenerator = async () => {
-    const type = document.getElementById('gen-type').value;
-    const qty = parseInt(document.getElementById('gen-qty').value);
-    const statusEl = document.getElementById('gen-status');
+    const type = document.getElementById('gen-type').value; const qty = parseInt(document.getElementById('gen-qty').value);
     if(!confirm(`Gerar ${qty} itens SIMULADOS?`)) return;
-    statusEl.innerText = "Gerando..."; statusEl.classList.remove('hidden');
+    document.getElementById('gen-status').innerText = "Gerando..."; document.getElementById('gen-status').classList.remove('hidden');
     const batch = writeBatch(db);
     let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
-
-    // ARRAYS EXPANDIDOS E VARIADOS
-    const oppsRich = [
-        {title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
-        {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"},
-        {title: "Indique e Ganhe (Demonstrativo)", desc: "Ganhe por convidar.", type: "indique", badge: "🔵 Indicação"}
-    ];
-    
-    // Novas variações de Missões
-    const missoesVariadas = [
-        {nome: "Avaliar Aplicativo", suf: "(Teste)"},
-        {nome: "Cliente Oculto", suf: "(Esgotada)"},
-        {nome: "Fotografar Loja", suf: "(Coletando)"},
-        {nome: "Pesquisa de Preço", suf: "(Concluída)"},
-        {nome: "Validar Endereço", suf: "(Em Análise)"}
-    ];
-
+    const oppsRich = [{title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"}, {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}];
     for(let i=0; i<qty; i++) {
         const docRef = doc(collection(db, collectionName));
         let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
-        
-        if(type === 'opps') {
-            const item = oppsRich[Math.floor(Math.random()*oppsRich.length)];
-            data.titulo = item.title; data.descricao = item.desc; data.tipo_visual = item.type; data.badge_text = item.badge; data.status = "analise"; data.link = "#";
-        } else if (type === 'missions') {
-            const item = missoesVariadas[Math.floor(Math.random()*missoesVariadas.length)];
-            data.titulo = `${item.nome} ${item.suf}`;
-            data.status = item.suf.includes("Concluída") ? "concluida" : "ativa";
-            data.valor = (Math.random() * 20).toFixed(2);
-        } else if (type === 'jobs') {
-            data.titulo = "Vaga Exemplo (Banco de Talentos)";
-            data.status = "encerrada"; data.empresa = "Parceiro"; data.salario = "A combinar";
-        } else if (type === 'services') {
-            data.nome_profissional = "Profissional Modelo"; data.is_online = false; data.status = "indisponivel";
-        }
+        if(type === 'opps') { const item = oppsRich[Math.floor(Math.random()*oppsRich.length)]; data.titulo = item.title; data.descricao = item.desc; data.tipo_visual = item.type; data.badge_text = item.badge; data.status = "analise"; data.link = "#"; }
+        else if (type === 'jobs') { data.titulo = "Vaga Exemplo (Banco de Talentos)"; data.status = "encerrada"; data.empresa = "Parceiro"; data.salario = "A combinar"; }
+        else if (type === 'services') { data.nome_profissional = "Profissional Modelo"; data.is_online = false; data.status = "indisponivel"; }
+        else { data.titulo = "Missão Teste (Concluída)"; data.status = "concluida"; data.valor = "10.00"; }
         batch.set(docRef, data);
     }
-    await batch.commit(); statusEl.innerText = "✅ Feito!"; window.toggleDataMode('demo'); window.switchView(type);
+    await batch.commit(); document.getElementById('gen-status').innerText = "✅ Feito!"; window.toggleDataMode('demo'); window.switchView(type);
 };
 
-// --- OUTROS ---
 window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
-window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
+window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; document.getElementById('bulk-count').innerText = count; document.getElementById('bulk-actions').classList.toggle('visible', count > 0); };
 window.deleteSelectedItems = async () => { const checked = document.querySelectorAll('.row-checkbox:checked'); if(!confirm("Excluir?")) return; const batch = writeBatch(db); checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); await batch.commit(); document.getElementById('bulk-actions').classList.remove('visible'); loadList(currentView); };
 window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
 window.saveSettings = async () => { const msg = document.getElementById('conf-global-msg').value; await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); alert("Salvo!"); };
