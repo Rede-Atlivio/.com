@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, limit, getDocs, where, deleteDoc, addDoc, updateDoc, doc, serverTimestamp, getCountFromServer, onSnapshot, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, where, deleteDoc, addDoc, updateDoc, doc, serverTimestamp, getCountFromServer, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
@@ -19,22 +19,30 @@ const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
 let currentView = 'dashboard';
 let dataMode = 'real';
-let liveListener = null;
-let mainChart = null;
 let currentEditId = null;
 let currentEditColl = null;
 
 // --- 1. LOGIN ROBUSTO (GLOBAL) ---
+// Define a função no escopo global (window) para o HTML acessar
 window.loginAdmin = async () => {
     const loader = document.getElementById('loading-login');
+    const errMsg = document.getElementById('error-msg');
+    
     loader.classList.remove('hidden');
+    errMsg.classList.add('hidden');
+    
     try {
         const result = await signInWithPopup(auth, provider);
         checkAdmin(result.user);
     } catch (e) {
-        alert("Erro no Login: " + e.message);
         console.error(e);
         loader.classList.add('hidden');
+        if(e.code === 'auth/popup-closed-by-user') {
+            errMsg.innerText = "Login cancelado. Tente novamente.";
+        } else {
+            errMsg.innerText = "Erro: " + e.message;
+        }
+        errMsg.classList.remove('hidden');
     }
 };
 
@@ -47,14 +55,14 @@ function checkAdmin(user) {
         document.getElementById('admin-main').classList.remove('hidden');
         initDashboard();
     } else {
-        alert("ACESSO NEGADO. E-mail não autorizado.");
+        alert("ACESSO NEGADO. Apenas Administrador.");
         signOut(auth);
     }
 }
 
 onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
 
-// --- 2. EDITOR UNIVERSAL (A MÁGICA) ---
+// --- 2. EDITOR UNIVERSAL (PODER TOTAL) ---
 window.openUniversalEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
@@ -65,50 +73,46 @@ window.openUniversalEditor = async (collectionName, id) => {
     
     modal.classList.remove('hidden');
     title.innerText = `EDITAR: ${collectionName.toUpperCase()}`;
-    content.innerHTML = `<p class="text-center text-gray-500">Carregando dados...</p>`;
+    content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando dados do banco...</p>`;
 
     try {
         const docRef = doc(db, collectionName, id);
         const docSnap = await getDoc(docRef);
         
         if (!docSnap.exists()) {
-            content.innerHTML = `<p class="text-red-500">Documento não encontrado.</p>`;
+            content.innerHTML = `<p class="text-red-500">Documento não existe ou foi apagado.</p>`;
             return;
         }
 
         const data = docSnap.data();
-        content.innerHTML = ""; // Limpa loading
+        content.innerHTML = ""; // Limpa
 
-        // Gera inputs dinamicamente baseado nos dados
+        // Gera inputs dinâmicos
         Object.keys(data).sort().forEach(key => {
             const val = data[key];
-            let inputType = "text";
-            let displayVal = val;
-            
-            // Ignora campos de sistema complexos ou timestamp
+            // Ignora timestamps complexos para não quebrar
             if (key === 'created_at' || key === 'updated_at') return;
 
-            if (typeof val === 'number') inputType = "number";
+            let inputHtml = '';
+            
             if (typeof val === 'boolean') {
-                // Checkbox para booleanos
-                content.innerHTML += `
+                inputHtml = `
                     <div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700">
-                        <label class="text-[10px] text-gray-400 uppercase font-bold">${key}</label>
+                        <label class="inp-label">${key}</label>
                         <input type="checkbox" id="field-${key}" ${val ? 'checked' : ''} class="w-4 h-4 accent-blue-600">
-                    </div>
-                `;
+                    </div>`;
             } else {
-                // Inputs normais
-                content.innerHTML += `
+                let type = typeof val === 'number' ? 'number' : 'text';
+                inputHtml = `
                     <div>
-                        <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">${key}</label>
-                        <input type="${inputType}" id="field-${key}" value="${displayVal}" class="inp-editor" ${key==='id'?'disabled':''}>
-                    </div>
-                `;
+                        <label class="inp-label">${key}</label>
+                        <input type="${type}" id="field-${key}" value="${val}" class="inp-editor">
+                    </div>`;
             }
+            content.innerHTML += inputHtml;
         });
         
-        // Define o callback de salvamento para usar esses inputs
+        // Define o callback de salvamento
         window.saveCallback = async () => {
             const updates = {};
             Object.keys(data).forEach(key => {
@@ -124,11 +128,11 @@ window.openUniversalEditor = async (collectionName, id) => {
         };
 
     } catch (e) {
-        content.innerHTML = `<p class="text-red-500">Erro ao carregar: ${e.message}</p>`;
+        content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`;
     }
 };
 
-// --- 3. LISTAS (Atualizadas para usar o Editor) ---
+// --- 3. CRUD LISTAS (USANDO EDITOR) ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body');
     const thead = document.getElementById('table-header');
@@ -138,13 +142,12 @@ async function loadList(type) {
     let constraints = [];
     if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
 
-    // Definição das colunas
     if(type === 'users') {
         colName = "usuarios";
-        headers = ["USUÁRIO", "TIPO", "SALDO", "STATUS", "EDITAR"];
+        headers = ["USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"];
         fields = (d) => `
             <td class="p-3">
-                <div class="font-bold text-white">${d.displayName || 'Sem Nome'}</div>
+                <div class="font-bold text-white">${d.displayName || 'Anon'}</div>
                 <div class="text-gray-500">${d.email}</div>
             </td>
             <td class="p-3">${d.is_provider ? 'Prestador' : 'Cliente'}</td>
@@ -157,35 +160,22 @@ async function loadList(type) {
         `;
     } else if (type === 'services') {
         colName = "active_providers";
-        headers = ["NOME", "ONLINE?", "SERVIÇOS", "AÇÕES"];
+        headers = ["NOME", "ONLINE", "DEMO?", "AÇÕES"];
         fields = (d) => `
             <td class="p-3 font-bold text-white">${d.nome_profissional}</td>
-            <td class="p-3">${d.is_online ? '🟢 Sim' : '🔴 Não'}</td>
-            <td class="p-3 text-gray-500 text-xs">${d.services ? d.services.length : 0} ativos</td>
+            <td class="p-3">${d.is_online ? '🟢' : '⚪'}</td>
+            <td class="p-3">${d.is_seed ? 'SIM' : '-'}</td>
             <td class="p-3 flex gap-2">
                 <button onclick="openUniversalEditor('active_providers', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button>
                 <button onclick="deleteItem('active_providers', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button>
             </td>
         `;
-    } else if (type === 'missions') {
-        colName = "missoes";
-        headers = ["TÍTULO", "VALOR", "STATUS", "AÇÕES"];
-        fields = (d) => `
-            <td class="p-3 font-bold text-white">${d.titulo}</td>
-            <td class="p-3 text-green-400">R$ ${d.recompensa}</td>
-            <td class="p-3 uppercase text-[10px]">${d.status}</td>
-            <td class="p-3 flex gap-2">
-                <button onclick="openUniversalEditor('missoes', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button>
-                <button onclick="deleteItem('missoes', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button>
-            </td>
-        `;
     } else {
-        // Fallback genérico para outras abas
         colName = type; 
-        headers = ["ID", "DADOS", "AÇÕES"];
+        headers = ["ID", "TÍTULO/DADOS", "AÇÕES"];
         fields = (d) => `
-            <td class="p-3 font-mono text-xs">${d.id}</td>
-            <td class="p-3 text-gray-500">...</td>
+            <td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td>
+            <td class="p-3 font-bold text-white">${d.titulo || d.name || 'Sem título'}</td>
             <td class="p-3 flex gap-2">
                 <button onclick="openUniversalEditor('${type}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button>
                 <button onclick="deleteItem('${type}', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button>
@@ -193,7 +183,6 @@ async function loadList(type) {
         `;
     }
 
-    // Render
     thead.innerHTML = headers.map(h => `<th class="p-3">${h}</th>`).join('');
     
     try {
@@ -201,49 +190,46 @@ async function loadList(type) {
         const snap = await getDocs(q);
         
         tbody.innerHTML = "";
-        if(snap.empty) tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Vazio.</td></tr>";
+        if(snap.empty) tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Nenhum item encontrado.</td></tr>";
         
         snap.forEach(docSnap => {
             const d = { id: docSnap.id, ...docSnap.data() };
-            tbody.innerHTML += `<tr class="table-row border-b border-white/5">${fields(d)}</tr>`;
+            tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`;
         });
         lucide.createIcons();
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan='5' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`;
     }
     
-    // Configura botão Novo
     document.getElementById('btn-add-new').onclick = () => openModalCreate(type);
 }
 
-// --- 4. MODAL GENÉRICO ---
+// --- 4. FUNÇÕES GERAIS ---
 window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
 
 window.saveModalData = async () => {
     try {
         if(window.saveCallback) await window.saveCallback();
-        alert("✅ Salvo!");
+        alert("✅ Atualizado!");
         closeModal();
         forceRefresh();
-    } catch(e) { alert("Erro: " + e.message); }
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
 };
 
 window.deleteItem = async (coll, id) => {
-    if(!confirm("Apagar item?")) return;
+    if(!confirm("⚠️ Tem certeza? Essa ação é irreversível.")) return;
     try {
         await deleteDoc(doc(db, coll, id));
         forceRefresh();
     } catch(e) { alert(e.message); }
 };
 
-// --- 5. DASHBOARD & UTILS ---
 window.switchView = (viewName) => {
     currentView = viewName;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     event.currentTarget.classList.add('active');
-    document.getElementById('view-dashboard').classList.add('hidden');
-    document.getElementById('view-list').classList.add('hidden');
-    document.getElementById('view-finance').classList.add('hidden');
+    
+    ['view-dashboard', 'view-list', 'view-finance'].forEach(id => document.getElementById(id).classList.add('hidden'));
     document.getElementById('page-title').innerText = viewName.toUpperCase();
 
     if(viewName === 'dashboard') {
@@ -269,30 +255,28 @@ window.forceRefresh = () => {
     else loadList(currentView);
 };
 
-// CRIAÇÃO SIMPLES (Mantido do anterior para criar Demo)
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
     document.getElementById('modal-title').innerText = "NOVO ITEM";
-    
-    // Simplificado: Cria com dados padrão e manda editar depois
-    content.innerHTML = `<p class="text-center text-gray-400">Clique em SALVAR para criar um item em branco e depois edite.</p>`;
-    
+    content.innerHTML = `<p class="text-center text-gray-400">Clique em SALVAR para criar um item em branco e depois edite para preencher.</p>`;
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : type));
         await addDoc(collection(db, coll), {
             created_at: serverTimestamp(),
             is_demo: dataMode === 'demo',
-            status: 'rascunho',
-            titulo: 'Novo Item'
+            titulo: 'Novo Item (Edite-me)',
+            status: 'rascunho'
         });
     };
 };
 
 async function initDashboard() {
-    const collUsers = collection(db, "usuarios");
-    const snapUsers = await getCountFromServer(collUsers);
-    document.getElementById('kpi-users').innerText = snapUsers.data().count;
-    // (Restante do dash igual ao anterior)
+    try {
+        const collUsers = collection(db, "usuarios");
+        const snapUsers = await getCountFromServer(collUsers);
+        document.getElementById('kpi-users').innerText = snapUsers.data().count;
+    } catch(e) { console.log("Dash init error", e); }
+    // KPIs adicionais e gráficos viriam aqui
 }
