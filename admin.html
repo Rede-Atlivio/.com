@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Sala de Comando</title>
+    <title>Atlivio God Mode | Sniper Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -11,146 +11,192 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
     
     <style>
-        body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
-        .nav-item { cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
-        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-item.active { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-        .metric-value { font-size: 1.8rem; font-weight: 800; color: white; }
-        .metric-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 4px; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .dot-green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        /* ESTÉTICA SNIPER (NÃO MEXER) */
+        body { background-color: #0b0c15; color: #a5b4fc; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #0b0c15 80%); overflow: hidden; }
+        .glass-panel { background: rgba(30, 41, 59, 0.4); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; }
         
-        /* CORREÇÃO DE INPUTS */
-        input, select, textarea { 
-            background-color: #1e293b !important; 
-            border-color: #334155 !important; 
-            color: #f8fafc !important; 
+        .metric-value { font-size: 1.5rem; font-weight: 800; color: white; }
+        .metric-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; }
+        
+        .funnel-step { position: relative; padding-left: 20px; border-left: 2px solid #334155; margin-bottom: 20px; }
+        .funnel-step.active { border-left-color: #10b981; }
+        .funnel-step::before { content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; background: #334155; border-radius: 50%; }
+        .funnel-step.active::before { background: #10b981; box-shadow: 0 0 10px #10b981; }
+        .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
+
+        .hidden-details { display: none; animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0c15; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+        /* INPUTS ESTILO SNIPER */
+        input, select, textarea {
+            background-color: #0f172a !important; 
+            border: 1px solid #334155 !important;
+            color: #e2e8f0 !important;
+            outline: none;
         }
+        input:focus, select:focus, textarea:focus { border-color: #6366f1 !important; }
+
+        /* NAVEGAÇÃO */
+        .nav-item { cursor: pointer; transition: all 0.2s; border-left: 2px solid transparent; padding: 12px; color: #64748b; }
+        .nav-item:hover { background: rgba(255,255,255,0.03); color: #a5b4fc; }
+        .nav-item.active { border-left-color: #6366f1; background: rgba(99, 102, 241, 0.1); color: white; font-weight: bold; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5); }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex">
+<body class="flex h-screen">
 
-    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between hidden md:flex">
+    <aside class="w-64 bg-[#05060a] border-r border-[#1e293b] flex flex-col justify-between z-20">
         <div>
-            <div class="p-6 flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-xl">A</div>
-                <div><h1 class="font-bold text-white tracking-tight">ATLIVIO <span class="text-blue-500">GOD</span></h1><p class="text-[10px] text-slate-500">v8.0 Stable</p></div>
+            <div class="p-6 flex items-center gap-3 border-b border-[#1e293b]">
+                <div class="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center font-black text-white text-lg shadow-[0_0_15px_rgba(79,70,229,0.5)]">A</div>
+                <div>
+                    <h1 class="font-bold text-white tracking-tight text-sm">ATLIVIO <span class="text-indigo-500">GOD</span></h1>
+                    <p class="text-[9px] text-slate-500 font-mono">SNIPER CORE v9.3</p>
+                </div>
             </div>
-            <nav class="mt-4 space-y-1">
-                <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="layout-dashboard" size="18"></i> Visão Geral</div>
-                <div onclick="switchView('links')" id="nav-links" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="link" size="18"></i> Fábrica de Links</div>
-                <div onclick="switchView('loja')" id="nav-loja" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="shopping-bag" size="18"></i> Loja & Produtos</div>
-                <div onclick="switchView('opps')" id="nav-opps" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="zap" size="18"></i> Oportunidades</div>
-                <div onclick="switchView('rh')" id="nav-rh" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="briefcase" size="18"></i> RH & Talentos</div>
-                <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="wallet" size="18"></i> Financeiro</div>
-                <div onclick="switchView('tools')" id="nav-tools" class="nav-item p-4 flex items-center gap-3 text-sm font-bold text-yellow-500"><i data-lucide="settings" size="18"></i> Ferramentas de Impulso</div>
+
+            <nav class="mt-4 space-y-1 px-2">
+                <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="activity" size="16"></i> Visão Geral
+                </div>
+                <div onclick="switchView('links')" id="nav-links" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="link" size="16"></i> Fábrica de Links
+                </div>
+                <div onclick="switchView('users')" id="nav-users" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="users" size="16"></i> Baleias (Users)
+                </div>
+                <div onclick="switchView('rh')" id="nav-rh" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="briefcase" size="16"></i> RH & Vagas
+                </div>
+                <div onclick="switchView('loja')" id="nav-loja" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="shopping-cart" size="16"></i> Loja & Opps
+                </div>
+                <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest">
+                    <i data-lucide="wallet" size="16"></i> Financeiro
+                </div>
+                <div onclick="switchView('tools')" id="nav-tools" class="nav-item flex items-center gap-3 text-xs uppercase tracking-widest text-amber-500">
+                    <i data-lucide="zap" size="16"></i> Impulso (Seed)
+                </div>
             </nav>
         </div>
-        <div class="p-4 border-t border-slate-800"><button onclick="location.href='index.html'" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"><i data-lucide="log-out" size="14"></i> VOLTAR AO APP</button></div>
+        <div class="p-4 border-t border-[#1e293b]">
+            <button onclick="location.href='index.html'" class="w-full bg-[#0f172a] hover:bg-[#1e293b] text-slate-400 py-3 rounded text-[10px] font-bold transition flex items-center justify-center gap-2 border border-[#334155]">
+                <i data-lucide="log-out" size="12"></i> VOLTAR AO APP
+            </button>
+        </div>
     </aside>
 
-    <div class="md:hidden fixed top-0 w-full bg-slate-900 z-50 p-4 border-b border-slate-800 flex justify-between items-center">
-        <span class="font-bold text-white">ATLIVIO ADMIN</span>
-        <button onclick="toggleMobileMenu()" class="text-white"><i data-lucide="menu"></i></button>
-    </div>
-
-    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative mt-14 md:mt-0">
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         
-        <header class="flex justify-between items-center mb-8">
-            <h2 class="text-xl font-bold text-white" id="page-title">Visão Geral</h2>
-            <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-lg border border-slate-700">
+        <header class="flex justify-between items-end mb-8 border-b border-indigo-900/30 pb-4">
+            <div>
+                <h2 class="text-2xl font-black text-white tracking-tight mb-1" id="page-title">DASHBOARD</h2>
+                <p class="text-xs text-indigo-400 font-mono">Monitoramento em Tempo Real</p>
+            </div>
+            
+            <div class="flex items-center gap-3 bg-slate-900/50 p-2 rounded-lg border border-slate-700">
                 <span id="mode-label" class="text-[10px] text-emerald-400 uppercase font-bold tracking-wider">DADOS REAIS</span>
                 <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" id="toggle-test" class="sr-only peer" onchange="window.toggleModoTeste()">
-                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                    <input type="checkbox" id="toggle-test" class="sr-only peer" onchange="window.loadData()">
+                    <div class="w-9 h-5 bg-emerald-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
                 </label>
             </div>
         </header>
 
         <div id="view-dashboard" class="space-y-6 animate-fadeIn">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-5 border-l-4 border-blue-500"><p class="metric-label">Usuários Totais</p><h3 class="metric-value" id="kpi-users">...</h3></div>
-                <div class="glass-panel p-5 border-l-4 border-green-500"><p class="metric-label">Online Agora</p><h3 class="metric-value text-green-400" id="kpi-online">...</h3></div>
-                <div class="glass-panel p-5 border-l-4 border-purple-500"><p class="metric-label">Vagas Abertas</p><h3 class="metric-value" id="kpi-jobs">0</h3></div>
-                <div class="glass-panel p-5 border-l-4 border-yellow-500"><p class="metric-label">Links Ativos</p><h3 class="metric-value text-yellow-400" id="kpi-links">0</h3></div>
+                <div class="glass-panel p-4 border-l-2 border-indigo-500"><p class="metric-label">Tráfego Total</p><p id="kpi-views" class="metric-value">0</p></div>
+                <div class="glass-panel p-4 border-l-2 border-emerald-500"><p class="metric-label">Conversões</p><p id="kpi-sales" class="metric-value text-emerald-400">0</p></div>
+                <div class="glass-panel p-4 border-l-2 border-pink-500"><p class="metric-label">Engajamento</p><p id="kpi-actions" class="metric-value">0</p></div>
+                <div class="glass-panel p-4 border-l-2 border-amber-500"><p class="metric-label">Links Ativos</p><p id="kpi-links" class="text-lg font-bold text-white truncate mt-1">0</p></div>
             </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="glass-panel p-6 lg:col-span-2">
-                    <h3 class="text-sm font-bold text-white mb-4">FUNIL DE CONVERSÃO</h3>
-                    <div class="h-64 w-full"><canvas id="funnelChart"></canvas></div>
+                    <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-widest">
+                        <i data-lucide="filter" size="16" class="text-indigo-400"></i> FUNIL DE VENDAS
+                    </h2>
+                    <div id="funnel-container" class="space-y-6">
+                        </div>
                 </div>
-                <div class="glass-panel p-0 overflow-hidden flex flex-col h-[400px]">
-                    <div class="p-4 border-b border-white/5 bg-slate-800/50 flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-white flex items-center gap-2"><span class="status-dot dot-green animate-pulse"></span> LIVE FEED</h3>
+
+                <div class="glass-panel p-0 overflow-hidden flex flex-col h-[600px]">
+                    <div class="p-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                        <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> RASTREAMENTO DE GESTOS
+                        </h3>
+                        <span class="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30">REAL</span>
                     </div>
-                    <div id="live-feed-content" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+                    <div class="overflow-y-auto p-4 space-y-3" id="live-feed">
+                        </div>
                 </div>
             </div>
         </div>
 
         <div id="view-links" class="hidden space-y-6 animate-fadeIn">
-            <div class="glass-panel p-6 mb-6">
-                <h3 class="text-sm font-bold text-white mb-4">Criar Rastreamento</h3>
+            <div class="glass-panel p-6 mb-10 border border-emerald-500/30">
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">🔗 Encurtador Operacional</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 font-bold">Slug (Ex: zap-grupo1)</label><input type="text" id="link-slug" class="w-full text-xs p-3 rounded"></div>
-                    <div><label class="text-[10px] text-slate-400 font-bold">Destino</label><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Serviços</option><option value="empregos">Empregos</option><option value="oportunidades">Oportunidades</option></select></div>
-                    <div><label class="text-[10px] text-slate-400 font-bold">Origem</label><input type="text" id="link-source" placeholder="WhatsApp" class="w-full text-xs p-3 rounded"></div>
+                    <div class="md:col-span-2">
+                        <div class="flex">
+                            <span class="bg-slate-800 text-slate-400 p-3 text-xs rounded-l border border-slate-700 font-mono">/index.html?trk=</span>
+                            <input type="text" id="link-slug" placeholder="slug-unico" class="w-full text-xs p-3 rounded-r">
+                        </div>
+                    </div>
+                    <div><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Destino: Serviços</option><option value="empregos">Destino: Empregos</option><option value="oportunidades">Destino: Oportunidades</option></select></div>
+                    <div><input type="text" id="link-source" placeholder="Origem (Ex: WhatsApp)" class="w-full text-xs p-3 rounded"></div>
                 </div>
-                <button onclick="criarLinkRastreado()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase">Gerar Link</button>
-                <div id="link-result-box" class="hidden mt-4 bg-slate-950 p-4 rounded flex justify-between items-center"><code id="final-link-text" class="text-green-400 text-xs">...</code><button onclick="copiarLinkGerado()" class="text-[10px] bg-slate-800 text-white px-3 py-1 rounded">COPIAR</button></div>
-            </div>
-            <div id="links-list" class="space-y-3"></div>
-        </div>
-
-        <div id="view-loja" class="hidden space-y-6 animate-fadeIn">
-            <div class="glass-panel p-6">
-                <h3 class="text-sm font-bold text-white mb-4">Novo Produto</h3>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <input type="text" id="prod-nome" placeholder="Nome" class="w-full text-xs p-3 rounded">
-                    <input type="text" id="prod-preco" placeholder="Preço" class="w-full text-xs p-3 rounded">
-                    <input type="text" id="prod-link" placeholder="Link Afiliado" class="w-full text-xs p-3 rounded col-span-2">
-                    <input type="text" id="prod-img" placeholder="Link Imagem" class="w-full text-xs p-3 rounded col-span-2">
+                <button onclick="criarLinkRastreado()" id="btnSaveLink" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition mb-4 shadow-[0_0_15px_rgba(16,185,129,0.3)]">💾 GERAR LINK RASTREADO</button>
+                <div id="codeResult" class="hidden flex justify-between items-center bg-black/50 p-4 rounded border border-slate-700">
+                    <code id="finalLinkDisplay" class="text-emerald-400 text-xs font-mono">...</code>
+                    <button onclick="copiarLinkGerado()" class="text-[10px] bg-slate-700 text-white px-3 py-1 rounded">COPIAR</button>
                 </div>
-                <button onclick="adicionarProduto()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg text-xs uppercase">Salvar</button>
             </div>
-            <div id="loja-list" class="grid grid-cols-2 gap-4 mt-6"></div>
-        </div>
-
-        <div id="view-opps" class="hidden space-y-6 animate-fadeIn">
-            <div class="glass-panel p-6">
-                <h3 class="text-sm font-bold text-white mb-4">Nova Oportunidade</h3>
-                <input type="text" id="opp-titulo" placeholder="Título" class="w-full text-xs p-3 rounded mb-2">
-                <input type="text" id="opp-link" placeholder="Link" class="w-full text-xs p-3 rounded mb-2">
-                <textarea id="opp-desc" placeholder="Descrição" class="w-full text-xs p-3 rounded mb-4"></textarea>
-                <button onclick="adicionarOportunidade()" class="w-full bg-yellow-600 text-white font-bold py-3 rounded-lg text-xs uppercase">Publicar</button>
-            </div>
-            <div id="opps-list" class="space-y-3 mt-6"></div>
+            <div id="links-list" class="space-y-2"></div>
         </div>
 
         <div id="view-tools" class="hidden space-y-6 animate-fadeIn">
+            <h2 class="text-xl font-bold text-amber-500 border-b border-amber-900/30 pb-4 mb-6">Ferramentas de Impulso</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="glass-panel p-6">
-                    <h3 class="text-white font-bold mb-2">🌱 Impulso: Prestadores</h3>
-                    <p class="text-xs text-slate-400 mb-4">Cria: Pedreiros, Diaristas (Nomes Reais).</p>
-                    <button onclick="gerarSeed('servico')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-xs">Gerar 5 Perfis</button>
+                <div class="glass-panel p-6 border-l-4 border-blue-600">
+                    <h3 class="text-white font-bold mb-2 text-sm uppercase">Prestadores (Aquecimento)</h3>
+                    <p class="text-xs text-slate-400 mb-6">Cria 3 perfis realistas (com foto e nome BR) marcados como "Demo".</p>
+                    <button onclick="gerarDemonstracao('servico')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded text-xs uppercase shadow-lg">Gerar +3 Prestadores</button>
                 </div>
-                <div class="glass-panel p-6">
-                    <h3 class="text-white font-bold mb-2">💼 Impulso: Vagas</h3>
-                    <p class="text-xs text-slate-400 mb-4">Cria: Atendente, Vendedor (Vagas Reais).</p>
-                    <button onclick="gerarSeed('vaga')" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg text-xs">Gerar 5 Vagas</button>
+                <div class="glass-panel p-6 border-l-4 border-purple-600">
+                    <h3 class="text-white font-bold mb-2 text-sm uppercase">Vagas (Volume)</h3>
+                    <p class="text-xs text-slate-400 mb-6">Cria 3 vagas comuns (Atendente, Auxiliar) para preencher a lista.</p>
+                    <button onclick="gerarDemonstracao('vaga')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded text-xs uppercase shadow-lg">Gerar +3 Vagas</button>
                 </div>
+            </div>
+            
+            <div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6 flex justify-between items-center mt-10">
+                <div><h3 class="text-red-500 font-bold text-sm mb-1 uppercase flex items-center gap-2"><i data-lucide="alert-triangle" size="16"></i> Zona de Perigo</h3><p class="text-xs text-slate-500">Zerar banco de dados (Modo Brutal).</p></div>
+                <button onclick="confirmWipe()" class="bg-red-900/20 hover:bg-red-900/40 text-red-400 border border-red-900/50 px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2"><i data-lucide="trash-2" size="14"></i> LIMPAR TUDO</button>
             </div>
         </div>
 
-        <div id="view-rh" class="hidden"><div class="glass-panel p-6"><div id="rh-cv-list">Carregando...</div></div></div>
-        <div id="view-financeiro" class="hidden"><div class="glass-panel p-6"><div id="fin-mission-list">Carregando...</div></div></div>
+        <div id="view-users" class="hidden animate-fadeIn"><h2 class="text-xl font-bold text-white mb-4">Ranking de Usuários</h2><div id="user-ranking-list" class="space-y-2"></div></div>
+        <div id="view-rh" class="hidden animate-fadeIn"><div class="glass-panel p-6"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Currículos Pendentes</h3><button onclick="carregarCandidaturas()" class="text-xs bg-slate-700 px-3 py-1 rounded">Refresh</button></div><div id="rh-cv-list" class="space-y-2"></div></div></div>
+        <div id="view-financeiro" class="hidden animate-fadeIn"><div class="glass-panel p-6"><div class="flex justify-between mb-4"><h3 class="font-bold text-white">Validações</h3><button onclick="carregarValidacoes()" class="text-xs bg-slate-700 px-3 py-1 rounded">Refresh</button></div><div id="fin-mission-list" class="space-y-2"></div></div></div>
+        
+        <div id="view-loja" class="hidden animate-fadeIn">
+            <div class="glass-panel p-6 mb-6">
+                <h3 class="font-bold text-white mb-4">Novo Produto</h3>
+                <div class="grid grid-cols-2 gap-4 mb-4"><input id="prod-nome" placeholder="Nome"><input id="prod-preco" placeholder="Preço"><input id="prod-link" placeholder="Link" class="col-span-2"><input id="prod-img" placeholder="Imagem URL" class="col-span-2"></div>
+                <button onclick="adicionarProduto()" class="w-full bg-green-600 py-3 rounded text-xs font-bold text-white">SALVAR</button>
+            </div>
+            <div id="loja-list" class="grid grid-cols-2 gap-4"></div>
+        </div>
 
     </main>
-    <script>lucide.createIcons(); function toggleMobileMenu(){const a=document.querySelector('aside');a.classList.toggle('hidden');a.classList.toggle('fixed');a.classList.toggle('z-50');a.classList.toggle('h-full');}</script>
-    <script type="module" src="./js/admin.js?v=8.0"></script>
+
+    <script>lucide.createIcons();</script>
+    <script type="module" src="./js/admin.js?v=9.0"></script>
 </body>
 </html>
