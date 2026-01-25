@@ -3,10 +3,6 @@ import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// --- IMPORTAÇÃO CRÍTICA: MÓDULO DE SERVIÇOS ---
-// Isso garante que a lógica de serviços e perfil carregue junto com o site
-import { inicializarModuloServicos } from './modules/services.js';
-
 // Configuração oficial Atlivio
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
@@ -17,7 +13,7 @@ const firebaseConfig = {
   appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 };
 
-// Inicialização do Firebase
+// Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -29,17 +25,5 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
-
-// --- INICIALIZAÇÃO AUTOMÁTICA DO SISTEMA ---
-window.addEventListener('load', () => {
-    console.log("🚀 App Carregado. Iniciando módulos...");
-    
-    // Chama o módulo que preenche o perfil e as categorias
-    if(typeof inicializarModuloServicos === 'function') {
-        inicializarModuloServicos();
-    } else {
-        console.warn("⚠️ Aviso: Módulo de serviços não carregou a tempo.");
-    }
-});
 
 export { app, auth, db, storage, provider };
