@@ -2,8 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-// Removemos imports cíclicos de auth.js aqui para evitar travamento na inicialização
-// O auth.js importará app.js, e não o contrário.
+// Imports de auth.js removidos para evitar ciclo
 
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
@@ -14,30 +13,18 @@ const firebaseConfig = {
   appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 };
 
-// 1. INICIALIZAÇÃO
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// 2. EXPOSIÇÃO GLOBAL (CRÍTICO PARA O SITE FUNCIONAR)
-window.app = app;
-window.auth = auth;
-window.db = db;
-window.storage = storage;
-window.provider = provider;
+window.app = app; window.auth = auth; window.db = db; window.storage = storage; window.provider = provider;
 
-console.log("✅ App Base Inicializado. DB Conectado.");
-
-// 3. GESTÃO DE SESSÃO
 let sessionId = sessionStorage.getItem('atlivio_session');
-if (!sessionId) {
-    sessionId = crypto.randomUUID();
-    sessionStorage.setItem('atlivio_session', sessionId);
-}
+if (!sessionId) { sessionId = crypto.randomUUID(); sessionStorage.setItem('atlivio_session', sessionId); }
 
-// 4. SENSOR DE LINKS (Fábrica de Links)
+// --- SENSOR DE LINKS CORRIGIDO ---
 (async function checkTracking() {
     const urlParams = new URLSearchParams(window.location.search);
     const trackId = urlParams.get('trk');
@@ -46,12 +33,20 @@ if (!sessionId) {
         console.log("📡 Link Detectado:", trackId);
         try {
             const linkRef = doc(db, "tracked_links", trackId);
-            const linkSnap = await getDoc(linkRef);
+            
+            // 1. Incrementa contador ATÔMICO (garantido pelo Firebase)
+            await updateDoc(linkRef, { 
+                clicks: increment(1),
+                last_click: serverTimestamp() 
+            });
+            console.log("✅ Contador incrementado");
 
+            // 2. Busca dados para redirecionamento
+            const linkSnap = await getDoc(linkRef);
             if (linkSnap.exists()) {
                 const linkData = linkSnap.data();
-
-                // Loga o tráfego
+                
+                // 3. Loga evento
                 await addDoc(collection(db, "system_events"), {
                     event: "TRAFFIC_SOURCE",
                     slug: trackId,
@@ -61,30 +56,23 @@ if (!sessionId) {
                     is_test: window.location.hostname.includes('localhost')
                 });
 
-                // Incrementa contador
-                updateDoc(linkRef, { clicks: increment(1) }).catch(()=>{});
-
-                // Salva intenção para redirecionar após login
                 sessionStorage.setItem('target_tab', linkData.target_tab);
                 
-                // Limpa a URL
+                // 4. Limpa URL
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, document.title, newUrl);
             }
         } catch (e) {
-            console.error("Erro no sensor:", e);
+            console.error("Erro sensor:", e);
         }
     }
 })();
 
-// 5. FUNÇÃO DE LOG (GLOBAL)
+// --- LOG GLOBAL ---
 window.logEvent = async function(eventName, details = {}) {
     try {
         const user = auth.currentUser;
-        // Tenta pegar o perfil do localStorage ou window se disponível, senão assume visitante
-        // Para simplificar e evitar dependência circular, pegamos básico aqui.
-        
-        const context = {
+        await addDoc(collection(db, "system_events"), {
             event: eventName,
             user_id: user ? user.uid : 'visitante',
             user_email: user ? user.email : 'anonimo',
@@ -93,20 +81,8 @@ window.logEvent = async function(eventName, details = {}) {
             details: details,
             timestamp: serverTimestamp(),
             is_test: window.location.hostname.includes('localhost')
-        };
-
-        await addDoc(collection(db, "system_events"), context);
-
-        if (user) {
-            const statsRef = doc(db, "usuarios", user.uid);
-            updateDoc(statsRef, {
-                "stats.events_count": increment(1),
-                "stats.last_active": serverTimestamp()
-            }).catch(() => {});
-        }
-    } catch (e) {
-        console.error("Silent Log Error:", e);
-    }
+        });
+    } catch (e) { console.error("Log error:", e); }
 };
 
 export { app, auth, db, storage, provider };
