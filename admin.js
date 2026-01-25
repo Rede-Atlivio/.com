@@ -9,7 +9,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// URL DO SITE (Garante que aponta para onde o index.html estará)
+// --- URL DO SEU APP PRINCIPAL (Para onde os links vão apontar) ---
 const SITE_URL = "https://rede-atlivio.github.io/painel-financeiro-borges"; 
 
 window.auth = auth;
@@ -134,7 +134,7 @@ window.openModalCreate = (type) => {
         if (type === 'users') coll = 'usuarios';
         else if (type === 'services') coll = 'active_providers';
         else if (type === 'missions') coll = 'missoes';
-        else if (type === 'opps') coll = 'oportunidades'; // <--- AQUI ESTAVA O ERRO DO "VAZIO"
+        else if (type === 'opps') coll = 'oportunidades'; // Correção do "Vazio"
 
         await addDoc(collection(db, coll), { 
             created_at: serverTimestamp(), 
@@ -227,19 +227,16 @@ async function initAnalytics() {
     }
 }
 
-// --- GERADOR DE LINKS BLINDADO ---
+// --- GERADOR DE LINKS BLINDADO E CORRIGIDO ---
 window.saveLinkToFirebase = async () => {
     let id = document.getElementById('linkName').value.trim();
     if(!id) return alert("Digite um nome curto para o link.");
     
-    // Remove espaços e caracteres estranhos do ID do link
-    id = id.replace(/\s+/g, '-').toLowerCase();
-
-    // Codifica os parâmetros para evitar erro de espaço na URL
+    id = id.replace(/\s+/g, '-').toLowerCase(); // Corrige espaços
     const source = encodeURIComponent(document.getElementById('utmSource').value || 'direct');
     const campaign = encodeURIComponent(document.getElementById('utmCampaign').value || 'none');
     
-    // URL Final correta
+    // Agora aponta para o SITE_URL correto
     const finalLink = `${SITE_URL}/?utm_source=${source}&utm_campaign=${campaign}&ref=${id}`;
 
     try {
