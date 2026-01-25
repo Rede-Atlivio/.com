@@ -20,35 +20,48 @@ export async function carregarOportunidades() {
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
-            
-            // LÓGICA VISUAL INTELIGENTE
             const isDemo = data.is_demo === true;
             
-            // Define cores baseadas no tipo
+            // Cores e Ícones
             let tipoClass = "bg-blue-100 text-blue-700";
             let icon = "⚡";
             if (data.tipo === 'cashback') { tipoClass = "bg-green-100 text-green-700"; icon = "💰"; }
             if (data.tipo === 'alerta') { tipoClass = "bg-red-100 text-red-700"; icon = "🔔"; }
 
-            // Badge de Demo (Automático)
+            // Lógica do Badge (Etiqueta no topo)
             let badgeDemo = "";
+            // Lógica da Linha Discreta (Rodapé)
+            let footerDemo = "";
+
             if (isDemo) {
                 badgeDemo = `<span class="ml-2 bg-gray-200 text-gray-500 text-[8px] px-2 py-0.5 rounded border border-gray-300 uppercase tracking-wide">Exemplo</span>`;
+                
+                // AQUI ESTÁ O QUE VOCÊ PEDIU:
+                footerDemo = `
+                    <div class="mt-3 pt-2 border-t border-gray-100 text-center">
+                        <p class="text-[8px] text-gray-400 italic">
+                            Conteúdo demonstrativo para ilustrar o funcionamento da plataforma.
+                        </p>
+                    </div>
+                `;
             }
 
             container.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between mb-3 animate-fadeIn">
-                    <div class="flex-1 pr-2">
-                        <div class="flex items-center mb-1">
-                            <span class="${tipoClass} text-[8px] font-bold px-2 py-1 rounded uppercase mr-1">${icon} ${data.tipo}</span>
-                            ${badgeDemo}
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 animate-fadeIn">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1 pr-2">
+                            <div class="flex items-center mb-1">
+                                <span class="${tipoClass} text-[8px] font-bold px-2 py-1 rounded uppercase mr-1">${icon} ${data.tipo}</span>
+                                ${badgeDemo}
+                            </div>
+                            <h4 class="font-black text-blue-900 text-xs uppercase leading-tight">${data.titulo}</h4>
+                            <p class="text-[10px] text-gray-500 mt-1 line-clamp-2">${data.descricao}</p>
                         </div>
-                        <h4 class="font-black text-blue-900 text-xs uppercase leading-tight">${data.titulo}</h4>
-                        <p class="text-[10px] text-gray-500 mt-1 line-clamp-2">${data.descricao}</p>
+                        <a href="${data.link || '#'}" target="_blank" class="bg-slate-800 text-white text-[9px] font-bold px-4 py-2 rounded-lg hover:bg-slate-900 shadow-md whitespace-nowrap self-center">
+                            VER OFERTA
+                        </a>
                     </div>
-                    <a href="${data.link || '#'}" target="_blank" class="bg-slate-800 text-white text-[9px] font-bold px-4 py-2 rounded-lg hover:bg-slate-900 shadow-md whitespace-nowrap">
-                        VER OFERTA
-                    </a>
+                    ${footerDemo}
                 </div>
             `;
         });
@@ -59,14 +72,10 @@ export async function carregarOportunidades() {
     }
 }
 
-// Auto-inicialização segura
+// Inicialização
 if(document.getElementById('sec-oportunidades') && !document.getElementById('sec-oportunidades').classList.contains('hidden')){
     carregarOportunidades();
 }
-
-// Expõe para o app.js chamar se necessário
 window.carregarOportunidades = carregarOportunidades;
-
-// Ouve o clique na aba
 const tabBtn = document.getElementById('tab-oportunidades');
 if(tabBtn) tabBtn.addEventListener('click', carregarOportunidades);
