@@ -73,9 +73,8 @@ onAuthStateChanged(auth, async (user) => {
                     iniciarAppLogado(user);
                     
                     if (userProfile.is_provider) {
-                        iniciarRadarPrestador(user.uid);
-                        // Atualiza o visual do botão baseado no banco
-                        atualizarVisualBotaoOnline(user.uid);
+                        // Inicia o radar baseado no status real do banco
+                        verificarStatusERadar(user.uid);
                         
                         if (!userProfile.setup_profissional_ok) {
                             const modal = document.getElementById('provider-setup-modal');
@@ -156,21 +155,38 @@ function iniciarAppLogado(user) {
     }
 }
 
-// --- FUNÇÃO AUXILIAR PARA SINCRONIZAR VISUAL ---
-async function atualizarVisualBotaoOnline(uid) {
+// --- FUNÇÃO DE STATUS E UI DO RADAR ---
+async function verificarStatusERadar(uid) {
     const toggle = document.getElementById('online-toggle');
-    if(!toggle) return;
-    
     try {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
-            toggle.checked = snap.data().is_online;
+            const isOnline = snap.data().is_online;
+            if(toggle) toggle.checked = isOnline;
+            
+            // Define o visual inicial
+            if(isOnline) {
+                iniciarRadarPrestador(uid);
+            } else {
+                renderizarRadarOffline();
+            }
         }
-    } catch(e) { console.log("Erro sync visual:", e); }
+    } catch(e) { console.log("Erro sync:", e); }
 }
 
-// --- ESCUTADOR GLOBAL DE EVENTOS (A SOLUÇÃO BLINDADA) ---
-// Isso garante que o clique funcione mesmo se o botão for recriado
+function renderizarRadarOffline() {
+    const radarContainer = document.getElementById('pview-radar');
+    if(radarContainer) {
+        radarContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 opacity-60 grayscale transition-all duration-500">
+                <div class="text-5xl mb-3">💤</div>
+                <p class="text-xs font-black uppercase tracking-widest text-gray-400">Você está Offline</p>
+                <p class="text-[9px] text-gray-400 mt-2">Toque no botão "Trabalhar" acima para receber pedidos.</p>
+            </div>`;
+    }
+}
+
+// --- ESCUTADOR GLOBAL DE EVENTOS ---
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
         const novoStatus = e.target.checked;
@@ -178,21 +194,22 @@ document.addEventListener('change', async (e) => {
         
         if(!uid) return;
 
-        console.log("🔘 STATUS ALTERADO PELO USUÁRIO:", novoStatus ? "ON" : "OFF");
-
-        // Feedback sonoro imediato
-        if(novoStatus) {
+        // 1. ATUALIZAÇÃO VISUAL IMEDIATA
+        if (novoStatus) {
+            iniciarRadarPrestador(uid); // Mostra animação do Radar
             const audio = document.getElementById('online-sound');
             if(audio) audio.play().catch(()=>{});
+        } else {
+            renderizarRadarOffline(); // Mostra tela de dormir
         }
 
+        // 2. ATUALIZAÇÃO NO BANCO
         try {
             await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
         } catch(err) {
             console.error("Erro ao salvar status:", err);
-            // Reverte visualmente se falhar no banco
-            e.target.checked = !novoStatus;
-            alert("Erro de conexão. Tente novamente.");
+            e.target.checked = !novoStatus; // Reverte se der erro
+            alert("Erro de conexão.");
         }
     }
 });
@@ -352,6 +369,7 @@ function iniciarRadarPrestador(uid) {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
 
+    // --- MODO VARREDURA ---
     const q = query(
         collection(db, "orders"), 
         where("provider_id", "==", uid),
@@ -359,6 +377,10 @@ function iniciarRadarPrestador(uid) {
     );
 
     onSnapshot(q, (snap) => {
+        // Se a pessoa ficou offline no meio do caminho, para tudo.
+        const toggle = document.getElementById('online-toggle');
+        if(toggle && !toggle.checked) return;
+
         radarContainer.innerHTML = "";
         
         if (snap.empty) {
