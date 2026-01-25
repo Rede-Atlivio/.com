@@ -203,12 +203,7 @@ function iniciarAppLogado(user) {
         toggleDisplay('tab-servicos', true);
         toggleDisplay('tab-oportunidades', true);
         toggleDisplay('tab-loja', true);
-        
-        // --- AQUI ESTAVA O PROBLEMA 5 ---
-        // Antes estava 'false'. Agora ativamos a carteira para o cliente.
         toggleDisplay('tab-ganhar', true); 
-        // -------------------------------
-
         toggleDisplay('tab-missoes', false);
         
         toggleDisplay('status-toggle-container', false);
@@ -216,6 +211,12 @@ function iniciarAppLogado(user) {
         toggleDisplay('servicos-cliente', true);
         
         if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos');
+    }
+
+    // --- HOOK DE RASTREAMENTO (Fábrica de Links) ---
+    // Se veio de um link rastreado, executa o redirecionamento
+    if (window.verificarIntencaoNavegacao) {
+        window.verificarIntencaoNavegacao();
     }
 }
 
