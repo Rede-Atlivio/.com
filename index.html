@@ -441,18 +441,18 @@
             });
         }
     </script>
-    <script type="module" src="./js/app.js?v=15.0"></script>
-    <script type="module" src="./js/auth.js?v=15.0"></script>
-    <script type="module" src="./js/modules/missions.js?v=15.0"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=15.0"></script>
-    <script type="module" src="./js/modules/services.js?v=15.0"></script>
-    <script type="module" src="./js/modules/products.js?v=15.0"></script>
+    <script type="module" src="./js/app.js?v=15.1"></script>
+    <script type="module" src="./js/auth.js?v=15.1"></script>
+    <script type="module" src="./js/modules/missions.js?v=15.1"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=15.1"></script>
+    <script type="module" src="./js/modules/services.js?v=15.1"></script>
+    <script type="module" src="./js/modules/products.js?v=15.1"></script>
     
-    <script type="module" src="./js/modules/request.js?v=15.0"></script>
-    <script type="module" src="./js/modules/jobs.js?v=15.0"></script>
+    <script type="module" src="./js/modules/request.js?v=15.1"></script>
+    <script type="module" src="./js/modules/jobs.js?v=15.1"></script>
     
-    <script type="module" src="./js/chat.js?v=15.0"></script>
-    <script type="module" src="./js/wallet.js?v=15.0"></script>
+    <script type="module" src="./js/chat.js?v=15.1"></script>
+    <script type="module" src="./js/wallet.js?v=15.1"></script>
 
     <script>
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
@@ -483,6 +483,20 @@
             if(activeBtn) {
                 activeBtn.classList.remove('border-transparent', 'text-gray-400');
                 activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+            }
+
+            // --- CORREÇÃO DO CARREGAMENTO DE SERVIÇOS ---
+            // Se a aba for 'servicos', força o carregamento dos dados imediatamente.
+            if(tabName === 'servicos') {
+                console.log("Tentando carregar serviços...");
+                if (window.carregarCatalogoServicos) {
+                    window.carregarCatalogoServicos();
+                } else {
+                    // Tenta novamente em 500ms caso o script ainda não tenha carregado
+                    setTimeout(() => {
+                        if (window.carregarCatalogoServicos) window.carregarCatalogoServicos();
+                    }, 500);
+                }
             }
         };
     </script>
