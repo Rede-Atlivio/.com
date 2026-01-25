@@ -1,6 +1,6 @@
 import { auth, db, provider } from './app.js';
 import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, deleteDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const storage = getStorage();
@@ -8,14 +8,14 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
-// --- LISTA DE CATEGORIAS (Seu pedido) ---
+// --- LISTA COMPLETA DE CATEGORIAS (ATUALIZADA) ---
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
-    "🛠️ Encanador", "🛠️ Pedreiro", "🛠️ Marido de Aluguel",
+    "🛠️ Encanador", "🛠️ Pedreiro", "🛠️ Marido de Aluguel", "🛠️ Conserto de Eletrodoméstico",
     "💻 Design Gráfico", "💻 Edição de Vídeo", "💻 Gestão de Redes Sociais", 
     "💻 Digitação", "💻 Suporte Técnico", "💻 Aulas Particulares", 
-    "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "Outros"
+    "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "💅 Manicure/Pedicure", "💇 Cabeleireiro(a)", "Outros"
 ];
 
 // --- LOGIN / LOGOUT ---
@@ -70,13 +70,9 @@ onAuthStateChanged(auth, async (user) => {
                     await setDoc(userRef, userProfile);
                 } else {
                     userProfile = docSnap.data();
-                    
-                    // Atualiza UI do Header
                     atualizarInterfaceUsuario(userProfile);
-
                     iniciarAppLogado(user);
                     
-                    // Se for prestador, ativa o Radar e a Lista de Serviços
                     if (userProfile.is_provider) {
                         iniciarRadarPrestador(user.uid);
                         if (!userProfile.setup_profissional_ok) {
@@ -102,7 +98,6 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 function atualizarInterfaceUsuario(dados) {
-    // Atualiza fotos e textos em todo o site
     document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => {
         if(dados.photoURL) img.src = dados.photoURL;
     });
@@ -132,7 +127,6 @@ function iniciarAppLogado(user) {
     if(isAdmin && adminTab) adminTab.classList.remove('hidden');
 
     if (userProfile.is_provider) {
-        // --- PRESTADOR ---
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
         
@@ -145,10 +139,8 @@ function iniciarAppLogado(user) {
         toggleDisplay('servicos-prestador', true);
         toggleDisplay('servicos-cliente', false);
         
-        // Ativa Toggle Online/Offline
         const toggle = document.getElementById('online-toggle');
         if(toggle) {
-            // Busca estado real no banco active_providers
             getDoc(doc(db, "active_providers", user.uid)).then(snap => {
                 if(snap.exists()) toggle.checked = snap.data().is_online;
             });
@@ -165,7 +157,6 @@ function iniciarAppLogado(user) {
         }
 
     } else {
-        // --- CLIENTE ---
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
         
@@ -183,7 +174,7 @@ function iniciarAppLogado(user) {
 
 // --- LÓGICA DO PRESTADOR: SERVIÇOS E RADAR ---
 
-// 1. Abrir Modal de Configuração (O QUE ESTAVA FALTANDO)
+// 1. Abrir Modal de Configuração
 window.abrirConfiguracaoServicos = async () => {
     const modal = document.getElementById('provider-setup-modal');
     const lista = document.getElementById('my-services-list');
@@ -191,7 +182,6 @@ window.abrirConfiguracaoServicos = async () => {
     
     if(!modal) return;
     
-    // Popula o Select com as categorias novas
     if(select) {
         select.innerHTML = `<option value="" disabled selected>Escolha uma categoria...</option>`;
         CATEGORIAS_SERVICOS.forEach(cat => {
@@ -202,7 +192,6 @@ window.abrirConfiguracaoServicos = async () => {
     modal.classList.remove('hidden');
     lista.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600"></div>`;
 
-    // Busca serviços atuais
     const docRef = doc(db, "active_providers", auth.currentUser.uid);
     const docSnap = await getDoc(docRef);
 
@@ -210,14 +199,21 @@ window.abrirConfiguracaoServicos = async () => {
     if (docSnap.exists() && docSnap.data().services) {
         docSnap.data().services.forEach((serv, index) => {
             lista.innerHTML += `
-                <div class="bg-gray-50 p-2 rounded flex justify-between items-center border border-gray-200">
+                <div class="bg-gray-50 p-3 rounded flex justify-between items-center border border-gray-200 shadow-sm mb-2">
                     <div>
                         <span class="font-bold text-xs text-blue-900 block">${serv.category}</span>
-                        <span class="text-[10px] text-gray-500">${serv.description || ''}</span>
+                        <span class="text-[10px] text-gray-500 italic">${serv.description || 'Sem descrição'}</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-green-600 text-xs">R$ ${serv.price}</span>
-                        <button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg">&times;</button>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-green-600 text-xs">R$ ${serv.price}</span>
+                        
+                        <button onclick="editarServico(${index})" class="text-blue-500 text-xs font-bold border border-blue-200 p-1 rounded hover:bg-blue-50">
+                            ✏️
+                        </button>
+                        
+                        <button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg hover:scale-110 transition">
+                            &times;
+                        </button>
                     </div>
                 </div>
             `;
@@ -227,7 +223,7 @@ window.abrirConfiguracaoServicos = async () => {
     }
 };
 
-// 2. Adicionar Serviço Localmente
+// 2. Adicionar Serviço
 window.addServiceLocal = async () => {
     const cat = document.getElementById('new-service-category').value;
     const price = document.getElementById('new-service-price').value;
@@ -244,7 +240,6 @@ window.addServiceLocal = async () => {
         if (docSnap.exists()) {
             servicosAtuais = docSnap.data().services || [];
         } else {
-            // Cria o documento se não existir
             await setDoc(docRef, { 
                 uid: auth.currentUser.uid,
                 nome_profissional: userProfile.nome_profissional || auth.currentUser.displayName,
@@ -258,11 +253,10 @@ window.addServiceLocal = async () => {
         servicosAtuais.push(novoServico);
         await updateDoc(docRef, { services: servicosAtuais });
         
-        alert("Serviço adicionado!");
+        // Limpa form
         document.getElementById('new-service-desc').value = "";
         document.getElementById('new-service-price').value = "";
         
-        // Recarrega a lista
         window.abrirConfiguracaoServicos();
 
     } catch (e) {
@@ -284,7 +278,33 @@ window.removerServico = async (index) => {
     }
 };
 
-// 4. Salvar Nome Profissional
+// 4. EDITAR SERVIÇO (NOVA FUNÇÃO)
+window.editarServico = async (index) => {
+    const docRef = doc(db, "active_providers", auth.currentUser.uid);
+    const docSnap = await getDoc(docRef);
+    
+    if(docSnap.exists()) {
+        const servicos = docSnap.data().services;
+        const item = servicos[index];
+
+        // 1. Joga os dados para os inputs
+        document.getElementById('new-service-category').value = item.category;
+        document.getElementById('new-service-price').value = item.price;
+        document.getElementById('new-service-desc').value = item.description;
+
+        // 2. Remove da lista (o usuário precisa clicar em "Adicionar" para salvar a edição)
+        // Isso evita lógica complexa de update
+        servicos.splice(index, 1);
+        await updateDoc(docRef, { services: servicos });
+        
+        // 3. Atualiza a lista visual
+        window.abrirConfiguracaoServicos();
+        
+        // 4. Foca no preço para agilizar
+        document.getElementById('new-service-price').focus();
+    }
+};
+
 window.saveServicesAndGoOnline = async () => {
     const nomeInput = document.getElementById('setup-name').value;
     if(!nomeInput) return alert("Digite seu nome profissional.");
@@ -295,7 +315,6 @@ window.saveServicesAndGoOnline = async () => {
             setup_profissional_ok: true
         });
         
-        // Atualiza também na tabela de busca
         const activeRef = doc(db, "active_providers", auth.currentUser.uid);
         const activeSnap = await getDoc(activeRef);
         if(activeSnap.exists()) {
@@ -316,18 +335,16 @@ window.saveServicesAndGoOnline = async () => {
         document.getElementById('provider-setup-modal').classList.add('hidden');
         document.getElementById('online-toggle').checked = true;
         location.reload();
-        
     } catch(e) {
         alert("Erro: " + e.message);
     }
 };
 
-// 5. RADAR (Ouvinte de Pedidos)
+// 5. RADAR "UBER" (VISUAL TOP)
 function iniciarRadarPrestador(uid) {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
 
-    // Busca pedidos pendentes direcionados a este prestador
     const q = query(
         collection(db, "orders"), 
         where("provider_id", "==", uid),
@@ -336,36 +353,67 @@ function iniciarRadarPrestador(uid) {
 
     onSnapshot(q, (snap) => {
         radarContainer.innerHTML = "";
+        
+        // --- ESTADO 1: VARRENDO (SEM PEDIDOS) ---
         if (snap.empty) {
             radarContainer.innerHTML = `
-                <div class="animate-pulse flex flex-col items-center justify-center h-40 opacity-50">
-                    <div class="text-4xl mb-2">📡</div>
-                    <p class="text-xs font-bold uppercase tracking-widest">Buscando Clientes...</p>
+                <div class="flex flex-col items-center justify-center py-10">
+                    <div class="relative flex h-32 w-32 items-center justify-center mb-4">
+                        <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
+                        <div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div>
+                        <span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">
+                            📡
+                        </span>
+                    </div>
+                    <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p>
+                    <p class="text-[9px] text-gray-400 mt-2">Mantenha esta tela aberta.</p>
                 </div>`;
             return;
         }
 
-        // Toca som se houver novos pedidos
+        // --- ESTADO 2: CHAMADA (TEM PEDIDO!) ---
         const audio = document.getElementById('notification-sound');
         if(audio && snap.docChanges().some(change => change.type === 'added')) {
             audio.play().catch(()=>{});
+            // Tenta vibrar o celular (se suportado)
+            if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
         }
 
         snap.forEach(d => {
             const pedido = d.data();
             radarContainer.innerHTML += `
-                <div class="bg-blue-50 border-l-4 border-blue-600 p-4 rounded shadow-md mb-3 text-left animate-fadeIn">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="bg-blue-600 text-white text-[8px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
-                        <span class="text-[9px] text-gray-400 font-bold">${new Date(pedido.created_at?.toDate()).toLocaleTimeString()}</span>
-                    </div>
-                    <h3 class="font-black text-blue-900 text-sm uppercase mb-1">Oferta: R$ ${pedido.offer_value}</h3>
-                    <p class="text-xs text-gray-600 mb-2">Cliente: <strong>${pedido.client_name}</strong></p>
-                    <p class="text-[10px] text-gray-500 mb-3">📍 ${pedido.location} | 📅 ${pedido.service_date}</p>
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl mb-4 border-2 border-blue-500 animate-fadeIn relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-600 rounded-full blur-2xl opacity-50"></div>
                     
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="responderPedido('${d.id}', false)" class="bg-white border border-gray-200 text-gray-500 py-2 rounded text-[10px] font-bold uppercase hover:bg-gray-50">Recusar</button>
-                        <button onclick="responderPedido('${d.id}', true)" class="bg-green-600 text-white py-2 rounded text-[10px] font-bold uppercase shadow hover:bg-green-700">ACEITAR</button>
+                    <div class="relative z-10 text-center">
+                        <div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">
+                            Nova Solicitação
+                        </div>
+                        
+                        <h2 class="text-4xl font-black text-white mb-1">R$ ${pedido.offer_value}</h2>
+                        <p class="text-xs text-gray-300 uppercase tracking-wide mb-6">Oferta do Cliente</p>
+                        
+                        <div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-lg">👤</div>
+                                <div>
+                                    <p class="font-bold text-sm text-white">${pedido.client_name}</p>
+                                    <p class="text-[10px] text-gray-400">Cliente 5.0 ★</p>
+                                </div>
+                            </div>
+                            <div class="border-t border-slate-700 my-2"></div>
+                            <p class="text-xs text-gray-300">📍 <strong>Local:</strong> ${pedido.location}</p>
+                            <p class="text-xs text-gray-300 mt-1">📅 <strong>Data:</strong> ${pedido.service_date} às ${pedido.service_time}</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">
+                                ✖ Recusar
+                            </button>
+                            <button onclick="responderPedido('${d.id}', true)" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transform active:scale-95 transition">
+                                ✔ ACEITAR CORRIDA
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -373,21 +421,17 @@ function iniciarRadarPrestador(uid) {
     });
 }
 
-// 6. Responder Pedido (Função Global)
+// 6. Responder Pedido
 window.responderPedido = async (orderId, aceitar) => {
     if(!aceitar) {
-        if(!confirm("Recusar oferta?")) return;
         await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
     } else {
         await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
         
-        // Destrava o Chat
         const chatQ = query(collection(db, "chats"), where("order_id", "==", orderId));
         getDoc(doc(db, "chats", orderId)).then(async (snap) => {
-             // Atualiza status do chat para 'active'
              if(snap.exists()) await updateDoc(snap.ref, { status: "active" });
         }).catch(async () => {
-             // Fallback se o ID do chat for igual ao ID da ordem
              const chatRef = doc(db, "chats", orderId);
              await updateDoc(chatRef, { status: "active" });
         });
