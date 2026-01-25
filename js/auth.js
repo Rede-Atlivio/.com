@@ -8,7 +8,6 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 export let userProfile = null;
 
-// --- LISTA COMPLETA DE CATEGORIAS (ATUALIZADA) ---
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
@@ -75,6 +74,9 @@ onAuthStateChanged(auth, async (user) => {
                     
                     if (userProfile.is_provider) {
                         iniciarRadarPrestador(user.uid);
+                        // --- CORREÇÃO: Chama a função do botão aqui ---
+                        ativarBotaoOnline(user.uid); 
+                        
                         if (!userProfile.setup_profissional_ok) {
                             const modal = document.getElementById('provider-setup-modal');
                             if(modal) {
@@ -138,24 +140,6 @@ function iniciarAppLogado(user) {
         toggleDisplay('status-toggle-container', true);
         toggleDisplay('servicos-prestador', true);
         toggleDisplay('servicos-cliente', false);
-        
-        const toggle = document.getElementById('online-toggle');
-        if(toggle) {
-            getDoc(doc(db, "active_providers", user.uid)).then(snap => {
-                if(snap.exists()) toggle.checked = snap.data().is_online;
-            });
-            
-            toggle.onchange = async () => {
-                try {
-                    await updateDoc(doc(db, "active_providers", user.uid), { is_online: toggle.checked });
-                    if(toggle.checked) {
-                        const audio = document.getElementById('online-sound');
-                        if(audio) audio.play().catch(()=>{});
-                    }
-                } catch(e) { console.error(e); }
-            };
-        }
-
     } else {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
@@ -172,9 +156,45 @@ function iniciarAppLogado(user) {
     }
 }
 
+// --- NOVA FUNÇÃO BLINDADA PARA O BOTÃO ONLINE ---
+function ativarBotaoOnline(uid) {
+    const toggle = document.getElementById('online-toggle');
+    if (!toggle) return;
+
+    // 1. Carregar estado inicial
+    getDoc(doc(db, "active_providers", uid)).then(snap => {
+        if(snap.exists()) {
+            toggle.checked = snap.data().is_online;
+            console.log("Estado inicial carregado:", toggle.checked);
+        }
+    });
+
+    // 2. Remover listeners antigos para evitar duplicação (cloneNode truque)
+    const newToggle = toggle.cloneNode(true);
+    toggle.parentNode.replaceChild(newToggle, toggle);
+
+    // 3. Adicionar listener novo e limpo
+    newToggle.addEventListener('change', async (e) => {
+        console.log("🔘 CLIQUE NO TOGGLE DETECTADO! Novo estado:", newToggle.checked);
+        
+        try {
+            await updateDoc(doc(db, "active_providers", uid), { is_online: newToggle.checked });
+            
+            if(newToggle.checked) {
+                const audio = document.getElementById('online-sound');
+                if(audio) audio.play().catch(()=>{});
+            }
+        } catch(err) {
+            console.error("Erro ao mudar status:", err);
+            // Reverte visualmente se der erro
+            newToggle.checked = !newToggle.checked;
+            alert("Erro de conexão ao mudar status.");
+        }
+    });
+}
+
 // --- LÓGICA DO PRESTADOR: SERVIÇOS E RADAR ---
 
-// 1. Abrir Modal de Configuração
 window.abrirConfiguracaoServicos = async () => {
     const modal = document.getElementById('provider-setup-modal');
     const lista = document.getElementById('my-services-list');
@@ -206,14 +226,8 @@ window.abrirConfiguracaoServicos = async () => {
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="font-black text-green-600 text-xs">R$ ${serv.price}</span>
-                        
-                        <button onclick="editarServico(${index})" class="text-blue-500 text-xs font-bold border border-blue-200 p-1 rounded hover:bg-blue-50">
-                            ✏️
-                        </button>
-                        
-                        <button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg hover:scale-110 transition">
-                            &times;
-                        </button>
+                        <button onclick="editarServico(${index})" class="text-blue-500 text-xs font-bold border border-blue-200 p-1 rounded hover:bg-blue-50">✏️</button>
+                        <button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg hover:scale-110 transition">&times;</button>
                     </div>
                 </div>
             `;
@@ -223,7 +237,6 @@ window.abrirConfiguracaoServicos = async () => {
     }
 };
 
-// 2. Adicionar Serviço
 window.addServiceLocal = async () => {
     const cat = document.getElementById('new-service-category').value;
     const price = document.getElementById('new-service-price').value;
@@ -253,7 +266,6 @@ window.addServiceLocal = async () => {
         servicosAtuais.push(novoServico);
         await updateDoc(docRef, { services: servicosAtuais });
         
-        // Limpa form
         document.getElementById('new-service-desc').value = "";
         document.getElementById('new-service-price').value = "";
         
@@ -265,7 +277,6 @@ window.addServiceLocal = async () => {
     }
 };
 
-// 3. Remover Serviço
 window.removerServico = async (index) => {
     if(!confirm("Remover este serviço?")) return;
     const docRef = doc(db, "active_providers", auth.currentUser.uid);
@@ -278,7 +289,6 @@ window.removerServico = async (index) => {
     }
 };
 
-// 4. EDITAR SERVIÇO (NOVA FUNÇÃO)
 window.editarServico = async (index) => {
     const docRef = doc(db, "active_providers", auth.currentUser.uid);
     const docSnap = await getDoc(docRef);
@@ -287,20 +297,13 @@ window.editarServico = async (index) => {
         const servicos = docSnap.data().services;
         const item = servicos[index];
 
-        // 1. Joga os dados para os inputs
         document.getElementById('new-service-category').value = item.category;
         document.getElementById('new-service-price').value = item.price;
         document.getElementById('new-service-desc').value = item.description;
 
-        // 2. Remove da lista (o usuário precisa clicar em "Adicionar" para salvar a edição)
-        // Isso evita lógica complexa de update
         servicos.splice(index, 1);
         await updateDoc(docRef, { services: servicos });
-        
-        // 3. Atualiza a lista visual
         window.abrirConfiguracaoServicos();
-        
-        // 4. Foca no preço para agilizar
         document.getElementById('new-service-price').focus();
     }
 };
@@ -340,7 +343,7 @@ window.saveServicesAndGoOnline = async () => {
     }
 };
 
-// 5. RADAR "UBER" (VISUAL TOP)
+// 5. RADAR "UBER"
 function iniciarRadarPrestador(uid) {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
@@ -354,7 +357,6 @@ function iniciarRadarPrestador(uid) {
     onSnapshot(q, (snap) => {
         radarContainer.innerHTML = "";
         
-        // --- ESTADO 1: VARRENDO (SEM PEDIDOS) ---
         if (snap.empty) {
             radarContainer.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-10">
@@ -371,11 +373,9 @@ function iniciarRadarPrestador(uid) {
             return;
         }
 
-        // --- ESTADO 2: CHAMADA (TEM PEDIDO!) ---
         const audio = document.getElementById('notification-sound');
         if(audio && snap.docChanges().some(change => change.type === 'added')) {
             audio.play().catch(()=>{});
-            // Tenta vibrar o celular (se suportado)
             if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
         }
 
@@ -384,15 +384,12 @@ function iniciarRadarPrestador(uid) {
             radarContainer.innerHTML += `
                 <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl mb-4 border-2 border-blue-500 animate-fadeIn relative overflow-hidden">
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-600 rounded-full blur-2xl opacity-50"></div>
-                    
                     <div class="relative z-10 text-center">
                         <div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">
                             Nova Solicitação
                         </div>
-                        
                         <h2 class="text-4xl font-black text-white mb-1">R$ ${pedido.offer_value}</h2>
                         <p class="text-xs text-gray-300 uppercase tracking-wide mb-6">Oferta do Cliente</p>
-                        
                         <div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-lg">👤</div>
@@ -405,14 +402,9 @@ function iniciarRadarPrestador(uid) {
                             <p class="text-xs text-gray-300">📍 <strong>Local:</strong> ${pedido.location}</p>
                             <p class="text-xs text-gray-300 mt-1">📅 <strong>Data:</strong> ${pedido.service_date} às ${pedido.service_time}</p>
                         </div>
-
                         <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">
-                                ✖ Recusar
-                            </button>
-                            <button onclick="responderPedido('${d.id}', true)" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transform active:scale-95 transition">
-                                ✔ ACEITAR CORRIDA
-                            </button>
+                            <button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">✖ Recusar</button>
+                            <button onclick="responderPedido('${d.id}', true)" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transform active:scale-95 transition">✔ ACEITAR CORRIDA</button>
                         </div>
                     </div>
                 </div>
@@ -421,7 +413,6 @@ function iniciarRadarPrestador(uid) {
     });
 }
 
-// 6. Responder Pedido
 window.responderPedido = async (orderId, aceitar) => {
     if(!aceitar) {
         await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
@@ -441,7 +432,6 @@ window.responderPedido = async (orderId, aceitar) => {
     }
 };
 
-// --- UPLOAD FOTO ---
 window.uploadFotoPerfil = async (input) => {
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
