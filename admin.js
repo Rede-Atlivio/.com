@@ -9,7 +9,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// --- URL CORRIGIDA (AGORA APONTA PARA A PASTA .COM) ---
+// URL DO SEU APP (PARA O GERADOR DE LINKS FUNCIONAR)
 const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
@@ -54,10 +54,11 @@ window.openModalCreate = (type) => {
     title.innerText = "CRIAR NOVO ITEM";
     content.innerHTML = ""; 
 
+    // Define campos baseados no tipo
     const fields = [
         { key: 'titulo', label: 'Título / Nome', type: 'text' },
         { key: 'descricao', label: 'Descrição', type: 'text' },
-        { key: 'status', label: 'Status (ativo/inativo)', type: 'text', val: 'ativo' },
+        { key: 'status', label: 'Status', type: 'text', val: 'ativo' },
         { key: 'is_demo', label: 'É Demonstração?', type: 'checkbox', val: dataMode === 'demo' }
     ];
 
@@ -65,6 +66,7 @@ window.openModalCreate = (type) => {
     if(type === 'missions' || type === 'services') fields.push({ key: 'valor', label: 'Valor (R$)', type: 'number' });
     if(type === 'opps') fields.push({ key: 'link', label: 'Link Externo', type: 'text' });
 
+    // Gera o HTML do formulário
     fields.forEach(f => {
         let inputHtml = f.type === 'checkbox' ? 
             `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
@@ -72,15 +74,20 @@ window.openModalCreate = (type) => {
         content.innerHTML += inputHtml;
     });
 
+    // Função de Salvar (Cria direto no banco)
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
         const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp() };
+        
         fields.forEach(f => {
             const el = document.getElementById(`new-${f.key}`);
             if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value);
         });
+        
+        // Ajustes de nome para compatibilidade
         if(newData.titulo) newData.nome = newData.titulo; 
         if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
+        
         await addDoc(collection(db, coll), newData);
     };
 };
@@ -123,7 +130,7 @@ window.saveModalData = async () => {
     catch(e) { alert("Erro: " + e.message); }
 };
 
-// --- GERADOR DE LINKS CORRIGIDO ---
+// --- GERADOR DE LINKS CORRIGIDO (Igual Sniper) ---
 window.saveLinkToFirebase = async () => {
     const idInput = document.getElementById('linkName');
     let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
@@ -132,9 +139,9 @@ window.saveLinkToFirebase = async () => {
     idInput.value = id;
 
     const source = document.getElementById('utmSource').value || 'direct';
-    const isTest = document.getElementById('is-test-link').checked;
+    const isTest = document.getElementById('is-test-link') ? document.getElementById('is-test-link').checked : false;
     
-    // AQUI ESTÁ A CORREÇÃO: Usa SITE_URL correto
+    // URL Final
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
     try {
