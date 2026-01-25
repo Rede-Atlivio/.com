@@ -13,6 +13,8 @@ window.auth = auth;
 window.db = db;
 let currentView = 'dashboard';
 let dataMode = 'real';
+let currentEditId = null;
+let currentEditColl = null;
 
 // VARIÁVEIS DO ROBÔ
 let roboIntervalo = null;
@@ -26,34 +28,56 @@ window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 // --- NAVEGAÇÃO ---
 window.switchView = (viewName) => {
     currentView = viewName;
-    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    document.getElementById('page-title').innerText = viewName.toUpperCase();
-    document.getElementById('bulk-actions').classList.remove('visible');
+    const views = ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'];
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.add('hidden');
+    });
+    
+    const titleEl = document.getElementById('page-title');
+    if(titleEl) titleEl.innerText = viewName.toUpperCase();
+    
+    const bulkBar = document.getElementById('bulk-actions');
+    if(bulkBar) bulkBar.classList.remove('visible');
 
-    if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
+    if(viewName === 'dashboard') { 
+        document.getElementById('view-dashboard').classList.remove('hidden'); 
+        initDashboard(); 
+    }
     else if(viewName === 'generator') { 
         document.getElementById('view-generator').classList.remove('hidden'); 
-        injetarPainelRobo(); // Painel do Robô + Gerenciador de Links
-        listarCampanhasAtivas(); // Carrega a lista visual
+        injetarPainelRobo(); 
+        listarCampanhasAtivas(); 
     }
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
     else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
-    else { document.getElementById('view-list').classList.remove('hidden'); loadList(viewName); }
+    else { 
+        document.getElementById('view-list').classList.remove('hidden'); 
+        loadList(viewName); 
+    }
 };
 
 window.toggleDataMode = (mode) => {
     dataMode = mode;
-    const btnReal = document.getElementById('btn-mode-real'), btnDemo = document.getElementById('btn-mode-demo');
+    const btnReal = document.getElementById('btn-mode-real');
+    const btnDemo = document.getElementById('btn-mode-demo');
+    
     if (btnReal) btnReal.className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     if (btnDemo) btnDemo.className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     window.forceRefresh();
 };
 
-window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
+window.forceRefresh = () => { 
+    if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) {
+        loadList(currentView); 
+    } else if (currentView === 'dashboard') {
+        initDashboard(); 
+    }
+};
 
 // ============================================================================
-// 🤖 PAINEL DO ROBÔ & GERENCIADOR DE LINKS (INTERFACE VISUAL)
+// 🤖 PAINEL DO ROBÔ & GERENCIADOR DE LINKS
 // ============================================================================
 
 window.injetarPainelRobo = () => {
@@ -73,18 +97,13 @@ window.injetarPainelRobo = () => {
                 </div>
             </div>
             <div class="mt-4 flex gap-4">
-                <button onclick="window.toggleRobo(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-lg transition">
-                    ▶️ LIGAR ROBÔ
-                </button>
-                <button onclick="window.toggleRobo(false)" class="flex-1 bg-red-900/50 hover:bg-red-900 text-white py-3 rounded-xl font-bold text-xs uppercase border border-red-800 transition">
-                    ⏸️ PAUSAR
-                </button>
+                <button onclick="window.toggleRobo(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-lg transition">▶️ LIGAR ROBÔ</button>
+                <button onclick="window.toggleRobo(false)" class="flex-1 bg-red-900/50 hover:bg-red-900 text-white py-3 rounded-xl font-bold text-xs uppercase border border-red-800 transition">⏸️ PAUSAR</button>
             </div>
         </div>
 
         <div class="glass-panel p-6 border border-blue-500/30 mb-6">
             <h3 class="text-lg font-bold text-white mb-4">📚 Minha Lista de Links (Afiliado)</h3>
-            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                 <input type="text" id="camp-titulo" placeholder="Título (Ex: iPhone 13 Promo)" class="inp-editor">
                 <input type="text" id="camp-link" placeholder="Seu Link de Afiliado" class="inp-editor text-blue-300">
@@ -97,18 +116,14 @@ window.injetarPainelRobo = () => {
                     <button onclick="window.adicionarCampanha()" class="bg-blue-600 text-white px-6 rounded-lg font-bold text-xs uppercase hover:bg-blue-500 flex-1">+ Adicionar à Lista</button>
                 </div>
             </div>
-
             <p class="text-[10px] text-gray-400 uppercase font-bold mb-2">Itens Ativos no Robô:</p>
             <div id="lista-campanhas" class="space-y-2 max-h-60 overflow-y-auto">
                 <p class="text-center text-gray-500 text-xs py-4">Carregando lista...</p>
             </div>
         </div>
     `;
-    
     container.insertAdjacentHTML('afterbegin', painelHtml);
 };
-
-// --- LÓGICA DE GERENCIAMENTO (CRUD) ---
 
 window.adicionarCampanha = async () => {
     const titulo = document.getElementById('camp-titulo').value;
@@ -127,14 +142,12 @@ window.adicionarCampanha = async () => {
             created_at: serverTimestamp()
         });
         
-        // Limpa form
         document.getElementById('camp-titulo').value = "";
         document.getElementById('camp-link').value = "";
         document.getElementById('camp-desc').value = "";
         
         alert("✅ Link salvo na biblioteca do Robô!");
         window.listarCampanhasAtivas();
-
     } catch(e) { alert("Erro: " + e.message); }
 };
 
@@ -171,29 +184,22 @@ window.removerCampanha = async (id) => {
     window.listarCampanhasAtivas();
 };
 
-// --- LÓGICA DO ROBÔ (EXECUÇÃO) ---
-
 window.toggleRobo = (ligar) => {
     const statusText = document.getElementById('robo-status-text');
-    
     if (ligar) {
         if (roboAtivo) return;
         
-        // Verifica se tem itens antes de ligar
         getDocs(collection(db, "bot_library")).then(snap => {
             if(snap.empty) {
                 alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!");
                 return;
             }
-            
             roboAtivo = true;
             if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
-            
             window.executarCicloRobo();
             roboIntervalo = setInterval(window.executarCicloRobo, TEMPO_ENTRE_POSTS);
             alert("🤖 ROBÔ INICIADO!\nEle usará sua lista de links cadastrados.");
         });
-
     } else {
         roboAtivo = false;
         clearInterval(roboIntervalo);
@@ -205,21 +211,16 @@ window.toggleRobo = (ligar) => {
 window.executarCicloRobo = async () => {
     if (!roboAtivo) return;
     console.log("🤖 ROBÔ: Buscando munição na biblioteca...");
-    
     try {
-        // 1. Busca todas as opções cadastradas
         const snap = await getDocs(collection(db, "bot_library"));
         if(snap.empty) {
             console.log("❌ Robô parou: Biblioteca vazia.");
             window.toggleRobo(false);
             return;
         }
-
         const opcoes = snap.docs.map(d => d.data());
-        // 2. Sorteia uma
         const oferta = opcoes[Math.floor(Math.random() * opcoes.length)];
         
-        // 3. Posta na timeline real
         await addDoc(collection(db, "oportunidades"), {
             titulo: oferta.titulo,
             descricao: oferta.descricao,
@@ -227,7 +228,7 @@ window.executarCicloRobo = async () => {
             link: oferta.link,
             created_at: serverTimestamp(),
             updated_at: serverTimestamp(),
-            is_demo: false, // Item REAL (sem badge Exemplo)
+            is_demo: false, 
             visibility_score: 100,
             origem: "robo_auto"
         });
@@ -235,13 +236,10 @@ window.executarCicloRobo = async () => {
         console.log(`✅ ROBÔ: Postou "${oferta.titulo}"!`);
         document.title = "Atlivio Admin (POSTOU!)";
         setTimeout(() => document.title = "Atlivio Admin", 5000);
-        
-    } catch (e) {
-        console.error("❌ ROBÔ FALHOU:", e);
-    }
+    } catch (e) { console.error("❌ ROBÔ FALHOU:", e); }
 };
 
-// --- LISTAGEM E FUNÇÕES PADRÃO (MANTIDAS) ---
+// --- LISTAGEM PADRÃO ---
 
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
@@ -285,18 +283,157 @@ async function loadList(type) {
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- OUTROS ---
-window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
-window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
-window.deleteSelectedItems = async () => { const checked = document.querySelectorAll('.row-checkbox:checked'); if(!confirm("Excluir?")) return; const batch = writeBatch(db); checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); await batch.commit(); document.getElementById('bulk-actions').classList.remove('visible'); loadList(currentView); };
-window.openModalCreate = (type) => { /* Simplificado */ const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "CRIAR"; content.innerHTML = "<p>Use o Gerador para criar rápido.</p>"; };
-window.openUniversalEditor = async (collectionName, id) => { const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title'); currentEditId = id; currentEditColl = collectionName; modal.classList.remove('hidden'); title.innerText = "EDITAR"; content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`; try { const docSnap = await getDoc(doc(db, collectionName, id)); if (!docSnap.exists()) return; const data = docSnap.data(); content.innerHTML = ""; Object.keys(data).sort().forEach(key => { if(key === 'created_at' || key === 'updated_at') return; content.innerHTML += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${data[key]}" class="inp-editor"></div>`; }); window.saveCallback = async () => { const updates = { updated_at: serverTimestamp() }; Object.keys(data).forEach(key => { if(key === 'created_at' || key === 'updated_at') return; const el = document.getElementById(`field-${key}`); if(el) updates[key] = el.value; }); await updateDoc(doc(db, collectionName, id), updates); }; } catch(e) { alert(e.message); } };
-window.saveModalData = async () => { try { if(window.saveCallback) await window.saveCallback(); alert("Salvo!"); window.closeModal(); window.forceRefresh(); } catch(e){alert(e.message);} };
+// --- OUTROS E UTILITÁRIOS ---
+
+window.toggleSelectAll = (src) => { 
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); 
+    window.updateBulkBar(); 
+};
+
+window.updateBulkBar = () => { 
+    const count = document.querySelectorAll('.row-checkbox:checked').length; 
+    const bar = document.getElementById('bulk-actions'); 
+    document.getElementById('bulk-count').innerText = count; 
+    if(count>0) bar.classList.add('visible'); 
+    else bar.classList.remove('visible'); 
+};
+
+window.deleteSelectedItems = async () => { 
+    const checked = document.querySelectorAll('.row-checkbox:checked'); 
+    if(!confirm("Excluir?")) return; 
+    const batch = writeBatch(db); 
+    checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); 
+    await batch.commit(); 
+    document.getElementById('bulk-actions').classList.remove('visible'); 
+    loadList(currentView); 
+};
+
+window.openModalCreate = (type) => { 
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    if(!modal) return;
+    
+    modal.classList.remove('hidden'); 
+    title.innerText = "CRIAR ITEM"; 
+    
+    // Formulário simples para criação manual (fallback)
+    content.innerHTML = `
+        <div class="mb-4 text-center text-gray-400 text-xs">
+            Para Oportunidades, use o <b>Painel do Robô</b> na aba GERADOR.<br>
+            Para outros itens, use o formulário abaixo.
+        </div>
+        <div class="mb-2"><label class="inp-label">Título</label><input type="text" id="new-titulo" class="inp-editor"></div>
+        <div class="mb-2"><label class="inp-label">Descrição</label><input type="text" id="new-desc" class="inp-editor"></div>
+    `;
+    
+    window.saveCallback = async () => {
+        const titulo = document.getElementById('new-titulo').value;
+        const desc = document.getElementById('new-desc').value;
+        if(!titulo) return alert("Título obrigatório");
+        
+        let col = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
+        
+        await addDoc(collection(db, col), {
+            titulo: titulo,
+            descricao: desc,
+            created_at: serverTimestamp(),
+            status: "ativo"
+        });
+    };
+};
+
+window.openUniversalEditor = async (collectionName, id) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    currentEditId = id; 
+    currentEditColl = collectionName;
+    
+    modal.classList.remove('hidden'); 
+    title.innerText = "EDITAR"; 
+    content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
+    
+    try { 
+        const docSnap = await getDoc(doc(db, collectionName, id)); 
+        if (!docSnap.exists()) return; 
+        const data = docSnap.data(); 
+        content.innerHTML = ""; 
+        
+        Object.keys(data).sort().forEach(key => { 
+            if(key === 'created_at' || key === 'updated_at') return; 
+            content.innerHTML += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${data[key]}" class="inp-editor"></div>`; 
+        }); 
+        
+        window.saveCallback = async () => { 
+            const updates = { updated_at: serverTimestamp() }; 
+            Object.keys(data).forEach(key => { 
+                if(key === 'created_at' || key === 'updated_at') return; 
+                const el = document.getElementById(`field-${key}`); 
+                if(el) updates[key] = el.value; 
+            }); 
+            await updateDoc(doc(db, collectionName, id), updates); 
+        }; 
+    } catch(e) { alert(e.message); } 
+};
+
+window.saveModalData = async () => { 
+    try { 
+        if(window.saveCallback) await window.saveCallback(); 
+        alert("Salvo!"); 
+        window.closeModal(); 
+        window.forceRefresh(); 
+    } catch(e){alert(e.message);} 
+};
+
 window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
-window.saveSettings = async () => { const msg = document.getElementById('conf-global-msg').value; await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); alert("Salvo!"); };
-window.loadSettings = async () => { try { const d = await getDoc(doc(db, "settings", "global")); if(d.exists()) document.getElementById('conf-global-msg').value = d.data().top_message||""; } catch(e){} };
-window.clearDatabase = async () => { if(confirm("Apagar TUDO do modo DEMO?")) { const batch = writeBatch(db); const q = query(collection(db, "usuarios"), where("is_demo", "==", true)); const s = await getDocs(q); s.forEach(d=>batch.delete(d.ref)); await batch.commit(); alert("Limpo!"); } };
-function checkAdmin(u) { if(u.email.toLowerCase().trim() === ADMIN_EMAIL) { document.getElementById('login-gate').classList.add('hidden'); document.getElementById('admin-sidebar').classList.remove('hidden'); document.getElementById('admin-main').classList.remove('hidden'); initDashboard(); } else { alert("ACESSO NEGADO."); signOut(auth); } }
+
+window.saveSettings = async () => { 
+    const msg = document.getElementById('conf-global-msg').value; 
+    await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); 
+    alert("Salvo!"); 
+};
+
+window.loadSettings = async () => { 
+    try { 
+        const d = await getDoc(doc(db, "settings", "global")); 
+        if(d.exists()) document.getElementById('conf-global-msg').value = d.data().top_message||""; 
+    } catch(e){} 
+};
+
+window.clearDatabase = async () => { 
+    if(confirm("Apagar TUDO do modo DEMO?")) { 
+        const batch = writeBatch(db); 
+        const q = query(collection(db, "usuarios"), where("is_demo", "==", true)); 
+        const s = await getDocs(q); 
+        s.forEach(d=>batch.delete(d.ref)); 
+        await batch.commit(); 
+        alert("Limpo!"); 
+    } 
+};
+
+function checkAdmin(u) { 
+    if(u.email.toLowerCase().trim() === ADMIN_EMAIL) { 
+        document.getElementById('login-gate').classList.add('hidden'); 
+        document.getElementById('admin-sidebar').classList.remove('hidden'); 
+        document.getElementById('admin-main').classList.remove('hidden'); 
+        initDashboard(); 
+    } else { 
+        alert("ACESSO NEGADO."); 
+        signOut(auth); 
+    } 
+}
+
 onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
-async function initDashboard() { try { const u = await getCountFromServer(collection(db, "usuarios")); document.getElementById('kpi-users').innerText = u.data().count; } catch(e){} }
+
+async function initDashboard() { 
+    try { 
+        const u = await getCountFromServer(collection(db, "usuarios")); 
+        document.getElementById('kpi-users').innerText = u.data().count; 
+    } catch(e){} 
+}
+
+// Desativa o gerador manual antigo
 window.runMassGenerator = () => { alert("Use o NOVO Painel do Robô acima! ☝️"); };
