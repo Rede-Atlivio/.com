@@ -135,7 +135,7 @@ async function initDashboard() {
         const snapOrders = await getCountFromServer(collection(db, "orders"));
         document.getElementById('kpi-orders').innerText = snapOrders.data().count;
         
-        // Simulação para Feed (Real-time seria onSnapshot, mas gastaria quota)
+        // Simulação para Feed
         const feed = document.getElementById('live-feed');
         if(feed) feed.innerHTML = `<div class="p-2 border-l border-green-500 bg-green-500/10 mb-2">Painel Iniciado com Sucesso <span class="float-right opacity-50 text-[10px]">${new Date().toLocaleTimeString()}</span></div>`;
 
