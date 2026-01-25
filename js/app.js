@@ -2,7 +2,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { userProfile } from './auth.js'; 
+// Removemos imports cíclicos de auth.js aqui para evitar travamento na inicialização
+// O auth.js importará app.js, e não o contrário.
 
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
@@ -13,72 +14,99 @@ const firebaseConfig = {
   appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 };
 
+// 1. INICIALIZAÇÃO
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// --- 1. SESSÃO (Gerar ID para visitantes) ---
+// 2. EXPOSIÇÃO GLOBAL (CRÍTICO PARA O SITE FUNCIONAR)
+window.app = app;
+window.auth = auth;
+window.db = db;
+window.storage = storage;
+window.provider = provider;
+
+console.log("✅ App Base Inicializado. DB Conectado.");
+
+// 3. GESTÃO DE SESSÃO
 let sessionId = sessionStorage.getItem('atlivio_session');
 if (!sessionId) {
     sessionId = crypto.randomUUID();
     sessionStorage.setItem('atlivio_session', sessionId);
 }
 
-// --- 2. SENSOR DE LINKS (Rastreio) ---
+// 4. SENSOR DE LINKS (Fábrica de Links)
 (async function checkTracking() {
     const urlParams = new URLSearchParams(window.location.search);
     const trackId = urlParams.get('trk');
 
     if (trackId) {
         console.log("📡 Link Detectado:", trackId);
-        // Salva intenção de navegação
         try {
             const linkRef = doc(db, "tracked_links", trackId);
             const linkSnap = await getDoc(linkRef);
-            
-            if(linkSnap.exists()) {
-                const data = linkSnap.data();
-                sessionStorage.setItem('target_tab', data.target_tab);
-                logEvent("TRAFFIC_SOURCE", { slug: trackId, source: data.source });
+
+            if (linkSnap.exists()) {
+                const linkData = linkSnap.data();
+
+                // Loga o tráfego
+                await addDoc(collection(db, "system_events"), {
+                    event: "TRAFFIC_SOURCE",
+                    slug: trackId,
+                    details: { source: linkData.source, target: linkData.target_tab },
+                    session_id: sessionId,
+                    timestamp: serverTimestamp(),
+                    is_test: window.location.hostname.includes('localhost')
+                });
+
+                // Incrementa contador
                 updateDoc(linkRef, { clicks: increment(1) }).catch(()=>{});
+
+                // Salva intenção para redirecionar após login
+                sessionStorage.setItem('target_tab', linkData.target_tab);
+                
+                // Limpa a URL
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, document.title, newUrl);
             }
-        } catch(e) { console.error(e); }
-        
-        // Limpa URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (e) {
+            console.error("Erro no sensor:", e);
+        }
     }
 })();
 
-// --- 3. FUNÇÃO DE LOG (O CORAÇÃO DO RASTREIO) ---
-export async function logEvent(eventName, details = {}) {
-    const user = auth.currentUser;
-    const isTest = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1');
-
-    const payload = {
-        event: eventName,
-        user_id: user ? user.uid : 'visitante',
-        user_email: user ? user.email : 'anonimo',
-        profile_type: userProfile ? (userProfile.is_provider ? 'prestador' : 'cliente') : 'visitante',
-        session_id: sessionId,
-        source: details.source || "organic",
-        details: details,
-        is_test: isTest, // MODO TESTE AUTOMÁTICO
-        timestamp: serverTimestamp()
-    };
-
+// 5. FUNÇÃO DE LOG (GLOBAL)
+window.logEvent = async function(eventName, details = {}) {
     try {
-        await addDoc(collection(db, "system_events"), payload);
-        console.log(`📡 Evento Enviado: ${eventName}`, payload);
-    } catch (e) {
-        console.error("❌ Erro ao logar evento:", e);
-    }
-}
+        const user = auth.currentUser;
+        // Tenta pegar o perfil do localStorage ou window se disponível, senão assume visitante
+        // Para simplificar e evitar dependência circular, pegamos básico aqui.
+        
+        const context = {
+            event: eventName,
+            user_id: user ? user.uid : 'visitante',
+            user_email: user ? user.email : 'anonimo',
+            session_id: sessionId,
+            source: details.source || "organic",
+            details: details,
+            timestamp: serverTimestamp(),
+            is_test: window.location.hostname.includes('localhost')
+        };
 
-// Exposição Global
-window.auth = auth;
-window.db = db;
-window.logEvent = logEvent;
+        await addDoc(collection(db, "system_events"), context);
+
+        if (user) {
+            const statsRef = doc(db, "usuarios", user.uid);
+            updateDoc(statsRef, {
+                "stats.events_count": increment(1),
+                "stats.last_active": serverTimestamp()
+            }).catch(() => {});
+        }
+    } catch (e) {
+        console.error("Silent Log Error:", e);
+    }
+};
 
 export { app, auth, db, storage, provider };
