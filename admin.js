@@ -9,16 +9,13 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// --- CONFIGURAÇÃO DO SEU SITE (LINK CORRIGIDO) ---
-// Se mudar o nome da pasta no GitHub, atualize aqui:
+// URL DO SITE (Garante que aponta para onde o index.html estará)
 const SITE_URL = "https://rede-atlivio.github.io/painel-financeiro-borges"; 
 
-// EXPORTS
 window.auth = auth;
 window.db = db;
 let chartInstance = null;
 let sourceChartInstance = null;
-
 let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
 
 // --- LOGIN ---
@@ -37,7 +34,6 @@ window.switchView = (viewName) => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(event && event.currentTarget) event.currentTarget.classList.add('active');
     
-    // Esconde todas as views
     ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings'].forEach(id => { 
         const el = document.getElementById(id); if (el) el.classList.add('hidden'); 
     });
@@ -45,7 +41,6 @@ window.switchView = (viewName) => {
     const pageTitle = document.getElementById('page-title');
     if (pageTitle) pageTitle.innerText = viewName.toUpperCase();
 
-    // Mostra a view correta
     if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
     else if(viewName === 'analytics') { document.getElementById('view-analytics').classList.remove('hidden'); initAnalytics(); }
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
@@ -109,6 +104,7 @@ window.openUniversalEditor = async (collectionName, id) => {
             
             let label = key;
             if(key === 'is_demo' || key === 'is_seed') label = 'É Simulado/Demonstrativo?';
+            if(key === 'visibility_score') label = 'Ordem de Destaque (0-100)';
 
             let inputHtml = typeof val === 'boolean' ? 
                 `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700"><label class="inp-label">${label}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
@@ -133,12 +129,19 @@ window.openModalCreate = (type) => {
     if(!modal) return; modal.classList.remove('hidden'); if(title) title.innerText = "NOVO ITEM";
     if(content) content.innerHTML = `<p class="text-center text-gray-400">Salve para criar o rascunho.</p>`;
     window.saveCallback = async () => {
-        let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : type));
+        // CORREÇÃO CRÍTICA DO MAPEAMENTO DE COLEÇÕES
+        let coll = type;
+        if (type === 'users') coll = 'usuarios';
+        else if (type === 'services') coll = 'active_providers';
+        else if (type === 'missions') coll = 'missoes';
+        else if (type === 'opps') coll = 'oportunidades'; // <--- AQUI ESTAVA O ERRO DO "VAZIO"
+
         await addDoc(collection(db, coll), { 
             created_at: serverTimestamp(), 
             updated_at: serverTimestamp(), 
             is_demo: dataMode === 'demo',
-            titulo: 'Novo Item Rascunho', 
+            titulo: 'Novo Item Rascunho',
+            nome: 'Novo Item',
             status: 'rascunho'
         });
     };
@@ -158,7 +161,7 @@ async function loadList(type) {
         colName = type === 'opps' ? 'oportunidades' : type; 
         if(type === 'missions') colName = 'missoes';
         headers = ["ID", "DADOS", "STATUS", "AÇÕES"]; 
-        fields = (d) => `<td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.name||'Item'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('${colName}', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; 
+        fields = (d) => `<td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.nome||d.cargo||'Item sem nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('${colName}', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; 
     }
     
     if(thead) thead.innerHTML = headers.map(h => `<th class="p-3">${h}</th>`).join('');
@@ -178,10 +181,8 @@ async function initDashboard() {
     try { 
         const snapUsers = await getCountFromServer(collection(db, "usuarios")); 
         document.getElementById('kpi-users').innerText = snapUsers.data().count;
-        
         const snapProv = await getCountFromServer(collection(db, "active_providers"));
         document.getElementById('kpi-providers').innerText = snapProv.data().count;
-
         const snapOrders = await getCountFromServer(collection(db, "orders"));
         document.getElementById('kpi-orders').innerText = snapOrders.data().count;
         
@@ -206,68 +207,46 @@ async function initDashboard() {
     const ctx = document.getElementById('mainChart');
     if(ctx) {
         if(chartInstance) chartInstance.destroy();
-        chartInstance = new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Usuários', 'Prestadores', 'Pedidos'],
-                datasets: [{
-                    data: [
-                        parseInt(document.getElementById('kpi-users').innerText) || 1, 
-                        parseInt(document.getElementById('kpi-providers').innerText) || 1,
-                        parseInt(document.getElementById('kpi-orders').innerText) || 1
-                    ],
-                    backgroundColor: ['#3b82f6', '#10b981', '#a855f7'],
-                    borderWidth: 0
-                }]
-            },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10, family: 'JetBrains Mono' } } } } }
-        });
+        chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Usuários', 'Prestadores', 'Pedidos'], datasets: [{ data: [parseInt(document.getElementById('kpi-users').innerText)||1, parseInt(document.getElementById('kpi-providers').innerText)||1, parseInt(document.getElementById('kpi-orders').innerText)||1], backgroundColor: ['#3b82f6', '#10b981', '#a855f7'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10, family: 'JetBrains Mono' } } } } } });
     }
 }
 
 async function initAnalytics() {
-    // Simulação Visual (Dados mockados para MVP)
     const container = document.getElementById('funnel-container');
-    const steps = [
-        { label: "VISITANTES (Home)", count: 120, color: "text-white" },
-        { label: "CADASTROS", count: 45, color: "text-indigo-400" },
-        { label: "ATIVOS", count: 30, color: "text-purple-400" },
-        { label: "CONVERSÃO", count: 8, color: "text-emerald-400" }
-    ];
+    const steps = [{ label: "VISITANTES", count: 120, color: "text-white" }, { label: "CADASTROS", count: 45, color: "text-indigo-400" }, { label: "ATIVOS", count: 30, color: "text-purple-400" }, { label: "CONVERSÃO", count: 8, color: "text-emerald-400" }];
     let html = '';
     steps.forEach((step, index) => {
         const width = (step.count / steps[0].count * 100);
         html += `<div class="funnel-step active"><div class="flex justify-between items-end"><div><p class="text-[10px] uppercase text-slate-500 font-bold">${step.label}</p><p class="text-xl font-black ${step.color}">${step.count}</p></div></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${width}%"></div></div></div>`;
     });
     container.innerHTML = html;
-
     const ctxSrc = document.getElementById('sourceChart');
     if(ctxSrc) {
         if(sourceChartInstance) sourceChartInstance.destroy();
-        sourceChartInstance = new Chart(ctxSrc, { 
-            type: 'doughnut', 
-            data: { labels: ['Instagram', 'Google', 'Direto'], datasets: [{ data: [55, 30, 15], backgroundColor: ['#f43f5e', '#3b82f6', '#10b981'], borderWidth:0 }] }, 
-            options: { plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } } } 
-        });
+        sourceChartInstance = new Chart(ctxSrc, { type: 'doughnut', data: { labels: ['Instagram', 'Google', 'Direto'], datasets: [{ data: [55, 30, 15], backgroundColor: ['#f43f5e', '#3b82f6', '#10b981'], borderWidth:0 }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } } } });
     }
 }
 
-// --- GERADOR DE LINKS (CORRIGIDO PARA GITHUB PAGES) ---
+// --- GERADOR DE LINKS BLINDADO ---
 window.saveLinkToFirebase = async () => {
-    const id = document.getElementById('linkName').value.trim();
-    if(!id) return alert("Digite um nome curto.");
+    let id = document.getElementById('linkName').value.trim();
+    if(!id) return alert("Digite um nome curto para o link.");
     
-    const source = document.getElementById('utmSource').value || 'direct';
-    const campaign = document.getElementById('utmCampaign').value || 'none';
+    // Remove espaços e caracteres estranhos do ID do link
+    id = id.replace(/\s+/g, '-').toLowerCase();
+
+    // Codifica os parâmetros para evitar erro de espaço na URL
+    const source = encodeURIComponent(document.getElementById('utmSource').value || 'direct');
+    const campaign = encodeURIComponent(document.getElementById('utmCampaign').value || 'none');
     
-    // CORREÇÃO: Usa o SITE_URL definido no topo
+    // URL Final correta
     const finalLink = `${SITE_URL}/?utm_source=${source}&utm_campaign=${campaign}&ref=${id}`;
 
     try {
         await setDoc(doc(db, "short_links", id), {
             target: finalLink,
-            source: source,
-            campaign: campaign,
+            source: decodeURIComponent(source),
+            campaign: decodeURIComponent(campaign),
             clicks: 0,
             created_at: serverTimestamp()
         });
@@ -276,86 +255,52 @@ window.saveLinkToFirebase = async () => {
     } catch(e) { alert("Erro ao salvar link: " + e.message); }
 };
 
-// --- CONFIGURAÇÕES GLOBAIS (REAL) ---
+// --- CONFIGURAÇÕES ---
 window.saveSettings = async () => {
     const msg = document.getElementById('conf-global-msg').value;
     try {
-        // Grava na coleção 'settings' documento 'global'
-        await setDoc(doc(db, "settings", "global"), {
-            top_message: msg,
-            updated_at: serverTimestamp(),
-            updated_by: auth.currentUser.email
-        }, { merge: true });
-        alert("✅ Configurações salvas no Banco de Dados!");
-    } catch(e) {
-        alert("Erro ao salvar: " + e.message);
-    }
+        await setDoc(doc(db, "settings", "global"), { top_message: msg, updated_at: serverTimestamp() }, { merge: true });
+        alert("✅ Configurações salvas!");
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
 };
 
 window.loadSettings = async () => {
     try {
         const docSnap = await getDoc(doc(db, "settings", "global"));
-        if(docSnap.exists()) {
-            document.getElementById('conf-global-msg').value = docSnap.data().top_message || "";
-        }
+        if(docSnap.exists()) document.getElementById('conf-global-msg').value = docSnap.data().top_message || "";
     } catch(e) { console.log("Sem configs ainda."); }
-    
-    // Conectar o botão de salvar dinamicamente
-    const btn = document.querySelector('#view-settings button');
-    if(btn) btn.onclick = window.saveSettings;
+    const btn = document.querySelector('#view-settings button'); if(btn) btn.onclick = window.saveSettings;
 };
 
-// --- ZONA DE PERIGO (COM SENHA) ---
+// --- ZONA DE PERIGO ---
 window.clearDatabase = async (scope) => {
-    if(!confirm("⚠️ AÇÃO IRREVERSÍVEL! Isso pode quebrar a plataforma. Tem certeza?")) return;
-    
-    if(scope === 'logs') {
-        alert("Limpando logs locais da sessão...");
-        console.clear();
-    } else if (scope === 'full') {
-        // SENHA MESTRE AQUI
+    if(!confirm("⚠️ AÇÃO IRREVERSÍVEL! Tem certeza?")) return;
+    if(scope === 'logs') { console.clear(); alert("Logs de sessão limpos."); } 
+    else if (scope === 'full') {
         const password = prompt("Digite a senha mestre para RESET TOTAL:");
-        
         if(password === "admin123") { 
-            const confirm2 = prompt("Digite 'DELETAR' para confirmar:");
-            if(confirm2 === 'DELETAR') {
+            if(prompt("Digite 'DELETAR' para confirmar:") === 'DELETAR') {
                 try {
-                    // Exemplo de deleção em massa (apaga usuários simulados)
                     const batch = writeBatch(db);
                     const q = query(collection(db, "usuarios"), where("is_demo", "==", true));
                     const snap = await getDocs(q);
                     snap.forEach(d => batch.delete(d.ref));
                     await batch.commit();
-                    alert("♻️ Dados SIMULADOS foram apagados com sucesso.");
-                    window.forceRefresh();
-                } catch(e) {
-                    alert("Erro ao limpar: " + e.message);
-                }
+                    alert("♻️ Dados SIMULADOS apagados."); window.forceRefresh();
+                } catch(e) { alert("Erro: " + e.message); }
             }
-        } else {
-            alert("❌ Senha incorreta.");
-        }
+        } else { alert("❌ Senha incorreta."); }
     }
 };
 
 window.generateDetailedPDF = async () => {
     const printArea = document.getElementById('print-body');
-    const dateArea = document.getElementById('print-date');
-    dateArea.innerText = `Gerado em: ${new Date().toLocaleString()} | Usuário: ${auth.currentUser.email}`;
-    
+    document.getElementById('print-date').innerText = `Gerado em: ${new Date().toLocaleString()} | Usuário: ${auth.currentUser.email}`;
     const logsQ = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(20));
     const logsSnap = await getDocs(logsQ);
     let logsHtml = "";
-    
-    if(!logsSnap.empty) {
-        logsSnap.forEach(l => {
-            const ld = l.data();
-            logsHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 5px;">${new Date(ld.timestamp.seconds*1000).toLocaleString()}</td><td style="padding: 5px;">LOG</td><td style="padding: 5px;">${ld.action}</td><td style="padding: 5px;">Sistema</td></tr>`;
-        });
-    } else {
-        logsHtml = "<tr><td colspan='4'>Sem logs recentes.</td></tr>";
-    }
-
+    if(!logsSnap.empty) { logsSnap.forEach(l => { const ld = l.data(); logsHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 5px;">${new Date(ld.timestamp.seconds*1000).toLocaleString()}</td><td style="padding: 5px;">LOG</td><td style="padding: 5px;">${ld.action}</td><td style="padding: 5px;">Sistema</td></tr>`; }); } 
+    else { logsHtml = "<tr><td colspan='4'>Sem logs recentes.</td></tr>"; }
     printArea.innerHTML = logsHtml;
     window.print();
 };
