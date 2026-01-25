@@ -485,6 +485,39 @@
                 activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
             }
         };
+
+        // --- FUNÇÕES DE SUB-ABAS (ADICIONADAS PARA CORRIGIR ERRO) ---
+        window.switchServiceSubTab = (subTab) => {
+            // Esconde todas as sub-abas
+            document.getElementById('view-contratar').classList.add('hidden');
+            document.getElementById('view-andamento').classList.add('hidden');
+            document.getElementById('view-historico').classList.add('hidden');
+            
+            // Remove classe ativa dos botões
+            document.getElementById('subtab-contratar-btn').classList.remove('active');
+            document.getElementById('subtab-andamento-btn').classList.remove('active');
+            document.getElementById('subtab-historico-btn').classList.remove('active');
+
+            // Mostra a escolhida
+            document.getElementById(`view-${subTab}`).classList.remove('hidden');
+            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
+        };
+
+        window.switchProviderSubTab = (subTab) => {
+             // Esconde todas as sub-abas do prestador
+            document.getElementById('pview-radar').classList.add('hidden');
+            document.getElementById('pview-ativos').classList.add('hidden');
+            document.getElementById('pview-historico').classList.add('hidden');
+            
+            // Remove classe ativa dos botões
+            document.getElementById('ptab-radar-btn').classList.remove('active');
+            document.getElementById('ptab-ativos-btn').classList.remove('active');
+            document.getElementById('ptab-historico-btn').classList.remove('active');
+
+            // Mostra a escolhida
+            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
+            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+        };
     </script>
     
     <script type="module">
