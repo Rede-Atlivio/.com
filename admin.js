@@ -16,10 +16,8 @@ let chartInstance = null;
 let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
 let currentCollectionName = '';
 
-window.loginAdmin = async () => {
-    try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); } 
-    catch (e) { document.getElementById('error-msg').innerText = e.message; document.getElementById('error-msg').classList.remove('hidden'); }
-};
+// --- LOGIN & CORE FUNCTIONS (Inalterados) ---
+window.loginAdmin = async () => { try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); } catch (e) { document.getElementById('error-msg').innerText = e.message; document.getElementById('error-msg').classList.remove('hidden'); } };
 window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
 window.switchView = (viewName) => {
@@ -47,7 +45,7 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- SELEÇÃO EM MASSA ---
+// --- BULK SELECTION (Inalterado) ---
 window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
 window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
 window.deleteSelectedItems = async () => {
@@ -60,11 +58,10 @@ window.deleteSelectedItems = async () => {
     loadList(currentView);
 };
 
-// --- CARREGAR LISTA ---
+// --- LIST LOADING (Inalterado) ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
     tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
-    
     let colName, headers, fields, constraints = [];
     if (dataMode === 'demo') constraints.push(where("is_demo", "==", true)); else constraints.push(where("is_demo", "!=", true)); 
 
@@ -72,26 +69,20 @@ async function loadList(type) {
     else if(type === 'services') colName = "active_providers";
     else if(type === 'missions') colName = "missoes";
     else if(type === 'opps') colName = "oportunidades";
-    else colName = type; // jobs
+    else colName = type; 
     
     currentCollectionName = colName;
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
 
     if(type === 'users') { headers = [chk, "USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3"><div class="font-bold text-white">${d.displayName||'Anon'}</div><div class="text-gray-500">${d.email}</div></td><td class="p-3">${d.is_provider?'Prestador':'Cliente'}</td><td class="p-3">R$ ${(d.saldo||0).toFixed(2)}</td><td class="p-3">${d.is_blocked?'🔴':'🟢'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
-    else if (type === 'services') { headers = [chk, "NOME", "ONLINE", "DEMO?", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_demo?'SIM':'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
+    else if (type === 'services') { headers = [chk, "NOME", "ONLINE", "DEMO?", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_seed||d.is_demo?'SIM':'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
     else { headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.name||'Item'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
     
     if(thead) thead.innerHTML = headers.join('');
-    try { 
-        const q = query(collection(db, colName), ...constraints, limit(50)); 
-        const snap = await getDocs(q); 
-        tbody.innerHTML = ""; 
-        if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Nenhum item encontrado neste modo.</td></tr>"; 
-        snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5">${fields(d)}</tr>`; }); 
-    } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
+    try { const q = query(collection(db, colName), ...constraints, limit(50)); const snap = await getDocs(q); tbody.innerHTML = ""; if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Nenhum item encontrado neste modo.</td></tr>"; snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5">${fields(d)}</tr>`; }); } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
 }
 
-// --- GERADOR EM MASSA (DIVERSIDADE EXPANDIDA) ---
+// --- MASS GENERATOR (ATUALIZADO COM "LISTAS GENEROSAS") ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
@@ -102,14 +93,32 @@ window.runMassGenerator = async () => {
     const batch = writeBatch(db);
     let collectionName = '';
 
-    // ARRAYS DE DIVERSIDADE (ATUALIZADO)
-    const profissoes = ["Eletricista", "Encanador", "Jardineiro", "Manicure", "Motorista Particular", "Professor de Inglês", "Designer Gráfico", "Programador Web", "Pedreiro", "Pintor", "Montador de Móveis", "Técnico de Celular", "Consultor Financeiro", "Personal Trainer"];
-    const statusServico = ["(Indisponível)", "(Agenda Cheia)", "(Férias)", "(Em Breve)"];
+    // --- LISTAS GENEROSAS (Baseado no seu Estudo) ---
+    const servicesList = [
+        {name: "Diarista Residencial (Exemplo)", cat: "Limpeza"}, {name: "Eletricista 24h (Modelo)", cat: "Reparos"},
+        {name: "Designer Gráfico (Portfólio)", cat: "Design"}, {name: "Fotógrafo de Eventos (Demonstrativo)", cat: "Eventos"},
+        {name: "Encanador Residencial (Offline)", cat: "Reparos"}, {name: "Técnico de Informática (Exemplo)", cat: "Tecnologia"},
+        {name: "Professor Particular (Modelo)", cat: "Educação"}, {name: "Montador de Móveis (Exemplo)", cat: "Reparos"},
+        {name: "Manicure Delivery (Agenda Fechada)", cat: "Beleza"}, {name: "Barbeiro em Domicílio (Exemplo)", cat: "Beleza"}
+    ];
     
-    const vagas = ["Vendedor Interno", "Atendente de SAC", "Auxiliar de Logística", "Recepcionista", "Estagiário de Direito", "Gerente de Loja", "Entregador", "Auxiliar Administrativo"];
-    const statusVaga = ["(Vaga Preenchida)", "(Encerrada)", "(Banco de Talentos)"];
+    const jobsList = [
+        "Atendente de Loja", "Recepcionista", "Auxiliar Administrativo", "Vendedor Interno", 
+        "Estoquista", "Operador de Caixa", "Social Media Júnior", "Designer Júnior", 
+        "Auxiliar de Limpeza", "Motoboy", "Garçom", "Auxiliar de Produção"
+    ];
+    const jobTypes = ["CLT", "Freelancer", "Temporário", "Estágio"];
 
-    const opps = ["Cupom 20% Ifood", "Indique e Ganhe R$10", "Teste Grátis Netflix", "Desconto Uber", "Cashback Magalu", "Pesquisa Remunerada"];
+    const oppsList = [
+        "Cashback Supermercado (Exemplo)", "Indique e Ganhe (Demonstrativo)", "App que paga por cadastro", 
+        "Cupom de Desconto (Exemplo)", "Programa de Pontos", "Pesquisa Remunerada", 
+        "Alerta Promocional (Exemplo)", "Parceria Local", "Desconto em Farmácia", "Cashback Combustível"
+    ];
+
+    const missionsList = [
+        "Tirar foto de fachada (Exemplo)", "Gravar vídeo curto (Modelo)", "Avaliar Aplicativo (Teste)", 
+        "Conferir preço no mercado (Exemplo)", "Fotografar cardápio (Modelo)"
+    ];
     
     if (type === 'jobs') collectionName = 'jobs';
     else if (type === 'services') collectionName = 'active_providers';
@@ -121,23 +130,28 @@ window.runMassGenerator = async () => {
         let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
 
         if (type === 'services') {
-            const prof = profissoes[Math.floor(Math.random() * profissoes.length)];
-            const st = statusServico[Math.floor(Math.random() * statusServico.length)];
-            data.nome_profissional = `${prof} ${st}`;
-            data.is_online = false;
+            const item = servicesList[Math.floor(Math.random() * servicesList.length)];
+            data.nome_profissional = item.name;
+            data.categoria = item.cat;
+            data.is_online = false; // Always offline for safety
             data.status = "indisponivel";
         } else if (type === 'jobs') {
-            const job = vagas[Math.floor(Math.random() * vagas.length)];
-            const st = statusVaga[Math.floor(Math.random() * statusVaga.length)];
-            data.titulo = `${job} ${st}`;
-            data.status = "encerrada";
+            const job = jobsList[Math.floor(Math.random() * jobsList.length)];
+            const jType = jobTypes[Math.floor(Math.random() * jobTypes.length)];
+            data.titulo = `${job} (Banco de Talentos)`;
+            data.status = "encerrada"; // Always closed
+            data.tipo = jType;
             data.empresa = "Parceiro Confidencial";
+            data.salario = "A combinar";
+            data.descricao = "Esta é uma vaga demonstrativa para ilustrar o formato da plataforma. Inscrições encerradas.";
         } else if (type === 'opps') {
-            data.titulo = opps[Math.floor(Math.random() * opps.length)] + " (Exemplo)";
-            data.status = "analise";
+            data.titulo = oppsList[Math.floor(Math.random() * oppsList.length)];
+            data.status = "analise"; // Safe status
+            data.link = "#";
         } else {
-            data.titulo = "Missão Teste (Concluída)";
-            data.status = "concluida";
+            data.titulo = missionsList[Math.floor(Math.random() * missionsList.length)];
+            data.status = "concluida"; // Always completed
+            data.valor = (Math.random() * 20).toFixed(2);
         }
         batch.set(docRef, data);
     }
@@ -146,14 +160,14 @@ window.runMassGenerator = async () => {
     catch (e) { alert("Erro: " + e.message); }
 };
 
-// --- GERADOR DE LINK (TEST vs REAL) ---
+// --- LINK GENERATOR (TEST vs REAL) ---
 window.saveLinkToFirebase = async () => {
     let id = document.getElementById('linkName').value.trim().replace(/\s+/g, '-').toLowerCase();
     if(!id) return alert("Digite um nome.");
     const source = encodeURIComponent(document.getElementById('utmSource').value || 'direct');
     const isTest = document.getElementById('is-test-link').checked;
     
-    // Adiciona flag de teste na URL
+    // Add test flag to URL if selected
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
     try {
@@ -163,9 +177,9 @@ window.saveLinkToFirebase = async () => {
     } catch(e) { alert("Erro: " + e.message); }
 };
 
-// --- OUTROS ---
-window.openModalCreate = (type) => { /* ... (mantido) ... */ };
-window.openUniversalEditor = async (c,i) => { /* ... (mantido) ... */ };
+// --- AUXILIARY FUNCTIONS (Unchanged) ---
+window.openModalCreate = (type) => { /* ... (kept) ... */ };
+window.openUniversalEditor = async (c,i) => { /* ... (kept) ... */ };
 window.saveSettings = async () => { /* ... */ };
 window.loadSettings = async () => { /* ... */ };
 window.clearDatabase = async (s) => { /* ... */ };
