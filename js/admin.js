@@ -16,6 +16,13 @@ window.switchView = (viewName) => {
     const target = document.getElementById(`view-${viewName}`);
     if(target) target.classList.remove('hidden');
     document.getElementById(`nav-${viewName}`)?.classList.add('active');
+    
+    // Atualiza título da página
+    const titulos = {
+        'dashboard': 'Visão Geral', 'links': 'Fábrica de Links', 'users': 'Top Usuários',
+        'rh': 'RH & Talentos', 'financeiro': 'Financeiro', 'tools': 'Ferramentas Seed'
+    };
+    document.getElementById('page-title').innerText = titulos[viewName] || 'Admin';
 
     // Carrega dados específicos
     if(viewName === 'rh') carregarCandidaturas();
@@ -24,18 +31,61 @@ window.switchView = (viewName) => {
     if(viewName === 'links') carregarLinksRastreados();
 };
 
-// --- 2. DASHBOARD LIVE ---
+// --- 2. CONTROLE MODO TESTE ---
+window.toggleModoTeste = () => {
+    const isTest = document.getElementById('toggle-test').checked;
+    const label = document.getElementById('mode-label');
+    
+    if (isTest) {
+        label.innerText = "MODO TESTE";
+        label.className = "text-[10px] text-amber-400 uppercase font-bold tracking-wider";
+    } else {
+        label.innerText = "DADOS REAIS";
+        label.className = "text-[10px] text-emerald-400 uppercase font-bold tracking-wider";
+    }
+    // Recarrega Dashboard
+    initDashboard(); 
+};
+
+// --- 3. DASHBOARD LIVE (FILTRADO) ---
 function initDashboard() {
-    const q = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(50));
+    const isTestMode = document.getElementById('toggle-test')?.checked || false;
+    const feed = document.getElementById('live-feed-content');
+    
+    if(!feed) return;
+    feed.innerHTML = "<p class='text-center text-slate-600 text-xs py-10'>Carregando...</p>";
+
+    // Tenta query com filtro. Se der erro de index, avisa no console.
+    let q;
+    try {
+        q = query(
+            collection(db, "system_events"), 
+            where("is_test", "==", isTestMode), 
+            orderBy("timestamp", "desc"), 
+            limit(50)
+        );
+    } catch(e) {
+        console.warn("Se der erro de índice, crie no Firebase Console.", e);
+        // Fallback sem filtro complexo para não travar
+        q = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(50));
+    }
     
     onSnapshot(q, (snap) => {
-        const feed = document.getElementById('live-feed-content');
-        if(!feed) return;
         feed.innerHTML = "";
+        
+        if(snap.empty) {
+            feed.innerHTML = `<p class="text-center text-slate-600 text-xs py-10">Sem dados ${isTestMode ? 'de teste' : 'reais'} recentes.</p>`;
+            updateChart({ views:0, actions:0, sales:0 });
+            return;
+        }
+
         let stats = { views: 0, actions: 0, sales: 0 };
 
         snap.forEach(d => {
             const data = d.data();
+            // Filtragem manual caso o query do Firebase falhe por falta de index
+            if(data.is_test !== undefined && data.is_test !== isTestMode) return;
+
             const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString() : '--:--';
             let icon = '🔹'; let color = 'text-slate-400';
 
@@ -81,10 +131,10 @@ function updateChart(data) {
     chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Acessos', 'Interações', 'Conversões'],
+            labels: ['Tráfego', 'Interações', 'Conversões'],
             datasets: [{
                 label: 'Atividade Hoje',
-                data: [data.views + 5, data.actions, data.sales],
+                data: [data.views, data.actions, data.sales],
                 backgroundColor: ['#64748b', '#3b82f6', '#10b981'],
                 borderRadius: 4
             }]
@@ -93,7 +143,7 @@ function updateChart(data) {
     });
 }
 
-// --- 3. FÁBRICA DE LINKS (NOVO) ---
+// --- 4. FÁBRICA DE LINKS ---
 window.criarLinkRastreado = async () => {
     const slug = document.getElementById('link-slug').value.trim().replace(/\s+/g, '-').toLowerCase();
     const target = document.getElementById('link-target').value;
@@ -113,7 +163,7 @@ window.criarLinkRastreado = async () => {
             created_at: serverTimestamp()
         });
 
-        // Gera URL baseada no local atual, trocando admin.html por index.html
+        // URL base correta
         const baseUrl = window.location.href.replace('admin.html', 'index.html').split('?')[0];
         const finalUrl = `${baseUrl}?trk=${slug}`;
         
@@ -121,13 +171,9 @@ window.criarLinkRastreado = async () => {
         document.getElementById('link-result-box').classList.remove('hidden');
         
         alert("✅ Link Operacional Criado!");
-        // Atualiza a lista
         carregarLinksRastreados();
-    } catch(e) {
-        alert("Erro: " + e.message);
-    } finally {
-        btn.innerText = "🛠️ Gerar Link Operacional"; btn.disabled = false;
-    }
+    } catch(e) { alert("Erro: " + e.message); } 
+    finally { btn.innerText = "🛠️ Gerar Link Operacional"; btn.disabled = false; }
 };
 
 window.copiarLinkGerado = () => {
@@ -163,7 +209,7 @@ function carregarLinksRastreados() {
     });
 }
 
-// --- 4. SEED & TOOLS ---
+// --- 5. SEED & TOOLS ---
 window.gerarSeed = async (tipo) => {
     const btn = event.target;
     btn.disabled = true; btn.innerText = "Criando...";
@@ -177,7 +223,7 @@ window.gerarSeed = async (tipo) => {
                 services: [{ category: "Outros", price: 100 + Math.floor(Math.random() * 200) }],
                 last_seen: serverTimestamp()
             });
-            await addDoc(collection(db, "system_events"), { event: "SEED_SERVICE_CREATED", user_id: "admin", timestamp: serverTimestamp() });
+            await addDoc(collection(db, "system_events"), { event: "SEED_SERVICE_CREATED", user_id: "admin", is_test: false, timestamp: serverTimestamp() });
         }
         if (tipo === 'vaga') {
             const vagas = ["Vendedor de Loja", "Auxiliar Administrativo", "Recepcionista", "Entregador"];
@@ -186,14 +232,15 @@ window.gerarSeed = async (tipo) => {
                 titulo: vaga, descricao: "Vaga urgente. Seed.", salario: "R$ 1.500,00", company_name: "Empresa Parceira",
                 is_seed: true, created_at: serverTimestamp()
             });
-            await addDoc(collection(db, "system_events"), { event: "SEED_JOB_CREATED", user_id: "admin", timestamp: serverTimestamp() });
+            await addDoc(collection(db, "system_events"), { event: "SEED_JOB_CREATED", user_id: "admin", is_test: false, timestamp: serverTimestamp() });
         }
         alert(`✅ ${tipo.toUpperCase()} Seed Criado!`);
     } catch(e) { alert("Erro: " + e.message); } 
     finally { btn.disabled = false; btn.innerText = "Gerar +1"; }
 };
 
-// --- 5. RANKING & GESTÃO ---
+// --- 6. OUTRAS LISTAGENS ---
+// (Mantenho as mesmas funções já aprovadas para RH, Financeiro e Users)
 function carregarTopUsuarios() {
     const list = document.getElementById('user-ranking-list');
     if(!list) return;
