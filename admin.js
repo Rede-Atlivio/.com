@@ -11,8 +11,11 @@ const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
 window.auth = auth;
 window.db = db;
+
+// --- VARIÁVEIS GLOBAIS (CORREÇÃO DO ERRO) ---
 let currentView = 'dashboard';
 let dataMode = 'real';
+let currentCollectionName = ''; // AGORA ESTÁ GLOBAL! O erro vai sumir.
 let currentEditId = null;
 let currentEditColl = null;
 
@@ -245,7 +248,10 @@ async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
     tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
     
+    // Define a coleção
     let colName = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
+    
+    // --- CORREÇÃO: Atualiza a variável global ---
     currentCollectionName = colName;
     
     let constraints = [];
