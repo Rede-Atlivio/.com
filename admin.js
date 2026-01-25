@@ -8,62 +8,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
-const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
 window.db = db;
 let currentView = 'dashboard';
 let dataMode = 'real';
 
-// ============================================================================
-// 💰 BANCO DE OFERTAS REAIS (SEU OURO ESTÁ AQUI)
-// Edite esta lista com seus links de afiliado reais.
-// O Robô vai sortear daqui.
-// ============================================================================
-const BANCO_DE_OFERTAS = [
-    {
-        titulo: "iPhone 13 (128GB) - Promoção Relâmpago",
-        descricao: "O menor preço dos últimos 30 dias na Amazon. Aproveite antes que acabe o estoque.",
-        tipo: "alerta", // ou 'cashback'
-        link: "https://www.amazon.com.br/dp/B09V3HKI5?tag=SEU_TAG_AQUI", // COLOQUE SEU LINK AQUI
-        badge: "🔥 Imperdível"
-    },
-    {
-        titulo: "Fone Bluetooth Lenovo LP40",
-        descricao: "O queridinho do momento. Ótimo grave e bateria dura muito.",
-        tipo: "cashback",
-        link: "https://shopee.com.br/link-do-produto", // COLOQUE SEU LINK AQUI
-        badge: "🎵 Top Vendas"
-    },
-    {
-        titulo: "Air Fryer Mondial 4L",
-        descricao: "Essencial na cozinha. Desconto exclusivo para compra via App.",
-        tipo: "alerta",
-        link: "https://www.magazineluiza.com.br/seu-link",
-        badge: "🍳 Cozinha"
-    },
-    {
-        titulo: "Cupom R$ 30,00 Primeira Compra",
-        descricao: "Válido para novos usuários no aplicativo parceiro.",
-        tipo: "cashback",
-        link: "#",
-        badge: "💰 Economia"
-    },
-    {
-        titulo: "Kit 3 Camisetas Básicas",
-        descricao: "Algodão premium. Várias cores disponíveis.",
-        tipo: "alerta",
-        link: "#",
-        badge: "👕 Moda"
-    }
-];
-
 // VARIÁVEIS DO ROBÔ
 let roboIntervalo = null;
 let roboAtivo = false;
-const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; // 30 Minutos (em milissegundos)
-
-// ============================================================================
+const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; // 30 Minutos
 
 // --- LOGIN ---
 window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
@@ -79,7 +33,8 @@ window.switchView = (viewName) => {
     if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
     else if(viewName === 'generator') { 
         document.getElementById('view-generator').classList.remove('hidden'); 
-        injetarPainelRobo(); // Injeta o painel do robô visualmente
+        injetarPainelRobo(); // Painel do Robô + Gerenciador de Links
+        listarCampanhasAtivas(); // Carrega a lista visual
     }
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
@@ -97,10 +52,12 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- FUNÇÃO DO ROBÔ (A MÁQUINA DE VENDAS) ---
+// ============================================================================
+// 🤖 PAINEL DO ROBÔ & GERENCIADOR DE LINKS (INTERFACE VISUAL)
+// ============================================================================
+
 window.injetarPainelRobo = () => {
     const container = document.getElementById('view-generator');
-    // Evita duplicar se já existir
     if(document.getElementById('painel-robo-container')) return;
 
     const painelHtml = `
@@ -108,14 +65,13 @@ window.injetarPainelRobo = () => {
             <div class="flex justify-between items-center">
                 <div>
                     <h2 class="text-xl font-black text-white italic">🤖 ROBÔ DE OFERTAS</h2>
-                    <p class="text-xs text-emerald-400">Posta itens da sua lista a cada 30 minutos.</p>
+                    <p class="text-xs text-emerald-400">Posta itens da sua lista abaixo a cada 30 minutos.</p>
                 </div>
                 <div class="text-right">
                     <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Status</p>
                     <div id="robo-status-text" class="text-red-500 font-black text-lg animate-pulse">PARADO 🛑</div>
                 </div>
             </div>
-            
             <div class="mt-4 flex gap-4">
                 <button onclick="window.toggleRobo(true)" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-lg transition">
                     ▶️ LIGAR ROBÔ
@@ -124,28 +80,120 @@ window.injetarPainelRobo = () => {
                     ⏸️ PAUSAR
                 </button>
             </div>
-            <p class="text-[9px] text-gray-500 mt-2 text-center italic">⚠️ Mantenha esta aba aberta para o robô funcionar.</p>
+        </div>
+
+        <div class="glass-panel p-6 border border-blue-500/30 mb-6">
+            <h3 class="text-lg font-bold text-white mb-4">📚 Minha Lista de Links (Afiliado)</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
+                <input type="text" id="camp-titulo" placeholder="Título (Ex: iPhone 13 Promo)" class="inp-editor">
+                <input type="text" id="camp-link" placeholder="Seu Link de Afiliado" class="inp-editor text-blue-300">
+                <input type="text" id="camp-desc" placeholder="Descrição curta..." class="inp-editor md:col-span-2">
+                <div class="flex gap-2 md:col-span-2">
+                    <select id="camp-tipo" class="inp-editor w-32">
+                        <option value="alerta">🔴 Alerta</option>
+                        <option value="cashback">🟢 Cashback</option>
+                    </select>
+                    <button onclick="window.adicionarCampanha()" class="bg-blue-600 text-white px-6 rounded-lg font-bold text-xs uppercase hover:bg-blue-500 flex-1">+ Adicionar à Lista</button>
+                </div>
+            </div>
+
+            <p class="text-[10px] text-gray-400 uppercase font-bold mb-2">Itens Ativos no Robô:</p>
+            <div id="lista-campanhas" class="space-y-2 max-h-60 overflow-y-auto">
+                <p class="text-center text-gray-500 text-xs py-4">Carregando lista...</p>
+            </div>
         </div>
     `;
     
-    // Insere antes do conteúdo existente
     container.insertAdjacentHTML('afterbegin', painelHtml);
 };
+
+// --- LÓGICA DE GERENCIAMENTO (CRUD) ---
+
+window.adicionarCampanha = async () => {
+    const titulo = document.getElementById('camp-titulo').value;
+    const link = document.getElementById('camp-link').value;
+    const desc = document.getElementById('camp-desc').value;
+    const tipo = document.getElementById('camp-tipo').value;
+
+    if(!titulo || !link) return alert("Preencha Título e Link.");
+
+    try {
+        await addDoc(collection(db, "bot_library"), {
+            titulo: titulo,
+            link: link,
+            descricao: desc || "Oferta imperdível.",
+            tipo: tipo,
+            created_at: serverTimestamp()
+        });
+        
+        // Limpa form
+        document.getElementById('camp-titulo').value = "";
+        document.getElementById('camp-link').value = "";
+        document.getElementById('camp-desc').value = "";
+        
+        alert("✅ Link salvo na biblioteca do Robô!");
+        window.listarCampanhasAtivas();
+
+    } catch(e) { alert("Erro: " + e.message); }
+};
+
+window.listarCampanhasAtivas = async () => {
+    const lista = document.getElementById('lista-campanhas');
+    if(!lista) return;
+
+    const q = query(collection(db, "bot_library"), orderBy("created_at", "desc"));
+    const snap = await getDocs(q);
+
+    lista.innerHTML = "";
+    if(snap.empty) {
+        lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`;
+        return;
+    }
+
+    snap.forEach(d => {
+        const item = d.data();
+        lista.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5">
+                <div class="truncate pr-2">
+                    <p class="text-xs text-white font-bold">${item.titulo}</p>
+                    <p class="text-[9px] text-blue-400 truncate">${item.link}</p>
+                </div>
+                <button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button>
+            </div>
+        `;
+    });
+};
+
+window.removerCampanha = async (id) => {
+    if(!confirm("Remover este item da lista do robô?")) return;
+    await deleteDoc(doc(db, "bot_library", id));
+    window.listarCampanhasAtivas();
+};
+
+// --- LÓGICA DO ROBÔ (EXECUÇÃO) ---
 
 window.toggleRobo = (ligar) => {
     const statusText = document.getElementById('robo-status-text');
     
     if (ligar) {
-        if (roboAtivo) return; // Já está ligado
-        roboAtivo = true;
-        if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
+        if (roboAtivo) return;
         
-        // Executa a primeira vez imediatamente
-        window.executarCicloRobo();
-        
-        // Inicia o loop
-        roboIntervalo = setInterval(window.executarCicloRobo, TEMPO_ENTRE_POSTS);
-        alert("🤖 ROBÔ INICIADO!\n\nEle vai postar uma oferta agora e depois a cada 30 minutos.\nNão feche esta aba.");
+        // Verifica se tem itens antes de ligar
+        getDocs(collection(db, "bot_library")).then(snap => {
+            if(snap.empty) {
+                alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!");
+                return;
+            }
+            
+            roboAtivo = true;
+            if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
+            
+            window.executarCicloRobo();
+            roboIntervalo = setInterval(window.executarCicloRobo, TEMPO_ENTRE_POSTS);
+            alert("🤖 ROBÔ INICIADO!\nEle usará sua lista de links cadastrados.");
+        });
+
     } else {
         roboAtivo = false;
         clearInterval(roboIntervalo);
@@ -156,13 +204,22 @@ window.toggleRobo = (ligar) => {
 
 window.executarCicloRobo = async () => {
     if (!roboAtivo) return;
-    
-    console.log("🤖 ROBÔ: Iniciando ciclo de postagem...");
-    
-    // Sorteia uma oferta da lista
-    const oferta = BANCO_DE_OFERTAS[Math.floor(Math.random() * BANCO_DE_OFERTAS.length)];
+    console.log("🤖 ROBÔ: Buscando munição na biblioteca...");
     
     try {
+        // 1. Busca todas as opções cadastradas
+        const snap = await getDocs(collection(db, "bot_library"));
+        if(snap.empty) {
+            console.log("❌ Robô parou: Biblioteca vazia.");
+            window.toggleRobo(false);
+            return;
+        }
+
+        const opcoes = snap.docs.map(d => d.data());
+        // 2. Sorteia uma
+        const oferta = opcoes[Math.floor(Math.random() * opcoes.length)];
+        
+        // 3. Posta na timeline real
         await addDoc(collection(db, "oportunidades"), {
             titulo: oferta.titulo,
             descricao: oferta.descricao,
@@ -170,24 +227,21 @@ window.executarCicloRobo = async () => {
             link: oferta.link,
             created_at: serverTimestamp(),
             updated_at: serverTimestamp(),
-            is_demo: false, // IMPORTANTE: É False para parecer real (sem etiqueta Exemplo)
-            visibility_score: 100, // Alta prioridade para aparecer no topo
+            is_demo: false, // Item REAL (sem badge Exemplo)
+            visibility_score: 100,
             origem: "robo_auto"
         });
         
-        console.log(`✅ ROBÔ: Postou "${oferta.titulo}" com sucesso!`);
-        
-        // Feedback visual discreto no título da página
-        document.title = "Atlivio Admin (Robô Postou!)";
-        setTimeout(() => document.title = "Atlivio Admin | Comando Central", 5000);
+        console.log(`✅ ROBÔ: Postou "${oferta.titulo}"!`);
+        document.title = "Atlivio Admin (POSTOU!)";
+        setTimeout(() => document.title = "Atlivio Admin", 5000);
         
     } catch (e) {
         console.error("❌ ROBÔ FALHOU:", e);
     }
 };
 
-// --- LISTAGEM E FUNÇÕES PADRÃO ---
-// (Mantidas do código anterior para garantir funcionamento do resto)
+// --- LISTAGEM E FUNÇÕES PADRÃO (MANTIDAS) ---
 
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
@@ -198,9 +252,6 @@ async function loadList(type) {
     
     let constraints = [];
     if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
-    
-    // Se for modo real, mostra itens sem is_demo ou is_demo=false
-    // Simplificação: no modo admin mostramos tudo se não for demo mode estrito
     if (dataMode === 'real') constraints = [limit(50)]; 
 
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
@@ -211,7 +262,6 @@ async function loadList(type) {
     if(thead) thead.innerHTML = headers.join('');
     
     try {
-        // Ordenação por data para ver os posts do robô primeiro
         let q;
         if(colName === 'oportunidades' || colName === 'jobs') {
              q = query(collection(db, colName), orderBy('created_at', 'desc'), limit(50));
@@ -227,51 +277,26 @@ async function loadList(type) {
             tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; 
         });
     } catch(e) { 
-        console.log(e); // Fallback se der erro de index
-        tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro (Index ou Conexão). Verifique Console.</td></tr>`; 
+        console.log(e); 
+        tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro. Verifique Console.</td></tr>`; 
     }
     
     const btnAdd = document.getElementById('btn-add-new'); 
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MANUTENÇÃO (EDITOR, ETC) ---
-window.openModalCreate = (type) => { /* Mantido igual, simplificado aqui */ 
-    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    modal.classList.remove('hidden'); title.innerText = "CRIAR"; content.innerHTML = "<p>Use o Gerador para criar rápido.</p>";
-};
-window.openUniversalEditor = async (collectionName, id) => {
-    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    currentEditId = id; currentEditColl = collectionName;
-    modal.classList.remove('hidden'); title.innerText = "EDITAR";
-    content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
-    try {
-        const docSnap = await getDoc(doc(db, collectionName, id));
-        if (!docSnap.exists()) return;
-        const data = docSnap.data(); content.innerHTML = ""; 
-        Object.keys(data).sort().forEach(key => {
-            if(key === 'created_at' || key === 'updated_at') return;
-            content.innerHTML += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${data[key]}" class="inp-editor"></div>`;
-        });
-        window.saveCallback = async () => {
-            const updates = { updated_at: serverTimestamp() };
-            Object.keys(data).forEach(key => {
-                if(key === 'created_at' || key === 'updated_at') return;
-                const el = document.getElementById(`field-${key}`);
-                if(el) updates[key] = el.value;
-            });
-            await updateDoc(doc(db, collectionName, id), updates);
-        };
-    } catch(e) { alert(e.message); }
-};
-window.saveModalData = async () => { try { if(window.saveCallback) await window.saveCallback(); alert("Salvo!"); window.closeModal(); window.forceRefresh(); } catch(e){alert(e.message);} };
-window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
+// --- OUTROS ---
 window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
 window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
 window.deleteSelectedItems = async () => { const checked = document.querySelectorAll('.row-checkbox:checked'); if(!confirm("Excluir?")) return; const batch = writeBatch(db); checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); await batch.commit(); document.getElementById('bulk-actions').classList.remove('visible'); loadList(currentView); };
-
-// --- BOILERPLATE ---
+window.openModalCreate = (type) => { /* Simplificado */ const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "CRIAR"; content.innerHTML = "<p>Use o Gerador para criar rápido.</p>"; };
+window.openUniversalEditor = async (collectionName, id) => { const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title'); currentEditId = id; currentEditColl = collectionName; modal.classList.remove('hidden'); title.innerText = "EDITAR"; content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`; try { const docSnap = await getDoc(doc(db, collectionName, id)); if (!docSnap.exists()) return; const data = docSnap.data(); content.innerHTML = ""; Object.keys(data).sort().forEach(key => { if(key === 'created_at' || key === 'updated_at') return; content.innerHTML += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${data[key]}" class="inp-editor"></div>`; }); window.saveCallback = async () => { const updates = { updated_at: serverTimestamp() }; Object.keys(data).forEach(key => { if(key === 'created_at' || key === 'updated_at') return; const el = document.getElementById(`field-${key}`); if(el) updates[key] = el.value; }); await updateDoc(doc(db, collectionName, id), updates); }; } catch(e) { alert(e.message); } };
+window.saveModalData = async () => { try { if(window.saveCallback) await window.saveCallback(); alert("Salvo!"); window.closeModal(); window.forceRefresh(); } catch(e){alert(e.message);} };
+window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
+window.saveSettings = async () => { const msg = document.getElementById('conf-global-msg').value; await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); alert("Salvo!"); };
+window.loadSettings = async () => { try { const d = await getDoc(doc(db, "settings", "global")); if(d.exists()) document.getElementById('conf-global-msg').value = d.data().top_message||""; } catch(e){} };
+window.clearDatabase = async () => { if(confirm("Apagar TUDO do modo DEMO?")) { const batch = writeBatch(db); const q = query(collection(db, "usuarios"), where("is_demo", "==", true)); const s = await getDocs(q); s.forEach(d=>batch.delete(d.ref)); await batch.commit(); alert("Limpo!"); } };
 function checkAdmin(u) { if(u.email.toLowerCase().trim() === ADMIN_EMAIL) { document.getElementById('login-gate').classList.add('hidden'); document.getElementById('admin-sidebar').classList.remove('hidden'); document.getElementById('admin-main').classList.remove('hidden'); initDashboard(); } else { alert("ACESSO NEGADO."); signOut(auth); } }
 onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
 async function initDashboard() { try { const u = await getCountFromServer(collection(db, "usuarios")); document.getElementById('kpi-users').innerText = u.data().count; } catch(e){} }
-window.runMassGenerator = () => { alert("Use o ROBÔ para gerar Oportunidades agora!"); }; // Desativa o gerador manual antigo para forçar uso do robô
+window.runMassGenerator = () => { alert("Use o NOVO Painel do Robô acima! ☝️"); };
