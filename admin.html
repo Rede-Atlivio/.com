@@ -3,263 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio - Painel Administrativo</title>
+    <title>Atlivio Admin | Controle Total</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/906/906343.png">
+    
     <style>
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #b91c1c; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 80%); }
+        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; }
+        .metric-value { font-size: 1.8rem; font-weight: 800; color: white; }
+        .metric-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; font-weight: bold; }
+        .nav-btn { text-align: left; padding: 12px 16px; border-radius: 8px; transition: all 0.2s; color: #94a3b8; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
+        
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .dot-green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+        .dot-red { background-color: #ef4444; }
+        .dot-amber { background-color: #f59e0b; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        
+        .table-row:hover { background-color: rgba(255,255,255,0.02); }
     </style>
 </head>
-<body class="bg-slate-100 text-gray-800 font-sans">
+<body class="h-screen overflow-hidden flex text-sm">
 
-    <div id="auth-gate" class="min-h-screen flex flex-col items-center justify-center p-4">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center border-t-4 border-red-600">
-            <h1 class="text-2xl font-black text-slate-800 uppercase mb-2">Área Restrita</h1>
-            <p class="text-gray-500 text-sm mb-6">Acesso exclusivo para Gestão.</p>
-            
-            <div id="loading-check" class="flex justify-center my-4">
-                <div class="loader"></div>
-            </div>
-
-            <button id="btn-login-admin" onclick="loginAdmin()" class="hidden w-full bg-slate-800 text-white font-bold py-3 rounded-lg hover:bg-slate-900 transition">
-                Entrar como Admin
+    <div id="login-gate" class="fixed inset-0 bg-[#0f172a] z-50 flex items-center justify-center">
+        <div class="text-center p-8 border border-blue-900/50 rounded-2xl bg-slate-900/80 backdrop-blur glass-panel w-96">
+            <h1 class="text-3xl text-white font-black mb-1 italic tracking-tighter">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
+            <p class="text-xs text-slate-400 mb-8 font-mono">ACESSO RESTRITO // GESTÃO</p>
+            <div id="loading-login" class="hidden mb-4"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+            <button id="btn-login-admin" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+                <i data-lucide="shield" size="18"></i> AUTENTICAR
             </button>
-            
-            <p id="error-msg" class="hidden text-red-600 font-bold text-xs mt-4 bg-red-50 p-2 rounded border border-red-100"></p>
-            
-            <a href="index.html" class="block mt-6 text-xs text-blue-600 underline">Voltar para o App Principal</a>
+            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden font-bold"></p>
         </div>
     </div>
 
-    <div id="admin-panel" class="hidden min-h-screen pb-20">
-        <header class="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-50">
-            <div class="max-w-4xl mx-auto flex justify-between items-center">
-                <div>
-                    <h2 class="text-xl font-black uppercase italic tracking-tighter">Atlivio <span class="text-red-500">Admin</span></h2>
-                    <p class="text-[10px] text-gray-400">Painel de Controle v1.0</p>
+    <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
+        <div class="p-6 border-b border-white/5">
+            <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
+            <p class="text-[10px] text-gray-500 mt-1">v15.0 // ONLINE</p>
+        </div>
+        
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <button class="nav-btn active" onclick="switchView('dashboard')"><i data-lucide="layout-dashboard" size="16"></i> DASHBOARD</button>
+            <button class="nav-btn" onclick="switchView('users')"><i data-lucide="users" size="16"></i> USUÁRIOS</button>
+            <button class="nav-btn" onclick="switchView('services')"><i data-lucide="wrench" size="16"></i> SERVIÇOS</button>
+            <button class="nav-btn" onclick="switchView('missions')"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
+            <button class="nav-btn" onclick="switchView('jobs')"><i data-lucide="briefcase" size="16"></i> EMPREGOS</button>
+            <button class="nav-btn" onclick="switchView('opps')"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
+            <button class="nav-btn" onclick="switchView('finance')"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
+            <button class="nav-btn" onclick="switchView('links')"><i data-lucide="link" size="16"></i> LINKS CURTOS</button>
+        </nav>
+
+        <div class="p-4 border-t border-white/5 bg-red-900/10">
+            <button onclick="logoutAdmin()" class="nav-btn text-red-400 hover:text-red-300 w-full"><i data-lucide="log-out" size="16"></i> ENCERRAR</button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden hidden" id="admin-main">
+        <header class="h-16 border-b border-white/5 flex justify-between items-center px-6 bg-slate-900/30 backdrop-blur">
+            <div class="flex items-center gap-4">
+                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">VISÃO GERAL</h2>
+                <div class="h-4 w-[1px] bg-gray-700"></div>
+                <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                    <button onclick="toggleDataMode('real')" id="btn-mode-real" class="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition">DADOS REAIS</button>
+                    <button onclick="toggleDataMode('demo')" id="btn-mode-demo" class="px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition">DEMONSTRATIVO</button>
                 </div>
-                <button onclick="logoutAdmin()" class="text-xs bg-red-600 px-3 py-1 rounded hover:bg-red-700 font-bold">SAIR</button>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="forceRefresh()" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                    <span class="status-dot dot-green"></span>
+                    <span class="text-[10px] font-bold text-green-400">SISTEMA ATIVO</span>
+                </div>
             </div>
         </header>
 
-        <main class="max-w-4xl mx-auto p-4 space-y-6">
+        <div class="flex-1 overflow-y-auto p-6" id="content-area">
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600">
-                    <p class="text-xs font-bold text-gray-400 uppercase">Usuários Totais</p>
-                    <h3 class="text-3xl font-black text-slate-800" id="dash-total-users">-</h3>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-600">
-                    <p class="text-xs font-bold text-gray-400 uppercase">Prestadores Online</p>
-                    <h3 class="text-3xl font-black text-slate-800" id="dash-active-providers">-</h3>
-                </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-yellow-500">
-                    <p class="text-xs font-bold text-gray-400 uppercase">Pedidos Hoje</p>
-                    <h3 class="text-3xl font-black text-slate-800" id="dash-orders-today">-</h3>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-                <div class="bg-slate-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                    <h3 class="font-bold text-slate-700 uppercase text-sm">🔎 Validações Pendentes</h3>
-                    <span id="count-pending" class="bg-red-100 text-red-600 text-xs font-black px-2 py-1 rounded-full">0</span>
-                </div>
-                <div id="admin-pending-list" class="p-4 space-y-3 min-h-[100px]">
-                    <p class="text-center text-gray-400 text-xs py-4">Nenhuma pendência.</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="font-bold text-slate-700 uppercase text-sm mb-4">🔧 Controles Globais</h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-xs font-bold border border-slate-200 hover:bg-slate-200">⏸️ Pausar App</button>
-                        <button class="bg-slate-100 text-slate-600 p-3 rounded-lg text-xs font-bold border border-slate-200 hover:bg-slate-200">🔐 Travar Saques</button>
+            <div id="view-dashboard" class="space-y-6 animate-fade">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="glass-panel p-5 border-l-2 border-blue-500">
+                        <p class="metric-label">USUÁRIOS TOTAIS</p>
+                        <h3 class="metric-value" id="kpi-users">-</h3>
+                    </div>
+                    <div class="glass-panel p-5 border-l-2 border-green-500">
+                        <p class="metric-label">PRESTADORES ONLINE</p>
+                        <h3 class="metric-value text-green-400" id="kpi-providers">-</h3>
+                    </div>
+                    <div class="glass-panel p-5 border-l-2 border-purple-500">
+                        <p class="metric-label">PEDIDOS HOJE</p>
+                        <h3 class="metric-value" id="kpi-orders">-</h3>
+                    </div>
+                    <div class="glass-panel p-5 border-l-2 border-amber-500">
+                        <p class="metric-label">SALDO EM CARTEIRAS</p>
+                        <h3 class="metric-value" id="kpi-balance">R$ 0,00</h3>
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-xl shadow-sm">
-                    <h3 class="font-bold text-slate-700 uppercase text-sm mb-4">🌱 Seeds (Dados de Teste)</h3>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="rodarSeedOportunidade()" class="bg-blue-50 text-blue-700 border border-blue-100 p-2 rounded text-[10px] font-bold hover:bg-blue-100">Oportunidades</button>
-                        <button onclick="rodarSeedMissao()" class="bg-green-50 text-green-700 border border-green-100 p-2 rounded text-[10px] font-bold hover:bg-green-100">Missões</button>
-                        <button onclick="rodarSeedProdutos()" class="bg-purple-50 text-purple-700 border border-purple-100 p-2 rounded text-[10px] font-bold hover:bg-purple-100">Produtos</button>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="glass-panel p-0 col-span-2 flex flex-col h-[400px]">
+                        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
+                            <h3 class="text-xs font-bold text-white uppercase"><i data-lucide="activity" size="14" class="inline mr-2"></i> LIVE FEED (Tempo Real)</h3>
+                        </div>
+                        <div id="live-feed" class="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs">
+                            <p class="text-gray-500 text-center py-10">Aguardando eventos...</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-4 flex flex-col items-center justify-center">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 w-full text-left">DISTRIBUIÇÃO DE SERVIÇOS</h3>
+                        <div class="w-full h-64 relative">
+                            <canvas id="mainChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-red-50 border border-red-200 rounded-xl p-6">
-                <h3 class="text-red-800 font-black text-sm uppercase mb-2">⚠️ Zona de Perigo</h3>
-                <p class="text-xs text-red-600 mb-4">Ações irreversíveis. Use com cautela absoluta.</p>
-                <button onclick="limparMissoes()" class="bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 text-xs font-bold uppercase">🗑️ Resetar Todas as Missões</button>
+            <div id="view-list" class="hidden space-y-4">
+                <div class="flex justify-between items-center">
+                    <input type="text" id="search-input" placeholder="Buscar..." class="bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
+                    <button id="btn-add-new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">
+                        + NOVO
+                    </button>
+                </div>
+                <div class="glass-panel overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-900/50 text-[10px] uppercase text-gray-400 font-bold">
+                            <tr id="table-header"></tr>
+                        </thead>
+                        <tbody id="table-body" class="text-xs font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="view-finance" class="hidden space-y-6">
+                <div class="glass-panel p-6 border border-amber-500/30">
+                     <h2 class="text-lg font-bold text-white mb-4">Aprovação de Saques</h2>
+                     <div id="finance-list" class="space-y-2">
+                         <p class="text-gray-500 text-xs">Nenhum saque pendente.</p>
+                     </div>
+                </div>
             </div>
 
-        </main>
+        </div>
+    </main>
+
+    <div id="modal-editor" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-lg shadow-2xl relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white"><i data-lucide="x"></i></button>
+            <h2 id="modal-title" class="text-lg font-bold text-white uppercase mb-4">EDITAR</h2>
+            <div id="modal-content" class="space-y-3 mb-6"></div>
+            <div class="flex gap-3">
+                <button onclick="saveModalData()" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold uppercase text-xs">SALVAR</button>
+                <button onclick="closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold uppercase text-xs">CANCELAR</button>
+            </div>
+        </div>
     </div>
 
-    <script type="module">
-        import { auth, db, provider } from './js/app.js';
-        import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { collection, query, where, getDocs, updateDoc, doc, deleteDoc, addDoc, serverTimestamp, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // CONFIGURAÇÃO DE SEGURANÇA
-        const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
-
-        // Elementos UI
-        const gate = document.getElementById('auth-gate');
-        const panel = document.getElementById('admin-panel');
-        const loading = document.getElementById('loading-check');
-        const btnLogin = document.getElementById('btn-login-admin');
-        const errorMsg = document.getElementById('error-msg');
-
-        // 1. CHECAGEM DE ACESSO
-        onAuthStateChanged(auth, (user) => {
-            loading.classList.add('hidden');
-            
-            if (user) {
-                // Normaliza email para evitar erros de digitação/espaços
-                const email = user.email.toLowerCase().trim();
-                
-                if (ADMIN_EMAILS.includes(email)) {
-                    // É ADMIN: Libera o painel
-                    gate.classList.add('hidden');
-                    panel.classList.remove('hidden');
-                    iniciarDashboard();
-                } else {
-                    // NÃO É ADMIN: Bloqueia e avisa
-                    btnLogin.classList.add('hidden');
-                    errorMsg.innerText = `Acesso Negado para: ${user.email}`;
-                    errorMsg.classList.remove('hidden');
-                    // Força logout após 3s para segurança
-                    setTimeout(() => signOut(auth), 3000);
-                }
-            } else {
-                // NÃO LOGADO
-                btnLogin.classList.remove('hidden');
-            }
-        });
-
-        // 2. FUNÇÕES DE LOGIN/LOGOUT
-        window.loginAdmin = () => {
-            signInWithPopup(auth, provider).catch(e => {
-                alert("Erro: " + e.message);
-            });
-        };
-
-        window.logoutAdmin = () => {
-            signOut(auth).then(() => location.reload());
-        };
-
-        // 3. DASHBOARD LOGIC
-        async function iniciarDashboard() {
-            carregarTotais();
-            carregarPendencias();
-        }
-
-        async function carregarTotais() {
-            // Contagem rápida (Aggregation)
-            const collUsers = collection(db, "usuarios");
-            const collProviders = collection(db, "active_providers");
-            
-            // Nota: getCountFromServer é mais barato que baixar os documentos
-            const snapUsers = await getCountFromServer(collUsers);
-            const snapProviders = await getCountFromServer(collProviders);
-            
-            document.getElementById('dash-total-users').innerText = snapUsers.data().count;
-            document.getElementById('dash-active-providers').innerText = snapProviders.data().count;
-            
-            // Pedidos de hoje (Exemplo simples)
-            document.getElementById('dash-orders-today').innerText = "0"; // Implementar filtro de data depois
-        }
-
-        async function carregarPendencias() {
-            const list = document.getElementById('admin-pending-list');
-            const q = query(collection(db, "mission_assignments"), where("status", "==", "pending_approval"));
-            
-            const snap = await getDocs(q);
-            document.getElementById('count-pending').innerText = snap.size;
-            
-            list.innerHTML = "";
-            if(snap.empty) {
-                list.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Tudo limpo! Nenhuma validação pendente.</p>`;
-                return;
-            }
-
-            snap.forEach(docSnap => {
-                const data = docSnap.data();
-                list.innerHTML += `
-                    <div class="bg-white border border-gray-200 p-3 rounded-lg flex justify-between items-center shadow-sm">
-                        <div>
-                            <p class="font-bold text-xs text-slate-700 uppercase">${data.mission_title}</p>
-                            <p class="text-[10px] text-gray-500">Usuário: ${data.user_email}</p>
-                            ${data.proof_url ? `<a href="${data.proof_url}" target="_blank" class="text-[10px] text-blue-600 underline font-bold">Ver Comprovante 📷</a>` : ''}
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="aprovarMissao('${docSnap.id}', '${data.user_id}', ${data.reward})" class="bg-green-100 text-green-700 px-3 py-1 rounded text-xs font-bold hover:bg-green-200">APROVAR</button>
-                            <button onclick="rejeitarMissao('${docSnap.id}')" class="bg-red-100 text-red-700 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">REJEITAR</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // 4. AÇÕES DE GESTÃO (Tornar globais para o HTML acessar)
-        window.aprovarMissao = async (docId, userId, reward) => {
-            if(!confirm("Aprovar e pagar o usuário?")) return;
-            try {
-                await updateDoc(doc(db, "mission_assignments", docId), { 
-                    status: "approved", 
-                    approved_at: serverTimestamp() 
-                });
-                // Adiciona saldo ao usuário
-                await updateDoc(doc(db, "usuarios", userId), { 
-                    saldo: increment(reward) 
-                });
-                alert("✅ Aprovado com sucesso!");
-                carregarPendencias();
-            } catch(e) { alert("Erro: " + e.message); }
-        };
-
-        window.rejeitarMissao = async (docId) => {
-            if(!confirm("Rejeitar esta missão?")) return;
-            try {
-                await updateDoc(doc(db, "mission_assignments", docId), { 
-                    status: "rejected", 
-                    rejected_at: serverTimestamp() 
-                });
-                alert("❌ Rejeitado.");
-                carregarPendencias();
-            } catch(e) { alert("Erro: " + e.message); }
-        };
-
-        window.limparMissoes = async () => {
-            if(!confirm("TEM CERTEZA? Isso apagará todo o histórico de missões.")) return;
-            // Código de limpeza... (simplificado para segurança, implementar batch delete se necessário)
-            alert("Função de limpeza em massa deve ser usada com cuidado. Implementação pendente por segurança.");
-        };
-
-        // 5. SEEDS (Para popular o banco)
-        // Reimportar seeds do arquivo antigo ou recriar aqui se necessário. 
-        // Como o app principal já tem, podemos deixar simplificado ou copiar a lógica depois.
-        window.rodarSeedProdutos = async () => {
-            if(!confirm("Criar produtos?")) return;
-            const produtosRecomendados = [
-                { id: 1, nome: "Kit Ferramentas Pro", preco: 250.00, img: "https://images.unsplash.com/photo-1581147036324-c17ac41dfa6c?auto=format&fit=crop&w=300&q=80", desc: "Ideal para montadores." },
-                { id: 2, nome: "Parafusadeira 12V", preco: 199.90, img: "https://images.unsplash.com/photo-1616400619175-5beda3a17896?auto=format&fit=crop&w=300&q=80", desc: "Bateria longa duração." },
-                { id: 3, nome: "Botas de Segurança", preco: 120.00, img: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=300&q=80", desc: "Conforto e proteção." },
-                { id: 4, nome: "Mochila Impermeável", preco: 89.90, img: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=300&q=80", desc: "Para entregadores." }
-            ];
-            try {
-                for(const p of produtosRecomendados) {
-                    await addDoc(collection(db, "produtos"), { ...p, created_at: serverTimestamp() });
-                }
-                alert("✅ Produtos criados!");
-            } catch(e) { alert("Erro: " + e.message); }
-        };
-        // (Outros seeds podem ser adicionados aqui seguindo o padrão)
-        window.rodarSeedOportunidade = () => alert("Implementar seed de Oportunidades aqui.");
-        window.rodarSeedMissao = () => alert("Implementar seed de Missões aqui.");
-
+    <script type="module" src="./js/admin.js?v=16.0"></script>
+    <script>
+        lucide.createIcons();
     </script>
 </body>
 </html>
