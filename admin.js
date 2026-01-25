@@ -9,7 +9,7 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// --- URL CORRIGIDA (AGORA APONTA PARA A PASTA .COM) ---
+// --- URL CORRIGIDA ---
 const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
@@ -47,7 +47,7 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- CRIAÇÃO DIRETA (SEM TRAVAMENTO) ---
+// --- CRIAÇÃO DIRETA ---
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
     modal.classList.remove('hidden');
@@ -123,7 +123,7 @@ window.saveModalData = async () => {
     catch(e) { alert("Erro: " + e.message); }
 };
 
-// --- GERADOR DE LINKS CORRIGIDO ---
+// --- GERADOR DE LINKS ---
 window.saveLinkToFirebase = async () => {
     const idInput = document.getElementById('linkName');
     let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
@@ -134,7 +134,6 @@ window.saveLinkToFirebase = async () => {
     const source = document.getElementById('utmSource').value || 'direct';
     const isTest = document.getElementById('is-test-link').checked;
     
-    // AQUI ESTÁ A CORREÇÃO: Usa SITE_URL correto
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
     try {
@@ -186,7 +185,7 @@ async function loadList(type) {
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MASS GENERATOR ---
+// --- MASS GENERATOR (CORRIGIDO: SEM POLUIÇÃO VISUAL) ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
@@ -196,7 +195,11 @@ window.runMassGenerator = async () => {
     const batch = writeBatch(db);
     let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
 
-    const oppsRich = [{title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"}, {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}];
+    // --- AQUI ESTAVA O "ERRO": removi os textos entre parênteses ---
+    const oppsRich = [
+        {title: "Alerta Promocional iFood", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
+        {title: "Cashback Supermercado", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}
+    ];
     const jobsRich = ["Vendedor", "Atendente", "Estoquista", "Recepcionista"];
     
     for(let i=0; i<qty; i++) {
@@ -205,14 +208,26 @@ window.runMassGenerator = async () => {
         
         if(type === 'opps') {
             const item = oppsRich[Math.floor(Math.random()*oppsRich.length)];
-            data.titulo = item.title; data.descricao = item.desc; data.tipo_visual = item.type; data.badge_text = item.badge; data.status = "analise"; data.link = "#";
+            data.titulo = item.title; 
+            data.descricao = item.desc; 
+            data.tipo_visual = item.type; // Mantive para compatibilidade
+            data.tipo = item.type;        // Campo correto usado pelo frontend novo
+            data.status = "analise"; 
+            data.link = "#";
         } else if (type === 'jobs') {
-            data.titulo = `${jobsRich[Math.floor(Math.random()*jobsRich.length)]} (Banco de Talentos)`;
-            data.status = "encerrada"; data.empresa = "Parceiro"; data.salario = "A combinar";
+            // Removido o "(Banco de Talentos)" do título
+            data.titulo = `${jobsRich[Math.floor(Math.random()*jobsRich.length)]}`;
+            data.status = "encerrada"; 
+            data.empresa = "Parceiro"; 
+            data.salario = "A combinar";
         } else if (type === 'services') {
-            data.nome_profissional = "Profissional Modelo"; data.is_online = false; data.status = "indisponivel";
+            data.nome_profissional = "Profissional Modelo"; 
+            data.is_online = false; 
+            data.status = "indisponivel";
         } else {
-            data.titulo = "Missão Teste (Concluída)"; data.status = "concluida"; data.valor = "10.00";
+            data.titulo = "Missão Teste"; 
+            data.status = "concluida"; 
+            data.valor = "10.00";
         }
         batch.set(docRef, data);
     }
