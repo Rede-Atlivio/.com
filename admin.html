@@ -26,7 +26,6 @@
         .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
         .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
 
-        /* Impressão de Relatório */
         @media print {
             body * { visibility: hidden; }
             #printable-area, #printable-area * { visibility: visible; }
@@ -52,7 +51,7 @@
     <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
         <div class="p-6 border-b border-white/5">
             <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v23.0 // ONLINE</p>
+            <p class="text-[10px] text-gray-500 mt-1">v26.0 // ONLINE</p>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
@@ -64,8 +63,9 @@
             <button class="nav-btn" onclick="window.switchView('opps')"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
             <button class="nav-btn" onclick="window.switchView('finance')"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
             
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-6 mb-2 pl-2">Estratégia</p>
-            <button class="nav-btn" onclick="window.switchView('analytics')"><i data-lucide="bar-chart-2" size="16"></i> ANALYTICS (Sniper)</button>
+            <p class="text-[10px] text-gray-600 font-bold uppercase mt-6 mb-2 pl-2">Estratégia & Povoamento</p>
+            <button class="nav-btn text-purple-400" onclick="window.switchView('generator')"><i data-lucide="box" size="16"></i> GERADOR EM MASSA</button>
+            <button class="nav-btn" onclick="window.switchView('analytics')"><i data-lucide="bar-chart-2" size="16"></i> ANALYTICS</button>
             <button class="nav-btn" onclick="window.switchView('links')"><i data-lucide="link" size="16"></i> LINKS INTELIGENTES</button>
             <button class="nav-btn" onclick="window.switchView('settings')"><i data-lucide="settings" size="16"></i> CONFIGURAÇÕES</button>
         </nav>
@@ -119,20 +119,58 @@
                 </div>
             </div>
 
+            <div id="view-generator" class="hidden space-y-6">
+                <div class="glass-panel p-8 border border-purple-500/30">
+                    <h2 class="text-2xl font-black text-white italic mb-2">GERADOR DE CONTEÚDO SIMULADO</h2>
+                    <p class="text-sm text-gray-400 mb-8">Povoamento seguro. Todo conteúdo gerado aqui é marcado como "Demonstrativo" e não permite interação real.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div>
+                            <label class="inp-label">TIPO DE CONTEÚDO</label>
+                            <select id="gen-type" class="inp-editor h-10">
+                                <option value="jobs">Empregos (Vagas)</option>
+                                <option value="services">Serviços (Prestadores)</option>
+                                <option value="missions">Micro Tarefas</option>
+                                <option value="opps">Oportunidades</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="inp-label">QUANTIDADE</label>
+                            <select id="gen-qty" class="inp-editor h-10">
+                                <option value="1">1 Item</option>
+                                <option value="5">5 Itens</option>
+                                <option value="10">10 Itens (Lote)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="inp-label">CATEGORIA PREDOMINANTE</label>
+                            <select id="gen-cat" class="inp-editor h-10">
+                                <option value="mix">Mix Variado (Recomendado)</option>
+                                <option value="tech">Tecnologia / Digital</option>
+                                <option value="servicos">Serviços Gerais</option>
+                                <option value="vendas">Vendas / Comércio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="window.runMassGenerator()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                        <i data-lucide="zap"></i> GERAR CONTEÚDO AGORA
+                    </button>
+                    
+                    <div id="gen-status" class="mt-4 text-center text-xs font-mono text-gray-500 hidden">
+                        Processando...
+                    </div>
+                </div>
+            </div>
+
             <div id="view-analytics" class="hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="glass-panel p-6">
-                         <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2">
-                            <i data-lucide="filter" size="16" class="text-purple-400"></i> FUNIL DE CONVERSÃO
-                        </h2>
-                        <div id="funnel-container" class="space-y-4">
-                            <p class="text-gray-500 text-xs">Carregando dados do funil...</p>
-                        </div>
+                         <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="filter" size="16" class="text-purple-400"></i> FUNIL DE CONVERSÃO</h2>
+                        <div id="funnel-container" class="space-y-4"><p class="text-gray-500 text-xs">Carregando dados...</p></div>
                     </div>
                     <div class="glass-panel p-6">
-                        <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2">
-                            <i data-lucide="globe" size="16" class="text-emerald-400"></i> ORIGEM DE TRÁFEGO
-                        </h2>
+                        <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="globe" size="16" class="text-emerald-400"></i> ORIGEM DE TRÁFEGO</h2>
                         <div class="h-64"><canvas id="sourceChart"></canvas></div>
                     </div>
                 </div>
@@ -156,18 +194,9 @@
                     <h2 class="text-lg font-bold text-white mb-2">Criador de Links (UTM + Database)</h2>
                     <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis automaticamente.</p>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label class="inp-label">NOME CURTO (ID)</label>
-                            <input type="text" id="linkName" placeholder="ex: promocao-natal" class="inp-editor border-emerald-500/50">
-                        </div>
-                        <div>
-                            <label class="inp-label">ORIGEM (Source)</label>
-                            <input type="text" id="utmSource" value="instagram" class="inp-editor">
-                        </div>
-                        <div>
-                            <label class="inp-label">CAMPANHA</label>
-                            <input type="text" id="utmCampaign" placeholder="lancamento" class="inp-editor">
-                        </div>
+                        <div><label class="inp-label">NOME CURTO (ID)</label><input type="text" id="linkName" placeholder="ex: promocao-natal" class="inp-editor border-emerald-500/50"></div>
+                        <div><label class="inp-label">ORIGEM (Source)</label><input type="text" id="utmSource" value="instagram" class="inp-editor"></div>
+                        <div><label class="inp-label">CAMPANHA</label><input type="text" id="utmCampaign" placeholder="lancamento" class="inp-editor"></div>
                     </div>
                     <button onclick="window.saveLinkToFirebase()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition">💾 GERAR E SALVAR</button>
                     <div id="link-result" class="hidden mt-4 p-4 bg-black/30 rounded border border-emerald-500/30">
@@ -179,19 +208,19 @@
 
             <div id="view-settings" class="hidden space-y-6">
                 <div class="glass-panel p-6">
-                    <h2 class="text-lg font-bold text-white mb-4">Mensagens Globais</h2>
+                    <h2 class="text-lg font-bold text-white mb-4">Mensagens Globais (Site)</h2>
                     <div class="space-y-4">
                         <div>
                             <label class="inp-label">Aviso no Topo do Site</label>
                             <input type="text" id="conf-global-msg" class="inp-editor" placeholder="Ex: Manutenção programada às 22h">
                         </div>
-                        <button onclick="alert('Configurações salvas (Simulação)')" class="bg-blue-600 px-4 py-2 rounded text-white text-xs font-bold">SALVAR CONFIGS</button>
+                        <button onclick="alert('Salvo!')" class="bg-blue-600 px-4 py-2 rounded text-white text-xs font-bold">SALVAR CONFIGS</button>
                     </div>
                 </div>
 
                 <div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6">
                     <h3 class="text-red-500 font-bold text-sm mb-2 uppercase flex items-center gap-2"><i data-lucide="alert-triangle"></i> ZONA DE PERIGO</h3>
-                    <p class="text-xs text-slate-400 mb-4">Ações irreversíveis. Tenha certeza absoluta.</p>
+                    <p class="text-xs text-slate-400 mb-4">Ações irreversíveis.</p>
                     <div class="flex flex-wrap gap-4">
                         <button onclick="window.clearDatabase('logs')" class="bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800 px-4 py-2 rounded-lg text-xs font-bold">LIMPAR LOGS</button>
                         <button onclick="window.clearDatabase('full')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold">🔥 FORMATAR BANCO (RESET TOTAL)</button>
@@ -224,14 +253,7 @@
         <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">RELATÓRIO DETALHADO ATLIVIO</h1>
         <p id="print-date" style="font-size: 12px; color: #666; margin-bottom: 20px;"></p>
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: monospace;">
-            <thead>
-                <tr style="background: #eee; text-align: left;">
-                    <th style="padding: 5px; border: 1px solid #ccc;">DATA/HORA</th>
-                    <th style="padding: 5px; border: 1px solid #ccc;">TIPO</th>
-                    <th style="padding: 5px; border: 1px solid #ccc;">DESCRIÇÃO</th>
-                    <th style="padding: 5px; border: 1px solid #ccc;">USUÁRIO</th>
-                </tr>
-            </thead>
+            <thead><tr style="background: #eee; text-align: left;"><th style="padding: 5px; border: 1px solid #ccc;">DATA/HORA</th><th style="padding: 5px; border: 1px solid #ccc;">TIPO</th><th style="padding: 5px; border: 1px solid #ccc;">DESCRIÇÃO</th><th style="padding: 5px; border: 1px solid #ccc;">USUÁRIO</th></tr></thead>
             <tbody id="print-body"></tbody>
         </table>
     </div>
