@@ -1,5 +1,5 @@
 import { db, auth } from '../app.js';
-import { userProfile } from '../auth.js'; // IMPORTANTE: Importando o perfil para pegar o nome
+import { userProfile } from '../auth.js';
 import { doc, setDoc, collection, query, where, onSnapshot, serverTimestamp, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -47,21 +47,22 @@ window.switchProviderSubTab = (tabName) => {
     });
 };
 
-// --- CORREÇÃO CRÍTICA AQUI: Enviar Nome e Foto ao ficar Online ---
 window.alternarStatusOnline = async (isOnline) => {
     if (!auth.currentUser) return;
     
-    // Garante que temos um nome, seja do perfil carregado ou do Auth do Google
     const nomeParaSalvar = userProfile?.nome_profissional || userProfile?.displayName || auth.currentUser.displayName || "Prestador";
     const fotoParaSalvar = userProfile?.photoURL || auth.currentUser.photoURL || "";
+    // Banner padrão por enquanto
+    const bannerParaSalvar = userProfile?.bannerURL || "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=500&q=60"; 
 
     const activeRef = doc(db, "active_providers", auth.currentUser.uid);
     try {
         await setDoc(activeRef, {
             is_online: isOnline,
             uid: auth.currentUser.uid,
-            nome_profissional: nomeParaSalvar, // <--- SALVANDO O NOME
-            foto_perfil: fotoParaSalvar,       // <--- SALVANDO A FOTO
+            nome_profissional: nomeParaSalvar,
+            foto_perfil: fotoParaSalvar,
+            banner_url: bannerParaSalvar,
             last_seen: serverTimestamp(),
             services: meusServicos
         }, { merge: true });
@@ -111,54 +112,84 @@ window.renderizarFiltros = () => {
 window.filtrarCategoria = (cat) => {
     categoriaAtiva = cat;
     document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.toggle('active', btn.innerText.toUpperCase() === cat.toUpperCase()));
-    carregarPrestadoresOnline();
+    carregarPrestadores();
 };
 
-// --- 5. CATÁLOGO EM TEMPO REAL ---
-function carregarPrestadoresOnline() {
+// --- 5. CATÁLOGO HÍBRIDO (ONLINE E OFFLINE) ---
+function carregarPrestadores() {
     const container = document.getElementById('lista-prestadores-realtime');
     if (!container) return;
     
-    // Consulta básica
-    const q = query(collection(db, "active_providers"), where("is_online", "==", true));
+    // Agora buscamos TODOS os prestadores ativos na tabela (Online e Offline)
+    const q = query(collection(db, "active_providers"));
     
     onSnapshot(q, (snap) => {
-        container.innerHTML = snap.empty ? `<div class="col-span-2 text-center text-gray-400 py-10">Procurando profissionais...</div>` : "";
+        container.innerHTML = snap.empty ? `<div class="col-span-2 text-center text-gray-400 py-10">Nenhum profissional encontrado.</div>` : "";
         
-        snap.forEach(d => {
-            const p = d.data();
+        let prestadores = [];
+        snap.forEach(d => prestadores.push(d.data()));
+
+        // Ordenação: Online primeiro, depois Offline
+        prestadores.sort((a, b) => (a.is_online === b.is_online) ? 0 : a.is_online ? -1 : 1);
+
+        prestadores.forEach(p => {
             // Filtra o próprio usuário
             if (auth.currentUser && p.uid === auth.currentUser.uid) return;
             
             // Filtra por categoria
             const srv = (categoriaAtiva !== 'Todos') ? p.services?.find(s => s.category === categoriaAtiva) : p.services?.[0];
-            
             if (!srv) return;
             
-            // Tratamento de segurança para dados undefined
-            const nomeExibicao = p.nome_profissional || "Prestador Atlivio";
+            // Dados Visuais
+            const nomeExibicao = p.nome_profissional || "Prestador";
             const fotoExibicao = p.foto_perfil || `https://ui-avatars.com/api/?name=${nomeExibicao}&background=random`;
+            // Banner padrão se não tiver
+            const bannerExibicao = p.banner_url || "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=500&q=60";
+
+            // Lógica Online/Offline
+            const isOnline = p.is_online;
+            const statusBadge = isOnline 
+                ? `<div class="absolute top-2 right-2 bg-green-500 text-[7px] text-white font-bold px-2 py-0.5 rounded-full z-10 shadow">ONLINE</div>`
+                : `<div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[7px] text-white font-bold px-2 py-0.5 rounded-full z-10 shadow">OFFLINE</div>`;
+            
+            const cardBg = isOnline ? "bg-white" : "bg-yellow-50 opacity-90"; // Amarelinho se offline
+            const btnText = isOnline ? "SOLICITAR AGORA" : "AGENDAR 📅";
+            const btnColor = isOnline ? "bg-blue-600 hover:bg-blue-700" : "bg-yellow-600 hover:bg-yellow-700";
 
             container.innerHTML += `
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden relative mb-4 animate-fadeIn">
-                <div class="h-16 w-full bg-blue-600 relative">
-                    <div class="absolute top-2 right-2 bg-green-500 text-[7px] text-white font-bold px-2 py-0.5 rounded-full">ONLINE</div>
+            <div class="${cardBg} rounded-xl shadow-sm border border-gray-100 overflow-hidden relative mb-4 animate-fadeIn group">
+                <div class="h-20 w-full relative">
+                    <img src="${bannerExibicao}" class="w-full h-full object-cover opacity-90">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black/20"></div>
+                    ${statusBadge}
                 </div>
-                <div class="absolute top-8 left-3 w-12 h-12 rounded-full border-4 border-white shadow bg-white overflow-hidden">
+                
+                <div class="absolute top-12 left-3 w-14 h-14 rounded-full border-4 border-white shadow-md bg-white overflow-hidden">
                     <img src="${fotoExibicao}" class="w-full h-full object-cover">
                 </div>
-                <div class="pt-5 pb-3 px-3">
-                    <h4 class="font-black text-xs text-gray-800 truncate">${nomeExibicao}</h4>
-                    <p class="text-[9px] font-black text-green-600">A partir de R$ ${srv.price}</p>
+                
+                <div class="pt-8 pb-3 px-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-black text-xs text-gray-800 truncate max-w-[120px]">${nomeExibicao}</h4>
+                            <p class="text-[9px] text-gray-400 uppercase font-bold">${srv.category}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[8px] text-gray-400">A partir de</p>
+                            <p class="text-sm font-black text-green-600">R$ ${srv.price}</p>
+                        </div>
+                    </div>
                     
-                    <button onclick="window.abrirModalSolicitacao('${p.uid}', '${nomeExibicao}', '${srv.price}')" class="w-full mt-2 bg-blue-600 text-white py-1.5 rounded-lg text-[8px] font-bold uppercase shadow-sm hover:bg-blue-700 transition">Solicitar</button>
+                    <button onclick="window.abrirModalSolicitacao('${p.uid}', '${nomeExibicao}', '${srv.price}')" class="w-full mt-3 ${btnColor} text-white py-2 rounded-lg text-[9px] font-black uppercase shadow-sm transition transform active:scale-95">
+                        ${btnText}
+                    </button>
                 </div>
             </div>`;
         });
     });
 }
 
-// --- 6. INICIALIZAÇÃO E SINCRONIA ---
+// --- 6. INICIALIZAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const userDoc = await getDoc(doc(db, "usuarios", user.uid));
@@ -166,7 +197,7 @@ onAuthStateChanged(auth, async (user) => {
             const d = userDoc.data();
             meusServicos = d.services_offered || [];
             
-            // Atualiza visual do Header
+            // Header Info
             const nomeDisplay = d.nome_profissional || user.displayName;
             document.querySelectorAll('#header-user-name, #provider-header-name').forEach(el => el.innerText = nomeDisplay);
             document.querySelectorAll('#header-user-pic, #provider-header-pic').forEach(el => el.src = d.photoURL || user.photoURL);
@@ -183,7 +214,7 @@ onAuthStateChanged(auth, async (user) => {
 
         atualizarVisualRadar(statusReal);
         window.renderizarFiltros();
-        carregarPrestadoresOnline();
+        carregarPrestadores(); // Chama a nova função híbrida
         window.switchServiceSubTab('contratar');
     }
 });
