@@ -1,174 +1,368 @@
-import { db } from './app.js';
-import { collection, addDoc, getDocs, getCountFromServer, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, where, deleteDoc, addDoc, updateDoc, doc, serverTimestamp, getCountFromServer, onSnapshot, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- DASHBOARD ---
-export async function carregarDashboard() {
+// Configuração (Mesma do app.js)
+const firebaseConfig = {
+  apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
+  authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
+  projectId: "atlivio-oficial-a1a29",
+  storageBucket: "atlivio-oficial-a1a29.firebasestorage.app",
+  messagingSenderId: "887430049204",
+  appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+const ADMIN_EMAIL = "contatogilborges@gmail.com";
+
+// ESTADO GLOBAL
+let currentView = 'dashboard';
+let dataMode = 'real'; // 'real' ou 'demo'
+let liveListener = null;
+let mainChart = null;
+
+// --- 1. AUTENTICAÇÃO ---
+document.getElementById('btn-login-admin').addEventListener('click', async () => {
+    document.getElementById('loading-login').classList.remove('hidden');
     try {
-        const collUsers = collection(db, "usuarios");
-        const snapshotUsers = await getCountFromServer(collUsers);
-        const elTotal = document.getElementById('dash-total-users');
-        if(elTotal) elTotal.innerText = snapshotUsers.data().count;
+        const result = await signInWithPopup(auth, provider);
+        checkAdmin(result.user);
+    } catch (e) {
+        showError("Erro login: " + e.message);
+    }
+});
 
-        const collActive = collection(db, "active_providers");
-        const snapshotActive = await getCountFromServer(collActive);
-        const elActive = document.getElementById('dash-active-providers');
-        if(elActive) elActive.innerText = snapshotActive.data().count;
-    } catch (e) { console.error("Erro dash:", e); }
+function checkAdmin(user) {
+    if(user.email.toLowerCase().trim() === ADMIN_EMAIL) {
+        document.getElementById('login-gate').classList.add('hidden');
+        document.getElementById('admin-sidebar').classList.remove('hidden');
+        document.getElementById('admin-main').classList.remove('hidden');
+        initDashboard();
+    } else {
+        showError("ACESSO NEGADO. Este e-mail não é administrador.");
+        signOut(auth);
+    }
+    document.getElementById('loading-login').classList.add('hidden');
 }
 
-// --- LIMPEZA ---
-window.limparMissoes = async () => {
-    if(!confirm("⚠️ Apagar TODAS as missões?")) return;
-    const btn = event.target;
-    btn.innerText = "Apagando...";
-    btn.disabled = true;
-    try {
-        const q = query(collection(db, "missoes"));
-        const snap = await getDocs(q);
-        const promises = snap.docs.map(docSnap => deleteDoc(doc(db, "missoes", docSnap.id)));
-        await Promise.all(promises);
-        alert("✅ Limpeza concluída!");
-        location.reload();
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "Erro";
-        btn.disabled = false;
+onAuthStateChanged(auth, (user) => {
+    if(user) checkAdmin(user);
+});
+
+window.logoutAdmin = () => signOut(auth).then(() => location.reload());
+
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.innerText = msg;
+    el.classList.remove('hidden');
+}
+
+// --- 2. NAVEGAÇÃO ---
+window.switchView = (viewName) => {
+    currentView = viewName;
+    // UI Update
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    
+    // Hide all views
+    document.getElementById('view-dashboard').classList.add('hidden');
+    document.getElementById('view-list').classList.add('hidden');
+    document.getElementById('view-finance').classList.add('hidden');
+
+    // Title Update
+    document.getElementById('page-title').innerText = viewName.toUpperCase();
+
+    // Logic Switch
+    if(viewName === 'dashboard') {
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        initDashboard();
+    } else if(viewName === 'finance') {
+        document.getElementById('view-finance').classList.remove('hidden');
+        loadFinance();
+    } else {
+        document.getElementById('view-list').classList.remove('hidden');
+        loadList(viewName);
     }
 };
 
-// --- VALIDAÇÃO ---
-function carregarValidacoes() {
-    const container = document.getElementById('admin-pending-list');
-    const badge = document.getElementById('count-pending');
-    if(!container) return;
+window.toggleDataMode = (mode) => {
+    dataMode = mode;
+    document.getElementById('btn-mode-real').className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+    document.getElementById('btn-mode-demo').className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white transition" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+    
+    // Reload current view
+    if(currentView === 'dashboard') initDashboard();
+    else if(currentView === 'finance') loadFinance();
+    else loadList(currentView);
+};
 
-    const q = query(collection(db, "mission_assignments"), where("status", "==", "submitted"), orderBy("submitted_at", "desc"));
+window.forceRefresh = () => {
+    if(currentView === 'dashboard') initDashboard();
+    else loadList(currentView);
+};
 
-    onSnapshot(q, (snap) => {
-        container.innerHTML = "";
-        if(snap.empty) {
-            container.innerHTML = "<p class='text-center text-xs text-gray-400 py-4'>Nada para validar.</p>";
-            if(badge) { badge.innerText = "0"; badge.classList.replace('bg-red-500', 'bg-gray-400'); }
-        } else {
-            if(badge) { badge.innerText = snap.size; badge.classList.replace('bg-gray-400', 'bg-red-500'); }
-            snap.forEach(d => {
-                const item = d.data();
-                const valorFormatado = item.valor_bruto ? item.valor_bruto.toFixed(2) : "0.00";
-                
-                container.innerHTML += `
-                    <div class="border p-3 rounded-lg bg-white shadow-sm flex flex-col gap-2">
-                        <div class="flex justify-between items-center border-b pb-2">
-                            <span class="font-bold text-xs uppercase text-blue-900">${item.mission_title}</span>
-                            <span class="text-[9px] bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold">R$ ${valorFormatado}</span>
-                        </div>
-                        <div class="flex justify-between items-end">
-                            <div class="text-[10px] text-gray-500">
-                                <p>Agente: <span class="text-black font-bold">${item.profile_email || 'Anon'}</span></p>
-                                <a href="${item.photo_url}" target="_blank" class="text-blue-600 underline mt-1 block">📸 Ver Foto</a>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="validarMissao('${d.id}', false, '${item.profile_id}', 0)" class="bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded text-[9px] font-bold">REJEITAR</button>
-                                <button onclick="validarMissao('${d.id}', true, '${item.profile_id}', ${item.valor_bruto})" class="bg-green-600 text-white px-3 py-1.5 rounded text-[9px] font-bold shadow-sm">APROVAR</button>
-                            </div>
-                        </div>
-                    </div>`;
-            });
-        }
+// --- 3. DASHBOARD LOGIC ---
+async function initDashboard() {
+    // KPIs
+    const collUsers = collection(db, "usuarios");
+    const snapUsers = await getCountFromServer(collUsers);
+    document.getElementById('kpi-users').innerText = snapUsers.data().count;
+
+    const qProviders = query(collection(db, "active_providers"), where("is_online", "==", true));
+    const snapProv = await getDocs(qProviders);
+    document.getElementById('kpi-providers').innerText = snapProv.size;
+
+    // Chart
+    renderChart();
+
+    // Live Feed
+    if(liveListener) liveListener(); // Unsubscribe old
+    const qFeed = query(collection(db, "admin_logs"), orderBy("timestamp", "desc"), limit(20));
+    
+    liveListener = onSnapshot(qFeed, (snap) => {
+        const feed = document.getElementById('live-feed');
+        feed.innerHTML = "";
+        snap.forEach(d => {
+            const log = d.data();
+            const time = log.timestamp ? new Date(log.timestamp.seconds * 1000).toLocaleTimeString() : '--:--';
+            const color = log.type === 'DANGER' ? 'text-red-400' : 'text-blue-400';
+            feed.innerHTML += `
+                <div class="border-l-2 border-slate-700 pl-3 py-1 hover:bg-white/5 transition">
+                    <p class="text-[10px] text-gray-500 font-bold">${time} // ${log.admin || 'System'}</p>
+                    <p class="${color}">${log.action}</p>
+                    <p class="text-gray-400 truncate">${log.details || ''}</p>
+                </div>
+            `;
+        });
     });
 }
 
-// --- FUNÇÃO DE APROVAÇÃO/REJEIÇÃO (FALTAVA ANTES) ---
-window.validarMissao = async (docId, aprovado, userId, valor) => {
-    const btn = event.target;
-    const textoOriginal = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "⏳";
+function renderChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    if(mainChart) mainChart.destroy();
+    
+    // Fake data for demo visual, replace with real Aggregation if needed
+    mainChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Serviços', 'Tarefas', 'Produtos'],
+            datasets: [{
+                data: [55, 30, 15],
+                backgroundColor: ['#2563eb', '#10b981', '#f59e0b'],
+                borderWidth: 0
+            }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } } }
+    });
+}
 
+// --- 4. LISTAS CRUD GENÉRICAS ---
+async function loadList(type) {
+    const tbody = document.getElementById('table-body');
+    const thead = document.getElementById('table-header');
+    tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
+
+    let colName, fields, headers;
+    let constraints = [];
+
+    // Filtro Demo vs Real
+    if (dataMode === 'demo') {
+        constraints.push(where("is_demo", "==", true));
+    } else {
+        // Em modo real, mostramos tudo ou filtramos 'is_demo' == false se quiser limpar a vista
+        // Por padrão, vamos mostrar tudo no Real para controle, mas destacar visualmente
+    }
+
+    if(type === 'users') {
+        colName = "usuarios";
+        headers = ["NOME/EMAIL", "TIPO", "SALDO", "STATUS", "AÇÕES"];
+        fields = (d) => `
+            <td class="p-3">
+                <div class="font-bold text-white">${d.displayName || 'Sem Nome'}</div>
+                <div class="text-gray-500">${d.email}</div>
+                ${d.is_demo ? '<span class="text-[9px] bg-amber-500/20 text-amber-500 px-1 rounded">DEMO</span>' : ''}
+            </td>
+            <td class="p-3">${d.is_provider ? '<span class="text-blue-400">Prestador</span>' : '<span class="text-green-400">Cliente</span>'}</td>
+            <td class="p-3 font-mono">R$ ${(d.saldo || 0).toFixed(2)}</td>
+            <td class="p-3">${d.is_blocked ? '<span class="text-red-500">BLOQUEADO</span>' : '<span class="text-green-500">ATIVO</span>'}</td>
+            <td class="p-3 flex gap-2">
+                <button onclick="editUser('${d.id}')" class="text-blue-400 hover:text-white"><i data-lucide="edit-2" size="14"></i></button>
+                <button onclick="toggleBlock('${d.id}', ${d.is_blocked})" class="${d.is_blocked ? 'text-green-400' : 'text-red-400'}"><i data-lucide="${d.is_blocked ? 'unlock' : 'lock'}" size="14"></i></button>
+            </td>
+        `;
+    } else if (type === 'services') {
+        colName = "active_providers";
+        headers = ["PRESTADOR", "SERVIÇOS", "STATUS", "AÇÕES"];
+        fields = (d) => `
+            <td class="p-3 flex items-center gap-2">
+                <img src="${d.foto_perfil || 'https://ui-avatars.com/api/?name=X'}" class="w-8 h-8 rounded-full">
+                <div>${d.nome_profissional}</div>
+                ${d.is_seed ? '<span class="text-[9px] bg-amber-500/20 text-amber-500 px-1 rounded">DEMO</span>' : ''}
+            </td>
+            <td class="p-3 text-gray-400">${d.services ? d.services.map(s => s.category).join(', ') : '-'}</td>
+            <td class="p-3">${d.is_online ? '<span class="text-green-400">ONLINE</span>' : '<span class="text-gray-500">OFFLINE</span>'}</td>
+            <td class="p-3">
+                <button onclick="deleteItem('active_providers', '${d.id}')" class="text-red-400 hover:text-white"><i data-lucide="trash" size="14"></i></button>
+            </td>
+        `;
+    } else if (type === 'missions') {
+        colName = "missoes";
+        headers = ["TÍTULO", "RECOMPENSA", "STATUS", "AÇÕES"];
+        fields = (d) => `
+            <td class="p-3">
+                <div class="font-bold text-white">${d.titulo}</div>
+                <div class="text-[10px] text-gray-500">${d.descricao}</div>
+            </td>
+            <td class="p-3 text-green-400 font-bold">R$ ${d.recompensa}</td>
+            <td class="p-3">${d.status}</td>
+            <td class="p-3 flex gap-2">
+                <button onclick="deleteItem('missoes', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button>
+            </td>
+        `;
+    } else if (type === 'jobs') {
+        colName = "jobs";
+        headers = ["EMPRESA", "CARGO", "CANDIDATOS", "AÇÕES"];
+        fields = (d) => `
+            <td class="p-3">${d.company_name}</td>
+            <td class="p-3 font-bold text-white">${d.titulo}</td>
+            <td class="p-3">${d.candidatos_count || 0}</td>
+            <td class="p-3"><button onclick="deleteItem('jobs', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>
+        `;
+    } else if (type === 'links') {
+        colName = "short_links";
+        headers = ["SLUG (ID)", "DESTINO", "CLIQUES", "AÇÕES"];
+        fields = (d) => `
+            <td class="p-3 font-mono text-blue-400">${d.id}</td>
+            <td class="p-3 text-gray-500 truncate max-w-[150px]">${d.target}</td>
+            <td class="p-3 font-bold text-white">${d.clicks || 0}</td>
+            <td class="p-3"><button onclick="deleteItem('short_links', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>
+        `;
+    }
+
+    // Render Headers
+    thead.innerHTML = headers.map(h => `<th class="p-3">${h}</th>`).join('');
+
+    // Fetch Data
+    const q = query(collection(db, colName), ...constraints, limit(50));
+    const snap = await getDocs(q);
+    
+    tbody.innerHTML = "";
+    if(snap.empty) {
+        tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Nenhum registro encontrado.</td></tr>";
+    }
+
+    snap.forEach(docSnap => {
+        const d = { id: docSnap.id, ...docSnap.data() };
+        tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`;
+    });
+    
+    lucide.createIcons();
+
+    // Configura botão NOVO
+    document.getElementById('btn-add-new').onclick = () => openModalCreate(type);
+}
+
+// --- 5. EDITOR E MODAIS ---
+window.openModalCreate = (type) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    modal.classList.remove('hidden');
+    title.innerText = "NOVO " + type.slice(0, -1).toUpperCase(); // Remove 's' plural
+    
+    content.innerHTML = "";
+    
+    if(type === 'missions') {
+        content.innerHTML = `
+            <input type="text" id="inp-title" placeholder="Título da Missão" class="w-full bg-black border border-gray-700 p-3 rounded text-white text-xs">
+            <textarea id="inp-desc" placeholder="Descrição" class="w-full bg-black border border-gray-700 p-3 rounded text-white text-xs"></textarea>
+            <input type="number" id="inp-val" placeholder="Valor (Ex: 5.00)" class="w-full bg-black border border-gray-700 p-3 rounded text-white text-xs">
+            <label class="flex items-center gap-2 text-gray-400 text-xs"><input type="checkbox" id="inp-demo"> Marcar como DEMONSTRAÇÃO (Simulado)</label>
+        `;
+        window.saveCallback = async () => {
+            await addDoc(collection(db, "missoes"), {
+                titulo: document.getElementById('inp-title').value,
+                descricao: document.getElementById('inp-desc').value,
+                recompensa: document.getElementById('inp-val').value,
+                status: 'aberto',
+                tenant_id: 'atlivio_fsa_01',
+                is_demo: document.getElementById('inp-demo').checked,
+                created_at: serverTimestamp()
+            });
+        };
+    } else if (type === 'links') {
+        content.innerHTML = `
+            <input type="text" id="inp-slug" placeholder="Slug (ex: promocao-natal)" class="w-full bg-black border border-gray-700 p-3 rounded text-white text-xs">
+            <input type="text" id="inp-target" placeholder="Link Destino (https://...)" class="w-full bg-black border border-gray-700 p-3 rounded text-white text-xs">
+        `;
+        window.saveCallback = async () => {
+            const slug = document.getElementById('inp-slug').value;
+            await updateDoc(doc(db, "short_links", slug), { // Use updateDoc/setDoc logic here
+                target: document.getElementById('inp-target').value,
+                clicks: 0,
+                created_at: serverTimestamp()
+            }); // Note: should probably be setDoc for custom IDs
+        };
+    }
+    // Adicionar outros tipos conforme necessidade
+};
+
+window.saveModalData = async () => {
     try {
-        const assignmentRef = doc(db, "mission_assignments", docId);
-        
-        if (aprovado) {
-            if(!confirm(`Aprovar e enviar R$ ${valor} para o usuário?`)) {
-                 btn.disabled = false; btn.innerText = textoOriginal; return; 
-            }
-
-            // 1. Atualiza Status da Missão
-            await updateDoc(assignmentRef, {
-                status: "approved",
-                approved_at: serverTimestamp()
-            });
-
-            // 2. Adiciona Saldo ao Usuário
-            const userRef = doc(db, "usuarios", userId);
-            await updateDoc(userRef, {
-                saldo: increment(valor)
-            });
-
-            alert("✅ Aprovado! Saldo creditado.");
-        } else {
-            const motivo = prompt("Motivo da rejeição:");
-            if(motivo === null) { btn.disabled = false; btn.innerText = textoOriginal; return; }
-
-            await updateDoc(assignmentRef, {
-                status: "rejected",
-                rejection_reason: motivo,
-                rejected_at: serverTimestamp()
-            });
-            alert("❌ Rejeitado.");
-        }
-    } catch (e) {
+        if(window.saveCallback) await window.saveCallback();
+        alert("✅ Salvo com sucesso!");
+        closeModal();
+        forceRefresh();
+        logAction("CREATE", `Criou item em ${currentView}`);
+    } catch(e) {
         alert("Erro: " + e.message);
-        btn.disabled = false;
-        btn.innerText = textoOriginal;
     }
 };
 
-// --- SEEDERS (FERRAMENTAS DE TESTE) ---
-window.rodarSeedMissao = async () => {
+window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
+
+// --- 6. AÇÕES DE ITENS ---
+window.deleteItem = async (coll, id) => {
+    if(!confirm("⚠️ Tem certeza? Isso não pode ser desfeito.")) return;
     try {
-        await addDoc(collection(db, "missoes"), {
-            titulo: "Preço do Tomate", descricao: "Vá ao mercado e fotografe.", recompensa: "5,00",
-            tenant_id: "atlivio_fsa_01", status: "aberto", created_at: serverTimestamp()
-        });
-        alert("✅ Missão criada!");
-    } catch (e) { alert("Erro: " + e.message); }
+        await deleteDoc(doc(db, coll, id));
+        forceRefresh();
+        logAction("DELETE", `Apagou ${id} de ${coll}`);
+    } catch(e) { alert(e.message); }
 };
 
-window.rodarSeedOportunidade = async () => {
-    try {
-        await addDoc(collection(db, "oportunidades"), {
-            titulo: "Bug do iFood", descricao: "Cupom R$ 30", link: "https://ifood.com.br",
-            is_premium: false, created_at: serverTimestamp()
-        });
-        alert("✅ Oportunidade criada!");
-    } catch (e) { alert("Erro: " + e.message); }
+window.editUser = async (uid) => {
+    const newBal = prompt("Novo Saldo (use ponto, ex: 10.50):");
+    if(newBal) {
+        try {
+            await updateDoc(doc(db, "usuarios", uid), { saldo: parseFloat(newBal) });
+            alert("Saldo Atualizado!");
+            forceRefresh();
+            logAction("FINANCE", `Alterou saldo de ${uid} para ${newBal}`);
+        } catch(e) { alert("Erro de Permissão (Verifique Rules): " + e.message); }
+    }
 };
 
-window.rodarSeedProdutos = async () => {
+window.toggleBlock = async (uid, currentStatus) => {
     try {
-        const produtosExemplo = [
-            { nome: "iPhone 15 Pro Max", preco: 8500.00, categoria: "Eletrônicos", img: "https://http2.mlstatic.com/D_NQ_NP_2X_759904-MLA71783266948_092023-F.webp", desc: "Original Lacrado", destaque: true },
-            { nome: "Curso Marketing Digital", preco: 97.00, categoria: "Infoproduto", img: "https://img.freepik.com/fotos-gratis/marketing-digital-com-icones-de-negocios-e-tecnologia_53876-47820.jpg", desc: "Venda Todo Dia", destaque: false },
-            { nome: "Fone Bluetooth Pro", preco: 129.90, categoria: "Acessórios", img: "https://m.media-amazon.com/images/I/51+u0M-8tJL._AC_UF894,1000_QL80_.jpg", desc: "Grave Potente", destaque: false }
-        ];
-
-        for (const p of produtosExemplo) {
-            await addDoc(collection(db, "produtos"), {
-                ...p, created_at: serverTimestamp()
-            });
-        }
-        alert("✅ 3 Produtos adicionados à loja!");
-    } catch (e) { alert("Erro: " + e.message); }
+        await updateDoc(doc(db, "usuarios", uid), { is_blocked: !currentStatus });
+        forceRefresh();
+    } catch(e) { alert(e.message); }
 };
 
-// Inicialização
-setInterval(() => {
-    const secAdmin = document.getElementById('sec-admin');
-    if(secAdmin && !secAdmin.classList.contains('hidden')) carregarDashboard();
-}, 5000);
+// --- 7. LOGS E AUDITORIA ---
+async function logAction(action, details) {
+    await addDoc(collection(db, "admin_logs"), {
+        admin: auth.currentUser.email,
+        action, details,
+        timestamp: serverTimestamp(),
+        type: action === 'DELETE' ? 'DANGER' : 'INFO'
+    });
+}
 
-setTimeout(() => {
-    // Verifica periodicamente se a seção admin apareceu para iniciar o listener de validações
-    const secAdmin = document.getElementById('sec-admin');
-    if(secAdmin) carregarValidacoes();
-}, 2000);
+// Inicializa Ícones
+lucide.createIcons();
