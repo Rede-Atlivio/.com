@@ -1,128 +1,228 @@
 import { auth, db, provider } from './app.js';
-import { signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// REMOVIDO: import { inicializarModuloServicos } ... (Evita o ciclo)
+import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// --- VARIÁVEL GLOBAL (Para todos acessarem) ---
-window.userProfile = null;
+const storage = getStorage();
+const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
+const DEFAULT_TENANT = "atlivio_fsa_01";
+export let userProfile = null;
 
-// --- FUNÇÕES GLOBAIS ---
-window.loginGoogle = loginGoogle;
-window.logout = logout;
-window.alternarPerfil = alternarPerfil;
-window.definirPerfil = definirPerfil;
+// --- LOGIN / LOGOUT ---
+window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert("Erro login: " + e.message));
+window.logout = () => signOut(auth).then(() => location.reload());
 
-window.alternarStatusOnline = async () => {
-    const toggle = document.getElementById('online-toggle');
-    if(!auth.currentUser || !toggle) return;
+// --- GESTÃO DE PERFIL ---
+window.definirPerfil = async (tipo) => {
+    if(!auth.currentUser) return;
     try {
-        await updateDoc(doc(db, "active_providers", auth.currentUser.uid), {
-            is_online: toggle.checked,
-            last_seen: serverTimestamp()
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            is_provider: tipo === 'prestador', 
+            perfil_completo: true 
         });
-        console.log("Status Online:", toggle.checked);
-    } catch(e) { 
-        console.error("Erro status:", e);
-        toggle.checked = !toggle.checked;
+        location.reload();
+    } catch(e) { alert("Erro ao salvar perfil: " + e.message); }
+};
+
+window.alternarPerfil = async () => {
+    if(!userProfile) return;
+    const btn = document.getElementById('btn-trocar-perfil');
+    if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
+    try {
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            is_provider: !userProfile.is_provider 
+        });
+        setTimeout(() => location.reload(), 500);
+    } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
+};
+
+// --- SALVAR NOME E SERVIÇOS ---
+window.saveServicesAndGoOnline = async () => {
+    const nomeInput = document.getElementById('setup-name').value;
+    const modal = document.getElementById('provider-setup-modal');
+
+    if(!nomeInput) return alert("Digite seu nome profissional.");
+
+    try {
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
+            nome_profissional: nomeInput,
+            setup_profissional_ok: true
+        });
+        
+        userProfile.nome_profissional = nomeInput;
+        
+        if(window.alternarStatusOnline) {
+            await window.alternarStatusOnline(true);
+        }
+        
+        alert("✅ Perfil configurado! Você está Online.");
+        modal.classList.add('hidden');
+        document.getElementById('online-toggle').checked = true;
+        
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar: " + e.message);
     }
 };
 
-// --- LOGIN ---
-async function loginGoogle() {
+// --- UPLOAD FOTO ---
+window.uploadFotoPerfil = async (input) => {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const overlay = document.getElementById('upload-overlay');
+    if(overlay) overlay.classList.remove('hidden');
+
     try {
-        const result = await signInWithPopup(auth, provider);
-        await verificarEAtualizarUsuario(result.user);
-    } catch (error) { alert("Erro login: " + error.message); }
-}
+        const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
 
-async function verificarEAtualizarUsuario(user) {
-    const userRef = doc(db, "usuarios", user.uid);
-    const docSnap = await getDoc(userRef);
+        await updateProfile(user, { photoURL: downloadURL });
+        await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL });
 
-    if (!docSnap.exists()) {
-        const novoPerfil = {
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            created_at: serverTimestamp(),
-            saldo: 0.00,
-            is_provider: false
-        };
-        await setDoc(userRef, novoPerfil);
-        window.userProfile = novoPerfil;
-        mostrarTelaSelecao();
-    } else {
-        window.userProfile = docSnap.data();
-        direcionarUsuario();
-    }
-}
-
-function mostrarTelaSelecao() {
-    document.getElementById('auth-container').classList.add('hidden');
-    document.getElementById('role-selection').classList.remove('hidden');
-}
-
-async function definirPerfil(tipo) {
-    if (!auth.currentUser) return;
-    const isProvider = tipo === 'prestador';
-    await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: isProvider });
-    window.userProfile.is_provider = isProvider;
-    direcionarUsuario();
-}
-
-async function alternarPerfil() {
-    if (!window.userProfile) return;
-    const novoStatus = !window.userProfile.is_provider;
-    await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: novoStatus });
-    location.reload();
-}
-
-function direcionarUsuario() {
-    document.getElementById('auth-container').classList.add('hidden');
-    document.getElementById('role-selection').classList.add('hidden');
-    document.getElementById('app-container').classList.remove('hidden');
-
-    const btnPerfil = document.getElementById('btn-trocar-perfil');
-    const tabAdmin = document.getElementById('tab-admin');
-    
-    if (window.userProfile.is_provider) {
-        btnPerfil.innerText = "🔄 Virar Cliente";
-        btnPerfil.classList.replace('text-gray-500', 'text-blue-600');
-        document.getElementById('servicos-prestador').classList.remove('hidden');
-        document.getElementById('status-toggle-container').classList.remove('hidden');
-        document.getElementById('tab-missoes').classList.remove('hidden');
-        document.getElementById('tab-ganhar').classList.remove('hidden');
-        
-        // Verifica status online
-        getDoc(doc(db, "active_providers", auth.currentUser.uid)).then(snap => {
-            if(snap.exists()) document.getElementById('online-toggle').checked = snap.data().is_online;
+        const activeRef = doc(db, "active_providers", user.uid);
+        getDoc(activeRef).then(snap => {
+            if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL });
         });
-    } else {
-        btnPerfil.innerText = "🔄 Virar Prestador";
-        document.getElementById('servicos-cliente').classList.remove('hidden');
-        document.getElementById('tab-oportunidades').classList.remove('hidden');
-        document.getElementById('tab-loja').classList.remove('hidden');
+
+        document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL);
+        alert("✅ Foto atualizada!");
+    } catch (error) {
+        console.error(error);
+        alert("Erro no upload. Tente outra imagem.");
+    } finally {
+        if(overlay) overlay.classList.add('hidden');
+        input.value = "";
     }
+};
 
-    if(window.userProfile.email === "contatogilborges@gmail.com") {
-        tabAdmin.classList.remove('hidden');
-    }
-
-    // Dispara evento para avisar outros módulos que carregou
-    window.dispatchEvent(new CustomEvent('perfilCarregado'));
-}
-
-function logout() { signOut(auth).then(() => location.reload()); }
-
+// --- NÚCLEO DE AUTENTICAÇÃO ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        const snap = await getDoc(doc(db, "usuarios", user.uid));
-        if(snap.exists()) {
-            window.userProfile = snap.data();
-            direcionarUsuario();
-        }
+        document.getElementById('auth-container').classList.add('hidden');
+        const userRef = doc(db, "usuarios", user.uid);
+        
+        onSnapshot(userRef, async (docSnap) => {
+            try {
+                if(!docSnap.exists()) {
+                    const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
+                    userProfile = { 
+                        email: user.email, 
+                        displayName: user.displayName, 
+                        photoURL: user.photoURL,        
+                        tenant_id: DEFAULT_TENANT, 
+                        perfil_completo: false, 
+                        role: roleInicial, 
+                        saldo: 0, 
+                        is_provider: false,
+                        created_at: new Date()
+                    };
+                    await setDoc(userRef, userProfile);
+                } else {
+                    userProfile = docSnap.data();
+                    if ((user.photoURL && user.photoURL !== userProfile.photoURL && !userProfile.photoURL.includes('firebasestorage'))) {
+                        updateDoc(userRef, { displayName: user.displayName, photoURL: user.photoURL }).catch(()=>{});
+                    }
+                    iniciarAppLogado(user);
+                    
+                    if (userProfile.is_provider && !userProfile.setup_profissional_ok) {
+                        const modal = document.getElementById('provider-setup-modal');
+                        if(modal) {
+                            modal.classList.remove('hidden');
+                            const inputNome = document.getElementById('setup-name');
+                            if(inputNome && !inputNome.value) inputNome.value = user.displayName || "";
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error("Erro crítico perfil:", err);
+                iniciarAppLogado(user); 
+            }
+        });
     } else {
-        document.getElementById('app-container').classList.add('hidden');
         document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('role-selection').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
     }
 });
+
+function iniciarAppLogado(user) {
+    if(!userProfile || !userProfile.perfil_completo) {
+        document.getElementById('app-container').classList.add('hidden');
+        document.getElementById('role-selection').classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('role-selection').classList.add('hidden');
+    document.getElementById('app-container').classList.remove('hidden');
+    
+    const btnPerfil = document.getElementById('btn-trocar-perfil');
+    const isAdmin = ADMIN_EMAILS.some(email => email.toLowerCase() === user.email.toLowerCase().trim());
+    const tabServicos = document.getElementById('tab-servicos');
+    const adminTab = document.getElementById('tab-admin');
+    const adminSec = document.getElementById('sec-admin');
+
+    if(isAdmin) {
+        if(adminTab) adminTab.classList.remove('hidden');
+    } else {
+        if(adminTab) adminTab.classList.add('hidden');
+        if(adminSec) adminSec.classList.add('hidden');
+    }
+
+    if (userProfile.is_provider) {
+        // --- PRESTADOR ---
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin 
+            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
+            : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
+        
+        if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
+        
+        toggleDisplay('tab-servicos', true);
+        toggleDisplay('tab-missoes', true);
+        toggleDisplay('tab-oportunidades', true);
+        toggleDisplay('tab-ganhar', true);
+        toggleDisplay('tab-loja', false);
+        
+        toggleDisplay('status-toggle-container', true);
+        toggleDisplay('servicos-prestador', true);
+        toggleDisplay('servicos-cliente', false);
+        
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos'); 
+
+    } else {
+        // --- CLIENTE ---
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin 
+            ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
+            : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
+            
+        if(tabServicos) tabServicos.innerText = "Contratar Serviço 🛠️";
+        
+        toggleDisplay('tab-servicos', true);
+        toggleDisplay('tab-oportunidades', true);
+        toggleDisplay('tab-loja', true);
+        
+        // --- AQUI ESTAVA O PROBLEMA 5 ---
+        // Antes estava 'false'. Agora ativamos a carteira para o cliente.
+        toggleDisplay('tab-ganhar', true); 
+        // -------------------------------
+
+        toggleDisplay('tab-missoes', false);
+        
+        toggleDisplay('status-toggle-container', false);
+        toggleDisplay('servicos-prestador', false);
+        toggleDisplay('servicos-cliente', true);
+        
+        if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos');
+    }
+}
+
+function toggleDisplay(id, show) {
+    const el = document.getElementById(id);
+    if(el) {
+        if(show) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    }
+}
