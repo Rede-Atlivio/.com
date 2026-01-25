@@ -74,8 +74,8 @@ onAuthStateChanged(auth, async (user) => {
                     
                     if (userProfile.is_provider) {
                         iniciarRadarPrestador(user.uid);
-                        // --- CORREÇÃO: Chama a função do botão aqui ---
-                        ativarBotaoOnline(user.uid); 
+                        // Atualiza o visual do botão baseado no banco
+                        atualizarVisualBotaoOnline(user.uid);
                         
                         if (!userProfile.setup_profissional_ok) {
                             const modal = document.getElementById('provider-setup-modal');
@@ -156,42 +156,46 @@ function iniciarAppLogado(user) {
     }
 }
 
-// --- NOVA FUNÇÃO BLINDADA PARA O BOTÃO ONLINE ---
-function ativarBotaoOnline(uid) {
+// --- FUNÇÃO AUXILIAR PARA SINCRONIZAR VISUAL ---
+async function atualizarVisualBotaoOnline(uid) {
     const toggle = document.getElementById('online-toggle');
-    if (!toggle) return;
-
-    // 1. Carregar estado inicial
-    getDoc(doc(db, "active_providers", uid)).then(snap => {
+    if(!toggle) return;
+    
+    try {
+        const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             toggle.checked = snap.data().is_online;
-            console.log("Estado inicial carregado:", toggle.checked);
         }
-    });
-
-    // 2. Remover listeners antigos para evitar duplicação (cloneNode truque)
-    const newToggle = toggle.cloneNode(true);
-    toggle.parentNode.replaceChild(newToggle, toggle);
-
-    // 3. Adicionar listener novo e limpo
-    newToggle.addEventListener('change', async (e) => {
-        console.log("🔘 CLIQUE NO TOGGLE DETECTADO! Novo estado:", newToggle.checked);
-        
-        try {
-            await updateDoc(doc(db, "active_providers", uid), { is_online: newToggle.checked });
-            
-            if(newToggle.checked) {
-                const audio = document.getElementById('online-sound');
-                if(audio) audio.play().catch(()=>{});
-            }
-        } catch(err) {
-            console.error("Erro ao mudar status:", err);
-            // Reverte visualmente se der erro
-            newToggle.checked = !newToggle.checked;
-            alert("Erro de conexão ao mudar status.");
-        }
-    });
+    } catch(e) { console.log("Erro sync visual:", e); }
 }
+
+// --- ESCUTADOR GLOBAL DE EVENTOS (A SOLUÇÃO BLINDADA) ---
+// Isso garante que o clique funcione mesmo se o botão for recriado
+document.addEventListener('change', async (e) => {
+    if (e.target && e.target.id === 'online-toggle') {
+        const novoStatus = e.target.checked;
+        const uid = auth.currentUser ? auth.currentUser.uid : null;
+        
+        if(!uid) return;
+
+        console.log("🔘 STATUS ALTERADO PELO USUÁRIO:", novoStatus ? "ON" : "OFF");
+
+        // Feedback sonoro imediato
+        if(novoStatus) {
+            const audio = document.getElementById('online-sound');
+            if(audio) audio.play().catch(()=>{});
+        }
+
+        try {
+            await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
+        } catch(err) {
+            console.error("Erro ao salvar status:", err);
+            // Reverte visualmente se falhar no banco
+            e.target.checked = !novoStatus;
+            alert("Erro de conexão. Tente novamente.");
+        }
+    }
+});
 
 // --- LÓGICA DO PRESTADOR: SERVIÇOS E RADAR ---
 
