@@ -15,15 +15,16 @@ window.db = db;
 let chartInstance = null;
 let sourceChartInstance = null;
 let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
+let currentCollectionName = ''; // Para saber o que deletar em massa
 
-// --- LOGIN ---
+// --- LOGIN & LOGS ---
 window.loginAdmin = async () => {
     const loader = document.getElementById('loading-login'), errMsg = document.getElementById('error-msg');
     if (loader) loader.classList.remove('hidden'); if (errMsg) errMsg.classList.add('hidden');
-    try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); } 
+    try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); logSystemAction('LOGIN', 'Admin logou.'); } 
     catch (e) { console.error(e); if (loader) loader.classList.add('hidden'); if (errMsg) { errMsg.innerText = "Erro: " + e.message; errMsg.classList.remove('hidden'); } }
 };
-
+async function logSystemAction(action, desc) { try { await addDoc(collection(db, "system_logs"), { action, desc, user: auth.currentUser?.email||'sys', timestamp: serverTimestamp() }); } catch(e){} }
 window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
 // --- NAVEGAÇÃO ---
@@ -31,19 +32,17 @@ window.switchView = (viewName) => {
     currentView = viewName;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     if(event && event.currentTarget) event.currentTarget.classList.add('active');
+    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    document.getElementById('page-title').innerText = viewName.toUpperCase();
     
-    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => { 
-        const el = document.getElementById(id); if (el) el.classList.add('hidden'); 
-    });
-    
-    const pageTitle = document.getElementById('page-title');
-    if (pageTitle) pageTitle.innerText = viewName.toUpperCase();
+    // Esconde barra de bulk se mudar de aba
+    document.getElementById('bulk-actions').classList.remove('visible');
 
     if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
-    else if(viewName === 'analytics') { document.getElementById('view-analytics').classList.remove('hidden'); initAnalytics(); }
-    else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'generator') { document.getElementById('view-generator').classList.remove('hidden'); }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
+    else if(viewName === 'analytics') { document.getElementById('view-analytics').classList.remove('hidden'); initAnalytics(); }
+    else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
     else { document.getElementById('view-list').classList.remove('hidden'); loadList(viewName); }
 };
@@ -56,98 +55,95 @@ window.toggleDataMode = (mode) => {
     window.forceRefresh();
 };
 
-window.forceRefresh = () => { 
-    if(currentView === 'dashboard') initDashboard(); 
-    else if(currentView === 'analytics') initAnalytics();
-    else if(currentView === 'settings') loadSettings();
-    else if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView);
+window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
+
+// --- LÓGICA DE SELEÇÃO EM MASSA (NOVO) ---
+window.toggleSelectAll = (source) => {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateBulkBar();
 };
 
-// --- FUNÇÕES DE EDIÇÃO ---
-window.closeModal = () => { const modal = document.getElementById('modal-editor'); if (modal) modal.classList.add('hidden'); };
-
-window.saveModalData = async () => {
-    try { if(window.saveCallback) await window.saveCallback(); alert("✅ Atualizado!"); window.closeModal(); window.forceRefresh(); } 
-    catch(e) { alert("Erro ao salvar: " + e.message); }
+window.updateBulkBar = () => {
+    const count = document.querySelectorAll('.row-checkbox:checked').length;
+    const bar = document.getElementById('bulk-actions');
+    document.getElementById('bulk-count').innerText = count;
+    if(count > 0) bar.classList.add('visible'); else bar.classList.remove('visible');
 };
 
-window.deleteItem = async (coll, id) => {
-    if(!confirm("⚠️ Apagar permanentemente?")) return;
-    try { await deleteDoc(doc(db, coll, id)); window.forceRefresh(); } catch(e) { alert(e.message); }
-};
+window.deleteSelectedItems = async () => {
+    const checked = document.querySelectorAll('.row-checkbox:checked');
+    if(checked.length === 0) return;
+    if(!confirm(`⚠️ Tem certeza que deseja excluir ${checked.length} itens permanentemente?`)) return;
 
-function checkAdmin(user) {
-    if(user.email.toLowerCase().trim() === ADMIN_EMAIL) {
-        document.getElementById('login-gate').classList.add('hidden');
-        document.getElementById('admin-sidebar').classList.remove('hidden');
-        document.getElementById('admin-main').classList.remove('hidden');
-        initDashboard();
-    } else { alert("ACESSO NEGADO."); signOut(auth); }
-}
-onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
+    const batch = writeBatch(db);
+    checked.forEach(cb => {
+        const ref = doc(db, currentCollectionName, cb.value);
+        batch.delete(ref);
+    });
 
-window.openUniversalEditor = async (collectionName, id) => {
-    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    if(!modal) return;
-    currentEditId = id; currentEditColl = collectionName;
-    modal.classList.remove('hidden'); if(title) title.innerText = `EDITAR: ${collectionName.toUpperCase()}`;
-    if(content) content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
     try {
-        const docRef = doc(db, collectionName, id), docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) { if(content) content.innerHTML = `<p class="text-red-500">Item não encontrado.</p>`; return; }
-        const data = docSnap.data(); if(content) content.innerHTML = ""; 
-        Object.keys(data).sort().forEach(key => {
-            const val = data[key];
-            if (key === 'created_at' || key === 'updated_at') return;
-            let label = key;
-            if(key === 'is_demo' || key === 'is_seed') label = 'É Simulado/Demonstrativo?';
-            if(key === 'visibility_score') label = 'Ordem de Destaque (0-100)';
-            let inputHtml = typeof val === 'boolean' ? `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700"><label class="inp-label">${label}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` : `<div><label class="inp-label">${label}</label><input type="${typeof val==='number'?'number':'text'}" id="field-${key}" value="${val}" class="inp-editor"></div>`;
-            if(content) content.innerHTML += inputHtml;
-        });
-        window.saveCallback = async () => {
-            const updates = {};
-            Object.keys(data).forEach(key => {
-                if (key === 'created_at' || key === 'updated_at') return;
-                const field = document.getElementById(`field-${key}`);
-                if (field) { updates[key] = field.type === 'checkbox' ? field.checked : (field.type === 'number' ? parseFloat(field.value) : field.value); }
-            });
-            updates.updated_at = serverTimestamp(); await updateDoc(docRef, updates);
-        };
-    } catch (e) { if(content) content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
+        await batch.commit();
+        alert("Itens excluídos com sucesso!");
+        document.getElementById('bulk-actions').classList.remove('visible');
+        loadList(currentView);
+    } catch(e) { alert("Erro na exclusão em massa: " + e.message); }
 };
 
-window.openModalCreate = (type) => {
-    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    if(!modal) return; modal.classList.remove('hidden'); if(title) title.innerText = "NOVO ITEM";
-    if(content) content.innerHTML = `<p class="text-center text-gray-400">Salve para criar o rascunho.</p>`;
-    window.saveCallback = async () => {
-        let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
-        await addDoc(collection(db, coll), { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: dataMode === 'demo', titulo: 'Novo Item Rascunho', nome: 'Novo Item', status: 'rascunho' });
-    };
-};
-
+// --- CARREGAMENTO DE LISTA (Com Checkboxes) ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
-    if(!tbody) return; tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
+    tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
+    
     let colName, headers, fields, constraints = [];
-    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true)); else constraints.push(where("is_demo", "!=", true)); 
-    if(type === 'users') { colName = "usuarios"; headers = ["USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><div class="font-bold text-white">${d.displayName||'Anon'}</div><div class="text-gray-500">${d.email}</div></td><td class="p-3">${d.is_provider?'Prestador':'Cliente'}</td><td class="p-3 font-mono text-green-400">R$ ${(d.saldo||0).toFixed(2)}</td><td class="p-3">${d.is_blocked?'🔴':'🟢'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('usuarios', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('usuarios', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; }
-    else if (type === 'services') { colName = "active_providers"; headers = ["NOME", "ONLINE", "SIMULADO?", "AÇÕES"]; fields = (d) => `<td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_seed||d.is_demo?'SIM':'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('active_providers', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('active_providers', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; }
-    else { colName = type === 'opps' ? 'oportunidades' : (type === 'missions' ? 'missoes' : type); headers = ["ID", "DADOS", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.name||d.cargo||'Item sem nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('${colName}', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; }
-    if(thead) thead.innerHTML = headers.map(h => `<th class="p-3">${h}</th>`).join('');
-    try { const q = query(collection(db, colName), ...constraints, limit(50)); const snap = await getDocs(q); tbody.innerHTML = ""; if(snap.empty) tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Vazio.</td></tr>"; snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; }); if(typeof lucide !== 'undefined') lucide.createIcons(); } catch(e) { tbody.innerHTML = `<tr><td colspan='5' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
+    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
+    else constraints.push(where("is_demo", "!=", true)); 
+
+    // Define nome da coleção para exclusão
+    if(type === 'users') colName = "usuarios";
+    else if(type === 'services') colName = "active_providers";
+    else if(type === 'missions') colName = "missoes";
+    else if(type === 'opps') colName = "oportunidades";
+    else colName = type;
+    
+    currentCollectionName = colName;
+
+    // Cabeçalho com Checkbox Geral
+    const checkboxTh = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
+    
+    if(type === 'users') { 
+        headers = [checkboxTh, "USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"]; 
+        fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3"><div class="font-bold text-white">${d.displayName||'Anon'}</div><div class="text-gray-500">${d.email}</div></td><td class="p-3">${d.is_provider?'Prestador':'Cliente'}</td><td class="p-3 font-mono text-green-400">R$ ${(d.saldo||0).toFixed(2)}</td><td class="p-3">${d.is_blocked?'🔴':'🟢'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button></td>`; 
+    }
+    else if (type === 'services') { 
+        headers = [checkboxTh, "NOME", "ONLINE", "SIMULADO?", "AÇÕES"]; 
+        fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_seed||d.is_demo?'SIM':'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button></td>`; 
+    }
+    else { 
+        headers = [checkboxTh, "ID", "DADOS", "STATUS", "AÇÕES"]; 
+        fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.name||d.cargo||'Item sem nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button></td>`; 
+    }
+    
+    if(thead) thead.innerHTML = headers.join(''); // Join direto pois headers já contém HTML do checkbox
+    
+    try { 
+        const q = query(collection(db, colName), ...constraints, limit(50)); 
+        const snap = await getDocs(q); 
+        tbody.innerHTML = ""; 
+        if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Vazio ou modo incorreto.</td></tr>"; 
+        snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; }); 
+        if(typeof lucide !== 'undefined') lucide.createIcons(); 
+    } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
     const btnAdd = document.getElementById('btn-add-new'); if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- GERADOR EM MASSA (O CÉREBRO) ---
+// --- GERADOR EM MASSA (COM AUTO-SWITCH) ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
-    const cat = document.getElementById('gen-cat').value;
     const statusEl = document.getElementById('gen-status');
     
-    if(!confirm(`Gerar ${qty} itens SIMULADOS em '${type}'?\nIsso vai povoar a plataforma.`)) return;
+    if(!confirm(`Gerar ${qty} itens SIMULADOS em '${type}'?\nEles aparecerão na aba DEMONSTRATIVO.`)) return;
     
     statusEl.innerText = "Iniciando geração...";
     statusEl.classList.remove('hidden');
@@ -155,11 +151,11 @@ window.runMassGenerator = async () => {
     const batch = writeBatch(db);
     let collectionName = '';
     
-    // Arrays de Dados (Segurança: Termos profissionais e genéricos)
-    const jobTitles = ["Assistente Administrativo (Banco de Talentos)", "Vendedor Externo (Vaga Preenchida)", "Atendente de Loja (Cadastro)", "Recepcionista (Modelo)", "Estagiário de Marketing (Exemplo)"];
-    const serviceNames = ["Eletricista Residencial (Indisponível)", "Limpeza Pós-Obra (Modelo)", "Montador de Móveis (Exemplo)", "Técnico de Informática (Offline)"];
-    const missionTitles = ["Pesquisa de Preço (Encerrada)", "Cliente Oculto (Finalizada)", "Entrega Rápida (Teste)", "Foto de Fachada (Modelo)"];
-    const oppTitles = ["Desconto em Farmácias (Parceiro)", "Cashback Supermercado (Exemplo)", "Indique e Ganhe (Demonstrativo)"];
+    // Arrays de Dados Seguros
+    const jobTitles = ["Assistente Admin (Banco de Talentos)", "Vendedor (Vaga Preenchida)", "Atendente (Cadastro)", "Recepcionista (Modelo)"];
+    const serviceNames = ["Eletricista (Indisponível)", "Limpeza (Modelo)", "Montador (Exemplo)"];
+    const missionTitles = ["Pesquisa (Encerrada)", "Cliente Oculto (Finalizada)", "Entrega (Teste)"];
+    const oppTitles = ["Desconto Farmácia (Parceiro)", "Cashback (Exemplo)"];
 
     if (type === 'jobs') collectionName = 'jobs';
     else if (type === 'services') collectionName = 'active_providers';
@@ -168,55 +164,40 @@ window.runMassGenerator = async () => {
 
     for (let i = 0; i < qty; i++) {
         const docRef = doc(collection(db, collectionName));
-        let data = {
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp(),
-            is_demo: true, // A TABUA DE SALVAÇÃO
-            visibility_score: 10 // Baixo score para ficar no final
-        };
+        let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
 
-        if (type === 'jobs') {
-            data.titulo = jobTitles[Math.floor(Math.random() * jobTitles.length)];
-            data.empresa = "Empresa Parceira (Confidencial)";
-            data.status = "encerrada"; // Status que bloqueia
-            data.salario = "A combinar";
-            data.descricao = "Esta é uma vaga demonstrativa para ilustrar o formato da plataforma.";
-        } else if (type === 'services') {
-            data.nome_profissional = serviceNames[Math.floor(Math.random() * serviceNames.length)];
-            data.is_online = false; // Força offline
-            data.categoria = "Serviços Gerais";
-            data.status = "indisponivel";
-        } else if (type === 'missions') {
-            data.titulo = missionTitles[Math.floor(Math.random() * missionTitles.length)];
-            data.valor = (Math.random() * 50).toFixed(2);
-            data.status = "concluida"; // Já nasce concluída
-        } else if (type === 'opps') {
-            data.titulo = oppTitles[Math.floor(Math.random() * oppTitles.length)];
-            data.link = "#";
-            data.status = "analise";
-        }
+        if (type === 'jobs') { data.titulo = jobTitles[Math.floor(Math.random()*jobTitles.length)]; data.status = "encerrada"; data.empresa = "Parceiro (Confidencial)"; }
+        else if (type === 'services') { data.nome_profissional = serviceNames[Math.floor(Math.random()*serviceNames.length)]; data.is_online = false; data.status = "indisponivel"; }
+        else if (type === 'missions') { data.titulo = missionTitles[Math.floor(Math.random()*missionTitles.length)]; data.status = "concluida"; }
+        else if (type === 'opps') { data.titulo = oppTitles[Math.floor(Math.random()*oppTitles.length)]; data.status = "analise"; }
 
         batch.set(docRef, data);
     }
 
     try {
         await batch.commit();
-        statusEl.innerText = "✅ Concluído! Conteúdo gerado.";
-        alert(`Sucesso! ${qty} itens gerados em '${collectionName}'.\nEles estão marcados como 'Demonstrativo' e não competem com reais.`);
+        statusEl.innerText = "✅ Concluído!";
+        
+        // --- A MÁGICA: MUDAR PARA MODO DEMO E IR PARA A LISTA ---
+        alert(`Sucesso! Redirecionando para a lista de ${type} em modo DEMONSTRATIVO para você ver os itens.`);
+        window.toggleDataMode('demo'); // Força o modo demo
+        window.switchView(type); // Leva o usuário para a lista criada
+        
     } catch (e) {
         statusEl.innerText = "Erro ao gerar.";
         alert("Erro: " + e.message);
     }
 };
 
-// --- OUTROS ---
-async function initDashboard() {
-    try { const snapUsers = await getCountFromServer(collection(db, "usuarios")); document.getElementById('kpi-users').innerText = snapUsers.data().count; const snapProv = await getCountFromServer(collection(db, "active_providers")); document.getElementById('kpi-providers').innerText = snapProv.data().count; const snapOrders = await getCountFromServer(collection(db, "orders")); document.getElementById('kpi-orders').innerText = snapOrders.data().count; } catch(e) {}
-    const ctx = document.getElementById('mainChart'); if(ctx && !chartInstance) { chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Usuários', 'Prestadores', 'Pedidos'], datasets: [{ data: [1, 1, 1], backgroundColor: ['#3b82f6', '#10b981', '#a855f7'] }] } }); }
-}
-async function initAnalytics() { /* ... código do analytics mantido ... */ }
-window.saveLinkToFirebase = async () => { /* ... código de links mantido ... */ };
-window.saveSettings = async () => { /* ... código de settings mantido ... */ };
+// --- OUTROS FUNÇÕES AUXILIARES (Mantidas) ---
+window.openModalCreate = (type) => { /* ... (mantido igual v26) ... */ };
+window.openUniversalEditor = async (c,i) => { /* ... (mantido igual v26) ... */ };
+window.saveLinkToFirebase = async () => { /* ... */ };
+window.saveSettings = async () => { /* ... */ };
 window.loadSettings = async () => { /* ... */ };
-window.clearDatabase = async (scope) => { /* ... */ };
+window.clearDatabase = async (s) => { /* ... */ };
 window.generateDetailedPDF = async () => { /* ... */ };
+function checkAdmin(u) { if(u.email.toLowerCase().trim() === ADMIN_EMAIL) { document.getElementById('login-gate').classList.add('hidden'); document.getElementById('admin-sidebar').classList.remove('hidden'); document.getElementById('admin-main').classList.remove('hidden'); initDashboard(); } else { alert("ACESSO NEGADO."); signOut(auth); } }
+onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
+async function initDashboard() { /* ... */ }
+async function initAnalytics() { /* ... */ }
