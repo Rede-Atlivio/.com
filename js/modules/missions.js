@@ -1,175 +1,57 @@
-import { db, storage, auth } from '../app.js';
-import { userProfile } from '../auth.js';
-import { collection, query, where, getDocs, doc, getDoc, addDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { db } from '../app.js';
+import { collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let missaoAtualId = null;
-let arquivoParaEnvio = null;
-let currentLat = null, currentLng = null;
+export function carregarMissoes() {
+    const container = document.getElementById('lista-missoes');
+    if(!container) return;
 
-// GATILHO DE CLIQUE NA ABA (Resposta Imediata)
-const tabMissoes = document.getElementById('tab-missoes');
-if(tabMissoes) {
-    tabMissoes.addEventListener('click', () => {
-        carregarMissoes(true); // true = força o visual de carregamento
+    container.innerHTML = `<div class="text-center py-6"><div class="loader mx-auto mb-2 border-blue-200 border-t-blue-600"></div></div>`;
+
+    const q = query(collection(db, "missoes"), orderBy("visibility_score", "desc"));
+
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        if (snap.empty) { container.innerHTML = `<div class="text-center text-gray-400 text-xs">Sem missões na área.</div>`; return; }
+
+        snap.forEach(d => {
+            const m = d.data();
+            const isDemo = m.is_demo === true;
+            
+            // Lógica Visual de Status
+            let statusBadge = "";
+            let btnState = "";
+            let opacity = "";
+
+            if (m.status === 'concluida' || m.titulo.includes("(Concluída)")) {
+                statusBadge = `<span class="text-green-600 font-bold text-[9px] bg-green-50 px-2 py-1 rounded border border-green-100">✅ Concluída</span>`;
+                btnState = "disabled class='bg-gray-200 text-gray-400 px-4 py-2 rounded-lg text-[9px] font-bold uppercase cursor-not-allowed'";
+                opacity = "opacity-75";
+            } else if (m.titulo.includes("(Coletando)")) {
+                statusBadge = `<span class="text-blue-600 font-bold text-[9px] bg-blue-50 px-2 py-1 rounded border border-blue-100">📸 Coletando</span>`;
+                btnState = "onclick='alert(\"Missão em andamento por outro agente.\")' class='bg-blue-600 text-white px-4 py-2 rounded-lg text-[9px] font-bold uppercase'";
+            } else if (m.titulo.includes("(Esgotada)")) {
+                statusBadge = `<span class="text-red-600 font-bold text-[9px] bg-red-50 px-2 py-1 rounded border border-red-100">🔒 Esgotada</span>`;
+                btnState = "disabled class='bg-gray-200 text-gray-400 px-4 py-2 rounded-lg text-[9px] font-bold uppercase'";
+                opacity = "opacity-60";
+            } else {
+                // Padrão (Demo segura)
+                statusBadge = `<span class="text-gray-500 font-bold text-[9px] bg-gray-100 px-2 py-1 rounded">👁️ Exemplo</span>`;
+                btnState = "onclick='alert(\"Modo Demonstração: Esta missão serve para ilustrar o formato de ganho.\")' class='bg-gray-700 text-white px-4 py-2 rounded-lg text-[9px] font-bold uppercase'";
+            }
+
+            container.innerHTML += `
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm animate-fadeIn flex justify-between items-center ${opacity}">
+                    <div>
+                        <div class="mb-1">${statusBadge}</div>
+                        <h3 class="font-black text-xs text-gray-800 uppercase">${m.titulo}</h3>
+                        <p class="text-[10px] text-green-600 font-bold">Recompensa: R$ ${m.valor || '0,00'}</p>
+                    </div>
+                    <button ${btnState}>Ver</button>
+                </div>
+            `;
+        });
     });
 }
 
-// INICIALIZAÇÃO
-setTimeout(() => {
-    const sec = document.getElementById('sec-missoes');
-    if(sec && !sec.classList.contains('hidden')) carregarMissoes();
-}, 1500);
-
-export async function carregarMissoes(forcarLoading = false) {
-    const container = document.getElementById('lista-missoes');
-    if(!container) return;
-    
-    // 1. VISUAL DE CARREGAMENTO (RADAR + SPINNER)
-    // Se forçar loading ou se o container estiver vazio, mostra o load
-    if (forcarLoading || container.innerHTML.trim() === "") {
-        container.innerHTML = `
-            <div class="text-center py-6 bg-blue-50 rounded-xl border border-blue-100 mb-4 animate-fadeIn">
-                <div class="loader mx-auto mb-3 border-blue-200 border-t-blue-600"></div>
-                <p class="text-xs font-bold text-blue-900 mt-1 uppercase">Radar Ligado</p>
-                <p class="text-[9px] text-gray-500">Buscando micro tarefas...</p>
-            </div>
-        `;
-    }
-    
-    if(!userProfile) return;
-
-    // 2. BUSCA DADOS
-    const q = query(collection(db, "missoes"), where("tenant_id", "==", userProfile.tenant_id), where("status", "==", "aberto"));
-    const snap = await getDocs(q);
-    
-    // 3. RENDERIZA RESULTADO (MANTENDO O RADAR NO TOPO)
-    // Cabeçalho fixo do Radar
-    const radarHeader = `
-        <div class="text-center py-4 bg-blue-50 rounded-xl border border-blue-100 mb-4">
-            <p class="text-3xl animate-pulse">📡</p>
-            <p class="text-xs font-bold text-blue-900 mt-1">Radar Ligado</p>
-            <p class="text-[9px] text-gray-500">Monitorando região...</p>
-        </div>
-    `;
-
-    if(snap.empty) { 
-        container.innerHTML = radarHeader + `<div class="text-center py-4 text-gray-400 text-xs animate-fadeIn"><p>Nenhuma tarefa encontrada agora.</p></div>`; 
-    } else {
-        let listaHTML = "";
-        snap.forEach(d => {
-            const m = d.data();
-            let btnAction = userProfile.is_provider 
-                ? `<button onclick="iniciarMissao('${d.id}')" class="w-full bg-blue-600 text-white py-3 rounded-xl font-black text-[10px] uppercase italic shadow-md hover:bg-blue-700 transition">📷 Capturar (R$ ${m.recompensa})</button>`
-                : `<div class="w-full bg-gray-50 text-gray-400 py-3 rounded-xl font-bold text-[9px] text-center italic border border-gray-100">Exclusivo para Coletores</div>`;
-            
-            listaHTML += `
-                <div class="bg-white p-5 rounded-2xl border-l-4 border-blue-900 shadow-sm mb-4 animate-fadeIn">
-                    <div class="flex justify-between items-start mb-3">
-                        <h3 class="font-black text-blue-900 text-sm uppercase italic leading-tight max-w-[75%]">${m.titulo}</h3>
-                        <span class="bg-green-100 text-green-700 px-2 py-1 rounded-md font-black text-[10px]">R$ ${m.recompensa}</span>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mb-4">${m.descricao}</p>
-                    ${btnAction}
-                </div>`;
-        });
-        container.innerHTML = radarHeader + listaHTML;
-    }
-}
-
-window.iniciarMissao = (id) => {
-    missaoAtualId = id;
-    document.getElementById('camera-input').click();
-};
-
-window.mostrarPreview = (input) => {
-    if (input.files && input.files[0]) {
-        arquivoParaEnvio = input.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('img-preview').src = e.target.result;
-            document.getElementById('preview-modal').classList.remove('hidden');
-            buscarGPS();
-        }
-        reader.readAsDataURL(arquivoParaEnvio);
-        input.value = '';
-    }
-};
-
-function buscarGPS() {
-    const btn = document.getElementById('btn-confirmar-foto');
-    const status = document.getElementById('gps-status');
-    
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (p) => {
-                currentLat = p.coords.latitude;
-                currentLng = p.coords.longitude;
-                status.innerText = `✅ GPS Fixado: ${p.coords.accuracy.toFixed(0)}m`;
-                status.classList.replace('text-yellow-400', 'text-green-400');
-                btn.innerText = "✅ ENVIAR PROVA";
-                btn.disabled = false;
-                btn.classList.replace('bg-gray-500', 'bg-green-500');
-                btn.classList.remove('cursor-not-allowed', 'opacity-50');
-            },
-            (e) => { status.innerText = "⚠️ Erro no GPS."; },
-            { enableHighAccuracy: true }
-        );
-    }
-}
-
-window.cancelarPreview = () => {
-    document.getElementById('preview-modal').classList.add('hidden');
-    arquivoParaEnvio = null;
-};
-
-window.enviarFotoReal = async (event) => {
-    if(event) event.preventDefault();
-    document.getElementById('preview-modal').classList.add('hidden');
-    document.getElementById('upload-overlay').classList.remove('hidden');
-    
-    try {
-        if(!arquivoParaEnvio) throw new Error("Sem foto.");
-        const timestamp = new Date().getTime();
-        const refStorage = ref(storage, `provas/${userProfile.tenant_id}/${auth.currentUser.uid}/${timestamp}.jpg`);
-        
-        const snap = await uploadBytes(refStorage, arquivoParaEnvio);
-        const url = await getDownloadURL(snap.ref);
-        const docMissao = await getDoc(doc(db, "missoes", missaoAtualId));
-        
-        const assignmentRef = await addDoc(collection(db, "mission_assignments"), {
-            mission_id: missaoAtualId,
-            mission_title: docMissao.data().titulo,
-            profile_id: auth.currentUser.uid,
-            profile_email: auth.currentUser.email,
-            photo_url: url,
-            valor_bruto: parseFloat(docMissao.data().recompensa.replace(',', '.')),
-            status: "submitted",
-            submitted_at: serverTimestamp(),
-            tenant_id: userProfile.tenant_id,
-            gps_lat: currentLat, gps_lng: currentLng
-        });
-
-        await setDoc(doc(db, "chats", assignmentRef.id), {
-            assignment_id: assignmentRef.id,
-            mission_title: docMissao.data().titulo,
-            participants: [auth.currentUser.uid, "ADMIN"], 
-            last_message: "Prova enviada.",
-            updated_at: serverTimestamp()
-        });
-
-        alert("✅ Micro Tarefa Enviada!");
-    } catch (e) { alert("Erro: " + e.message); } 
-    finally { document.getElementById('upload-overlay').classList.add('hidden'); }
-};
-
-// AUTO-LOAD SILENCIOSO (SÓ RODA SE A ABA ESTIVER VISÍVEL)
-setInterval(() => { 
-    const sec = document.getElementById('sec-missoes');
-    if(sec && !sec.classList.contains('hidden')) carregarMissoes(false); 
-}, 15000);
-
-const camInput = document.getElementById('camera-input');
-if(camInput) {
-    camInput.addEventListener('change', function() { window.mostrarPreview(this); });
-}
+const tabMissions = document.getElementById('tab-missoes');
+if(tabMissions) tabMissions.addEventListener('click', carregarMissoes);
