@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, serverTimestamp, doc, updateDoc, increment, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { userProfile } from './auth.js'; // Importa perfil para saber se é prestador/cliente
+import { userProfile } from './auth.js'; 
 
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
@@ -19,55 +19,66 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// --- 1. GESTÃO DE SESSÃO ---
+// --- 1. SESSÃO (Gerar ID para visitantes) ---
 let sessionId = sessionStorage.getItem('atlivio_session');
 if (!sessionId) {
     sessionId = crypto.randomUUID();
     sessionStorage.setItem('atlivio_session', sessionId);
 }
 
-// --- 2. LOG DE INTELIGÊNCIA (Enriquecido) ---
-export async function logEvent(eventName, details = {}) {
-    try {
-        const user = auth.currentUser;
+// --- 2. SENSOR DE LINKS (Rastreio) ---
+(async function checkTracking() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const trackId = urlParams.get('trk');
+
+    if (trackId) {
+        console.log("📡 Link Detectado:", trackId);
+        // Salva intenção de navegação
+        try {
+            const linkRef = doc(db, "tracked_links", trackId);
+            const linkSnap = await getDoc(linkRef);
+            
+            if(linkSnap.exists()) {
+                const data = linkSnap.data();
+                sessionStorage.setItem('target_tab', data.target_tab);
+                logEvent("TRAFFIC_SOURCE", { slug: trackId, source: data.source });
+                updateDoc(linkRef, { clicks: increment(1) }).catch(()=>{});
+            }
+        } catch(e) { console.error(e); }
         
-        // Contexto Automático
-        const context = {
-            event: eventName,
-            user_id: user ? user.uid : 'anonimo',
-            user_email: user ? user.email : 'anonimo',
-            profile_type: userProfile ? (userProfile.is_provider ? 'prestador' : 'cliente') : 'visitante',
-            session_id: sessionId,
-            screen: document.querySelector('.active')?.innerText || 'home', // Tenta pegar aba ativa
-            source: details.source || "organic",
-            details: details,
-            timestamp: serverTimestamp(),
-            is_test: window.location.hostname.includes('localhost')
-        };
+        // Limpa URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+})();
 
-        // 1. Salva o Evento no Log Geral
-        await addDoc(collection(db, "system_events"), context);
+// --- 3. FUNÇÃO DE LOG (O CORAÇÃO DO RASTREIO) ---
+export async function logEvent(eventName, details = {}) {
+    const user = auth.currentUser;
+    const isTest = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1');
 
-        // 2. Incrementa Estatísticas do Usuário (Se logado)
-        if (user) {
-            const statsRef = doc(db, "usuarios", user.uid);
-            // Atualiza estatísticas sem sobrescrever o doc
-            updateDoc(statsRef, {
-                "stats.events_count": increment(1),
-                "stats.last_active": serverTimestamp()
-            }).catch(() => {}); // Ignora erro se doc não existir ainda
-        }
+    const payload = {
+        event: eventName,
+        user_id: user ? user.uid : 'visitante',
+        user_email: user ? user.email : 'anonimo',
+        profile_type: userProfile ? (userProfile.is_provider ? 'prestador' : 'cliente') : 'visitante',
+        session_id: sessionId,
+        source: details.source || "organic",
+        details: details,
+        is_test: isTest, // MODO TESTE AUTOMÁTICO
+        timestamp: serverTimestamp()
+    };
 
+    try {
+        await addDoc(collection(db, "system_events"), payload);
+        console.log(`📡 Evento Enviado: ${eventName}`, payload);
     } catch (e) {
-        console.error("Silent Log Error:", e);
+        console.error("❌ Erro ao logar evento:", e);
     }
 }
 
 // Exposição Global
 window.auth = auth;
 window.db = db;
-window.storage = storage;
-window.provider = provider;
 window.logEvent = logEvent;
 
 export { app, auth, db, storage, provider };
