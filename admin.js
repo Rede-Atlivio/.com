@@ -185,53 +185,69 @@ async function loadList(type) {
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MASS GENERATOR (CORRIGIDO: SEM POLUIÇÃO VISUAL) ---
+// --- MASS GENERATOR (VERSÃO ROBUSTA E VARIADA) ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
     const statusEl = document.getElementById('gen-status');
+    
     if(!confirm(`Gerar ${qty} itens SIMULADOS?`)) return;
     statusEl.innerText = "Gerando..."; statusEl.classList.remove('hidden');
+    
     const batch = writeBatch(db);
     let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
 
-    // --- AQUI ESTAVA O "ERRO": removi os textos entre parênteses ---
+    // --- MODELOS DE DADOS RICOS E VARIADOS ---
+    // Isso evita o erro 'undefined' e cria variedade visual
     const oppsRich = [
-        {title: "Alerta Promocional iFood", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
-        {title: "Cashback Supermercado", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}
+        {title: "Cupom R$ 20,00 iFood", desc: "Desconto para primeira compra no app.", type: "alerta", badge: "🔴 Alerta"},
+        {title: "Cashback 5% Amazon", desc: "Dinheiro de volta em eletrônicos.", type: "cashback", badge: "🟢 Cashback"},
+        {title: "Uber - 2 Viagens Grátis", desc: "Use o código promocional para novos usuários.", type: "alerta", badge: "🔴 Alerta"},
+        {title: "Indique e Ganhe TikTok", desc: "Ganhe R$ 50,00 por amigo indicado.", type: "cashback", badge: "💰 Renda Extra"},
+        {title: "Desconto Farmácia Pague Menos", desc: "15% off em medicamentos genéricos.", type: "alerta", badge: "💊 Saúde"}
     ];
-    const jobsRich = ["Vendedor", "Atendente", "Estoquista", "Recepcionista"];
+
+    const jobsRich = ["Vendedor de Loja", "Atendente de SAC", "Estoquista", "Recepcionista", "Auxiliar Administrativo", "Motorista Particular"];
     
+    const servicesRich = ["Montador de Móveis", "Eletricista Residencial", "Diarista", "Técnico de Informática", "Pedreiro"];
+
     for(let i=0; i<qty; i++) {
         const docRef = doc(collection(db, collectionName));
         let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
         
         if(type === 'opps') {
-            const item = oppsRich[Math.floor(Math.random()*oppsRich.length)];
+            // Garante que o índice existe usando módulo (%)
+            const item = oppsRich[i % oppsRich.length]; 
             data.titulo = item.title; 
             data.descricao = item.desc; 
-            data.tipo_visual = item.type; // Mantive para compatibilidade
-            data.tipo = item.type;        // Campo correto usado pelo frontend novo
+            data.tipo = item.type; // Campo correto usado pelo sistema
             data.status = "analise"; 
             data.link = "#";
         } else if (type === 'jobs') {
-            // Removido o "(Banco de Talentos)" do título
-            data.titulo = `${jobsRich[Math.floor(Math.random()*jobsRich.length)]}`;
+            data.titulo = jobsRich[i % jobsRich.length];
             data.status = "encerrada"; 
-            data.empresa = "Parceiro"; 
+            data.empresa = "Parceiro Atlivio"; 
             data.salario = "A combinar";
+            data.descricao = "Vaga demonstrativa para testes da plataforma.";
         } else if (type === 'services') {
-            data.nome_profissional = "Profissional Modelo"; 
-            data.is_online = false; 
-            data.status = "indisponivel";
+            data.nome_profissional = servicesRich[i % servicesRich.length]; 
+            data.is_online = true; // Para aparecer na busca
+            data.status = "disponivel";
+            data.services = [{category: "Geral", price: 100, description: "Serviço padrão"}];
         } else {
-            data.titulo = "Missão Teste"; 
+            data.titulo = `Missão Teste #${i+1}`; 
             data.status = "concluida"; 
             data.valor = "10.00";
         }
         batch.set(docRef, data);
     }
-    await batch.commit(); statusEl.innerText = "✅ Feito!"; window.toggleDataMode('demo'); window.switchView(type);
+    await batch.commit(); 
+    statusEl.innerText = "✅ Feito!"; 
+    window.toggleDataMode('demo'); 
+    window.switchView(type);
+    
+    // Força recarregamento da lista para limpar "fantasmas"
+    setTimeout(() => window.forceRefresh(), 500);
 };
 
 // --- OUTROS ---
