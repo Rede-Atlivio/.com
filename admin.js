@@ -12,12 +12,11 @@ const SITE_URL = "https://rede-atlivio.github.io/painel-financeiro-borges";
 
 window.auth = auth;
 window.db = db;
-let chartInstance = null;
-let currentView = 'dashboard', dataMode = 'real';
+let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
 let currentCollectionName = '';
 
 // --- LOGIN ---
-window.loginAdmin = async () => { try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); } catch (e) { document.getElementById('error-msg').innerText = e.message; document.getElementById('error-msg').classList.remove('hidden'); } };
+window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
 window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
 // --- NAVEGAÇÃO ---
@@ -31,7 +30,6 @@ window.switchView = (viewName) => {
     else if(viewName === 'generator') { document.getElementById('view-generator').classList.remove('hidden'); }
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
-    else if(viewName === 'analytics') { document.getElementById('view-analytics').classList.remove('hidden'); initAnalytics(); }
     else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
     else { document.getElementById('view-list').classList.remove('hidden'); loadList(viewName); }
 };
@@ -46,168 +44,206 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- CORREÇÃO DO BOTÃO + NOVO (IMPORTANTE) ---
+// --- NOVO SISTEMA DE CRIAÇÃO (DIRETO E SEM TRAVAS) ---
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    if(!modal) return; 
-    modal.classList.remove('hidden'); 
-    if(title) title.innerText = "CRIAR NOVO ITEM";
-    if(content) content.innerHTML = `<p class="text-center text-gray-400 text-xs">Clique em SALVAR para criar o rascunho inicial.</p>`;
-    
-    window.saveCallback = async () => {
-        // Mapeamento Correto
-        let coll = type;
-        if (type === 'users') coll = 'usuarios';
-        else if (type === 'services') coll = 'active_providers';
-        else if (type === 'missions') coll = 'missoes';
-        else if (type === 'opps') coll = 'oportunidades';
-        else if (type === 'jobs') coll = 'jobs';
+    modal.classList.remove('hidden');
+    title.innerText = "CRIAR NOVO ITEM";
+    content.innerHTML = ""; // Limpa
 
-        await addDoc(collection(db, coll), { 
-            created_at: serverTimestamp(), 
-            updated_at: serverTimestamp(), 
-            is_demo: dataMode === 'demo', 
-            titulo: 'Novo Item (Rascunho)', 
-            nome: 'Novo Item', 
-            status: 'rascunho',
-            visibility_score: 100 // Manual tem prioridade
+    // Campos Padrão para Preencher
+    const fields = [
+        { key: 'titulo', label: 'Título / Nome', type: 'text' },
+        { key: 'descricao', label: 'Descrição', type: 'text' },
+        { key: 'status', label: 'Status (ativo/inativo)', type: 'text', val: 'ativo' },
+        { key: 'is_demo', label: 'É Demonstração?', type: 'checkbox', val: dataMode === 'demo' }
+    ];
+
+    if(type === 'jobs') fields.push({ key: 'salario', label: 'Salário', type: 'text' });
+    if(type === 'missions' || type === 'services') fields.push({ key: 'valor', label: 'Valor (R$)', type: 'number' });
+    if(type === 'opps') fields.push({ key: 'link', label: 'Link Externo', type: 'text' });
+
+    // Renderiza Formulário Vazio
+    fields.forEach(f => {
+        let inputHtml = f.type === 'checkbox' ? 
+            `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
+            `<div class="mb-2"><label class="inp-label">${f.label}</label><input type="${f.type}" id="new-${f.key}" value="${f.val||''}" class="inp-editor"></div>`;
+        content.innerHTML += inputHtml;
+    });
+
+    // Ação de Salvar (Cria Direto no Banco)
+    window.saveCallback = async () => {
+        let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
+        
+        const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp() };
+        fields.forEach(f => {
+            const el = document.getElementById(`new-${f.key}`);
+            if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value);
         });
+        
+        // Ajuste de campos específicos
+        if(newData.titulo) newData.nome = newData.titulo; 
+        if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
+
+        await addDoc(collection(db, coll), newData);
     };
 };
 
-// --- GERADOR EM MASSA INTELIGENTE (CORRIGIDO) ---
-window.runMassGenerator = async () => {
-    const type = document.getElementById('gen-type').value;
-    const qty = parseInt(document.getElementById('gen-qty').value);
-    const statusEl = document.getElementById('gen-status');
+// --- EDITOR UNIVERSAL (EDITION) ---
+window.openUniversalEditor = async (collectionName, id) => {
+    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
+    currentEditId = id; currentEditColl = collectionName;
+    modal.classList.remove('hidden'); title.innerText = "EDITAR ITEM";
+    content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
     
-    if(!confirm(`Gerar ${qty} itens SIMULADOS na aba '${type}'?`)) return;
+    try {
+        const docSnap = await getDoc(doc(db, collectionName, id));
+        if (!docSnap.exists()) return;
+        const data = docSnap.data(); content.innerHTML = ""; 
+        
+        Object.keys(data).sort().forEach(key => {
+            const val = data[key];
+            if (key === 'created_at' || key === 'updated_at') return;
+            let inputHtml = typeof val === 'boolean' ? 
+                `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${key}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
+                `<div class="mb-2"><label class="inp-label">${key}</label><input type="${typeof val==='number'?'number':'text'}" id="field-${key}" value="${val}" class="inp-editor"></div>`;
+            content.innerHTML += inputHtml;
+        });
+
+        window.saveCallback = async () => {
+            const updates = { updated_at: serverTimestamp() };
+            Object.keys(data).forEach(key => {
+                if (key === 'created_at' || key === 'updated_at') return;
+                const field = document.getElementById(`field-${key}`);
+                if (field) updates[key] = field.type === 'checkbox' ? field.checked : (field.type === 'number' ? parseFloat(field.value) : field.value);
+            });
+            await updateDoc(doc(db, collectionName, id), updates);
+        };
+    } catch (e) { alert(e.message); }
+};
+
+window.saveModalData = async () => {
+    try { if(window.saveCallback) await window.saveCallback(); alert("✅ Salvo!"); window.closeModal(); window.forceRefresh(); } 
+    catch(e) { alert("Erro: " + e.message); }
+};
+
+// --- GERADOR DE LINKS (REFEITO IGUAL SNIPER) ---
+window.saveLinkToFirebase = async () => {
+    const idInput = document.getElementById('linkName');
+    let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
     
-    statusEl.innerText = "Gerando dados ricos..."; statusEl.classList.remove('hidden');
-    const batch = writeBatch(db);
-    let collectionName = '';
+    if(!id) return alert("Digite um nome para o link.");
+    
+    // Atualiza o input visualmente
+    idInput.value = id;
 
-    // 1. LISTA RICA DE OPORTUNIDADES (Com Tipos e Cores)
-    const oppsRichList = [
-        { title: "Alerta Promocional iFood (Exemplo)", type: "alerta", desc: "Cupom especial identificado por tempo limitado.", badge: "🔴 Alerta" },
-        { title: "Cashback Supermercado (Modelo)", type: "cashback", desc: "Receba parte do valor de volta em compras essenciais.", badge: "🟢 Cashback" },
-        { title: "Indique e Ganhe (Demonstrativo)", type: "indique", desc: "Convide amigos e receba bônus na carteira.", badge: "🔵 Indicação" },
-        { title: "Pesquisa Remunerada (Simulação)", type: "pesquisa", desc: "Responda perguntas simples sobre marcas e ganhe.", badge: "🟡 Pesquisa" },
-        { title: "Erro de Preço Monitor (Exemplo)", type: "alerta", desc: "Diferença de valor detectada em lote promocional.", badge: "🟣 Monitor" },
-        { title: "Teste Grátis Streaming (Modelo)", type: "promo", desc: "30 dias gratuitos para novos cadastros.", badge: "⚪ Promo" }
-    ];
+    const source = document.getElementById('utmSource').value || 'direct';
+    const isTest = document.getElementById('is-test-link').checked;
+    
+    // URL Simples e Direta
+    const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
-    // 2. LISTA RICA DE MISSÕES (Com Status Variados)
-    const missionRichList = [
-        { title: "Fotografar Fachada (Coletando)", status: "em_andamento" },
-        { title: "Pesquisa de Preço (Vagas Cheias)", status: "esgotada" },
-        { title: "Cliente Oculto (Concluída)", status: "concluida" },
-        { title: "Validar Endereço (Encerrada)", status: "encerrada" },
-        { title: "Gravar Vídeo Curto (Em Análise)", status: "analise" }
-    ];
-
-    if (type === 'jobs') collectionName = 'jobs';
-    else if (type === 'services') collectionName = 'active_providers';
-    else if (type === 'missions') collectionName = 'missoes';
-    else if (type === 'opps') collectionName = 'oportunidades';
-
-    for (let i = 0; i < qty; i++) {
-        const docRef = doc(collection(db, collectionName));
-        let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
-
-        if (type === 'opps') {
-            const item = oppsRichList[Math.floor(Math.random() * oppsRichList.length)];
-            data.titulo = item.title;
-            data.descricao = item.desc; // Previne undefined
-            data.tipo_visual = item.type; // Para cor do ícone
-            data.badge_text = item.badge;
-            data.status = "analise";
-            data.link = "#";
-            data.cta_text = "Ver detalhes"; // Previne undefined no botão
-        } 
-        else if (type === 'missions') {
-            const item = missionRichList[Math.floor(Math.random() * missionRichList.length)];
-            data.titulo = item.title; // Já vem com o status no nome para clareza
-            data.status = "concluida"; // Status técnico seguro
-            data.valor = (Math.random() * 30).toFixed(2);
-            data.descricao = "Missão demonstrativa para compor o histórico da região.";
-        }
-        else if (type === 'services') {
-            // Mantido o anterior que estava bom
-            const profissoes = ["Eletricista", "Encanador", "Jardineiro", "Manicure", "Montador"];
-            const statusServ = ["(Indisponível)", "(Agenda Cheia)", "(Offline)"];
-            data.nome_profissional = `${profissoes[Math.floor(Math.random()*profissoes.length)]} ${statusServ[Math.floor(Math.random()*statusServ.length)]}`;
-            data.is_online = false;
-            data.status = "indisponivel";
-        } 
-        else if (type === 'jobs') {
-            const vagas = ["Vendedor", "Atendente", "Auxiliar", "Estoquista"];
-            const stVaga = ["(Preenchida)", "(Encerrada)", "(Banco de Talentos)"];
-            data.titulo = `${vagas[Math.floor(Math.random()*vagas.length)]} ${stVaga[Math.floor(Math.random()*stVaga.length)]}`;
-            data.status = "encerrada";
-            data.empresa = "Parceiro Confidencial";
-            data.salario = "A combinar";
-            data.descricao = "Vaga demonstrativa.";
-        }
-
-        batch.set(docRef, data);
+    try {
+        // Gravação direta sem frescura
+        await setDoc(doc(db, "short_links", id), {
+            target: finalLink,
+            source: source,
+            is_test: isTest,
+            clicks: 0,
+            created_at: serverTimestamp()
+        });
+        
+        document.getElementById('finalLinkDisplay').innerText = finalLink;
+        document.getElementById('link-result').classList.remove('hidden');
+        alert("✅ Link Gerado e Salvo!");
+        
+    } catch(e) { 
+        console.error(e);
+        alert("Erro no Firebase: " + e.message); 
     }
-
-    try { await batch.commit(); statusEl.innerText = "✅ Feito!"; window.toggleDataMode('demo'); window.switchView(type); } 
-    catch (e) { alert("Erro: " + e.message); }
 };
 
-// --- OUTRAS FUNÇÕES (Mantidas do v29.0) ---
-window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
-window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
-window.deleteSelectedItems = async () => {
-    const checked = document.querySelectorAll('.row-checkbox:checked');
-    if(!confirm(`Excluir ${checked.length} itens?`)) return;
-    const batch = writeBatch(db);
-    checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value)));
-    await batch.commit();
-    document.getElementById('bulk-actions').classList.remove('visible');
-    loadList(currentView);
-};
-
-// --- LIST LOADING (Universal Fix) ---
+// --- LISTAGEM ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
     tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
     
-    let colName, headers, fields, constraints = [];
-    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true)); else constraints.push(where("is_demo", "!=", true)); 
-
-    if(type === 'users') colName = "usuarios";
-    else if(type === 'services') colName = "active_providers";
-    else if(type === 'missions') colName = "missoes";
-    else if(type === 'opps') colName = "oportunidades";
-    else colName = type; 
-    
+    let colName = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
     currentCollectionName = colName;
-    const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
+    
+    let constraints = [];
+    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
+    else constraints.push(where("is_demo", "!=", true)); 
 
-    // Campos universais para evitar erro visual
-    if(type === 'users') { headers = [chk, "USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3"><div class="font-bold text-white">${d.displayName||'Anon'}</div><div class="text-gray-500">${d.email}</div></td><td class="p-3">${d.is_provider?'Prestador':'Cliente'}</td><td class="p-3">R$ ${(d.saldo||0).toFixed(2)}</td><td class="p-3">${d.is_blocked?'🔴':'🟢'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
-    else if (type === 'services') { headers = [chk, "NOME", "ONLINE", "DEMO?", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_seed||d.is_demo?'SIM':'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
-    else { headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.name||'Item'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`; }
+    const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
+    let headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"];
+    let fields = (d) => `<td class="p-3"><input type="checkbox" class="chk-custom row-checkbox" value="${d.id}" onclick="window.updateBulkBar()"></td><td class="p-3 text-xs text-gray-500">${d.id.substring(0,6)}</td><td class="p-3 font-bold text-white">${d.titulo||d.nome||d.nome_profissional||'Sem Nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')">✏️</button></td>`;
+
+    if(type === 'users') { headers = [chk, "NOME", "TIPO", "SALDO", "STATUS", "AÇÕES"]; }
     
     if(thead) thead.innerHTML = headers.join('');
-    try { const q = query(collection(db, colName), ...constraints, limit(50)); const snap = await getDocs(q); tbody.innerHTML = ""; if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Nenhum item encontrado neste modo.</td></tr>"; snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5">${fields(d)}</tr>`; }); } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
     
-    // RECONECTAR O BOTÃO ADD NEW AO MUDAR DE ABA
+    try {
+        const q = query(collection(db, colName), ...constraints, limit(50));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
+        if(snap.empty) tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Vazio.</td></tr>";
+        snap.forEach(docSnap => { 
+            const d = { id: docSnap.id, ...docSnap.data() }; 
+            tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; 
+        });
+    } catch(e) { tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro: ${e.message}</td></tr>`; }
+    
     const btnAdd = document.getElementById('btn-add-new'); 
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// ... Restante das funções (universal editor, save link, etc.) mantidas iguais ...
-window.openUniversalEditor = async (c,i) => { /*...igual v29...*/ };
-window.saveLinkToFirebase = async () => { /*...igual v29...*/ };
-window.saveSettings = async () => { /*...*/ };
-window.loadSettings = async () => { /*...*/ };
-window.clearDatabase = async (s) => { /*...*/ };
-window.generateDetailedPDF = async () => { /*...*/ };
+// --- MASS GENERATOR (MANTIDO E FUNCIONAL) ---
+window.runMassGenerator = async () => {
+    const type = document.getElementById('gen-type').value;
+    const qty = parseInt(document.getElementById('gen-qty').value);
+    const statusEl = document.getElementById('gen-status');
+    if(!confirm(`Gerar ${qty} itens SIMULADOS?`)) return;
+    statusEl.innerText = "Gerando..."; statusEl.classList.remove('hidden');
+    const batch = writeBatch(db);
+    let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
+
+    // ARRAYS RICOS
+    const oppsRich = [
+        {title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
+        {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}
+    ];
+    const jobsRich = ["Vendedor", "Atendente", "Estoquista", "Recepcionista"];
+    
+    for(let i=0; i<qty; i++) {
+        const docRef = doc(collection(db, collectionName));
+        let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
+        
+        if(type === 'opps') {
+            const item = oppsRich[Math.floor(Math.random()*oppsRich.length)];
+            data.titulo = item.title; data.descricao = item.desc; data.tipo_visual = item.type; data.badge_text = item.badge; data.status = "analise"; data.link = "#";
+        } else if (type === 'jobs') {
+            data.titulo = `${jobsRich[Math.floor(Math.random()*jobsRich.length)]} (Banco de Talentos)`;
+            data.status = "encerrada"; data.empresa = "Parceiro"; data.salario = "A combinar";
+        } else if (type === 'services') {
+            data.nome_profissional = "Profissional Modelo"; data.is_online = false; data.status = "indisponivel";
+        } else {
+            data.titulo = "Missão Teste (Concluída)"; data.status = "concluida"; data.valor = "10.00";
+        }
+        batch.set(docRef, data);
+    }
+    await batch.commit(); statusEl.innerText = "✅ Feito!"; window.toggleDataMode('demo'); window.switchView(type);
+};
+
+// --- OUTROS ---
+window.toggleSelectAll = (src) => { document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = src.checked); window.updateBulkBar(); };
+window.updateBulkBar = () => { const count = document.querySelectorAll('.row-checkbox:checked').length; const bar = document.getElementById('bulk-actions'); document.getElementById('bulk-count').innerText = count; if(count>0) bar.classList.add('visible'); else bar.classList.remove('visible'); };
+window.deleteSelectedItems = async () => { const checked = document.querySelectorAll('.row-checkbox:checked'); if(!confirm("Excluir?")) return; const batch = writeBatch(db); checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); await batch.commit(); document.getElementById('bulk-actions').classList.remove('visible'); loadList(currentView); };
+window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
+window.saveSettings = async () => { const msg = document.getElementById('conf-global-msg').value; await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); alert("Salvo!"); };
+window.loadSettings = async () => { try { const d = await getDoc(doc(db, "settings", "global")); if(d.exists()) document.getElementById('conf-global-msg').value = d.data().top_message||""; } catch(e){} };
+window.clearDatabase = async () => { if(confirm("Apagar TUDO do modo DEMO?")) { const batch = writeBatch(db); const q = query(collection(db, "usuarios"), where("is_demo", "==", true)); const s = await getDocs(q); s.forEach(d=>batch.delete(d.ref)); await batch.commit(); alert("Limpo!"); } };
 function checkAdmin(u) { if(u.email.toLowerCase().trim() === ADMIN_EMAIL) { document.getElementById('login-gate').classList.add('hidden'); document.getElementById('admin-sidebar').classList.remove('hidden'); document.getElementById('admin-main').classList.remove('hidden'); initDashboard(); } else { alert("ACESSO NEGADO."); signOut(auth); } }
 onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
-async function initDashboard() { /*...*/ }
-async function initAnalytics() { /*...*/ }
+async function initDashboard() { try { const u = await getCountFromServer(collection(db, "usuarios")); document.getElementById('kpi-users').innerText = u.data().count; } catch(e){} }
+async function initAnalytics() {}
