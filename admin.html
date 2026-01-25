@@ -29,7 +29,8 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         
         .table-row:hover { background-color: rgba(255,255,255,0.02); }
-        .inp-editor { width: 100%; background: #020617; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; color: white; font-size: 0.75rem; }
+        .inp-editor { width: 100%; background: #020617; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; color: white; font-size: 0.75rem; margin-bottom: 5px; }
+        .inp-label { font-size: 0.65rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 2px; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex text-sm">
@@ -39,7 +40,7 @@
             <h1 class="text-3xl text-white font-black mb-1 italic tracking-tighter">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
             <p class="text-xs text-slate-400 mb-8 font-mono">ACESSO RESTRITO // GESTÃO</p>
             <div id="loading-login" class="hidden mb-4"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
-            <button id="btn-login-admin" onclick="loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+            <button id="btn-login-admin" onclick="window.loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
                 <i data-lucide="shield" size="18"></i> AUTENTICAR
             </button>
             <p id="error-msg" class="text-red-500 text-xs mt-4 hidden font-bold"></p>
@@ -49,7 +50,7 @@
     <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
         <div class="p-6 border-b border-white/5">
             <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v16.0 // ONLINE</p>
+            <p class="text-[10px] text-gray-500 mt-1">v17.0 // ONLINE</p>
         </div>
         
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -161,8 +162,7 @@
             <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white"><i data-lucide="x"></i></button>
             <h2 id="modal-title" class="text-lg font-bold text-white uppercase mb-4 flex-shrink-0">EDITOR</h2>
             
-            <div id="modal-content" class="space-y-3 mb-6 overflow-y-auto flex-1 pr-2">
-                </div>
+            <div id="modal-content" class="space-y-3 mb-6 overflow-y-auto flex-1 pr-2"></div>
             
             <div class="flex gap-3 flex-shrink-0">
                 <button onclick="saveModalData()" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold uppercase text-xs">SALVAR</button>
