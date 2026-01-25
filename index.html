@@ -30,6 +30,11 @@
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        /* --- CORREÇÃO DO TEXTO INVISÍVEL --- */
+        input, textarea, select {
+            color: #111827 !important; /* Força cor preta (Gray-900) */
+        }
     </style>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -112,6 +117,8 @@
 
         <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
             <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            
+            <button onclick="switchTab('empregos')" id="tab-empregos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Empregos 💼</button>
             <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
             <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
             <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Produtos Recomendados 🛒</button>
@@ -211,6 +218,21 @@
                 </div>
             </section>
 
+            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-vagas" class="grid gap-3"></div>
+
+                <div id="painel-empresa" class="hidden">
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center mb-4">
+                        <h3 class="font-black text-blue-900 text-sm uppercase italic">Precisa Contratar?</h3>
+                        <p class="text-[10px] text-gray-500 mb-3">Encontre talentos locais rápido.</p>
+                        <button onclick="abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">
+                            + Anunciar Vaga Grátis
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Suas Vagas Ativas</p>
+                    <div id="lista-minhas-vagas" class="space-y-2"></div>
+                </div>
+            </section>
             <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
                 <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados para aumentar sua produtividade</p>
                 <div id="sec-produtos"></div>
@@ -364,6 +386,46 @@
         </div>
     </div>
 
+    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-4">Nova Vaga</h3>
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Título da Vaga</label>
+            <input type="text" id="job-title" placeholder="Ex: Atendente de Loja" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Salário (Opcional)</label>
+            <input type="text" id="job-salary" placeholder="Ex: 1.800,00" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Descrição</label>
+            <textarea id="job-desc" rows="4" class="w-full border p-2 rounded-lg mb-4 text-sm bg-gray-50" placeholder="Requisitos e atividades..."></textarea>
+            
+            <button onclick="publicarVaga()" id="btn-pub-job" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-blue-700">PUBLICAR AGORA</button>
+        </div>
+    </div>
+
+    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <h3 class="font-black text-xl text-green-600 uppercase italic mb-1">Seu Currículo</h3>
+            <p class="text-xs text-gray-400 mb-4">Preencha uma vez, aplique para sempre.</p>
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Nome Completo</label>
+            <input type="text" id="cv-nome" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">WhatsApp</label>
+            <input type="tel" id="cv-telefone" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="(75) 9...">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Habilidades / Resumo</label>
+            <textarea id="cv-habilidades" rows="2" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Ex: Tenho moto, experiência..."></textarea>
+            
+            <label class="text-[9px] font-bold text-blue-600 uppercase">📎 Anexar Currículo (PDF)</label>
+            <input type="file" id="cv-arquivo" accept="application/pdf" class="w-full border p-2 rounded-lg mb-4 text-xs bg-blue-50 text-blue-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+            
+            <button onclick="salvarCurriculo()" id="btn-save-cv" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-green-700">SALVAR E CONTINUAR</button>
+        </div>
+    </div>
+
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -382,6 +444,7 @@
     <script type="module" src="./js/modules/products.js?v=15.0"></script>
     
     <script type="module" src="./js/modules/request.js?v=15.0"></script>
+    <script type="module" src="./js/modules/jobs.js?v=15.0"></script>
     
     <script type="module" src="./js/chat.js?v=15.0"></script>
     <script type="module" src="./js/wallet.js?v=15.0"></script>
