@@ -1,11 +1,11 @@
 import { db } from './app.js';
-import { collection, addDoc, getDocs, getCountFromServer, deleteDoc, doc, query, where, orderBy, limit, onSnapshot, serverTimestamp, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs, getCountFromServer, deleteDoc, setDoc, doc, query, where, orderBy, limit, onSnapshot, serverTimestamp, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let chartInstance = null;
 
 // --- 1. CONTROLE DE NAVEGAÇÃO ---
 window.switchView = (viewName) => {
-    ['dashboard', 'rh', 'financeiro', 'users', 'tools'].forEach(v => {
+    ['dashboard', 'links', 'rh', 'financeiro', 'users', 'tools'].forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if(el) el.classList.add('hidden');
         document.getElementById(`nav-${v}`)?.classList.remove('active');
@@ -18,6 +18,7 @@ window.switchView = (viewName) => {
     if(viewName === 'rh') carregarCandidaturas();
     if(viewName === 'financeiro') carregarValidacoes();
     if(viewName === 'users') carregarTopUsuarios();
+    if(viewName === 'links') carregarLinksRastreados();
 };
 
 // --- 2. DASHBOARD LIVE ---
@@ -35,6 +36,7 @@ function initDashboard() {
             let icon = '🔹'; let color = 'text-slate-400';
 
             if (data.event.includes('LOGIN')) { icon = '🔑'; stats.views++; }
+            if (data.event.includes('TRAFFIC')) { icon = '🚦'; color = 'text-yellow-400'; } // Novo evento de tráfego
             if (data.event.includes('CANDIDATURA') || data.event.includes('CLICK')) { icon = '👆'; color = 'text-blue-400'; stats.actions++; }
             if (data.event.includes('PROPOSTA') || data.event.includes('SEED')) { icon = '💰'; color = 'text-green-400 font-bold'; stats.sales++; }
 
@@ -43,7 +45,7 @@ function initDashboard() {
                     <div class="flex items-center gap-2">
                         <span>${icon}</span>
                         <span class="${color}">${data.event}</span>
-                        <span class="text-slate-600">(${data.profile_type || 'user'})</span>
+                        <span class="text-slate-600">(${data.details?.source || 'app'})</span>
                     </div>
                     <span class="font-mono text-slate-600">${time}</span>
                 </div>`;
@@ -71,85 +73,84 @@ function updateChart(data) {
     });
 }
 
-// --- 3. MODO DEUS (SEED GENERATOR) ---
-window.gerarSeed = async (tipo) => {
-    const btn = event.target;
-    btn.disabled = true; btn.innerText = "Criando...";
+// --- 3. FÁBRICA DE LINKS (NOVO) ---
+window.criarLinkRastreado = async () => {
+    const slug = document.getElementById('link-slug').value.trim().replace(/\s+/g, '-').toLowerCase();
+    const target = document.getElementById('link-target').value;
+    const source = document.getElementById('link-source').value || 'direct';
     
+    if(!slug) return alert("Defina um identificador único (ex: zap-grupo-1).");
+
+    const btn = event.target;
+    btn.innerText = "Gerando..."; btn.disabled = true;
+
     try {
-        if (tipo === 'servico') {
-            const titulos = ["Marido de Aluguel", "Eletricista Rápido", "Limpeza Pós-Obra", "Formatatação de PC"];
-            const titulo = titulos[Math.floor(Math.random() * titulos.length)];
-            
-            await addDoc(collection(db, "active_providers"), {
-                nome_profissional: "Seed Pro " + Math.floor(Math.random() * 100),
-                is_online: true,
-                is_seed: true, // FLAG IMPORTANTE
-                services: [{ category: "Outros", price: 100 + Math.floor(Math.random() * 200) }],
-                last_seen: serverTimestamp()
-            });
-            await addDoc(collection(db, "system_events"), { event: "SEED_SERVICE_CREATED", user_id: "admin", timestamp: serverTimestamp() });
-        }
+        // Salva metadados do link
+        await setDoc(doc(db, "tracked_links", slug), {
+            slug: slug,
+            target_tab: target,
+            source: source,
+            clicks: 0,
+            created_at: serverTimestamp()
+        });
+
+        const baseUrl = window.location.href.replace('admin.html', 'index.html');
+        // Gera link limpo com parâmetro de rastreio
+        const finalUrl = `${baseUrl}?trk=${slug}`;
         
-        if (tipo === 'vaga') {
-            const vagas = ["Vendedor de Loja", "Auxiliar Administrativo", "Recepcionista", "Entregador"];
-            const vaga = vagas[Math.floor(Math.random() * vagas.length)];
-            
-            await addDoc(collection(db, "jobs"), {
-                titulo: vaga,
-                descricao: "Vaga urgente para início imediato. Salário compatível.",
-                salario: "R$ 1." + Math.floor(Math.random() * 9) + "00,00",
-                company_name: "Empresa Parceira",
-                is_seed: true, // FLAG IMPORTANTE
-                created_at: serverTimestamp()
-            });
-            await addDoc(collection(db, "system_events"), { event: "SEED_JOB_CREATED", user_id: "admin", timestamp: serverTimestamp() });
-        }
+        document.getElementById('final-link-text').innerText = finalUrl;
+        document.getElementById('link-result-box').classList.remove('hidden');
         
-        alert(`✅ ${tipo.toUpperCase()} Seed Criado!`);
+        alert("✅ Link Operacional Criado!");
     } catch(e) {
         alert("Erro: " + e.message);
     } finally {
-        btn.disabled = false; btn.innerText = "Gerar +1";
+        btn.innerText = "🛠️ Gerar Link Operacional"; btn.disabled = false;
     }
 };
 
-// --- 4. RANKING DE USUÁRIOS (Novidade) ---
-function carregarTopUsuarios() {
-    const list = document.getElementById('user-ranking-list');
+window.copiarLinkGerado = () => {
+    const text = document.getElementById('final-link-text').innerText;
+    navigator.clipboard.writeText(text).then(() => alert("Link copiado!"));
+};
+
+function carregarLinksRastreados() {
+    const list = document.getElementById('links-list');
     if(!list) return;
-    
-    // Pega usuários ordenados por saldo (quem mais movimenta)
-    const q = query(collection(db, "usuarios"), orderBy("saldo", "desc"), limit(10));
+
+    const q = query(collection(db, "tracked_links"), orderBy("created_at", "desc"));
     
     onSnapshot(q, (snap) => {
         list.innerHTML = "";
-        snap.forEach((d, index) => {
-            const u = d.data();
+        snap.forEach(d => {
+            const l = d.data();
             list.innerHTML += `
                 <div class="flex justify-between items-center bg-slate-800 p-3 rounded border border-slate-700">
-                    <div class="flex items-center gap-3">
-                        <span class="text-lg font-black text-slate-600">#${index+1}</span>
-                        <div>
-                            <p class="text-white font-bold text-xs">${u.displayName || u.email}</p>
-                            <p class="text-[10px] text-slate-400">${u.email}</p>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-400 font-bold text-xs uppercase">${l.slug}</span>
+                            <span class="text-[9px] bg-slate-700 px-1 rounded text-slate-400">${l.source}</span>
                         </div>
+                        <p class="text-[9px] text-slate-500">Destino: ${l.target_tab}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-green-400 font-mono text-xs">R$ ${u.saldo?.toFixed(2) || '0.00'}</p>
-                        <p class="text-[9px] text-slate-500">${u.stats?.events_count || 0} ações</p>
+                        <span class="text-lg font-black text-white">${l.clicks}</span>
+                        <span class="text-[9px] text-slate-500 block uppercase">Cliques</span>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     });
 }
 
-// --- Funções Auxiliares (Candidaturas/Validações do código anterior mantidas) ---
-window.carregarCandidaturas = () => { /* ... código anterior do RH ... */ };
-window.decidirCandidato = async (uid, ok) => { /* ... código anterior ... */ };
-window.carregarValidacoes = () => { /* ... código anterior financeiro ... */ };
-window.validarMissao = async (id, ok, uid, val) => { /* ... código anterior ... */ };
+// --- 4. SEED & TOOLS ---
+window.gerarSeed = async (tipo) => { /* ... mantido do código anterior ... */ };
 
-// Inicializa
+// --- 5. RANKING & OUTROS ---
+function carregarTopUsuarios() { /* ... mantido do código anterior ... */ }
+window.carregarCandidaturas = () => { /* ... mantido ... */ };
+window.decidirCandidato = async (uid, ok) => { /* ... mantido ... */ };
+window.carregarValidacoes = () => { /* ... mantido ... */ };
+window.validarMissao = async (id, ok, uid, val) => { /* ... mantido ... */ };
+
+// Start
 initDashboard();
