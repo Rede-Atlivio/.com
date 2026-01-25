@@ -1,264 +1,303 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio Admin | Comando Central</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 80%); }
-        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; }
-        .nav-btn { text-align: left; padding: 12px 16px; border-radius: 8px; transition: all 0.2s; color: #94a3b8; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
-        .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .inp-editor { width: 100%; background: #020617; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; color: white; font-size: 0.75rem; margin-bottom: 5px; }
-        .inp-label { font-size: 0.65rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 2px; }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, query, orderBy, limit, getDocs, where, deleteDoc, addDoc, updateDoc, doc, serverTimestamp, getCountFromServer, onSnapshot, getDoc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+const ADMIN_EMAIL = "contatogilborges@gmail.com";
+
+// --- URL DO SEU APP PRINCIPAL (Para onde os links vão apontar) ---
+const SITE_URL = "https://rede-atlivio.github.io/painel-financeiro-borges"; 
+
+window.auth = auth;
+window.db = db;
+let chartInstance = null;
+let sourceChartInstance = null;
+let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
+
+// --- LOGIN ---
+window.loginAdmin = async () => {
+    const loader = document.getElementById('loading-login'), errMsg = document.getElementById('error-msg');
+    if (loader) loader.classList.remove('hidden'); if (errMsg) errMsg.classList.add('hidden');
+    try { const result = await signInWithPopup(auth, provider); checkAdmin(result.user); } 
+    catch (e) { console.error(e); if (loader) loader.classList.add('hidden'); if (errMsg) { errMsg.innerText = "Erro: " + e.message; errMsg.classList.remove('hidden'); } }
+};
+
+window.logoutAdmin = () => signOut(auth).then(() => location.reload());
+
+// --- NAVEGAÇÃO ---
+window.switchView = (viewName) => {
+    currentView = viewName;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    if(event && event.currentTarget) event.currentTarget.classList.add('active');
+    
+    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings'].forEach(id => { 
+        const el = document.getElementById(id); if (el) el.classList.add('hidden'); 
+    });
+    
+    const pageTitle = document.getElementById('page-title');
+    if (pageTitle) pageTitle.innerText = viewName.toUpperCase();
+
+    if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
+    else if(viewName === 'analytics') { document.getElementById('view-analytics').classList.remove('hidden'); initAnalytics(); }
+    else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
+    else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
+    else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
+    else { document.getElementById('view-list').classList.remove('hidden'); loadList(viewName); }
+};
+
+window.toggleDataMode = (mode) => {
+    dataMode = mode;
+    const btnReal = document.getElementById('btn-mode-real'), btnDemo = document.getElementById('btn-mode-demo');
+    if (btnReal) btnReal.className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
+    if (btnDemo) btnDemo.className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
+    window.forceRefresh();
+};
+
+window.forceRefresh = () => { 
+    if(currentView === 'dashboard') initDashboard(); 
+    else if(currentView === 'analytics') initAnalytics();
+    else if(currentView === 'settings') loadSettings();
+    else if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView);
+};
+
+// --- FUNÇÕES DE EDIÇÃO ---
+window.closeModal = () => { const modal = document.getElementById('modal-editor'); if (modal) modal.classList.add('hidden'); };
+
+window.saveModalData = async () => {
+    try { if(window.saveCallback) await window.saveCallback(); alert("✅ Atualizado!"); window.closeModal(); window.forceRefresh(); } 
+    catch(e) { alert("Erro ao salvar: " + e.message); }
+};
+
+window.deleteItem = async (coll, id) => {
+    if(!confirm("⚠️ Apagar permanentemente?")) return;
+    try { await deleteDoc(doc(db, coll, id)); window.forceRefresh(); } catch(e) { alert(e.message); }
+};
+
+function checkAdmin(user) {
+    if(user.email.toLowerCase().trim() === ADMIN_EMAIL) {
+        document.getElementById('login-gate').classList.add('hidden');
+        document.getElementById('admin-sidebar').classList.remove('hidden');
+        document.getElementById('admin-main').classList.remove('hidden');
+        initDashboard();
+    } else { alert("ACESSO NEGADO."); signOut(auth); }
+}
+onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
+
+window.openUniversalEditor = async (collectionName, id) => {
+    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
+    if(!modal) return;
+    currentEditId = id; currentEditColl = collectionName;
+    modal.classList.remove('hidden'); if(title) title.innerText = `EDITAR: ${collectionName.toUpperCase()}`;
+    if(content) content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
+    try {
+        const docRef = doc(db, collectionName, id), docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) { if(content) content.innerHTML = `<p class="text-red-500">Item não encontrado.</p>`; return; }
+        const data = docSnap.data(); if(content) content.innerHTML = ""; 
         
-        /* Estilos do Sniper Analytics */
-        .funnel-step { position: relative; padding-left: 20px; border-left: 2px solid #334155; margin-bottom: 20px; }
-        .funnel-step.active { border-left-color: #10b981; }
-        .funnel-step::before { content: ''; position: absolute; left: -6px; top: 0; width: 10px; height: 10px; background: #334155; border-radius: 50%; }
-        .funnel-step.active::before { background: #10b981; box-shadow: 0 0 10px #10b981; }
-        .progress-bar-bg { background: #1e293b; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 5px; }
-        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #a855f7); width: 0%; transition: width 1s; }
+        Object.keys(data).sort().forEach(key => {
+            const val = data[key];
+            if (key === 'created_at' || key === 'updated_at') return;
+            
+            let label = key;
+            if(key === 'is_demo' || key === 'is_seed') label = 'É Simulado/Demonstrativo?';
+            if(key === 'visibility_score') label = 'Ordem de Destaque (0-100)';
 
-        @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; width: 100%; background: white; color: black; padding: 20px; }
-            .no-print { display: none !important; }
+            let inputHtml = typeof val === 'boolean' ? 
+                `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700"><label class="inp-label">${label}</label><input type="checkbox" id="field-${key}" ${val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
+                `<div><label class="inp-label">${label}</label><input type="${typeof val==='number'?'number':'text'}" id="field-${key}" value="${val}" class="inp-editor"></div>`;
+            if(content) content.innerHTML += inputHtml;
+        });
+
+        window.saveCallback = async () => {
+            const updates = {};
+            Object.keys(data).forEach(key => {
+                if (key === 'created_at' || key === 'updated_at') return;
+                const field = document.getElementById(`field-${key}`);
+                if (field) { updates[key] = field.type === 'checkbox' ? field.checked : (field.type === 'number' ? parseFloat(field.value) : field.value); }
+            });
+            updates.updated_at = serverTimestamp(); await updateDoc(docRef, updates);
+        };
+    } catch (e) { if(content) content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
+};
+
+window.openModalCreate = (type) => {
+    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
+    if(!modal) return; modal.classList.remove('hidden'); if(title) title.innerText = "NOVO ITEM";
+    if(content) content.innerHTML = `<p class="text-center text-gray-400">Salve para criar o rascunho.</p>`;
+    window.saveCallback = async () => {
+        // CORREÇÃO CRÍTICA DO MAPEAMENTO DE COLEÇÕES
+        let coll = type;
+        if (type === 'users') coll = 'usuarios';
+        else if (type === 'services') coll = 'active_providers';
+        else if (type === 'missions') coll = 'missoes';
+        else if (type === 'opps') coll = 'oportunidades'; // Correção do "Vazio"
+
+        await addDoc(collection(db, coll), { 
+            created_at: serverTimestamp(), 
+            updated_at: serverTimestamp(), 
+            is_demo: dataMode === 'demo',
+            titulo: 'Novo Item Rascunho',
+            nome: 'Novo Item',
+            status: 'rascunho'
+        });
+    };
+};
+
+async function loadList(type) {
+    const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
+    if(!tbody) return; tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
+    
+    let colName, headers, fields, constraints = [];
+    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
+    else constraints.push(where("is_demo", "!=", true)); 
+
+    if(type === 'users') { colName = "usuarios"; headers = ["USUÁRIO", "TIPO", "SALDO", "STATUS", "AÇÕES"]; fields = (d) => `<td class="p-3"><div class="font-bold text-white">${d.displayName||'Anon'}</div><div class="text-gray-500">${d.email}</div></td><td class="p-3">${d.is_provider?'Prestador':'Cliente'}</td><td class="p-3 font-mono text-green-400">R$ ${(d.saldo||0).toFixed(2)}</td><td class="p-3">${d.is_blocked?'🔴':'🟢'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('usuarios', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('usuarios', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; }
+    else if (type === 'services') { colName = "active_providers"; headers = ["NOME", "ONLINE", "SIMULADO?", "AÇÕES"]; fields = (d) => `<td class="p-3 font-bold text-white">${d.nome_profissional}</td><td class="p-3">${d.is_online?'🟢':'⚪'}</td><td class="p-3">${d.is_seed||d.is_demo?'SIM':'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('active_providers', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('active_providers', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; }
+    else { 
+        colName = type === 'opps' ? 'oportunidades' : type; 
+        if(type === 'missions') colName = 'missoes';
+        headers = ["ID", "DADOS", "STATUS", "AÇÕES"]; 
+        fields = (d) => `<td class="p-3 font-mono text-xs text-gray-500">${d.id.substring(0,8)}...</td><td class="p-3 font-bold text-white">${d.titulo||d.nome||d.cargo||'Item sem nome'}</td><td class="p-3 text-xs">${d.status||'-'}</td><td class="p-3 flex gap-2"><button onclick="window.openUniversalEditor('${colName}', '${d.id}')" class="text-blue-400"><i data-lucide="edit-2" size="14"></i></button><button onclick="window.deleteItem('${colName}', '${d.id}')" class="text-red-400"><i data-lucide="trash" size="14"></i></button></td>`; 
+    }
+    
+    if(thead) thead.innerHTML = headers.map(h => `<th class="p-3">${h}</th>`).join('');
+    try { 
+        const q = query(collection(db, colName), ...constraints, limit(50)); 
+        const snap = await getDocs(q); 
+        tbody.innerHTML = ""; 
+        if(snap.empty) tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Vazio ou sem permissão.</td></tr>"; 
+        snap.forEach(docSnap => { const d = { id: docSnap.id, ...docSnap.data() }; tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`; }); 
+        if(typeof lucide !== 'undefined') lucide.createIcons(); 
+    } catch(e) { tbody.innerHTML = `<tr><td colspan='5' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`; }
+    const btnAdd = document.getElementById('btn-add-new'); if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
+}
+
+// --- DASHBOARD ---
+async function initDashboard() {
+    try { 
+        const snapUsers = await getCountFromServer(collection(db, "usuarios")); 
+        document.getElementById('kpi-users').innerText = snapUsers.data().count;
+        const snapProv = await getCountFromServer(collection(db, "active_providers"));
+        document.getElementById('kpi-providers').innerText = snapProv.data().count;
+        const snapOrders = await getCountFromServer(collection(db, "orders"));
+        document.getElementById('kpi-orders').innerText = snapOrders.data().count;
+        
+        const feed = document.getElementById('live-feed');
+        if(feed) {
+             const logsQ = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(10));
+             const logsSnap = await getDocs(logsQ);
+             let logHtml = "";
+             if(!logsSnap.empty) {
+                 logsSnap.forEach(l => {
+                    const ld = l.data();
+                    const time = ld.timestamp ? new Date(ld.timestamp.seconds*1000).toLocaleTimeString() : '-';
+                    logHtml += `<div class="p-2 border-l border-blue-500 bg-blue-500/10 mb-2 rounded flex justify-between"><span class="text-white">${ld.action}</span> <span class="opacity-50 text-[10px]">${time}</span></div>`;
+                 });
+             } else {
+                 logHtml = `<div class="p-2 border-l border-green-500 bg-green-500/10 mb-2">Painel Iniciado com Sucesso <span class="float-right opacity-50 text-[10px]">${new Date().toLocaleTimeString()}</span></div>`;
+             }
+             feed.innerHTML = logHtml;
         }
-    </style>
-</head>
-<body class="h-screen overflow-hidden flex text-sm">
+    } catch(e) { console.log("Dash error", e); }
 
-    <div id="login-gate" class="fixed inset-0 bg-[#0f172a] z-50 flex items-center justify-center">
-        <div class="text-center p-8 border border-blue-900/50 rounded-2xl bg-slate-900/80 backdrop-blur glass-panel w-96">
-            <h1 class="text-3xl text-white font-black mb-1 italic tracking-tighter">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
-            <p class="text-xs text-slate-400 mb-8 font-mono">COMANDO CENTRAL</p>
-            <div id="loading-login" class="hidden mb-4"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
-            <button onclick="window.loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
-                <i data-lucide="shield" size="18"></i> AUTENTICAR
-            </button>
-            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden font-bold"></p>
-        </div>
-    </div>
+    const ctx = document.getElementById('mainChart');
+    if(ctx) {
+        if(chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: ['Usuários', 'Prestadores', 'Pedidos'], datasets: [{ data: [parseInt(document.getElementById('kpi-users').innerText)||1, parseInt(document.getElementById('kpi-providers').innerText)||1, parseInt(document.getElementById('kpi-orders').innerText)||1], backgroundColor: ['#3b82f6', '#10b981', '#a855f7'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10, family: 'JetBrains Mono' } } } } } });
+    }
+}
 
-    <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
-        <div class="p-6 border-b border-white/5">
-            <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v26.0 // ONLINE</p>
-        </div>
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
-            <button class="nav-btn active" onclick="window.switchView('dashboard')"><i data-lucide="layout-dashboard" size="16"></i> DASHBOARD</button>
-            <button class="nav-btn" onclick="window.switchView('users')"><i data-lucide="users" size="16"></i> USUÁRIOS</button>
-            <button class="nav-btn" onclick="window.switchView('services')"><i data-lucide="wrench" size="16"></i> SERVIÇOS</button>
-            <button class="nav-btn" onclick="window.switchView('missions')"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
-            <button class="nav-btn" onclick="window.switchView('jobs')"><i data-lucide="briefcase" size="16"></i> EMPREGOS</button>
-            <button class="nav-btn" onclick="window.switchView('opps')"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
-            <button class="nav-btn" onclick="window.switchView('finance')"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
-            
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-6 mb-2 pl-2">Estratégia & Povoamento</p>
-            <button class="nav-btn text-purple-400" onclick="window.switchView('generator')"><i data-lucide="box" size="16"></i> GERADOR EM MASSA</button>
-            <button class="nav-btn" onclick="window.switchView('analytics')"><i data-lucide="bar-chart-2" size="16"></i> ANALYTICS</button>
-            <button class="nav-btn" onclick="window.switchView('links')"><i data-lucide="link" size="16"></i> LINKS INTELIGENTES</button>
-            <button class="nav-btn" onclick="window.switchView('settings')"><i data-lucide="settings" size="16"></i> CONFIGURAÇÕES</button>
-        </nav>
-        <div class="p-4 border-t border-white/5 bg-red-900/10">
-            <button onclick="window.logoutAdmin()" class="nav-btn text-red-400 hover:text-red-300 w-full"><i data-lucide="log-out" size="16"></i> ENCERRAR</button>
-        </div>
-    </aside>
+async function initAnalytics() {
+    const container = document.getElementById('funnel-container');
+    const steps = [{ label: "VISITANTES", count: 120, color: "text-white" }, { label: "CADASTROS", count: 45, color: "text-indigo-400" }, { label: "ATIVOS", count: 30, color: "text-purple-400" }, { label: "CONVERSÃO", count: 8, color: "text-emerald-400" }];
+    let html = '';
+    steps.forEach((step, index) => {
+        const width = (step.count / steps[0].count * 100);
+        html += `<div class="funnel-step active"><div class="flex justify-between items-end"><div><p class="text-[10px] uppercase text-slate-500 font-bold">${step.label}</p><p class="text-xl font-black ${step.color}">${step.count}</p></div></div><div class="progress-bar-bg"><div class="progress-bar-fill" style="width: ${width}%"></div></div></div>`;
+    });
+    container.innerHTML = html;
+    const ctxSrc = document.getElementById('sourceChart');
+    if(ctxSrc) {
+        if(sourceChartInstance) sourceChartInstance.destroy();
+        sourceChartInstance = new Chart(ctxSrc, { type: 'doughnut', data: { labels: ['Instagram', 'Google', 'Direto'], datasets: [{ data: [55, 30, 15], backgroundColor: ['#f43f5e', '#3b82f6', '#10b981'], borderWidth:0 }] }, options: { plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size: 10 } } } } } });
+    }
+}
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden hidden" id="admin-main">
-        <header class="h-16 border-b border-white/5 flex justify-between items-center px-6 bg-slate-900/30 backdrop-blur">
-            <div class="flex items-center gap-4">
-                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">VISÃO GERAL</h2>
-                <div class="h-4 w-[1px] bg-gray-700"></div>
-                <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                    <button onclick="window.toggleDataMode('real')" id="btn-mode-real" class="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition">DADOS REAIS</button>
-                    <button onclick="window.toggleDataMode('demo')" id="btn-mode-demo" class="px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition">DEMONSTRATIVO</button>
-                </div>
-            </div>
-            <div class="flex items-center gap-3">
-                <button onclick="window.generateDetailedPDF()" class="p-2 text-indigo-400 hover:text-white transition bg-indigo-900/20 rounded-lg border border-indigo-500/30" title="Gerar Relatório Detalhado"><i data-lucide="printer" size="16"></i></button>
-                <button onclick="window.forceRefresh()" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
-                <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                    <span class="status-dot dot-green"></span><span class="text-[10px] font-bold text-green-400">SISTEMA ATIVO</span>
-                </div>
-            </div>
-        </header>
+// --- GERADOR DE LINKS BLINDADO E CORRIGIDO ---
+window.saveLinkToFirebase = async () => {
+    let id = document.getElementById('linkName').value.trim();
+    if(!id) return alert("Digite um nome curto para o link.");
+    
+    id = id.replace(/\s+/g, '-').toLowerCase(); // Corrige espaços
+    const source = encodeURIComponent(document.getElementById('utmSource').value || 'direct');
+    const campaign = encodeURIComponent(document.getElementById('utmCampaign').value || 'none');
+    
+    // Agora aponta para o SITE_URL correto
+    const finalLink = `${SITE_URL}/?utm_source=${source}&utm_campaign=${campaign}&ref=${id}`;
 
-        <div class="flex-1 overflow-y-auto p-6" id="content-area">
-            
-            <div id="view-dashboard" class="space-y-6 animate-fade">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 border-l-2 border-blue-500"><p class="metric-label">USUÁRIOS TOTAIS</p><h3 class="metric-value" id="kpi-users">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-green-500"><p class="metric-label">PRESTADORES ONLINE</p><h3 class="metric-value text-green-400" id="kpi-providers">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-purple-500"><p class="metric-label">PEDIDOS HOJE</p><h3 class="metric-value" id="kpi-orders">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-amber-500"><p class="metric-label">SALDO EM CARTEIRAS</p><h3 class="metric-value" id="kpi-balance">R$ 0,00</h3></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-0 col-span-2 flex flex-col h-[400px]">
-                        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                            <h3 class="text-xs font-bold text-white uppercase"><i data-lucide="activity" size="14" class="inline mr-2"></i> LIVE FEED (LOGS)</h3>
-                            <span class="text-[10px] text-gray-500">Últimas 24h</span>
-                        </div>
-                        <div id="live-feed" class="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs">
-                            <p class="text-gray-500 text-center py-10">Aguardando eventos...</p>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-4 flex flex-col items-center justify-center">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 w-full text-left">DISTRIBUIÇÃO</h3>
-                        <div class="w-full h-64 relative"><canvas id="mainChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+    try {
+        await setDoc(doc(db, "short_links", id), {
+            target: finalLink,
+            source: decodeURIComponent(source),
+            campaign: decodeURIComponent(campaign),
+            clicks: 0,
+            created_at: serverTimestamp()
+        });
+        document.getElementById('finalLinkDisplay').innerText = finalLink;
+        document.getElementById('link-result').classList.remove('hidden');
+    } catch(e) { alert("Erro ao salvar link: " + e.message); }
+};
 
-            <div id="view-generator" class="hidden space-y-6">
-                <div class="glass-panel p-8 border border-purple-500/30">
-                    <h2 class="text-2xl font-black text-white italic mb-2">GERADOR DE CONTEÚDO SIMULADO</h2>
-                    <p class="text-sm text-gray-400 mb-8">Povoamento seguro. Todo conteúdo gerado aqui é marcado como "Demonstrativo" e não permite interação real.</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div>
-                            <label class="inp-label">TIPO DE CONTEÚDO</label>
-                            <select id="gen-type" class="inp-editor h-10">
-                                <option value="jobs">Empregos (Vagas)</option>
-                                <option value="services">Serviços (Prestadores)</option>
-                                <option value="missions">Micro Tarefas</option>
-                                <option value="opps">Oportunidades</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="inp-label">QUANTIDADE</label>
-                            <select id="gen-qty" class="inp-editor h-10">
-                                <option value="1">1 Item</option>
-                                <option value="5">5 Itens</option>
-                                <option value="10">10 Itens (Lote)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="inp-label">CATEGORIA PREDOMINANTE</label>
-                            <select id="gen-cat" class="inp-editor h-10">
-                                <option value="mix">Mix Variado (Recomendado)</option>
-                                <option value="tech">Tecnologia / Digital</option>
-                                <option value="servicos">Serviços Gerais</option>
-                                <option value="vendas">Vendas / Comércio</option>
-                            </select>
-                        </div>
-                    </div>
+// --- CONFIGURAÇÕES ---
+window.saveSettings = async () => {
+    const msg = document.getElementById('conf-global-msg').value;
+    try {
+        await setDoc(doc(db, "settings", "global"), { top_message: msg, updated_at: serverTimestamp() }, { merge: true });
+        alert("✅ Configurações salvas!");
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
+};
 
-                    <button onclick="window.runMassGenerator()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                        <i data-lucide="zap"></i> GERAR CONTEÚDO AGORA
-                    </button>
-                    
-                    <div id="gen-status" class="mt-4 text-center text-xs font-mono text-gray-500 hidden">
-                        Processando...
-                    </div>
-                </div>
-            </div>
+window.loadSettings = async () => {
+    try {
+        const docSnap = await getDoc(doc(db, "settings", "global"));
+        if(docSnap.exists()) document.getElementById('conf-global-msg').value = docSnap.data().top_message || "";
+    } catch(e) { console.log("Sem configs ainda."); }
+    const btn = document.querySelector('#view-settings button'); if(btn) btn.onclick = window.saveSettings;
+};
 
-            <div id="view-analytics" class="hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="glass-panel p-6">
-                         <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="filter" size="16" class="text-purple-400"></i> FUNIL DE CONVERSÃO</h2>
-                        <div id="funnel-container" class="space-y-4"><p class="text-gray-500 text-xs">Carregando dados...</p></div>
-                    </div>
-                    <div class="glass-panel p-6">
-                        <h2 class="text-sm font-bold text-white mb-6 flex items-center gap-2"><i data-lucide="globe" size="16" class="text-emerald-400"></i> ORIGEM DE TRÁFEGO</h2>
-                        <div class="h-64"><canvas id="sourceChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+// --- ZONA DE PERIGO ---
+window.clearDatabase = async (scope) => {
+    if(!confirm("⚠️ AÇÃO IRREVERSÍVEL! Tem certeza?")) return;
+    if(scope === 'logs') { console.clear(); alert("Logs de sessão limpos."); } 
+    else if (scope === 'full') {
+        const password = prompt("Digite a senha mestre para RESET TOTAL:");
+        if(password === "admin123") { 
+            if(prompt("Digite 'DELETAR' para confirmar:") === 'DELETAR') {
+                try {
+                    const batch = writeBatch(db);
+                    const q = query(collection(db, "usuarios"), where("is_demo", "==", true));
+                    const snap = await getDocs(q);
+                    snap.forEach(d => batch.delete(d.ref));
+                    await batch.commit();
+                    alert("♻️ Dados SIMULADOS apagados."); window.forceRefresh();
+                } catch(e) { alert("Erro: " + e.message); }
+            }
+        } else { alert("❌ Senha incorreta."); }
+    }
+};
 
-            <div id="view-list" class="hidden space-y-4">
-                <div class="flex justify-between items-center">
-                    <input type="text" id="search-input" placeholder="Buscar..." class="bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
-                    <button id="btn-add-new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">+ NOVO</button>
-                </div>
-                <div class="glass-panel overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-900/50 text-[10px] uppercase text-gray-400 font-bold"><tr id="table-header"></tr></thead>
-                        <tbody id="table-body" class="text-xs font-mono"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="view-links" class="hidden space-y-6">
-                <div class="glass-panel p-6 border border-emerald-500/30">
-                    <h2 class="text-lg font-bold text-white mb-2">Criador de Links (UTM + Database)</h2>
-                    <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis automaticamente.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div><label class="inp-label">NOME CURTO (ID)</label><input type="text" id="linkName" placeholder="ex: promocao-natal" class="inp-editor border-emerald-500/50"></div>
-                        <div><label class="inp-label">ORIGEM (Source)</label><input type="text" id="utmSource" value="instagram" class="inp-editor"></div>
-                        <div><label class="inp-label">CAMPANHA</label><input type="text" id="utmCampaign" placeholder="lancamento" class="inp-editor"></div>
-                    </div>
-                    <button onclick="window.saveLinkToFirebase()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition">💾 GERAR E SALVAR</button>
-                    <div id="link-result" class="hidden mt-4 p-4 bg-black/30 rounded border border-emerald-500/30">
-                        <p class="text-emerald-400 font-bold text-xs mb-1">Link Gerado:</p>
-                        <code id="finalLinkDisplay" class="text-white text-xs select-all">...</code>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-settings" class="hidden space-y-6">
-                <div class="glass-panel p-6">
-                    <h2 class="text-lg font-bold text-white mb-4">Mensagens Globais (Site)</h2>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="inp-label">Aviso no Topo do Site</label>
-                            <input type="text" id="conf-global-msg" class="inp-editor" placeholder="Ex: Manutenção programada às 22h">
-                        </div>
-                        <button onclick="alert('Salvo!')" class="bg-blue-600 px-4 py-2 rounded text-white text-xs font-bold">SALVAR CONFIGS</button>
-                    </div>
-                </div>
-
-                <div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6">
-                    <h3 class="text-red-500 font-bold text-sm mb-2 uppercase flex items-center gap-2"><i data-lucide="alert-triangle"></i> ZONA DE PERIGO</h3>
-                    <p class="text-xs text-slate-400 mb-4">Ações irreversíveis.</p>
-                    <div class="flex flex-wrap gap-4">
-                        <button onclick="window.clearDatabase('logs')" class="bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800 px-4 py-2 rounded-lg text-xs font-bold">LIMPAR LOGS</button>
-                        <button onclick="window.clearDatabase('full')" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-xs font-bold">🔥 FORMATAR BANCO (RESET TOTAL)</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-finance" class="hidden space-y-6">
-                <div class="glass-panel p-6 border border-amber-500/30">
-                    <h2 class="text-lg font-bold text-white mb-4">Aprovação de Saques</h2>
-                    <div id="finance-list" class="space-y-2"><p class="text-gray-500 text-xs">Nenhum saque pendente.</p></div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <div id="modal-editor" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-lg shadow-2xl relative flex flex-col max-h-[90vh]">
-            <button onclick="window.closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white"><i data-lucide="x"></i></button>
-            <h2 id="modal-title" class="text-lg font-bold text-white uppercase mb-4 flex-shrink-0">EDITOR</h2>
-            <div id="modal-content" class="space-y-3 mb-6 overflow-y-auto flex-1 pr-2"></div>
-            <div class="flex gap-3 flex-shrink-0">
-                <button onclick="window.saveModalData()" class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold uppercase text-xs">SALVAR</button>
-                <button onclick="window.closeModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold uppercase text-xs">CANCELAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="printable-area" class="hidden">
-        <h1 style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">RELATÓRIO DETALHADO ATLIVIO</h1>
-        <p id="print-date" style="font-size: 12px; color: #666; margin-bottom: 20px;"></p>
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px; font-family: monospace;">
-            <thead><tr style="background: #eee; text-align: left;"><th style="padding: 5px; border: 1px solid #ccc;">DATA/HORA</th><th style="padding: 5px; border: 1px solid #ccc;">TIPO</th><th style="padding: 5px; border: 1px solid #ccc;">DESCRIÇÃO</th><th style="padding: 5px; border: 1px solid #ccc;">USUÁRIO</th></tr></thead>
-            <tbody id="print-body"></tbody>
-        </table>
-    </div>
-
-    <script type="module" src="./admin.js"></script>
-    <script>lucide.createIcons();</script>
-</body>
-</html>
+window.generateDetailedPDF = async () => {
+    const printArea = document.getElementById('print-body');
+    document.getElementById('print-date').innerText = `Gerado em: ${new Date().toLocaleString()} | Usuário: ${auth.currentUser.email}`;
+    const logsQ = query(collection(db, "system_logs"), orderBy("timestamp", "desc"), limit(20));
+    const logsSnap = await getDocs(logsQ);
+    let logsHtml = "";
+    if(!logsSnap.empty) { logsSnap.forEach(l => { const ld = l.data(); logsHtml += `<tr style="border-bottom: 1px solid #eee;"><td style="padding: 5px;">${new Date(ld.timestamp.seconds*1000).toLocaleString()}</td><td style="padding: 5px;">LOG</td><td style="padding: 5px;">${ld.action}</td><td style="padding: 5px;">Sistema</td></tr>`; }); } 
+    else { logsHtml = "<tr><td colspan='4'>Sem logs recentes.</td></tr>"; }
+    printArea.innerHTML = logsHtml;
+    window.print();
+};
