@@ -4,31 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlivio - Sala de Comando</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
-    
     <style>
         body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
         .nav-item { cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; }
         .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
         .nav-item.active { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
-        
         .metric-value { font-size: 1.8rem; font-weight: 800; color: white; }
         .metric-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 4px; }
-        
-        /* Scrollbar Fina */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-
         .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
         .dot-green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
-        .dot-red { background-color: #ef4444; }
-        .dot-yellow { background-color: #f59e0b; }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex">
@@ -38,27 +30,28 @@
             <div class="p-6 flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-xl">A</div>
                 <div>
-                    <h1 class="font-bold text-white tracking-tight">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
-                    <p class="text-[10px] text-slate-500">v3.1 Supercharged</p>
+                    <h1 class="font-bold text-white tracking-tight">ATLIVIO <span class="text-blue-500">GOD</span></h1>
+                    <p class="text-[10px] text-slate-500">v5.0 Intelligence</p>
                 </div>
             </div>
-
             <nav class="mt-4 space-y-1">
                 <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active p-4 flex items-center gap-3 text-sm font-bold">
                     <i data-lucide="layout-dashboard" size="18"></i> Visão Geral
                 </div>
+                <div onclick="switchView('users')" id="nav-users" class="nav-item p-4 flex items-center gap-3 text-sm font-bold">
+                    <i data-lucide="users" size="18"></i> Top Usuários
+                </div>
                 <div onclick="switchView('rh')" id="nav-rh" class="nav-item p-4 flex items-center gap-3 text-sm font-bold">
-                    <i data-lucide="briefcase" size="18"></i> RH & Talentos <span id="badge-rh" class="bg-blue-500 text-white text-[9px] px-1.5 rounded hidden">0</span>
+                    <i data-lucide="briefcase" size="18"></i> RH & Talentos
                 </div>
                 <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item p-4 flex items-center gap-3 text-sm font-bold">
-                    <i data-lucide="wallet" size="18"></i> Financeiro <span id="badge-fin" class="bg-red-500 text-white text-[9px] px-1.5 rounded hidden">0</span>
+                    <i data-lucide="wallet" size="18"></i> Financeiro
                 </div>
-                <div onclick="switchView('servicos')" id="nav-servicos" class="nav-item p-4 flex items-center gap-3 text-sm font-bold opacity-50 cursor-not-allowed" title="Em breve">
-                    <i data-lucide="shopping-bag" size="18"></i> Serviços (V4)
+                <div onclick="switchView('tools')" id="nav-tools" class="nav-item p-4 flex items-center gap-3 text-sm font-bold text-yellow-500">
+                    <i data-lucide="zap" size="18"></i> Ferramentas Seed
                 </div>
             </nav>
         </div>
-
         <div class="p-4 border-t border-slate-800">
             <button onclick="location.href='index.html'" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
                 <i data-lucide="log-out" size="14"></i> VOLTAR AO APP
@@ -66,96 +59,60 @@
         </div>
     </aside>
 
-    <div class="md:hidden fixed top-0 w-full bg-slate-900 z-50 p-4 border-b border-slate-800 flex justify-between items-center">
-        <span class="font-bold text-white">ATLIVIO ADMIN</span>
-        <button onclick="toggleMobileMenu()" class="text-white"><i data-lucide="menu"></i></button>
-    </div>
-
-    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative mt-14 md:mt-0">
+    <main class="flex-1 overflow-y-auto p-4 md:p-8 relative">
         
         <div id="view-dashboard" class="space-y-6 animate-fadeIn">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="glass-panel p-5 border-l-4 border-blue-500">
-                    <p class="metric-label">Usuários Totais</p>
-                    <h3 class="metric-value" id="kpi-users">0</h3>
-                </div>
-                <div class="glass-panel p-5 border-l-4 border-green-500">
-                    <p class="metric-label">Online Agora</p>
-                    <h3 class="metric-value text-green-400" id="kpi-online">0</h3>
-                </div>
-                <div class="glass-panel p-5 border-l-4 border-purple-500">
-                    <p class="metric-label">Vagas Abertas</p>
-                    <h3 class="metric-value" id="kpi-jobs">0</h3>
-                </div>
-                <div class="glass-panel p-5 border-l-4 border-yellow-500">
-                    <p class="metric-label">Caixa (Est.)</p>
-                    <h3 class="metric-value text-yellow-400">R$ <span id="kpi-revenue">0</span></h3>
-                </div>
+                <div class="glass-panel p-5 border-l-4 border-blue-500"><p class="metric-label">Usuários Totais</p><h3 class="metric-value" id="kpi-users">...</h3></div>
+                <div class="glass-panel p-5 border-l-4 border-green-500"><p class="metric-label">Online Agora</p><h3 class="metric-value text-green-400" id="kpi-online">...</h3></div>
             </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="glass-panel p-6 lg:col-span-2">
-                    <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <i data-lucide="filter" size="16" class="text-blue-400"></i> FUNIL DE CONVERSÃO
-                    </h3>
-                    <div class="h-64 w-full">
-                        <canvas id="funnelChart"></canvas>
-                    </div>
+                    <h3 class="text-sm font-bold text-white mb-4">FUNIL DE CONVERSÃO</h3>
+                    <div class="h-64 w-full"><canvas id="funnelChart"></canvas></div>
                 </div>
-
                 <div class="glass-panel p-0 overflow-hidden flex flex-col h-[400px]">
                     <div class="p-4 border-b border-white/5 bg-slate-800/50 flex justify-between items-center">
-                        <h3 class="text-xs font-bold text-white flex items-center gap-2">
-                            <span class="status-dot dot-green animate-pulse"></span> LIVE FEED
-                        </h3>
-                        <span class="text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded">REAL-TIME</span>
+                        <h3 class="text-xs font-bold text-white flex items-center gap-2"><span class="status-dot dot-green animate-pulse"></span> LIVE FEED</h3>
                     </div>
-                    <div id="live-feed-content" class="flex-1 overflow-y-auto p-4 space-y-3">
-                        <p class="text-center text-slate-600 text-xs py-10">Aguardando eventos...</p>
-                    </div>
+                    <div id="live-feed-content" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
                 </div>
             </div>
+        </div>
+
+        <div id="view-users" class="hidden space-y-6 animate-fadeIn">
+            <h2 class="text-xl font-bold text-white border-b border-slate-700 pb-4">Ranking de Usuários (Baleias)</h2>
+            <div id="user-ranking-list" class="space-y-3"></div>
         </div>
 
         <div id="view-rh" class="hidden space-y-6 animate-fadeIn">
-            <h2 class="text-xl font-bold text-white border-b border-slate-700 pb-4 mb-4">Gestão de Talentos</h2>
-            
-            <div class="glass-panel p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-sm font-bold text-blue-400 uppercase tracking-widest">Currículos Pendentes</h3>
-                    <button onclick="carregarCandidaturas()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded transition"><i data-lucide="refresh-cw" size="12" class="inline mr-1"></i> Atualizar</button>
-                </div>
-                <div id="rh-cv-list" class="space-y-3">
-                    <p class="text-center text-slate-500 text-xs">Nenhum currículo pendente.</p>
-                </div>
-            </div>
+            <h2 class="text-xl font-bold text-white border-b border-slate-700 pb-4">Gestão de Currículos</h2>
+            <div id="rh-cv-list" class="space-y-3"></div>
         </div>
 
         <div id="view-financeiro" class="hidden space-y-6 animate-fadeIn">
-            <h2 class="text-xl font-bold text-white border-b border-slate-700 pb-4 mb-4">Financeiro & Missões</h2>
-            
-            <div class="glass-panel p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-sm font-bold text-green-400 uppercase tracking-widest">Validação de Missões</h3>
-                    <button onclick="carregarValidacoes()" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded transition">Atualizar</button>
+            <h2 class="text-xl font-bold text-white border-b border-slate-700 pb-4">Validação de Missões</h2>
+            <div id="fin-mission-list" class="space-y-3"></div>
+        </div>
+
+        <div id="view-tools" class="hidden space-y-6 animate-fadeIn">
+            <h2 class="text-xl font-bold text-yellow-500 border-b border-slate-700 pb-4">Ferramentas de Movimentação (Seed)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="glass-panel p-6">
+                    <h3 class="text-white font-bold mb-2">🌱 Criar Prestadores Fakes</h3>
+                    <p class="text-xs text-slate-400 mb-4">Gera perfis 'Online' no catálogo para atrair clientes.</p>
+                    <button onclick="gerarSeed('servico')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg uppercase text-xs">Gerar Prestador Seed</button>
                 </div>
-                <div id="fin-mission-list" class="space-y-3">
-                    <p class="text-center text-slate-500 text-xs">Nenhuma missão para validar.</p>
+                <div class="glass-panel p-6">
+                    <h3 class="text-white font-bold mb-2">💼 Criar Vagas Fakes</h3>
+                    <p class="text-xs text-slate-400 mb-4">Gera vagas de emprego para atrair candidatos.</p>
+                    <button onclick="gerarSeed('vaga')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg uppercase text-xs">Gerar Vaga Seed</button>
                 </div>
             </div>
         </div>
 
     </main>
-
-    <script>
-        lucide.createIcons();
-        function toggleMobileMenu() {
-            document.querySelector('aside').classList.toggle('hidden');
-            document.querySelector('aside').classList.toggle('fixed');
-            document.querySelector('aside').classList.toggle('z-50');
-            document.querySelector('aside').classList.toggle('h-full');
-        }
-    </script>
+    <script>lucide.createIcons();</script>
     <script type="module" src="./js/admin.js"></script>
 </body>
 </html>
