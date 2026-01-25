@@ -1,6 +1,7 @@
-import { db, auth } from '../app.js';
+import { db, auth, storage } from '../app.js'; // Importando Storage
 import { userProfile } from '../auth.js';
-import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // GATILHO DE ABA
 const tabEmpregos = document.getElementById('tab-empregos');
@@ -16,10 +17,6 @@ export function carregarInterfaceEmpregos() {
     
     if(!container) return;
 
-    // LÓGICA BIVALENTE
-    // Se é Prestador -> Vê Vagas (Candidato)
-    // Se é Cliente -> Posta Vagas (Empresa)
-    
     if (userProfile && userProfile.is_provider) {
         // --- VISÃO CANDIDATO ---
         if(containerEmpresa) containerEmpresa.classList.add('hidden');
@@ -82,17 +79,13 @@ function listarVagasParaCandidato(container) {
 window.candidatarVaga = async (jobId) => {
     if(!auth.currentUser) return alert("Faça login.");
     
-    // Verifica se já tem currículo
     const cvRef = doc(db, "candidates", auth.currentUser.uid);
     const cvSnap = await getDoc(cvRef);
 
     if (!cvSnap.exists()) {
-        // Abre modal para criar CV rápido
         document.getElementById('cv-setup-modal').classList.remove('hidden');
-        // Salva o ID da vaga para candidatar depois de criar
         window.vagaPendenteId = jobId; 
     } else {
-        // Já tem CV, aplica direto
         aplicarParaVaga(jobId);
     }
 };
@@ -101,16 +94,36 @@ window.salvarCurriculo = async () => {
     const nome = document.getElementById('cv-nome').value;
     const habilidades = document.getElementById('cv-habilidades').value;
     const telefone = document.getElementById('cv-telefone').value;
+    const fileInput = document.getElementById('cv-arquivo');
 
-    if(!nome || !telefone) return alert("Preencha os dados básicos.");
+    if(!nome || !telefone) return alert("Preencha nome e telefone.");
+
+    const btn = document.getElementById('btn-save-cv');
+    btn.innerText = "Salvando...";
+    btn.disabled = true;
 
     try {
+        let pdfUrl = null;
+
+        // Upload do PDF (Se existir)
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            // Verifica tamanho (ex: max 5MB)
+            if (file.size > 5 * 1024 * 1024) throw new Error("PDF muito grande (Max 5MB).");
+            
+            const storageRef = ref(storage, `curriculos/${auth.currentUser.uid}/${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            pdfUrl = await getDownloadURL(snapshot.ref);
+        }
+
+        // Salva dados no Firestore
         await setDoc(doc(db, "candidates", auth.currentUser.uid), {
             nome_completo: nome,
             habilidades: habilidades,
-            telefone: telefone, // Visível apenas para empresa pagante (Futuro)
+            telefone: telefone,
+            curriculo_pdf: pdfUrl, // Link do PDF
             updated_at: serverTimestamp()
-        });
+        }, { merge: true });
         
         alert("✅ Currículo Salvo!");
         document.getElementById('cv-setup-modal').classList.add('hidden');
@@ -121,25 +134,37 @@ window.salvarCurriculo = async () => {
         }
     } catch (e) {
         alert("Erro: " + e.message);
+    } finally {
+        btn.innerText = "SALVAR E CONTINUAR";
+        btn.disabled = false;
     }
 };
 
 async function aplicarParaVaga(jobId) {
     try {
+        // Busca dados do candidato para "congelar" na aplicação
+        const cvDoc = await getDoc(doc(db, "candidates", auth.currentUser.uid));
+        const cvData = cvDoc.data();
+
         await addDoc(collection(db, "job_applications"), {
             job_id: jobId,
             candidate_id: auth.currentUser.uid,
-            candidate_name: userProfile.nome_profissional || userProfile.displayName,
+            candidate_name: cvData.nome_completo,
+            candidate_pdf: cvData.curriculo_pdf || null, // Salva link na aplicação
             applied_at: serverTimestamp(),
             status: "pending"
         });
+        
+        // Atualiza contador da vaga (opcional, mas bom pra UX)
+        // await updateDoc(doc(db, "jobs", jobId), { candidatos_count: increment(1) });
+
         alert("🚀 Candidatura enviada com sucesso!");
     } catch(e) {
         alert("Erro ao aplicar: " + e.message);
     }
 }
 
-// --- 3. VISÃO EMPRESA (Postar Vaga) ---
+// --- 3. VISÃO EMPRESA (Postar e Gerenciar) ---
 function listarMinhasVagasEmpresa() {
     const list = document.getElementById('lista-minhas-vagas');
     if(!list) return;
@@ -154,16 +179,59 @@ function listarMinhasVagasEmpresa() {
         snap.forEach(d => {
             const v = d.data();
             list.innerHTML += `
-                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2 flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-xs text-gray-800">${v.titulo}</p>
-                        <p class="text-[9px] text-gray-500">${v.candidatos_count || 0} candidatos</p>
+                <div class="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-2">
+                    <div class="flex justify-between items-center mb-2">
+                        <div>
+                            <p class="font-bold text-xs text-gray-800">${v.titulo}</p>
+                            <p class="text-[9px] text-gray-500">Publicado em: ${v.created_at ? v.created_at.toDate().toLocaleDateString() : 'Hoje'}</p>
+                        </div>
+                        <button onclick="window.verCandidatos('${d.id}')" class="bg-blue-100 text-blue-700 text-[9px] font-bold uppercase px-3 py-1.5 rounded hover:bg-blue-200 transition">
+                            Ver Candidatos
+                        </button>
                     </div>
-                    <button class="text-red-400 text-[9px] font-bold uppercase border border-red-100 px-2 py-1 rounded bg-white">Fechar</button>
+                    <div id="candidatos-${d.id}" class="hidden mt-2 border-t border-gray-200 pt-2 space-y-1">
+                        <p class="text-[9px] text-gray-400 italic">Carregando candidatos...</p>
+                    </div>
                 </div>`;
         });
     });
 }
+
+// Função para expandir e ver candidatos (COM PDF)
+window.verCandidatos = async (jobId) => {
+    const container = document.getElementById(`candidatos-${jobId}`);
+    if(container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+        
+        // Busca aplicações desta vaga
+        const q = query(collection(db, "job_applications"), where("job_id", "==", jobId));
+        const snap = await getDocs(q);
+        
+        container.innerHTML = "";
+        if (snap.empty) {
+            container.innerHTML = `<p class="text-[9px] text-gray-400">Nenhum candidato ainda.</p>`;
+        } else {
+            snap.forEach(appDoc => {
+                const app = appDoc.data();
+                const pdfLink = app.candidate_pdf 
+                    ? `<a href="${app.candidate_pdf}" target="_blank" class="text-red-500 font-bold hover:underline">📄 PDF</a>` 
+                    : `<span class="text-gray-300">Sem PDF</span>`;
+
+                container.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded border border-gray-100">
+                        <span class="text-[10px] font-bold text-gray-700">${app.candidate_name}</span>
+                        <div class="flex gap-2 text-[9px]">
+                            ${pdfLink}
+                            <button onclick="alert('Funcionalidade Premium: Contato liberado no plano empresa!')" class="text-blue-600 font-bold hover:text-blue-800">📞 Contato</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    } else {
+        container.classList.add('hidden');
+    }
+};
 
 window.abrirModalVaga = () => {
     document.getElementById('job-post-modal').classList.remove('hidden');
@@ -187,14 +255,13 @@ window.publicarVaga = async () => {
             titulo: titulo,
             descricao: desc,
             salario: salario,
-            tipo: "CLT", // Padrão por enquanto
+            tipo: "CLT",
             created_at: serverTimestamp(),
             candidatos_count: 0
         });
         
         alert("✅ Vaga Publicada!");
         document.getElementById('job-post-modal').classList.add('hidden');
-        // Limpar inputs...
     } catch(e) {
         alert("Erro: " + e.message);
     } finally {
