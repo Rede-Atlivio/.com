@@ -36,19 +36,12 @@ window.alternarPerfil = async () => {
     } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- FUNÇÃO QUE FALTAVA: SALVAR NOME E SERVIÇOS DO PRESTADOR ---
+// --- SALVAR NOME E SERVIÇOS ---
 window.saveServicesAndGoOnline = async () => {
     const nomeInput = document.getElementById('setup-name').value;
     const modal = document.getElementById('provider-setup-modal');
 
     if(!nomeInput) return alert("Digite seu nome profissional.");
-    // Verifica se a variável meusServicos (do services.js) está acessível ou se precisamos recarregar
-    // Para simplificar, assumimos que services.js já atualizou a variável global se ela fosse exportada
-    // Mas como services.js não exporta, confiamos que o modal foi manipulado corretamente.
-    
-    // NOTA: Para garantir integridade, idealmente services.js exportaria 'meusServicos'.
-    // Como estamos separando arquivos, vamos salvar o que estiver no banco ou o que foi editado no services.js
-    // A melhor abordagem rápida aqui é apenas salvar o nome e fechar, deixando o services.js lidar com a lista.
 
     try {
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
@@ -56,18 +49,14 @@ window.saveServicesAndGoOnline = async () => {
             setup_profissional_ok: true
         });
         
-        // Atualiza o userProfile local
         userProfile.nome_profissional = nomeInput;
         
-        // Chama a função de ficar online (do services.js)
         if(window.alternarStatusOnline) {
             await window.alternarStatusOnline(true);
         }
         
         alert("✅ Perfil configurado! Você está Online.");
         modal.classList.add('hidden');
-        
-        // Atualiza a tela
         document.getElementById('online-toggle').checked = true;
         
     } catch(e) {
@@ -94,7 +83,6 @@ window.uploadFotoPerfil = async (input) => {
         await updateProfile(user, { photoURL: downloadURL });
         await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL });
 
-        // Atualiza no radar se for prestador
         const activeRef = doc(db, "active_providers", user.uid);
         getDoc(activeRef).then(snap => {
             if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL });
@@ -185,7 +173,7 @@ function iniciarAppLogado(user) {
     }
 
     if (userProfile.is_provider) {
-        // PRESTADOR
+        // --- PRESTADOR ---
         if(btnPerfil) btnPerfil.innerHTML = isAdmin 
             ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
             : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
@@ -205,7 +193,7 @@ function iniciarAppLogado(user) {
         if (!document.querySelector('nav button.border-blue-600') && window.switchTab) window.switchTab('servicos'); 
 
     } else {
-        // CLIENTE
+        // --- CLIENTE ---
         if(btnPerfil) btnPerfil.innerHTML = isAdmin 
             ? `🛡️ <span class="text-red-600 font-black">ADMIN</span> 🔄`
             : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
@@ -215,8 +203,13 @@ function iniciarAppLogado(user) {
         toggleDisplay('tab-servicos', true);
         toggleDisplay('tab-oportunidades', true);
         toggleDisplay('tab-loja', true);
+        
+        // --- AQUI ESTAVA O PROBLEMA 5 ---
+        // Antes estava 'false'. Agora ativamos a carteira para o cliente.
+        toggleDisplay('tab-ganhar', true); 
+        // -------------------------------
+
         toggleDisplay('tab-missoes', false);
-        toggleDisplay('tab-ganhar', false);
         
         toggleDisplay('status-toggle-container', false);
         toggleDisplay('servicos-prestador', false);
