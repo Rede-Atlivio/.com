@@ -45,14 +45,17 @@ export async function carregarCatalogoServicos() {
             // Smart Button Logic
             let btnText = "Solicitar";
             let btnColor = "bg-blue-600 hover:bg-blue-700 text-white shadow-sm";
-            // Escapar as aspas simples nos parâmetros da função
             const safeName = data.nome_profissional ? data.nome_profissional.replace(/'/g, "\\'") : "Profissional";
             let btnAction = `onclick="abrirSolicitacao('${doc.id}', '${safeName}', ${servico.price})"`;
+            let extraHtml = ""; // HTML Extra para Demos
 
             if (isDemo) {
                 btnText = "Ver como funciona";
                 btnColor = "bg-gray-700 hover:bg-gray-800 text-white";
-                btnAction = `onclick="alert('🚧 MODO DEMONSTRAÇÃO\\n\\nEste é um perfil de exemplo para mostrar como os serviços aparecem na plataforma. Em breve, profissionais reais estarão disponíveis aqui.')"`;
+                btnAction = `onclick="alert('🚧 MODO DEMONSTRAÇÃO\\n\\nEste é um perfil de exemplo para mostrar como os serviços aparecem na plataforma.')"`;
+                
+                // --- AJUSTE VISUAL (CREDIBILIDADE) ---
+                extraHtml = `<p class="text-[7px] text-gray-400 mt-2 text-center italic border-t border-gray-100 pt-1">Conteúdo demonstrativo para testes.</p>`;
             }
 
             container.innerHTML += `
@@ -75,6 +78,7 @@ export async function carregarCatalogoServicos() {
                     <button ${btnAction} class="w-full ${btnColor} py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition">
                         ${btnText}
                     </button>
+                    ${extraHtml}
                 </div>
             `;
         });
@@ -86,21 +90,15 @@ export async function carregarCatalogoServicos() {
 }
 
 // --- FIX CRÍTICO: DISPARADORES ---
-
-// 1. Expõe a função para o escopo global (caso precise chamar via HTML ou console)
 window.carregarCatalogoServicos = carregarCatalogoServicos;
 
-// 2. Adiciona o ouvinte de clique no botão da aba "Serviços"
-// Isso garante que a busca rode SEMPRE que o usuário clicar na aba
 const tabBtn = document.getElementById('tab-servicos');
 if(tabBtn) {
     tabBtn.addEventListener('click', () => {
-        // Pequeno delay ou chamada direta para garantir que a UI já respondeu
         carregarCatalogoServicos();
     });
 }
 
-// 3. Executa se já estiver visível ao carregar (Ex: Recarregamento de página na aba certa)
 if(document.getElementById('sec-servicos') && !document.getElementById('sec-servicos').classList.contains('hidden')){
     carregarCatalogoServicos();
 }
