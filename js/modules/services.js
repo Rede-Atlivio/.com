@@ -12,8 +12,14 @@ export async function carregarCatalogoServicos() {
         </div>`;
 
     try {
-        // Busca prestadores online (Reais e Seeds)
-        const q = query(collection(db, "active_providers"), where("is_online", "==", true), limit(20));
+        // --- ORDENAÇÃO POR SCORE (Reais > Simulados) ---
+        const q = query(
+            collection(db, "active_providers"), 
+            where("is_online", "==", true), 
+            orderBy("visibility_score", "desc"), // Ordena score alto primeiro
+            limit(20)
+        );
+        
         const snapshot = await getDocs(q);
 
         container.innerHTML = "";
@@ -27,21 +33,21 @@ export async function carregarCatalogoServicos() {
             const data = doc.data();
             const servico = data.services && data.services.length > 0 ? data.services[0] : { category: "Geral", price: 0 };
             
-            // --- LÓGICA DE PROTEÇÃO DE MARCA (SEED) ---
-            const isSeed = data.is_seed === true;
+            // --- LÓGICA DE PROTEÇÃO DE MARCA (SIMULADO/DEMO) ---
+            const isDemo = data.is_demo === true || data.is_seed === true;
             
             // Badge e Estilo
-            const badgeDemo = isSeed 
-                ? `<span class="bg-gray-100 text-gray-500 text-[8px] px-2 py-0.5 rounded border border-gray-200 uppercase tracking-wide">Demonstração</span>` 
+            const badgeDemo = isDemo 
+                ? `<span class="bg-gray-100 text-gray-500 text-[8px] px-2 py-0.5 rounded border border-gray-200 uppercase tracking-wide">Exemplo</span>` 
                 : `<span class="bg-green-100 text-green-700 text-[8px] px-2 py-0.5 rounded border border-green-200 uppercase tracking-wide">● Online</span>`;
             
-            const opacityClass = isSeed ? "opacity-80 grayscale-[0.3]" : "";
+            const opacityClass = isDemo ? "opacity-75 grayscale-[0.3]" : "";
             
-            // Ação do Botão
-            const btnText = isSeed ? "Como Funciona?" : "Solicitar";
-            const btnColor = isSeed ? "bg-gray-600 hover:bg-gray-700" : "bg-blue-600 hover:bg-blue-700";
-            const btnAction = isSeed 
-                ? `onclick="alert('🚧 MODO DEMONSTRAÇÃO\\n\\nA Atlivio está em fase de expansão! Este perfil serve para mostrar como a plataforma funciona. Em breve, profissionais reais estarão disponíveis aqui.')"` 
+            // Ação do Botão (Travada para Demos)
+            const btnText = isDemo ? "Indisponível" : "Solicitar";
+            const btnColor = isDemo ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white shadow-sm";
+            const btnAction = isDemo 
+                ? `onclick="alert('Este é um perfil demonstrativo para ilustrar os serviços da plataforma.')"` 
                 : `onclick="abrirSolicitacao('${doc.id}', '${data.nome_profissional}', ${servico.price})"`;
 
             container.innerHTML += `
@@ -61,7 +67,7 @@ export async function carregarCatalogoServicos() {
                         <p class="text-xs font-black text-blue-900">R$ ${servico.price},00 <span class="text-[8px] font-normal text-gray-400">/estimado</span></p>
                     </div>
 
-                    <button ${btnAction} class="w-full ${btnColor} text-white py-2 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-sm transition">
+                    <button ${btnAction} class="w-full ${btnColor} py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition">
                         ${btnText}
                     </button>
                 </div>
@@ -69,8 +75,12 @@ export async function carregarCatalogoServicos() {
         });
 
     } catch (e) {
-        console.error(e);
-        container.innerHTML = `<div class="col-span-2 text-center text-red-400 text-xs">Erro ao carregar.</div>`;
+        console.error("Erro ao carregar (Provável falta de índice):", e);
+        // Link para o console se der erro
+        if(e.message.includes("index")) {
+            console.log("⚠️ CLIQUE NO LINK ACIMA NO CONSOLE PARA CRIAR O ÍNDICE NO FIREBASE");
+        }
+        container.innerHTML = `<div class="col-span-2 text-center text-red-400 text-xs">Erro de conexão. Verifique o console.</div>`;
     }
 }
 
