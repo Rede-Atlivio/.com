@@ -9,14 +9,12 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// URL DO SEU APP (PARA O GERADOR DE LINKS FUNCIONAR)
+// --- CORREÇÃO DO LINK (Apontando para a pasta correta) ---
 const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
 window.db = db;
-let chartInstance = null;
-let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
-let currentCollectionName = '';
+let currentView = 'dashboard', dataMode = 'real', currentCollectionName = '';
 
 // --- LOGIN ---
 window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
@@ -47,26 +45,25 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- CRIAÇÃO DIRETA (SEM TRAVAMENTO) ---
+// --- CRIAÇÃO DIRETA (CORREÇÃO DO TRAVAMENTO) ---
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
     modal.classList.remove('hidden');
-    title.innerText = "CRIAR NOVO ITEM";
+    title.innerText = "NOVO ITEM (Direto)";
     content.innerHTML = ""; 
 
-    // Define campos baseados no tipo
+    // Campos Dinâmicos
     const fields = [
         { key: 'titulo', label: 'Título / Nome', type: 'text' },
         { key: 'descricao', label: 'Descrição', type: 'text' },
         { key: 'status', label: 'Status', type: 'text', val: 'ativo' },
-        { key: 'is_demo', label: 'É Demonstração?', type: 'checkbox', val: dataMode === 'demo' }
+        { key: 'is_demo', label: 'Modo Demonstração?', type: 'checkbox', val: dataMode === 'demo' }
     ];
 
     if(type === 'jobs') fields.push({ key: 'salario', label: 'Salário', type: 'text' });
     if(type === 'missions' || type === 'services') fields.push({ key: 'valor', label: 'Valor (R$)', type: 'number' });
     if(type === 'opps') fields.push({ key: 'link', label: 'Link Externo', type: 'text' });
 
-    // Gera o HTML do formulário
     fields.forEach(f => {
         let inputHtml = f.type === 'checkbox' ? 
             `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
@@ -74,17 +71,17 @@ window.openModalCreate = (type) => {
         content.innerHTML += inputHtml;
     });
 
-    // Função de Salvar (Cria direto no banco)
+    // Ação de Salvar Real
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
-        const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp() };
+        const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp(), visibility_score: 100 };
         
         fields.forEach(f => {
             const el = document.getElementById(`new-${f.key}`);
             if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value);
         });
         
-        // Ajustes de nome para compatibilidade
+        // Compatibilidade de nomes
         if(newData.titulo) newData.nome = newData.titulo; 
         if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
         
@@ -95,8 +92,7 @@ window.openModalCreate = (type) => {
 // --- EDITOR UNIVERSAL ---
 window.openUniversalEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    currentEditId = id; currentEditColl = collectionName;
-    modal.classList.remove('hidden'); title.innerText = "EDITAR ITEM";
+    modal.classList.remove('hidden'); title.innerText = "EDITAR";
     content.innerHTML = `<p class="text-center text-gray-500 animate-pulse">Carregando...</p>`;
     
     try {
@@ -130,18 +126,17 @@ window.saveModalData = async () => {
     catch(e) { alert("Erro: " + e.message); }
 };
 
-// --- GERADOR DE LINKS CORRIGIDO (Igual Sniper) ---
+// --- GERADOR DE LINKS CORRIGIDO ---
 window.saveLinkToFirebase = async () => {
     const idInput = document.getElementById('linkName');
     let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
-    
-    if(!id) return alert("Digite um nome para o link.");
+    if(!id) return alert("Digite um nome.");
     idInput.value = id;
 
     const source = document.getElementById('utmSource').value || 'direct';
-    const isTest = document.getElementById('is-test-link') ? document.getElementById('is-test-link').checked : false;
+    const isTest = document.getElementById('is-test-link').checked;
     
-    // URL Final
+    // URL Corrigida com SITE_URL
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
     try {
@@ -155,7 +150,7 @@ window.saveLinkToFirebase = async () => {
         document.getElementById('finalLinkDisplay').innerText = finalLink;
         document.getElementById('link-result').classList.remove('hidden');
         alert("✅ Link Gerado!");
-    } catch(e) { alert("Erro no Firebase: " + e.message); }
+    } catch(e) { alert("Erro: " + e.message); }
 };
 
 // --- LISTAGEM ---
@@ -193,7 +188,7 @@ async function loadList(type) {
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MASS GENERATOR ---
+// --- MASS GENERATOR (COM VARIEDADE DE STATUS) ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
@@ -203,9 +198,22 @@ window.runMassGenerator = async () => {
     const batch = writeBatch(db);
     let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
 
-    const oppsRich = [{title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"}, {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}];
-    const jobsRich = ["Vendedor", "Atendente", "Estoquista", "Recepcionista"];
+    // ARRAYS EXPANDIDOS E VARIADOS
+    const oppsRich = [
+        {title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
+        {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"},
+        {title: "Indique e Ganhe (Demonstrativo)", desc: "Ganhe por convidar.", type: "indique", badge: "🔵 Indicação"}
+    ];
     
+    // Novas variações de Missões
+    const missoesVariadas = [
+        {nome: "Avaliar Aplicativo", suf: "(Teste)"},
+        {nome: "Cliente Oculto", suf: "(Esgotada)"},
+        {nome: "Fotografar Loja", suf: "(Coletando)"},
+        {nome: "Pesquisa de Preço", suf: "(Concluída)"},
+        {nome: "Validar Endereço", suf: "(Em Análise)"}
+    ];
+
     for(let i=0; i<qty; i++) {
         const docRef = doc(collection(db, collectionName));
         let data = { created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: true, visibility_score: 10 };
@@ -213,13 +221,16 @@ window.runMassGenerator = async () => {
         if(type === 'opps') {
             const item = oppsRich[Math.floor(Math.random()*oppsRich.length)];
             data.titulo = item.title; data.descricao = item.desc; data.tipo_visual = item.type; data.badge_text = item.badge; data.status = "analise"; data.link = "#";
+        } else if (type === 'missions') {
+            const item = missoesVariadas[Math.floor(Math.random()*missoesVariadas.length)];
+            data.titulo = `${item.nome} ${item.suf}`;
+            data.status = item.suf.includes("Concluída") ? "concluida" : "ativa";
+            data.valor = (Math.random() * 20).toFixed(2);
         } else if (type === 'jobs') {
-            data.titulo = `${jobsRich[Math.floor(Math.random()*jobsRich.length)]} (Banco de Talentos)`;
+            data.titulo = "Vaga Exemplo (Banco de Talentos)";
             data.status = "encerrada"; data.empresa = "Parceiro"; data.salario = "A combinar";
         } else if (type === 'services') {
             data.nome_profissional = "Profissional Modelo"; data.is_online = false; data.status = "indisponivel";
-        } else {
-            data.titulo = "Missão Teste (Concluída)"; data.status = "concluida"; data.valor = "10.00";
         }
         batch.set(docRef, data);
     }
