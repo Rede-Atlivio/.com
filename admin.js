@@ -22,10 +22,29 @@ let dataMode = 'real';
 let currentEditId = null;
 let currentEditColl = null;
 
+// --- INICIALIZAR FUNÇÕES GLOBAIS ---
+function initGlobalFunctions() {
+    window.loginAdmin = loginAdmin;
+    window.logoutAdmin = logoutAdmin;
+    window.openUniversalEditor = openUniversalEditor;
+    window.closeModal = closeModal;
+    window.saveModalData = saveModalData;
+    window.deleteItem = deleteItem;
+    window.switchView = switchView;
+    window.toggleDataMode = toggleDataMode;
+    window.forceRefresh = forceRefresh;
+    window.openModalCreate = openModalCreate;
+}
+
 // --- 1. LOGIN ROBUSTO (GLOBAL) ---
-window.loginAdmin = async () => {
+async function loginAdmin() {
     const loader = document.getElementById('loading-login');
     const errMsg = document.getElementById('error-msg');
+    
+    if (!loader || !errMsg) {
+        console.error('Elementos de login não encontrados');
+        return;
+    }
     
     loader.classList.remove('hidden');
     errMsg.classList.add('hidden');
@@ -39,15 +58,21 @@ window.loginAdmin = async () => {
         errMsg.innerText = "Erro: " + e.message;
         errMsg.classList.remove('hidden');
     }
-};
+}
 
-window.logoutAdmin = () => signOut(auth).then(() => location.reload());
+function logoutAdmin() {
+    signOut(auth).then(() => location.reload());
+}
 
 function checkAdmin(user) {
     if(user.email.toLowerCase().trim() === ADMIN_EMAIL) {
-        document.getElementById('login-gate').classList.add('hidden');
-        document.getElementById('admin-sidebar').classList.remove('hidden');
-        document.getElementById('admin-main').classList.remove('hidden');
+        const loginGate = document.getElementById('login-gate');
+        const adminSidebar = document.getElementById('admin-sidebar');
+        const adminMain = document.getElementById('admin-main');
+        
+        if (loginGate) loginGate.classList.add('hidden');
+        if (adminSidebar) adminSidebar.classList.remove('hidden');
+        if (adminMain) adminMain.classList.remove('hidden');
         initDashboard();
     } else {
         alert("ACESSO NEGADO. Apenas Administrador.");
@@ -55,13 +80,20 @@ function checkAdmin(user) {
     }
 }
 
-onAuthStateChanged(auth, (user) => { if(user) checkAdmin(user); });
+onAuthStateChanged(auth, (user) => { 
+    if(user) checkAdmin(user); 
+});
 
 // --- 2. EDITOR UNIVERSAL (PODER TOTAL) ---
-window.openUniversalEditor = async (collectionName, id) => {
+async function openUniversalEditor(collectionName, id) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
+    
+    if (!modal || !content || !title) {
+        console.error('Elementos do modal não encontrados');
+        return;
+    }
     
     currentEditId = id;
     currentEditColl = collectionName;
@@ -116,18 +148,25 @@ window.openUniversalEditor = async (collectionName, id) => {
                     else updates[key] = field.value;
                 }
             });
+            updates.updated_at = serverTimestamp();
             await updateDoc(docRef, updates);
         };
 
     } catch (e) {
         content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`;
     }
-};
+}
 
 // --- 3. CRUD LISTAS ---
 async function loadList(type) {
     const tbody = document.getElementById('table-body');
     const thead = document.getElementById('table-header');
+    
+    if (!tbody || !thead) {
+        console.error('Elementos da tabela não encontrados');
+        return;
+    }
+    
     tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
 
     let colName, headers, fields;
@@ -182,92 +221,146 @@ async function loadList(type) {
         const snap = await getDocs(q);
         
         tbody.innerHTML = "";
-        if(snap.empty) tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Nenhum item encontrado.</td></tr>";
+        if(snap.empty) {
+            tbody.innerHTML = "<tr><td colspan='5' class='p-4 text-center text-gray-500'>Nenhum item encontrado.</td></tr>";
+        } else {
+            snap.forEach(docSnap => {
+                const d = { id: docSnap.id, ...docSnap.data() };
+                tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`;
+            });
+        }
         
-        snap.forEach(docSnap => {
-            const d = { id: docSnap.id, ...docSnap.data() };
-            tbody.innerHTML += `<tr class="table-row border-b border-white/5 transition">${fields(d)}</tr>`;
-        });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch(e) {
         tbody.innerHTML = `<tr><td colspan='5' class='p-4 text-red-500'>Erro: ${e.message}</td></tr>`;
     }
     
-    document.getElementById('btn-add-new').onclick = () => openModalCreate(type);
+    const btnAddNew = document.getElementById('btn-add-new');
+    if (btnAddNew) btnAddNew.onclick = () => openModalCreate(type);
 }
 
 // --- 4. FUNÇÕES GERAIS ---
-window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
+function closeModal() {
+    const modal = document.getElementById('modal-editor');
+    if (modal) modal.classList.add('hidden');
+}
 
-window.saveModalData = async () => {
+async function saveModalData() {
     try {
         if(window.saveCallback) await window.saveCallback();
         alert("✅ Atualizado!");
         closeModal();
         forceRefresh();
-    } catch(e) { alert("Erro ao salvar: " + e.message); }
-};
+    } catch(e) { 
+        alert("Erro ao salvar: " + e.message); 
+    }
+}
 
-window.deleteItem = async (coll, id) => {
+async function deleteItem(coll, id) {
     if(!confirm("⚠️ Tem certeza? Essa ação é irreversível.")) return;
     try {
         await deleteDoc(doc(db, coll, id));
         forceRefresh();
-    } catch(e) { alert(e.message); }
-};
+    } catch(e) { 
+        alert(e.message); 
+    }
+}
 
-window.switchView = (viewName) => {
+function switchView(viewName) {
     currentView = viewName;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const navBtns = document.querySelectorAll('.nav-btn');
+    navBtns.forEach(b => b.classList.remove('active'));
     event.currentTarget.classList.add('active');
     
-    ['view-dashboard', 'view-list', 'view-finance'].forEach(id => document.getElementById(id).classList.add('hidden'));
-    document.getElementById('page-title').innerText = viewName.toUpperCase();
+    ['view-dashboard', 'view-list', 'view-finance'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    const pageTitle = document.getElementById('page-title');
+    if (pageTitle) pageTitle.innerText = viewName.toUpperCase();
 
     if(viewName === 'dashboard') {
-        document.getElementById('view-dashboard').classList.remove('hidden');
+        const viewDash = document.getElementById('view-dashboard');
+        if (viewDash) viewDash.classList.remove('hidden');
         initDashboard();
     } else if(viewName === 'finance') {
-        document.getElementById('view-finance').classList.remove('hidden');
+        const viewFin = document.getElementById('view-finance');
+        if (viewFin) viewFin.classList.remove('hidden');
     } else {
-        document.getElementById('view-list').classList.remove('hidden');
+        const viewList = document.getElementById('view-list');
+        if (viewList) viewList.classList.remove('hidden');
         loadList(viewName);
     }
-};
+}
 
-window.toggleDataMode = (mode) => {
+function toggleDataMode(mode) {
     dataMode = mode;
-    document.getElementById('btn-mode-real').className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
-    document.getElementById('btn-mode-demo').className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
+    const btnModeReal = document.getElementById('btn-mode-real');
+    const btnModeDemo = document.getElementById('btn-mode-demo');
+    
+    if (btnModeReal) {
+        btnModeReal.className = mode === 'real' 
+            ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" 
+            : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
+    }
+    if (btnModeDemo) {
+        btnModeDemo.className = mode === 'demo' 
+            ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" 
+            : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
+    }
     forceRefresh();
-};
+}
 
-window.forceRefresh = () => {
+function forceRefresh() {
     if(currentView === 'dashboard') initDashboard();
     else loadList(currentView);
-};
+}
 
-window.openModalCreate = (type) => {
+function openModalCreate(type) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
+    const modalTitle = document.getElementById('modal-title');
+    
+    if (!modal || !content || !modalTitle) {
+        console.error('Elementos do modal não encontrados');
+        return;
+    }
+    
     modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = "NOVO ITEM";
+    modalTitle.innerText = "NOVO ITEM";
     content.innerHTML = `<p class="text-center text-gray-400">Clique em SALVAR para criar um item em branco e depois edite para preencher.</p>`;
+    
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : type));
         await addDoc(collection(db, coll), {
             created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
             is_demo: dataMode === 'demo',
             titulo: 'Novo Item (Edite-me)',
             status: 'rascunho'
         });
     };
-};
+}
 
 async function initDashboard() {
     try {
         const collUsers = collection(db, "usuarios");
         const snapUsers = await getCountFromServer(collUsers);
-        document.getElementById('kpi-users').innerText = snapUsers.data().count;
-    } catch(e) { console.log("Dash init error", e); }
+        const kpiUsers = document.getElementById('kpi-users');
+        if (kpiUsers) kpiUsers.innerText = snapUsers.data().count;
+    } catch(e) { 
+        console.log("Dashboard init error", e); 
+    }
 }
+
+// --- INICIALIZAR QUANDO DOCUMENT ESTIVER PRONTO ---
+document.addEventListener('DOMContentLoaded', () => {
+    initGlobalFunctions();
+    console.log('✅ Admin Dashboard carregado com sucesso');
+});
+
+// Garantir que as funções estejam disponíveis globalmente
+window.addEventListener('load', () => {
+    initGlobalFunctions();
+});
