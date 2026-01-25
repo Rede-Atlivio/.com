@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlivio - Sala de Comando</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; }
@@ -21,7 +23,13 @@
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
         .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
         .dot-green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
-        input, select, textarea { background-color: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
+        
+        /* CORREÇÃO DE INPUTS */
+        input, select, textarea { 
+            background-color: #1e293b !important; 
+            border-color: #334155 !important; 
+            color: #f8fafc !important; 
+        }
     </style>
 </head>
 <body class="h-screen overflow-hidden flex">
@@ -30,15 +38,16 @@
         <div>
             <div class="p-6 flex items-center gap-3">
                 <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-xl">A</div>
-                <div><h1 class="font-bold text-white tracking-tight">ATLIVIO <span class="text-blue-500">GOD</span></h1><p class="text-[10px] text-slate-500">v7.0 Final</p></div>
+                <div><h1 class="font-bold text-white tracking-tight">ATLIVIO <span class="text-blue-500">GOD</span></h1><p class="text-[10px] text-slate-500">v8.0 Stable</p></div>
             </div>
             <nav class="mt-4 space-y-1">
                 <div onclick="switchView('dashboard')" id="nav-dashboard" class="nav-item active p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="layout-dashboard" size="18"></i> Visão Geral</div>
                 <div onclick="switchView('links')" id="nav-links" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="link" size="18"></i> Fábrica de Links</div>
-                <div onclick="switchView('rh')" id="nav-rh" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="briefcase" size="18"></i> RH & Talentos</div>
                 <div onclick="switchView('loja')" id="nav-loja" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="shopping-bag" size="18"></i> Loja & Produtos</div>
                 <div onclick="switchView('opps')" id="nav-opps" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="zap" size="18"></i> Oportunidades</div>
-                <div onclick="switchView('tools')" id="nav-tools" class="nav-item p-4 flex items-center gap-3 text-sm font-bold text-yellow-500"><i data-lucide="settings" size="18"></i> Ferramentas Seed</div>
+                <div onclick="switchView('rh')" id="nav-rh" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="briefcase" size="18"></i> RH & Talentos</div>
+                <div onclick="switchView('financeiro')" id="nav-financeiro" class="nav-item p-4 flex items-center gap-3 text-sm font-bold"><i data-lucide="wallet" size="18"></i> Financeiro</div>
+                <div onclick="switchView('tools')" id="nav-tools" class="nav-item p-4 flex items-center gap-3 text-sm font-bold text-yellow-500"><i data-lucide="settings" size="18"></i> Ferramentas de Impulso</div>
             </nav>
         </div>
         <div class="p-4 border-t border-slate-800"><button onclick="location.href='index.html'" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2"><i data-lucide="log-out" size="14"></i> VOLTAR AO APP</button></div>
@@ -85,10 +94,11 @@
 
         <div id="view-links" class="hidden space-y-6 animate-fadeIn">
             <div class="glass-panel p-6 mb-6">
+                <h3 class="text-sm font-bold text-white mb-4">Criar Rastreamento</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 uppercase font-bold block">Slug</label><input type="text" id="link-slug" placeholder="vaga-zap" class="w-full text-xs p-3 rounded"></div>
-                    <div><label class="text-[10px] text-slate-400 uppercase font-bold block">Destino</label><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Serviços</option><option value="empregos">Empregos</option><option value="oportunidades">Oportunidades</option></select></div>
-                    <div><label class="text-[10px] text-slate-400 uppercase font-bold block">Origem</label><input type="text" id="link-source" placeholder="WhatsApp" class="w-full text-xs p-3 rounded"></div>
+                    <div class="md:col-span-2"><label class="text-[10px] text-slate-400 font-bold">Slug (Ex: zap-grupo1)</label><input type="text" id="link-slug" class="w-full text-xs p-3 rounded"></div>
+                    <div><label class="text-[10px] text-slate-400 font-bold">Destino</label><select id="link-target" class="w-full text-xs p-3 rounded"><option value="servicos">Serviços</option><option value="empregos">Empregos</option><option value="oportunidades">Oportunidades</option></select></div>
+                    <div><label class="text-[10px] text-slate-400 font-bold">Origem</label><input type="text" id="link-source" placeholder="WhatsApp" class="w-full text-xs p-3 rounded"></div>
                 </div>
                 <button onclick="criarLinkRastreado()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-xs uppercase">Gerar Link</button>
                 <div id="link-result-box" class="hidden mt-4 bg-slate-950 p-4 rounded flex justify-between items-center"><code id="final-link-text" class="text-green-400 text-xs">...</code><button onclick="copiarLinkGerado()" class="text-[10px] bg-slate-800 text-white px-3 py-1 rounded">COPIAR</button></div>
@@ -96,56 +106,51 @@
             <div id="links-list" class="space-y-3"></div>
         </div>
 
-        <div id="view-rh" class="hidden space-y-6 animate-fadeIn">
-            <div class="glass-panel p-6">
-                <div class="flex justify-between items-center mb-6"><h3 class="text-sm font-bold text-blue-400">Currículos</h3><button onclick="carregarCandidaturas()" class="text-xs bg-slate-700 text-white px-3 py-1 rounded">Atualizar</button></div>
-                <div id="rh-cv-list" class="space-y-3"></div>
-            </div>
-        </div>
-
         <div id="view-loja" class="hidden space-y-6 animate-fadeIn">
             <div class="glass-panel p-6">
-                <h3 class="text-sm font-bold text-white mb-4">Adicionar Produto</h3>
+                <h3 class="text-sm font-bold text-white mb-4">Novo Produto</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <input type="text" id="prod-nome" placeholder="Nome do Produto" class="w-full text-xs p-3 rounded">
-                    <input type="text" id="prod-preco" placeholder="Preço (R$)" class="w-full text-xs p-3 rounded">
-                    <input type="text" id="prod-link" placeholder="Link de Afiliado" class="w-full text-xs p-3 rounded col-span-2">
-                    <input type="text" id="prod-img" placeholder="URL da Imagem" class="w-full text-xs p-3 rounded col-span-2">
+                    <input type="text" id="prod-nome" placeholder="Nome" class="w-full text-xs p-3 rounded">
+                    <input type="text" id="prod-preco" placeholder="Preço" class="w-full text-xs p-3 rounded">
+                    <input type="text" id="prod-link" placeholder="Link Afiliado" class="w-full text-xs p-3 rounded col-span-2">
+                    <input type="text" id="prod-img" placeholder="Link Imagem" class="w-full text-xs p-3 rounded col-span-2">
                 </div>
-                <button onclick="adicionarProduto()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg text-xs uppercase">Salvar Produto</button>
+                <button onclick="adicionarProduto()" class="w-full bg-green-600 text-white font-bold py-3 rounded-lg text-xs uppercase">Salvar</button>
             </div>
-            <h3 class="text-sm font-bold text-slate-400 mt-6">Produtos Ativos</h3>
-            <div id="loja-list" class="grid grid-cols-2 gap-4"></div>
+            <div id="loja-list" class="grid grid-cols-2 gap-4 mt-6"></div>
         </div>
 
         <div id="view-opps" class="hidden space-y-6 animate-fadeIn">
             <div class="glass-panel p-6">
-                <h3 class="text-sm font-bold text-white mb-4">Criar Oportunidade</h3>
-                <input type="text" id="opp-titulo" placeholder="Título (Ex: Cupom Shopee)" class="w-full text-xs p-3 rounded mb-2">
+                <h3 class="text-sm font-bold text-white mb-4">Nova Oportunidade</h3>
+                <input type="text" id="opp-titulo" placeholder="Título" class="w-full text-xs p-3 rounded mb-2">
                 <input type="text" id="opp-link" placeholder="Link" class="w-full text-xs p-3 rounded mb-2">
-                <textarea id="opp-desc" placeholder="Descrição..." class="w-full text-xs p-3 rounded mb-4"></textarea>
-                <button onclick="adicionarOportunidade()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 rounded-lg text-xs uppercase">Publicar</button>
+                <textarea id="opp-desc" placeholder="Descrição" class="w-full text-xs p-3 rounded mb-4"></textarea>
+                <button onclick="adicionarOportunidade()" class="w-full bg-yellow-600 text-white font-bold py-3 rounded-lg text-xs uppercase">Publicar</button>
             </div>
-            <div id="opps-list" class="space-y-3"></div>
+            <div id="opps-list" class="space-y-3 mt-6"></div>
         </div>
 
         <div id="view-tools" class="hidden space-y-6 animate-fadeIn">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="glass-panel p-6">
-                    <h3 class="text-white font-bold mb-2">🌱 Seed: Prestadores</h3>
-                    <p class="text-xs text-slate-400 mb-4">Cria: Pedreiros, Diaristas, Eletricistas (Nomes Reais).</p>
-                    <button onclick="gerarSeed('servico')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-xs">Gerar 5 Prestadores</button>
+                    <h3 class="text-white font-bold mb-2">🌱 Impulso: Prestadores</h3>
+                    <p class="text-xs text-slate-400 mb-4">Cria: Pedreiros, Diaristas (Nomes Reais).</p>
+                    <button onclick="gerarSeed('servico')" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg text-xs">Gerar 5 Perfis</button>
                 </div>
                 <div class="glass-panel p-6">
-                    <h3 class="text-white font-bold mb-2">💼 Seed: Vagas</h3>
-                    <p class="text-xs text-slate-400 mb-4">Cria: Atendente, Vendedor, Auxiliar (Vagas Reais).</p>
+                    <h3 class="text-white font-bold mb-2">💼 Impulso: Vagas</h3>
+                    <p class="text-xs text-slate-400 mb-4">Cria: Atendente, Vendedor (Vagas Reais).</p>
                     <button onclick="gerarSeed('vaga')" class="w-full bg-purple-600 text-white font-bold py-3 rounded-lg text-xs">Gerar 5 Vagas</button>
                 </div>
             </div>
         </div>
 
+        <div id="view-rh" class="hidden"><div class="glass-panel p-6"><div id="rh-cv-list">Carregando...</div></div></div>
+        <div id="view-financeiro" class="hidden"><div class="glass-panel p-6"><div id="fin-mission-list">Carregando...</div></div></div>
+
     </main>
     <script>lucide.createIcons(); function toggleMobileMenu(){const a=document.querySelector('aside');a.classList.toggle('hidden');a.classList.toggle('fixed');a.classList.toggle('z-50');a.classList.toggle('h-full');}</script>
-    <script type="module" src="./js/admin.js?v=7.0"></script>
+    <script type="module" src="./js/admin.js?v=8.0"></script>
 </body>
 </html>
