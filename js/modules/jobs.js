@@ -36,8 +36,10 @@ export function carregarInterfaceEmpregos() {
 function listarVagasParaCandidato(container) {
     container.innerHTML = `<div class="text-center py-6 animate-fadeIn"><div class="loader mx-auto mb-2 border-blue-200 border-t-blue-600"></div><p class="text-[9px] text-gray-400">Buscando oportunidades...</p></div>`;
 
-    // Ordena por pontuação e depois por data
-    const q = query(collection(db, "jobs"), orderBy("visibility_score", "desc"), orderBy("created_at", "desc"));
+    // --- CORREÇÃO DO ERRO DE ÍNDICE ---
+    // Removemos 'orderBy("visibility_score")' para evitar travamento do Firebase
+    // Agora ordena apenas por data (mais recente primeiro)
+    const q = query(collection(db, "jobs"), orderBy("created_at", "desc"));
 
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
@@ -60,16 +62,24 @@ function listarVagasParaCandidato(container) {
 
             // Lógica do Botão
             let btnHtml = `<button onclick="window.candidatarVaga('${d.id}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-blue-700 transition">Enviar Currículo</button>`;
-            
+            let footerDemo = "";
+
             if (isDemo) {
-                // --- AJUSTE VISUAL (CREDIBILIDADE) ---
                 btnHtml = `
                 <div class="flex flex-col items-end">
                     <button onclick="alert('ℹ️ MODO DEMONSTRAÇÃO\\n\\nEsta é uma vaga de exemplo para ilustrar o sistema.')" class="bg-gray-700 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-gray-800 transition">
                         Ver Exemplo
                     </button>
-                    <span class="text-[7px] text-gray-400 mt-1 italic tracking-wide">Item Demonstrativo</span>
                 </div>`;
+                
+                // Linha discreta no rodapé
+                footerDemo = `
+                    <div class="mt-3 pt-2 border-t border-gray-100 text-center">
+                        <p class="text-[8px] text-gray-400 italic">
+                            Conteúdo demonstrativo para ilustrar o funcionamento da plataforma.
+                        </p>
+                    </div>
+                `;
             } else if (isEncerrada) {
                 btnHtml = `<button disabled class="bg-gray-200 text-gray-500 px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase cursor-not-allowed">Inscrições Encerradas</button>`;
             }
@@ -85,6 +95,7 @@ function listarVagasParaCandidato(container) {
                         <span class="text-[9px] font-bold text-green-600">R$ ${vaga.salario || 'A combinar'}</span>
                         ${btnHtml}
                     </div>
+                    ${footerDemo}
                 </div>`;
         });
     });
