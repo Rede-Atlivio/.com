@@ -8,10 +8,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
-const SITE_URL = "https://rede-atlivio.github.io/painel-financeiro-borges"; 
+
+// --- URL CORRIGIDA (AGORA APONTA PARA A PASTA .COM) ---
+const SITE_URL = "https://rede-atlivio.github.io/.com"; 
 
 window.auth = auth;
 window.db = db;
+let chartInstance = null;
 let currentView = 'dashboard', dataMode = 'real', currentEditId = null, currentEditColl = null;
 let currentCollectionName = '';
 
@@ -44,14 +47,13 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) loadList(currentView); else if (currentView === 'dashboard') initDashboard(); };
 
-// --- NOVO SISTEMA DE CRIAÇÃO (DIRETO E SEM TRAVAS) ---
+// --- CRIAÇÃO DIRETA (SEM TRAVAMENTO) ---
 window.openModalCreate = (type) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
     modal.classList.remove('hidden');
     title.innerText = "CRIAR NOVO ITEM";
-    content.innerHTML = ""; // Limpa
+    content.innerHTML = ""; 
 
-    // Campos Padrão para Preencher
     const fields = [
         { key: 'titulo', label: 'Título / Nome', type: 'text' },
         { key: 'descricao', label: 'Descrição', type: 'text' },
@@ -63,7 +65,6 @@ window.openModalCreate = (type) => {
     if(type === 'missions' || type === 'services') fields.push({ key: 'valor', label: 'Valor (R$)', type: 'number' });
     if(type === 'opps') fields.push({ key: 'link', label: 'Link Externo', type: 'text' });
 
-    // Renderiza Formulário Vazio
     fields.forEach(f => {
         let inputHtml = f.type === 'checkbox' ? 
             `<div class="flex items-center justify-between bg-slate-800 p-2 rounded border border-slate-700 mb-2"><label class="inp-label">${f.label}</label><input type="checkbox" id="new-${f.key}" ${f.val?'checked':''} class="w-4 h-4 accent-blue-600"></div>` :
@@ -71,25 +72,20 @@ window.openModalCreate = (type) => {
         content.innerHTML += inputHtml;
     });
 
-    // Ação de Salvar (Cria Direto no Banco)
     window.saveCallback = async () => {
         let coll = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
-        
         const newData = { created_at: serverTimestamp(), updated_at: serverTimestamp() };
         fields.forEach(f => {
             const el = document.getElementById(`new-${f.key}`);
             if(el) newData[f.key] = f.type === 'checkbox' ? el.checked : (f.type === 'number' ? parseFloat(el.value) : el.value);
         });
-        
-        // Ajuste de campos específicos
         if(newData.titulo) newData.nome = newData.titulo; 
         if(newData.titulo && type === 'services') newData.nome_profissional = newData.titulo;
-
         await addDoc(collection(db, coll), newData);
     };
 };
 
-// --- EDITOR UNIVERSAL (EDITION) ---
+// --- EDITOR UNIVERSAL ---
 window.openUniversalEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
     currentEditId = id; currentEditColl = collectionName;
@@ -127,24 +123,21 @@ window.saveModalData = async () => {
     catch(e) { alert("Erro: " + e.message); }
 };
 
-// --- GERADOR DE LINKS (REFEITO IGUAL SNIPER) ---
+// --- GERADOR DE LINKS CORRIGIDO ---
 window.saveLinkToFirebase = async () => {
     const idInput = document.getElementById('linkName');
     let id = idInput.value.trim().replace(/\s+/g, '-').toLowerCase();
     
     if(!id) return alert("Digite um nome para o link.");
-    
-    // Atualiza o input visualmente
     idInput.value = id;
 
     const source = document.getElementById('utmSource').value || 'direct';
     const isTest = document.getElementById('is-test-link').checked;
     
-    // URL Simples e Direta
+    // AQUI ESTÁ A CORREÇÃO: Usa SITE_URL correto
     const finalLink = `${SITE_URL}/?utm_source=${source}&ref=${id}${isTest ? '&mode=test' : ''}`;
 
     try {
-        // Gravação direta sem frescura
         await setDoc(doc(db, "short_links", id), {
             target: finalLink,
             source: source,
@@ -152,15 +145,10 @@ window.saveLinkToFirebase = async () => {
             clicks: 0,
             created_at: serverTimestamp()
         });
-        
         document.getElementById('finalLinkDisplay').innerText = finalLink;
         document.getElementById('link-result').classList.remove('hidden');
-        alert("✅ Link Gerado e Salvo!");
-        
-    } catch(e) { 
-        console.error(e);
-        alert("Erro no Firebase: " + e.message); 
-    }
+        alert("✅ Link Gerado!");
+    } catch(e) { alert("Erro no Firebase: " + e.message); }
 };
 
 // --- LISTAGEM ---
@@ -198,7 +186,7 @@ async function loadList(type) {
     if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
 }
 
-// --- MASS GENERATOR (MANTIDO E FUNCIONAL) ---
+// --- MASS GENERATOR ---
 window.runMassGenerator = async () => {
     const type = document.getElementById('gen-type').value;
     const qty = parseInt(document.getElementById('gen-qty').value);
@@ -208,11 +196,7 @@ window.runMassGenerator = async () => {
     const batch = writeBatch(db);
     let collectionName = type === 'jobs' ? 'jobs' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : 'oportunidades'));
 
-    // ARRAYS RICOS
-    const oppsRich = [
-        {title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"},
-        {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}
-    ];
+    const oppsRich = [{title: "Alerta Promocional iFood (Exemplo)", desc: "Cupom especial.", type: "alerta", badge: "🔴 Alerta"}, {title: "Cashback Supermercado (Modelo)", desc: "Dinheiro de volta.", type: "cashback", badge: "🟢 Cashback"}];
     const jobsRich = ["Vendedor", "Atendente", "Estoquista", "Recepcionista"];
     
     for(let i=0; i<qty; i++) {
