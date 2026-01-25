@@ -62,7 +62,14 @@ function listarVagasParaCandidato(container) {
             let btnHtml = `<button onclick="window.candidatarVaga('${d.id}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-blue-700 transition">Enviar Currículo</button>`;
             
             if (isDemo) {
-                btnHtml = `<button onclick="alert('ℹ️ MODO DEMONSTRAÇÃO\\n\\nEsta é uma vaga de exemplo.')" class="bg-gray-700 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-gray-800 transition">Ver Exemplo</button>`;
+                // --- AJUSTE VISUAL (CREDIBILIDADE) ---
+                btnHtml = `
+                <div class="flex flex-col items-end">
+                    <button onclick="alert('ℹ️ MODO DEMONSTRAÇÃO\\n\\nEsta é uma vaga de exemplo para ilustrar o sistema.')" class="bg-gray-700 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-gray-800 transition">
+                        Ver Exemplo
+                    </button>
+                    <span class="text-[7px] text-gray-400 mt-1 italic tracking-wide">Item Demonstrativo</span>
+                </div>`;
             } else if (isEncerrada) {
                 btnHtml = `<button disabled class="bg-gray-200 text-gray-500 px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase cursor-not-allowed">Inscrições Encerradas</button>`;
             }
@@ -83,9 +90,8 @@ function listarVagasParaCandidato(container) {
     });
 }
 
-// --- FUNÇÃO 2: PUBLICAR VAGA (A QUE ESTAVA FALTANDO) ---
+// --- FUNÇÃO 2: PUBLICAR VAGA ---
 export async function publicarVaga() {
-    // 1. Pega os valores
     const tituloEl = document.getElementById('job-title');
     const salarioEl = document.getElementById('job-salary');
     const descEl = document.getElementById('job-desc');
@@ -97,19 +103,16 @@ export async function publicarVaga() {
     const salario = salarioEl.value;
     const descricao = descEl.value;
 
-    // 2. Validação
     if (!titulo || !descricao) {
         return alert("Por favor, preencha o Título e a Descrição da vaga.");
     }
 
-    // 3. UI de Carregamento
     if(btn) {
         btn.innerText = "PUBLICANDO...";
         btn.disabled = true;
     }
 
     try {
-        // 4. Salva no Banco (Mesma lógica do teste que funcionou)
         await addDoc(collection(db, "jobs"), {
             titulo: titulo,
             salario: salario || "A combinar",
@@ -119,19 +122,17 @@ export async function publicarVaga() {
             tipo: "CLT",
             created_at: serverTimestamp(),
             status: "ativa",
-            visibility_score: 100, // Garante que aparece no topo
+            visibility_score: 100, 
             is_demo: false
         });
 
         alert("✅ Vaga publicada com sucesso!");
         
-        // 5. Limpa e Fecha
         tituloEl.value = "";
         salarioEl.value = "";
         descEl.value = "";
         document.getElementById('job-post-modal').classList.add('hidden');
         
-        // Atualiza a lista da empresa
         listarMinhasVagasEmpresa();
 
     } catch (e) {
@@ -177,16 +178,13 @@ function listarMinhasVagasEmpresa() {
 export async function candidatarVaga(jobId) {
     if(!auth.currentUser) return alert("Faça login para se candidatar.");
     
-    // Verifica se já tem currículo
     const cvRef = doc(db, "candidates", auth.currentUser.uid);
     const cvSnap = await getDoc(cvRef);
     
     if (!cvSnap.exists()) { 
-        // Abre modal de criar currículo se não tiver
         document.getElementById('cv-setup-modal').classList.remove('hidden'); 
         window.vagaPendenteId = jobId; 
     } else { 
-        // Aplica direto
         aplicarParaVaga(jobId); 
     }
 }
@@ -236,7 +234,7 @@ async function aplicarParaVaga(jobId) {
     }
 }
 
-// --- EXPORTAÇÃO GLOBAL (O QUE FAZ OS BOTÕES DO HTML FUNCIONAREM) ---
+// --- EXPORTAÇÃO GLOBAL ---
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.abrirModalVaga = abrirModalVaga;
 window.publicarVaga = publicarVaga;
