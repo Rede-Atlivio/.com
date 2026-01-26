@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentViewType = 'jobs';
 
@@ -29,8 +29,18 @@ export async function init(viewType) {
             <th class="p-3 text-left">STATUS</th>
             <th class="p-3 text-right">AÇÕES</th>
         `;
-        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA TAREFA"; btnAdd.onclick = () => window.openJobEditor('missions', null); }
-    } 
+        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA TAREFA"; btnAdd.onclick = () => window.openJobEditor('missoes', null); }
+    }
+    else if (viewType === 'opps') { // ✅ NOVO BLOCO OPORTUNIDADES
+        headers.innerHTML = `
+            <th class="p-3 text-left">OPORTUNIDADE</th>
+            <th class="p-3 text-left">TIPO</th>
+            <th class="p-3 text-left">LINK DESTINO</th>
+            <th class="p-3 text-left">STATUS</th>
+            <th class="p-3 text-right">AÇÕES</th>
+        `;
+        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA OPORTUNIDADE"; btnAdd.onclick = () => window.openJobEditor('oportunidades', null); }
+    }
     else if (viewType === 'candidatos') {
         headers.innerHTML = `
             <th class="p-3 text-left">NOME DO CANDIDATO</th>
@@ -59,6 +69,7 @@ async function loadList() {
         let collectionName = '';
         if(currentViewType === 'jobs') collectionName = 'jobs';
         if(currentViewType === 'missions') collectionName = 'missoes';
+        if(currentViewType === 'opps') collectionName = 'oportunidades'; // ✅ NOVO
         if(currentViewType === 'candidatos') collectionName = 'candidatos';
 
         const isDemoMode = window.currentDataMode === 'demo';
@@ -86,6 +97,7 @@ async function loadList() {
 
             if (currentViewType === 'jobs') renderJobRow(tbody, id, data);
             else if (currentViewType === 'missions') renderMissionRow(tbody, id, data);
+            else if (currentViewType === 'opps') renderOppRow(tbody, id, data); // ✅ NOVO
             else if (currentViewType === 'candidatos') renderCandidateRow(tbody, id, data);
         });
 
@@ -152,6 +164,32 @@ function renderMissionRow(tbody, id, data) {
             </td>
         </tr>
     `;
+}
+
+function renderOppRow(tbody, id, data) { // ✅ RENDERIZADOR NOVO
+    const demoBadge = data.is_demo ? `<span class="ml-2 text-[8px] bg-purple-600 px-1 rounded text-white">DEMO</span>` : "";
+    let tipoIcon = "⚡";
+    if(data.tipo === 'cashback') tipoIcon = "💸";
+
+    tbody.innerHTML += `
+        <tr class="border-b border-white/5 hover:bg-white/5 transition">
+            <td class="p-3">
+                <div class="font-bold text-white flex items-center">${tipoIcon} ${data.titulo} ${demoBadge}</div>
+                <div class="text-[9px] text-gray-500">${data.descricao || ""}</div>
+            </td>
+            <td class="p-3">
+                <span class="bg-slate-800 text-gray-300 px-2 py-1 rounded text-[10px] uppercase font-bold">${data.tipo || "Geral"}</span>
+            </td>
+            <td class="p-3">
+                <a href="${data.link}" target="_blank" class="text-blue-400 hover:text-blue-300 text-[10px] underline truncate block max-w-[150px]">${data.link}</a>
+            </td>
+            <td class="p-3">
+                <span class="bg-green-900/30 text-green-400 border border-green-500/50 px-2 py-1 rounded text-[10px] font-bold">ATIVO</span>
+            </td>
+            <td class="p-3 text-right">
+                <button onclick="window.openJobEditor('oportunidades', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold transition">✏️ EDITAR</button>
+            </td>
+        </tr>`;
 }
 
 function renderCandidateRow(tbody, id, data) {
@@ -236,6 +274,21 @@ window.openJobEditor = async (collectionName, id) => {
                 </div>
             `;
         }
+        else if (realColl === 'oportunidades') { // ✅ FORMULÁRIO NOVO
+            html += `
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2"><label class="inp-label">Título da Oportunidade</label><input type="text" id="edt-titulo" value="${data.titulo||''}" class="inp-editor font-bold text-white"></div>
+                    <div class="col-span-2"><label class="inp-label">Link de Destino</label><input type="text" id="edt-link" value="${data.link||''}" class="inp-editor text-blue-400"></div>
+                    <div><label class="inp-label">Tipo</label>
+                        <select id="edt-tipo" class="inp-editor">
+                            <option value="alerta" ${data.tipo==='alerta'?'selected':''}>⚡ Alerta</option>
+                            <option value="cashback" ${data.tipo==='cashback'?'selected':''}>💸 Cashback</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2"><label class="inp-label">Descrição Curta</label><input type="text" id="edt-descricao" value="${data.descricao||''}" class="inp-editor"></div>
+                </div>
+            `;
+        }
 
         html += `
             <div class="mt-6 pt-4 border-t border-slate-700">
@@ -260,6 +313,8 @@ window.saveJobData = async (col, id) => {
         if(document.getElementById('edt-salario')) data.salario = document.getElementById('edt-salario').value;
         if(document.getElementById('edt-descricao')) data.descricao = document.getElementById('edt-descricao').value;
         if(document.getElementById('edt-status')) data.status = document.getElementById('edt-status').value;
+        if(document.getElementById('edt-link')) data.link = document.getElementById('edt-link').value; // ✅ NOVO
+        if(document.getElementById('edt-tipo')) data.tipo = document.getElementById('edt-tipo').value; // ✅ NOVO
         
         // CORREÇÃO: Salva sempre como número
         if(document.getElementById('edt-valor')) data.valor = parseFloat(document.getElementById('edt-valor').value);
@@ -267,10 +322,10 @@ window.saveJobData = async (col, id) => {
         if (!id) {
             data.created_at = serverTimestamp();
             data.is_demo = (window.currentDataMode === 'demo');
+            data.origem = "admin_manual";
             if(col === 'jobs') data.candidatos_count = 0;
             
-            await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
-                .then(m => m.addDoc(m.collection(db, col), data));
+            await addDoc(collection(db, col), data);
         } else {
             await updateDoc(doc(db, col, id), data);
         }
