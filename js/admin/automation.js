@@ -6,7 +6,56 @@ let roboAtivo = false;
 const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; // 30 Minutos
 
 // ============================================================================
-// 1. INICIALIZAÇÃO (RENDERIZA O HTML NA TELA)
+// 🧠 CÉREBRO DE DADOS (SUA LISTA COMPLETA)
+// ============================================================================
+const FAKES = {
+    jobs: [
+        {t: "Caixa de Supermercado", d: "CLT | R$ 1.320,00 | Enviar Currículo", s: "1.320,00"},
+        {t: "Repositor de Mercadorias", d: "CLT | R$ 1.350,00", s: "1.350,00"},
+        {t: "Atendente de Loja", d: "CLT | R$ 1.400,00", s: "1.400,00"},
+        {t: "Auxiliar de Limpeza", d: "CLT | R$ 1.320,00", s: "1.320,00"},
+        {t: "Estoquista", d: "CLT | R$ 1.380,00", s: "1.380,00"},
+        {t: "Recepcionista", d: "CLT | R$ 1.500,00", s: "1.500,00"},
+        {t: "Vendedor Interno", d: "CLT + Comissão", s: "1.450,00"},
+        {t: "Motorista Entregador", d: "CLT | CNH B", s: "1.800,00"},
+        {t: "Ajudante de Depósito", d: "CLT | R$ 1.350,00", s: "1.350,00"},
+        {t: "Fiscal de Loja", d: "CLT | R$ 1.420,00", s: "1.420,00"}
+    ],
+    services: [
+        {t: "Pintor Residencial", cat: "Obras", p: 120},
+        {t: "Encanador", cat: "Obras", p: 80},
+        {t: "Eletricista Residencial", cat: "Técnica", p: 100},
+        {t: "Diarista", cat: "Limpeza", p: 100},
+        {t: "Montador de Móveis", cat: "Obras", p: 150},
+        {t: "Técnico de Informática", cat: "Técnica", p: 90},
+        {t: "Barman para Eventos", cat: "Outros", p: 150},
+        {t: "Pedreiro", cat: "Obras", p: 120},
+        {t: "Jardineiro", cat: "Limpeza", p: 100},
+        {t: "Instalador de Ventilador", cat: "Técnica", p: 90}
+    ],
+    missions: [
+        {t: "Fotografar Vitrine", d: "Mercado do Bairro.", p: 8},
+        {t: "Avaliar Farmácia", d: "Cliente oculto.", p: 5},
+        {t: "Preço Gás", d: "Conferir preço no bairro.", p: 6},
+        {t: "Fotografar Cardápio", d: "Lanchonete local.", p: 7},
+        {t: "Responder Pesquisa", d: "3 perguntas rápidas.", p: 4},
+        {t: "Confirmar Horário", d: "Loja de rua.", p: 5},
+        {t: "Testar App", d: "Feedback de uso.", p: 12},
+        {t: "Foto Ponto Turístico", d: "Praça central.", p: 10},
+        {t: "Verificar Fila", d: "Lotérica.", p: 6},
+        {t: "Quiz Consumo", d: "Sobre marcas de refri.", p: 4}
+    ],
+    opps: [
+        {t: "Cashback Supermercado", d: "Até 5% de volta.", link: "https://google.com"},
+        {t: "Cashback Farmácia", d: "Medicamentos e perfumaria.", link: "https://google.com"},
+        {t: "Indique e Ganhe", d: "Ganhe por indicação válida.", link: "https://google.com"},
+        {t: "Cupom Delivery", d: "Uso limitado hoje.", link: "https://google.com"},
+        {t: "Desconto Exames", d: "Até 20% off em laboratórios.", link: "https://google.com"}
+    ]
+};
+
+// ============================================================================
+// 1. INICIALIZAÇÃO
 // ============================================================================
 export async function init() {
     const container = document.getElementById('view-automation');
@@ -17,8 +66,8 @@ export async function init() {
             <div class="glass-panel p-6 border border-emerald-500/50 bg-emerald-900/10">
                 <div class="flex justify-between items-center mb-4">
                     <div>
-                        <h2 class="text-xl font-black text-white italic">🤖 ROBÔ DE OFERTAS</h2>
-                        <p class="text-xs text-emerald-400">Posta itens da biblioteca abaixo a cada 30min.</p>
+                        <h2 class="text-xl font-black text-white italic">🤖 SUPER ROBÔ 3.0</h2>
+                        <p class="text-xs text-emerald-400">Posta Empregos, Serviços, Missões e Ofertas aleatoriamente.</p>
                     </div>
                     <div class="text-right">
                         <p class="text-[10px] text-gray-400 uppercase font-bold mb-1">Status</p>
@@ -35,29 +84,16 @@ export async function init() {
                     </button>
                 </div>
 
-                <h3 class="text-sm font-bold text-white mb-2">📚 Biblioteca de Conteúdo (Afiliado)</h3>
-                <div class="bg-slate-900/50 p-4 rounded-xl border border-white/5 mb-4">
-                    <input type="text" id="camp-titulo" placeholder="Título (Ex: iPhone 13 Promo)" class="inp-editor mb-2">
-                    <input type="text" id="camp-link" placeholder="Seu Link de Afiliado" class="inp-editor text-blue-300 mb-2">
-                    <input type="text" id="camp-desc" placeholder="Descrição curta..." class="inp-editor mb-2">
-                    <div class="flex gap-2">
-                        <select id="camp-tipo" class="inp-editor w-32">
-                            <option value="alerta">🔴 Alerta</option>
-                            <option value="cashback">🟢 Cashback</option>
-                        </select>
-                        <button onclick="window.adicionarCampanha()" class="bg-blue-600 text-white px-4 rounded-lg font-bold text-xs uppercase hover:bg-blue-500 flex-1">+ Adicionar</button>
-                    </div>
-                </div>
-
-                <p class="text-[10px] text-gray-400 uppercase font-bold mb-2">Itens na Fila:</p>
-                <div id="lista-campanhas" class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                    <p class="text-center text-gray-500 text-xs py-4">Carregando lista...</p>
+                <div class="bg-black/20 p-3 rounded text-[10px] text-gray-400 font-mono">
+                    <p>⚡ Intervalo: 30 minutos</p>
+                    <p>🎲 Conteúdo: Sorteio entre todas as categorias</p>
+                    <p>📚 Fonte: Lista Interna + Biblioteca de Links</p>
                 </div>
             </div>
             
             <div class="glass-panel p-6 border border-blue-500/50">
                 <h2 class="text-xl font-bold text-white mb-2">🔗 LINKS INTELIGENTES</h2>
-                <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis para campanhas.</p>
+                <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis.</p>
                 
                 <div class="space-y-4 mb-6">
                     <div>
@@ -86,7 +122,6 @@ export async function init() {
             <h2 class="text-2xl font-black text-white italic mb-2">🏭 GERADOR EM MASSA (MANUAL)</h2>
             <p class="text-sm text-gray-400 mb-8">
                 Cria conteúdo simulado instantaneamente.
-                <span class="text-yellow-500 font-bold">⚠️ ATENÇÃO:</span> Os itens aparecem na aba "DEMONSTRATIVO".
             </p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div>
@@ -115,38 +150,22 @@ export async function init() {
             </div>
         </div>
     `;
-
-    // Carrega a lista do robô
-    listarCampanhasAtivas();
     console.log("✅ Módulo Automação Carregado.");
 }
 
 // ============================================================================
-// 2. FUNÇÕES DO ROBÔ
+// 2. FUNÇÕES DO ROBÔ (ATUALIZADO PARA POSTAR TUDO)
 // ============================================================================
 
 window.toggleRobo = (ligar) => {
     const statusText = document.getElementById('robo-status-text');
     if (ligar) {
         if (roboAtivo) return;
-        
-        // Verifica munição
-        const db = window.db;
-        getDocs(collection(db, "bot_library")).then(snap => {
-            if(snap.empty) {
-                alert("⚠️ Adicione pelo menos 1 link na lista antes de ligar o robô!");
-                return;
-            }
-            roboAtivo = true;
-            if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
-            
-            // Executa o primeiro ciclo imediatamente
-            executarCicloRobo();
-            
-            // Inicia o intervalo
-            roboIntervalo = setInterval(executarCicloRobo, TEMPO_ENTRE_POSTS);
-            alert("🤖 ROBÔ INICIADO!\nEle usará sua lista de links cadastrados.");
-        });
+        roboAtivo = true;
+        if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
+        executarCicloRobo();
+        roboIntervalo = setInterval(executarCicloRobo, TEMPO_ENTRE_POSTS);
+        alert("🤖 ROBÔ INICIADO!\nEle vai postar Vagas, Serviços e Tarefas aleatoriamente.");
     } else {
         roboAtivo = false;
         clearInterval(roboIntervalo);
@@ -157,103 +176,69 @@ window.toggleRobo = (ligar) => {
 
 async function ejecutarCicloRobo() {
     if (!roboAtivo) return;
-    console.log("🤖 ROBÔ: Ciclo iniciado...");
+    console.log("🤖 ROBÔ: Iniciando sorteio...");
     const db = window.db;
 
+    // 1. SORTEIA O TIPO DE POST
+    const tipos = ['jobs', 'services', 'missions', 'opps'];
+    const tipoSorteado = tipos[Math.floor(Math.random() * tipos.length)];
+    
+    // 2. SORTEIA O ITEM DA LISTA
+    const lista = FAKES[tipoSorteado];
+    const modelo = lista[Math.floor(Math.random() * lista.length)];
+
+    console.log(`🎲 Robô Sorteou: ${tipoSorteado.toUpperCase()} -> ${modelo.t}`);
+
     try {
-        const snap = await getDocs(collection(db, "bot_library"));
-        if(snap.empty) {
-            console.log("❌ Robô parou: Biblioteca vazia.");
-            window.toggleRobo(false);
-            return;
-        }
-        const opcoes = snap.docs.map(d => d.data());
-        const oferta = opcoes[Math.floor(Math.random() * opcoes.length)];
-        
-        await addDoc(collection(db, "oportunidades"), {
-            titulo: oferta.titulo,
-            descricao: oferta.descricao,
-            tipo: oferta.tipo,
-            link: oferta.link,
+        let collectionName = "";
+        let data = {
             created_at: serverTimestamp(),
             updated_at: serverTimestamp(),
-            is_demo: false, 
-            visibility_score: 100,
+            is_demo: true,
+            visibility_score: 100, // Dá destaque automático
             origem: "robo_auto"
-        });
+        };
+
+        if(tipoSorteado === 'jobs') {
+            collectionName = "jobs";
+            data.titulo = modelo.t;
+            data.descricao = modelo.d;
+            data.salario = modelo.s;
+            data.empresa = "Empresa Parceira (Bot)";
+            data.status = "ativo";
+        } 
+        else if(tipoSorteado === 'services') {
+            collectionName = "active_providers";
+            data.nome_profissional = modelo.t;
+            data.bio = "Profissional verificado (Bot).";
+            data.services = [{category: modelo.cat, price: modelo.p}];
+            data.is_online = true; 
+            data.status = "aprovado";
+        }
+        else if(tipoSorteado === 'missions') {
+            collectionName = "missoes";
+            data.titulo = modelo.t;
+            data.descricao = modelo.d;
+            data.valor = modelo.p;
+            data.status = "disponivel";
+        }
+        else if(tipoSorteado === 'opps') {
+            collectionName = "oportunidades";
+            data.titulo = modelo.t;
+            data.descricao = modelo.d;
+            data.link = modelo.link;
+            data.tipo = "alerta";
+        }
+
+        await addDoc(collection(db, collectionName), data);
         
-        console.log(`✅ ROBÔ: Postou "${oferta.titulo}"!`);
+        console.log(`✅ ROBÔ: Postado com sucesso!`);
         document.title = "Atlivio Admin (POSTOU!)";
         setTimeout(() => document.title = "Atlivio Admin", 5000);
+
     } catch (e) { console.error("❌ ROBÔ FALHOU:", e); }
 }
-// Expõe ciclo para console
 window.executarCicloRobo = ejecutarCicloRobo;
-
-window.adicionarCampanha = async () => {
-    const titulo = document.getElementById('camp-titulo').value;
-    const link = document.getElementById('camp-link').value;
-    const desc = document.getElementById('camp-desc').value;
-    const tipo = document.getElementById('camp-tipo').value;
-
-    if(!titulo || !link) return alert("Preencha Título e Link.");
-    const db = window.db;
-
-    try {
-        await addDoc(collection(db, "bot_library"), {
-            titulo: titulo,
-            link: link,
-            descricao: desc || "Oferta imperdível.",
-            tipo: tipo,
-            created_at: serverTimestamp()
-        });
-        
-        // Limpa form
-        document.getElementById('camp-titulo').value = "";
-        document.getElementById('camp-link').value = "";
-        document.getElementById('camp-desc').value = "";
-        
-        alert("✅ Link salvo na biblioteca do Robô!");
-        listarCampanhasAtivas();
-    } catch(e) { alert("Erro: " + e.message); }
-};
-
-window.removerCampanha = async (id) => {
-    if(!confirm("Remover este item da lista do robô?")) return;
-    const db = window.db;
-    await deleteDoc(doc(db, "bot_library", id));
-    listarCampanhasAtivas();
-};
-
-async function listarCampanhasAtivas() {
-    const lista = document.getElementById('lista-campanhas');
-    if(!lista) return;
-    const db = window.db;
-
-    const q = query(collection(db, "bot_library"), orderBy("created_at", "desc"));
-    const snap = await getDocs(q);
-
-    lista.innerHTML = "";
-    if(snap.empty) {
-        lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`;
-        return;
-    }
-
-    snap.forEach(d => {
-        const item = d.data();
-        lista.innerHTML += `
-            <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5">
-                <div class="truncate pr-2">
-                    <p class="text-xs text-white font-bold">${item.titulo}</p>
-                    <p class="text-[9px] text-blue-400 truncate">${item.link}</p>
-                </div>
-                <button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button>
-            </div>
-        `;
-    });
-}
-// Expõe para ser chamado no init
-window.listarCampanhasAtivas = listarCampanhasAtivas;
 
 // ============================================================================
 // 3. LINKS INTELIGENTES
@@ -304,46 +289,6 @@ window.runMassGenerator = async () => {
     btn.innerHTML = "⏳ GERANDO...";
     btn.disabled = true;
 
-    // LISTA DE DADOS SIMULADOS (RECUPERADA DA SUA MENSAGEM)
-    const fakes = {
-        jobs: [
-            {t: "Caixa de Supermercado", d: "CLT | R$ 1.320,00 | Enviar Currículo", s: "1.320,00"},
-            {t: "Repositor de Mercadorias", d: "CLT | R$ 1.350,00", s: "1.350,00"},
-            {t: "Atendente de Loja", d: "CLT | R$ 1.400,00", s: "1.400,00"},
-            {t: "Auxiliar de Limpeza", d: "CLT | R$ 1.320,00", s: "1.320,00"},
-            {t: "Estoquista", d: "CLT | R$ 1.380,00", s: "1.380,00"},
-            {t: "Recepcionista", d: "CLT | R$ 1.500,00", s: "1.500,00"},
-            {t: "Vendedor Interno", d: "CLT + Comissão", s: "1.450,00"},
-            {t: "Motorista Entregador", d: "CLT | CNH B", s: "1.800,00"}
-        ],
-        services: [
-            {t: "Pintor Residencial", cat: "Obras", p: 120},
-            {t: "Encanador", cat: "Obras", p: 80},
-            {t: "Eletricista Residencial", cat: "Técnica", p: 100},
-            {t: "Diarista", cat: "Limpeza", p: 100},
-            {t: "Montador de Móveis", cat: "Obras", p: 150},
-            {t: "Técnico de Informática", cat: "Técnica", p: 90},
-            {t: "Barman para Eventos", cat: "Outros", p: 150},
-            {t: "Jardineiro", cat: "Limpeza", p: 100}
-        ],
-        missions: [
-            {t: "Fotografar Fachada", d: "Tirar foto da loja X.", p: 8},
-            {t: "Avaliar Atendimento", d: "Cliente oculto em farmácia.", p: 5},
-            {t: "Conferir Preço Gás", d: "Verificar preço no bairro.", p: 6},
-            {t: "Fotografar Cardápio", d: "Lanchonete local.", p: 7},
-            {t: "Responder Pesquisa", d: "3 perguntas rápidas.", p: 4},
-            {t: "Testar App Parceiro", d: "Enviar feedback.", p: 12},
-            {t: "Verificar Fila", d: "Banco ou lotérica.", p: 6}
-        ],
-        opps: [
-            {t: "Cashback Supermercado", d: "Até 5% de volta.", link: "https://..."},
-            {t: "Cashback Farmácia", d: "Medicamentos e perfumaria.", link: "https://..."},
-            {t: "Indique e Ganhe", d: "Ganhe por indicação válida.", link: "https://..."},
-            {t: "Cupom Delivery", d: "Uso limitado hoje.", link: "https://..."},
-            {t: "Desconto Exames", d: "Até 20% off em laboratórios.", link: "https://..."}
-        ]
-    };
-
     try {
         const batch = writeBatch(db);
         let collectionName = "";
@@ -359,10 +304,10 @@ window.runMassGenerator = async () => {
                 created_at: serverTimestamp(),
                 updated_at: serverTimestamp(),
                 is_demo: true,
-                visibility_score: 10 // Score baixo para ficar no fundo
+                visibility_score: 10
             };
 
-            const lista = fakes[tipo] || [];
+            const lista = FAKES[tipo] || [];
             const modelo = lista[Math.floor(Math.random() * lista.length)];
 
             if(tipo === 'jobs') {
@@ -374,7 +319,7 @@ window.runMassGenerator = async () => {
             } 
             else if(tipo === 'services') {
                 data.nome_profissional = modelo.t + " (Exemplo)";
-                data.bio = "Profissional verificado pela plataforma.";
+                data.bio = "Profissional verificado.";
                 data.services = [{category: modelo.cat, price: modelo.p}];
                 data.is_online = true; 
                 data.status = "aprovado";
@@ -397,7 +342,6 @@ window.runMassGenerator = async () => {
 
         await batch.commit();
         alert(`✅ ${qtd} itens criados com sucesso em ${tipo.toUpperCase()}!`);
-        // Se houver função global de refresh, chama ela
         if(window.forceRefresh) window.forceRefresh();
 
     } catch (e) {
