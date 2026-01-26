@@ -12,12 +12,13 @@ const ADMIN_EMAIL = "contatogilborges@gmail.com";
 window.auth = auth;
 window.db = db;
 
-// --- VARIÁVEIS GLOBAIS (CORREÇÃO DO ERRO) ---
-let currentView = 'dashboard';
-let dataMode = 'real';
-let currentCollectionName = ''; // AGORA ESTÁ GLOBAL! O erro vai sumir.
-let currentEditId = null;
-let currentEditColl = null;
+// --- VARIÁVEIS GLOBAIS (BLINDADAS) ---
+// Usamos window. para garantir que sejam acessíveis em todo o arquivo
+window.currentView = 'dashboard';
+window.dataMode = 'real';
+window.currentCollectionName = ''; // AQUI ESTAVA O ERRO, AGORA ESTÁ FIXO
+window.currentEditId = null;
+window.currentEditColl = null;
 
 // VARIÁVEIS DO ROBÔ
 let roboIntervalo = null;
@@ -30,7 +31,7 @@ window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
 // --- NAVEGAÇÃO ---
 window.switchView = (viewName) => {
-    currentView = viewName;
+    window.currentView = viewName;
     const views = ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'];
     views.forEach(id => {
         const el = document.getElementById(id);
@@ -62,7 +63,7 @@ window.switchView = (viewName) => {
 };
 
 window.toggleDataMode = (mode) => {
-    dataMode = mode;
+    window.dataMode = mode;
     const btnReal = document.getElementById('btn-mode-real');
     const btnDemo = document.getElementById('btn-mode-demo');
     
@@ -72,9 +73,9 @@ window.toggleDataMode = (mode) => {
 };
 
 window.forceRefresh = () => { 
-    if(['users', 'services', 'missions', 'jobs', 'opps'].includes(currentView)) {
-        loadList(currentView); 
-    } else if (currentView === 'dashboard') {
+    if(['users', 'services', 'missions', 'jobs', 'opps'].includes(window.currentView)) {
+        loadList(window.currentView); 
+    } else if (window.currentView === 'dashboard') {
         initDashboard(); 
     }
 };
@@ -251,12 +252,12 @@ async function loadList(type) {
     // Define a coleção
     let colName = type === 'users' ? 'usuarios' : (type === 'services' ? 'active_providers' : (type === 'missions' ? 'missoes' : (type === 'opps' ? 'oportunidades' : type)));
     
-    // --- CORREÇÃO: Atualiza a variável global ---
-    currentCollectionName = colName;
+    // --- CORREÇÃO DEFINITIVA: Atualiza a variável Global ---
+    window.currentCollectionName = colName;
     
     let constraints = [];
-    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
-    if (dataMode === 'real') constraints = [limit(50)]; 
+    if (window.dataMode === 'demo') constraints.push(where("is_demo", "==", true));
+    if (window.dataMode === 'real') constraints = [limit(50)]; 
 
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
     let headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"];
@@ -285,8 +286,17 @@ async function loadList(type) {
         tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro. Verifique Console.</td></tr>`; 
     }
     
+    // REATIVAÇÃO DO BOTÃO + NOVO (GARANTIA)
     const btnAdd = document.getElementById('btn-add-new'); 
-    if(btnAdd) btnAdd.onclick = () => window.openModalCreate(type);
+    if(btnAdd) {
+        // Remove listeners antigos para evitar duplicação
+        const newBtn = btnAdd.cloneNode(true);
+        btnAdd.parentNode.replaceChild(newBtn, btnAdd);
+        
+        // Adiciona o novo listener
+        newBtn.onclick = () => window.openModalCreate(type);
+        console.log("✅ Botão + NOVO ativado para: " + type);
+    }
 }
 
 // --- OUTROS E UTILITÁRIOS ---
@@ -308,18 +318,22 @@ window.deleteSelectedItems = async () => {
     const checked = document.querySelectorAll('.row-checkbox:checked'); 
     if(!confirm("Excluir?")) return; 
     const batch = writeBatch(db); 
-    checked.forEach(cb => batch.delete(doc(db, currentCollectionName, cb.value))); 
+    checked.forEach(cb => batch.delete(doc(db, window.currentCollectionName, cb.value))); 
     await batch.commit(); 
     document.getElementById('bulk-actions').classList.remove('visible'); 
-    loadList(currentView); 
+    loadList(window.currentView); 
 };
 
 window.openModalCreate = (type) => { 
+    console.log("🛠️ Abrindo modal para:", type);
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
     
-    if(!modal) return;
+    if(!modal) {
+        console.error("❌ Modal não encontrado no HTML!");
+        return;
+    }
     
     modal.classList.remove('hidden'); 
     title.innerText = "CRIAR ITEM"; 
@@ -330,8 +344,11 @@ window.openModalCreate = (type) => {
             Para Oportunidades, use o <b>Painel do Robô</b> na aba GERADOR.<br>
             Para outros itens, use o formulário abaixo.
         </div>
-        <div class="mb-2"><label class="inp-label">Título</label><input type="text" id="new-titulo" class="inp-editor"></div>
-        <div class="mb-2"><label class="inp-label">Descrição</label><input type="text" id="new-desc" class="inp-editor"></div>
+        <div class="mb-2"><label class="inp-label">Título</label><input type="text" id="new-titulo" class="inp-editor" placeholder="Nome do item"></div>
+        <div class="mb-2"><label class="inp-label">Descrição</label><input type="text" id="new-desc" class="inp-editor" placeholder="Detalhes..."></div>
+        <div class="mt-4 flex justify-end">
+            <button onclick="window.saveModalData()" class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold uppercase">SALVAR</button>
+        </div>
     `;
     
     window.saveCallback = async () => {
@@ -355,8 +372,8 @@ window.openUniversalEditor = async (collectionName, id) => {
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
     
-    currentEditId = id; 
-    currentEditColl = collectionName;
+    window.currentEditId = id; 
+    window.currentEditColl = collectionName;
     
     modal.classList.remove('hidden'); 
     title.innerText = "EDITAR"; 
@@ -373,6 +390,12 @@ window.openUniversalEditor = async (collectionName, id) => {
             content.innerHTML += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${data[key]}" class="inp-editor"></div>`; 
         }); 
         
+        content.innerHTML += `
+            <div class="mt-4 flex justify-end">
+                <button onclick="window.saveModalData()" class="bg-blue-600 text-white px-4 py-2 rounded text-xs font-bold uppercase">SALVAR ALTERAÇÕES</button>
+            </div>
+        `;
+
         window.saveCallback = async () => { 
             const updates = { updated_at: serverTimestamp() }; 
             Object.keys(data).forEach(key => { 
