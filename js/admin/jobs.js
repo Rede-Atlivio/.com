@@ -39,7 +39,6 @@ export async function init(viewType) {
             <th class="p-3 text-left">CURRÍCULO (PDF)</th>
             <th class="p-3 text-right">AÇÕES</th>
         `;
-        // Não faz sentido criar candidato manualmente por aqui, eles vêm do App
         if(btnAdd) btnAdd.style.display = 'none'; 
     }
 
@@ -69,7 +68,6 @@ async function loadList() {
         if (isDemoMode) {
             q = query(collection(db, collectionName), where('is_demo', '==', true), limit(50));
         } else {
-            // Em produção, ordena por data recente
             q = query(collection(db, collectionName), orderBy('created_at', 'desc'), limit(50));
         }
 
@@ -132,6 +130,9 @@ function renderJobRow(tbody, id, data) {
 function renderMissionRow(tbody, id, data) {
     const demoBadge = data.is_demo ? `<span class="ml-2 text-[8px] bg-purple-600 px-1 rounded text-white">DEMO</span>` : "";
     
+    // CORREÇÃO: Força converter para número antes do toFixed
+    const valorNumerico = parseFloat(data.valor || 0);
+
     tbody.innerHTML += `
         <tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="p-3">
@@ -141,7 +142,7 @@ function renderMissionRow(tbody, id, data) {
                 <div class="text-[10px] text-gray-400 truncate max-w-[200px]">${data.descricao || "-"}</div>
             </td>
             <td class="p-3 font-bold text-amber-400">
-                R$ ${(data.valor || 0).toFixed(2)}
+                R$ ${valorNumerico.toFixed(2)}
             </td>
             <td class="p-3">
                 <span class="bg-blue-900/30 text-blue-400 border border-blue-500/50 px-2 py-1 rounded text-[10px] font-bold">DISPONÍVEL</span>
@@ -183,7 +184,7 @@ function renderCandidateRow(tbody, id, data) {
             </td>
         </tr>
     `;
-    lucide.createIcons(); // Atualiza ícones
+    lucide.createIcons();
 }
 
 // ============================================================================
@@ -193,7 +194,6 @@ window.openJobEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     
-    // Mapeia nome correto
     let realColl = collectionName === 'missions' ? 'missoes' : collectionName;
 
     modal.classList.remove('hidden');
@@ -211,7 +211,6 @@ window.openJobEditor = async (collectionName, id) => {
 
         let html = `<div class="space-y-4">`;
         
-        // CAMPOS PERSONALIZADOS POR TIPO
         if (realColl === 'jobs') {
             html += `
                 <div class="grid grid-cols-2 gap-4">
@@ -238,7 +237,6 @@ window.openJobEditor = async (collectionName, id) => {
             `;
         }
 
-        // Botão Salvar
         html += `
             <div class="mt-6 pt-4 border-t border-slate-700">
                 <button onclick="window.saveJobData('${realColl}', '${id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">
@@ -257,15 +255,15 @@ window.saveJobData = async (col, id) => {
         const db = window.db;
         let data = { updated_at: serverTimestamp() };
         
-        // Coleta genérica dos campos
         if(document.getElementById('edt-titulo')) data.titulo = document.getElementById('edt-titulo').value;
         if(document.getElementById('edt-empresa')) data.empresa = document.getElementById('edt-empresa').value;
         if(document.getElementById('edt-salario')) data.salario = document.getElementById('edt-salario').value;
         if(document.getElementById('edt-descricao')) data.descricao = document.getElementById('edt-descricao').value;
         if(document.getElementById('edt-status')) data.status = document.getElementById('edt-status').value;
+        
+        // CORREÇÃO: Salva sempre como número
         if(document.getElementById('edt-valor')) data.valor = parseFloat(document.getElementById('edt-valor').value);
 
-        // Se for novo, adiciona created_at e is_demo baseado no modo atual
         if (!id) {
             data.created_at = serverTimestamp();
             data.is_demo = (window.currentDataMode === 'demo');
@@ -279,7 +277,6 @@ window.saveJobData = async (col, id) => {
 
         alert("✅ Salvo com sucesso!");
         document.getElementById('modal-editor').classList.add('hidden');
-        // Recarrega a lista se o módulo tiver a função exposta ou recarrega a view
         if(window.switchView) window.switchView(window.activeView);
 
     } catch(e) { alert("Erro ao salvar: " + e.message); }
