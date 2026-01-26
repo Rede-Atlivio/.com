@@ -1,11 +1,16 @@
 import { auth, db, provider } from './app.js';
 import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const storage = getStorage();
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
+
+// 💰 CONFIGURAÇÃO FINANCEIRA
+const TAXA_PLATAFORMA = 0.20; // 20% de comissão
+const LIMITE_CREDITO_NEGATIVO = -60.00; // Deixa ficar devendo até 60 reais antes de travar
+
 export let userProfile = null;
 
 const CATEGORIAS_SERVICOS = [
@@ -62,18 +67,20 @@ onAuthStateChanged(auth, async (user) => {
                         tenant_id: DEFAULT_TENANT, 
                         perfil_completo: false, 
                         role: roleInicial, 
-                        saldo: 0, 
+                        wallet_balance: 0.00, // 💰 Carteira começa zerada
                         is_provider: false,
                         created_at: new Date()
                     };
                     await setDoc(userRef, userProfile);
                 } else {
                     userProfile = docSnap.data();
+                    // Garante que o campo carteira exista (para usuários antigos)
+                    if (userProfile.wallet_balance === undefined) userProfile.wallet_balance = 0.00;
+                    
                     atualizarInterfaceUsuario(userProfile);
                     iniciarAppLogado(user);
                     
                     if (userProfile.is_provider) {
-                        // Inicia o radar baseado no status real do banco
                         verificarStatusERadar(user.uid);
                         
                         if (!userProfile.setup_profissional_ok) {
@@ -106,8 +113,17 @@ function atualizarInterfaceUsuario(dados) {
     const nameEl = document.getElementById('header-user-name');
     if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
 
+    // Mostra Nome + Saldo no Header do Prestador
     const provNameEl = document.getElementById('provider-header-name');
-    if(provNameEl) provNameEl.innerText = dados.nome_profissional || dados.displayName || "Prestador";
+    if(provNameEl) {
+        // Formata saldo: Se negativo fica vermelho, se positivo fica verde
+        const saldo = dados.wallet_balance || 0;
+        const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
+        provNameEl.innerHTML = `
+            ${dados.nome_profissional || dados.displayName} <br>
+            <span class="text-[10px] font-normal text-gray-300">Saldo: <span class="${corSaldo} font-bold">R$ ${saldo.toFixed(2)}</span></span>
+        `;
+    }
 }
 
 function iniciarAppLogado(user) {
@@ -164,7 +180,6 @@ async function verificarStatusERadar(uid) {
             const isOnline = snap.data().is_online;
             if(toggle) toggle.checked = isOnline;
             
-            // Define o visual inicial
             if(isOnline) {
                 iniciarRadarPrestador(uid);
             } else {
@@ -186,7 +201,7 @@ function renderizarRadarOffline() {
     }
 }
 
-// --- ESCUTADOR GLOBAL DE EVENTOS ---
+// --- ESCUTADOR GLOBAL DE EVENTOS (BOTÃO ONLINE) ---
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
         const novoStatus = e.target.checked;
@@ -194,182 +209,29 @@ document.addEventListener('change', async (e) => {
         
         if(!uid) return;
 
-        // 1. ATUALIZAÇÃO VISUAL IMEDIATA
         if (novoStatus) {
-            iniciarRadarPrestador(uid); // Mostra animação do Radar
+            iniciarRadarPrestador(uid);
             const audio = document.getElementById('online-sound');
             if(audio) audio.play().catch(()=>{});
         } else {
-            renderizarRadarOffline(); // Mostra tela de dormir
+            renderizarRadarOffline();
         }
 
-        // 2. ATUALIZAÇÃO NO BANCO
         try {
             await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
         } catch(err) {
             console.error("Erro ao salvar status:", err);
-            e.target.checked = !novoStatus; // Reverte se der erro
+            e.target.checked = !novoStatus;
             alert("Erro de conexão.");
         }
     }
 });
 
-// --- LÓGICA DO PRESTADOR: SERVIÇOS E RADAR ---
-
-window.abrirConfiguracaoServicos = async () => {
-    const modal = document.getElementById('provider-setup-modal');
-    const lista = document.getElementById('my-services-list');
-    const select = document.getElementById('new-service-category');
-    
-    if(!modal) return;
-    
-    if(select) {
-        select.innerHTML = `<option value="" disabled selected>Escolha uma categoria...</option>`;
-        CATEGORIAS_SERVICOS.forEach(cat => {
-            select.innerHTML += `<option value="${cat}">${cat}</option>`;
-        });
-    }
-
-    modal.classList.remove('hidden');
-    lista.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600"></div>`;
-
-    const docRef = doc(db, "active_providers", auth.currentUser.uid);
-    const docSnap = await getDoc(docRef);
-
-    lista.innerHTML = "";
-    if (docSnap.exists() && docSnap.data().services) {
-        docSnap.data().services.forEach((serv, index) => {
-            lista.innerHTML += `
-                <div class="bg-gray-50 p-3 rounded flex justify-between items-center border border-gray-200 shadow-sm mb-2">
-                    <div>
-                        <span class="font-bold text-xs text-blue-900 block">${serv.category}</span>
-                        <span class="text-[10px] text-gray-500 italic">${serv.description || 'Sem descrição'}</span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span class="font-black text-green-600 text-xs">R$ ${serv.price}</span>
-                        <button onclick="editarServico(${index})" class="text-blue-500 text-xs font-bold border border-blue-200 p-1 rounded hover:bg-blue-50">✏️</button>
-                        <button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg hover:scale-110 transition">&times;</button>
-                    </div>
-                </div>
-            `;
-        });
-    } else {
-        lista.innerHTML = `<p class="text-center text-gray-300 text-xs italic py-4">Nenhum serviço ativo.</p>`;
-    }
-};
-
-window.addServiceLocal = async () => {
-    const cat = document.getElementById('new-service-category').value;
-    const price = document.getElementById('new-service-price').value;
-    const desc = document.getElementById('new-service-desc').value;
-
-    if (!cat || !price) return alert("Preencha categoria e preço.");
-
-    const novoServico = { category: cat, price: parseFloat(price), description: desc };
-    const docRef = doc(db, "active_providers", auth.currentUser.uid);
-
-    try {
-        const docSnap = await getDoc(docRef);
-        let servicosAtuais = [];
-        if (docSnap.exists()) {
-            servicosAtuais = docSnap.data().services || [];
-        } else {
-            await setDoc(docRef, { 
-                uid: auth.currentUser.uid,
-                nome_profissional: userProfile.nome_profissional || auth.currentUser.displayName,
-                foto_perfil: userProfile.photoURL,
-                is_online: true,
-                visibility_score: 100,
-                created_at: serverTimestamp()
-            });
-        }
-
-        servicosAtuais.push(novoServico);
-        await updateDoc(docRef, { services: servicosAtuais });
-        
-        document.getElementById('new-service-desc').value = "";
-        document.getElementById('new-service-price').value = "";
-        
-        window.abrirConfiguracaoServicos();
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao salvar: " + e.message);
-    }
-};
-
-window.removerServico = async (index) => {
-    if(!confirm("Remover este serviço?")) return;
-    const docRef = doc(db, "active_providers", auth.currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    if(docSnap.exists()) {
-        let servicos = docSnap.data().services;
-        servicos.splice(index, 1);
-        await updateDoc(docRef, { services: servicos });
-        window.abrirConfiguracaoServicos();
-    }
-};
-
-window.editarServico = async (index) => {
-    const docRef = doc(db, "active_providers", auth.currentUser.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if(docSnap.exists()) {
-        const servicos = docSnap.data().services;
-        const item = servicos[index];
-
-        document.getElementById('new-service-category').value = item.category;
-        document.getElementById('new-service-price').value = item.price;
-        document.getElementById('new-service-desc').value = item.description;
-
-        servicos.splice(index, 1);
-        await updateDoc(docRef, { services: servicos });
-        window.abrirConfiguracaoServicos();
-        document.getElementById('new-service-price').focus();
-    }
-};
-
-window.saveServicesAndGoOnline = async () => {
-    const nomeInput = document.getElementById('setup-name').value;
-    if(!nomeInput) return alert("Digite seu nome profissional.");
-
-    try {
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-            nome_profissional: nomeInput,
-            setup_profissional_ok: true
-        });
-        
-        const activeRef = doc(db, "active_providers", auth.currentUser.uid);
-        const activeSnap = await getDoc(activeRef);
-        if(activeSnap.exists()) {
-            await updateDoc(activeRef, { nome_profissional: nomeInput, is_online: true });
-        } else {
-             await setDoc(activeRef, { 
-                uid: auth.currentUser.uid,
-                nome_profissional: nomeInput,
-                foto_perfil: userProfile.photoURL,
-                is_online: true,
-                visibility_score: 100,
-                services: [],
-                created_at: serverTimestamp()
-            });
-        }
-
-        alert("✅ Perfil Atualizado!");
-        document.getElementById('provider-setup-modal').classList.add('hidden');
-        document.getElementById('online-toggle').checked = true;
-        location.reload();
-    } catch(e) {
-        alert("Erro: " + e.message);
-    }
-};
-
-// 5. RADAR "UBER"
+// 5. RADAR "UBER" COM VALORES FINANCEIROS
 function iniciarRadarPrestador(uid) {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
 
-    // --- MODO VARREDURA ---
     const q = query(
         collection(db, "orders"), 
         where("provider_id", "==", uid),
@@ -377,7 +239,6 @@ function iniciarRadarPrestador(uid) {
     );
 
     onSnapshot(q, (snap) => {
-        // Se a pessoa ficou offline no meio do caminho, para tudo.
         const toggle = document.getElementById('online-toggle');
         if(toggle && !toggle.checked) return;
 
@@ -389,12 +250,10 @@ function iniciarRadarPrestador(uid) {
                     <div class="relative flex h-32 w-32 items-center justify-center mb-4">
                         <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
                         <div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div>
-                        <span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">
-                            📡
-                        </span>
+                        <span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span>
                     </div>
                     <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p>
-                    <p class="text-[9px] text-gray-400 mt-2">Mantenha esta tela aberta.</p>
+                    <p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${userProfile.wallet_balance?.toFixed(2)}</p>
                 </div>`;
             return;
         }
@@ -407,15 +266,22 @@ function iniciarRadarPrestador(uid) {
 
         snap.forEach(d => {
             const pedido = d.data();
+            // Cálculo da taxa visual para o prestador ver
+            const taxa = pedido.offer_value * TAXA_PLATAFORMA;
+            const liquido = pedido.offer_value - taxa;
+
             radarContainer.innerHTML += `
                 <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl mb-4 border-2 border-blue-500 animate-fadeIn relative overflow-hidden">
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-600 rounded-full blur-2xl opacity-50"></div>
                     <div class="relative z-10 text-center">
-                        <div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">
-                            Nova Solicitação
-                        </div>
+                        <div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">Nova Solicitação</div>
                         <h2 class="text-4xl font-black text-white mb-1">R$ ${pedido.offer_value}</h2>
-                        <p class="text-xs text-gray-300 uppercase tracking-wide mb-6">Oferta do Cliente</p>
+                        
+                        <div class="flex justify-center gap-4 text-[10px] text-gray-400 mb-4 bg-slate-800/50 p-2 rounded">
+                            <span>Taxa: <b class="text-red-400">-R$ ${taxa.toFixed(2)}</b></span>
+                            <span>Seu Lucro: <b class="text-green-400">R$ ${liquido.toFixed(2)}</b></span>
+                        </div>
+
                         <div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700">
                             <div class="flex items-center gap-3 mb-2">
                                 <div class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-lg">👤</div>
@@ -430,7 +296,7 @@ function iniciarRadarPrestador(uid) {
                         </div>
                         <div class="grid grid-cols-2 gap-3">
                             <button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">✖ Recusar</button>
-                            <button onclick="responderPedido('${d.id}', true)" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transform active:scale-95 transition">✔ ACEITAR CORRIDA</button>
+                            <button onclick="responderPedido('${d.id}', true, ${pedido.offer_value})" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg shadow-green-500/30 hover:bg-green-600 transform active:scale-95 transition">✔ ACEITAR (-R$ ${taxa.toFixed(0)})</button>
                         </div>
                     </div>
                 </div>
@@ -439,62 +305,60 @@ function iniciarRadarPrestador(uid) {
     });
 }
 
-window.responderPedido = async (orderId, aceitar) => {
+// 🛑 NÚCLEO FINANCEIRO: COBRANÇA DE TAXA AUTOMÁTICA
+window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
     if(!aceitar) {
         await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
     } else {
-        await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
-        
-        const chatQ = query(collection(db, "chats"), where("order_id", "==", orderId));
-        getDoc(doc(db, "chats", orderId)).then(async (snap) => {
-             if(snap.exists()) await updateDoc(snap.ref, { status: "active" });
-        }).catch(async () => {
-             const chatRef = doc(db, "chats", orderId);
-             await updateDoc(chatRef, { status: "active" });
-        });
+        const uid = auth.currentUser.uid;
+        const userRef = doc(db, "usuarios", uid);
+        const taxa = valorServico * TAXA_PLATAFORMA;
 
-        alert("✅ Pedido Aceito! Combine os detalhes no Chat.");
-        window.switchTab('chat');
+        // 1. CHECAGEM DE SALDO (O CHECKMATE)
+        const snap = await getDoc(userRef);
+        const saldoAtual = snap.data().wallet_balance || 0;
+        const saldoFuturo = saldoAtual - taxa;
+
+        if (saldoFuturo < LIMITE_CREDITO_NEGATIVO) {
+            alert(`⛔ LIMITE DE CRÉDITO EXCEDIDO!\n\nSeu saldo ficaria: R$ ${saldoFuturo.toFixed(2)}.\nO limite é R$ ${LIMITE_CREDITO_NEGATIVO.toFixed(2)}.\n\nPor favor, recarregue sua carteira para aceitar novos serviços.`);
+            return; // Bloqueia a ação
+        }
+
+        // 2. Se tiver limite, desconta e aceita
+        try {
+            // Atualiza saldo
+            await updateDoc(userRef, { wallet_balance: saldoFuturo });
+            
+            // Aceita pedido
+            await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
+            
+            // Ativa chat
+            const chatQ = query(collection(db, "chats"), where("order_id", "==", orderId));
+            getDoc(doc(db, "chats", orderId)).then(async (snapChat) => {
+                 if(snapChat.exists()) await updateDoc(snapChat.ref, { status: "active" });
+            }).catch(async () => {
+                 const chatRef = doc(db, "chats", orderId);
+                 await updateDoc(chatRef, { status: "active" });
+            });
+
+            alert(`✅ Pedido Aceito!\n\nTaxa de R$ ${taxa.toFixed(2)} foi descontada do seu saldo.\nSaldo atual: R$ ${saldoFuturo.toFixed(2)}`);
+            window.switchTab('chat');
+            
+        } catch (e) {
+            alert("Erro financeiro: " + e.message);
+        }
     }
 };
 
-window.uploadFotoPerfil = async (input) => {
-    if (!input.files || input.files.length === 0) return;
-    const file = input.files[0];
-    const user = auth.currentUser;
-    if (!user) return;
+// --- (RESTANTE DAS FUNÇÕES DE UPLOAD E SERVIÇOS MANTIDAS IGUAIS) ---
+window.uploadFotoPerfil = async (input) => { /* Mantido */ if (!input.files || input.files.length === 0) return; const file = input.files[0]; const user = auth.currentUser; if (!user) return; const overlay = document.getElementById('upload-overlay'); if(overlay) overlay.classList.remove('hidden'); try { const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await updateProfile(user, { photoURL: downloadURL }); await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); const activeRef = doc(db, "active_providers", user.uid); getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); alert("✅ Foto atualizada!"); } catch (error) { console.error(error); alert("Erro no upload. Tente outra imagem."); } finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } };
 
-    const overlay = document.getElementById('upload-overlay');
-    if(overlay) overlay.classList.remove('hidden');
+window.abrirConfiguracaoServicos = async () => { /* Mantido */ const modal = document.getElementById('provider-setup-modal'); const lista = document.getElementById('my-services-list'); const select = document.getElementById('new-service-category'); if(!modal) return; if(select) { select.innerHTML = `<option value="" disabled selected>Escolha uma categoria...</option>`; CATEGORIAS_SERVICOS.forEach(cat => { select.innerHTML += `<option value="${cat}">${cat}</option>`; }); } modal.classList.remove('hidden'); lista.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600"></div>`; const docRef = doc(db, "active_providers", auth.currentUser.uid); const docSnap = await getDoc(docRef); lista.innerHTML = ""; if (docSnap.exists() && docSnap.data().services) { docSnap.data().services.forEach((serv, index) => { lista.innerHTML += `<div class="bg-gray-50 p-3 rounded flex justify-between items-center border border-gray-200 shadow-sm mb-2"><div><span class="font-bold text-xs text-blue-900 block">${serv.category}</span><span class="text-[10px] text-gray-500 italic">${serv.description || 'Sem descrição'}</span></div><div class="flex items-center gap-3"><span class="font-black text-green-600 text-xs">R$ ${serv.price}</span><button onclick="editarServico(${index})" class="text-blue-500 text-xs font-bold border border-blue-200 p-1 rounded hover:bg-blue-50">✏️</button><button onclick="removerServico(${index})" class="text-red-500 font-bold text-lg hover:scale-110 transition">&times;</button></div></div>`; }); } else { lista.innerHTML = `<p class="text-center text-gray-300 text-xs italic py-4">Nenhum serviço ativo.</p>`; } };
 
-    try {
-        const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`);
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
+window.addServiceLocal = async () => { /* Mantido */ const cat = document.getElementById('new-service-category').value; const price = document.getElementById('new-service-price').value; const desc = document.getElementById('new-service-desc').value; if (!cat || !price) return alert("Preencha categoria e preço."); const novoServico = { category: cat, price: parseFloat(price), description: desc }; const docRef = doc(db, "active_providers", auth.currentUser.uid); try { const docSnap = await getDoc(docRef); let servicosAtuais = []; if (docSnap.exists()) { servicosAtuais = docSnap.data().services || []; } else { await setDoc(docRef, { uid: auth.currentUser.uid, nome_profissional: userProfile.nome_profissional || auth.currentUser.displayName, foto_perfil: userProfile.photoURL, is_online: true, visibility_score: 100, created_at: serverTimestamp() }); } servicosAtuais.push(novoServico); await updateDoc(docRef, { services: servicosAtuais }); document.getElementById('new-service-desc').value = ""; document.getElementById('new-service-price').value = ""; window.abrirConfiguracaoServicos(); } catch (e) { console.error(e); alert("Erro ao salvar: " + e.message); } };
 
-        await updateProfile(user, { photoURL: downloadURL });
-        await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL });
+window.removerServico = async (index) => { if(!confirm("Remover?")) return; const docRef = doc(db, "active_providers", auth.currentUser.uid); const docSnap = await getDoc(docRef); if(docSnap.exists()) { let servicos = docSnap.data().services; servicos.splice(index, 1); await updateDoc(docRef, { services: servicos }); window.abrirConfiguracaoServicos(); } };
+window.editarServico = async (index) => { const docRef = doc(db, "active_providers", auth.currentUser.uid); const docSnap = await getDoc(docRef); if(docSnap.exists()) { const servicos = docSnap.data().services; const item = servicos[index]; document.getElementById('new-service-category').value = item.category; document.getElementById('new-service-price').value = item.price; document.getElementById('new-service-desc').value = item.description; servicos.splice(index, 1); await updateDoc(docRef, { services: servicos }); window.abrirConfiguracaoServicos(); document.getElementById('new-service-price').focus(); } };
+window.saveServicesAndGoOnline = async () => { const nomeInput = document.getElementById('setup-name').value; if(!nomeInput) return alert("Digite seu nome."); try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { nome_profissional: nomeInput, setup_profissional_ok: true }); const activeRef = doc(db, "active_providers", auth.currentUser.uid); const activeSnap = await getDoc(activeRef); if(activeSnap.exists()) { await updateDoc(activeRef, { nome_profissional: nomeInput, is_online: true }); } else { await setDoc(activeRef, { uid: auth.currentUser.uid, nome_profissional: nomeInput, foto_perfil: userProfile.photoURL, is_online: true, visibility_score: 100, services: [], created_at: serverTimestamp() }); } alert("✅ Perfil Atualizado!"); document.getElementById('provider-setup-modal').classList.add('hidden'); document.getElementById('online-toggle').checked = true; location.reload(); } catch(e) { alert("Erro: " + e.message); } };
 
-        const activeRef = doc(db, "active_providers", user.uid);
-        getDoc(activeRef).then(snap => {
-            if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL });
-        });
-
-        document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL);
-        alert("✅ Foto atualizada!");
-    } catch (error) {
-        console.error(error);
-        alert("Erro no upload. Tente outra imagem.");
-    } finally {
-        if(overlay) overlay.classList.add('hidden');
-        input.value = "";
-    }
-};
-
-function toggleDisplay(id, show) {
-    const el = document.getElementById(id);
-    if(el) {
-        if(show) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-    }
-}
+function toggleDisplay(id, show) { const el = document.getElementById(id); if(el) { if(show) el.classList.remove('hidden'); else el.classList.add('hidden'); } }
