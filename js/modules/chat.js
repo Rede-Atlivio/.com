@@ -3,7 +3,7 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, 
 
 const TAXA_PLATAFORMA = 0.20; // 20%
 
-// --- GATILHOS ---
+// --- GATILHOS E NAVEGAÇÃO ---
 const tabChat = document.getElementById('tab-chat');
 if (tabChat) {
     tabChat.addEventListener('click', () => {
@@ -11,29 +11,58 @@ if (tabChat) {
     });
 }
 
+// FUNÇÃO GLOBAL DE REDIRECIONAMENTO (Corrige o problema de não carregar)
+window.irParaChat = () => {
+    // 1. Simula o clique visual na aba
+    const tab = document.getElementById('tab-chat');
+    if(tab) tab.click();
+    
+    // 2. Força o carregamento dos dados
+    carregarPedidosAtivos();
+    
+    // 3. Rola a página para o topo (boa prática)
+    window.scrollTo(0,0);
+};
+
 // Expõe globalmente
 window.carregarChat = carregarPedidosAtivos;
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
-window.iniciarServico = iniciarServico; // NOVA FUNÇÃO
+window.iniciarServico = iniciarServico;
 window.finalizarServicoComToken = finalizarServicoComToken;
 window.voltarParaListaPedidos = carregarPedidosAtivos;
+window.voltarAoInicio = () => location.reload(); // Maneira mais segura de voltar ao Dashboard limpo
 
 // ============================================================================
-// 1. LISTA DE PEDIDOS ATIVOS
+// 1. LISTA DE PEDIDOS ATIVOS (COM BOTÃO VOLTAR)
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('app-container');
     if (!container || !auth.currentUser) return;
 
+    // Layout Melhorado com Botão Voltar e Dicas
     container.innerHTML = `
         <div id="painel-pedidos" class="p-4 pb-24 animate-fadeIn">
-            <h2 class="text-xl font-black text-blue-900 mb-4 flex items-center gap-2">💬 Pedidos & Chat</h2>
+            <div class="flex items-center gap-3 mb-6">
+                <button onclick="window.voltarAoInicio()" class="bg-white p-2 rounded-full shadow-sm text-gray-600 hover:bg-gray-100 border border-gray-200 transition">
+                    ⬅ Início
+                </button>
+                <div>
+                    <h2 class="text-xl font-black text-blue-900 flex items-center gap-2">💬 Seus Pedidos</h2>
+                    <p class="text-[10px] text-gray-400">Gerencie seus serviços em andamento</p>
+                </div>
+            </div>
+            
             <div id="lista-pedidos-render" class="space-y-3">
                 <div class="loader mx-auto border-blue-200 border-t-blue-600 mt-10"></div>
-                <p class="text-center text-xs text-gray-400 mt-2">Buscando serviços...</p>
+                <p class="text-center text-xs text-gray-400 mt-2">Atualizando lista...</p>
+            </div>
+            
+            <div class="mt-8 text-center opacity-50">
+                <p class="text-[9px] text-gray-400 uppercase tracking-widest">Dica: Toque no cartão para abrir o chat</p>
             </div>
         </div>
+
         <div id="painel-chat-individual" class="hidden h-screen fixed inset-0 z-[60] bg-white"></div>
     `;
 
@@ -46,8 +75,12 @@ export async function carregarPedidosAtivos() {
         if (pedidosMap.size === 0) {
             listaRender.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-20 opacity-50">
-                    <div class="text-6xl mb-4 grayscale">📭</div>
-                    <p class="text-sm font-bold text-gray-600">Nenhum serviço ativo.</p>
+                    <div class="text-6xl mb-4 grayscale">📂</div>
+                    <p class="text-sm font-bold text-gray-600">Lista Vazia</p>
+                    <p class="text-xs text-gray-400 text-center max-w-[200px] mt-2">
+                        Quando você aceitar ou solicitar um serviço, ele aparecerá aqui para você conversar.
+                    </p>
+                    <button onclick="window.voltarAoInicio()" class="mt-6 text-blue-500 font-bold text-xs underline">Voltar e Procurar</button>
                 </div>`;
             return;
         }
@@ -56,17 +89,30 @@ export async function carregarPedidosAtivos() {
             const isMeProvider = pedido.provider_id === uid;
             const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
             
-            // Lógica de Status Visual
             let statusTexto = "Aguardando";
             let statusCor = "text-gray-500 bg-gray-100";
+            let acaoSugerida = "";
             
-            if(pedido.status === 'accepted') { statusTexto = "⏳ Pendente Início"; statusCor = "text-orange-600 bg-orange-100"; }
-            if(pedido.status === 'in_progress') { statusTexto = "▶️ Em Andamento"; statusCor = "text-blue-600 bg-blue-100"; }
-            if(pedido.status === 'completed') { statusTexto = "✅ Finalizado"; statusCor = "text-green-600 bg-green-100"; }
+            if(pedido.status === 'accepted') { 
+                statusTexto = "⏳ Pendente Início"; 
+                statusCor = "text-orange-600 bg-orange-100"; 
+                acaoSugerida = isMeProvider ? "Toque para INICIAR o serviço" : "Aguarde o prestador chegar";
+            }
+            if(pedido.status === 'in_progress') { 
+                statusTexto = "▶️ Em Andamento"; 
+                statusCor = "text-blue-600 bg-blue-100"; 
+                acaoSugerida = isMeProvider ? "Realize o serviço e peça o código" : "Entregue o código ao final";
+            }
+            if(pedido.status === 'completed') { 
+                statusTexto = "✅ Finalizado"; 
+                statusCor = "text-green-600 bg-green-100"; 
+                acaoSugerida = "Serviço concluído";
+            }
 
             listaRender.innerHTML += `
                 <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden group">
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${pedido.status === 'in_progress' ? 'bg-blue-600' : 'bg-gray-300'}"></div>
+                    
                     <div class="flex justify-between items-start pl-2">
                         <div>
                             <h3 class="font-bold text-gray-800 text-sm">${outroNome}</h3>
@@ -74,6 +120,10 @@ export async function carregarPedidosAtivos() {
                                 <span class="text-xs font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded">R$ ${pedido.offer_value}</span>
                                 <span class="text-[9px] uppercase font-bold ${statusCor} px-2 py-0.5 rounded">${statusTexto}</span>
                             </div>
+                            
+                            <p class="text-[9px] text-gray-500 mt-2 italic border-l-2 border-gray-200 pl-2">
+                                💡 ${acaoSugerida}
+                            </p>
                         </div>
                         <div class="bg-blue-50 p-2.5 rounded-full text-blue-600">💬</div>
                     </div>
@@ -83,19 +133,18 @@ export async function carregarPedidosAtivos() {
     };
 
     const pedidosRef = collection(db, "orders");
-    // Busca aceitos E em andamento
-    const statuses = ["accepted", "in_progress"];
+    const statuses = ["accepted", "in_progress", "completed"]; // Adicionei completed para histórico
     
-    // Obs: Firestore "in" query limita a 10, mas serve para nós
-    const qProvider = query(pedidosRef, where("provider_id", "==", uid), where("status", "in", statuses));
-    const qClient = query(pedidosRef, where("client_id", "==", uid), where("status", "in", statuses));
+    // Limita a busca para não travar se tiver muitos (melhoria de performance)
+    const qProvider = query(pedidosRef, where("provider_id", "==", uid), where("status", "in", statuses), limit(20));
+    const qClient = query(pedidosRef, where("client_id", "==", uid), where("status", "in", statuses), limit(20));
 
     onSnapshot(qProvider, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
     onSnapshot(qClient, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
 }
 
 // ============================================================================
-// 2. TELA DE CHAT (LÓGICA FINANCEIRA VISUAL)
+// 2. TELA DE CHAT (COM MAIS INSTRUÇÕES)
 // ============================================================================
 export async function abrirChatPedido(orderId) {
     const painelChat = document.getElementById('painel-chat-individual');
@@ -121,72 +170,79 @@ export async function abrirChatPedido(orderId) {
         await updateDoc(doc(db, "orders", orderId), { security_code: token });
     }
 
-    // --- BLOCO DE CONTROLE (A MÁGICA DOS BOTÕES) ---
     let areaControle = "";
     
+    // --- LÓGICA DE CONTROLE EDUCATIVA ---
     if (isMeProvider) {
-        // --- VISÃO DO PRESTADOR ---
         if (pedido.status === 'accepted') {
-            // ESTADO 1: ACEITOU, MAS NÃO COMEÇOU
-            // Botão para INICIAR SERVIÇO (Sem cobrar ainda)
             areaControle = `
-                <div class="bg-slate-800 p-6 -mx-4 mb-4 shadow-inner text-center">
-                    <p class="text-white font-bold mb-2">Você chegou ao local?</p>
+                <div class="bg-slate-800 p-6 -mx-4 mb-4 shadow-inner text-center border-b-4 border-slate-900">
+                    <p class="text-white font-bold mb-2">👋 Você chegou ao local?</p>
+                    <p class="text-[10px] text-gray-400 mb-4 px-4">Só clique no botão abaixo quando estiver na frente do cliente e pronto para começar.</p>
                     <button onclick="window.iniciarServico('${orderId}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase shadow-lg text-sm animate-pulse">
-                        ▶️ INICIAR SERVIÇO
+                        ▶️ ESTOU AQUI E VOU INICIAR
                     </button>
-                    <p class="text-[10px] text-gray-400 mt-2">Clique apenas quando estiver pronto para trabalhar.</p>
                 </div>
             `;
         } else if (pedido.status === 'in_progress') {
-            // ESTADO 2: TRABALHANDO
-            // Campo para DIGITAR O TOKEN (Cobra ao finalizar)
             areaControle = `
                 <div class="bg-slate-900 p-4 -mx-4 mb-4 shadow-inner border-b border-slate-700">
                     <div class="flex justify-between items-center mb-2">
-                        <p class="text-[10px] text-gray-400 uppercase font-bold">Finalizar e Receber</p>
-                        <span class="text-[9px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded">A Receber: R$ ${pedido.offer_value}</span>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Encerrar Serviço</p>
+                        <span class="text-[9px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded">R$ ${pedido.offer_value}</span>
+                    </div>
+                    <div class="bg-slate-800/50 p-2 rounded mb-3 border border-slate-700">
+                        <p class="text-[10px] text-gray-300">ℹ️ Peça ao cliente o código de 4 números que aparece na tela dele.</p>
                     </div>
                     <div class="flex gap-2">
-                        <input type="tel" id="input-token-final" placeholder="Código do Cliente" maxlength="4" class="w-full bg-slate-800 text-white text-center text-lg font-bold tracking-[0.3em] rounded-lg border border-slate-600 focus:border-blue-500 outline-none p-3">
+                        <input type="tel" id="input-token-final" placeholder="0000" maxlength="4" class="w-full bg-slate-800 text-white text-center text-lg font-bold tracking-[0.3em] rounded-lg border border-slate-600 focus:border-blue-500 outline-none p-3">
                         <button onclick="window.finalizarServicoComToken('${orderId}', '${token}', ${pedido.offer_value})" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 rounded-lg text-xs uppercase shadow-lg">
-                            CONCLUIR
+                            VALIDAR
                         </button>
                     </div>
-                    <p class="text-[9px] text-slate-500 mt-2 text-center">Taxa de ${(TAXA_PLATAFORMA*100)}% será descontada do seu saldo agora.</p>
                 </div>
             `;
         }
     } else {
-        // --- VISÃO DO CLIENTE ---
         if (pedido.status === 'accepted') {
             areaControle = `
                 <div class="bg-orange-500 p-4 -mx-4 mb-4 text-center text-white shadow-lg">
-                    <p class="font-bold text-sm">O prestador está a caminho.</p>
-                    <p class="text-[10px] opacity-80">O código aparecerá quando o serviço iniciar.</p>
+                    <p class="font-bold text-sm">🚗 O prestador está a caminho.</p>
+                    <p class="text-[10px] opacity-90 mt-1">O código de segurança aparecerá aqui assim que ele iniciar o serviço.</p>
                 </div>
             `;
         } else if (pedido.status === 'in_progress') {
             areaControle = `
                 <div class="bg-blue-600 p-6 -mx-4 mb-4 shadow-lg text-center relative overflow-hidden">
-                    <p class="text-[10px] text-blue-100 uppercase font-bold mb-1 tracking-wider">Seu Código de Segurança</p>
+                    <p class="text-[10px] text-blue-100 uppercase font-bold mb-1 tracking-wider">🔐 Código de Segurança</p>
                     <div class="text-5xl font-black text-white tracking-[0.3em] drop-shadow-md my-2">${token}</div>
-                    <p class="text-[9px] text-blue-100 bg-blue-700/50 inline-block px-3 py-1 rounded-full">Entregue ao prestador para finalizar.</p>
+                    <div class="bg-white/10 inline-block px-4 py-2 rounded-lg border border-white/20 mt-2">
+                        <p class="text-[10px] text-white font-bold">⚠️ Entregue este número ao prestador APENAS quando o serviço for concluído.</p>
+                    </div>
                 </div>
             `;
         }
     }
 
+    if (pedido.status === 'completed') {
+        areaControle = `
+            <div class="bg-green-100 p-4 -mx-4 mb-4 text-center text-green-800 border-b border-green-200">
+                <p class="font-bold">✅ Serviço Finalizado</p>
+                <p class="text-xs">Este atendimento foi encerrado com sucesso.</p>
+            </div>
+        `;
+    }
+
     painelChat.innerHTML = `
         <div class="flex flex-col h-full bg-gray-50">
             <div class="bg-white p-3 shadow-sm flex items-center gap-3 z-20 border-b border-gray-100">
-                <button onclick="window.voltarParaListaPedidos()" class="text-gray-500 p-2">⬅</button>
+                <button onclick="window.voltarParaListaPedidos()" class="text-gray-500 p-2 hover:bg-gray-100 rounded-full transition">⬅ Voltar</button>
                 <div class="flex-1">
                     <h3 class="font-bold text-gray-800 text-sm line-clamp-1">${outroNome}</h3>
                     <p class="text-[10px] text-green-600 flex items-center gap-1 font-bold">Chat Ativo</p>
                 </div>
-                ${isMeProvider ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.location)}" target="_blank" class="bg-blue-100 text-blue-700 p-2 rounded-full">📍</a>` : ''}
                 <a href="tel:${telefoneLink}" class="bg-green-100 text-green-700 p-2 rounded-full">📞</a>
+                ${isMeProvider ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.location)}" target="_blank" class="bg-blue-100 text-blue-700 p-2 rounded-full">📍</a>` : ''}
             </div>
 
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 scroll-smooth">
@@ -194,19 +250,18 @@ export async function abrirChatPedido(orderId) {
                 <div class="flex justify-center my-4"><span class="text-[9px] text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Início da conversa</span></div>
             </div>
 
+            ${pedido.status !== 'completed' ? `
             <div class="bg-white p-3 border-t border-gray-200 flex gap-2 items-center pb-safe">
-                <input type="text" id="chat-input-msg" placeholder="Mensagem..." class="flex-1 bg-gray-100 text-gray-800 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="text" id="chat-input-msg" placeholder="Digite uma mensagem..." class="flex-1 bg-gray-100 text-gray-800 rounded-full px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button onclick="window.enviarMensagemChat('${orderId}')" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">➤</button>
-            </div>
+            </div>` : ''}
         </div>
     `;
 
-    // Escuta Mensagens
     const msgsQ = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(msgsQ, (snap) => {
         const divMsgs = document.getElementById('chat-messages');
         if(!divMsgs) return;
-        // Limpa mensagens antigas (mantendo o painel de controle)
         let bubbles = divMsgs.querySelectorAll('.msg-bubble-container');
         bubbles.forEach(el => el.remove());
 
@@ -227,23 +282,20 @@ export async function abrirChatPedido(orderId) {
 }
 
 // ============================================================================
-// 3. AÇÕES DO PRESTADOR (INICIAR E FINALIZAR)
+// 3. AÇÕES FINANCEIRAS
 // ============================================================================
 
-// NOVA: Muda status para 'in_progress'
 export async function iniciarServico(orderId) {
-    if(!confirm("Confirmar que você INICIOU o serviço?\nIsso liberará o código de segurança para o cliente.")) return;
+    if(!confirm("Você confirma que CHEGOU ao local e vai INICIAR o serviço?")) return;
     try {
         await updateDoc(doc(db, "orders", orderId), { 
             status: 'in_progress',
             started_at: serverTimestamp()
         });
-        // Recarrega o chat para mudar o painel visual
         window.abrirChatPedido(orderId);
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// ATUALIZADA: Cobra a taxa aqui!
 export async function finalizarServicoComToken(orderId, tokenCorreto, valorServico) {
     const input = document.getElementById('input-token-final');
     const tokenDigitado = input.value.trim();
@@ -251,38 +303,29 @@ export async function finalizarServicoComToken(orderId, tokenCorreto, valorServi
     if (tokenDigitado !== tokenCorreto) {
         input.classList.add('border-red-500', 'bg-red-50');
         setTimeout(() => input.classList.remove('border-red-500', 'bg-red-50'), 500);
-        return alert("❌ Código incorreto!");
+        return alert("❌ Código incorreto! Peça o número ao cliente.");
     }
 
-    if (!confirm(`Confirmar finalização?\n\nA taxa de serviço será descontada do seu saldo agora.`)) return;
+    if (!confirm(`Confirmar finalização?\n\nO valor de R$ ${(valorServico * TAXA_PLATAFORMA).toFixed(2)} será descontado do seu saldo.`)) return;
 
     try {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "usuarios", uid);
         const taxa = valorServico * TAXA_PLATAFORMA;
-
-        // 1. Busca Saldo Atual
         const userSnap = await getDoc(userRef);
         const saldoAtual = userSnap.data().wallet_balance || 0;
-        const novoSaldo = saldoAtual - taxa;
-
-        // 2. Atualiza Saldo e Pedido (Idealmente seria transaction, mas aqui é MVP)
-        await updateDoc(userRef, { wallet_balance: novoSaldo });
         
-        await updateDoc(doc(db, "orders", orderId), {
-            status: 'completed',
-            completed_at: serverTimestamp()
-        });
+        await updateDoc(userRef, { wallet_balance: saldoAtual - taxa });
+        await updateDoc(doc(db, "orders", orderId), { status: 'completed', completed_at: serverTimestamp() });
 
-        alert(`✅ SERVIÇO CONCLUÍDO!\n\nTaxa descontada: R$ ${taxa.toFixed(2)}\nNovo Saldo: R$ ${novoSaldo.toFixed(2)}`);
+        alert("✅ SERVIÇO CONCLUÍDO!");
         window.voltarParaListaPedidos();
 
     } catch (e) {
-        alert("Erro ao processar pagamento: " + e.message);
+        alert("Erro: " + e.message);
     }
 }
 
-// Mantém envio de mensagem simples
 export async function enviarMensagemChat(orderId) {
     const input = document.getElementById('chat-input-msg');
     const texto = input.value.trim();
