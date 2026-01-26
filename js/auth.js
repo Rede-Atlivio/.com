@@ -196,7 +196,7 @@ function iniciarRadarPrestador(uid) {
     });
 }
 
-// 🛑 MODIFICADO: NÃO COBRA A TAXA AQUI MAIS!
+// 🛑 MODIFICADO: SEM COBRANÇA + REDIRECT CORRIGIDO
 window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
     if(!aceitar) {
         await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
@@ -204,8 +204,7 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "usuarios", uid);
 
-        // 1. CHECAGEM DE CALOTEIRO (Mantida)
-        // Só aceita se o saldo ATUAL não estiver estourado
+        // 1. CHECAGEM DE CALOTEIRO
         const snap = await getDoc(userRef);
         const saldoAtual = snap.data().wallet_balance || 0;
 
@@ -214,7 +213,7 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
             return;
         }
 
-        // 2. ACEITA SEM COBRAR (Mudança aqui)
+        // 2. ACEITA SEM COBRAR
         try {
             await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
             
@@ -225,15 +224,23 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
                  await updateDoc(doc(db, "chats", orderId), { status: "active" });
             });
 
-            // Feedback diferente
             alert(`✅ Pedido Aceito!\n\nCombine os detalhes no Chat.\nA taxa só será descontada quando você FINALIZAR o serviço.`);
-            window.switchTab('chat');
+            
+            // 3. REDIRECIONA PARA O CHAT (AGORA DO JEITO CERTO)
+            if (window.irParaChat) {
+                window.irParaChat();
+            } else {
+                // Fallback de segurança se o chat.js demorar pra carregar
+                const tab = document.getElementById('tab-chat');
+                if(tab) tab.click();
+                setTimeout(() => { if(window.carregarChat) window.carregarChat(); }, 500);
+            }
             
         } catch (e) { alert("Erro: " + e.message); }
     }
 };
 
-// Funções utilitárias mantidas (Upload, Toggle, etc)
+// Funções utilitárias mantidas
 window.uploadFotoPerfil = async (input) => { if (!input.files || input.files.length === 0) return; const file = input.files[0]; const user = auth.currentUser; if (!user) return; const overlay = document.getElementById('upload-overlay'); if(overlay) overlay.classList.remove('hidden'); try { const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await updateProfile(user, { photoURL: downloadURL }); await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); const activeRef = doc(db, "active_providers", user.uid); getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); alert("✅ Foto atualizada!"); } catch (error) { console.error(error); alert("Erro no upload."); } finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } };
 window.abrirConfiguracaoServicos = async () => { document.getElementById('provider-setup-modal')?.classList.remove('hidden'); const lista = document.getElementById('my-services-list'); if(!lista) return; lista.innerHTML = "Carregando..."; const snap = await getDoc(doc(db, "active_providers", auth.currentUser.uid)); lista.innerHTML = ""; if(snap.exists() && snap.data().services) { snap.data().services.forEach((s,i) => lista.innerHTML += `<div class="bg-gray-50 p-2 mb-1 flex justify-between"><span>${s.category}</span><button onclick="removerServico(${i})" class="text-red-500">x</button></div>`); } };
 window.addServiceLocal = async () => { const cat = document.getElementById('new-service-category').value; const price = document.getElementById('new-service-price').value; if(!cat || !price) return; const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let svcs = snap.exists() ? snap.data().services || [] : []; svcs.push({category: cat, price: parseFloat(price)}); await (snap.exists() ? updateDoc(ref, {services: svcs}) : setDoc(ref, {uid: auth.currentUser.uid, services: svcs, is_online: true})); window.abrirConfiguracaoServicos(); };
