@@ -2,345 +2,199 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimes
 
 let currentViewType = 'jobs';
 
-// ============================================================================
 // 1. INICIALIZAÇÃO
-// ============================================================================
 export async function init(viewType) {
     currentViewType = viewType;
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
     
-    // CONFIGURAÇÃO DINÂMICA DA TABELA
+    // Cabeçalhos (Iguais)
     if (viewType === 'jobs') {
-        headers.innerHTML = `
-            <th class="p-3 text-left">TÍTULO DA VAGA</th>
-            <th class="p-3 text-left">EMPRESA & SALÁRIO</th>
-            <th class="p-3 text-left">CANDIDATOS</th>
-            <th class="p-3 text-left">STATUS</th>
-            <th class="p-3 text-right">AÇÕES</th>
-        `;
+        headers.innerHTML = `<th class="p-3 text-left">TÍTULO DA VAGA</th><th class="p-3 text-left">EMPRESA</th><th class="p-3 text-left">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA VAGA"; btnAdd.onclick = () => window.openJobEditor('jobs', null); }
     } 
     else if (viewType === 'missions') {
-        headers.innerHTML = `
-            <th class="p-3 text-left">TAREFA / MISSÃO</th>
-            <th class="p-3 text-left">DESCRIÇÃO</th>
-            <th class="p-3 text-left">RECOMPENSA</th>
-            <th class="p-3 text-left">STATUS</th>
-            <th class="p-3 text-right">AÇÕES</th>
-        `;
+        headers.innerHTML = `<th class="p-3 text-left">TAREFA</th><th class="p-3 text-left">DESCRIÇÃO</th><th class="p-3 text-left">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA TAREFA"; btnAdd.onclick = () => window.openJobEditor('missoes', null); }
     }
-    else if (viewType === 'opps') { // ✅ NOVO BLOCO OPORTUNIDADES
-        headers.innerHTML = `
-            <th class="p-3 text-left">OPORTUNIDADE</th>
-            <th class="p-3 text-left">TIPO</th>
-            <th class="p-3 text-left">LINK DESTINO</th>
-            <th class="p-3 text-left">STATUS</th>
-            <th class="p-3 text-right">AÇÕES</th>
-        `;
+    else if (viewType === 'opps') {
+        headers.innerHTML = `<th class="p-3 text-left">OPORTUNIDADE</th><th class="p-3 text-left">TIPO</th><th class="p-3 text-left">LINK</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA OPORTUNIDADE"; btnAdd.onclick = () => window.openJobEditor('oportunidades', null); }
     }
     else if (viewType === 'candidatos') {
-        headers.innerHTML = `
-            <th class="p-3 text-left">NOME DO CANDIDATO</th>
-            <th class="p-3 text-left">PARA A VAGA</th>
-            <th class="p-3 text-left">CONTATO</th>
-            <th class="p-3 text-left">CURRÍCULO (PDF)</th>
-            <th class="p-3 text-right">AÇÕES</th>
-        `;
+        headers.innerHTML = `<th class="p-3 text-left">CANDIDATO</th><th class="p-3 text-left">VAGA</th><th class="p-3 text-left">CV</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) btnAdd.style.display = 'none'; 
     }
 
-    console.log(`✅ Módulo Jobs/Tasks carregado: ${viewType}`);
+    console.log(`✅ Jobs carregado: ${viewType}`);
     await loadList();
 }
 
-// ============================================================================
-// 2. LISTAGEM (LOAD LIST)
-// ============================================================================
+// 2. LOAD LIST
 async function loadList() {
     const tbody = document.getElementById('list-body');
     const countEl = document.getElementById('list-count');
-    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center"><div class="loader border-t-blue-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center">Carregando...</td></tr>`;
 
     try {
         const db = window.db;
-        let collectionName = '';
-        if(currentViewType === 'jobs') collectionName = 'jobs';
-        if(currentViewType === 'missions') collectionName = 'missoes';
-        if(currentViewType === 'opps') collectionName = 'oportunidades'; // ✅ NOVO
-        if(currentViewType === 'candidatos') collectionName = 'candidatos';
-
-        const isDemoMode = window.currentDataMode === 'demo';
-        let q;
-
-        // FILTRO REAL vs DEMO
-        if (isDemoMode) {
-            q = query(collection(db, collectionName), where('is_demo', '==', true), limit(50));
-        } else {
-            q = query(collection(db, collectionName), orderBy('created_at', 'desc'), limit(50));
-        }
+        let col = currentViewType === 'jobs' ? 'jobs' : (currentViewType === 'missions' ? 'missoes' : (currentViewType === 'opps' ? 'oportunidades' : 'candidatos'));
+        const isDemo = window.currentDataMode === 'demo';
+        
+        // Query
+        let q = isDemo 
+            ? query(collection(db, col), where('is_demo', '==', true), limit(50))
+            : query(collection(db, col), orderBy('created_at', 'desc'), limit(50));
 
         const snap = await getDocs(q);
         tbody.innerHTML = "";
         countEl.innerText = `${snap.size} registros`;
 
-        if (snap.empty) {
-            tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-500 opacity-50">Nenhum item encontrado.</td></tr>`;
-            return;
-        }
+        if (snap.empty) { tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center opacity-50">Nada encontrado.</td></tr>`; return; }
 
-        snap.forEach(docSnap => {
-            const data = docSnap.data();
-            const id = docSnap.id;
-
-            if (currentViewType === 'jobs') renderJobRow(tbody, id, data);
-            else if (currentViewType === 'missions') renderMissionRow(tbody, id, data);
-            else if (currentViewType === 'opps') renderOppRow(tbody, id, data); // ✅ NOVO
-            else if (currentViewType === 'candidatos') renderCandidateRow(tbody, id, data);
+        snap.forEach(d => {
+            if (currentViewType === 'jobs') renderJobRow(tbody, d.id, d.data());
+            else if (currentViewType === 'missions') renderMissionRow(tbody, d.id, d.data());
+            else if (currentViewType === 'opps') renderOppRow(tbody, d.id, d.data());
+            else if (currentViewType === 'candidatos') renderCandidateRow(tbody, d.id, d.data());
         });
-
-    } catch (e) {
-        console.error(e);
-        tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Erro: ${e.message}</td></tr>`;
-    }
+    } catch (e) { console.error(e); tbody.innerHTML = `<tr><td colspan="5" class="text-red-500 p-4">Erro: ${e.message}</td></tr>`; }
 }
 
-// ============================================================================
-// 3. RENDERIZADORES DE LINHA
-// ============================================================================
-
+// 3. RENDERIZADORES (Tabelas)
 function renderJobRow(tbody, id, data) {
-    let statusBadge = data.status === 'ativo' 
-        ? `<span class="bg-green-900/30 text-green-400 border border-green-500/50 px-2 py-1 rounded text-[10px] font-bold">ATIVO</span>`
-        : `<span class="bg-gray-700 text-gray-400 border border-gray-600 px-2 py-1 rounded text-[10px] font-bold">PAUSADO</span>`;
-    
-    const demoBadge = data.is_demo ? `<span class="ml-2 text-[8px] bg-purple-600 px-1 rounded text-white">DEMO</span>` : "";
-
+    const demo = data.is_demo ? `<span class="text-[9px] bg-purple-600 px-1 rounded ml-1">DEMO</span>` : "";
     tbody.innerHTML += `
-        <tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="p-3">
-                <div class="font-bold text-white flex items-center">${data.titulo} ${demoBadge}</div>
-                <div class="text-[10px] text-gray-500 font-mono">${id.substring(0,6)}...</div>
-            </td>
-            <td class="p-3">
-                <div class="text-xs text-blue-300 font-bold uppercase">${data.empresa || "Confidencial"}</div>
-                <div class="text-[10px] text-gray-400">R$ ${data.salario || "A combinar"}</div>
-            </td>
-            <td class="p-3 text-xs text-gray-400">
-                ${data.candidatos_count || 0} inscritos
-            </td>
-            <td class="p-3">${statusBadge}</td>
-            <td class="p-3 text-right">
-                <button onclick="window.openJobEditor('jobs', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold transition">✏️ GERENCIAR</button>
-            </td>
-        </tr>
-    `;
+    <tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="p-3 font-bold text-white">${data.titulo} ${demo}</td>
+        <td class="p-3 text-gray-400 text-xs">${data.empresa}</td>
+        <td class="p-3 text-xs">${data.status}</td>
+        <td class="p-3 text-right"><button onclick="window.openJobEditor('jobs', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">GERENCIAR</button></td>
+    </tr>`;
 }
 
 function renderMissionRow(tbody, id, data) {
-    const demoBadge = data.is_demo ? `<span class="ml-2 text-[8px] bg-purple-600 px-1 rounded text-white">DEMO</span>` : "";
-    
-    // CORREÇÃO: Força converter para número antes do toFixed
-    const valorNumerico = parseFloat(data.valor || 0);
-
+    const val = parseFloat(data.valor || 0).toFixed(2);
     tbody.innerHTML += `
-        <tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="p-3">
-                <div class="font-bold text-white flex items-center">📷 ${data.titulo} ${demoBadge}</div>
-            </td>
-            <td class="p-3">
-                <div class="text-[10px] text-gray-400 truncate max-w-[200px]">${data.descricao || "-"}</div>
-            </td>
-            <td class="p-3 font-bold text-amber-400">
-                R$ ${valorNumerico.toFixed(2)}
-            </td>
-            <td class="p-3">
-                <span class="bg-blue-900/30 text-blue-400 border border-blue-500/50 px-2 py-1 rounded text-[10px] font-bold">DISPONÍVEL</span>
-            </td>
-            <td class="p-3 text-right">
-                <button onclick="window.openJobEditor('missoes', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold transition">✏️ EDITAR</button>
-            </td>
-        </tr>
-    `;
+    <tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="p-3 font-bold text-white">📷 ${data.titulo}</td>
+        <td class="p-3 text-gray-400 text-xs truncate max-w-[150px]">${data.descricao}</td>
+        <td class="p-3 text-amber-400 font-bold text-xs">R$ ${val}</td>
+        <td class="p-3 text-right"><button onclick="window.openJobEditor('missoes', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">EDITAR</button></td>
+    </tr>`;
 }
 
-function renderOppRow(tbody, id, data) { // ✅ RENDERIZADOR NOVO
-    const demoBadge = data.is_demo ? `<span class="ml-2 text-[8px] bg-purple-600 px-1 rounded text-white">DEMO</span>` : "";
-    let tipoIcon = "⚡";
-    if(data.tipo === 'cashback') tipoIcon = "💸";
-
+function renderOppRow(tbody, id, data) {
     tbody.innerHTML += `
-        <tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="p-3">
-                <div class="font-bold text-white flex items-center">${tipoIcon} ${data.titulo} ${demoBadge}</div>
-                <div class="text-[9px] text-gray-500">${data.descricao || ""}</div>
-            </td>
-            <td class="p-3">
-                <span class="bg-slate-800 text-gray-300 px-2 py-1 rounded text-[10px] uppercase font-bold">${data.tipo || "Geral"}</span>
-            </td>
-            <td class="p-3">
-                <a href="${data.link}" target="_blank" class="text-blue-400 hover:text-blue-300 text-[10px] underline truncate block max-w-[150px]">${data.link}</a>
-            </td>
-            <td class="p-3">
-                <span class="bg-green-900/30 text-green-400 border border-green-500/50 px-2 py-1 rounded text-[10px] font-bold">ATIVO</span>
-            </td>
-            <td class="p-3 text-right">
-                <button onclick="window.openJobEditor('oportunidades', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold transition">✏️ EDITAR</button>
-            </td>
-        </tr>`;
+    <tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="p-3 font-bold text-white">⚡ ${data.titulo}</td>
+        <td class="p-3 text-gray-400 text-xs uppercase">${data.tipo}</td>
+        <td class="p-3 text-blue-400 text-xs underline truncate max-w-[150px]">${data.link}</td>
+        <td class="p-3 text-right"><button onclick="window.openJobEditor('oportunidades', '${id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs">EDITAR</button></td>
+    </tr>`;
 }
 
 function renderCandidateRow(tbody, id, data) {
-    let cvButton = `<span class="text-gray-600 text-[10px]">Sem PDF</span>`;
+    const pdfBtn = data.cv_url ? `<a href="${data.cv_url}" target="_blank" class="text-red-400 text-xs font-bold border border-red-900 px-2 py-1 rounded">PDF</a>` : "-";
+    tbody.innerHTML += `
+    <tr class="border-b border-white/5 hover:bg-white/5">
+        <td class="p-3 font-bold text-white">${data.nome_candidato}</td>
+        <td class="p-3 text-gray-400 text-xs">${data.vaga_titulo}</td>
+        <td class="p-3">${pdfBtn}</td>
+        <td class="p-3 text-right"><button onclick="window.deleteItem('candidatos', '${id}')" class="text-red-500 hover:text-red-400 px-2">🗑️</button></td>
+    </tr>`;
+}
+
+// 4. EDITOR (AGORA COM BOTÃO EXCLUIR)
+window.openJobEditor = async (colName, id) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const realColl = colName === 'missions' ? 'missoes' : colName;
     
-    if (data.cv_url) {
-        cvButton = `
-            <a href="${data.cv_url}" target="_blank" class="flex items-center gap-2 bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-500/30 px-3 py-1.5 rounded text-[10px] font-bold transition">
-                <i data-lucide="file-text" size="12"></i> BAIXAR PDF
-            </a>
+    modal.classList.remove('hidden');
+    document.getElementById('modal-title').innerText = id ? "EDITAR" : "NOVO";
+    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+    content.innerHTML = "Carregando...";
+
+    let data = {};
+    if(id) {
+        const snap = await getDoc(doc(window.db, realColl, id));
+        if(snap.exists()) data = snap.data();
+    }
+
+    let fields = "";
+    // Gera campos baseado no tipo...
+    if(realColl === 'jobs') {
+        fields = `
+        <label class="inp-label">Título</label><input id="edt-titulo" value="${data.titulo||''}" class="inp-editor mb-2">
+        <label class="inp-label">Empresa</label><input id="edt-empresa" value="${data.empresa||''}" class="inp-editor mb-2">
+        <label class="inp-label">Salário</label><input id="edt-salario" value="${data.salario||''}" class="inp-editor mb-2">
+        <label class="inp-label">Descrição</label><textarea id="edt-descricao" class="inp-editor h-20 mb-2">${data.descricao||''}</textarea>
+        <label class="inp-label">Status</label><select id="edt-status" class="inp-editor"><option value="ativo">Ativo</option><option value="pausado">Pausado</option></select>
+        `;
+    } else if (realColl === 'missoes') {
+        fields = `
+        <label class="inp-label">Título</label><input id="edt-titulo" value="${data.titulo||''}" class="inp-editor mb-2">
+        <label class="inp-label">Descrição</label><textarea id="edt-descricao" class="inp-editor h-20 mb-2">${data.descricao||''}</textarea>
+        <label class="inp-label">Valor (R$)</label><input type="number" id="edt-valor" value="${data.valor||''}" class="inp-editor mb-2">
+        `;
+    } else if (realColl === 'oportunidades') {
+        fields = `
+        <label class="inp-label">Título</label><input id="edt-titulo" value="${data.titulo||''}" class="inp-editor mb-2">
+        <label class="inp-label">Link</label><input id="edt-link" value="${data.link||''}" class="inp-editor mb-2 text-blue-400">
+        <label class="inp-label">Tipo</label><select id="edt-tipo" class="inp-editor"><option value="alerta">Alerta</option><option value="cashback">Cashback</option></select>
+        <label class="inp-label">Descrição</label><input id="edt-descricao" value="${data.descricao||''}" class="inp-editor mb-2">
         `;
     }
 
-    tbody.innerHTML += `
-        <tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="p-3">
-                <div class="font-bold text-white">${data.nome_candidato || "Desconhecido"}</div>
-            </td>
-            <td class="p-3">
-                <div class="text-xs text-gray-300">${data.vaga_titulo || "Vaga Removida"}</div>
-            </td>
-            <td class="p-3 text-[10px] text-gray-400">
-                ${data.email_candidato || "-"}
-            </td>
-            <td class="p-3">
-                ${cvButton}
-            </td>
-            <td class="p-3 text-right">
-                <button onclick="window.deleteItem('candidatos', '${id}')" class="text-red-500 hover:text-white px-2">🗑️</button>
-            </td>
-        </tr>
-    `;
-    lucide.createIcons();
-}
+    // AQUI ESTÁ A MÁGICA: O BOTÃO DE EXCLUIR SÓ APARECE SE TIVER ID (EDIÇÃO)
+    let deleteButton = id ? `<button onclick="window.deleteItem('${realColl}', '${id}')" class="bg-red-900/50 hover:bg-red-600 text-white border border-red-800 px-4 rounded font-bold text-xs">🗑️ EXCLUIR</button>` : "";
 
-// ============================================================================
-// 4. EDITOR ESPECÍFICO DESTA ÁREA
-// ============================================================================
-window.openJobEditor = async (collectionName, id) => {
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
-    
-    let realColl = collectionName === 'missions' ? 'missoes' : collectionName;
-
-    modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = id ? "EDITAR ITEM" : "CRIAR NOVO";
-    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
-    
-    content.innerHTML = `<p class="text-center text-gray-500 py-10">Carregando...</p>`;
-
-    try {
-        let data = {};
-        if (id) {
-            const docSnap = await getDoc(doc(window.db, realColl, id));
-            if (docSnap.exists()) data = docSnap.data();
-        }
-
-        let html = `<div class="space-y-4">`;
-        
-        if (realColl === 'jobs') {
-            html += `
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2"><label class="inp-label">Título da Vaga</label><input type="text" id="edt-titulo" value="${data.titulo||''}" class="inp-editor font-bold text-white"></div>
-                    <div><label class="inp-label">Empresa</label><input type="text" id="edt-empresa" value="${data.empresa||''}" class="inp-editor"></div>
-                    <div><label class="inp-label">Salário (Texto)</label><input type="text" id="edt-salario" value="${data.salario||''}" class="inp-editor"></div>
-                    <div class="col-span-2"><label class="inp-label">Descrição Completa</label><textarea id="edt-descricao" class="inp-editor h-24">${data.descricao||''}</textarea></div>
-                    <div><label class="inp-label">Status</label>
-                        <select id="edt-status" class="inp-editor">
-                            <option value="ativo" ${data.status==='ativo'?'selected':''}>ATIVO</option>
-                            <option value="pausado" ${data.status==='pausado'?'selected':''}>PAUSADO</option>
-                        </select>
-                    </div>
-                </div>
-            `;
-        } 
-        else if (realColl === 'missoes') {
-            html += `
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2"><label class="inp-label">Título da Missão</label><input type="text" id="edt-titulo" value="${data.titulo||''}" class="inp-editor font-bold text-white"></div>
-                    <div class="col-span-2"><label class="inp-label">Descrição (O que fazer?)</label><textarea id="edt-descricao" class="inp-editor h-20">${data.descricao||''}</textarea></div>
-                    <div><label class="inp-label">Recompensa (R$)</label><input type="number" id="edt-valor" value="${data.valor||''}" class="inp-editor text-amber-400 font-bold"></div>
-                </div>
-            `;
-        }
-        else if (realColl === 'oportunidades') { // ✅ FORMULÁRIO NOVO
-            html += `
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-2"><label class="inp-label">Título da Oportunidade</label><input type="text" id="edt-titulo" value="${data.titulo||''}" class="inp-editor font-bold text-white"></div>
-                    <div class="col-span-2"><label class="inp-label">Link de Destino</label><input type="text" id="edt-link" value="${data.link||''}" class="inp-editor text-blue-400"></div>
-                    <div><label class="inp-label">Tipo</label>
-                        <select id="edt-tipo" class="inp-editor">
-                            <option value="alerta" ${data.tipo==='alerta'?'selected':''}>⚡ Alerta</option>
-                            <option value="cashback" ${data.tipo==='cashback'?'selected':''}>💸 Cashback</option>
-                        </select>
-                    </div>
-                    <div class="col-span-2"><label class="inp-label">Descrição Curta</label><input type="text" id="edt-descricao" value="${data.descricao||''}" class="inp-editor"></div>
-                </div>
-            `;
-        }
-
-        html += `
-            <div class="mt-6 pt-4 border-t border-slate-700">
-                <button onclick="window.saveJobData('${realColl}', '${id}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">
-                    💾 SALVAR DADOS
-                </button>
+    content.innerHTML = `
+        <div class="space-y-4">
+            ${fields}
+            <div class="flex gap-4 pt-4 border-t border-slate-700">
+                ${deleteButton}
+                <button onclick="window.saveJobData('${realColl}', '${id}')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded font-bold text-xs">SALVAR</button>
             </div>
-        </div>`;
-
-        content.innerHTML = html;
-
-    } catch (e) { content.innerHTML = `Erro: ${e.message}`; }
+        </div>
+    `;
 };
 
+// SALVAR
 window.saveJobData = async (col, id) => {
     try {
-        const db = window.db;
         let data = { updated_at: serverTimestamp() };
-        
+        // Pega valores genéricos
         if(document.getElementById('edt-titulo')) data.titulo = document.getElementById('edt-titulo').value;
         if(document.getElementById('edt-empresa')) data.empresa = document.getElementById('edt-empresa').value;
         if(document.getElementById('edt-salario')) data.salario = document.getElementById('edt-salario').value;
         if(document.getElementById('edt-descricao')) data.descricao = document.getElementById('edt-descricao').value;
         if(document.getElementById('edt-status')) data.status = document.getElementById('edt-status').value;
-        if(document.getElementById('edt-link')) data.link = document.getElementById('edt-link').value; // ✅ NOVO
-        if(document.getElementById('edt-tipo')) data.tipo = document.getElementById('edt-tipo').value; // ✅ NOVO
-        
-        // CORREÇÃO: Salva sempre como número
         if(document.getElementById('edt-valor')) data.valor = parseFloat(document.getElementById('edt-valor').value);
+        if(document.getElementById('edt-link')) data.link = document.getElementById('edt-link').value;
+        if(document.getElementById('edt-tipo')) data.tipo = document.getElementById('edt-tipo').value;
 
-        if (!id) {
+        if(!id) {
             data.created_at = serverTimestamp();
             data.is_demo = (window.currentDataMode === 'demo');
-            data.origem = "admin_manual";
             if(col === 'jobs') data.candidatos_count = 0;
-            
-            await addDoc(collection(db, col), data);
+            await addDoc(collection(window.db, col), data);
         } else {
-            await updateDoc(doc(db, col, id), data);
+            await updateDoc(doc(window.db, col, id), data);
         }
-
-        alert("✅ Salvo com sucesso!");
         document.getElementById('modal-editor').classList.add('hidden');
-        if(window.switchView) window.switchView(window.activeView);
-
-    } catch(e) { alert("Erro ao salvar: " + e.message); }
+        loadList();
+        alert("Salvo!");
+    } catch(e) { alert(e.message); }
 };
 
+// EXCLUIR
 window.deleteItem = async (col, id) => {
-    if(!confirm("Excluir permanentemente?")) return;
+    if(!confirm("Tem certeza? Isso apagará o item permanentemente.")) return;
     try {
         await deleteDoc(doc(window.db, col, id));
-        if(window.switchView) window.switchView(window.activeView);
-    } catch(e) { alert(e.message); }
+        document.getElementById('modal-editor').classList.add('hidden'); // Fecha modal se estiver aberto
+        loadList(); // Recarrega lista
+    } catch(e) { alert("Erro ao excluir: " + e.message); }
 };
