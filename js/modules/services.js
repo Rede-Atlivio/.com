@@ -1,7 +1,6 @@
 import { db, auth } from '../app.js';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, limit, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Variável para cache (performance)
 let cachePrestadores = [];
 
 // --- GATILHOS ---
@@ -20,17 +19,14 @@ window.fecharModalServico = fecharModalServico;
 window.filtrarCategoria = filtrarCategoria;
 
 // ============================================================================
-// 1. LISTAGEM DE SERVIÇOS (CORRIGIDA PARA NÃO APAGAR O MENU)
+// 1. LISTAGEM DE SERVIÇOS (VITRINE CORRIGIDA)
 // ============================================================================
 export async function carregarServicosDisponiveis() {
-    // 1. Identifica os containers corretos no index.html
     const listaRender = document.getElementById('lista-prestadores-realtime');
     const filtersRender = document.getElementById('category-filters');
     
-    // Se não achar (ex: usuário está na tela de login), para.
     if (!listaRender || !filtersRender) return;
 
-    // 2. Renderiza os Filtros (Botões)
     filtersRender.innerHTML = `
         <button onclick="window.filtrarCategoria('Todos', this)" class="btn-filtro active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md transition">Todos</button>
         <button onclick="window.filtrarCategoria('Limpeza', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Limpeza</button>
@@ -39,7 +35,6 @@ export async function carregarServicosDisponiveis() {
         <button onclick="window.filtrarCategoria('Outros', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Outros</button>
     `;
 
-    // 3. Feedback de Carregamento na Lista
     listaRender.innerHTML = `
         <div class="col-span-2 text-center py-10">
             <div class="loader mx-auto border-blue-200 border-t-blue-600 mb-2"></div>
@@ -47,12 +42,11 @@ export async function carregarServicosDisponiveis() {
         </div>
     `;
 
-    // 4. Busca no Firebase
     const q = query(collection(db, "active_providers"), where("is_online", "==", true), limit(50));
     
     try {
         const snap = await getDocs(q);
-        cachePrestadores = []; // Limpa cache
+        cachePrestadores = []; 
 
         if (snap.empty) {
             listaRender.innerHTML = `
@@ -68,7 +62,6 @@ export async function carregarServicosDisponiveis() {
             cachePrestadores.push({ id: d.id, ...d.data() });
         });
 
-        // Renderiza a lista
         renderizarLista(cachePrestadores);
 
     } catch (e) {
@@ -77,9 +70,7 @@ export async function carregarServicosDisponiveis() {
     }
 }
 
-// --- FUNÇÃO DE FILTRO ---
 function filtrarCategoria(categoria, btnElement) {
-    // Atualiza visual dos botões
     if(btnElement) {
         document.querySelectorAll('.btn-filtro').forEach(btn => {
             btn.className = "btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition";
@@ -103,7 +94,6 @@ function filtrarCategoria(categoria, btnElement) {
     }, 300);
 }
 
-// --- RENDERIZADOR DOS CARDS (PREMIUM) ---
 function renderizarLista(lista) {
     const container = document.getElementById('lista-prestadores-realtime');
     container.innerHTML = "";
@@ -118,7 +108,10 @@ function renderizarLista(lista) {
     }
 
     lista.forEach(prestador => {
-        const fotoPerfil = prestador.foto_perfil || 'https://via.placeholder.com/150';
+        // CORREÇÃO: Usa UI Avatars se não tiver foto
+        const nomeSafe = prestador.nome_profissional || "Profissional";
+        const fotoPerfil = prestador.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSafe)}&background=random&color=fff`;
+        
         const temBanner = !!prestador.banner_url;
         const bannerStyle = temBanner 
             ? `background-image: url('${prestador.banner_url}');` 
@@ -145,7 +138,7 @@ function renderizarLista(lista) {
 
                     <div class="pt-8 px-4 pb-4">
                         <div class="mb-2">
-                            <h3 class="font-black text-gray-800 text-sm leading-tight truncate">${prestador.nome_profissional}</h3>
+                            <h3 class="font-black text-gray-800 text-sm leading-tight truncate">${nomeSafe}</h3>
                             <div class="flex items-center gap-1 mt-1">
                                 <span class="text-[9px] font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded-full">⭐ 5.0</span>
                                 <span class="text-[9px] text-gray-400 truncate w-32">${bio}</span>
@@ -174,15 +167,12 @@ function renderizarLista(lista) {
     });
 }
 
-// ============================================================================
-// 2. MODAL DE CONTRATAÇÃO
-// ============================================================================
+// 2. MODAL DE CONTRATAÇÃO (Igual ao anterior, sem mudanças)
 export function abrirModalContratacao(providerId, providerName, category, price) {
     if (!auth.currentUser) return alert("Faça login para solicitar um serviço.");
 
     const modal = document.getElementById('modal-contratacao');
     if(!modal) {
-        // Se o modal não existir no HTML (caso de erro), cria ele
         const newModal = document.createElement('div');
         newModal.id = 'modal-contratacao';
         newModal.className = 'hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4';
@@ -243,9 +233,7 @@ export function abrirModalContratacao(providerId, providerName, category, price)
     `;
 }
 
-// ============================================================================
 // 3. ENVIO (MANTIDO)
-// ============================================================================
 export async function confirmarSolicitacao(providerId, providerName, category, price) {
     const data = document.getElementById('req-date').value;
     const hora = document.getElementById('req-time').value;
