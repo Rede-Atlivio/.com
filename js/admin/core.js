@@ -13,7 +13,7 @@ const ADMIN_EMAIL = "contatogilborges@gmail.com";
 // EXPOR GLOBAIS
 window.auth = auth;
 window.db = db;
-window.currentDataMode = 'real'; // Padrão: Dados Reais
+window.currentDataMode = 'real';
 window.activeView = 'dashboard';
 
 // ============================================================================
@@ -72,12 +72,10 @@ function setDataMode(mode) {
         btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold bg-purple-600 text-white transition shadow-lg";
     }
     
-    // Recarrega a view atual para aplicar o filtro
     console.log(`🔄 Modo alterado para: ${mode.toUpperCase()}`);
     switchView(window.activeView);
 }
 
-// ... (Login/Logout functions - Iguais ao anterior) ...
 async function loginAdmin() { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } }
 function logoutAdmin() { signOut(auth).then(() => location.reload()); }
 function unlockAdmin() {
@@ -93,7 +91,7 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS
+// 2. ROTEADOR DE MÓDULOS (CORRIGIDO)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
@@ -108,18 +106,38 @@ window.switchView = async function(viewName) {
     // Mapeamento
     let moduleFile, containerId;
     
-    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
-    else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
-    else if (['jobs', 'candidatos', 'missions'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; } // Jobs ainda vai ser criado
-    else if (['automation', 'opps'].includes(viewName)) { moduleFile = './automation.js'; containerId = 'view-automation'; }
-    else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
-    else if (viewName === 'settings') { moduleFile = './settings.js'; containerId = 'view-settings'; }
+    if (viewName === 'dashboard') { 
+        moduleFile = './dashboard.js'; 
+        containerId = 'view-dashboard'; 
+    }
+    else if (['users', 'services'].includes(viewName)) { 
+        moduleFile = './users.js'; 
+        containerId = 'view-list'; 
+    }
+    // ✅ CORREÇÃO AQUI: 'opps' foi movido para cá
+    else if (['jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
+        moduleFile = './jobs.js'; 
+        containerId = 'view-list'; 
+    }
+    // ✅ CORREÇÃO AQUI: 'opps' foi removido daqui
+    else if (['automation'].includes(viewName)) { 
+        moduleFile = './automation.js'; 
+        containerId = 'view-automation'; 
+    }
+    else if (viewName === 'finance') { 
+        moduleFile = './finance.js'; 
+        containerId = 'view-finance'; 
+    }
+    else if (viewName === 'settings') { 
+        moduleFile = './settings.js'; 
+        containerId = 'view-settings'; 
+    }
 
     if(containerId) document.getElementById(containerId).classList.remove('hidden');
 
     if (moduleFile) {
         try {
-            // Cache busting simples para garantir carregamento novo
+            // Cache busting simples
             const module = await import(`${moduleFile}?v=${Date.now()}`);
             if (module.init) await module.init(viewName);
         } catch (e) {
