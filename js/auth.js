@@ -379,7 +379,7 @@ window.addServiceLocal = async () => {
     window.abrirConfiguracaoServicos(); // Recarrega para mostrar na lista
 };
 
-// 4. SALVAR TUDO E MUDAR STATUS
+// 4. SALVAR TUDO E MUDAR STATUS (VERSÃO BLINDADA)
 window.saveServicesAndGoOnline = async () => {
     const nome = document.getElementById('setup-name').value;
     const bio = document.getElementById('setup-bio').value;
@@ -392,17 +392,17 @@ window.saveServicesAndGoOnline = async () => {
     }
 
     const btn = document.querySelector('button[onclick="window.saveServicesAndGoOnline()"]');
-    btn.innerText = "ENVIANDO...";
-    btn.disabled = true;
+    if(btn) {
+        btn.innerText = "ENVIANDO...";
+        btn.disabled = true;
+    }
 
     try {
-        // Atualiza perfil do usuário
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             nome_profissional: nome, 
             setup_profissional_ok: true 
         });
 
-        // Atualiza tabela de prestadores ativos
         const activeRef = doc(db, "active_providers", auth.currentUser.uid);
         
         await setDoc(activeRef, {
@@ -411,23 +411,31 @@ window.saveServicesAndGoOnline = async () => {
             foto_perfil: userProfile.photoURL,
             bio: bio,
             banner_url: banner,
-            is_online: false, // OFF até aprovar
-            status: 'em_analise', // O pulo do gato 😺
+            is_online: false, 
+            status: 'em_analise', 
             updated_at: serverTimestamp()
         }, { merge: true });
 
         alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise.\nAssim que aprovado, você poderá ficar online.");
-        document.getElementById('provider-setup-modal').classList.add('hidden');
         
-        // Atualiza a tela localmente
-        document.getElementById('online-toggle').checked = false;
-        document.getElementById('online-toggle').disabled = true;
-        document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
+        const modal = document.getElementById('provider-setup-modal');
+        if(modal) modal.classList.add('hidden');
+        
+        const toggle = document.getElementById('online-toggle');
+        const label = document.getElementById('status-label');
+        
+        if(toggle) {
+            toggle.checked = false;
+            toggle.disabled = true;
+        }
+        if(label) label.innerText = "🟡 EM ANÁLISE";
 
     } catch(e) {
         alert("Erro: " + e.message);
-        btn.innerText = "SALVAR E ENVIAR";
-        btn.disabled = false;
+        if(btn) {
+            btn.innerText = "SALVAR E ENVIAR";
+            btn.disabled = false;
+        }
     }
 };
 
@@ -440,6 +448,6 @@ window.removerServico = async (i) => {
     window.abrirConfiguracaoServicos(); 
 };
 
-// Funções utilitárias (Upload perfil normal)
+// Funções utilitárias
 window.uploadFotoPerfil = async (input) => { if (!input.files || input.files.length === 0) return; const file = input.files[0]; const user = auth.currentUser; if (!user) return; const overlay = document.getElementById('upload-overlay'); if(overlay) overlay.classList.remove('hidden'); try { const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await updateProfile(user, { photoURL: downloadURL }); await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); const activeRef = doc(db, "active_providers", user.uid); getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); alert("✅ Foto atualizada!"); } catch (error) { console.error(error); alert("Erro no upload."); } finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } };
 function toggleDisplay(id, show) { const el = document.getElementById(id); if(el) show ? el.classList.remove('hidden') : el.classList.add('hidden'); }
