@@ -10,46 +10,48 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// EXPOR PARA O CONSOLE (Para seus testes funcionarem)
+// EXPOR GLOBAIS
 window.auth = auth;
 window.db = db;
-window.core = {}; // Namespace para funções globais
-
-// ESTADO GLOBAL
-const state = {
-    currentModule: null,
-    currentUser: null
-};
+window.currentDataMode = 'real'; // Padrão: Dados Reais
+window.activeView = 'dashboard';
 
 // ============================================================================
-// 1. SISTEMA DE LOGIN
+// 1. INICIALIZAÇÃO
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Listeners de Login/Logout
+    // Auth Listeners
     const btnLogin = document.getElementById('btn-login');
     const btnLogout = document.getElementById('btn-logout');
-
     if(btnLogin) btnLogin.addEventListener('click', loginAdmin);
     if(btnLogout) btnLogout.addEventListener('click', logoutAdmin);
 
-    // Listener de Navegação (Menu Lateral)
+    // Navegação
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            // Remove active de todos
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            // Adiciona ao clicado
-            const target = e.currentTarget;
-            target.classList.add('active');
-            // Navega
-            const view = target.getAttribute('data-view');
+            e.currentTarget.classList.add('active');
+            const view = e.currentTarget.getAttribute('data-view');
             switchView(view);
         });
     });
 
-    // Monitorar Auth
+    // MODO DE DADOS (REAL vs DEMO)
+    const btnReal = document.getElementById('mode-real');
+    const btnDemo = document.getElementById('mode-demo');
+
+    if(btnReal && btnDemo) {
+        btnReal.addEventListener('click', () => setDataMode('real'));
+        btnDemo.addEventListener('click', () => setDataMode('demo'));
+    }
+
+    // Refresh
+    const btnRefresh = document.getElementById('btn-refresh');
+    if(btnRefresh) btnRefresh.addEventListener('click', () => switchView(window.activeView));
+
+    // Monitor Auth
     onAuthStateChanged(auth, (user) => {
         if (user && user.email.toLowerCase() === ADMIN_EMAIL) {
-            state.currentUser = user;
             unlockAdmin();
         } else {
             lockAdmin();
@@ -57,26 +59,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function loginAdmin() {
-    try {
-        await signInWithPopup(auth, provider);
-    } catch (e) {
-        alert("Erro no login: " + e.message);
+function setDataMode(mode) {
+    window.currentDataMode = mode;
+    const btnReal = document.getElementById('mode-real');
+    const btnDemo = document.getElementById('mode-demo');
+
+    if (mode === 'real') {
+        btnReal.className = "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition shadow-lg";
+        btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+    } else {
+        btnReal.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+        btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold bg-purple-600 text-white transition shadow-lg";
     }
+    
+    // Recarrega a view atual para aplicar o filtro
+    console.log(`🔄 Modo alterado para: ${mode.toUpperCase()}`);
+    switchView(window.activeView);
 }
 
-function logoutAdmin() {
-    signOut(auth).then(() => location.reload());
-}
-
+// ... (Login/Logout functions - Iguais ao anterior) ...
+async function loginAdmin() { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } }
+function logoutAdmin() { signOut(auth).then(() => location.reload()); }
 function unlockAdmin() {
     document.getElementById('login-gate').classList.add('hidden');
     document.getElementById('admin-sidebar').classList.remove('hidden');
     document.getElementById('admin-main').classList.remove('hidden');
-    // Carrega Dashboard por padrão
     switchView('dashboard');
 }
-
 function lockAdmin() {
     document.getElementById('login-gate').classList.remove('hidden');
     document.getElementById('admin-sidebar').classList.add('hidden');
@@ -84,64 +93,38 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS (LOADER DINÂMICO)
+// 2. ROTEADOR DE MÓDULOS
 // ============================================================================
 window.switchView = async function(viewName) {
-    console.log(`🔄 Navegando para: ${viewName}`);
+    window.activeView = viewName;
+    console.log(`🚀 Carregando módulo: ${viewName}`);
     
-    // 1. Esconde todas as views
-    const containers = ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings'];
-    containers.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
+    // UI Cleanup
+    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
     });
-
-    // 2. Atualiza Título
     document.getElementById('page-title').innerText = viewName.toUpperCase();
 
-    // 3. Carrega o Módulo Correspondente
-    try {
-        let moduleFile = '';
-        let containerId = '';
+    // Mapeamento
+    let moduleFile, containerId;
+    
+    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
+    else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
+    else if (['jobs', 'candidatos', 'missions'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; } // Jobs ainda vai ser criado
+    else if (['automation', 'opps'].includes(viewName)) { moduleFile = './automation.js'; containerId = 'view-automation'; }
+    else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
+    else if (viewName === 'settings') { moduleFile = './settings.js'; containerId = 'view-settings'; }
 
-        if (viewName === 'dashboard') {
-            moduleFile = './dashboard.js';
-            containerId = 'view-dashboard';
-        } 
-        else if (['users', 'services'].includes(viewName)) {
-            moduleFile = './users.js';
-            containerId = 'view-list';
-        }
-        else if (['jobs', 'candidatos', 'missions'].includes(viewName)) {
-            moduleFile = './jobs.js';
-            containerId = 'view-list';
-        }
-        else if (viewName === 'finance') {
-            moduleFile = './finance.js';
-            containerId = 'view-finance';
-        }
-        else if (viewName === 'automation' || viewName === 'opps') { // Opps agora é gerenciado pelo robo/automation
-            moduleFile = './automation.js';
-            containerId = 'view-automation';
-        }
-        else if (viewName === 'settings') {
-            moduleFile = './settings.js';
-            containerId = 'view-settings';
-        }
+    if(containerId) document.getElementById(containerId).classList.remove('hidden');
 
-        // Mostra o container
-        if(containerId) document.getElementById(containerId).classList.remove('hidden');
-
-        // Importação Dinâmica
-        if (moduleFile) {
-            const module = await import(moduleFile);
-            if (module.init) {
-                await module.init(viewName); // Inicia o módulo passando o contexto (ex: 'users' ou 'services')
-            }
+    if (moduleFile) {
+        try {
+            // Cache busting simples para garantir carregamento novo
+            const module = await import(`${moduleFile}?v=${Date.now()}`);
+            if (module.init) await module.init(viewName);
+        } catch (e) {
+            console.error(e);
+            alert(`Erro ao carregar ${viewName}: ${e.message}`);
         }
-
-    } catch (e) {
-        console.error(`❌ Erro ao carregar módulo ${viewName}:`, e);
-        // alert(`Erro ao carregar módulo: ${e.message}`);
     }
 };
