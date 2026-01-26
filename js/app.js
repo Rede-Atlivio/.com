@@ -27,3 +27,16 @@ window.storage = storage;
 window.provider = provider;
 
 export { app, auth, db, storage, provider };
+
+// ============================================================================
+// 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// Aqui conectamos todas as funcionalidades novas que criamos
+// ============================================================================
+
+import './auth.js';                  // Gerencia Login, Perfil e Saldo Financeiro
+import './modules/services.js';      // Lista de Prestadores e Serviços
+import './modules/jobs.js';          // Vagas de Emprego
+import './modules/opportunities.js'; // Robô de Ofertas e Afiliados
+import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (Token)
+
+console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
