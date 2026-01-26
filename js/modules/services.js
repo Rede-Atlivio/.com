@@ -16,35 +16,39 @@ window.confirmarSolicitacao = confirmarSolicitacao;
 window.fecharModalServico = fecharModalServico;
 
 // ============================================================================
-// 1. LISTAGEM DE SERVIÇOS (VITRINE)
+// 1. LISTAGEM DE SERVIÇOS (VITRINE PREMIUM 💎)
 // ============================================================================
 export async function carregarServicosDisponiveis() {
     const container = document.getElementById('app-container');
     if (!container) return;
 
+    // Cabeçalho da Seção
     container.innerHTML = `
         <div class="p-4 pb-24 animate-fadeIn">
-            <h2 class="text-xl font-black text-blue-900 mb-2">🛠️ Contratar Profissional</h2>
-            <p class="text-xs text-gray-500 mb-6">Escolha uma categoria e encontre os melhores.</p>
-            
-            <div class="flex gap-2 overflow-x-auto pb-4 mb-2 no-scrollbar">
-                <button onclick="window.filtrarCategoria('Todos')" class="bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md">Todos</button>
-                <button onclick="window.filtrarCategoria('Limpeza')" class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap">Limpeza</button>
-                <button onclick="window.filtrarCategoria('Obras')" class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap">Obras</button>
-                <button onclick="window.filtrarCategoria('Técnica')" class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap">Técnica</button>
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <h2 class="text-2xl font-black text-blue-900">Profissionais</h2>
+                    <p class="text-xs text-gray-500">Encontre os melhores especialistas.</p>
+                </div>
+                <button onclick="window.filtrarCategoria('Todos')" class="text-[10px] font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    Ver Todos
+                </button>
             </div>
-
-            <div id="lista-servicos-render" class="grid grid-cols-1 gap-4">
-                <div class="loader mx-auto border-blue-200 border-t-blue-600 mt-10"></div>
+            
+            <div id="lista-servicos-render" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div class="col-span-1 text-center py-10">
+                    <div class="loader mx-auto border-blue-200 border-t-blue-600 mb-2"></div>
+                    <p class="text-[10px] text-gray-400">Carregando vitrine...</p>
+                </div>
             </div>
         </div>
 
-        <div id="modal-contratacao" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-            </div>
+        <div id="modal-contratacao" class="hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"></div>
     `;
 
-    // Busca prestadores ativos
     const listaRender = document.getElementById('lista-servicos-render');
+    
+    // Busca APENAS quem está ONLINE (Isso já filtra os "Em Análise" que o auth.js bloqueia)
     const q = query(collection(db, "active_providers"), where("is_online", "==", true), limit(50));
     
     try {
@@ -53,46 +57,87 @@ export async function carregarServicosDisponiveis() {
         
         if (snap.empty) {
             listaRender.innerHTML = `
-                <div class="text-center py-10 opacity-60">
-                    <div class="text-4xl mb-2">😴</div>
-                    <p class="text-sm font-bold">Nenhum prestador online.</p>
-                    <p class="text-xs">Tente novamente mais tarde.</p>
+                <div class="col-span-1 md:col-span-2 text-center py-12 opacity-60">
+                    <div class="text-5xl mb-3 grayscale">😴</div>
+                    <h3 class="font-bold text-gray-700">Ninguém Online Agora</h3>
+                    <p class="text-xs text-gray-400 max-w-[200px] mx-auto mt-1">Nossos parceiros estão descansando. Tente mais tarde.</p>
                 </div>`;
             return;
         }
 
         snap.forEach(d => {
             const prestador = d.data();
-            // Se o prestador tiver serviços cadastrados
+            
+            // Tratamento de Imagens (Fallback se não tiver)
+            const fotoPerfil = prestador.foto_perfil || 'https://via.placeholder.com/150';
+            // Se tiver banner, usa. Se não, usa um degradê azul bonito padrão do Atlivio.
+            const temBanner = !!prestador.banner_url;
+            const bannerStyle = temBanner 
+                ? `background-image: url('${prestador.banner_url}');` 
+                : `background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);`; 
+
+            // Tratamento de Texto
+            const bio = prestador.bio || "Profissional verificado da plataforma Atlivio.";
+            
+            // Loop pelos serviços (Um Card por Serviço Principal ou Agrupado)
+            // Para a vitrine não ficar repetida, vamos mostrar o CARD DO PRESTADOR com o serviço principal destacado
             if (prestador.services && prestador.services.length > 0) {
-                prestador.services.forEach(servico => {
-                    listaRender.innerHTML += `
-                        <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex gap-4 items-center">
-                            <img src="${prestador.foto_perfil || 'https://via.placeholder.com/50'}" class="w-12 h-12 rounded-full object-cover border border-gray-200">
-                            <div class="flex-1">
-                                <h3 class="font-bold text-gray-800 text-sm">${servico.category}</h3>
-                                <p class="text-[10px] text-gray-500 line-clamp-1">${servico.description || 'Profissional qualificado'}</p>
-                                <p class="text-[10px] text-blue-600 font-bold mt-1">Por: ${prestador.nome_profissional}</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-lg font-black text-blue-900">R$ ${servico.price}</p>
-                                <button onclick="window.abrirModalContratacao('${d.id}', '${prestador.nome_profissional}', '${servico.category}', ${servico.price})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase shadow-lg hover:bg-blue-500 transition">
-                                    Contratar
-                                </button>
-                            </div>
+                const servicoPrincipal = prestador.services[0]; // Pega o primeiro como destaque
+                
+                listaRender.innerHTML += `
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative">
+                        
+                        <div class="h-24 w-full bg-cover bg-center relative" style="${bannerStyle}">
+                            <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition"></div>
+                            ${!temBanner ? '<div class="absolute inset-0 flex items-center justify-center opacity-20 text-white font-black text-2xl tracking-widest">ATLIVIO</div>' : ''}
                         </div>
-                    `;
-                });
+
+                        <div class="px-5 relative">
+                            <div class="absolute -top-8 left-5">
+                                <img src="${fotoPerfil}" class="w-16 h-16 rounded-full border-4 border-white shadow-md object-cover bg-white">
+                                <div class="absolute bottom-1 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" title="Online"></div>
+                            </div>
+                            
+                            <button class="absolute top-3 right-5 text-gray-300 hover:text-red-500 transition">♥</button>
+                        </div>
+
+                        <div class="pt-10 px-5 pb-5">
+                            <div class="mb-3">
+                                <h3 class="font-black text-gray-800 text-lg leading-tight truncate">${prestador.nome_profissional}</h3>
+                                <div class="flex items-center gap-1 mt-1">
+                                    <span class="text-[10px] font-bold text-white bg-blue-600 px-2 py-0.5 rounded-full">⭐ 5.0</span>
+                                    <span class="text-[10px] text-gray-400 truncate w-40">${bio}</span>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-3 border border-gray-100 flex justify-between items-center mb-4">
+                                <div>
+                                    <p class="text-[9px] uppercase font-bold text-gray-400 tracking-wider">Especialidade</p>
+                                    <p class="font-bold text-blue-900 text-sm truncate w-32">${servicoPrincipal.category}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[9px] text-gray-400">A partir de</p>
+                                    <p class="font-black text-green-600 text-lg">R$ ${servicoPrincipal.price}</p>
+                                </div>
+                            </div>
+
+                            <button onclick="window.abrirModalContratacao('${d.id}', '${prestador.nome_profissional}', '${servicoPrincipal.category}', ${servicoPrincipal.price})" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wide shadow-lg shadow-blue-600/20 transform active:scale-95 transition">
+                                Ver Detalhes & Contratar
+                            </button>
+                        </div>
+                    </div>
+                `;
             }
         });
     } catch (e) {
         console.error(e);
-        listaRender.innerHTML = `<p class="text-center text-red-500 text-xs">Erro ao carregar serviços.</p>`;
+        listaRender.innerHTML = `<p class="text-center text-red-500 text-xs">Erro ao carregar vitrine.</p>`;
     }
 }
 
 // ============================================================================
-// 2. MODAL DE CONTRATAÇÃO
+// 2. MODAL DE CONTRATAÇÃO (PAGAMENTO NO FINAL)
 // ============================================================================
 export function abrirModalContratacao(providerId, providerName, category, price) {
     if (!auth.currentUser) return alert("Faça login para solicitar um serviço.");
@@ -101,74 +146,76 @@ export function abrirModalContratacao(providerId, providerName, category, price)
     modal.classList.remove('hidden');
 
     modal.innerHTML = `
-        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden animate-slideUp">
-            <div class="bg-blue-600 p-4 text-white text-center">
-                <h3 class="font-bold text-lg">Solicitar Serviço</h3>
-                <p class="text-xs opacity-80">Você pagará diretamente ao prestador</p>
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden animate-slideUp shadow-2xl">
+            <div class="bg-slate-900 p-6 text-white text-center relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-2xl opacity-20 -mr-10 -mt-10"></div>
+                <h3 class="font-black text-xl relative z-10">Agendar Serviço</h3>
+                <p class="text-xs opacity-70 mt-1 relative z-10">Combine data e hora com o profissional</p>
+                <button onclick="window.fecharModalServico()" class="absolute top-4 right-4 text-white/50 hover:text-white font-bold text-xl">&times;</button>
             </div>
             
             <div class="p-6">
-                <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
+                <div class="flex items-center gap-4 mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <div class="w-10 h-10 rounded-full bg-blue-200 flex items-center justify-center text-xl">👷</div>
                     <div>
-                        <p class="text-xs text-gray-400 uppercase font-bold">Profissional</p>
-                        <p class="font-bold text-gray-800">${providerName}</p>
+                        <p class="text-xs text-gray-500">Profissional</p>
+                        <p class="font-bold text-blue-900 text-sm">${providerName}</p>
                     </div>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Data</label>
+                            <input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Horário</label>
+                            <input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Onde será o serviço?</label>
+                        <input type="text" id="req-local" placeholder="Rua, número e bairro..." class="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition">
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-t border-gray-100 pt-4 mb-6">
+                    <p class="text-xs font-bold text-gray-500">Total Estimado</p>
                     <div class="text-right">
-                        <p class="text-xs text-gray-400 uppercase font-bold">Serviço</p>
-                        <p class="font-bold text-blue-600">${category}</p>
+                        <p class="text-2xl font-black text-blue-900">R$ ${price}</p>
+                        <p class="text-[9px] text-gray-400">Pagamento direto ao prestador</p>
                     </div>
                 </div>
 
-                <div class="space-y-3 mb-6">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Data</label>
-                        <input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded p-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Horário</label>
-                        <input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded p-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Local (Endereço)</label>
-                        <input type="text" id="req-local" placeholder="Ex: Rua das Flores, 123" class="w-full bg-gray-50 border border-gray-200 rounded p-2 text-sm">
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 p-4 rounded-xl text-center mb-6 border border-gray-200">
-                    <p class="text-xs text-gray-400 font-bold uppercase">Valor Total</p>
-                    <p class="text-3xl font-black text-blue-900">R$ ${price}</p>
-                    <p class="text-[10px] text-gray-400 mt-1">Pagamento no final (Pix/Dinheiro)</p>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="window.fecharModalServico()" class="bg-gray-200 text-gray-600 py-3 rounded-xl font-bold text-xs uppercase">Cancelar</button>
-                    <button onclick="window.confirmarSolicitacao('${providerId}', '${providerName}', '${category}', ${price})" class="bg-green-600 text-white py-3 rounded-xl font-bold text-xs uppercase shadow-lg hover:bg-green-500">
-                        SOLICITAR AGORA
-                    </button>
-                </div>
+                <button onclick="window.confirmarSolicitacao('${providerId}', '${providerName}', '${category}', ${price})" class="w-full bg-green-600 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg shadow-green-600/30 hover:bg-green-500 transform active:scale-95 transition flex items-center justify-center gap-2">
+                    <span>🚀</span> Enviar Solicitação
+                </button>
+                <p class="text-[9px] text-center text-gray-400 mt-3">Ao solicitar, você concorda com os termos.</p>
             </div>
         </div>
     `;
 }
 
 // ============================================================================
-// 3. CONFIRMAÇÃO (CRIA PEDIDO + CRIA CHAT COM MENSAGEM CORRETA)
+// 3. LOGICA DE ENVIO (MANTIDA E SEGURA)
 // ============================================================================
 export async function confirmarSolicitacao(providerId, providerName, category, price) {
     const data = document.getElementById('req-date').value;
     const hora = document.getElementById('req-time').value;
     const local = document.getElementById('req-local').value;
 
-    if(!data || !hora || !local) return alert("Preencha data, hora e local.");
+    if(!data || !hora || !local) return alert("Por favor, preencha todos os campos (Data, Hora e Local).");
 
     const btn = document.querySelector('button[onclick^="window.confirmarSolicitacao"]');
-    btn.innerText = "ENVIANDO...";
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = "Processando...";
     btn.disabled = true;
 
     try {
         const user = auth.currentUser;
         
-        // 1. Cria o Pedido (Order)
+        // 1. Cria Pedido
         const orderData = {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -188,35 +235,33 @@ export async function confirmarSolicitacao(providerId, providerName, category, p
         const docRef = await addDoc(collection(db, "orders"), orderData);
         const orderId = docRef.id;
 
-        // 2. CRIA O CHAT AUTOMATICAMENTE (Para não ficar vazio)
+        // 2. Cria Chat
         await setDoc(doc(db, "chats", orderId), {
             participants: [user.uid, providerId],
             order_id: orderId,
             status: "active",
-            last_message: "Solicitação enviada",
+            last_message: "Solicitação de serviço",
             updated_at: serverTimestamp()
         });
 
-        // 3. ENVIA A PRIMEIRA MENSAGEM (CORRETA)
-        // Aqui removemos a lógica de "reserva" e colocamos o texto certo
-        const mensagemAutomatica = `👋 Olá! Gostaria de agendar o serviço de ${category} para o dia ${data} às ${hora}. O valor total é R$ ${price}. Aguardo seu aceite!`;
+        // 3. Mensagem Automática (Sem reserva, texto limpo)
+        const msgAuto = `👋 Olá! Gostaria de agendar o serviço de ${category} para o dia ${data} às ${hora}.\n📍 Local: ${local}\n💰 Valor Total: R$ ${price}\n\nFico no aguardo da confirmação!`;
 
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: mensagemAutomatica,
+            text: msgAuto,
             sender_id: user.uid,
             timestamp: serverTimestamp()
         });
 
-        // Feedback e Redirecionamento
-        alert("✅ Solicitação Enviada!\n\nVocê será notificado quando o prestador aceitar.");
+        alert("✅ Solicitação Enviada com Sucesso!");
         window.fecharModalServico();
         
         if(window.irParaChat) window.irParaChat();
 
     } catch (e) {
         console.error(e);
-        alert("Erro ao solicitar: " + e.message);
-        btn.innerText = "TENTAR NOVAMENTE";
+        alert("Erro ao enviar: " + e.message);
+        btn.innerHTML = textoOriginal;
         btn.disabled = false;
     }
 }
@@ -226,5 +271,6 @@ export function fecharModalServico() {
 }
 
 window.filtrarCategoria = (cat) => {
-    alert("Filtro por categoria: " + cat + " (Em breve)");
+    // Implementação simples de feedback visual
+    alert(`Filtro '${cat}' selecionado.\n(No futuro isso filtrará a lista abaixo)`);
 };
