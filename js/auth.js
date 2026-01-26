@@ -8,8 +8,8 @@ const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
 
 // 💰 CONFIGURAÇÃO FINANCEIRA
-const TAXA_PLATAFORMA = 0.20; // 20% de comissão
-const LIMITE_CREDITO_NEGATIVO = -60.00; // Bloqueia se a dívida passar disso
+const TAXA_PLATAFORMA = 0.20; 
+const LIMITE_CREDITO_NEGATIVO = -60.00; 
 
 export let userProfile = null;
 const CATEGORIAS_SERVICOS = [
@@ -66,7 +66,7 @@ onAuthStateChanged(auth, async (user) => {
                     iniciarAppLogado(user);
                     if (userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
-                        if (!userProfile.setup_profissional_ok) document.getElementById('provider-setup-modal')?.classList.remove('hidden');
+                        if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                 }
             } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); }
@@ -123,8 +123,21 @@ async function verificarStatusERadar(uid) {
     try {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
-            const isOnline = snap.data().is_online;
-            if(toggle) toggle.checked = isOnline;
+            const data = snap.data();
+            // Só liga o radar se estiver ONLINE e APROVADO
+            const isOnline = data.is_online && data.status === 'aprovado';
+            
+            if(toggle) {
+                toggle.checked = isOnline;
+                // Se estiver em análise, desabilita o botão para ele não ligar na marra
+                if(data.status === 'em_analise') {
+                    toggle.disabled = true;
+                    document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
+                } else {
+                    toggle.disabled = false;
+                    document.getElementById('status-label').innerText = isOnline ? "ONLINE" : "OFFLINE";
+                }
+            }
             if(isOnline) iniciarRadarPrestador(uid); else renderizarRadarOffline();
         }
     } catch(e) {}
@@ -140,110 +153,293 @@ document.addEventListener('change', async (e) => {
         const novoStatus = e.target.checked;
         const uid = auth.currentUser?.uid;
         if(!uid) return;
+        
+        // Verifica status antes de deixar ligar
+        const snap = await getDoc(doc(db, "active_providers", uid));
+        if(snap.exists() && snap.data().status === 'em_analise') {
+            e.target.checked = false;
+            return alert("⏳ Seu perfil está em análise.\nAguarde a aprovação para ficar online.");
+        }
+
         if (novoStatus) { iniciarRadarPrestador(uid); document.getElementById('online-sound')?.play().catch(()=>{}); } 
         else { renderizarRadarOffline(); }
         await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
     }
 });
 
-// 5. RADAR "UBER" (MODIFICADO: SEM COBRANÇA NO BOTÃO)
 function iniciarRadarPrestador(uid) {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
-
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-
     onSnapshot(q, (snap) => {
         const toggle = document.getElementById('online-toggle');
         if(toggle && !toggle.checked) return;
         radarContainer.innerHTML = "";
-        
         if (snap.empty) {
             radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${userProfile.wallet_balance?.toFixed(2)}</p></div>`;
             return;
         }
-
         document.getElementById('notification-sound')?.play().catch(()=>{});
         if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
-
         snap.forEach(d => {
             const pedido = d.data();
             const taxa = pedido.offer_value * TAXA_PLATAFORMA;
             const liquido = pedido.offer_value - taxa;
-
             radarContainer.innerHTML += `
                 <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl mb-4 border-2 border-blue-500 animate-fadeIn relative overflow-hidden">
-                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-600 rounded-full blur-2xl opacity-50"></div>
                     <div class="relative z-10 text-center">
                         <div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">Nova Solicitação</div>
                         <h2 class="text-4xl font-black text-white mb-1">R$ ${pedido.offer_value}</h2>
-                        <div class="flex justify-center gap-4 text-[10px] text-gray-400 mb-4 bg-slate-800/50 p-2 rounded">
-                            <span>Taxa Futura: <b class="text-red-400">-R$ ${taxa.toFixed(2)}</b></span>
-                            <span>Seu Lucro: <b class="text-green-400">R$ ${liquido.toFixed(2)}</b></span>
-                        </div>
-                        <div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700">
-                            <p class="font-bold text-sm text-white">👤 ${pedido.client_name}</p>
-                            <p class="text-xs text-gray-300">📍 ${pedido.location}</p>
-                            <p class="text-xs text-gray-300">📅 ${pedido.service_date} às ${pedido.service_time}</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">✖ Recusar</button>
-                            <button onclick="responderPedido('${d.id}', true, ${pedido.offer_value})" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg hover:bg-green-600">✔ ACEITAR</button>
-                        </div>
+                        <div class="flex justify-center gap-4 text-[10px] text-gray-400 mb-4 bg-slate-800/50 p-2 rounded"><span>Taxa Futura: <b class="text-red-400">-R$ ${taxa.toFixed(2)}</b></span><span>Seu Lucro: <b class="text-green-400">R$ ${liquido.toFixed(2)}</b></span></div>
+                        <div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700"><p class="font-bold text-sm text-white">👤 ${pedido.client_name}</p><p class="text-xs text-gray-300">📍 ${pedido.location}</p><p class="text-xs text-gray-300">📅 ${pedido.service_date} às ${pedido.service_time}</p></div>
+                        <div class="grid grid-cols-2 gap-3"><button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">✖ Recusar</button><button onclick="responderPedido('${d.id}', true, ${pedido.offer_value})" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg hover:bg-green-600">✔ ACEITAR</button></div>
                     </div>
                 </div>`;
         });
     });
 }
 
-// 🛑 MODIFICADO: SEM COBRANÇA + REDIRECT CORRIGIDO
 window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
     if(!aceitar) {
         await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
     } else {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "usuarios", uid);
-
-        // 1. CHECAGEM DE CALOTEIRO
         const snap = await getDoc(userRef);
         const saldoAtual = snap.data().wallet_balance || 0;
-
-        if (saldoAtual <= LIMITE_CREDITO_NEGATIVO) {
-            alert(`⛔ CONTA BLOQUEADA!\n\nVocê atingiu o limite de crédito negativo (R$ ${LIMITE_CREDITO_NEGATIVO}).\nSeu saldo atual é R$ ${saldoAtual.toFixed(2)}.\n\nPor favor, recarregue sua carteira para voltar a aceitar serviços.`);
-            return;
-        }
-
-        // 2. ACEITA SEM COBRAR
+        if (saldoAtual <= LIMITE_CREDITO_NEGATIVO) return alert(`⛔ LIMITE EXCEDIDO (R$ ${LIMITE_CREDITO_NEGATIVO}).\nSaldo atual: R$ ${saldoAtual.toFixed(2)}.\nRecarregue para continuar.`);
         try {
             await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
-            
-            // Ativa chat se não existir
-            getDoc(doc(db, "chats", orderId)).then(async (snapChat) => {
-                 if(snapChat.exists()) await updateDoc(snapChat.ref, { status: "active" });
-            }).catch(async () => {
-                 await updateDoc(doc(db, "chats", orderId), { status: "active" });
-            });
-
-            alert(`✅ Pedido Aceito!\n\nCombine os detalhes no Chat.\nA taxa só será descontada quando você FINALIZAR o serviço.`);
-            
-            // 3. REDIRECIONA PARA O CHAT (AGORA DO JEITO CERTO)
-            if (window.irParaChat) {
-                window.irParaChat();
-            } else {
-                // Fallback de segurança se o chat.js demorar pra carregar
-                const tab = document.getElementById('tab-chat');
-                if(tab) tab.click();
-                setTimeout(() => { if(window.carregarChat) window.carregarChat(); }, 500);
-            }
-            
+            getDoc(doc(db, "chats", orderId)).then(async (snapChat) => { if(snapChat.exists()) await updateDoc(snapChat.ref, { status: "active" }); }).catch(async () => { await updateDoc(doc(db, "chats", orderId), { status: "active" }); });
+            alert(`✅ Pedido Aceito!`);
+            if (window.irParaChat) window.irParaChat(); else { document.getElementById('tab-chat').click(); setTimeout(() => { if(window.carregarChat) window.carregarChat(); }, 500); }
         } catch (e) { alert("Erro: " + e.message); }
     }
 };
 
-// Funções utilitárias mantidas
+// ============================================================================
+// 🎨 NOVA ÁREA DE CONFIGURAÇÃO DE PERFIL (VITRINE)
+// ============================================================================
+
+// 1. UPLOAD DE BANNER
+window.uploadBanner = async (input) => {
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const user = auth.currentUser;
+    
+    // Validação de tamanho (máx 200kb idealmente, aqui aviso se for grande)
+    if(file.size > 500000) alert("⚠️ Imagem grande! Recomendado: menos de 500kb para carregar rápido.");
+
+    const btn = document.getElementById('btn-upload-banner');
+    const originalText = btn.innerText;
+    btn.innerText = "Enviando...";
+    btn.disabled = true;
+
+    try {
+        const storageRef = ref(storage, `banners/${user.uid}/capa_vitrine.jpg`);
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        
+        // Salva URL num campo hidden para usar depois
+        document.getElementById('hidden-banner-url').value = downloadURL;
+        
+        // Preview
+        document.getElementById('preview-banner').src = downloadURL;
+        document.getElementById('preview-banner').classList.remove('hidden');
+        document.getElementById('banner-placeholder').classList.add('hidden');
+        
+        alert("✅ Banner carregado! Clique em 'SALVAR E ENVIAR' no final para confirmar.");
+    } catch (error) {
+        console.error(error);
+        alert("Erro no upload do banner.");
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+};
+
+// 2. ABRIR CONFIGURAÇÃO (AGORA COM CAMPOS COMPLETOS)
+window.abrirConfiguracaoServicos = async () => {
+    const modal = document.getElementById('provider-setup-modal');
+    modal.classList.remove('hidden');
+    
+    const content = document.getElementById('provider-setup-content'); // Certifique-se que seu HTML tem esse ID dentro do modal, ou injete no modal-content genérico
+    
+    // Se não tiver o ID especifico, usa o modal todo (ajuste conforme seu HTML)
+    // Vou injetar um formulário completo
+    const formContainer = modal.querySelector('div.bg-white') || modal.firstElementChild;
+    
+    // Busca dados atuais
+    let dados = {};
+    try {
+        const docSnap = await getDoc(doc(db, "active_providers", auth.currentUser.uid));
+        if(docSnap.exists()) dados = docSnap.data();
+    } catch(e){}
+
+    const bannerAtual = dados.banner_url || "";
+    const bioAtual = dados.bio || "";
+    const servicosAtuais = dados.services || [];
+
+    formContainer.innerHTML = `
+        <div class="p-6 h-[80vh] overflow-y-auto">
+            <h2 class="text-xl font-black text-blue-900 mb-1">🚀 Seu Perfil Profissional</h2>
+            <p class="text-xs text-gray-500 mb-6">Capriche! Essa é sua loja dentro do app.</p>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-2">📸 Foto de Capa (Banner)</label>
+                <div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center group cursor-pointer" onclick="document.getElementById('banner-input').click()">
+                    <img id="preview-banner" src="${bannerAtual}" class="${bannerAtual ? '' : 'hidden'} w-full h-full object-cover">
+                    <div id="banner-placeholder" class="${bannerAtual ? 'hidden' : 'flex'} flex-col items-center">
+                        <span class="text-2xl">🖼️</span>
+                        <span class="text-[10px] text-gray-400">Toque para adicionar</span>
+                    </div>
+                    <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-bold">Trocar Imagem</div>
+                </div>
+                <input type="file" id="banner-input" accept="image/*" class="hidden" onchange="window.uploadBanner(this)">
+                <input type="hidden" id="hidden-banner-url" value="${bannerAtual}">
+                <p id="btn-upload-banner" class="text-[9px] text-center mt-1 text-gray-400">Recomendado: 1200x400px (Horizontal)</p>
+            </div>
+
+            <div class="mb-6 space-y-3">
+                <div>
+                    <label class="inp-label">Nome Profissional</label>
+                    <input type="text" id="setup-name" value="${dados.nome_profissional || auth.currentUser.displayName || ''}" class="inp-editor" placeholder="Ex: João Eletricista">
+                </div>
+                <div>
+                    <label class="inp-label">Bio (Quem é você?)</label>
+                    <textarea id="setup-bio" rows="3" class="inp-editor" placeholder="Ex: Especialista em elétrica residencial com 5 anos de experiência. Trabalho rápido e limpo.">${bioAtual}</textarea>
+                    <p class="text-[9px] text-right text-gray-400">Seja breve e passe confiança.</p>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-2">🛠️ Seus Serviços</label>
+                <div id="my-services-list" class="mb-3 space-y-2">
+                    ${servicosAtuais.map((s, i) => `
+                        <div class="bg-blue-50 p-3 rounded border border-blue-100 flex justify-between items-center">
+                            <div>
+                                <p class="font-bold text-xs text-blue-900">${s.category}</p>
+                                <p class="text-[10px] text-gray-500">R$ ${s.price}</p>
+                            </div>
+                            <button onclick="removerServico(${i})" class="text-red-500 font-bold px-2">x</button>
+                        </div>
+                    `).join('')}
+                    ${servicosAtuais.length === 0 ? '<p class="text-xs text-gray-400 italic text-center py-2">Nenhum serviço adicionado.</p>' : ''}
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <select id="new-service-category" class="inp-editor">
+                            <option value="" disabled selected>Categoria...</option>
+                            ${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}
+                        </select>
+                        <input type="number" id="new-service-price" placeholder="Preço (R$)" class="inp-editor">
+                    </div>
+                    <textarea id="new-service-desc" placeholder="Detalhes (Ex: Incluso material?)" class="inp-editor mb-2" rows="1"></textarea>
+                    <button onclick="window.addServiceLocal()" class="w-full bg-slate-700 text-white py-2 rounded text-xs font-bold uppercase">Adicionar Serviço</button>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-gray-100">
+                <button onclick="window.saveServicesAndGoOnline()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">
+                    💾 SALVAR E ENVIAR PARA APROVAÇÃO
+                </button>
+                <p class="text-[10px] text-center text-gray-400 mt-2">Seu perfil será analisado pela equipe Atlivio.</p>
+            </div>
+        </div>
+    `;
+};
+
+// 3. ADICIONAR SERVIÇO (LOCALMENTE NA LISTA VISUAL)
+window.addServiceLocal = async () => {
+    const cat = document.getElementById('new-service-category').value;
+    const price = document.getElementById('new-service-price').value;
+    const desc = document.getElementById('new-service-desc').value;
+
+    if (!cat || !price) return alert("Preencha categoria e preço.");
+
+    // Salva direto no banco para simplificar (e recarrega a tela)
+    const ref = doc(db, "active_providers", auth.currentUser.uid);
+    const snap = await getDoc(ref);
+    let svcs = snap.exists() ? snap.data().services || [] : [];
+    
+    svcs.push({ category: cat, price: parseFloat(price), description: desc });
+    
+    // Se o documento não existe, cria com dados básicos
+    const dadosBase = snap.exists() ? {} : { 
+        uid: auth.currentUser.uid, 
+        created_at: serverTimestamp(),
+        is_online: false, // Começa offline
+        status: 'em_analise', // Começa em análise
+        visibility_score: 100
+    };
+
+    await setDoc(ref, { ...dadosBase, services: svcs }, { merge: true });
+    window.abrirConfiguracaoServicos(); // Recarrega para mostrar na lista
+};
+
+// 4. SALVAR TUDO E MUDAR STATUS
+window.saveServicesAndGoOnline = async () => {
+    const nome = document.getElementById('setup-name').value;
+    const bio = document.getElementById('setup-bio').value;
+    const banner = document.getElementById('hidden-banner-url').value;
+
+    if(!nome) return alert("O nome profissional é obrigatório.");
+    if(!bio) return alert("Escreva uma bio curta sobre você.");
+    if(!banner) {
+        if(!confirm("Tem certeza que quer enviar SEM foto de capa? Perfis com capa são aprovados mais rápido.")) return;
+    }
+
+    const btn = document.querySelector('button[onclick="window.saveServicesAndGoOnline()"]');
+    btn.innerText = "ENVIANDO...";
+    btn.disabled = true;
+
+    try {
+        // Atualiza perfil do usuário
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            nome_profissional: nome, 
+            setup_profissional_ok: true 
+        });
+
+        // Atualiza tabela de prestadores ativos
+        const activeRef = doc(db, "active_providers", auth.currentUser.uid);
+        
+        await setDoc(activeRef, {
+            uid: auth.currentUser.uid,
+            nome_profissional: nome,
+            foto_perfil: userProfile.photoURL,
+            bio: bio,
+            banner_url: banner,
+            is_online: false, // OFF até aprovar
+            status: 'em_analise', // O pulo do gato 😺
+            updated_at: serverTimestamp()
+        }, { merge: true });
+
+        alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise.\nAssim que aprovado, você poderá ficar online.");
+        document.getElementById('provider-setup-modal').classList.add('hidden');
+        
+        // Atualiza a tela localmente
+        document.getElementById('online-toggle').checked = false;
+        document.getElementById('online-toggle').disabled = true;
+        document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
+
+    } catch(e) {
+        alert("Erro: " + e.message);
+        btn.innerText = "SALVAR E ENVIAR";
+        btn.disabled = false;
+    }
+};
+
+window.removerServico = async (i) => { 
+    const ref = doc(db, "active_providers", auth.currentUser.uid); 
+    const snap = await getDoc(ref); 
+    let s = snap.data().services; 
+    s.splice(i,1); 
+    await updateDoc(ref, {services: s}); 
+    window.abrirConfiguracaoServicos(); 
+};
+
+// Funções utilitárias (Upload perfil normal)
 window.uploadFotoPerfil = async (input) => { if (!input.files || input.files.length === 0) return; const file = input.files[0]; const user = auth.currentUser; if (!user) return; const overlay = document.getElementById('upload-overlay'); if(overlay) overlay.classList.remove('hidden'); try { const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await updateProfile(user, { photoURL: downloadURL }); await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); const activeRef = doc(db, "active_providers", user.uid); getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); alert("✅ Foto atualizada!"); } catch (error) { console.error(error); alert("Erro no upload."); } finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } };
-window.abrirConfiguracaoServicos = async () => { document.getElementById('provider-setup-modal')?.classList.remove('hidden'); const lista = document.getElementById('my-services-list'); if(!lista) return; lista.innerHTML = "Carregando..."; const snap = await getDoc(doc(db, "active_providers", auth.currentUser.uid)); lista.innerHTML = ""; if(snap.exists() && snap.data().services) { snap.data().services.forEach((s,i) => lista.innerHTML += `<div class="bg-gray-50 p-2 mb-1 flex justify-between"><span>${s.category}</span><button onclick="removerServico(${i})" class="text-red-500">x</button></div>`); } };
-window.addServiceLocal = async () => { const cat = document.getElementById('new-service-category').value; const price = document.getElementById('new-service-price').value; if(!cat || !price) return; const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let svcs = snap.exists() ? snap.data().services || [] : []; svcs.push({category: cat, price: parseFloat(price)}); await (snap.exists() ? updateDoc(ref, {services: svcs}) : setDoc(ref, {uid: auth.currentUser.uid, services: svcs, is_online: true})); window.abrirConfiguracaoServicos(); };
-window.removerServico = async (i) => { const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let s = snap.data().services; s.splice(i,1); await updateDoc(ref, {services: s}); window.abrirConfiguracaoServicos(); };
-window.saveServicesAndGoOnline = async () => { document.getElementById('provider-setup-modal').classList.add('hidden'); location.reload(); };
 function toggleDisplay(id, show) { const el = document.getElementById(id); if(el) show ? el.classList.remove('hidden') : el.classList.add('hidden'); }
