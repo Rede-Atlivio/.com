@@ -11,16 +11,18 @@ const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
 window.auth = auth;
 window.db = db;
-let currentView = 'dashboard';
-let dataMode = 'real';
+
+// --- VARIÁVEIS GLOBAIS ---
+window.currentView = 'dashboard';
+window.dataMode = 'real';
 window.currentCollectionName = '';
 window.currentEditId = null;
 window.currentEditColl = null;
 
-// VARIÁVEIS DO ROBÔ (MANTIDAS)
+// VARIÁVEIS DO ROBÔ
 let roboIntervalo = null;
 let roboAtivo = false;
-const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; 
+const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; // 30 Minutos
 
 // --- LOGIN ---
 window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
@@ -28,16 +30,23 @@ window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 
 // --- NAVEGAÇÃO ---
 window.switchView = (viewName) => {
-    currentView = viewName;
-    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    window.currentView = viewName;
+    const views = ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'];
+    views.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.add('hidden');
+    });
     
-    // Atualiza título com segurança
     const titleEl = document.getElementById('page-title');
     if(titleEl) titleEl.innerText = viewName.toUpperCase();
     
-    document.getElementById('bulk-actions').classList.remove('visible');
+    const bulkBar = document.getElementById('bulk-actions');
+    if(bulkBar) bulkBar.classList.remove('visible');
 
-    if(viewName === 'dashboard') { document.getElementById('view-dashboard').classList.remove('hidden'); initDashboard(); }
+    if(viewName === 'dashboard') { 
+        document.getElementById('view-dashboard').classList.remove('hidden'); 
+        initDashboard(); 
+    }
     else if(viewName === 'generator') { 
         document.getElementById('view-generator').classList.remove('hidden'); 
         injetarPainelRobo(); 
@@ -46,24 +55,32 @@ window.switchView = (viewName) => {
     else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
     else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
-    else { document.getElementById('view-list').classList.remove('hidden'); loadList(viewName); }
+    else { 
+        document.getElementById('view-list').classList.remove('hidden'); 
+        loadList(viewName); 
+    }
 };
 
 window.toggleDataMode = (mode) => {
-    dataMode = mode;
-    const btnReal = document.getElementById('btn-mode-real'), btnDemo = document.getElementById('btn-mode-demo');
+    window.dataMode = mode;
+    const btnReal = document.getElementById('btn-mode-real');
+    const btnDemo = document.getElementById('btn-mode-demo');
+    
     if (btnReal) btnReal.className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     if (btnDemo) btnDemo.className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     window.forceRefresh();
 };
 
 window.forceRefresh = () => { 
-    if(currentView === 'dashboard') initDashboard();
-    else loadList(currentView);
+    if(['users', 'services', 'missions', 'jobs', 'opps', 'candidatos'].includes(window.currentView)) {
+        loadList(window.currentView); 
+    } else if (window.currentView === 'dashboard') {
+        initDashboard(); 
+    }
 };
 
 // ============================================================================
-// 🤖 PAINEL DO ROBÔ (MANTIDO 100% IGUAL)
+// 🤖 PAINEL DO ROBÔ (MANTIDO INTACTO)
 // ============================================================================
 
 window.injetarPainelRobo = () => {
@@ -116,10 +133,22 @@ window.adicionarCampanha = async () => {
     const link = document.getElementById('camp-link').value;
     const desc = document.getElementById('camp-desc').value;
     const tipo = document.getElementById('camp-tipo').value;
+
     if(!titulo || !link) return alert("Preencha Título e Link.");
+
     try {
-        await addDoc(collection(db, "bot_library"), { titulo: titulo, link: link, descricao: desc || "Oferta imperdível.", tipo: tipo, created_at: serverTimestamp() });
-        document.getElementById('camp-titulo').value = ""; document.getElementById('camp-link').value = ""; document.getElementById('camp-desc').value = "";
+        await addDoc(collection(db, "bot_library"), {
+            titulo: titulo,
+            link: link,
+            descricao: desc || "Oferta imperdível.",
+            tipo: tipo,
+            created_at: serverTimestamp()
+        });
+        
+        document.getElementById('camp-titulo').value = "";
+        document.getElementById('camp-link').value = "";
+        document.getElementById('camp-desc').value = "";
+        
         alert("✅ Link salvo na biblioteca do Robô!");
         window.listarCampanhasAtivas();
     } catch(e) { alert("Erro: " + e.message); }
@@ -128,13 +157,27 @@ window.adicionarCampanha = async () => {
 window.listarCampanhasAtivas = async () => {
     const lista = document.getElementById('lista-campanhas');
     if(!lista) return;
+
     const q = query(collection(db, "bot_library"), orderBy("created_at", "desc"));
     const snap = await getDocs(q);
+
     lista.innerHTML = "";
-    if(snap.empty) { lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`; return; }
+    if(snap.empty) {
+        lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`;
+        return;
+    }
+
     snap.forEach(d => {
         const item = d.data();
-        lista.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5"><div class="truncate pr-2"><p class="text-xs text-white font-bold">${item.titulo}</p><p class="text-[9px] text-blue-400 truncate">${item.link}</p></div><button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button></div>`;
+        lista.innerHTML += `
+            <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5">
+                <div class="truncate pr-2">
+                    <p class="text-xs text-white font-bold">${item.titulo}</p>
+                    <p class="text-[9px] text-blue-400 truncate">${item.link}</p>
+                </div>
+                <button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button>
+            </div>
+        `;
     });
 };
 
@@ -149,7 +192,10 @@ window.toggleRobo = (ligar) => {
     if (ligar) {
         if (roboAtivo) return;
         getDocs(collection(db, "bot_library")).then(snap => {
-            if(snap.empty) { alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!"); return; }
+            if(snap.empty) {
+                alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!");
+                return;
+            }
             roboAtivo = true;
             if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
             window.executarCicloRobo();
@@ -169,10 +215,26 @@ window.executarCicloRobo = async () => {
     console.log("🤖 ROBÔ: Buscando munição na biblioteca...");
     try {
         const snap = await getDocs(collection(db, "bot_library"));
-        if(snap.empty) { console.log("❌ Robô parou: Biblioteca vazia."); window.toggleRobo(false); return; }
+        if(snap.empty) {
+            console.log("❌ Robô parou: Biblioteca vazia.");
+            window.toggleRobo(false);
+            return;
+        }
         const opcoes = snap.docs.map(d => d.data());
         const oferta = opcoes[Math.floor(Math.random() * opcoes.length)];
-        await addDoc(collection(db, "oportunidades"), { titulo: oferta.titulo, descricao: oferta.descricao, tipo: oferta.tipo, link: oferta.link, created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: false, visibility_score: 100, origem: "robo_auto" });
+        
+        await addDoc(collection(db, "oportunidades"), {
+            titulo: oferta.titulo,
+            descricao: oferta.descricao,
+            tipo: oferta.tipo,
+            link: oferta.link,
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
+            is_demo: false, 
+            visibility_score: 100,
+            origem: "robo_auto"
+        });
+        
         console.log(`✅ ROBÔ: Postou "${oferta.titulo}"!`);
         document.title = "Atlivio Admin (POSTOU!)";
         setTimeout(() => document.title = "Atlivio Admin", 5000);
@@ -180,7 +242,7 @@ window.executarCicloRobo = async () => {
 };
 
 // ============================================================================
-// 🧠 NOVO SISTEMA DE LISTAGEM E CURADORIA
+// 🧠 NOVO SISTEMA DE LISTAGEM E CURADORIA (MUDANÇAS AQUI)
 // ============================================================================
 
 async function loadList(type) {
@@ -193,28 +255,31 @@ async function loadList(type) {
     else if (type === 'services') colName = 'active_providers';
     else if (type === 'missions') colName = 'missoes';
     else if (type === 'opps') colName = 'oportunidades';
-    else if (type === 'candidatos') colName = 'candidatos'; // Suporte a Candidatos
+    else if (type === 'candidatos') colName = 'candidatos'; // NOVO: Suporte a Candidatos
 
     window.currentCollectionName = colName;
     
     let constraints = [];
-    if (dataMode === 'demo') constraints.push(where("is_demo", "==", true));
-    if (dataMode === 'real') constraints = [limit(50)]; 
+    if (window.dataMode === 'demo') constraints.push(where("is_demo", "==", true));
+    if (window.dataMode === 'real') constraints = [limit(50)]; 
 
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
     let headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"];
     
+    // HEADERS PERSONALIZADOS
     if(type === 'users') headers = [chk, "NOME", "TIPO", "SALDO", "STATUS", "AÇÕES"];
     if(type === 'services') headers = [chk, "PRESTADOR", "SERVIÇOS", "SCORE", "STATUS", "AÇÕES"];
-    if(type === 'candidatos') headers = [chk, "NOME", "VAGA", "CONTATO", "STATUS", "AÇÕES"]; // Header novo
+    if(type === 'candidatos') headers = [chk, "NOME", "VAGA", "CONTATO", "STATUS", "AÇÕES"];
 
     if(thead) thead.innerHTML = headers.join('');
     
     try {
         let q;
-        // Prioriza "Em Análise"
+        // Prioriza "Em Análise" ordenando por update recente
         if (colName === 'active_providers' || colName === 'candidatos') {
              q = query(collection(db, colName), orderBy('updated_at', 'desc'), limit(50));
+        } else if(colName === 'oportunidades' || colName === 'jobs') {
+             q = query(collection(db, colName), orderBy('created_at', 'desc'), limit(50));
         } else {
              q = query(collection(db, colName), limit(50));
         }
@@ -226,7 +291,7 @@ async function loadList(type) {
         snap.forEach(docSnap => { 
             const d = { id: docSnap.id, ...docSnap.data() }; 
             
-            // Destaque visual para "Em Análise"
+            // DESTAQUE VISUAL PARA "EM ANÁLISE"
             let rowClass = "border-b border-white/5 transition hover:bg-white/5";
             let statusBadge = `<span class="bg-gray-700 text-gray-300 px-2 py-1 rounded text-[10px] uppercase font-bold">${d.status || 'OK'}</span>`;
             
@@ -235,6 +300,8 @@ async function loadList(type) {
                 statusBadge = `<span class="bg-yellow-600 text-white px-2 py-1 rounded text-[10px] uppercase font-black animate-pulse">🟡 EM ANÁLISE</span>`;
             } else if (d.status === 'aprovado') {
                 statusBadge = `<span class="bg-green-600 text-white px-2 py-1 rounded text-[10px] uppercase font-bold">✅ APROVADO</span>`;
+            } else if (d.status === 'rejeitado') {
+                statusBadge = `<span class="bg-red-600 text-white px-2 py-1 rounded text-[10px] uppercase font-bold">❌ REJEITADO</span>`;
             }
 
             let mainInfo = d.titulo || d.nome || d.nome_profissional || 'Sem Nome';
@@ -251,7 +318,7 @@ async function loadList(type) {
         });
     } catch(e) { console.log(e); tbody.innerHTML = `<tr><td colspan='6' class='text-red-500 p-4'>Erro: ${e.message}</td></tr>`; }
     
-    // Reativa botão NOVO
+    // REATIVAÇÃO DO BOTÃO NOVO
     const btnAdd = document.getElementById('btn-add-new'); 
     if(btnAdd) {
         const newBtn = btnAdd.cloneNode(true);
@@ -260,10 +327,15 @@ async function loadList(type) {
     }
 }
 
-// --- EDITOR UNIVERSAL (COM DETECTOR DE FOTO E PDF) ---
+// --- EDITOR UNIVERSAL INTELIGENTE (COM DETECTOR DE FOTO E PDF) ---
 window.openUniversalEditor = async (collectionName, id) => {
-    const modal = document.getElementById('modal-editor'), content = document.getElementById('modal-content'), title = document.getElementById('modal-title');
-    window.currentEditId = id; window.currentEditColl = collectionName;
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    window.currentEditId = id; 
+    window.currentEditColl = collectionName;
+    
     modal.classList.remove('hidden'); 
     title.innerHTML = `GERENCIAR <span class="text-blue-500">${collectionName.toUpperCase()}</span>`; 
     content.innerHTML = `<p class="text-center text-gray-500 animate-pulse py-10">Carregando dados...</p>`;
@@ -286,23 +358,44 @@ window.openUniversalEditor = async (collectionName, id) => {
             // 1. É Imagem? (Preview)
             if ((keyLower.includes('banner') || keyLower.includes('foto') || keyLower.includes('image')) && typeof valor === 'string' && valor.startsWith('http')) {
                 temMidia = true;
-                htmlMidia += `<div><p class="inp-label mb-1">📷 ${key.toUpperCase()}</p><div class="h-32 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-slate-600"><img src="${valor}" class="h-full object-contain"></div><input type="text" id="field-${key}" value="${valor}" class="inp-editor mt-1 text-[10px] text-gray-500"></div>`;
+                htmlMidia += `
+                    <div>
+                        <p class="inp-label mb-1">📷 PREVIEW: ${key.toUpperCase()}</p>
+                        <div class="h-32 rounded-lg bg-black/50 flex items-center justify-center overflow-hidden border border-slate-600 relative group">
+                            <img src="${valor}" class="h-full object-contain">
+                            <a href="${valor}" target="_blank" class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white font-bold text-xs">ABRIR ORIGINAL ↗</a>
+                        </div>
+                        <input type="text" id="field-${key}" value="${valor}" class="inp-editor mt-1 text-[10px] text-gray-500">
+                    </div>`;
                 return;
             }
-            // 2. É PDF/CV? (Download)
-            if ((keyLower.includes('curriculo') || keyLower.includes('cv') || keyLower.includes('pdf')) && typeof valor === 'string' && valor.startsWith('http')) {
+
+            // 2. É PDF/Currículo? (Download)
+            if ((keyLower.includes('curriculo') || keyLower.includes('cv') || keyLower.includes('pdf') || keyLower.includes('arquivo')) && typeof valor === 'string' && valor.startsWith('http')) {
                 temMidia = true;
-                htmlMidia += `<div class="bg-blue-900/20 p-3 rounded-lg border border-blue-500/30 flex justify-between items-center"><div><p class="text-blue-400 font-bold text-xs uppercase">📎 DOCUMENTO (${key})</p><p class="text-[10px] text-gray-400 truncate max-w-[200px]">${valor}</p></div><a href="${valor}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-lg">⬇ BAIXAR PDF</a></div>`;
+                htmlMidia += `
+                    <div class="bg-blue-900/20 p-3 rounded-lg border border-blue-500/30 flex justify-between items-center">
+                        <div>
+                            <p class="text-blue-400 font-bold text-xs uppercase">📎 DOCUMENTO (${key})</p>
+                            <p class="text-[10px] text-gray-400 truncate max-w-[200px]">${valor}</p>
+                        </div>
+                        <a href="${valor}" target="_blank" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-lg">
+                            ⬇ BAIXAR PDF
+                        </a>
+                    </div>`;
                 return;
             }
+
             htmlCampos += `<div class="mb-2"><label class="inp-label">${key}</label><input type="text" id="field-${key}" value="${valor}" class="inp-editor"></div>`; 
         }); 
         
-        htmlCampos += '</div>'; htmlMidia += '</div>';
+        htmlCampos += '</div>'; 
+        htmlMidia += '</div>';
+
         if(temMidia) content.innerHTML += htmlMidia;
         content.innerHTML += htmlCampos;
 
-        // BOTÕES DE APROVAÇÃO
+        // BOTÕES DE AÇÃO (MODERAÇÃO)
         if (collectionName === 'active_providers' || collectionName === 'candidatos') {
             content.innerHTML += `
                 <div class="pt-4 border-t border-slate-700 mt-4">
@@ -311,28 +404,48 @@ window.openUniversalEditor = async (collectionName, id) => {
                         <button onclick="window.moderarItem('${collectionName}', '${id}', 'rejeitado')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-xl font-bold text-xs uppercase transition">❌ REPROVAR</button>
                         <button onclick="window.moderarItem('${collectionName}', '${id}', 'aprovado')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg transition">✅ APROVAR & PUBLICAR</button>
                     </div>
+                    <button onclick="window.saveModalData()" class="w-full mt-3 bg-slate-800 text-gray-400 py-2 rounded-lg text-[10px] font-bold uppercase hover:bg-slate-700">Apenas Salvar Dados</button>
                 </div>`;
         } else {
-            content.innerHTML += `<div class="pt-4 border-t border-slate-700 flex gap-3 mt-4"><button onclick="window.saveModalData()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold text-xs uppercase">SALVAR EDIÇÃO</button></div>`;
+            content.innerHTML += `
+                <div class="pt-4 border-t border-slate-700 flex gap-3 mt-4">
+                    <button onclick="window.saveModalData()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold text-xs uppercase">SALVAR EDIÇÃO</button>
+                </div>`;
         }
 
-        window.saveCallback = async () => { const updates = { updated_at: serverTimestamp() }; Object.keys(data).forEach(key => { if(key === 'created_at' || key === 'updated_at') return; const el = document.getElementById(`field-${key}`); if(el) updates[key] = el.value; }); await updateDoc(doc(db, collectionName, id), updates); }; 
+        window.saveCallback = async () => { 
+            const updates = { updated_at: serverTimestamp() }; 
+            Object.keys(data).forEach(key => { 
+                if(key === 'created_at' || key === 'updated_at') return; 
+                const el = document.getElementById(`field-${key}`); 
+                if(el) updates[key] = el.value; 
+            }); 
+            await updateDoc(doc(db, collectionName, id), updates); 
+        }; 
     } catch(e) { alert(e.message); } 
 };
 
-// --- NOVA FUNÇÃO DE MODERAÇÃO ---
+// --- FUNÇÃO DE MODERAÇÃO ---
 window.moderarItem = async (col, id, decisao) => {
     if(!confirm(`Tem certeza que deseja marcar como ${decisao.toUpperCase()}?`)) return;
     try {
         const ref = doc(db, col, id);
         let updates = { status: decisao, updated_at: serverTimestamp() };
-        // Regra Especial Prestador: Aprovado ganha Score 100
+        
+        // Se for Prestador, a aprovação ativa o Score 100
         if (col === 'active_providers') {
-            if (decisao === 'aprovado') { updates.visibility_score = 100; updates.is_online = false; alert("✅ Aprovado! Score 100 definido."); } 
-            else { updates.visibility_score = 0; updates.is_online = false; }
+            if (decisao === 'aprovado') { 
+                updates.visibility_score = 100; 
+                updates.is_online = false; 
+                alert("✅ Prestador Aprovado!\nAgora ele tem Score 100."); 
+            } else { 
+                updates.visibility_score = 0; 
+                updates.is_online = false; 
+            }
         }
         await updateDoc(ref, updates);
-        window.closeModal(); window.forceRefresh();
+        window.closeModal(); 
+        window.forceRefresh();
     } catch(e) { alert("Erro: " + e.message); }
 };
 
