@@ -22,7 +22,7 @@ window.currentEditColl = null;
 // VARIÁVEIS DO ROBÔ
 let roboIntervalo = null;
 let roboAtivo = false;
-const TEMPO_ENTRE_POSTS = 30 * 60 * 1000; // 30 Minutos
+const TEMPO_ENTRE_POSTS = 30 * 60 * 1000;
 
 // --- LOGIN ---
 window.loginAdmin = async () => { try { await signInWithPopup(auth, provider); checkAdmin(auth.currentUser); } catch (e) { alert(e.message); } };
@@ -31,8 +31,7 @@ window.logoutAdmin = () => signOut(auth).then(() => location.reload());
 // --- NAVEGAÇÃO ---
 window.switchView = (viewName) => {
     window.currentView = viewName;
-    const views = ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'];
-    views.forEach(id => {
+    ['view-dashboard', 'view-list', 'view-finance', 'view-analytics', 'view-links', 'view-settings', 'view-generator'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
     });
@@ -52,12 +51,16 @@ window.switchView = (viewName) => {
         injetarPainelRobo(); 
         listarCampanhasAtivas(); 
     }
-    else if(viewName === 'links') { document.getElementById('view-links').classList.remove('hidden'); }
+    else if(viewName === 'links') { 
+        document.getElementById('view-links').classList.remove('hidden'); 
+        // CORREÇÃO: Injeta o HTML dos links se não existir
+        injetarGeradorLinks();
+    }
     else if(viewName === 'settings') { document.getElementById('view-settings').classList.remove('hidden'); loadSettings(); }
     else if(viewName === 'finance') { document.getElementById('view-finance').classList.remove('hidden'); }
     else { 
         document.getElementById('view-list').classList.remove('hidden'); 
-        loadList(viewName); 
+        window.loadList(viewName); 
     }
 };
 
@@ -65,7 +68,6 @@ window.toggleDataMode = (mode) => {
     window.dataMode = mode;
     const btnReal = document.getElementById('btn-mode-real');
     const btnDemo = document.getElementById('btn-mode-demo');
-    
     if (btnReal) btnReal.className = mode === 'real' ? "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     if (btnDemo) btnDemo.className = mode === 'demo' ? "px-3 py-1 rounded text-[10px] font-bold bg-amber-600 text-white" : "px-3 py-1 rounded text-[10px] font-bold text-gray-400";
     window.forceRefresh();
@@ -73,14 +75,82 @@ window.toggleDataMode = (mode) => {
 
 window.forceRefresh = () => { 
     if(['users', 'services', 'missions', 'jobs', 'opps', 'candidatos'].includes(window.currentView)) {
-        loadList(window.currentView); 
+        window.loadList(window.currentView); 
     } else if (window.currentView === 'dashboard') {
         initDashboard(); 
     }
 };
 
 // ============================================================================
-// 🤖 PAINEL DO ROBÔ (MANTIDO INTACTO)
+// 🔗 GERADOR DE LINKS (CORREÇÃO DE INJEÇÃO)
+// ============================================================================
+window.injetarGeradorLinks = () => {
+    const container = document.getElementById('view-links');
+    // Se já tem conteúdo (input linkName), não faz nada
+    if(container.querySelector('#linkName')) return;
+
+    container.innerHTML = `
+        <div class="glass-panel p-6 border border-emerald-500/30">
+            <h2 class="text-lg font-bold text-white mb-2">Criador de Links Inteligentes</h2>
+            <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis para campanhas.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div class="col-span-2">
+                    <label class="inp-label">NOME CURTO (ID)</label>
+                    <input type="text" id="linkName" placeholder="ex: zap_promo" class="inp-editor border-emerald-500/50">
+                </div>
+                <div>
+                    <label class="inp-label">ORIGEM (UTM)</label>
+                    <input type="text" id="utmSource" value="instagram" class="inp-editor">
+                </div>
+                <div class="flex items-center pt-4">
+                    <input type="checkbox" id="is-test-link" class="w-4 h-4 mr-2 accent-amber-500">
+                    <label for="is-test-link" class="text-xs font-bold text-amber-400 uppercase cursor-pointer">Link de Teste?</label>
+                </div>
+            </div>
+            
+            <button onclick="window.saveLinkToFirebase()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition uppercase">
+                💾 GERAR LINK RASTREÁVEL
+            </button>
+            
+            <div id="link-result" class="hidden mt-4 p-4 bg-black/30 rounded border border-emerald-500/30">
+                <p class="text-[10px] text-gray-400 mb-1">Seu Link:</p>
+                <code id="finalLinkDisplay" class="text-white text-xs select-all block break-all">...</code>
+            </div>
+        </div>
+    `;
+};
+
+window.saveLinkToFirebase = async () => {
+    const nome = document.getElementById('linkName').value;
+    const origem = document.getElementById('utmSource').value;
+    if(!nome) return alert("Defina um nome curto para o link.");
+    
+    const btn = document.querySelector('button[onclick="window.saveLinkToFirebase()"]');
+    if(btn) btn.innerText = "GERANDO...";
+
+    try {
+        const finalLink = `https://rede-atlivio.github.io/.com/?ref=${nome}&utm_source=${origem}`;
+        await addDoc(collection(db, "smart_links"), {
+            short: nome,
+            destination: finalLink,
+            original_source: origem,
+            clicks: 0,
+            created_at: serverTimestamp()
+        });
+        
+        document.getElementById('link-result').classList.remove('hidden');
+        document.getElementById('finalLinkDisplay').innerText = finalLink;
+        alert("✅ Link gerado com sucesso!");
+    } catch(e) { 
+        alert("Erro: " + e.message); 
+    } finally {
+        if(btn) btn.innerText = "💾 GERAR LINK RASTREÁVEL";
+    }
+};
+
+// ============================================================================
+// 🤖 PAINEL DO ROBÔ (MANTIDO)
 // ============================================================================
 
 window.injetarPainelRobo = () => {
@@ -144,11 +214,7 @@ window.adicionarCampanha = async () => {
             tipo: tipo,
             created_at: serverTimestamp()
         });
-        
-        document.getElementById('camp-titulo').value = "";
-        document.getElementById('camp-link').value = "";
-        document.getElementById('camp-desc').value = "";
-        
+        document.getElementById('camp-titulo').value = ""; document.getElementById('camp-link').value = ""; document.getElementById('camp-desc').value = "";
         alert("✅ Link salvo na biblioteca do Robô!");
         window.listarCampanhasAtivas();
     } catch(e) { alert("Erro: " + e.message); }
@@ -157,27 +223,13 @@ window.adicionarCampanha = async () => {
 window.listarCampanhasAtivas = async () => {
     const lista = document.getElementById('lista-campanhas');
     if(!lista) return;
-
     const q = query(collection(db, "bot_library"), orderBy("created_at", "desc"));
     const snap = await getDocs(q);
-
     lista.innerHTML = "";
-    if(snap.empty) {
-        lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`;
-        return;
-    }
-
+    if(snap.empty) { lista.innerHTML = `<p class="text-center text-gray-500 text-xs py-4">Nenhum link cadastrado. O robô não vai funcionar.</p>`; return; }
     snap.forEach(d => {
         const item = d.data();
-        lista.innerHTML += `
-            <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5">
-                <div class="truncate pr-2">
-                    <p class="text-xs text-white font-bold">${item.titulo}</p>
-                    <p class="text-[9px] text-blue-400 truncate">${item.link}</p>
-                </div>
-                <button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button>
-            </div>
-        `;
+        lista.innerHTML += `<div class="flex justify-between items-center bg-slate-900/50 p-2 rounded border border-white/5"><div class="truncate pr-2"><p class="text-xs text-white font-bold">${item.titulo}</p><p class="text-[9px] text-blue-400 truncate">${item.link}</p></div><button onclick="window.removerCampanha('${d.id}')" class="text-red-500 hover:text-red-400 font-bold px-2">🗑️</button></div>`;
     });
 };
 
@@ -192,10 +244,7 @@ window.toggleRobo = (ligar) => {
     if (ligar) {
         if (roboAtivo) return;
         getDocs(collection(db, "bot_library")).then(snap => {
-            if(snap.empty) {
-                alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!");
-                return;
-            }
+            if(snap.empty) { alert("⚠️ Adicione pelo menos 1 link na lista abaixo antes de ligar o robô!"); return; }
             roboAtivo = true;
             if(statusText) { statusText.innerText = "TRABALHANDO 🚀"; statusText.className = "text-emerald-400 font-black text-lg animate-pulse"; }
             window.executarCicloRobo();
@@ -215,26 +264,10 @@ window.executarCicloRobo = async () => {
     console.log("🤖 ROBÔ: Buscando munição na biblioteca...");
     try {
         const snap = await getDocs(collection(db, "bot_library"));
-        if(snap.empty) {
-            console.log("❌ Robô parou: Biblioteca vazia.");
-            window.toggleRobo(false);
-            return;
-        }
+        if(snap.empty) { console.log("❌ Robô parou: Biblioteca vazia."); window.toggleRobo(false); return; }
         const opcoes = snap.docs.map(d => d.data());
         const oferta = opcoes[Math.floor(Math.random() * opcoes.length)];
-        
-        await addDoc(collection(db, "oportunidades"), {
-            titulo: oferta.titulo,
-            descricao: oferta.descricao,
-            tipo: oferta.tipo,
-            link: oferta.link,
-            created_at: serverTimestamp(),
-            updated_at: serverTimestamp(),
-            is_demo: false, 
-            visibility_score: 100,
-            origem: "robo_auto"
-        });
-        
+        await addDoc(collection(db, "oportunidades"), { titulo: oferta.titulo, descricao: oferta.descricao, tipo: oferta.tipo, link: oferta.link, created_at: serverTimestamp(), updated_at: serverTimestamp(), is_demo: false, visibility_score: 100, origem: "robo_auto" });
         console.log(`✅ ROBÔ: Postou "${oferta.titulo}"!`);
         document.title = "Atlivio Admin (POSTOU!)";
         setTimeout(() => document.title = "Atlivio Admin", 5000);
@@ -242,10 +275,11 @@ window.executarCicloRobo = async () => {
 };
 
 // ============================================================================
-// 🧠 NOVO SISTEMA DE LISTAGEM E CURADORIA (MUDANÇAS AQUI)
+// 🧠 NOVO SISTEMA DE LISTAGEM E CURADORIA (CORREÇÃO: EXPOSTO NA WINDOW)
 // ============================================================================
 
-async function loadList(type) {
+// CORREÇÃO: Tornei a função global (window.loadList) para o diagnóstico encontrar
+window.loadList = async function(type) {
     const tbody = document.getElementById('table-body'), thead = document.getElementById('table-header');
     tbody.innerHTML = "<tr><td colspan='6' class='p-4 text-center text-gray-500'>Carregando...</td></tr>";
     
@@ -255,7 +289,7 @@ async function loadList(type) {
     else if (type === 'services') colName = 'active_providers';
     else if (type === 'missions') colName = 'missoes';
     else if (type === 'opps') colName = 'oportunidades';
-    else if (type === 'candidatos') colName = 'candidatos'; // NOVO: Suporte a Candidatos
+    else if (type === 'candidatos') colName = 'candidatos'; // Suporte a Candidatos
 
     window.currentCollectionName = colName;
     
@@ -266,7 +300,7 @@ async function loadList(type) {
     const chk = `<th class="p-3 w-10"><input type="checkbox" class="chk-custom" onclick="window.toggleSelectAll(this)"></th>`;
     let headers = [chk, "ID", "DADOS", "STATUS", "AÇÕES"];
     
-    // HEADERS PERSONALIZADOS
+    // HEADERS
     if(type === 'users') headers = [chk, "NOME", "TIPO", "SALDO", "STATUS", "AÇÕES"];
     if(type === 'services') headers = [chk, "PRESTADOR", "SERVIÇOS", "SCORE", "STATUS", "AÇÕES"];
     if(type === 'candidatos') headers = [chk, "NOME", "VAGA", "CONTATO", "STATUS", "AÇÕES"];
@@ -275,7 +309,6 @@ async function loadList(type) {
     
     try {
         let q;
-        // Prioriza "Em Análise" ordenando por update recente
         if (colName === 'active_providers' || colName === 'candidatos') {
              q = query(collection(db, colName), orderBy('updated_at', 'desc'), limit(50));
         } else if(colName === 'oportunidades' || colName === 'jobs') {
@@ -291,7 +324,7 @@ async function loadList(type) {
         snap.forEach(docSnap => { 
             const d = { id: docSnap.id, ...docSnap.data() }; 
             
-            // DESTAQUE VISUAL PARA "EM ANÁLISE"
+            // Destaque visual
             let rowClass = "border-b border-white/5 transition hover:bg-white/5";
             let statusBadge = `<span class="bg-gray-700 text-gray-300 px-2 py-1 rounded text-[10px] uppercase font-bold">${d.status || 'OK'}</span>`;
             
@@ -325,7 +358,7 @@ async function loadList(type) {
         btnAdd.parentNode.replaceChild(newBtn, btnAdd);
         newBtn.onclick = () => window.openModalCreate(type);
     }
-}
+};
 
 // --- EDITOR UNIVERSAL INTELIGENTE (COM DETECTOR DE FOTO E PDF) ---
 window.openUniversalEditor = async (collectionName, id) => {
@@ -446,25 +479,6 @@ window.moderarItem = async (col, id, decisao) => {
         await updateDoc(ref, updates);
         window.closeModal(); 
         window.forceRefresh();
-    } catch(e) { alert("Erro: " + e.message); }
-};
-
-// --- MANUTENÇÃO (LINKS) ---
-// Adicionando a função que faltava para os Links
-window.saveLinkToFirebase = async () => {
-    const nome = document.getElementById('linkName').value;
-    const origem = document.getElementById('utmSource').value;
-    if(!nome) return alert("Defina um nome curto.");
-    try {
-        const finalLink = `https://rede-atlivio.github.io/.com/?ref=${nome}&utm_source=${origem}`;
-        await addDoc(collection(db, "smart_links"), {
-            short: nome,
-            destination: finalLink,
-            created_at: serverTimestamp()
-        });
-        document.getElementById('link-result').classList.remove('hidden');
-        document.getElementById('finalLinkDisplay').innerText = finalLink;
-        alert("Link gerado!");
     } catch(e) { alert("Erro: " + e.message); }
 };
 
