@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio Admin | Comando Central</title>
+    <title>Atlivio Admin | Comando Central v3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -18,6 +18,16 @@
         .inp-editor { width: 100%; background: #020617; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; color: white; font-size: 0.75rem; margin-bottom: 5px; }
         .inp-label { font-size: 0.65rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 2px; }
         .chk-custom { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        
+        /* Utilitários de Animação */
+        @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fade 0.3s ease-out forwards; }
+        
         #bulk-actions { transition: transform 0.3s ease; transform: translateY(100%); }
         #bulk-actions.visible { transform: translateY(0); }
     </style>
@@ -27,180 +37,107 @@
     <div id="login-gate" class="fixed inset-0 bg-[#0f172a] z-50 flex items-center justify-center">
         <div class="text-center p-8 border border-blue-900/50 rounded-2xl bg-slate-900/80 backdrop-blur glass-panel w-96">
             <h1 class="text-3xl text-white font-black mb-1 italic tracking-tighter">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
-            <p class="text-xs text-slate-400 mb-8 font-mono">COMANDO CENTRAL</p>
-            <div id="loading-login" class="hidden mb-4"><div class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
-            <button onclick="window.loginAdmin()" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-blue-900/20">
+            <p class="text-xs text-slate-400 mb-8 font-mono">COMANDO CENTRAL MODULAR</p>
+            <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
                 <i data-lucide="shield" size="18"></i> AUTENTICAR
             </button>
-            <p id="error-msg" class="text-red-500 text-xs mt-4 hidden font-bold"></p>
         </div>
     </div>
 
     <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
         <div class="p-6 border-b border-white/5">
             <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v29.0 // STABLE</p>
+            <p class="text-[10px] text-gray-500 mt-1">v3.0 // MODULAR SYSTEM</p>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
-            <button class="nav-btn active" onclick="window.switchView('dashboard')"><i data-lucide="layout-dashboard" size="16"></i> DASHBOARD</button>
-            <button class="nav-btn" onclick="window.switchView('users')"><i data-lucide="users" size="16"></i> USUÁRIOS</button>
-            <button class="nav-btn" onclick="window.switchView('services')"><i data-lucide="wrench" size="16"></i> SERVIÇOS</button>
-            <button class="nav-btn" onclick="window.switchView('missions')"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
-            <button class="nav-btn" onclick="window.switchView('jobs')"><i data-lucide="briefcase" size="16"></i> EMPREGOS</button>
-            <button class="nav-btn" onclick="window.switchView('opps')"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
-            <button class="nav-btn" onclick="window.switchView('finance')"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
+            <button class="nav-btn active" data-view="dashboard"><i data-lucide="layout-dashboard" size="16"></i> DASHBOARD</button>
+            <button class="nav-btn" data-view="users"><i data-lucide="users" size="16"></i> USUÁRIOS</button>
+            <button class="nav-btn" data-view="services"><i data-lucide="wrench" size="16"></i> SERVIÇOS (VITRINE)</button>
+            <button class="nav-btn" data-view="missions"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
             
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-6 mb-2 pl-2">Estratégia & Povoamento</p>
-            <button class="nav-btn text-purple-400" onclick="window.switchView('generator')"><i data-lucide="box" size="16"></i> GERADOR EM MASSA</button>
-            <button class="nav-btn" onclick="window.switchView('analytics')"><i data-lucide="bar-chart-2" size="16"></i> ANALYTICS</button>
-            <button class="nav-btn" onclick="window.switchView('links')"><i data-lucide="link" size="16"></i> LINKS INTELIGENTES</button>
-            <button class="nav-btn" onclick="window.switchView('settings')"><i data-lucide="settings" size="16"></i> CONFIGURAÇÕES</button>
+            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Vagas & RH</p>
+            <button class="nav-btn" data-view="jobs"><i data-lucide="briefcase" size="16"></i> VAGAS DE EMPREGO</button>
+            <button class="nav-btn text-blue-300" data-view="candidatos"><i data-lucide="file-text" size="16"></i> CANDIDATOS (CVs)</button>
+            
+            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Estratégia</p>
+            <button class="nav-btn" data-view="opps"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
+            <button class="nav-btn" data-view="finance"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
+            <button class="nav-btn text-purple-400" data-view="automation"><i data-lucide="box" size="16"></i> GERADOR & ROBÔ</button>
+            <button class="nav-btn" data-view="settings"><i data-lucide="settings" size="16"></i> CONFIGURAÇÕES</button>
         </nav>
         <div class="p-4 border-t border-white/5 bg-red-900/10">
-            <button onclick="window.logoutAdmin()" class="nav-btn text-red-400 hover:text-red-300 w-full"><i data-lucide="log-out" size="16"></i> ENCERRAR</button>
+            <button id="btn-logout" class="nav-btn text-red-400 hover:text-red-300 w-full"><i data-lucide="log-out" size="16"></i> ENCERRAR</button>
         </div>
     </aside>
 
     <main class="flex-1 flex flex-col h-full overflow-hidden hidden" id="admin-main">
         <header class="h-16 border-b border-white/5 flex justify-between items-center px-6 bg-slate-900/30 backdrop-blur">
             <div class="flex items-center gap-4">
-                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">VISÃO GERAL</h2>
+                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">DASHBOARD</h2>
                 <div class="h-4 w-[1px] bg-gray-700"></div>
                 <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                    <button onclick="window.toggleDataMode('real')" id="btn-mode-real" class="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition">DADOS REAIS</button>
-                    <button onclick="window.toggleDataMode('demo')" id="btn-mode-demo" class="px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition">DEMONSTRATIVO</button>
+                    <button id="mode-real" class="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition">DADOS REAIS</button>
+                    <button id="mode-demo" class="px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition">DEMONSTRATIVO</button>
                 </div>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="window.forceRefresh()" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
+                <button id="btn-refresh" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                    <span class="status-dot dot-green"></span><span class="text-[10px] font-bold text-green-400">SISTEMA ATIVO</span>
+                    <span class="status-dot dot-green"></span><span class="text-[10px] font-bold text-green-400">ONLINE</span>
                 </div>
             </div>
         </header>
 
         <div class="flex-1 overflow-y-auto p-6 pb-24" id="content-area">
             
-            <div id="view-dashboard" class="space-y-6 animate-fade">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="glass-panel p-5 border-l-2 border-blue-500"><p class="metric-label">USUÁRIOS TOTAIS</p><h3 class="metric-value" id="kpi-users">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-green-500"><p class="metric-label">PRESTADORES ONLINE</p><h3 class="metric-value text-green-400" id="kpi-providers">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-purple-500"><p class="metric-label">PEDIDOS HOJE</p><h3 class="metric-value" id="kpi-orders">-</h3></div>
-                    <div class="glass-panel p-5 border-l-2 border-amber-500"><p class="metric-label">SALDO EM CARTEIRAS</p><h3 class="metric-value" id="kpi-balance">R$ 0,00</h3></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="glass-panel p-0 col-span-2 flex flex-col h-[400px]">
-                        <div class="p-4 border-b border-white/5 flex justify-between items-center bg-white/5">
-                            <h3 class="text-xs font-bold text-white uppercase"><i data-lucide="activity" size="14" class="inline mr-2"></i> LIVE FEED</h3>
-                        </div>
-                        <div id="live-feed" class="flex-1 overflow-y-auto p-4 space-y-2 font-mono text-xs">
-                            <p class="text-gray-500 text-center py-10">Aguardando...</p>
-                        </div>
-                    </div>
-                    <div class="glass-panel p-4 flex flex-col items-center justify-center">
-                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-4 w-full text-left">DISTRIBUIÇÃO</h3>
-                        <div class="w-full h-64 relative"><canvas id="mainChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
+            <div id="view-dashboard" class="space-y-6 animate-fade"></div>
 
-            <div id="view-list" class="hidden space-y-4">
+            <div id="view-list" class="hidden space-y-4 animate-fade">
                 <div class="flex justify-between items-center">
-                    <input type="text" id="search-input" placeholder="Buscar..." class="bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
-                    <button id="btn-add-new" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">+ NOVO</button>
+                    <input type="text" id="list-search" placeholder="Buscar..." class="bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
+                    <button id="btn-list-add" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">+ NOVO ITEM</button>
                 </div>
                 <div class="glass-panel overflow-hidden">
                     <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-900/50 text-[10px] uppercase text-gray-400 font-bold"><tr id="table-header"></tr></thead>
-                        <tbody id="table-body" class="text-xs font-mono"></tbody>
+                        <thead class="bg-slate-900/50 text-[10px] uppercase text-gray-400 font-bold"><tr id="list-header"></tr></thead>
+                        <tbody id="list-body" class="text-xs font-mono"></tbody>
                     </table>
                 </div>
+                <p id="list-count" class="text-xs text-gray-500 text-right">0 registros</p>
             </div>
 
-            <div id="view-generator" class="hidden space-y-6">
-                <div class="glass-panel p-8 border border-purple-500/30">
-                    <h2 class="text-2xl font-black text-white italic mb-2">GERADOR DE POVOAMENTO</h2>
-                    <p class="text-sm text-gray-400 mb-8">
-                        Cria conteúdo simulado para evitar a "síndrome da plataforma vazia". <br>
-                        <span class="text-yellow-500 font-bold">⚠️ ATENÇÃO:</span> Os itens criados aparecerão na aba "DEMONSTRATIVO".
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div>
-                            <label class="inp-label">TIPO</label>
-                            <select id="gen-type" class="inp-editor h-10">
-                                <option value="jobs">Empregos</option>
-                                <option value="services">Serviços</option>
-                                <option value="missions">Micro Tarefas</option>
-                                <option value="opps">Oportunidades</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="inp-label">QUANTIDADE</label>
-                            <select id="gen-qty" class="inp-editor h-10">
-                                <option value="1">1 Item</option>
-                                <option value="3">3 Itens</option>
-                                <option value="5">5 Itens</option>
-                                <option value="10">10 Itens</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="inp-label">STATUS</label>
-                            <input type="text" value="🔒 MODO SEGURO ATIVO" disabled class="inp-editor h-10 text-green-500 font-bold bg-green-900/20 border-green-500/50">
-                        </div>
-                    </div>
-                    <button onclick="window.runMassGenerator()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black py-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
-                        <i data-lucide="zap"></i> GERAR AGORA
-                    </button>
-                    <div id="gen-status" class="mt-4 text-center text-xs font-mono text-gray-500 hidden">Processando...</div>
-                </div>
-            </div>
+            <div id="view-finance" class="hidden space-y-6 animate-fade"></div>
 
-            <div id="view-links" class="hidden space-y-6">
-                <div class="glass-panel p-6 border border-emerald-500/30">
-                    <h2 class="text-lg font-bold text-white mb-2">Criador de Links</h2>
-                    <p class="text-xs text-slate-400 mb-6">Cria links curtos e rastreáveis.</p>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div class="col-span-2">
-                            <label class="inp-label">NOME CURTO (ID)</label>
-                            <input type="text" id="linkName" placeholder="ex: zap" class="inp-editor border-emerald-500/50">
-                        </div>
-                        <div>
-                            <label class="inp-label">ORIGEM</label>
-                            <input type="text" id="utmSource" value="instagram" class="inp-editor">
-                        </div>
-                        <div class="flex items-center pt-4">
-                            <input type="checkbox" id="is-test-link" class="w-4 h-4 mr-2 accent-amber-500">
-                            <label for="is-test-link" class="text-xs font-bold text-amber-400 uppercase cursor-pointer">Link de Teste?</label>
-                        </div>
-                    </div>
-                    <button onclick="window.saveLinkToFirebase()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg text-xs transition">💾 GERAR LINK</button>
-                    <div id="link-result" class="hidden mt-4 p-4 bg-black/30 rounded border border-emerald-500/30">
-                        <code id="finalLinkDisplay" class="text-white text-xs select-all">...</code>
-                    </div>
-                </div>
-            </div>
+            <div id="view-automation" class="hidden space-y-6 animate-fade"></div>
 
-            <div id="view-settings" class="hidden space-y-6"><div class="glass-panel p-6"><h2 class="text-lg font-bold text-white mb-4">Configurações</h2><div class="space-y-4"><div><label class="inp-label">Aviso Global</label><input type="text" id="conf-global-msg" class="inp-editor"></div><button onclick="window.saveSettings()" class="bg-blue-600 px-4 py-2 rounded text-white text-xs font-bold">SALVAR</button></div></div><div class="border border-red-900/30 bg-red-950/10 rounded-xl p-6"><button onclick="window.clearDatabase('full')" class="bg-red-600 text-white px-4 py-2 rounded text-xs font-bold">🔥 FORMATAR BANCO</button></div></div>
-            <div id="view-analytics" class="hidden space-y-6"><div class="grid grid-cols-1 lg:grid-cols-2 gap-6"><div class="glass-panel p-6"><h2 class="text-sm font-bold text-white mb-6">FUNIL</h2><div id="funnel-container" class="space-y-4"></div></div><div class="glass-panel p-6"><h2 class="text-sm font-bold text-white mb-6">ORIGEM</h2><div class="h-64"><canvas id="sourceChart"></canvas></div></div></div></div>
-            <div id="view-finance" class="hidden space-y-6"><div class="glass-panel p-6 border border-amber-500/30"><h2 class="text-lg font-bold text-white">Financeiro</h2><p class="text-gray-500 text-xs">Vazio.</p></div></div>
+            <div id="view-settings" class="hidden space-y-6 animate-fade"></div>
+            
         </div>
 
         <div id="bulk-actions" class="fixed bottom-0 left-64 right-0 bg-slate-800 border-t border-slate-700 p-4 flex justify-between items-center z-50 shadow-2xl translate-y-full">
             <div class="flex items-center gap-3">
                 <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full" id="bulk-count">0</span>
-                <span class="text-xs text-white font-bold uppercase">Itens Selecionados</span>
+                <span class="text-xs text-white font-bold uppercase">Selecionados</span>
             </div>
-            <button onclick="window.deleteSelectedItems()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2">
-                <i data-lucide="trash-2"></i> EXCLUIR
-            </button>
+            <div class="flex gap-2" id="bulk-buttons">
+                <button id="btn-bulk-delete" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2"><i data-lucide="trash-2"></i> EXCLUIR</button>
+            </div>
         </div>
-
     </main>
 
-    <div id="modal-editor" class="fixed inset-0 bg-black/80 z-[60] hidden flex items-center justify-center backdrop-blur-sm"><div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-lg"><button onclick="window.closeModal()" class="absolute top-4 right-4 text-gray-500">&times;</button><h2 id="modal-title" class="text-lg font-bold text-white mb-4">EDITOR</h2><div id="modal-content" class="space-y-3 mb-6 overflow-y-auto max-h-[60vh]"></div><div class="flex gap-3"><button onclick="window.saveModalData()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold text-xs">SALVAR</button><button onclick="window.closeModal()" class="flex-1 bg-slate-700 text-white py-3 rounded-xl font-bold text-xs">CANCELAR</button></div></div></div>
+    <div id="modal-editor" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4">
+                <h2 id="modal-title" class="text-xl font-black text-white italic tracking-wide">EDITOR</h2>
+                <button id="btn-close-modal" class="text-gray-500 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="modal-content" class="space-y-4 overflow-y-auto flex-1 pr-2"></div>
+        </div>
+    </div>
 
-    <script type="module" src="./admin.js"></script>
+    <script type="module" src="./js/admin/core.js"></script> 
+    
     <script>lucide.createIcons();</script>
 </body>
 </html>
