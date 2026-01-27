@@ -20,23 +20,28 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// EXPOSIÇÃO GLOBAL (Obrigatório para os scripts de teste e console funcionarem)
+// ============================================================================
+// 🚨 O PULO DO GATO (MANTÉM TUDO FUNCIONANDO)
+// ============================================================================
+
+// 1. Para os ARQUIVOS NOVOS (Modules) importarem sem erro
+export { app, auth, db, storage, provider };
+
+// 2. Para o CONSOLE, AUDITOR e SCRIPTS ANTIGOS (Não removemos nada!)
+window.app = app;
 window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
 
-export { app, auth, db, storage, provider };
-
 // ============================================================================
-// 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
-// Aqui conectamos todas as funcionalidades novas que criamos
+// 👇 CARREGAMENTO DOS MÓDULOS
 // ============================================================================
 
-import './auth.js';                  // Gerencia Login, Perfil e Saldo Financeiro
-import './modules/services.js';      // Lista de Prestadores e Serviços
-import './modules/jobs.js';          // Vagas de Emprego
-import './modules/opportunities.js'; // Robô de Ofertas e Afiliados
-import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (Token)
+import './auth.js';                 // Login e Perfil
+import './modules/services.js';     // Serviços
+import './modules/jobs.js';         // Vagas e Candidaturas
+import './modules/opportunities.js';// Oportunidades (Onde tudo começou)
+import './modules/chat.js';         // Chat
 
-console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
+console.log("✅ Sistema Atlivio Carregado: Híbrido (Module + Global).");
