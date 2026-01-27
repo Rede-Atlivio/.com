@@ -92,7 +92,7 @@ onAuthStateChanged(auth, async (user) => {
                     userProfile = docSnap.data();
                     if (userProfile.wallet_balance === undefined) userProfile.wallet_balance = 0.00;
                     atualizarInterfaceUsuario(userProfile);
-                    iniciarAppLogado(user); // Aqui estava o erro
+                    iniciarAppLogado(user); 
                     if (userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
                         if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
@@ -125,7 +125,7 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
-// CORREÇÃO CRÍTICA DO ADMIN CHECK
+// CORREÇÃO CRÍTICA: Carregamento Automático da Vitrine
 function iniciarAppLogado(user) {
     if(!userProfile || !userProfile.perfil_completo) {
         document.getElementById('app-container').classList.add('hidden');
@@ -153,6 +153,14 @@ function iniciarAppLogado(user) {
         document.getElementById('tab-servicos').innerText = "Contratar Serviço 🛠️";
         ['tab-servicos', 'tab-oportunidades', 'tab-loja', 'tab-ganhar', 'servicos-cliente'].forEach(id => toggleDisplay(id, true));
         ['tab-missoes', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, false));
+        
+        // 🔥 AQUI ESTÁ A CORREÇÃO DA VITRINE! 🔥
+        // Força o carregamento dos dados assim que o app abre
+        setTimeout(() => {
+            if(window.carregarServicos) window.carregarServicos(); // Carrega Vitrine
+            if(window.carregarVagas) window.carregarVagas();       // Carrega Empregos (Já adianta Item 14)
+            if(window.carregarOportunidades) window.carregarOportunidades(); // Carrega Ofertas
+        }, 800); // Pequeno delay para garantir que o DOM renderizou
     }
 }
 
