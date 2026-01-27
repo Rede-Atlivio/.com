@@ -1,6 +1,6 @@
 import { db, auth } from '../app.js';
 import { userProfile } from '../auth.js';
-import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp, getDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GATILHOS DA ABA ---
 const tabEmpregos = document.getElementById('tab-empregos');
@@ -10,7 +10,9 @@ if(tabEmpregos) {
     }); 
 }
 
-// --- CONTROLE DE INTERFACE ---
+// ============================================================================
+// 1. CONTROLE DE INTERFACE (PAINEL EMPRESA vs PRESTADOR)
+// ============================================================================
 export function carregarInterfaceEmpregos() {
     const container = document.getElementById('lista-vagas');
     const containerEmpresa = document.getElementById('painel-empresa');
@@ -23,7 +25,7 @@ export function carregarInterfaceEmpregos() {
             listarVagasParaCandidato(container);
         }
     } else {
-        // Se é cliente, ele vê o painel de criar vagas
+        // Se é cliente/empresa, ele vê o painel de criar vagas
         if(container) container.classList.add('hidden');
         if(containerEmpresa) { 
             containerEmpresa.classList.remove('hidden'); 
@@ -32,14 +34,14 @@ export function carregarInterfaceEmpregos() {
     }
 }
 
-// --- FUNÇÃO 1: LISTAR VAGAS (Para quem procura emprego) ---
+// ============================================================================
+// 2. LISTAR VAGAS PARA O PRESTADOR (VISÃO DO CANDIDATO)
+// ============================================================================
 function listarVagasParaCandidato(container) {
     container.innerHTML = `<div class="text-center py-6 animate-fadeIn"><div class="loader mx-auto mb-2 border-blue-200 border-t-blue-600"></div><p class="text-[9px] text-gray-400">Buscando oportunidades...</p></div>`;
 
-    // --- CORREÇÃO DO ERRO DE ÍNDICE ---
-    // Removemos 'orderBy("visibility_score")' para evitar travamento do Firebase
-    // Agora ordena apenas por data (mais recente primeiro)
-    const q = query(collection(db, "jobs"), orderBy("created_at", "desc"));
+    // Busca vagas ativas ordenadas por data
+    const q = query(collection(db, "jobs"), where("status", "==", "ativa"), orderBy("created_at", "desc"));
 
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
@@ -50,58 +52,36 @@ function listarVagasParaCandidato(container) {
 
         snap.forEach(d => {
             const vaga = d.data();
+            const id = d.id;
             const isDemo = vaga.is_demo === true;
-            const isEncerrada = vaga.status === 'encerrada';
             
-            // Lógica Visual
-            const opacityClass = isEncerrada && !isDemo ? "opacity-75 grayscale-[0.5]" : "";
-            
+            // Badge visual
             let badge = `<span class="bg-blue-50 text-blue-700 text-[8px] font-bold px-2 py-1 rounded uppercase">${vaga.tipo || 'CLT'}</span>`;
-            if (isDemo) badge = `<span class="bg-gray-100 text-gray-500 text-[8px] px-2 py-0.5 rounded border border-gray-200 uppercase">Exemplo</span>`;
-            if (isEncerrada) badge = `<span class="bg-red-100 text-red-600 text-[8px] px-2 py-0.5 rounded border border-red-200 uppercase">Preenchida</span>`;
+            if (isDemo) badge = `<span class="bg-purple-100 text-purple-600 text-[8px] px-2 py-0.5 rounded border border-purple-200 uppercase">DEMO</span>`;
 
-            // Lógica do Botão
-            let btnHtml = `<button onclick="window.candidatarVaga('${d.id}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-blue-700 transition">Enviar Currículo</button>`;
-            let footerDemo = "";
-
-            if (isDemo) {
-                btnHtml = `
-                <div class="flex flex-col items-end">
-                    <button onclick="alert('ℹ️ MODO DEMONSTRAÇÃO\\n\\nEsta é uma vaga de exemplo para ilustrar o sistema.')" class="bg-gray-700 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-gray-800 transition">
-                        Ver Exemplo
-                    </button>
-                </div>`;
-                
-                // Linha discreta no rodapé
-                footerDemo = `
-                    <div class="mt-3 pt-2 border-t border-gray-100 text-center">
-                        <p class="text-[8px] text-gray-400 italic">
-                            Conteúdo demonstrativo para ilustrar o funcionamento da plataforma.
-                        </p>
-                    </div>
-                `;
-            } else if (isEncerrada) {
-                btnHtml = `<button disabled class="bg-gray-200 text-gray-500 px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase cursor-not-allowed">Inscrições Encerradas</button>`;
-            }
+            // Lógica: Botão chama o NOVO modal de PDF
+            const btnHtml = `<button onclick="window.abrirModalCandidatura('${id}', '${vaga.titulo}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-blue-700 transition">Enviar Proposta 🚀</button>`;
 
             container.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 animate-fadeIn ${opacityClass}">
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 animate-fadeIn">
                     <div class="flex justify-between items-start mb-2">
                         <h3 class="font-black text-blue-900 text-sm uppercase">${vaga.titulo}</h3>
                         ${badge}
                     </div>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">${vaga.empresa || "Confidencial"}</p>
                     <p class="text-[10px] text-gray-500 mb-2 line-clamp-2">${vaga.descricao}</p>
                     <div class="flex justify-between items-center mt-3 border-t border-gray-50 pt-2">
                         <span class="text-[9px] font-bold text-green-600">R$ ${vaga.salario || 'A combinar'}</span>
                         ${btnHtml}
                     </div>
-                    ${footerDemo}
                 </div>`;
         });
     });
 }
 
-// --- FUNÇÃO 2: PUBLICAR VAGA ---
+// ============================================================================
+// 3. PUBLICAR VAGA (VISÃO DA EMPRESA)
+// ============================================================================
 export async function publicarVaga() {
     const tituloEl = document.getElementById('job-title');
     const salarioEl = document.getElementById('job-salary');
@@ -114,14 +94,9 @@ export async function publicarVaga() {
     const salario = salarioEl.value;
     const descricao = descEl.value;
 
-    if (!titulo || !descricao) {
-        return alert("Por favor, preencha o Título e a Descrição da vaga.");
-    }
+    if (!titulo || !descricao) return alert("Por favor, preencha Título e Descrição.");
 
-    if(btn) {
-        btn.innerText = "PUBLICANDO...";
-        btn.disabled = true;
-    }
+    if(btn) { btn.innerText = "PUBLICANDO..."; btn.disabled = true; }
 
     try {
         await addDoc(collection(db, "jobs"), {
@@ -134,30 +109,23 @@ export async function publicarVaga() {
             created_at: serverTimestamp(),
             status: "ativa",
             visibility_score: 100, 
-            is_demo: false
+            is_demo: false // Vaga Real
         });
 
         alert("✅ Vaga publicada com sucesso!");
         
-        tituloEl.value = "";
-        salarioEl.value = "";
-        descEl.value = "";
+        tituloEl.value = ""; salarioEl.value = ""; descEl.value = "";
         document.getElementById('job-post-modal').classList.add('hidden');
-        
         listarMinhasVagasEmpresa();
 
     } catch (e) {
         console.error("Erro ao publicar:", e);
-        alert("Erro ao publicar vaga: " + e.message);
+        alert("Erro: " + e.message);
     } finally {
-        if(btn) {
-            btn.innerText = "PUBLICAR AGORA";
-            btn.disabled = false;
-        }
+        if(btn) { btn.innerText = "PUBLICAR AGORA"; btn.disabled = false; }
     }
 }
 
-// --- FUNÇÃO 3: LISTAR VAGAS DA MINHA EMPRESA ---
 function listarMinhasVagasEmpresa() {
     const container = document.getElementById('lista-minhas-vagas');
     if(!container || !auth.currentUser) return;
@@ -166,14 +134,12 @@ function listarMinhasVagasEmpresa() {
     
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        if (snap.empty) {
-            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Você ainda não criou vagas.</p>`;
-            return;
-        }
+        if (snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Você ainda não criou vagas.</p>`; return; }
+        
         snap.forEach(d => {
             const v = d.data();
             container.innerHTML += `
-                <div class="bg-white p-3 rounded-lg border border-gray-100 flex justify-between items-center">
+                <div class="bg-white p-3 rounded-lg border border-gray-100 flex justify-between items-center mb-2">
                     <div>
                         <p class="font-bold text-xs text-blue-900">${v.titulo}</p>
                         <p class="text-[9px] text-gray-400">${v.status.toUpperCase()}</p>
@@ -185,69 +151,95 @@ function listarMinhasVagasEmpresa() {
     });
 }
 
-// --- FUNÇÃO 4: CANDIDATAR-SE ---
-export async function candidatarVaga(jobId) {
+// ============================================================================
+// 4. NOVA LÓGICA DE CANDIDATURA (MODAL + PDF)
+// ============================================================================
+
+// Ação Global: Abre o Modal
+window.abrirModalCandidatura = (vagaId, vagaTitulo) => {
     if(!auth.currentUser) return alert("Faça login para se candidatar.");
+
+    const modal = document.getElementById('modal-apply');
+    if (!modal) return alert("Erro: Modal 'modal-apply' não encontrado no HTML. Verifique o index.html.");
+
+    // Reseta form
+    document.getElementById('apply-message').value = "";
+    document.getElementById('apply-file').value = "";
+
+    // Preenche dados ocultos
+    document.getElementById('apply-job-id').value = vagaId;
+    document.getElementById('apply-job-title').innerText = vagaTitulo;
     
-    const cvRef = doc(db, "candidates", auth.currentUser.uid);
-    const cvSnap = await getDoc(cvRef);
+    // Mostra
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
     
-    if (!cvSnap.exists()) { 
-        document.getElementById('cv-setup-modal').classList.remove('hidden'); 
-        window.vagaPendenteId = jobId; 
-    } else { 
-        aplicarParaVaga(jobId); 
+    // Listener do botão enviar (remover anteriores para não duplicar)
+    const btnEnviar = document.getElementById('btn-submit-proposal');
+    const newBtn = btnEnviar.cloneNode(true);
+    btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
+    newBtn.addEventListener('click', enviarCandidaturaReal);
+};
+
+// Ação Global: Envia para o Admin
+async function enviarCandidaturaReal() {
+    const btn = document.getElementById('btn-submit-proposal');
+    const txtOriginal = btn.innerText;
+    
+    const vagaId = document.getElementById('apply-job-id').value;
+    const vagaTitulo = document.getElementById('apply-job-title').innerText;
+    const msg = document.getElementById('apply-message')?.value || "";
+    const fileInput = document.getElementById('apply-file');
+
+    // Validação
+    if(!fileInput.files.length) {
+        return alert("⚠️ Por favor, anexe seu currículo em PDF.");
     }
-}
 
-// --- AUXILIARES ---
-export function abrirModalVaga() {
-    document.getElementById('job-post-modal').classList.remove('hidden');
-}
-
-export async function salvarCurriculo() {
-    const nome = document.getElementById('cv-nome').value;
-    const tel = document.getElementById('cv-telefone').value;
-    const hab = document.getElementById('cv-habilidades').value;
-    
-    if(!nome || !tel) return alert("Preencha nome e telefone.");
+    btn.innerText = "ENVIANDO...";
+    btn.disabled = true;
 
     try {
-        await setDoc(doc(db, "candidates", auth.currentUser.uid), {
-            nome: nome,
-            telefone: tel,
-            habilidades: hab,
-            updated_at: serverTimestamp()
+        // Link Fake do PDF (No MVP não temos Storage, o Admin sabe disso)
+        // Em produção, aqui faríamos uploadBytes() para o Storage
+        let cvUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; 
+
+        // CRUCIAL: Salva na coleção 'candidatos' (onde o Admin lê)
+        await addDoc(collection(db, "candidatos"), {
+            vaga_id: vagaId,
+            vaga_titulo: vagaTitulo,
+            user_id: auth.currentUser.uid,
+            nome_candidato: auth.currentUser.displayName || auth.currentUser.email,
+            email_candidato: auth.currentUser.email,
+            mensagem: msg,
+            cv_url: cvUrl, 
+            created_at: serverTimestamp(),
+            status: "novo",
+            is_demo: false
         });
-        
-        document.getElementById('cv-setup-modal').classList.add('hidden');
-        alert("Currículo Salvo!");
-        
-        if(window.vagaPendenteId) {
-            aplicarParaVaga(window.vagaPendenteId);
-            window.vagaPendenteId = null;
-        }
-    } catch(e) {
-        alert("Erro: " + e.message);
+
+        alert(`✅ Sucesso! Proposta enviada para "${vagaTitulo}".`);
+        window.fecharModalCandidatura();
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao enviar: " + e.message);
+    } finally {
+        btn.innerText = txtOriginal;
+        btn.disabled = false;
     }
 }
 
-async function aplicarParaVaga(jobId) {
-    try {
-        await addDoc(collection(db, `jobs/${jobId}/applications`), {
-            candidate_id: auth.currentUser.uid,
-            candidate_name: auth.currentUser.displayName,
-            applied_at: serverTimestamp()
-        });
-        alert("✅ Candidatura enviada com sucesso!");
-    } catch(e) {
-        alert("Erro ao aplicar: " + e.message);
+window.fecharModalCandidatura = () => {
+    const modal = document.getElementById('modal-apply');
+    if(modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
-}
+};
 
-// --- EXPORTAÇÃO GLOBAL ---
+// --- EXPORTAÇÃO GLOBAL (API) ---
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
-window.abrirModalVaga = abrirModalVaga;
 window.publicarVaga = publicarVaga;
-window.candidatarVaga = candidatarVaga;
-window.salvarCurriculo = salvarCurriculo;
+// Abrir modal de criação de vaga (empresa)
+window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
