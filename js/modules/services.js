@@ -2,7 +2,7 @@ import { db, auth } from '../app.js';
 import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let cachePrestadores = [];
-let unsubscribeVitrine = null; // Para desligar a live quando sair da tela
+let unsubscribeVitrine = null;
 
 // --- GATILHOS ---
 const tabServicos = document.getElementById('tab-servicos');
@@ -16,9 +16,10 @@ if (tabServicos) {
 window.carregarServicos = carregarServicosDisponiveis;
 window.abrirModalContratacao = abrirModalContratacao;
 window.filtrarCategoria = filtrarCategoria;
+window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
 
 // ============================================================================
-// 1. LISTAGEM DE SERVIÇOS (AGORA EM TEMPO REAL 🔴)
+// 1. LISTAGEM DE SERVIÇOS (TEMPO REAL)
 // ============================================================================
 export function carregarServicosDisponiveis() {
     const listaRender = document.getElementById('lista-prestadores-realtime');
@@ -26,7 +27,6 @@ export function carregarServicosDisponiveis() {
     
     if (!listaRender || !filtersRender) return;
 
-    // Renderiza filtros (Visual)
     if(filtersRender.innerHTML.trim() === "") {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
@@ -40,7 +40,6 @@ export function carregarServicosDisponiveis() {
         `;
     }
 
-    // Se já existe uma escuta ativa, não recria para evitar duplicidade
     if (unsubscribeVitrine) return;
 
     listaRender.innerHTML = `
@@ -57,7 +56,6 @@ export function carregarServicosDisponiveis() {
             limit(50)
         );
         
-        // 🔥 A MÁGICA DO TEMPO REAL: onSnapshot
         unsubscribeVitrine = onSnapshot(q, (snap) => {
             cachePrestadores = []; 
 
@@ -74,7 +72,6 @@ export function carregarServicosDisponiveis() {
                 cachePrestadores.push({ id: d.id, ...d.data() });
             });
 
-            // Filtra localmente apenas quem tem serviços configurados
             const validos = cachePrestadores.filter(p => p.services && p.services.length > 0);
             renderizarLista(validos);
         });
@@ -93,8 +90,6 @@ function filtrarCategoria(categoria, btnElement) {
         btnElement.className = "filter-pill active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold border border-blue-600 shadow-md transition";
     }
 
-    const listaRender = document.getElementById('lista-prestadores-realtime');
-    
     if (categoria === 'Todos') {
         renderizarLista(cachePrestadores);
     } else {
@@ -106,8 +101,9 @@ function filtrarCategoria(categoria, btnElement) {
             return p.services.some(s => s.category.includes(categoria));
         });
         
+        const container = document.getElementById('lista-prestadores-realtime');
         if(filtrados.length === 0) {
-            listaRender.innerHTML = `<div class="col-span-2 text-center py-10 opacity-50"><p class="text-xs">Nenhum resultado para ${categoria}.</p></div>`;
+            container.innerHTML = `<div class="col-span-2 text-center py-10 opacity-50"><p class="text-xs">Nenhum resultado para ${categoria}.</p></div>`;
         } else {
             renderizarLista(filtrados);
         }
@@ -119,11 +115,9 @@ function renderizarLista(lista) {
     container.innerHTML = "";
 
     lista.forEach(prestador => {
-        // Regra de Visualização: Online e Aprovado
         const isOnline = prestador.is_online === true;
         const isAprovado = prestador.status === 'aprovado';
         
-        // Se não for aprovado, não mostra na vitrine (Segurança)
         if(!isAprovado) return; 
 
         const nomeSafe = prestador.nome_profissional || "Profissional";
@@ -133,7 +127,6 @@ function renderizarLista(lista) {
             : `background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);`; 
         const bio = prestador.bio || "Profissional verificado.";
         
-        // Lógica para mostrar múltiplos serviços ou o principal
         const servicoPrincipal = (prestador.services && prestador.services.length > 0) 
             ? prestador.services[0] 
             : { category: "Geral", price: 0 };
@@ -148,7 +141,8 @@ function renderizarLista(lista) {
         let containerClass = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative";
         if(!isOnline) containerClass += " grayscale opacity-90";
 
-        const onclickAction = `window.abrirModalContratacao('${prestador.id}', '${nomeSafe}', '${servicoPrincipal.category}', ${servicoPrincipal.price})`;
+        // 🔥 AQUI MUDOU: Agora passamos o ID para a função decidir se abre Perfil ou Pedido direto
+        const onclickAction = `window.abrirModalContratacao('${prestador.id}', '${nomeSafe}')`;
 
         container.innerHTML += `
             <div class="${containerClass}">
@@ -174,20 +168,20 @@ function renderizarLista(lista) {
 
                     <div class="bg-gray-50 rounded-lg p-2 border border-gray-100 flex justify-between items-center mb-3">
                         <div>
-                            <p class="text-[8px] uppercase font-bold text-gray-400 tracking-wider">Serviço</p>
+                            <p class="text-[8px] uppercase font-bold text-gray-400 tracking-wider">Serviço Principal</p>
                             <div class="flex items-center">
                                 <p class="font-bold text-blue-900 text-xs truncate max-w-[100px]">${servicoPrincipal.category}</p>
                                 ${badgeMais}
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="text-[8px] text-gray-400">Base</p>
+                            <p class="text-[8px] text-gray-400">A partir de</p>
                             <p class="font-black text-green-600 text-sm">R$ ${servicoPrincipal.price}</p>
                         </div>
                     </div>
 
                     <button onclick="${onclickAction}" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wide shadow-md transform active:scale-95 transition">
-                        ${isOnline ? 'Ver & Contratar' : '📅 Agendar'}
+                        ${isOnline ? (qtdServicos > 1 ? 'Ver Opções' : 'Contratar') : '📅 Agendar'}
                     </button>
                 </div>
             </div>
@@ -196,13 +190,58 @@ function renderizarLista(lista) {
 }
 
 // ============================================================================
-// 2. MODAL DE CONTRATAÇÃO
+// 2. MODAL DE CONTRATAÇÃO INTELIGENTE (ITEM 2.1)
 // ============================================================================
-export function abrirModalContratacao(providerId, providerName, category, price) {
-    if (window.abrirModalSolicitacao) {
-        window.abrirModalSolicitacao(providerId, providerName, price);
-    } else {
-        console.error("ERRO: O módulo request.js não carregou a função 'abrirModalSolicitacao'.");
-        alert("Erro interno: Tente recarregar a página.");
+export function abrirModalContratacao(providerId, providerName) {
+    // 1. Busca os dados completos do prestador no cache
+    const prestador = cachePrestadores.find(p => p.id === providerId);
+    
+    if (!prestador) {
+        return alert("Erro: Dados do prestador não encontrados. Atualize a página.");
     }
+
+    // 2. Decisão: Tem muitos serviços?
+    if (prestador.services && prestador.services.length > 1) {
+        // -> Abre Vitrine do Prestador (Lista Completa)
+        abrirPerfilPublico(prestador);
+    } else {
+        // -> Vai direto para o Pedido (Comportamento Antigo)
+        const servico = prestador.services[0];
+        if (window.abrirModalSolicitacao) {
+            window.abrirModalSolicitacao(providerId, providerName, servico.price); // Sem categoria por enquanto, simplificado
+        }
+    }
+}
+
+function abrirPerfilPublico(prestador) {
+    const modal = document.getElementById('provider-profile-modal');
+    if(!modal) return;
+
+    // Popula Dados
+    document.getElementById('public-profile-photo').src = prestador.foto_perfil || "https://ui-avatars.com/api/?name=User";
+    document.getElementById('public-profile-name').innerText = prestador.nome_profissional;
+    // document.getElementById('public-profile-rating').innerText = "5.0"; // Futuro: Item 9.1
+
+    // Popula Lista de Serviços
+    const listaContainer = document.getElementById('public-services-list');
+    listaContainer.innerHTML = "";
+
+    prestador.services.forEach(svc => {
+        // Cada serviço tem seu próprio botão de contratar
+        const clickAction = `window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional}', ${svc.price}); window.fecharPerfilPublico();`;
+        
+        listaContainer.innerHTML += `
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
+                <div>
+                    <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
+                    <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
+                </div>
+                <button onclick="${clickAction}" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
+                    R$ ${svc.price}
+                </button>
+            </div>
+        `;
+    });
+
+    modal.classList.remove('hidden');
 }
