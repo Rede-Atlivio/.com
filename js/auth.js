@@ -1,22 +1,24 @@
 import { auth, db } from './app.js';
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, collection, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, onSnapshot, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const storage = getStorage();
 
-// --- CONSTANTES ---
+// --- CONSTANTES & ESTADO ---
 const TAXA_PLATAFORMA = 0.10; // 10%
 const CATEGORIAS_SERVICOS = ['Limpeza', 'Obras', 'Técnica', 'Frete', 'Beleza', 'Aulas', 'Outros'];
 let userProfile = null;
 let radarUnsubscribe = null;
 
 // ============================================================================
-// 1. SISTEMA DE LOGIN E PERFIL (CORRIGIDO)
+// 1. SISTEMA DE LOGIN (BLINDADO)
 // ============================================================================
 
 window.loginGoogle = async function() {
+    // CRÍTICO: Criamos o provider aqui para evitar erro de importação
     const provider = new GoogleAuthProvider();
+    
     try {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
@@ -25,17 +27,19 @@ window.loginGoogle = async function() {
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
+            // Novo usuário
             await setDoc(userRef, {
                 uid: user.uid,
                 email: user.email,
                 name: user.displayName,
                 photoURL: user.photoURL,
-                role: 'pending',
+                role: 'pending', // pending, cliente, prestador
                 created_at: serverTimestamp(),
                 wallet_balance: 0.00
             });
             mostrarSelecaoPerfil();
         } else {
+            // Usuário existente
             const userData = userSnap.data();
             if (!userData.role || userData.role === 'pending') {
                 mostrarSelecaoPerfil();
@@ -44,8 +48,8 @@ window.loginGoogle = async function() {
             }
         }
     } catch (error) {
-        console.error("Erro Login:", error);
-        alert("Erro ao entrar: " + error.message);
+        console.error("Erro Crítico no Login:", error);
+        alert("Erro ao conectar com Google: " + error.message);
     }
 };
 
@@ -54,13 +58,17 @@ window.logout = function() {
     signOut(auth).then(() => window.location.reload());
 };
 
+// ============================================================================
+// 2. GESTÃO DE PERFIL E INICIALIZAÇÃO
+// ============================================================================
+
 window.definirPerfil = async function(perfil) {
     const user = auth.currentUser;
     if (!user) return;
     try {
         await updateDoc(doc(db, "users", user.uid), { role: perfil });
         window.location.reload();
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); alert("Erro ao salvar perfil."); }
 };
 
 window.alternarPerfil = async function() {
@@ -80,42 +88,57 @@ window.alternarPerfil = async function() {
     }
 };
 
-// Monitoramento de Auth
+// MONITOR DE ESTADO (OBSERVER)
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        const userSnap = await getDoc(doc(db, "users", user.uid));
-        if (userSnap.exists()) {
-            userProfile = userSnap.data();
-            if (userProfile.role && userProfile.role !== 'pending') {
-                iniciarAppLogado(userProfile);
+        try {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if (userSnap.exists()) {
+                userProfile = userSnap.data();
+                if (userProfile.role && userProfile.role !== 'pending') {
+                    iniciarAppLogado(userProfile);
+                } else {
+                    mostrarSelecaoPerfil();
+                }
             } else {
+                // Logado no Auth mas sem doc no Firestore (Erro raro de sincronia)
                 mostrarSelecaoPerfil();
             }
-        } else {
-            mostrarSelecaoPerfil();
+        } catch (err) {
+            console.error("Erro ao buscar perfil:", err);
         }
     } else {
         mostrarLogin();
     }
 });
 
-// --- FUNÇÕES DE UI ---
+// --- FUNÇÕES VISUAIS DE ESTADO ---
 function mostrarLogin() {
-    document.getElementById('auth-container').classList.remove('hidden');
-    document.getElementById('role-selection').classList.add('hidden');
-    document.getElementById('app-container').classList.add('hidden');
+    const authC = document.getElementById('auth-container');
+    const roleS = document.getElementById('role-selection');
+    const appC = document.getElementById('app-container');
+    if(authC) authC.classList.remove('hidden');
+    if(roleS) roleS.classList.add('hidden');
+    if(appC) appC.classList.add('hidden');
 }
 
 function mostrarSelecaoPerfil() {
-    document.getElementById('auth-container').classList.add('hidden');
-    document.getElementById('role-selection').classList.remove('hidden');
-    document.getElementById('app-container').classList.add('hidden');
+    const authC = document.getElementById('auth-container');
+    const roleS = document.getElementById('role-selection');
+    const appC = document.getElementById('app-container');
+    if(authC) authC.classList.add('hidden');
+    if(roleS) roleS.classList.remove('hidden');
+    if(appC) appC.classList.add('hidden');
 }
 
 function iniciarAppLogado(dados) {
-    document.getElementById('auth-container').classList.add('hidden');
-    document.getElementById('role-selection').classList.add('hidden');
-    document.getElementById('app-container').classList.remove('hidden');
+    const authC = document.getElementById('auth-container');
+    const roleS = document.getElementById('role-selection');
+    const appC = document.getElementById('app-container');
+    
+    if(authC) authC.classList.add('hidden');
+    if(roleS) roleS.classList.add('hidden');
+    if(appC) appC.classList.remove('hidden');
     
     // Atualiza Header
     const user = auth.currentUser;
@@ -142,7 +165,7 @@ function iniciarAppLogado(dados) {
         if(viewPrestador) viewPrestador.classList.remove('hidden');
         if(tabServicos) tabServicos.innerHTML = "Meu Painel 🛠️";
         
-        verificarStatusERadar(); // <--- RESTAURADO
+        verificarStatusERadar(); // Inicia o radar
     } else {
         if(viewPrestador) viewPrestador.classList.add('hidden');
         if(viewCliente) viewCliente.classList.remove('hidden');
@@ -153,15 +176,14 @@ function iniciarAppLogado(dados) {
 }
 
 // ============================================================================
-// 2. FUNCIONALIDADES DO PRESTADOR (RESTAURADAS)
+// 3. FUNCIONALIDADES DO PRESTADOR (RADAR & SERVIÇOS)
 // ============================================================================
 
-// A. Radar e Status
 async function verificarStatusERadar() {
     const user = auth.currentUser;
     if(!user) return;
 
-    // Listener no active_providers para ver se está online
+    // Listener para manter o botão de status sincronizado
     onSnapshot(doc(db, "active_providers", user.uid), (docSnap) => {
         const toggle = document.getElementById('online-toggle');
         const statusLabel = document.getElementById('status-label');
@@ -181,12 +203,11 @@ async function verificarStatusERadar() {
         }
     });
 
-    // Evento do Toggle
+    // Evento de clique no Toggle
     const toggle = document.getElementById('online-toggle');
     if(toggle) {
         toggle.onchange = async function() {
             if(this.checked) {
-                // Tenta ficar online (abre config se não tiver serviços)
                 const docSnap = await getDoc(doc(db, "active_providers", user.uid));
                 if(docSnap.exists() && docSnap.data().services && docSnap.data().services.length > 0) {
                     await updateDoc(doc(db, "active_providers", user.uid), { is_online: true, last_active: serverTimestamp() });
@@ -196,7 +217,6 @@ async function verificarStatusERadar() {
                     window.abrirConfiguracaoServicos();
                 }
             } else {
-                // Fica offline
                 await updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
             }
         };
@@ -208,7 +228,6 @@ function iniciarRadarPrestador() {
     const radarContainer = document.getElementById('pview-radar');
     if(!radarContainer) return;
 
-    // Escuta pedidos PENDENTES para este prestador
     const q = query(
         collection(db, "orders"),
         where("provider_id", "==", user.uid),
@@ -221,7 +240,7 @@ function iniciarRadarPrestador() {
                 <div class="animate-pulse">
                     <div class="text-6xl mb-2">📡</div>
                     <p class="text-xs font-bold text-blue-900">Radar Ativo</p>
-                    <p class="text-[10px] text-gray-400">Procurando clientes na região...</p>
+                    <p class="text-[10px] text-gray-400">Aguardando novos pedidos...</p>
                 </div>`;
         } else {
             radarContainer.innerHTML = "";
@@ -251,7 +270,7 @@ function iniciarRadarPrestador() {
                         </div>
                     </div>
                 `;
-                // Toca som se for novo
+                // Tenta tocar som
                 const audio = document.getElementById('notification-sound');
                 if(audio) audio.play().catch(e => {});
             });
@@ -266,12 +285,11 @@ function renderizarRadarOffline() {
             <div class="opacity-50">
                 <div class="text-6xl mb-2 grayscale">💤</div>
                 <p class="text-xs font-bold text-gray-400">Você está Offline</p>
-                <p class="text-[10px] text-gray-400">Ative o botão acima para receber pedidos.</p>
+                <p class="text-[10px] text-gray-400">Toque no botão acima para ficar visível.</p>
             </div>`;
     }
 }
 
-// B. Ações do Prestador
 window.responderPedido = async function(orderId, action) {
     const btn = event.target;
     const originalText = btn.innerText;
@@ -281,7 +299,6 @@ window.responderPedido = async function(orderId, action) {
     try {
         if(action === 'accepted') {
             await updateDoc(doc(db, "orders", orderId), { status: "accepted", updated_at: serverTimestamp() });
-            // Redireciona para o chat ou aba de ativos
             window.switchProviderSubTab('ativos');
         } else {
             await updateDoc(doc(db, "orders", orderId), { status: "rejected", updated_at: serverTimestamp() });
@@ -293,7 +310,10 @@ window.responderPedido = async function(orderId, action) {
     }
 };
 
-// C. Configuração de Serviços e Uploads
+// ============================================================================
+// 4. CONFIGURAÇÃO DE SERVIÇOS (MODAL)
+// ============================================================================
+
 window.abrirConfiguracaoServicos = async function() {
     const modal = document.getElementById('provider-setup-modal');
     const content = document.getElementById('provider-setup-content');
@@ -304,17 +324,15 @@ window.abrirConfiguracaoServicos = async function() {
     modal.classList.remove('hidden');
     content.innerHTML = '<div class="loader mx-auto"></div>';
 
-    // Busca dados atuais
     const docRef = doc(db, "active_providers", user.uid);
     const docSnap = await getDoc(docRef);
     let dados = docSnap.exists() ? docSnap.data() : { services: [], bio: "", banner_url: "" };
     
-    // Renderiza Form
+    // Constrói HTML do Modal
     let html = `
-        <h3 class="font-black text-blue-900 uppercase italic mb-4 text-center">Meu Perfil Profissional</h3>
+        <h3 class="font-black text-blue-900 uppercase italic mb-4 text-center">Perfil Profissional</h3>
         
         <div class="mb-4 text-center">
-            <p class="text-[9px] font-bold text-gray-400 uppercase mb-2">Foto do Perfil</p>
             <img src="${user.photoURL}" class="w-16 h-16 rounded-full mx-auto mb-2 border-2 border-blue-100">
             <button onclick="document.getElementById('profile-upload').click()" class="text-[10px] text-blue-600 font-bold underline">Alterar Foto</button>
         </div>
@@ -326,8 +344,8 @@ window.abrirConfiguracaoServicos = async function() {
         </div>
 
         <div class="mb-4">
-            <label class="text-[9px] font-bold text-gray-500 uppercase">Bio / Apresentação</label>
-            <textarea id="setup-bio" class="w-full border p-2 rounded-lg text-xs" rows="2" placeholder="Ex: Especialista em...">${dados.bio || ''}</textarea>
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Bio</label>
+            <textarea id="setup-bio" class="w-full border p-2 rounded-lg text-xs" rows="2" placeholder="Descreva sua experiência...">${dados.bio || ''}</textarea>
         </div>
 
         <div class="border-t border-gray-100 pt-4 mb-4">
@@ -339,7 +357,7 @@ window.abrirConfiguracaoServicos = async function() {
                     ${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}
                 </select>
                 <input type="number" id="new-svc-price" placeholder="Preço Base (R$)" class="w-full mb-2 p-1 text-xs rounded border">
-                <button onclick="window.addServiceLocal()" class="w-full bg-blue-100 text-blue-700 font-bold py-1 rounded text-xs hover:bg-blue-200">+ Adicionar Serviço</button>
+                <button onclick="window.addServiceLocal()" class="w-full bg-blue-100 text-blue-700 font-bold py-1 rounded text-xs hover:bg-blue-200">+ Adicionar</button>
             </div>
         </div>
 
@@ -347,10 +365,8 @@ window.abrirConfiguracaoServicos = async function() {
     `;
 
     content.innerHTML = html;
-
-    // Renderiza lista de serviços atuais
     window.tempServices = dados.services || [];
-    renderizarServicosLocais();
+    window.renderizarServicosLocais();
 };
 
 window.renderizarServicosLocais = function() {
@@ -371,16 +387,16 @@ window.renderizarServicosLocais = function() {
 window.addServiceLocal = function() {
     const cat = document.getElementById('new-svc-cat').value;
     const price = document.getElementById('new-svc-price').value;
-    if(!price) return alert("Digite o preço base.");
+    if(!price) return alert("Digite o preço.");
     
     window.tempServices.push({ category: cat, price: parseFloat(price) });
     document.getElementById('new-svc-price').value = "";
-    renderizarServicosLocais();
+    window.renderizarServicosLocais();
 };
 
 window.removerServico = function(index) {
     window.tempServices.splice(index, 1);
-    renderizarServicosLocais();
+    window.renderizarServicosLocais();
 };
 
 window.saveServicesAndGoOnline = async function() {
@@ -388,7 +404,7 @@ window.saveServicesAndGoOnline = async function() {
     const bio = document.getElementById('setup-bio').value;
     const btn = event.target;
     
-    if(window.tempServices.length === 0) return alert("Adicione pelo menos um serviço.");
+    if(window.tempServices.length === 0) return alert("Adicione ao menos um serviço.");
     
     btn.innerText = "Salvando...";
     
@@ -401,13 +417,12 @@ window.saveServicesAndGoOnline = async function() {
             services: window.tempServices,
             is_online: true,
             last_active: serverTimestamp(),
-            visibility_score: 100 // Score inicial
-        }, { merge: true }); // Merge para não perder o banner se já existir
+            visibility_score: 100
+        }, { merge: true });
 
         document.getElementById('provider-setup-modal').classList.add('hidden');
-        alert("✅ Perfil atualizado! Você está online.");
+        alert("✅ Perfil atualizado e Online!");
         
-        // Força atualização da UI
         const toggle = document.getElementById('online-toggle');
         if(toggle) toggle.checked = true;
         
@@ -432,15 +447,13 @@ window.uploadBanner = async function(input) {
         
         await setDoc(doc(db, "active_providers", user.uid), { banner_url: url }, { merge: true });
         
-        // Atualiza preview
-        const img = input.nextElementSibling; // A imagem está logo depois do input no HTML gerado
+        // Atualiza visualmente na hora
+        const img = input.nextElementSibling;
         if(img && img.tagName === 'IMG') {
             img.src = url;
         } else {
-            // Se não tinha imagem antes, insere
             input.insertAdjacentHTML('afterend', `<img src="${url}" class="w-full h-20 object-cover mt-2 rounded-lg">`);
         }
-        
     } catch (e) {
         console.error(e);
         alert("Erro no upload do banner.");
@@ -455,26 +468,19 @@ window.uploadFotoPerfil = async function(input) {
     const storageRef = ref(storage, `profiles/${user.uid}_${Date.now()}`);
 
     try {
-        // Overlay de loading
         document.getElementById('upload-overlay').classList.remove('hidden');
-
         const snapshot = await uploadBytes(storageRef, file);
         const url = await getDownloadURL(snapshot.ref);
 
-        // Atualiza Auth profile
-        // Nota: updateProfile requer importação de firebase-auth, mas vamos focar no Firestore
-        // Para simplificar, atualizamos o doc do user e recarregamos
-        
         await updateDoc(doc(db, "users", user.uid), { photoURL: url });
         
-        // Se for prestador, atualiza na collection pública também
+        // Se já tiver perfil de prestador, atualiza lá também
         const provDoc = await getDoc(doc(db, "active_providers", user.uid));
         if(provDoc.exists()) {
             await updateDoc(doc(db, "active_providers", user.uid), { foto_perfil: url });
         }
 
         window.location.reload();
-
     } catch (e) {
         console.error(e);
         alert("Erro no upload.");
