@@ -13,35 +13,23 @@ const firebaseConfig = {
   appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 };
 
-// Inicialização
+// 1. Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// ============================================================================
-// 🚨 O PULO DO GATO (MANTÉM TUDO FUNCIONANDO)
-// ============================================================================
-
-// 1. Para os ARQUIVOS NOVOS (Modules) importarem sem erro
-export { app, auth, db, storage, provider };
-
-// 2. Para o CONSOLE, AUDITOR e SCRIPTS ANTIGOS (Não removemos nada!)
+// 2. EXPOSIÇÃO GLOBAL (Essencial para o Console e Scripts antigos)
 window.app = app;
 window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
 
-// ============================================================================
-// 👇 CARREGAMENTO DOS MÓDULOS
-// ============================================================================
+// 3. EXPORTAÇÃO (Para os Módulos Modernos - auth.js, jobs.js, etc)
+export { app, auth, db, storage, provider };
 
-import './auth.js';                 // Login e Perfil
-import './modules/services.js';     // Serviços
-import './modules/jobs.js';         // Vagas e Candidaturas
-import './modules/opportunities.js';// Oportunidades (Onde tudo começou)
-import './modules/chat.js';         // Chat
-
-console.log("✅ Sistema Atlivio Carregado: Híbrido (Module + Global).");
+console.log("🔥 Firebase (app.js) Iniciado com Sucesso!");
+// REMOVIDO: Imports automáticos para evitar Dependência Circular.
+// O index.html cuidará de carregar os módulos.
