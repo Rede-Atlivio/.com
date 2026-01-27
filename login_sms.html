@@ -3,51 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste Login SMS</title>
+    <title>Login SMS Fácil</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="max-w-md w-full bg-gray-800 p-6 rounded-xl shadow-2xl text-center">
-        <h1 class="text-xl font-bold text-green-400 mb-2">📱 TESTE DE LOGIN SMS</h1>
-        <p class="text-gray-400 text-[10px] mb-6">Autenticação Nativa (Anti-bloqueio Android)</p>
+        <h1 class="text-xl font-bold text-green-400 mb-2">📱 ACESSO RÁPIDO</h1>
+        <p class="text-gray-400 text-[10px] mb-6">Digite seu número para entrar</p>
 
         <div id="step-phone" class="space-y-4">
-            <label class="block text-left text-xs font-bold text-gray-500">SEU WHATSAPP / TELEFONE</label>
-            <input type="tel" id="phone-number" placeholder="+55 75 99999-9999" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white text-lg focus:border-green-500 outline-none">
-            <p class="text-[10px] text-gray-500 text-left">Digite com o código do país (+55) e DDD.</p>
+            <label class="block text-left text-xs font-bold text-gray-500">SEU CELULAR</label>
+            
+            <div class="relative">
+                <span class="absolute left-3 top-3.5 text-gray-400 text-lg">🇧🇷 +55</span>
+                <input type="tel" id="phone-number" 
+                       placeholder="(75) 99999-0000" 
+                       maxlength="15"
+                       oninput="mascaraTelefone(this)"
+                       class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 pl-20 text-white text-lg focus:border-green-500 outline-none">
+            </div>
             
             <button onclick="enviarSMS()" id="btn-send" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg transition">
-                RECEBER CÓDIGO
+                RECEBER CÓDIGO VIA SMS
             </button>
+            <p class="text-[10px] text-gray-500 mt-2">Você receberá um código de 6 dígitos.</p>
         </div>
 
-        <div id="step-code" class="hidden space-y-4">
+        <div id="step-code" class="hidden space-y-4 animate-pulse">
             <div class="bg-blue-900/30 p-3 rounded border border-blue-500/30 mb-4">
-                <p class="text-xs text-blue-200">SMS enviado! Verifique suas mensagens.</p>
+                <p class="text-xs text-blue-200">Enviamos um SMS para <span id="lbl-phone" class="font-bold text-white">...</span></p>
+                <p class="text-[10px] text-gray-400 mt-1">Se for número de teste, use o código cadastrado.</p>
             </div>
             
             <label class="block text-left text-xs font-bold text-gray-500">CÓDIGO DE 6 DÍGITOS</label>
-            <input type="number" id="sms-code" placeholder="123456" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white text-lg tracking-widest text-center focus:border-blue-500 outline-none">
+            <input type="tel" id="sms-code" placeholder="000000" maxlength="6" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-3 text-white text-2xl tracking-[0.5em] text-center focus:border-blue-500 outline-none">
             
             <button onclick="verificarCodigo()" id="btn-verify" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg shadow-lg transition">
-                CONFIRMAR E ENTRAR
+                ENTRAR AGORA 🚀
             </button>
             
-            <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2">Tentar outro número</button>
+            <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2">Número errado? Corrigir.</button>
         </div>
 
         <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
-
-        <div id="status-log" class="mt-6 text-[10px] font-mono text-left bg-black p-2 rounded h-24 overflow-y-auto text-green-400 border border-gray-700">
-            > Aguardando número...
-        </div>
+        <div id="status-log" class="hidden mt-4 text-[10px] text-red-400 bg-black/50 p-2 rounded"></div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+        // CONFIGURAÇÃO
         const firebaseConfig = { 
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
             authDomain: "atlivio-oficial-a1a29.firebaseapp.com", 
@@ -59,108 +66,94 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        
-        // Define idioma para PT-BR (para o SMS e Captcha virem em português)
         auth.languageCode = 'pt-br';
 
-        const log = (msg) => {
-            const el = document.getElementById('status-log');
-            el.innerHTML += `<br>> ${msg}`;
-            el.scrollTop = el.scrollHeight;
-            console.log(msg);
-        }
+        // 🎨 MÁSCARA AUTOMÁTICA (VISUAL)
+        window.mascaraTelefone = (input) => {
+            let v = input.value.replace(/\D/g,''); // Remove tudo que não é dígito
+            v = v.substring(0, 11); // Limita a 11 dígitos
+            
+            // Formata: (XX) XXXXX-XXXX
+            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
+            
+            input.value = v;
+        };
 
-        // 1. Configurar ReCaptcha Invisível
+        // SETUP RECAPTCHA
         window.setupRecaptcha = () => {
             if(!window.recaptchaVerifier) {
-                log("Configurando ReCaptcha...");
                 window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    'size': 'invisible', // Ou 'normal' se quiser que apareça o check
-                    'callback': (response) => {
-                        log("ReCaptcha Resolvido!");
-                        // onSignInSubmit(); // Pode chamar o envio direto se quiser
-                    },
-                    'expired-callback': () => {
-                        log("ReCaptcha expirou. Tente novamente.");
-                    }
+                    'size': 'invisible'
                 });
             }
         };
 
-        // 2. Enviar SMS
+        // ENVIAR
         window.enviarSMS = async () => {
-            const phoneNumber = document.getElementById('phone-number').value;
-            if(!phoneNumber || phoneNumber.length < 10) return alert("Digite um número válido com DDD.");
+            let rawPhone = document.getElementById('phone-number').value;
+            let cleanPhone = rawPhone.replace(/\D/g, ''); // Só números
+
+            if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 759...)");
+
+            // 🔥 AQUI É O SEGREDO: Adiciona o +55 automaticamente
+            const finalPhone = '+55' + cleanPhone;
 
             const btn = document.getElementById('btn-send');
             btn.disabled = true;
-            btn.innerText = "Enviando...";
+            btn.innerText = "Aguarde...";
 
             setupRecaptcha();
             const appVerifier = window.recaptchaVerifier;
 
-            log(`Enviando SMS para ${phoneNumber}...`);
-
             try {
-                const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-                
-                // Sucesso!
+                const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
                 window.confirmationResult = confirmationResult;
-                log("✅ SMS Enviado com sucesso!");
                 
-                // Troca de Tela
+                document.getElementById('lbl-phone').innerText = finalPhone;
                 document.getElementById('step-phone').classList.add('hidden');
                 document.getElementById('step-code').classList.remove('hidden');
+                document.getElementById('step-code').classList.remove('animate-pulse');
 
             } catch (error) {
-                log("❌ ERRO AO ENVIAR:");
-                log(error.message);
                 console.error(error);
-                
-                // Reseta captcha em caso de erro
                 if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
                 window.recaptchaVerifier = null;
-                
                 btn.disabled = false;
-                btn.innerText = "RECEBER CÓDIGO";
-                alert("Erro: " + error.message);
+                btn.innerText = "RECEBER CÓDIGO VIA SMS";
+                
+                const logEl = document.getElementById('status-log');
+                logEl.classList.remove('hidden');
+                logEl.innerText = "Erro: " + error.message;
+
+                if(error.code === 'auth/invalid-phone-number') alert("Número inválido. Verifique o DDD.");
+                else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Espere um pouco.");
+                else alert("Não foi possível enviar o SMS. Tente novamente.");
             }
         };
 
-        // 3. Verificar Código
+        // VERIFICAR
         window.verificarCodigo = async () => {
             const code = document.getElementById('sms-code').value;
-            if(!code) return alert("Digite o código.");
+            if(code.length < 6) return alert("O código deve ter 6 números.");
 
             const btn = document.getElementById('btn-verify');
             btn.disabled = true;
             btn.innerText = "Validando...";
 
-            log("Validando código...");
-
             try {
                 const result = await window.confirmationResult.confirm(code);
-                const user = result.user;
-                log("🎉 LOGIN SUCESSO!");
-                log("UID: " + user.uid);
-                log("Phone: " + user.phoneNumber);
-                alert(`BEM-VINDO!\nLogin realizado com sucesso.\nID: ${user.uid}`);
-                
-                btn.innerText = "✅ LOGADO";
-                btn.classList.remove('bg-blue-600');
+                alert(`✅ SUCESSO!\n\nUsuário Logado:\n${result.user.uid}`);
+                btn.innerText = "BEM-VINDO!";
                 btn.classList.add('bg-green-600');
-
             } catch (error) {
-                log("❌ CÓDIGO INVÁLIDO");
                 btn.disabled = false;
-                btn.innerText = "CONFIRMAR E ENTRAR";
-                alert("Código errado ou expirado.");
+                btn.innerText = "ENTRAR AGORA 🚀";
+                alert("Código incorreto. Tente novamente.");
             }
         };
         
-        // Inicializa Captcha ao carregar
         setupRecaptcha();
-
     </script>
 </body>
 </html>
