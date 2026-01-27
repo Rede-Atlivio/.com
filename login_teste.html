@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Login Mobile Blindado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="max-w-md w-full bg-gray-800 p-6 rounded-xl shadow-2xl text-center">
+        <h1 class="text-2xl font-bold text-blue-400 mb-2">🧪 TESTE DE LOGIN</h1>
+        <p class="text-gray-400 text-xs mb-6">Modo: Redirect + Select Account</p>
+
+        <div id="status-box" class="bg-black p-4 rounded mb-4 text-left font-mono text-xs text-green-400 h-32 overflow-y-auto border border-gray-700">
+            > Aguardando ação...<br>
+        </div>
+
+        <button onclick="tentarLogin()" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl mb-4 transition">
+            🔐 ENTRAR COM GOOGLE
+        </button>
+        
+        <button onclick="limparCache()" class="w-full bg-gray-700 text-gray-300 font-bold py-2 rounded-xl text-xs">
+            🗑️ Limpar Cache/Logout
+        </button>
+    </div>
+
+    <script type="module">
+        // Importando direto do CDN para garantir versão limpa
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+        // SUA CONFIGURAÇÃO
+        const firebaseConfig = { 
+            apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
+            authDomain: "atlivio-oficial-a1a29.firebaseapp.com", 
+            projectId: "atlivio-oficial-a1a29", 
+            storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", 
+            messagingSenderId: "887430049204", 
+            appId: "1:887430049204:web:d205864a4b42d6799dd6e1" 
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+        
+        // 🔥 A CURA DO ANDROID: Força seleção de conta
+        provider.setCustomParameters({
+            prompt: 'select_account'
+        });
+
+        const log = (msg) => {
+            const box = document.getElementById('status-box');
+            box.innerHTML += `> ${msg}<br>`;
+            box.scrollTop = box.scrollHeight;
+            console.log(msg);
+        };
+
+        // 1. Verifica retorno do Redirect ao carregar a página
+        log("🔄 Verificando retorno de login...");
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result) {
+                    log("✅ SUCESSO TOTAL!");
+                    log("Usuário: " + result.user.email);
+                    document.getElementById('btn-login').innerText = "✅ LOGADO COM SUCESSO";
+                    document.getElementById('btn-login').classList.add('bg-green-600');
+                    alert("FUNCIONOU! O celular aceitou o Redirect.");
+                } else {
+                    log("ℹ️ Nenhum retorno de redirect detectado.");
+                    if(auth.currentUser) log("👤 Já logado: " + auth.currentUser.email);
+                }
+            })
+            .catch((error) => {
+                log("❌ ERRO NO RETORNO:");
+                log(error.code);
+                log(error.message);
+                alert("ERRO: " + error.message);
+            });
+
+        // 2. Função de Login
+        window.tentarLogin = () => {
+            log("🚀 Iniciando Redirect...");
+            signInWithRedirect(auth, provider);
+        };
+
+        window.limparCache = () => {
+            signOut(auth).then(() => {
+                log("🗑️ Deslogado.");
+                location.reload();
+            });
+        };
+    </script>
+</body>
+</html>
