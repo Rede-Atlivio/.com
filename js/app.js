@@ -13,23 +13,30 @@ const firebaseConfig = {
   appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 };
 
-// 1. Inicialização
+// Inicialização
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
-// 2. EXPOSIÇÃO GLOBAL (Essencial para o Console e Scripts antigos)
-window.app = app;
+// EXPOSIÇÃO GLOBAL (Obrigatório para os scripts de teste e console funcionarem)
 window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
 
-// 3. EXPORTAÇÃO (Para os Módulos Modernos - auth.js, jobs.js, etc)
 export { app, auth, db, storage, provider };
 
-console.log("🔥 Firebase (app.js) Iniciado com Sucesso!");
-// REMOVIDO: Imports automáticos para evitar Dependência Circular.
-// O index.html cuidará de carregar os módulos.
+// ============================================================================
+// 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// Aqui conectamos todas as funcionalidades novas que criamos
+// ============================================================================
+
+import './auth.js';                  // Gerencia Login, Perfil e Saldo Financeiro
+import './modules/services.js';      // Lista de Prestadores e Serviços
+import './modules/jobs.js';          // Vagas de Emprego
+import './modules/opportunities.js'; // Robô de Ofertas e Afiliados
+import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (Token)
+
+console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
