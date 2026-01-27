@@ -287,12 +287,44 @@
         </div>
     </div>
 
-    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl">
-            <div class="bg-blue-900 h-20 relative"><button onclick="document.getElementById('provider-profile-modal').classList.add('hidden')" class="absolute top-4 right-4 text-white/50 hover:text-white text-xl font-bold">&times;</button></div>
-            <div class="px-6 pb-6 text-center -mt-10"><img id="public-profile-photo" src="" class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md bg-gray-200"><h3 id="public-profile-name" class="font-black text-lg text-gray-800 uppercase mt-2">Nome do Prestador</h3><div class="flex justify-center items-center gap-1 text-yellow-500 text-sm mb-4"><span>★</span> <span id="public-profile-rating" class="font-bold text-gray-600">5.0</span></div><div class="text-left"><h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b pb-1">Serviços Oferecidos</h4><div id="public-services-list" class="space-y-2 max-h-60 overflow-y-auto"><div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center"><div><span class="block font-bold text-xs text-blue-900">CARREGANDO...</span></div></div></div></div></div>
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm">
+    
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative">
+        
+        <div class="bg-gradient-to-r from-blue-900 to-blue-800 h-24 rounded-t-2xl relative">
+            <button onclick="document.getElementById('provider-profile-modal').classList.add('hidden')" class="absolute top-4 right-4 text-white/70 hover:text-white text-2xl font-bold transition">
+                &times;
+            </button>
+        </div>
+
+        <div class="px-6 pb-6 text-center relative">
+            
+            <div class="-mt-12 mb-3 relative z-10 inline-block">
+                <img id="public-profile-photo" src="" class="w-24 h-24 rounded-full border-[5px] border-white mx-auto shadow-lg bg-gray-200 object-cover">
+                <div class="absolute bottom-1 right-1 bg-green-500 border-2 border-white w-5 h-5 rounded-full flex items-center justify-center text-[8px] text-white">✓</div>
+            </div>
+
+            <h3 id="public-profile-name" class="font-black text-xl text-gray-800 uppercase leading-tight">Nome do Prestador</h3>
+            
+            <div class="flex justify-center items-center gap-1 text-yellow-500 text-sm mb-6 mt-1 bg-yellow-50 inline-block px-3 py-1 rounded-full border border-yellow-100">
+                <span>⭐</span> <span id="public-profile-rating" class="font-bold text-gray-700">5.0</span>
+            </div>
+
+            <div class="text-left">
+                <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3 border-b pb-1 flex justify-between">
+                    <span>Serviços Disponíveis</span>
+                    <span class="text-blue-600">Escolha um 👇</span>
+                </h4>
+                
+                <div id="public-services-list" class="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 text-center opacity-50">
+                        <span class="text-xs font-bold">Carregando...</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+</div>
 
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
