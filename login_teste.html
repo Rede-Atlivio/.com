@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste de Login Mobile Blindado</title>
+    <title>Teste Mobile + Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="max-w-md w-full bg-gray-800 p-6 rounded-xl shadow-2xl text-center">
-        <h1 class="text-2xl font-bold text-blue-400 mb-2">🧪 TESTE DE LOGIN</h1>
-        <p class="text-gray-400 text-xs mb-6">Modo: Redirect + Select Account</p>
+        <h1 class="text-2xl font-bold text-blue-400 mb-2">🧪 TESTE FINAL</h1>
+        <p class="text-gray-400 text-xs mb-6">Redirect + Select Account + Eruda</p>
 
-        <div id="status-box" class="bg-black p-4 rounded mb-4 text-left font-mono text-xs text-green-400 h-32 overflow-y-auto border border-gray-700">
-            > Aguardando ação...<br>
+        <div id="status-box" class="bg-black p-4 rounded mb-4 text-left font-mono text-xs text-green-400 h-40 overflow-y-auto border border-gray-700">
+            > Sistema iniciado.<br>
+            > Aguardando...<br>
         </div>
 
         <button onclick="tentarLogin()" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl mb-4 transition">
@@ -23,10 +24,11 @@
         <button onclick="limparCache()" class="w-full bg-gray-700 text-gray-300 font-bold py-2 rounded-xl text-xs">
             🗑️ Limpar Cache/Logout
         </button>
+        
+        <p class="text-[10px] text-gray-500 mt-4">Toque na engrenagem ⚙️ que apareceu na tela para ver o console.</p>
     </div>
 
     <script type="module">
-        // Importando direto do CDN para garantir versão limpa
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -44,11 +46,12 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
         
-        // 🔥 A CURA DO ANDROID: Força seleção de conta
+        // 🔥 A CURA DO ANDROID
         provider.setCustomParameters({
             prompt: 'select_account'
         });
 
+        // Função para escrever na tela e no console ao mesmo tempo
         const log = (msg) => {
             const box = document.getElementById('status-box');
             box.innerHTML += `> ${msg}<br>`;
@@ -56,40 +59,53 @@
             console.log(msg);
         };
 
-        // 1. Verifica retorno do Redirect ao carregar a página
-        log("🔄 Verificando retorno de login...");
+        // 1. Verifica se voltou do Google com sucesso
+        log("🔄 Verificando RedirectResult...");
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    log("✅ SUCESSO TOTAL!");
-                    log("Usuário: " + result.user.email);
-                    document.getElementById('btn-login').innerText = "✅ LOGADO COM SUCESSO";
+                    log("✅ SUCESSO! LOGIN CONFIRMADO.");
+                    log("Email: " + result.user.email);
+                    log("Token: " + result.operationType);
+                    
+                    document.getElementById('btn-login').innerText = "✅ LOGADO!";
+                    document.getElementById('btn-login').classList.remove('bg-blue-600');
                     document.getElementById('btn-login').classList.add('bg-green-600');
-                    alert("FUNCIONOU! O celular aceitou o Redirect.");
+                    
+                    alert("FUNCIONOU! O celular aceitou o login.");
                 } else {
-                    log("ℹ️ Nenhum retorno de redirect detectado.");
-                    if(auth.currentUser) log("👤 Já logado: " + auth.currentUser.email);
+                    log("ℹ️ Nenhum retorno de login detectado.");
+                    if(auth.currentUser) {
+                        log("👤 Usuário já estava logado: " + auth.currentUser.email);
+                    }
                 }
             })
             .catch((error) => {
-                log("❌ ERRO NO RETORNO:");
-                log(error.code);
-                log(error.message);
+                log("❌ ERRO GRAVE NO RETORNO:");
+                log("Code: " + error.code);
+                log("Msg: " + error.message);
+                console.error(error);
                 alert("ERRO: " + error.message);
             });
 
         // 2. Função de Login
         window.tentarLogin = () => {
-            log("🚀 Iniciando Redirect...");
-            signInWithRedirect(auth, provider);
+            log("🚀 Iniciando Redirect com Select Account...");
+            signInWithRedirect(auth, provider)
+                .then(() => log("Redirect disparado..."))
+                .catch(e => log("Erro ao disparar: " + e.message));
         };
 
         window.limparCache = () => {
             signOut(auth).then(() => {
-                log("🗑️ Deslogado.");
+                log("🗑️ Deslogado. Recarregando...");
                 location.reload();
             });
         };
     </script>
+
+    <script src="//cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
+
 </body>
 </html>
