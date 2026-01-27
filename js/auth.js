@@ -11,7 +11,10 @@ const DEFAULT_TENANT = "atlivio_fsa_01";
 const TAXA_PLATAFORMA = 0.20; 
 const LIMITE_CREDITO_NEGATIVO = -60.00; 
 
+// --- EXPOSIÇÃO GLOBAL CRÍTICA ---
 export let userProfile = null;
+window.userProfile = null; // Correção para o request.js enxergar
+
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
@@ -49,6 +52,7 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
+        
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
@@ -61,9 +65,15 @@ onAuthStateChanged(auth, async (user) => {
                     await setDoc(userRef, userProfile);
                 } else {
                     userProfile = docSnap.data();
+                    
+                    // 🔥 CORREÇÃO: EXPOR GLOBALMENTE 🔥
+                    window.userProfile = userProfile; 
+                    
                     if (userProfile.wallet_balance === undefined) userProfile.wallet_balance = 0.00;
+                    
                     atualizarInterfaceUsuario(userProfile);
                     iniciarAppLogado(user);
+                    
                     if (userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
                         if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
@@ -72,6 +82,7 @@ onAuthStateChanged(auth, async (user) => {
             } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); }
         });
     } else {
+        window.userProfile = null;
         document.getElementById('auth-container').classList.remove('hidden');
         document.getElementById('role-selection').classList.add('hidden');
         document.getElementById('app-container').classList.add('hidden');
@@ -124,12 +135,10 @@ async function verificarStatusERadar(uid) {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const data = snap.data();
-            // Só liga o radar se estiver ONLINE e APROVADO
             const isOnline = data.is_online && data.status === 'aprovado';
             
             if(toggle) {
                 toggle.checked = isOnline;
-                // Se estiver em análise, desabilita o botão para ele não ligar na marra
                 if(data.status === 'em_analise') {
                     toggle.disabled = true;
                     document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
@@ -154,7 +163,6 @@ document.addEventListener('change', async (e) => {
         const uid = auth.currentUser?.uid;
         if(!uid) return;
         
-        // Verifica status antes de deixar ligar
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists() && snap.data().status === 'em_analise') {
             e.target.checked = false;
@@ -218,36 +226,26 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
 };
 
 // ============================================================================
-// 🎨 NOVA ÁREA DE CONFIGURAÇÃO DE PERFIL (VITRINE)
+// 🎨 ÁREA DE CONFIGURAÇÃO DE PERFIL (VITRINE) - RESTAURADA COM SEGURANÇA
 // ============================================================================
 
-// 1. UPLOAD DE BANNER
 window.uploadBanner = async (input) => {
     if (!input.files || input.files.length === 0) return;
     const file = input.files[0];
     const user = auth.currentUser;
-    
-    // Validação de tamanho (máx 200kb idealmente, aqui aviso se for grande)
     if(file.size > 500000) alert("⚠️ Imagem grande! Recomendado: menos de 500kb para carregar rápido.");
-
     const btn = document.getElementById('btn-upload-banner');
     const originalText = btn.innerText;
     btn.innerText = "Enviando...";
     btn.disabled = true;
-
     try {
         const storageRef = ref(storage, `banners/${user.uid}/capa_vitrine.jpg`);
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
-        
-        // Salva URL num campo hidden para usar depois
         document.getElementById('hidden-banner-url').value = downloadURL;
-        
-        // Preview
         document.getElementById('preview-banner').src = downloadURL;
         document.getElementById('preview-banner').classList.remove('hidden');
         document.getElementById('banner-placeholder').classList.add('hidden');
-        
         alert("✅ Banner carregado! Clique em 'SALVAR E ENVIAR' no final para confirmar.");
     } catch (error) {
         console.error(error);
@@ -258,24 +256,20 @@ window.uploadBanner = async (input) => {
     }
 };
 
-// 2. ABRIR CONFIGURAÇÃO (AGORA COM CAMPOS COMPLETOS)
 window.abrirConfiguracaoServicos = async () => {
     const modal = document.getElementById('provider-setup-modal');
     modal.classList.remove('hidden');
     
-    const content = document.getElementById('provider-setup-content'); // Certifique-se que seu HTML tem esse ID dentro do modal, ou injete no modal-content genérico
+    // Tenta encontrar o container específico ou usa o genérico
+    const content = document.getElementById('provider-setup-content');
+    const formContainer = content || modal.querySelector('div.bg-white') || modal.firstElementChild;
     
-    // Se não tiver o ID especifico, usa o modal todo (ajuste conforme seu HTML)
-    // Vou injetar um formulário completo
-    const formContainer = modal.querySelector('div.bg-white') || modal.firstElementChild;
-    
-    // Busca dados atuais
     let dados = {};
     try {
         const docSnap = await getDoc(doc(db, "active_providers", auth.currentUser.uid));
         if(docSnap.exists()) dados = docSnap.data();
     } catch(e){}
-
+    
     const bannerAtual = dados.banner_url || "";
     const bioAtual = dados.bio || "";
     const servicosAtuais = dados.services || [];
@@ -284,14 +278,12 @@ window.abrirConfiguracaoServicos = async () => {
         <div class="p-6 h-[80vh] overflow-y-auto">
             <h2 class="text-xl font-black text-blue-900 mb-1">🚀 Seu Perfil Profissional</h2>
             <p class="text-xs text-gray-500 mb-6">Capriche! Essa é sua loja dentro do app.</p>
-
             <div class="mb-6">
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">📸 Foto de Capa (Banner)</label>
                 <div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center group cursor-pointer" onclick="document.getElementById('banner-input').click()">
                     <img id="preview-banner" src="${bannerAtual}" class="${bannerAtual ? '' : 'hidden'} w-full h-full object-cover">
                     <div id="banner-placeholder" class="${bannerAtual ? 'hidden' : 'flex'} flex-col items-center">
-                        <span class="text-2xl">🖼️</span>
-                        <span class="text-[10px] text-gray-400">Toque para adicionar</span>
+                        <span class="text-2xl">🖼️</span><span class="text-[10px] text-gray-400">Toque para adicionar</span>
                     </div>
                     <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-bold">Trocar Imagem</div>
                 </div>
@@ -299,124 +291,75 @@ window.abrirConfiguracaoServicos = async () => {
                 <input type="hidden" id="hidden-banner-url" value="${bannerAtual}">
                 <p id="btn-upload-banner" class="text-[9px] text-center mt-1 text-gray-400">Recomendado: 1200x400px (Horizontal)</p>
             </div>
-
             <div class="mb-6 space-y-3">
-                <div>
-                    <label class="inp-label">Nome Profissional</label>
-                    <input type="text" id="setup-name" value="${dados.nome_profissional || auth.currentUser.displayName || ''}" class="inp-editor" placeholder="Ex: João Eletricista">
-                </div>
-                <div>
-                    <label class="inp-label">Bio (Quem é você?)</label>
-                    <textarea id="setup-bio" rows="3" class="inp-editor" placeholder="Ex: Especialista em elétrica residencial com 5 anos de experiência. Trabalho rápido e limpo.">${bioAtual}</textarea>
-                    <p class="text-[9px] text-right text-gray-400">Seja breve e passe confiança.</p>
-                </div>
+                <div><label class="inp-label">Nome Profissional</label><input type="text" id="setup-name" value="${dados.nome_profissional || auth.currentUser.displayName || ''}" class="inp-editor" placeholder="Ex: João Eletricista"></div>
+                <div><label class="inp-label">Bio (Quem é você?)</label><textarea id="setup-bio" rows="3" class="inp-editor" placeholder="Ex: Especialista em elétrica residencial com 5 anos de experiência. Trabalho rápido e limpo.">${bioAtual}</textarea></div>
             </div>
-
             <div class="mb-6">
                 <label class="block text-xs font-bold text-gray-700 uppercase mb-2">🛠️ Seus Serviços</label>
                 <div id="my-services-list" class="mb-3 space-y-2">
-                    ${servicosAtuais.map((s, i) => `
-                        <div class="bg-blue-50 p-3 rounded border border-blue-100 flex justify-between items-center">
-                            <div>
-                                <p class="font-bold text-xs text-blue-900">${s.category}</p>
-                                <p class="text-[10px] text-gray-500">R$ ${s.price}</p>
-                            </div>
-                            <button onclick="removerServico(${i})" class="text-red-500 font-bold px-2">x</button>
-                        </div>
-                    `).join('')}
+                    ${servicosAtuais.map((s, i) => `<div class="bg-blue-50 p-3 rounded border border-blue-100 flex justify-between items-center"><div><p class="font-bold text-xs text-blue-900">${s.category}</p><p class="text-[10px] text-gray-500">R$ ${s.price}</p></div><button onclick="removerServico(${i})" class="text-red-500 font-bold px-2">x</button></div>`).join('')}
                     ${servicosAtuais.length === 0 ? '<p class="text-xs text-gray-400 italic text-center py-2">Nenhum serviço adicionado.</p>' : ''}
                 </div>
-
                 <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
                     <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p>
                     <div class="grid grid-cols-2 gap-2 mb-2">
-                        <select id="new-service-category" class="inp-editor">
-                            <option value="" disabled selected>Categoria...</option>
-                            ${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}
-                        </select>
+                        <select id="new-service-category" class="inp-editor"><option value="" disabled selected>Categoria...</option>${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
                         <input type="number" id="new-service-price" placeholder="Preço (R$)" class="inp-editor">
                     </div>
                     <textarea id="new-service-desc" placeholder="Detalhes (Ex: Incluso material?)" class="inp-editor mb-2" rows="1"></textarea>
                     <button onclick="window.addServiceLocal()" class="w-full bg-slate-700 text-white py-2 rounded text-xs font-bold uppercase">Adicionar Serviço</button>
                 </div>
             </div>
-
             <div class="pt-4 border-t border-gray-100">
-                <button onclick="window.saveServicesAndGoOnline()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">
-                    💾 SALVAR E ENVIAR PARA APROVAÇÃO
-                </button>
+                <button onclick="window.saveServicesAndGoOnline()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">💾 SALVAR E ENVIAR</button>
                 <p class="text-[10px] text-center text-gray-400 mt-2">Seu perfil será analisado pela equipe Atlivio.</p>
             </div>
         </div>
     `;
 };
 
-// 3. ADICIONAR SERVIÇO (LOCALMENTE NA LISTA VISUAL)
 window.addServiceLocal = async () => {
     const cat = document.getElementById('new-service-category').value;
     const price = document.getElementById('new-service-price').value;
     const desc = document.getElementById('new-service-desc').value;
-
     if (!cat || !price) return alert("Preencha categoria e preço.");
-
-    // Salva direto no banco para simplificar (e recarrega a tela)
     const ref = doc(db, "active_providers", auth.currentUser.uid);
     const snap = await getDoc(ref);
     let svcs = snap.exists() ? snap.data().services || [] : [];
-    
     svcs.push({ category: cat, price: parseFloat(price), description: desc });
-    
-    // Se o documento não existe, cria com dados básicos
-    const dadosBase = snap.exists() ? {} : { 
-        uid: auth.currentUser.uid, 
-        created_at: serverTimestamp(),
-        is_online: false, // Começa offline
-        status: 'em_analise', // Começa em análise
-        visibility_score: 100
-    };
-
+    const dadosBase = snap.exists() ? {} : { uid: auth.currentUser.uid, created_at: serverTimestamp(), is_online: false, status: 'em_analise', visibility_score: 100 };
     await setDoc(ref, { ...dadosBase, services: svcs }, { merge: true });
-    window.abrirConfiguracaoServicos(); // Recarrega para mostrar na lista
+    window.abrirConfiguracaoServicos();
 };
 
-// 4. SALVAR TUDO E MUDAR STATUS (VERSÃO BLINDADA)
 window.saveServicesAndGoOnline = async () => {
     const nome = document.getElementById('setup-name').value;
     const bio = document.getElementById('setup-bio').value;
     const banner = document.getElementById('hidden-banner-url').value;
-
+    
     if(!nome) return alert("O nome profissional é obrigatório.");
     if(!bio) return alert("Escreva uma bio curta sobre você.");
-    if(!banner) {
-        if(!confirm("Tem certeza que quer enviar SEM foto de capa? Perfis com capa são aprovados mais rápido.")) return;
-    }
+    if(!banner) { if(!confirm("Tem certeza que quer enviar SEM foto de capa?")) return; }
 
     const btn = document.querySelector('button[onclick="window.saveServicesAndGoOnline()"]');
-    if(btn) {
-        btn.innerText = "ENVIANDO...";
-        btn.disabled = true;
-    }
+    if(btn) { btn.innerText = "ENVIANDO..."; btn.disabled = true; }
 
     try {
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
-            nome_profissional: nome, 
-            setup_profissional_ok: true 
-        });
-
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { nome_profissional: nome, setup_profissional_ok: true });
         const activeRef = doc(db, "active_providers", auth.currentUser.uid);
-        
-        await setDoc(activeRef, {
-            uid: auth.currentUser.uid,
-            nome_profissional: nome,
-            foto_perfil: userProfile.photoURL,
-            bio: bio,
-            banner_url: banner,
+        await setDoc(activeRef, { 
+            uid: auth.currentUser.uid, 
+            nome_profissional: nome, 
+            foto_perfil: userProfile.photoURL, 
+            bio: bio, 
+            banner_url: banner, 
             is_online: false, 
             status: 'em_analise', 
-            updated_at: serverTimestamp()
+            updated_at: serverTimestamp() 
         }, { merge: true });
 
-        alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise.\nAssim que aprovado, você poderá ficar online.");
+        alert("✅ PERFIL ENVIADO PARA ANÁLISE!");
         
         const modal = document.getElementById('provider-setup-modal');
         if(modal) modal.classList.add('hidden');
@@ -424,18 +367,12 @@ window.saveServicesAndGoOnline = async () => {
         const toggle = document.getElementById('online-toggle');
         const label = document.getElementById('status-label');
         
-        if(toggle) {
-            toggle.checked = false;
-            toggle.disabled = true;
-        }
+        if(toggle) { toggle.checked = false; toggle.disabled = true; }
         if(label) label.innerText = "🟡 EM ANÁLISE";
 
-    } catch(e) {
-        alert("Erro: " + e.message);
-        if(btn) {
-            btn.innerText = "SALVAR E ENVIAR";
-            btn.disabled = false;
-        }
+    } catch(e) { 
+        alert("Erro: " + e.message); 
+        if(btn) { btn.innerText = "SALVAR E ENVIAR"; btn.disabled = false; }
     }
 };
 
@@ -448,6 +385,25 @@ window.removerServico = async (i) => {
     window.abrirConfiguracaoServicos(); 
 };
 
-// Funções utilitárias
-window.uploadFotoPerfil = async (input) => { if (!input.files || input.files.length === 0) return; const file = input.files[0]; const user = auth.currentUser; if (!user) return; const overlay = document.getElementById('upload-overlay'); if(overlay) overlay.classList.remove('hidden'); try { const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); await uploadBytes(storageRef, file); const downloadURL = await getDownloadURL(storageRef); await updateProfile(user, { photoURL: downloadURL }); await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); const activeRef = doc(db, "active_providers", user.uid); getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); alert("✅ Foto atualizada!"); } catch (error) { console.error(error); alert("Erro no upload."); } finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } };
+window.uploadFotoPerfil = async (input) => { 
+    if (!input.files || input.files.length === 0) return; 
+    const file = input.files[0]; 
+    const user = auth.currentUser; 
+    if (!user) return; 
+    const overlay = document.getElementById('upload-overlay'); 
+    if(overlay) overlay.classList.remove('hidden'); 
+    try { 
+        const storageRef = ref(storage, `perfil/${user.uid}/foto_perfil.jpg`); 
+        await uploadBytes(storageRef, file); 
+        const downloadURL = await getDownloadURL(storageRef); 
+        await updateProfile(user, { photoURL: downloadURL }); 
+        await updateDoc(doc(db, "usuarios", user.uid), { photoURL: downloadURL }); 
+        const activeRef = doc(db, "active_providers", user.uid); 
+        getDoc(activeRef).then(snap => { if(snap.exists()) updateDoc(activeRef, { foto_perfil: downloadURL }); }); 
+        document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => img.src = downloadURL); 
+        alert("✅ Foto atualizada!"); 
+    } catch (error) { console.error(error); alert("Erro no upload."); } 
+    finally { if(overlay) overlay.classList.add('hidden'); input.value = ""; } 
+};
+
 function toggleDisplay(id, show) { const el = document.getElementById(id); if(el) show ? el.classList.remove('hidden') : el.classList.add('hidden'); }
