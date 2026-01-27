@@ -1,5 +1,6 @@
 import { auth, db, provider } from './app.js';
-import { signInWithPopup, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// ATUALIZAÇÃO ITEM 19: Adicionado signInWithRedirect e getRedirectResult, Removido signInWithPopup
+import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
@@ -21,9 +22,32 @@ const CATEGORIAS_SERVICOS = [
     "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "💅 Manicure/Pedicure", "💇 Cabeleireiro(a)", "Outros"
 ];
 
-// --- LOGIN / LOGOUT ---
-window.loginGoogle = () => signInWithPopup(auth, provider).catch(e => alert("Erro login: " + e.message));
+// --- LOGIN / LOGOUT (MODIFICADO PARA MOBILE - ITEM 19) ---
+// Usa Redirect ao invés de Popup para garantir compatibilidade mobile (WebView/Android)
+window.loginGoogle = () => {
+    console.log("🔄 Iniciando login via Redirect...");
+    signInWithRedirect(auth, provider);
+};
+
 window.logout = () => signOut(auth).then(() => location.reload());
+
+// --- CAPTURA O RETORNO DO LOGIN APÓS O REDIRECT ---
+getRedirectResult(auth)
+    .then((result) => {
+        if (result) {
+            console.log("✅ Login via Redirect concluído com sucesso:", result.user.email);
+            // O onAuthStateChanged vai assumir daqui
+        }
+    })
+    .catch((error) => {
+        console.error("❌ Erro no retorno do login:", error);
+        // Tratamento de erros comuns
+        if (error.code === 'auth/account-exists-with-different-credential') {
+            alert("Este e-mail já está associado a outra conta. Faça login pelo método original.");
+        } else if (error.code !== 'auth/popup-closed-by-user') { // Ignora se usuário fechou
+            alert("Falha no login: " + error.message);
+        }
+    });
 
 // --- GESTÃO DE PERFIL ---
 window.definirPerfil = async (tipo) => {
