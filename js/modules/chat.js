@@ -1,7 +1,6 @@
 import { db, auth } from '../app.js';
+import { processarCobrancaTaxa } from '../wallet.js'; // 👈 CONEXÃO COM O COBRADOR
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const TAXA_PLATAFORMA = 0.20; // 20%
 
 // --- GATILHOS E NAVEGAÇÃO ---
 const tabChat = document.getElementById('tab-chat');
@@ -11,16 +10,11 @@ if (tabChat) {
     });
 }
 
-// FUNÇÃO GLOBAL DE REDIRECIONAMENTO (Corrige o problema de não carregar)
+// FUNÇÃO GLOBAL DE REDIRECIONAMENTO
 window.irParaChat = () => {
-    // 1. Simula o clique visual na aba
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
-    
-    // 2. Força o carregamento dos dados
     carregarPedidosAtivos();
-    
-    // 3. Rola a página para o topo (boa prática)
     window.scrollTo(0,0);
 };
 
@@ -31,22 +25,19 @@ window.enviarMensagemChat = enviarMensagemChat;
 window.iniciarServico = iniciarServico;
 window.finalizarServicoComToken = finalizarServicoComToken;
 window.voltarParaListaPedidos = carregarPedidosAtivos;
-window.voltarAoInicio = () => location.reload(); // Maneira mais segura de voltar ao Dashboard limpo
+window.voltarAoInicio = () => location.reload();
 
 // ============================================================================
-// 1. LISTA DE PEDIDOS ATIVOS (COM BOTÃO VOLTAR)
+// 1. LISTA DE PEDIDOS ATIVOS
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('app-container');
     if (!container || !auth.currentUser) return;
 
-    // Layout Melhorado com Botão Voltar e Dicas
     container.innerHTML = `
         <div id="painel-pedidos" class="p-4 pb-24 animate-fadeIn">
             <div class="flex items-center gap-3 mb-6">
-                <button onclick="window.voltarAoInicio()" class="bg-white p-2 rounded-full shadow-sm text-gray-600 hover:bg-gray-100 border border-gray-200 transition">
-                    ⬅ Início
-                </button>
+                <button onclick="window.voltarAoInicio()" class="bg-white p-2 rounded-full shadow-sm text-gray-600 hover:bg-gray-100 border border-gray-200 transition">⬅ Início</button>
                 <div>
                     <h2 class="text-xl font-black text-blue-900 flex items-center gap-2">💬 Seus Pedidos</h2>
                     <p class="text-[10px] text-gray-400">Gerencie seus serviços em andamento</p>
@@ -62,7 +53,6 @@ export async function carregarPedidosAtivos() {
                 <p class="text-[9px] text-gray-400 uppercase tracking-widest">Dica: Toque no cartão para abrir o chat</p>
             </div>
         </div>
-
         <div id="painel-chat-individual" class="hidden h-screen fixed inset-0 z-[60] bg-white"></div>
     `;
 
@@ -77,9 +67,7 @@ export async function carregarPedidosAtivos() {
                 <div class="flex flex-col items-center justify-center py-20 opacity-50">
                     <div class="text-6xl mb-4 grayscale">📂</div>
                     <p class="text-sm font-bold text-gray-600">Lista Vazia</p>
-                    <p class="text-xs text-gray-400 text-center max-w-[200px] mt-2">
-                        Quando você aceitar ou solicitar um serviço, ele aparecerá aqui para você conversar.
-                    </p>
+                    <p class="text-xs text-gray-400 text-center max-w-[200px] mt-2">Quando você aceitar ou solicitar um serviço, ele aparecerá aqui.</p>
                     <button onclick="window.voltarAoInicio()" class="mt-6 text-blue-500 font-bold text-xs underline">Voltar e Procurar</button>
                 </div>`;
             return;
@@ -112,7 +100,6 @@ export async function carregarPedidosAtivos() {
             listaRender.innerHTML += `
                 <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden group">
                     <div class="absolute left-0 top-0 bottom-0 w-1 ${pedido.status === 'in_progress' ? 'bg-blue-600' : 'bg-gray-300'}"></div>
-                    
                     <div class="flex justify-between items-start pl-2">
                         <div>
                             <h3 class="font-bold text-gray-800 text-sm">${outroNome}</h3>
@@ -120,10 +107,7 @@ export async function carregarPedidosAtivos() {
                                 <span class="text-xs font-black text-blue-900 bg-blue-50 px-2 py-0.5 rounded">R$ ${pedido.offer_value}</span>
                                 <span class="text-[9px] uppercase font-bold ${statusCor} px-2 py-0.5 rounded">${statusTexto}</span>
                             </div>
-                            
-                            <p class="text-[9px] text-gray-500 mt-2 italic border-l-2 border-gray-200 pl-2">
-                                💡 ${acaoSugerida}
-                            </p>
+                            <p class="text-[9px] text-gray-500 mt-2 italic border-l-2 border-gray-200 pl-2">💡 ${acaoSugerida}</p>
                         </div>
                         <div class="bg-blue-50 p-2.5 rounded-full text-blue-600">💬</div>
                     </div>
@@ -133,9 +117,8 @@ export async function carregarPedidosAtivos() {
     };
 
     const pedidosRef = collection(db, "orders");
-    const statuses = ["accepted", "in_progress", "completed"]; // Adicionei completed para histórico
+    const statuses = ["accepted", "in_progress", "completed"];
     
-    // Limita a busca para não travar se tiver muitos (melhoria de performance)
     const qProvider = query(pedidosRef, where("provider_id", "==", uid), where("status", "in", statuses), limit(20));
     const qClient = query(pedidosRef, where("client_id", "==", uid), where("status", "in", statuses), limit(20));
 
@@ -144,7 +127,7 @@ export async function carregarPedidosAtivos() {
 }
 
 // ============================================================================
-// 2. TELA DE CHAT (COM MAIS INSTRUÇÕES)
+// 2. TELA DE CHAT
 // ============================================================================
 export async function abrirChatPedido(orderId) {
     const painelChat = document.getElementById('painel-chat-individual');
@@ -163,7 +146,6 @@ export async function abrirChatPedido(orderId) {
     const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
     const telefoneLink = isMeProvider ? pedido.client_phone : pedido.provider_phone;
     
-    // Token Logic
     let token = pedido.security_code;
     if (!token) {
         token = Math.floor(1000 + Math.random() * 9000).toString(); 
@@ -179,12 +161,11 @@ export async function abrirChatPedido(orderId) {
                 <div class="bg-slate-800 p-6 -mx-4 mb-4 shadow-inner text-center border-b-4 border-slate-900">
                     <p class="text-white font-bold mb-2">👋 Você chegou ao local?</p>
                     <p class="text-[10px] text-gray-400 mb-4 px-4">Só clique no botão abaixo quando estiver na frente do cliente e pronto para começar.</p>
-                    <button onclick="window.iniciarServico('${orderId}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase shadow-lg text-sm animate-pulse">
-                        ▶️ ESTOU AQUI E VOU INICIAR
-                    </button>
+                    <button onclick="window.iniciarServico('${orderId}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-xl uppercase shadow-lg text-sm animate-pulse">▶️ ESTOU AQUI E VOU INICIAR</button>
                 </div>
             `;
         } else if (pedido.status === 'in_progress') {
+            const valorTaxa = (pedido.offer_value * 0.20).toFixed(2);
             areaControle = `
                 <div class="bg-slate-900 p-4 -mx-4 mb-4 shadow-inner border-b border-slate-700">
                     <div class="flex justify-between items-center mb-2">
@@ -192,13 +173,12 @@ export async function abrirChatPedido(orderId) {
                         <span class="text-[9px] text-green-400 bg-green-400/10 px-2 py-0.5 rounded">R$ ${pedido.offer_value}</span>
                     </div>
                     <div class="bg-slate-800/50 p-2 rounded mb-3 border border-slate-700">
-                        <p class="text-[10px] text-gray-300">ℹ️ Peça ao cliente o código de 4 números que aparece na tela dele.</p>
+                        <p class="text-[10px] text-gray-300">ℹ️ Peça ao cliente o código de 4 números.</p>
+                        <p class="text-[9px] text-red-300 mt-1">Taxa de R$ ${valorTaxa} será descontada do seu saldo.</p>
                     </div>
                     <div class="flex gap-2">
                         <input type="tel" id="input-token-final" placeholder="0000" maxlength="4" class="w-full bg-slate-800 text-white text-center text-lg font-bold tracking-[0.3em] rounded-lg border border-slate-600 focus:border-blue-500 outline-none p-3">
-                        <button onclick="window.finalizarServicoComToken('${orderId}', '${token}', ${pedido.offer_value})" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 rounded-lg text-xs uppercase shadow-lg">
-                            VALIDAR
-                        </button>
+                        <button onclick="window.finalizarServicoComToken('${orderId}', '${token}', ${pedido.offer_value})" class="bg-green-600 hover:bg-green-500 text-white font-bold px-4 rounded-lg text-xs uppercase shadow-lg">VALIDAR</button>
                     </div>
                 </div>
             `;
@@ -242,7 +222,6 @@ export async function abrirChatPedido(orderId) {
                     <p class="text-[10px] text-green-600 flex items-center gap-1 font-bold">Chat Ativo</p>
                 </div>
                 <a href="tel:${telefoneLink}" class="bg-green-100 text-green-700 p-2 rounded-full">📞</a>
-                ${isMeProvider ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(pedido.location)}" target="_blank" class="bg-blue-100 text-blue-700 p-2 rounded-full">📍</a>` : ''}
             </div>
 
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 scroll-smooth">
@@ -282,7 +261,7 @@ export async function abrirChatPedido(orderId) {
 }
 
 // ============================================================================
-// 3. AÇÕES FINANCEIRAS
+// 3. AÇÕES FINANCEIRAS (ATUALIZADO)
 // ============================================================================
 
 export async function iniciarServico(orderId) {
@@ -306,23 +285,21 @@ export async function finalizarServicoComToken(orderId, tokenCorreto, valorServi
         return alert("❌ Código incorreto! Peça o número ao cliente.");
     }
 
-    if (!confirm(`Confirmar finalização?\n\nO valor de R$ ${(valorServico * TAXA_PLATAFORMA).toFixed(2)} será descontado do seu saldo.`)) return;
+    if (!confirm(`Confirmar finalização?\n\nSerá descontada a taxa de 20% do seu saldo.`)) return;
 
     try {
-        const uid = auth.currentUser.uid;
-        const userRef = doc(db, "usuarios", uid);
-        const taxa = valorServico * TAXA_PLATAFORMA;
-        const userSnap = await getDoc(userRef);
-        const saldoAtual = userSnap.data().wallet_balance || 0;
+        // 💰 CHAMA O COBRADOR BLINDADO (wallet.js)
+        await processarCobrancaTaxa(orderId, valorServico);
         
-        await updateDoc(userRef, { wallet_balance: saldoAtual - taxa });
+        // Se a cobrança passou, finaliza o pedido
         await updateDoc(doc(db, "orders", orderId), { status: 'completed', completed_at: serverTimestamp() });
 
-        alert("✅ SERVIÇO CONCLUÍDO!");
+        alert("✅ SERVIÇO CONCLUÍDO!\nTaxa processada com sucesso.");
         window.voltarParaListaPedidos();
 
     } catch (e) {
-        alert("Erro: " + e.message);
+        console.error(e);
+        // O alerta de erro já é dado pelo wallet.js
     }
 }
 
