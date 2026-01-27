@@ -1,5 +1,5 @@
 import { auth, db, provider } from './app.js';
-// ATUALIZAÇÃO ITEM 19: Adicionado signInWithRedirect e getRedirectResult, Removido signInWithPopup
+// ATUALIZAÇÃO: Mantendo Redirect e adicionando Phone
 import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -22,8 +22,8 @@ const CATEGORIAS_SERVICOS = [
     "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "💅 Manicure/Pedicure", "💇 Cabeleireiro(a)", "Outros"
 ];
 
-// --- LOGIN / LOGOUT (MODIFICADO PARA MOBILE - ITEM 19) ---
-// Usa Redirect ao invés de Popup para garantir compatibilidade mobile (WebView/Android)
+// --- LOGIN / LOGOUT ---
+// Mantido para compatibilidade, mas o index.html agora usa SMS direto
 window.loginGoogle = () => {
     console.log("🔄 Iniciando login via Redirect...");
     signInWithRedirect(auth, provider);
@@ -31,23 +31,12 @@ window.loginGoogle = () => {
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
-// --- CAPTURA O RETORNO DO LOGIN APÓS O REDIRECT ---
+// --- CAPTURA O RETORNO DO LOGIN (LEGADO GOOGLE) ---
 getRedirectResult(auth)
     .then((result) => {
-        if (result) {
-            console.log("✅ Login via Redirect concluído com sucesso:", result.user.email);
-            // O onAuthStateChanged vai assumir daqui
-        }
+        if (result) console.log("✅ Login via Redirect (Google) concluído.");
     })
-    .catch((error) => {
-        console.error("❌ Erro no retorno do login:", error);
-        // Tratamento de erros comuns
-        if (error.code === 'auth/account-exists-with-different-credential') {
-            alert("Este e-mail já está associado a outra conta. Faça login pelo método original.");
-        } else if (error.code !== 'auth/popup-closed-by-user') { // Ignora se usuário fechou
-            alert("Falha no login: " + error.message);
-        }
-    });
+    .catch((error) => console.error("❌ Erro no retorno do login:", error));
 
 // --- GESTÃO DE PERFIL ---
 window.definirPerfil = async (tipo) => {
@@ -68,7 +57,7 @@ window.alternarPerfil = async () => {
     } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- NÚCLEO DE AUTENTICAÇÃO ---
+// --- NÚCLEO DE AUTENTICAÇÃO (CORRIGIDO PARA SMS) ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
@@ -76,24 +65,44 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    const roleInicial = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
+                    // BLINDAGEM: Se for SMS, user.email é null. Usamos o telefone como identificador.
+                    const userEmail = user.email || "";
+                    const userPhone = user.phoneNumber || "";
+                    
+                    // Verifica admin de forma segura
+                    const roleInicial = (userEmail && ADMIN_EMAILS.includes(userEmail)) ? 'admin' : 'user';
+                    
+                    // Nome padrão para quem entra por SMS
+                    const nomePadrao = user.displayName || ("Usuário " + userPhone.slice(-4));
+
                     userProfile = { 
-                        email: user.email, displayName: user.displayName, photoURL: user.photoURL,        
-                        tenant_id: DEFAULT_TENANT, perfil_completo: false, role: roleInicial, 
-                        wallet_balance: 0.00, is_provider: false, created_at: new Date()
+                        email: userEmail,
+                        phone: userPhone, // Salva o telefone
+                        displayName: nomePadrao, 
+                        photoURL: user.photoURL,        
+                        tenant_id: DEFAULT_TENANT, 
+                        perfil_completo: false, 
+                        role: roleInicial, 
+                        wallet_balance: 0.00, 
+                        is_provider: false, 
+                        created_at: new Date()
                     };
                     await setDoc(userRef, userProfile);
                 } else {
                     userProfile = docSnap.data();
                     if (userProfile.wallet_balance === undefined) userProfile.wallet_balance = 0.00;
                     atualizarInterfaceUsuario(userProfile);
-                    iniciarAppLogado(user);
+                    iniciarAppLogado(user); // Aqui estava o erro
                     if (userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
                         if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                 }
-            } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); }
+            } catch (err) { 
+                console.error("Erro perfil:", err); 
+                // Tenta iniciar mesmo com erro para não travar tela branca
+                iniciarAppLogado(user); 
+            }
         });
     } else {
         document.getElementById('auth-container').classList.remove('hidden');
@@ -116,6 +125,7 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
+// CORREÇÃO CRÍTICA DO ADMIN CHECK
 function iniciarAppLogado(user) {
     if(!userProfile || !userProfile.perfil_completo) {
         document.getElementById('app-container').classList.add('hidden');
@@ -126,7 +136,11 @@ function iniciarAppLogado(user) {
     document.getElementById('app-container').classList.remove('hidden');
     
     const btnPerfil = document.getElementById('btn-trocar-perfil');
-    const isAdmin = ADMIN_EMAILS.some(email => email.toLowerCase() === user.email.toLowerCase().trim());
+    
+    // BLINDAGEM: Verifica se existe e-mail antes de tentar toLowerCase()
+    const userEmail = user.email ? user.email.toLowerCase().trim() : "";
+    const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
+    
     if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
 
     if (userProfile.is_provider) {
@@ -251,7 +265,6 @@ window.uploadBanner = async (input) => {
     const file = input.files[0];
     const user = auth.currentUser;
     
-    // Validação de tamanho (máx 200kb idealmente, aqui aviso se for grande)
     if(file.size > 500000) alert("⚠️ Imagem grande! Recomendado: menos de 500kb para carregar rápido.");
 
     const btn = document.getElementById('btn-upload-banner');
@@ -264,10 +277,8 @@ window.uploadBanner = async (input) => {
         await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(storageRef);
         
-        // Salva URL num campo hidden para usar depois
         document.getElementById('hidden-banner-url').value = downloadURL;
         
-        // Preview
         document.getElementById('preview-banner').src = downloadURL;
         document.getElementById('preview-banner').classList.remove('hidden');
         document.getElementById('banner-placeholder').classList.add('hidden');
@@ -282,18 +293,14 @@ window.uploadBanner = async (input) => {
     }
 };
 
-// 2. ABRIR CONFIGURAÇÃO (AGORA COM CAMPOS COMPLETOS)
+// 2. ABRIR CONFIGURAÇÃO
 window.abrirConfiguracaoServicos = async () => {
     const modal = document.getElementById('provider-setup-modal');
     modal.classList.remove('hidden');
     
-    const content = document.getElementById('provider-setup-content'); // Certifique-se que seu HTML tem esse ID dentro do modal, ou injete no modal-content genérico
-    
-    // Se não tiver o ID especifico, usa o modal todo (ajuste conforme seu HTML)
-    // Vou injetar um formulário completo
+    const content = document.getElementById('provider-setup-content');
     const formContainer = modal.querySelector('div.bg-white') || modal.firstElementChild;
     
-    // Busca dados atuais
     let dados = {};
     try {
         const docSnap = await getDoc(doc(db, "active_providers", auth.currentUser.uid));
@@ -375,7 +382,7 @@ window.abrirConfiguracaoServicos = async () => {
     `;
 };
 
-// 3. ADICIONAR SERVIÇO (LOCALMENTE NA LISTA VISUAL)
+// 3. ADICIONAR SERVIÇO
 window.addServiceLocal = async () => {
     const cat = document.getElementById('new-service-category').value;
     const price = document.getElementById('new-service-price').value;
@@ -383,27 +390,25 @@ window.addServiceLocal = async () => {
 
     if (!cat || !price) return alert("Preencha categoria e preço.");
 
-    // Salva direto no banco para simplificar (e recarrega a tela)
     const ref = doc(db, "active_providers", auth.currentUser.uid);
     const snap = await getDoc(ref);
     let svcs = snap.exists() ? snap.data().services || [] : [];
     
     svcs.push({ category: cat, price: parseFloat(price), description: desc });
     
-    // Se o documento não existe, cria com dados básicos
     const dadosBase = snap.exists() ? {} : { 
         uid: auth.currentUser.uid, 
         created_at: serverTimestamp(),
-        is_online: false, // Começa offline
-        status: 'em_analise', // Começa em análise
+        is_online: false, 
+        status: 'em_analise', 
         visibility_score: 100
     };
 
     await setDoc(ref, { ...dadosBase, services: svcs }, { merge: true });
-    window.abrirConfiguracaoServicos(); // Recarrega para mostrar na lista
+    window.abrirConfiguracaoServicos(); 
 };
 
-// 4. SALVAR TUDO E MUDAR STATUS (VERSÃO BLINDADA)
+// 4. SALVAR TUDO
 window.saveServicesAndGoOnline = async () => {
     const nome = document.getElementById('setup-name').value;
     const bio = document.getElementById('setup-bio').value;
