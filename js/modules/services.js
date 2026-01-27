@@ -1,288 +1,606 @@
-import { db, auth } from '../app.js';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, limit, setDoc, doc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-let cachePrestadores = [];
-
-// --- GATILHOS ---
-const tabServicos = document.getElementById('tab-servicos');
-if (tabServicos) {
-    tabServicos.addEventListener('click', () => {
-        carregarServicosDisponiveis();
-    });
-}
-
-// Expõe globalmente
-window.carregarServicos = carregarServicosDisponiveis;
-window.abrirModalContratacao = abrirModalContratacao;
-window.confirmarSolicitacao = confirmarSolicitacao;
-window.fecharModalServico = fecharModalServico;
-window.filtrarCategoria = filtrarCategoria;
-
-// ============================================================================
-// 1. LISTAGEM DE SERVIÇOS
-// ============================================================================
-export async function carregarServicosDisponiveis() {
-    const listaRender = document.getElementById('lista-prestadores-realtime');
-    const filtersRender = document.getElementById('category-filters');
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Atlivio - Marketplace Híbrido</title>
     
-    if (!listaRender || !filtersRender) return;
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
+        .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
+        
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
+        .rate-star.active { color: #fbbf24; }
+        
+        .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
+        .filter-pill { white-space: nowrap; transition: all 0.2s; }
+        .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        
+        .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
+        .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
+        
+        .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
+        @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-    filtersRender.innerHTML = `
-        <button onclick="window.filtrarCategoria('Todos', this)" class="btn-filtro active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md transition">Todos</button>
-        <button onclick="window.filtrarCategoria('Limpeza', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Limpeza</button>
-        <button onclick="window.filtrarCategoria('Obras', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Obras</button>
-        <button onclick="window.filtrarCategoria('Técnica', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Técnica</button>
-        <button onclick="window.filtrarCategoria('Outros', this)" class="btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition">Outros</button>
-    `;
+        /* --- CORREÇÃO DO TEXTO INVISÍVEL --- */
+        input, textarea, select {
+            color: #111827 !important; /* Força cor preta (Gray-900) */
+            opacity: 1 !important;
+        }
+        /* Placeholder visível */
+        ::placeholder {
+            color: #9ca3af !important;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
 
-    listaRender.innerHTML = `
-        <div class="col-span-2 text-center py-10">
-            <div class="loader mx-auto border-blue-200 border-t-blue-600 mb-2"></div>
-            <p class="text-[10px] text-gray-400">Buscando profissionais...</p>
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
+    <audio id="online-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
+
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
+    <div id="auth-container" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-gray-800 text-center border-b-4 border-blue-900">
+            <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-8">Marketplace Híbrido</p>
+            <button onclick="loginGoogle()" class="w-full mb-4 bg-white text-gray-700 border-2 border-gray-100 font-bold py-4 rounded-xl flex items-center justify-center hover:bg-gray-50 hover:border-blue-200 transition shadow-sm group">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6 h-6 mr-3 group-hover:scale-110 transition">
+                Entrar com Google
+            </button>
         </div>
-    `;
+    </div>
 
-    try {
-        const q = query(
-            collection(db, "active_providers"), 
-            orderBy("visibility_score", "desc"), 
-            limit(50)
-        );
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
+            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
+            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">💎</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços e comprar.</div>
+                </button>
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar e cumprir missões.</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
+        <div class="loader mb-4"></div>
+        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+    </div>
+
+    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         
-        const snap = await getDocs(q);
-        cachePrestadores = []; 
-
-        if (snap.empty) {
-            listaRender.innerHTML = `
-                <div class="col-span-2 text-center py-12 opacity-60">
-                    <div class="text-5xl mb-3 grayscale">🏜️</div>
-                    <h3 class="font-bold text-gray-700">Nenhum profissional encontrado.</h3>
-                </div>`;
-            return;
-        }
-
-        snap.forEach(d => {
-            cachePrestadores.push({ id: d.id, ...d.data() });
-        });
-
-        renderizarLista(cachePrestadores);
-
-    } catch (e) {
-        console.error(e);
-        listaRender.innerHTML = `<p class="col-span-2 text-center text-red-500 text-xs">Erro ao carregar. Verifique console.</p>`;
-    }
-}
-
-function filtrarCategoria(categoria, btnElement) {
-    if(btnElement) {
-        document.querySelectorAll('.btn-filtro').forEach(btn => {
-            btn.className = "btn-filtro bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-gray-50 transition";
-        });
-        btnElement.className = "btn-filtro active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md transition";
-    }
-
-    const listaRender = document.getElementById('lista-prestadores-realtime');
-    listaRender.innerHTML = '<div class="col-span-2 py-10 text-center"><div class="loader mx-auto border-blue-200 border-t-blue-600"></div></div>';
-
-    setTimeout(() => {
-        if (categoria === 'Todos') {
-            renderizarLista(cachePrestadores);
-        } else {
-            const filtrados = cachePrestadores.filter(p => {
-                if (!p.services) return false;
-                return p.services.some(s => s.category.includes(categoria) || (categoria === 'Outros' && !['Limpeza', 'Obras', 'Técnica'].some(c => s.category.includes(c))));
-            });
-            renderizarLista(filtrados);
-        }
-    }, 300);
-}
-
-// --- RENDERIZADOR INTELIGENTE (COM TRAVA DE DEMO) ---
-function renderizarLista(lista) {
-    const container = document.getElementById('lista-prestadores-realtime');
-    container.innerHTML = "";
-
-    if (lista.length === 0) {
-        container.innerHTML = `
-            <div class="col-span-2 text-center py-12 opacity-60">
-                <div class="text-4xl mb-2">🔍</div>
-                <p class="text-xs text-gray-400">Nenhum profissional nesta categoria.</p>
-            </div>`;
-        return;
-    }
-
-    lista.forEach(prestador => {
-        // --- 1. IDENTIFICAÇÃO DE DEMO ---
-        // Se visibility_score for 10 ou tiver is_demo=true
-        const isDemo = prestador.is_demo === true || (prestador.visibility_score && prestador.visibility_score <= 10);
-        const isOnline = prestador.is_online === true;
-
-        // --- 2. TRATAMENTO VISUAL ---
-        const nomeSafe = prestador.nome_profissional || "Profissional";
-        const fotoPerfil = prestador.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSafe)}&background=random&color=fff`;
-        const temBanner = !!prestador.banner_url;
-        const bannerStyle = temBanner 
-            ? `background-image: url('${prestador.banner_url}');` 
-            : `background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);`; 
-        const bio = prestador.bio || "Profissional verificado.";
-
-        // Variáveis visuais padrão (Online/Real)
-        let containerClass = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative animate-fadeIn";
-        let btnText = "Ver & Contratar";
-        let btnClass = "w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wide shadow-md transform active:scale-95 transition";
-        let statusDot = `<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" title="Online"></div>`;
-        let badgeDemoHtml = "";
-        let onclickAction = "";
-
-        // --- 3. APLICAÇÃO DE REGRAS ---
-        
-        if (isDemo) {
-            // REGRA: PERFIL DEMO (Exemplo)
-            containerClass += " opacity-90"; 
-            badgeDemoHtml = `<span class="bg-gray-100 text-gray-500 text-[8px] font-bold px-2 py-0.5 rounded border border-gray-200 uppercase tracking-wide ml-1">Exemplo</span>`;
-            btnText = "Ver Exemplo";
-            btnClass = "w-full bg-gray-100 text-gray-500 font-bold py-2 rounded-lg text-[10px] uppercase tracking-wide hover:bg-gray-200 transition";
-            // TRAVA O CLIQUE: Apenas alerta
-            onclickAction = `alert('🚧 PERFIL DE DEMONSTRAÇÃO\\n\\nEste é apenas um exemplo de como seu perfil ficará quando você se cadastrar no Atlivio.')`;
-        
-        } else if (!isOnline) {
-            // REGRA: OFFLINE REAL (Agenda)
-            containerClass += " grayscale"; 
-            btnText = "📅 Agendar";
-            btnClass = "w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wide shadow-md transition";
-            statusDot = `<div class="absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full" title="Offline"></div>`;
-            onclickAction = `window.abrirModalContratacao('${prestador.id || prestador.uid}', '${prestador.nome_profissional}', '${prestador.services[0]?.category}', ${prestador.services[0]?.price})`;
-        
-        } else {
-            // REGRA: ONLINE REAL (Normal)
-            onclickAction = `window.abrirModalContratacao('${prestador.id || prestador.uid}', '${prestador.nome_profissional}', '${prestador.services[0]?.category}', ${prestador.services[0]?.price})`;
-        }
-
-        if (prestador.services && prestador.services.length > 0) {
-            const servicoPrincipal = prestador.services[0];
-            const qtdExtras = prestador.services.length - 1;
-            const badgeExtra = qtdExtras > 0 
-                ? `<span class="ml-1 text-[8px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">+${qtdExtras}</span>` 
-                : "";
-            
-            container.innerHTML += `
-                <div class="${containerClass}">
-                    <div class="h-20 w-full bg-cover bg-center relative" style="${bannerStyle}">
-                        <div class="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition"></div>
-                        ${!temBanner ? '<div class="absolute inset-0 flex items-center justify-center opacity-20 text-white font-black text-xl tracking-widest">ATLIVIO</div>' : ''}
+        <header class="bg-white shadow-sm p-4 z-30 sticky top-0">
+            <div id="global-alert-banner" class="hidden bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-3 mb-3 rounded shadow-sm flex justify-between items-center">
+                <p id="global-alert-text" class="text-xs font-bold"></p>
+                <button onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold">&times;</button>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-1">
+                        <h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1>
+                        <span class="text-[8px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest border-l-0 md:border-l md:pl-2 border-gray-300">
+                            O Primeiro Marketplace Híbrido do Mundo
+                        </span>
                     </div>
-
-                    <div class="px-4 relative">
-                        <div class="absolute -top-6 left-4">
-                            <img src="${fotoPerfil}" class="w-12 h-12 rounded-full border-4 border-white shadow-md object-cover bg-white">
-                            ${statusDot}
+                    
+                    <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">
+                        🔄 Carregando...
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
+                        <span id="status-label" class="text-[8px] font-bold text-gray-500 uppercase mr-2">OFFLINE</span>
+                        
+                        <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                            <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
                         </div>
                     </div>
-
-                    <div class="pt-8 px-4 pb-4">
-                        <div class="mb-2">
-                            <div class="flex items-center">
-                                <h3 class="font-black text-gray-800 text-sm leading-tight truncate max-w-[120px]">${nomeSafe}</h3>
-                                ${badgeDemoHtml}
-                            </div>
-                            <div class="flex items-center gap-1 mt-1">
-                                <span class="text-[9px] font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded-full">⭐ 5.0</span>
-                                <span class="text-[9px] text-gray-400 truncate w-32">${bio}</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-lg p-2 border border-gray-100 flex justify-between items-center mb-3">
-                            <div class="flex items-center">
-                                <div>
-                                    <p class="text-[8px] uppercase font-bold text-gray-400 tracking-wider">Especialidade</p>
-                                    <div class="flex items-center">
-                                        <p class="font-bold text-blue-900 text-xs truncate max-w-[80px]">${servicoPrincipal.category}</p>
-                                        ${badgeExtra}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-[8px] text-gray-400">A partir de</p>
-                                <p class="font-black text-green-600 text-sm">R$ ${servicoPrincipal.price}</p>
-                            </div>
-                        </div>
-
-                        <button onclick="${onclickAction}" class="${btnClass}">
-                            ${btnText}
+                    <div class="flex flex-col items-end gap-1">
+                        <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">
+                            📲 SALVE SEU ACESSO
+                        </button>
+                        <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full">
+                            Sair
                         </button>
                     </div>
                 </div>
-            `;
-        }
-    });
-}
-
-// 2. MODAL DE CONTRATAÇÃO (Mantido)
-export function abrirModalContratacao(providerId, providerName, category, price) {
-    if (!auth.currentUser) return alert("Faça login para solicitar um serviço.");
-
-    const modal = document.getElementById('modal-contratacao');
-    if(!modal) {
-        const newModal = document.createElement('div');
-        newModal.id = 'modal-contratacao';
-        newModal.className = 'hidden fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4';
-        document.body.appendChild(newModal);
-        return abrirModalContratacao(providerId, providerName, category, price);
-    }
-    modal.classList.remove('hidden');
-    modal.innerHTML = `
-        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden animate-slideUp shadow-2xl">
-            <div class="bg-slate-900 p-5 text-white text-center relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-20 h-20 bg-blue-500 rounded-full blur-2xl opacity-20 -mr-10 -mt-10"></div>
-                <h3 class="font-black text-lg relative z-10">Agendar Serviço</h3>
-                <p class="text-xs opacity-70 mt-1 relative z-10">Solicite orçamento sem compromisso</p>
-                <button onclick="window.fecharModalServico()" class="absolute top-4 right-4 text-white/50 hover:text-white font-bold text-xl">&times;</button>
             </div>
-            <div class="p-5">
-                <div class="flex items-center gap-3 mb-5 bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <div class="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center text-lg">👷</div>
-                    <div><p class="text-[10px] text-gray-500 uppercase font-bold">Profissional</p><p class="font-bold text-blue-900 text-xs">${providerName}</p></div>
-                </div>
-                <div class="space-y-3 mb-5">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="text-[9px] font-bold text-gray-500 uppercase mb-1 block">Data</label><input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500 transition"></div>
-                        <div><label class="text-[9px] font-bold text-gray-500 uppercase mb-1 block">Horário</label><input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500 transition"></div>
+        </header>
+
+        <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
+            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            <button onclick="switchTab('empregos')" id="tab-empregos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Empregos 💼</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Produtos Recomendados 🛒</button>
+            <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
+            <button onclick="location.href='admin.html'" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic bg-red-50">ADMIN 🛡️</button>
+        </nav>
+
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos, Cashback e Apps que pagam por indicação</p>
+                <div id="lista-oportunidades" class="grid gap-3"></div>
+            </section>
+            
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões rápidas e garanta uma renda extra</p>
+                <div id="lista-missoes" class="grid gap-4"></div>
+            </section>
+            
+            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+                
+                <div id="category-filters" class="hidden"></div> <div id="servicos-cliente" class="hidden">
+                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                            </div>
+                        </div>
                     </div>
-                    <div><label class="text-[9px] font-bold text-gray-500 uppercase mb-1 block">Local</label><input type="text" id="req-local" placeholder="Endereço..." class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500 transition"></div>
+
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
+                        <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
+                        <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+                    </div>
+
+                    <div id="view-contratar">
+                        <div id="category-filters" class="mb-4"></div> <div id="lista-prestadores-realtime" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            </div>
+                    </div>
+                    
+                    <div id="view-andamento" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Acompanhe seus pedidos em tempo real</p>
+                        <div id="meus-pedidos-andamento" class="space-y-3"></div>
+                    </div>
+                    <div id="view-historico" class="hidden space-y-2">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus serviços anteriores</p>
+                        <div id="meus-pedidos-historico" class="space-y-3"></div>
+                    </div>
                 </div>
-                <div class="flex justify-between items-center border-t border-gray-100 pt-4 mb-5"><p class="text-xs font-bold text-gray-500">Valor Estimado</p><div class="text-right"><p class="text-xl font-black text-blue-900">R$ ${price}</p><p class="text-[8px] text-gray-400">Pagamento no final</p></div></div>
-                <button onclick="window.confirmarSolicitacao('${providerId}', '${providerName}', '${category}', ${price})" class="w-full bg-green-600 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-green-500 transition flex items-center justify-center gap-2"><span>🚀</span> Enviar Solicitação</button>
+
+                <div id="servicos-prestador" class="hidden">
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                                <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                            </div>
+                            <div>
+                                <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
+                                <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                            </div>
+                        </div>
+                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">
+                            ✎ MEUS SERVIÇOS
+                        </button>
+                    </div>
+
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
+                        <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
+                        <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
+                    </div>
+
+                    <div id="pview-radar" class="text-center py-10">
+                        </div>
+                    <div id="pview-ativos" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
+                        <div id="lista-chamados-ativos">
+                            <p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>
+                        </div>
+                    </div>
+                    <div id="pview-historico" class="hidden space-y-3">
+                        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus trabalhos concluídos</p>
+                        <div id="lista-chamados-historico">
+                            <p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-vagas" class="grid gap-3"></div>
+
+                <div id="painel-empresa" class="hidden">
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center mb-4">
+                        <h3 class="font-black text-blue-900 text-sm uppercase italic">Precisa Contratar?</h3>
+                        <p class="text-[10px] text-gray-500 mb-3">Encontre talentos locais rápido.</p>
+                        <button onclick="abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">
+                            + Anunciar Vaga Grátis
+                        </button>
+                    </div>
+                    <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Suas Vagas Ativas</p>
+                    <div id="lista-minhas-vagas" class="space-y-2"></div>
+                </div>
+            </section>
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados para aumentar sua produtividade</p>
+                <div id="sec-produtos"></div>
+            </section>
+            
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-chats" class="space-y-2"></div>
+            </section>
+            
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
+                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
+                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
+                    <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <div id="provider-setup-content">
+                <p class="text-center text-gray-400">Carregando editor...</p>
             </div>
         </div>
-    `;
-}
+    </div>
 
-// 3. ENVIO (Mantido)
-export async function confirmarSolicitacao(providerId, providerName, category, price) {
-    const data = document.getElementById('req-date').value;
-    const hora = document.getElementById('req-time').value;
-    const local = document.getElementById('req-local').value;
-    if(!data || !hora || !local) return alert("Preencha todos os campos.");
-    const btn = document.querySelector('button[onclick^="window.confirmarSolicitacao"]');
-    const txt = btn.innerHTML;
-    btn.innerHTML = "Enviando...";
-    btn.disabled = true;
-    try {
-        const user = auth.currentUser;
-        const orderData = { client_id: user.uid, client_name: user.displayName || "Cliente", client_phone: "Não informado", provider_id: providerId, provider_name: providerName, service_category: category, offer_value: parseFloat(price), service_date: data, service_time: hora, location: local, status: 'pending', created_at: serverTimestamp(), security_code: Math.floor(1000 + Math.random() * 9000).toString() };
-        const docRef = await addDoc(collection(db, "orders"), orderData);
-        const orderId = docRef.id;
-        await setDoc(doc(db, "chats", orderId), { participants: [user.uid, providerId], order_id: orderId, status: "active", last_message: "Solicitação", updated_at: serverTimestamp() });
-        await addDoc(collection(db, `chats/${orderId}/messages`), { text: `👋 Olá! Gostaria de agendar ${category} para ${data} às ${hora}.\n📍 ${local}\n💰 R$ ${price}`, sender_id: user.uid, timestamp: serverTimestamp() });
-        alert("✅ Solicitação Enviada!");
-        window.fecharModalServico();
-        if(window.irParaChat) window.irParaChat();
-    } catch (e) { alert("Erro: " + e.message); btn.innerHTML = txt; btn.disabled = false; }
-}
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl">
+            <div class="bg-blue-900 h-20 relative"><button onclick="document.getElementById('provider-profile-modal').classList.add('hidden')" class="absolute top-4 right-4 text-white/50 hover:text-white text-xl font-bold">&times;</button></div>
+            <div class="px-6 pb-6 text-center -mt-10"><img id="public-profile-photo" src="" class="w-20 h-20 rounded-full border-4 border-white mx-auto shadow-md bg-gray-200"><h3 id="public-profile-name" class="font-black text-lg text-gray-800 uppercase mt-2">Nome do Prestador</h3><div class="flex justify-center items-center gap-1 text-yellow-500 text-sm mb-4"><span>★</span> <span id="public-profile-rating" class="font-bold text-gray-600">5.0</span></div><div class="text-left"><h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 border-b pb-1">Serviços Oferecidos</h4><div id="public-services-list" class="space-y-2 max-h-60 overflow-y-auto"><div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center"><div><span class="block font-bold text-xs text-blue-900">CARREGANDO...</span></div></div></div></div></div>
+        </div>
+    </div>
 
-export function fecharModalServico() {
-    const modal = document.getElementById('modal-contratacao');
-    if(modal) modal.classList.add('hidden');
-}
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <input type="hidden" id="target-provider-id">
+            <input type="hidden" id="service-base-price">
+            
+            <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
+                <div>
+                    <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                    <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
+                </div>
+                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
+            </div>
 
-window.filtrarCategoria = filtrarCategoria;
+            <div class="p-6 space-y-5 overflow-y-auto flex-1">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Data</label>
+                        <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label>
+                        <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-gray-500 uppercase">Local</label>
+                    <input type="text" id="req-local" placeholder="Endereço do serviço" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
+                </div>
+
+                <div class="border-t border-gray-100 pt-2"></div>
+
+                <div>
+                    <p class="text-[10px] font-bold text-blue-900 uppercase mb-3">Quanto você quer ofertar?</p>
+                    
+                    <div class="mb-4">
+                        <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="selecionarDesconto(0.05)" id="btn-desc-5" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
+                            <button type="button" onclick="selecionarDesconto(0.10)" id="btn-desc-10" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
+                            <button type="button" onclick="selecionarDesconto(0.15)" id="btn-desc-15" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                                <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="ativarInputPersonalizado()">
+                                <span class="text-xs font-bold text-gray-700">✏️ Digitar Valor</span>
+                            </label>
+                            <span class="text-[8px] text-gray-400">(Min: -20% | Max: +30%)</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-gray-900 font-bold text-sm">R$</span>
+                            <input type="number" 
+                                   id="req-value" 
+                                   placeholder="0,00" 
+                                   disabled 
+                                   class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-900 bg-white outline-none transition disabled:bg-gray-100 disabled:text-gray-400"
+                                   oninput="validarOferta(this.value)">
+                        </div>
+                        <p id="msg-erro-valor" class="hidden text-[9px] text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-100 font-bold text-center">
+                            Mínimo aceito: R$ <span id="val-min">00</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden">
+                    <div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
+                    <div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
+                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA</span><span id="calc-total-reserva">R$ 0,00</span></div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
+                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
+                <button onclick="enviarPropostaAgora()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>ENVIAR PROPOSTA 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p><div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container"><span class="rate-star" data-val="1">★</span><span class="rate-star" data-val="2">★</span><span class="rate-star" data-val="3">★</span><span class="rate-star" data-val="4">★</span><span class="rate-star" data-val="5">★</span></div><div class="grid grid-cols-2 gap-2 mb-6"><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button></div><div class="flex items-center justify-center gap-4 mb-6"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="yes" class="accent-blue-600" checked><span class="text-xs font-bold text-gray-700">👍 Recomendo</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="no" class="accent-red-600"><span class="text-xs font-bold text-gray-700">👎 Não Indico</span></label></div><textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea><button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button><button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button></div>
+    </div>
+
+    <div id="painel-chat-individual" class="hidden h-screen fixed inset-0 z-[60] bg-white"></div>
+
+    <div id="preview-modal" class="hidden fixed inset-0 bg-black z-[70] flex flex-col items-center justify-center p-4">
+        <div class="bg-white p-4 rounded-xl w-full max-w-sm shadow-2xl">
+            <h3 class="font-black text-center text-gray-800 uppercase italic mb-2">Confirmação</h3>
+            <div class="w-full h-64 bg-gray-200 rounded-lg overflow-hidden mb-4 border-2 border-dashed border-gray-300 relative">
+                <img id="img-preview" class="w-full h-full object-contain">
+            </div>
+            <div class="mb-4 text-center bg-gray-50 p-2 rounded-lg border border-gray-100">
+                <p class="text-[10px] uppercase font-bold text-gray-400">Localização</p>
+                <p id="gps-status" class="text-xs font-bold text-yellow-500 animate-pulse">📡 Buscando Satélites...</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="cancelarPreview()" class="bg-gray-100 text-gray-600 py-3 rounded-lg font-bold text-xs uppercase hover:bg-gray-200">Tirar Outra</button>
+                <button id="btn-confirmar-foto" onclick="enviarFotoReal()" disabled class="bg-gray-400 text-white py-3 rounded-lg font-bold text-xs uppercase cursor-not-allowed opacity-50 shadow-md transition">Aguarde GPS...</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <h3 class="font-black text-xl text-blue-900 uppercase italic mb-4">Nova Vaga</h3>
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Título da Vaga</label>
+            <input type="text" id="job-title" placeholder="Ex: Atendente de Loja" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Salário (Opcional)</label>
+            <input type="text" id="job-salary" placeholder="Ex: 1.800,00" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Descrição</label>
+            <textarea id="job-desc" rows="4" class="w-full border p-2 rounded-lg mb-4 text-sm bg-gray-50" placeholder="Requisitos e atividades..."></textarea>
+            
+            <button onclick="publicarVaga()" id="btn-pub-job" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-blue-700">PUBLICAR AGORA</button>
+        </div>
+    </div>
+
+    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative">
+            <button onclick="window.fecharModalCandidatura()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+            
+            <h3 class="text-xl font-black text-blue-900 mb-1">Nova Candidatura</h3>
+            <p class="text-sm text-gray-500 mb-4">Vaga: <span id="apply-job-title" class="font-bold text-blue-600">...</span></p>
+            <input type="hidden" id="apply-job-id">
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">MENSAGEM AO RECRUTADOR</label>
+                    <textarea id="apply-message" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-blue-500 outline-none" placeholder="Olá, gostaria de me candidatar..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1">ANEXAR CURRÍCULO (PDF)</label>
+                    <input type="file" id="apply-file" accept="application/pdf" class="w-full text-xs text-gray-500 border border-gray-200 rounded-lg p-2">
+                </div>
+                
+                <button id="btn-submit-proposal" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
+                    ENVIAR PROPOSTA 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <h3 class="font-black text-xl text-green-600 uppercase italic mb-1">Seu Currículo</h3>
+            <p class="text-xs text-gray-400 mb-4">Preencha uma vez, aplique para sempre.</p>
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Nome Completo</label>
+            <input type="text" id="cv-nome" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">WhatsApp</label>
+            <input type="tel" id="cv-telefone" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="(75) 9...">
+            
+            <label class="text-[9px] font-bold text-gray-500 uppercase">Habilidades / Resumo</label>
+            <textarea id="cv-habilidades" rows="2" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Ex: Tenho moto, experiência..."></textarea>
+            
+            <label class="text-[9px] font-bold text-blue-600 uppercase">📎 Anexar Currículo (PDF)</label>
+            <input type="file" id="cv-arquivo" accept="application/pdf" class="w-full border p-2 rounded-lg mb-4 text-xs bg-blue-50 text-blue-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+            
+            <button onclick="salvarCurriculo()" id="btn-save-cv" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-green-700">SALVAR E CONTINUAR</button>
+        </div>
+    </div>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                    console.log("Service Worker DESTRUÍDO.");
+                }
+            });
+        }
+    </script>
+    
+    <script>
+        // 1. Função Inteligente para ignorar IDs duplicados vazios
+        window.getSmartValue = function(selector) {
+            const candidates = document.querySelectorAll(selector);
+            for (let el of candidates) {
+                if (el.value && el.value.trim() !== "") {
+                    return el.value;
+                }
+            }
+            return candidates.length > 0 ? candidates[candidates.length - 1].value : "";
+        };
+
+        // 2. Funções para o Modal de Preço (garante funcionamento mesmo sem JS externo)
+        window.ativarInputPersonalizado = function() {
+            const input = document.getElementById('req-value');
+            if (input) {
+                input.disabled = false;
+                input.focus();
+                input.classList.remove('bg-gray-100', 'text-gray-400');
+                input.classList.add('bg-white', 'text-gray-900');
+            }
+        };
+
+        window.selecionarDesconto = function(porcentagem) {
+            const input = document.getElementById('req-value');
+            const radio = document.getElementById('radio-custom');
+            if(input) {
+                input.disabled = true;
+                input.classList.add('bg-gray-100', 'text-gray-400');
+                input.classList.remove('bg-white', 'text-gray-900');
+                input.value = ""; 
+            }
+            if(radio) radio.checked = false;
+        };
+    </script>
+
+    <script type="module" src="./js/app.js?v=15.3"></script>
+    <script type="module" src="./js/auth.js?v=15.3"></script>
+    <script type="module" src="./js/modules/missions.js?v=15.3"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=15.3"></script>
+    <script type="module" src="./js/modules/services.js?v=15.3"></script>
+    <script type="module" src="./js/modules/products.js?v=15.3"></script>
+    
+    <script type="module" src="./js/modules/request.js?v=15.3"></script>
+    <script type="module" src="./js/modules/jobs.js?v=15.3"></script>
+    <script type="module" src="./js/modules/chat.js?v=15.3"></script>
+    <script type="module" src="./js/wallet.js?v=15.3"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registrado!', reg)).catch(err => console.log('SW falhou:', err)); }); }
+        let deferredPrompt; const btnInstall = document.getElementById('btn-install-app');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; btnInstall.classList.remove('hidden'); });
+        const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent); const isInStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        if (isIos && !isInStandalone) { btnInstall.classList.remove('hidden'); }
+        btnInstall.addEventListener('click', async () => { if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; deferredPrompt = null; if (outcome === 'accepted') { btnInstall.classList.add('hidden'); } } else if (isIos) { alert("Para instalar no iPhone, toque em 'Compartilhar' e depois em 'Adicionar à Tela de Início'."); } else { alert("Para instalar, procure a opção 'Adicionar à Tela Inicial' no menu do seu navegador."); } });
+        
+        let currentRating = 0; document.querySelectorAll('.rate-star.active').forEach(star => { star.addEventListener('click', function() { currentRating = this.getAttribute('data-val'); document.querySelectorAll('.rate-star').forEach(s => { s.classList.remove('active'); if(s.getAttribute('data-val') <= currentRating) s.classList.add('active'); }); }); });
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
+
+        window.switchTab = (tabName) => {
+            document.querySelectorAll('main > section').forEach(el => {
+                el.classList.add('hidden');
+                el.style.display = 'none';
+            });
+            const alvo = document.getElementById(`sec-${tabName}`);
+            if(alvo) {
+                alvo.classList.remove('hidden');
+                alvo.style.display = 'block';
+            }
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+            }
+        };
+
+        window.switchServiceSubTab = (subTab) => {
+            document.getElementById('view-contratar').classList.add('hidden');
+            document.getElementById('view-andamento').classList.add('hidden');
+            document.getElementById('view-historico').classList.add('hidden');
+            
+            document.getElementById('subtab-contratar-btn').classList.remove('active');
+            document.getElementById('subtab-andamento-btn').classList.remove('active');
+            document.getElementById('subtab-historico-btn').classList.remove('active');
+
+            document.getElementById(`view-${subTab}`).classList.remove('hidden');
+            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
+        };
+
+        window.switchProviderSubTab = (subTab) => {
+            document.getElementById('pview-radar').classList.add('hidden');
+            document.getElementById('pview-ativos').classList.add('hidden');
+            document.getElementById('pview-historico').classList.add('hidden');
+            
+            document.getElementById('ptab-radar-btn').classList.remove('active');
+            document.getElementById('ptab-ativos-btn').classList.remove('active');
+            document.getElementById('ptab-historico-btn').classList.remove('active');
+
+            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
+            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+        };
+    </script>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadGlobalAlert() {
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "global"));
+                if (docSnap.exists() && docSnap.data().top_message) {
+                    const msgDiv = document.getElementById('global-alert-banner');
+                    const msgText = document.getElementById('global-alert-text');
+                    if(msgDiv && msgText) {
+                        msgText.innerText = "⚠️ AVISO: " + docSnap.data().top_message;
+                        msgDiv.classList.remove('hidden');
+                    }
+                }
+            } catch (e) { console.log("Erro config:", e); }
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.get('utm_source')) {
+            console.log("🔥 ACESSO VIA LINK ADMIN:", urlParams.get('ref'));
+        }
+
+        loadGlobalAlert();
+    </script>
+</body>
+</html>
