@@ -13,17 +13,20 @@ const LIMITE_PARA_ACEITAR = -60.00;
 auth.onAuthStateChanged(user => {
     if (user) {
         iniciarRadarPrestador(user.uid);
-        carregarPedidosEmAndamento();
+        // Tenta carregar a aba se a função existir
+        if (typeof window.carregarPedidosEmAndamento === 'function') {
+             window.carregarPedidosEmAndamento();
+        }
     }
 });
 
 // ============================================================================
-// 1. ABRIR O MODAL (PREENCHE A MEMÓRIA E O HTML)
+// 1. ABRIR O MODAL (BLINDAGEM DO BOTÃO)
 // ============================================================================
 export function abrirModalSolicitacao(providerId, providerName, price) {
-    if(!auth.currentUser) return alert("Faça login para solicitar!");
+    if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    console.log("📝 Preparando Proposta:", { providerId, providerName, price });
+    console.log("📝 [REQUEST] Preparando Proposta:", { providerId, providerName, price });
 
     // 1. Salva na Memória (Segurança Máxima)
     mem_ProviderId = providerId;
@@ -36,15 +39,14 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
     if(modal) {
         modal.classList.remove('hidden');
         
-        // Tenta preencher inputs ocultos (se existirem)
+        // Preenche inputs ocultos (Backup do HTML)
         const elId = document.getElementById('target-provider-id');
         const elPrice = document.getElementById('service-base-price');
         const elInputVal = document.getElementById('req-value');
         const elTotal = document.getElementById('calc-total-reserva');
-        const btn = document.getElementById('btn-confirm-req');
-
-        if(elId) elId.value = providerId;
-        if(elPrice) elPrice.value = price;
+        
+        if(elId) elId.value = providerId || "";
+        if(elPrice) elPrice.value = price || "0";
         
         if(elInputVal) {
             elInputVal.value = mem_CurrentOffer.toFixed(2);
@@ -53,21 +55,35 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
 
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
 
-        // Destrava o botão caso estivesse travado de um erro anterior
+        // 3. SEQUESTRO DO BOTÃO (AQUI ESTÁ A MÁGICA)
+        // Forçamos o evento de clique via JS para garantir que funcione
+        const btn = document.getElementById('btn-confirm-req');
         if(btn) {
-            btn.disabled = false;
-            btn.innerText = "ENVIAR PROPOSTA 🚀";
+            // Remove clones anteriores para evitar cliques duplos
+            const novoBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(novoBtn, btn);
+            
+            // Ativa o novo botão
+            novoBtn.disabled = false;
+            novoBtn.innerText = "ENVIAR PROPOSTA 🚀";
+            novoBtn.onclick = enviarPropostaAgora; // Vínculo Direto JS -> Função
+            
+            console.log("✅ [REQUEST] Botão de envio vinculado com sucesso.");
+        } else {
+            console.error("❌ [REQUEST] Botão 'btn-confirm-req' não encontrado no HTML.");
         }
+
     } else {
-        alert("Erro: Modal não encontrado no HTML.");
+        alert("Erro Crítico: O modal de proposta não existe no HTML.");
     }
 }
 
 // ============================================================================
-// 2. CÁLCULOS E DESCONTOS
+// 2. CÁLCULOS (Matemática Simples)
 // ============================================================================
 export function selecionarDesconto(percent) {
-    // Usa o preço base da memória
+    if(!mem_BasePrice) mem_BasePrice = parseFloat(document.getElementById('service-base-price')?.value || 0);
+
     const discountValue = mem_BasePrice * percent;
     mem_CurrentOffer = mem_BasePrice - discountValue;
     
@@ -97,61 +113,86 @@ export function validarOferta(val) {
 }
 
 // ============================================================================
-// 3. ENVIAR PROPOSTA (O GRANDE MOMENTO)
+// 3. ENVIAR PROPOSTA (LÓGICA ROBUSTA)
 // ============================================================================
 export async function enviarPropostaAgora() {
-    console.log("🚀 Iniciando envio...");
+    console.log("🚀 [REQUEST] Iniciando processo de envio...");
     
-    // 1. Validação Dupla (Memória vs HTML)
-    // Se a memória estiver vazia, tenta pegar do HTML como última chance
-    if (!mem_ProviderId) {
-        mem_ProviderId = document.getElementById('target-provider-id')?.value;
+    // A. Autenticação
+    const user = auth.currentUser;
+    if (!user) return alert("Sessão expirada. Faça login novamente.");
+
+    // B. Recuperação de Dados (Estratégia Híbrida)
+    // 1. Tenta memória
+    let finalProviderId = mem_ProviderId;
+    let finalOffer = mem_CurrentOffer;
+
+    // 2. Se falhar, tenta raspar do HTML
+    if (!finalProviderId) {
+        console.warn("⚠️ [REQUEST] Memória vazia. Tentando ler do HTML...");
+        finalProviderId = document.getElementById('target-provider-id')?.value;
+        finalOffer = parseFloat(document.getElementById('req-value')?.value);
     }
 
-    if(!mem_ProviderId || !mem_CurrentOffer) {
-        console.error("❌ ERRO DE DADOS:", { mem_ProviderId, mem_CurrentOffer });
-        return alert("Erro: Dados da proposta incompletos. Tente recarregar a página.");
+    // C. Validação Final
+    if(!finalProviderId) {
+        console.error("❌ FALHA: ID do Prestador não encontrado.");
+        return alert("Erro Técnico: Não conseguimos identificar o prestador. Feche e abra o modal novamente.");
+    }
+    if(!finalOffer || isNaN(finalOffer)) {
+        console.error("❌ FALHA: Valor inválido.", finalOffer);
+        return alert("Erro: O valor da proposta é inválido.");
     }
     
-    const btn = document.getElementById('btn-confirm-req');
-    if(btn) { btn.innerText = "ENVIANDO..."; btn.disabled = true; }
+    // D. Feedback Visual
+    const btn = document.getElementById('btn-confirm-req'); // Pega o botão atual (pode ter sido clonado)
+    if(btn) { 
+        btn.innerText = "⏳ ENVIANDO..."; 
+        btn.disabled = true; 
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
 
     try {
-        console.log("📤 Enviando para Firestore...");
+        console.log("📤 [REQUEST] Enviando payload para o Firebase...");
 
-        // Cria Pedido
+        // Dados do Formulário Opcionais
+        const dataServico = document.getElementById('req-date')?.value || "A combinar";
+        const horaServico = document.getElementById('req-time')?.value || "A combinar";
+        const localServico = document.getElementById('req-local')?.value || "A combinar";
+
+        // Criação do Documento
         const docRef = await addDoc(collection(db, "orders"), {
-            client_id: auth.currentUser.uid,
-            client_name: auth.currentUser.displayName || "Cliente",
-            client_phone: "Não informado", // Adicione se tiver no perfil
+            client_id: user.uid,
+            client_name: user.displayName || user.email.split('@')[0],
+            client_phone: "Não informado", 
             
-            provider_id: mem_ProviderId,
+            provider_id: finalProviderId,
             provider_name: mem_ProviderName || "Prestador",
             
             status: 'pending', 
-            base_price: mem_BasePrice,
-            offer_value: mem_CurrentOffer,
+            base_price: mem_BasePrice || finalOffer,
+            offer_value: finalOffer,
             
-            service_date: document.getElementById('req-date')?.value || "A combinar",
-            service_time: document.getElementById('req-time')?.value || "A combinar",
-            location: document.getElementById('req-local')?.value || "A combinar",
+            service_date: dataServico,
+            service_time: horaServico,
+            location: localServico,
             
             created_at: serverTimestamp()
         });
 
-        console.log("✅ Pedido criado ID:", docRef.id);
+        console.log("✅ [REQUEST] Pedido criado com sucesso! ID:", docRef.id);
 
-        // Cria Sala de Chat
+        // Criação do Chat Vinculado
         await setDoc(doc(db, "chats", docRef.id), {
-            participants: [auth.currentUser.uid, mem_ProviderId],
+            participants: [user.uid, finalProviderId],
             order_id: docRef.id,
             status: "pending_approval",
             updated_at: serverTimestamp(),
             last_message: "Nova proposta enviada."
         });
 
-        // Feedback
-        alert("✅ Proposta Enviada com Sucesso!");
+        // E. Sucesso
+        alert("✅ PROPOSTA ENVIADA COM SUCESSO!");
         
         // Fecha Modal
         document.getElementById('request-modal').classList.add('hidden');
@@ -159,19 +200,29 @@ export async function enviarPropostaAgora() {
         // Limpa Memória
         mem_ProviderId = null;
 
-        // Atualiza Aba de Pedidos (Se existir função global)
+        // Atualiza Listas (se existirem)
         if(window.carregarPedidosEmAndamento) window.carregarPedidosEmAndamento();
 
     } catch (e) {
-        console.error("❌ ERRO AO SALVAR:", e);
-        alert("Erro ao enviar: " + e.message);
+        console.error("❌ [REQUEST] ERRO GRAVE AO SALVAR:", e);
+        
+        let msgErro = "Erro desconhecido ao enviar.";
+        if (e.code === 'permission-denied') msgErro = "Erro de Permissão: Verifique se você está logado corretamente.";
+        if (e.code === 'unavailable') msgErro = "Erro de Rede: Verifique sua conexão.";
+        
+        alert(`❌ Falha no envio:\n${msgErro}\n\nDetalhe técnico: ${e.message}`);
     } finally {
-        if(btn) { btn.innerText = "ENVIAR PROPOSTA 🚀"; btn.disabled = false; }
+        // Restaura botão em caso de erro ou sucesso
+        if(btn) { 
+            btn.innerText = "ENVIAR PROPOSTA 🚀"; 
+            btn.disabled = false; 
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
     }
 }
 
 // ============================================================================
-// 4. RADAR E LÓGICA DE ACEITE (MANTIDOS)
+// 4. RADAR E LOGICA DE ACEITE (MANTIDO E OTIMIZADO)
 // ============================================================================
 function iniciarRadarPrestador(uid) {
     const q = query(
@@ -274,11 +325,31 @@ export async function carregarPedidosEmAndamento() {
     const container = document.getElementById('lista-prestadores-realtime');
     if (!container || !auth.currentUser) return;
     
-    // (Mantido a lógica simplificada de listagem para não extender demais o código)
-    // Se precisar da listagem completa, avise. O foco agora é o Botão Enviar.
+    const uid = auth.currentUser.uid;
+    const pedidosRef = collection(db, "orders");
+    const statuses = ["accepted", "in_progress"];
+
+    const qProvider = query(pedidosRef, where("provider_id", "==", uid), where("status", "in", statuses));
+    
+    onSnapshot(qProvider, (snap) => {
+        container.innerHTML = "";
+        if(snap.empty) {
+            container.innerHTML = `<div class="text-center py-10 opacity-50"><p>Sem serviços em andamento.</p></div>`;
+            return;
+        }
+        snap.forEach(d => {
+            const p = d.data();
+            container.innerHTML += `
+                <div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 cursor-pointer">
+                    <h3 class="font-bold text-gray-800">${p.client_name}</h3>
+                    <p class="text-xs text-green-600 font-bold">R$ ${p.offer_value} • ${p.status === 'accepted' ? 'A iniciar' : 'Em andamento'}</p>
+                </div>
+            `;
+        });
+    });
 }
 
-// EXPORTAÇÃO GLOBAL
+// EXPORTAÇÃO GLOBAL (API PÚBLICA DO MÓDULO)
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
