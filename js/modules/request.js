@@ -63,10 +63,13 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
             const novoBtn = btn.cloneNode(true);
             btn.parentNode.replaceChild(novoBtn, btn);
             
-            // Ativa o novo botão
+            // Ativa o novo botão (Lógica + Visual)
             novoBtn.disabled = false;
             novoBtn.innerText = "ENVIAR PROPOSTA 🚀";
-            novoBtn.onclick = enviarPropostaAgora; // Vínculo Direto JS -> Função
+            novoBtn.onclick = enviarPropostaAgora; 
+
+            // A CURA DO ZUMBI: Remove as classes que deixam ele cinza/apagado
+            novoBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
             
             console.log("✅ [REQUEST] Botão de envio vinculado com sucesso.");
         } else {
