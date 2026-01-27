@@ -1,4 +1,5 @@
 import { db, auth } from '../app.js';
+import { podeTrabalhar } from '../wallet.js'; // 👈 CONEXÃO COM O FINANCEIRO
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, orderBy, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- VARIÁVEIS DE MEMÓRIA (O Cérebro do Pedido) ---
@@ -6,8 +7,6 @@ let mem_ProviderId = null;
 let mem_ProviderName = null;
 let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
-
-const LIMITE_PARA_ACEITAR = -60.00; 
 
 // --- GATILHOS E RADAR ---
 auth.onAuthStateChanged(user => {
@@ -56,7 +55,6 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
 
         // 3. SEQUESTRO DO BOTÃO (AQUI ESTÁ A MÁGICA)
-        // Forçamos o evento de clique via JS para garantir que funcione
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             // Remove clones anteriores para evitar cliques duplos
@@ -125,19 +123,24 @@ export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     if (!user) return alert("Sessão expirada. Faça login novamente.");
 
-    // B. Recuperação de Dados (Estratégia Híbrida)
-    // 1. Tenta memória
+    // ⛔ B. TRAVA FINANCEIRA (O GUARDIÃO) ⛔
+    // Antes de qualquer coisa, verifica se o usuário pode operar
+    if (!podeTrabalhar()) {
+        console.warn("⛔ Bloqueio Financeiro Ativado.");
+        return; // Para a execução aqui mesmo.
+    }
+
+    // C. Recuperação de Dados (Estratégia Híbrida)
     let finalProviderId = mem_ProviderId;
     let finalOffer = mem_CurrentOffer;
 
-    // 2. Se falhar, tenta raspar do HTML
     if (!finalProviderId) {
         console.warn("⚠️ [REQUEST] Memória vazia. Tentando ler do HTML...");
         finalProviderId = document.getElementById('target-provider-id')?.value;
         finalOffer = parseFloat(document.getElementById('req-value')?.value);
     }
 
-    // C. Validação Final
+    // D. Validação Final
     if(!finalProviderId) {
         console.error("❌ FALHA: ID do Prestador não encontrado.");
         return alert("Erro Técnico: Não conseguimos identificar o prestador. Feche e abra o modal novamente.");
@@ -147,8 +150,8 @@ export async function enviarPropostaAgora() {
         return alert("Erro: O valor da proposta é inválido.");
     }
     
-    // D. Feedback Visual
-    const btn = document.getElementById('btn-confirm-req'); // Pega o botão atual (pode ter sido clonado)
+    // E. Feedback Visual
+    const btn = document.getElementById('btn-confirm-req'); 
     if(btn) { 
         btn.innerText = "⏳ ENVIANDO..."; 
         btn.disabled = true; 
@@ -158,16 +161,14 @@ export async function enviarPropostaAgora() {
     try {
         console.log("📤 [REQUEST] Enviando payload para o Firebase...");
 
-        // Dados do Formulário Opcionais
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
         const localServico = document.getElementById('req-local')?.value || "A combinar";
 
-        // Criação do Documento
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
-            client_name: user.displayName || user.email.split('@')[0],
-            client_phone: "Não informado", 
+            client_name: user.displayName || user.email?.split('@')[0] || "Cliente",
+            client_phone: user.phoneNumber || "Não informado", 
             
             provider_id: finalProviderId,
             provider_name: mem_ProviderName || "Prestador",
@@ -194,28 +195,17 @@ export async function enviarPropostaAgora() {
             last_message: "Nova proposta enviada."
         });
 
-        // E. Sucesso
         alert("✅ PROPOSTA ENVIADA COM SUCESSO!");
         
-        // Fecha Modal
         document.getElementById('request-modal').classList.add('hidden');
-        
-        // Limpa Memória
         mem_ProviderId = null;
 
-        // Atualiza Listas (se existirem)
         if(window.carregarPedidosEmAndamento) window.carregarPedidosEmAndamento();
 
     } catch (e) {
         console.error("❌ [REQUEST] ERRO GRAVE AO SALVAR:", e);
-        
-        let msgErro = "Erro desconhecido ao enviar.";
-        if (e.code === 'permission-denied') msgErro = "Erro de Permissão: Verifique se você está logado corretamente.";
-        if (e.code === 'unavailable') msgErro = "Erro de Rede: Verifique sua conexão.";
-        
-        alert(`❌ Falha no envio:\n${msgErro}\n\nDetalhe técnico: ${e.message}`);
+        alert(`❌ Falha no envio: ${e.message}`);
     } finally {
-        // Restaura botão em caso de erro ou sucesso
         if(btn) { 
             btn.innerText = "ENVIAR PROPOSTA 🚀"; 
             btn.disabled = false; 
@@ -225,7 +215,7 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 4. RADAR E LOGICA DE ACEITE (MANTIDO E OTIMIZADO)
+// 4. RADAR E LOGICA DE ACEITE
 // ============================================================================
 function iniciarRadarPrestador(uid) {
     const q = query(
@@ -292,15 +282,11 @@ function fecharModalRadar() {
 
 export async function aceitarPedidoRadar(orderId) {
     fecharModalRadar();
+    
+    // ⛔ TRAVA FINANCEIRA DO RADAR ⛔
+    if (!podeTrabalhar()) return;
+
     try {
-        const uid = auth.currentUser.uid;
-        const userDoc = await getDoc(doc(db, "usuarios", uid));
-        const saldo = userDoc.data()?.wallet_balance || 0;
-
-        if (saldo < LIMITE_PARA_ACEITAR) {
-            return alert(`⚠️ Saldo Insuficiente (R$ ${saldo.toFixed(2)}). Regularize para aceitar.`);
-        }
-
         await updateDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() });
         await updateDoc(doc(db, "chats", orderId), { status: 'active' });
 
@@ -352,7 +338,7 @@ export async function carregarPedidosEmAndamento() {
     });
 }
 
-// EXPORTAÇÃO GLOBAL (API PÚBLICA DO MÓDULO)
+// EXPORTAÇÃO GLOBAL
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
