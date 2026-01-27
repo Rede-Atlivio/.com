@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlivio - Marketplace Híbrido</title>
     
     <link rel="manifest" href="./manifest.json">
@@ -13,41 +13,27 @@
     <style>
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
         .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
         .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
-        
         .toggle-checkbox:checked { right: 0; border-color: #68D391; }
         .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
-        
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
         .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
         .rate-star.active { color: #fbbf24; }
-        
         .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
         .filter-pill { white-space: nowrap; transition: all 0.2s; }
         .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
-        
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
-        
         .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
         /* --- CORREÇÃO DO TEXTO INVISÍVEL --- */
         input, textarea, select {
             color: #111827 !important; /* Força cor preta (Gray-900) */
-            opacity: 1 !important;
-        }
-        /* Placeholder visível */
-        ::placeholder {
-            color: #9ca3af !important;
-            opacity: 1;
         }
     </style>
 </head>
@@ -324,31 +310,26 @@
                     <div class="mb-4">
                         <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
                         <div class="grid grid-cols-3 gap-2">
-                            <button type="button" onclick="selecionarDesconto(0.05)" id="btn-desc-5" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
-                            <button type="button" onclick="selecionarDesconto(0.10)" id="btn-desc-10" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
-                            <button type="button" onclick="selecionarDesconto(0.15)" id="btn-desc-15" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
+                            <button onclick="selecionarDesconto(0.05)" id="btn-desc-5" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
+                            <button onclick="selecionarDesconto(0.10)" id="btn-desc-10" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
+                            <button onclick="selecionarDesconto(0.15)" id="btn-desc-15" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
                         </div>
                     </div>
 
                     <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
                         <div class="flex justify-between items-center mb-2">
-                            <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="ativarInputPersonalizado()">
-                                <span class="text-xs font-bold text-gray-700">✏️ Digitar Valor</span>
+                                <span class="text-xs font-bold text-gray-700">✏️ Outro Valor</span>
                             </label>
                             <span class="text-[8px] text-gray-400">(Min: -20% | Max: +30%)</span>
                         </div>
                         <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-gray-900 font-bold text-sm">R$</span>
-                            <input type="number" 
-                                   id="req-value" 
-                                   placeholder="0,00" 
-                                   disabled 
-                                   class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-900 bg-white outline-none transition disabled:bg-gray-100 disabled:text-gray-400"
-                                   oninput="validarOferta(this.value)">
+                            <span class="absolute left-3 top-2.5 text-gray-500 font-bold text-sm">R$</span>
+                            <input type="number" id="req-value" placeholder="0,00" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-400 bg-gray-100 outline-none transition" oninput="validarOferta(this.value)">
                         </div>
                         <p id="msg-erro-valor" class="hidden text-[9px] text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-100 font-bold text-center">
-                            Mínimo aceito: R$ <span id="val-min">00</span>
+                            Para manter a qualidade, a oferta mínima é R$ <span id="val-min">00</span>.
                         </p>
                     </div>
                 </div>
@@ -465,43 +446,6 @@
             });
         }
     </script>
-    
-    <script>
-        // 1. Função Inteligente para ignorar IDs duplicados vazios
-        window.getSmartValue = function(selector) {
-            const candidates = document.querySelectorAll(selector);
-            for (let el of candidates) {
-                if (el.value && el.value.trim() !== "") {
-                    return el.value;
-                }
-            }
-            return candidates.length > 0 ? candidates[candidates.length - 1].value : "";
-        };
-
-        // 2. Funções para o Modal de Preço (garante funcionamento mesmo sem JS externo)
-        window.ativarInputPersonalizado = function() {
-            const input = document.getElementById('req-value');
-            if (input) {
-                input.disabled = false;
-                input.focus();
-                input.classList.remove('bg-gray-100', 'text-gray-400');
-                input.classList.add('bg-white', 'text-gray-900');
-            }
-        };
-
-        window.selecionarDesconto = function(porcentagem) {
-            const input = document.getElementById('req-value');
-            const radio = document.getElementById('radio-custom');
-            if(input) {
-                input.disabled = true;
-                input.classList.add('bg-gray-100', 'text-gray-400');
-                input.classList.remove('bg-white', 'text-gray-900');
-                input.value = ""; 
-            }
-            if(radio) radio.checked = false;
-        };
-    </script>
-
     <script type="module" src="./js/app.js?v=15.3"></script>
     <script type="module" src="./js/auth.js?v=15.3"></script>
     <script type="module" src="./js/modules/missions.js?v=15.3"></script>
@@ -546,28 +490,35 @@
             }
         };
 
+        // --- FUNÇÕES DE SUB-ABAS (ADICIONADAS PARA CORRIGIR ERRO) ---
         window.switchServiceSubTab = (subTab) => {
+            // Esconde todas as sub-abas
             document.getElementById('view-contratar').classList.add('hidden');
             document.getElementById('view-andamento').classList.add('hidden');
             document.getElementById('view-historico').classList.add('hidden');
             
+            // Remove classe ativa dos botões
             document.getElementById('subtab-contratar-btn').classList.remove('active');
             document.getElementById('subtab-andamento-btn').classList.remove('active');
             document.getElementById('subtab-historico-btn').classList.remove('active');
 
+            // Mostra a escolhida
             document.getElementById(`view-${subTab}`).classList.remove('hidden');
             document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
         };
 
         window.switchProviderSubTab = (subTab) => {
+             // Esconde todas as sub-abas do prestador
             document.getElementById('pview-radar').classList.add('hidden');
             document.getElementById('pview-ativos').classList.add('hidden');
             document.getElementById('pview-historico').classList.add('hidden');
             
+            // Remove classe ativa dos botões
             document.getElementById('ptab-radar-btn').classList.remove('active');
             document.getElementById('ptab-ativos-btn').classList.remove('active');
             document.getElementById('ptab-historico-btn').classList.remove('active');
 
+            // Mostra a escolhida
             document.getElementById(`pview-${subTab}`).classList.remove('hidden');
             document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
         };
@@ -581,6 +532,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // 1. Ler Mensagem Global
         async function loadGlobalAlert() {
             try {
                 const docSnap = await getDoc(doc(db, "settings", "global"));
@@ -595,9 +547,11 @@
             } catch (e) { console.log("Erro config:", e); }
         }
 
+        // 2. Ler UTM da URL (Rastreamento de Links)
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.get('utm_source')) {
             console.log("🔥 ACESSO VIA LINK ADMIN:", urlParams.get('ref'));
+            // Futuro: Salvar no Analytics do Firebase
         }
 
         loadGlobalAlert();
