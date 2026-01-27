@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnóstico Mobile</title>
+    <title>Diagnóstico Mobile v2</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="max-w-md w-full bg-gray-800 p-6 rounded-xl shadow-2xl text-center">
-        <h1 class="text-xl font-bold text-yellow-400 mb-2">🕵️ DIAGNÓSTICO AVANÇADO</h1>
-        <p class="text-gray-400 text-[10px] mb-4">Investigando Conflito Android Account Manager</p>
+        <h1 class="text-xl font-bold text-yellow-400 mb-2">🕵️ DIAGNÓSTICO v2</h1>
+        <p class="text-gray-400 text-[10px] mb-4">Tentando bypass do Android Account Manager</p>
 
         <div id="status-box" class="bg-black p-3 rounded mb-4 text-left font-mono text-[10px] text-green-400 h-48 overflow-y-auto border border-gray-700">
             > Sistema iniciado.<br>
@@ -18,13 +18,15 @@
         </div>
 
         <div class="space-y-3">
-            <button onclick="tentarLoginRedirect()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm">
-                OPÇÃO A: Redirect (Forçar Consentimento)
+            <button onclick="tentarLoginConsent()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm border-2 border-blue-400">
+                🅰️ OPÇÃO A: Forçar Consentimento
             </button>
+            <p class="text-[9px] text-gray-500 mb-2">Tenta enganar o Android pedindo permissão de dados.</p>
             
-            <button onclick="tentarLoginPopup()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg text-sm">
-                OPÇÃO B: Popup (Aba Isolada)
+            <button onclick="tentarLoginPopup()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg text-sm border-2 border-purple-400">
+                🅱️ OPÇÃO B: Tentar Popup
             </button>
+            <p class="text-[9px] text-gray-500">Tenta abrir em aba isolada.</p>
         </div>
 
         <button onclick="limparCache()" class="mt-6 text-gray-500 underline text-xs">
@@ -48,7 +50,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         
-        // Log Helper
         const log = (msg) => {
             const box = document.getElementById('status-box');
             box.innerHTML += `> ${msg}<br>`;
@@ -56,48 +57,45 @@
             console.log(msg);
         };
 
-        // 1. Monitoramento de Retorno (Redirect)
-        log("🔄 Monitorando retorno de Redirect...");
+        // Monitora o retorno do Redirect (Para a Opção A)
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    log("✅ SUCESSO NO REDIRECT!");
+                    log("✅ SUCESSO NA OPÇÃO A!");
                     log("User: " + result.user.email);
-                    alert("FUNCIONOU A OPÇÃO A!");
+                    alert("A OPÇÃO A FUNCIONOU! (Redirect + Consent)");
                 }
             })
             .catch((error) => {
-                log("❌ ERRO NO REDIRECT:");
+                log("❌ FALHA NA OPÇÃO A:");
                 log(error.message);
-                // Se der o erro de conta existente, vamos saber aqui
             });
 
         // OPÇÃO A: Redirect com 'prompt=consent'
-        // Teoria: Forçar a tela de permissão quebra o loop de "adicionar conta"
-        window.tentarLoginRedirect = () => {
-            log("🚀 Testando Opção A...");
+        // Isso deve forçar a tela de "Permitir Acesso", que o Android não bloqueia.
+        window.tentarLoginConsent = () => {
+            log("🚀 Iniciando Opção A (Consent)...");
             const provider = new GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'consent' });
+            provider.setCustomParameters({ 
+                prompt: 'consent' 
+            });
             signInWithRedirect(auth, provider);
         };
 
         // OPÇÃO B: Popup
-        // Teoria: O Popup pode abrir como aba web normal, ignorando o Android OS
         window.tentarLoginPopup = () => {
-            log("🚀 Testando Opção B (Popup)...");
+            log("🚀 Iniciando Opção B (Popup)...");
             const provider = new GoogleAuthProvider();
-            provider.setCustomParameters({ prompt: 'select_account' });
-            
+            // Removemos parâmetros customizados para testar o padrão
             signInWithPopup(auth, provider)
                 .then((result) => {
-                    log("✅ SUCESSO NO POPUP!");
+                    log("✅ SUCESSO NA OPÇÃO B!");
                     log("User: " + result.user.email);
-                    alert("FUNCIONOU A OPÇÃO B!");
+                    alert("A OPÇÃO B FUNCIONOU! (Popup)");
                 })
                 .catch((error) => {
-                    log("❌ ERRO NO POPUP:");
-                    log(error.code + " - " + error.message);
-                    alert("ERRO: " + error.message);
+                    log("❌ FALHA NA OPÇÃO B:");
+                    log(error.message);
                 });
         };
 
