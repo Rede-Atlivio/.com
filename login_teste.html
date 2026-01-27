@@ -3,40 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Diagnóstico Mobile v2</title>
+    <title>Teste Final: Re-autenticação</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen p-4">
 
     <div class="max-w-md w-full bg-gray-800 p-6 rounded-xl shadow-2xl text-center">
-        <h1 class="text-xl font-bold text-yellow-400 mb-2">🕵️ DIAGNÓSTICO v2</h1>
-        <p class="text-gray-400 text-[10px] mb-4">Tentando bypass do Android Account Manager</p>
+        <h1 class="text-xl font-bold text-red-400 mb-2">🧨 TESTE DE FORÇA BRUTA</h1>
+        <p class="text-gray-400 text-[10px] mb-4">Forçar digitação de senha para ignorar Android OS</p>
 
         <div id="status-box" class="bg-black p-3 rounded mb-4 text-left font-mono text-[10px] text-green-400 h-48 overflow-y-auto border border-gray-700">
-            > Sistema iniciado.<br>
-            > Aguardando teste...<br>
+            > Aguardando...<br>
         </div>
 
-        <div class="space-y-3">
-            <button onclick="tentarLoginConsent()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm border-2 border-blue-400">
-                🅰️ OPÇÃO A: Forçar Consentimento
-            </button>
-            <p class="text-[9px] text-gray-500 mb-2">Tenta enganar o Android pedindo permissão de dados.</p>
-            
-            <button onclick="tentarLoginPopup()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg text-sm border-2 border-purple-400">
-                🅱️ OPÇÃO B: Tentar Popup
-            </button>
-            <p class="text-[9px] text-gray-500">Tenta abrir em aba isolada.</p>
-        </div>
-
-        <button onclick="limparCache()" class="mt-6 text-gray-500 underline text-xs">
-            Sair / Limpar
+        <button onclick="tentarLoginForcaBruta()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded-lg text-sm border-2 border-red-400">
+            C: Forçar Re-Login (Senha)
         </button>
+        <p class="text-[9px] text-gray-500 mt-2">Isso deve obrigar o Google a pedir sua senha novamente.</p>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithRedirect, signInWithPopup, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const firebaseConfig = { 
             apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
@@ -54,56 +42,33 @@
             const box = document.getElementById('status-box');
             box.innerHTML += `> ${msg}<br>`;
             box.scrollTop = box.scrollHeight;
-            console.log(msg);
         };
 
-        // Monitora o retorno do Redirect (Para a Opção A)
+        // Monitora o retorno
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    log("✅ SUCESSO NA OPÇÃO A!");
+                    log("✅ SUCESSO! FORÇA BRUTA FUNCIONOU.");
                     log("User: " + result.user.email);
-                    alert("A OPÇÃO A FUNCIONOU! (Redirect + Consent)");
+                    alert("FUNCIONOU! (Obrigando a senha)");
                 }
             })
             .catch((error) => {
-                log("❌ FALHA NA OPÇÃO A:");
+                log("❌ FALHA:");
                 log(error.message);
             });
 
-        // OPÇÃO A: Redirect com 'prompt=consent'
-        // Isso deve forçar a tela de "Permitir Acesso", que o Android não bloqueia.
-        window.tentarLoginConsent = () => {
-            log("🚀 Iniciando Opção A (Consent)...");
+        // OPÇÃO C: prompt='login'
+        window.tentarLoginForcaBruta = () => {
+            log("🚀 Iniciando Redirect com prompt='login'...");
             const provider = new GoogleAuthProvider();
+            // ISSO OBRIGA A DIGITAR A SENHA
             provider.setCustomParameters({ 
-                prompt: 'consent' 
+                prompt: 'login' 
             });
             signInWithRedirect(auth, provider);
         };
-
-        // OPÇÃO B: Popup
-        window.tentarLoginPopup = () => {
-            log("🚀 Iniciando Opção B (Popup)...");
-            const provider = new GoogleAuthProvider();
-            // Removemos parâmetros customizados para testar o padrão
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    log("✅ SUCESSO NA OPÇÃO B!");
-                    log("User: " + result.user.email);
-                    alert("A OPÇÃO B FUNCIONOU! (Popup)");
-                })
-                .catch((error) => {
-                    log("❌ FALHA NA OPÇÃO B:");
-                    log(error.message);
-                });
-        };
-
-        window.limparCache = () => {
-            signOut(auth).then(() => location.reload());
-        };
     </script>
-    
     <script src="//cdn.jsdelivr.net/npm/eruda"></script>
     <script>eruda.init();</script>
 </body>
