@@ -11,9 +11,9 @@ if (tabServicos) {
     });
 }
 
-// Expõe globalmente para o HTML acessar
+// Expõe globalmente
 window.carregarServicos = carregarServicosDisponiveis;
-window.abrirModalContratacao = abrirModalContratacao;
+window.abrirModalContratacao = abrirModalContratacao; // Agora aponta para a função corrigida abaixo
 window.filtrarCategoria = filtrarCategoria;
 
 // ============================================================================
@@ -25,7 +25,7 @@ export async function carregarServicosDisponiveis() {
     
     if (!listaRender || !filtersRender) return;
 
-    // Renderiza filtros apenas se estiver vazio
+    // Renderiza filtros (Visual)
     if(filtersRender.innerHTML.trim() === "") {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
@@ -130,7 +130,8 @@ function renderizarLista(lista) {
         let containerClass = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative";
         if(!isOnline) containerClass += " grayscale opacity-90";
 
-        // AQUI: Usamos aspas simples escapadas para evitar quebrar o HTML
+        // AQUI ESTAVA O PROBLEMA: Chamava uma função local antiga.
+        // CORREÇÃO: Agora chamamos 'abrirModalContratacao' que vai redirecionar para a lógica certa.
         const onclickAction = `window.abrirModalContratacao('${prestador.id}', '${nomeSafe}', '${servicoPrincipal.category}', ${servicoPrincipal.price})`;
 
         container.innerHTML += `
@@ -175,39 +176,19 @@ function renderizarLista(lista) {
     });
 }
 
-// 2. MODAL DE CONTRATAÇÃO (INTEGRAÇÃO CORRIGIDA)
+// ============================================================================
+// 2. MODAL DE CONTRATAÇÃO (CORREÇÃO DE PONTE)
+// ============================================================================
 export function abrirModalContratacao(providerId, providerName, category, price) {
-    if (!auth.currentUser) {
-        alert("Faça login para solicitar um serviço.");
-        return;
-    }
-
-    const modal = document.getElementById('request-modal');
-    if (!modal) {
-        console.error("ERRO CRÍTICO: #request-modal não encontrado no HTML.");
-        return;
-    }
-
-    // Popula campos ocultos
-    const providerInput = document.getElementById('target-provider-id');
-    const priceInput = document.getElementById('service-base-price');
+    // CORREÇÃO CRÍTICA:
+    // Em vez de tentar abrir o modal sozinho e quebrar as variáveis,
+    // nós delegamos para o request.js (que é o dono da lógica de pedidos).
     
-    if(providerInput) providerInput.value = providerId;
-    if(priceInput) priceInput.value = price;
-
-    // Configura campo de valor
-    const inputValor = document.getElementById('req-value');
-    if(inputValor) {
-        inputValor.placeholder = price.toFixed(2); 
-        inputValor.value = ""; 
-        inputValor.disabled = true; 
-        
-        inputValor.classList.add('bg-gray-100', 'text-gray-400');
-        inputValor.classList.remove('bg-white', 'text-gray-900');
+    if (window.abrirModalSolicitacao) {
+        // Redireciona para a função poderosa do request.js
+        window.abrirModalSolicitacao(providerId, providerName, price);
+    } else {
+        console.error("ERRO: O módulo request.js não carregou a função 'abrirModalSolicitacao'.");
+        alert("Erro interno: Tente recarregar a página.");
     }
-    
-    // Reseta radio buttons
-    document.querySelectorAll('input[name="price-type"]').forEach(r => r.checked = false);
-
-    modal.classList.remove('hidden');
 }
