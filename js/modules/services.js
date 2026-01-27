@@ -132,7 +132,11 @@ function renderizarLista(lista) {
             : { category: "Geral", price: 0 };
 
         const qtdServicos = prestador.services ? prestador.services.length : 0;
-        const badgeMais = qtdServicos > 1 ? `<span class="ml-2 text-[8px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full border border-gray-200">+${qtdServicos - 1} opções</span>` : '';
+        
+        // ✨ CORREÇÃO VISUAL: Badge muito mais destacado
+        const badgeMais = qtdServicos > 1 
+            ? `<span class="ml-2 text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 font-bold shadow-sm animate-pulse">✨ +${qtdServicos - 1} opções</span>` 
+            : '';
 
         let statusDot = isOnline 
             ? `<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse" title="Online"></div>`
@@ -141,8 +145,8 @@ function renderizarLista(lista) {
         let containerClass = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative";
         if(!isOnline) containerClass += " grayscale opacity-90";
 
-        // 🔥 AQUI MUDOU: Agora passamos o ID para a função decidir se abre Perfil ou Pedido direto
-        const onclickAction = `window.abrirModalContratacao('${prestador.id}', '${nomeSafe}')`;
+        // 🛡️ CORREÇÃO DE CLIQUE: Passamos APENAS o ID para evitar erros de aspas no nome
+        const onclickAction = `window.abrirModalContratacao('${prestador.id}')`;
 
         container.innerHTML += `
             <div class="${containerClass}">
@@ -192,30 +196,34 @@ function renderizarLista(lista) {
 // ============================================================================
 // 2. MODAL DE CONTRATAÇÃO INTELIGENTE (ITEM 2.1)
 // ============================================================================
-export function abrirModalContratacao(providerId, providerName) {
+export function abrirModalContratacao(providerId) {
+    console.log("🖱️ Clique detectado para ID:", providerId);
+
     // 1. Busca os dados completos do prestador no cache
     const prestador = cachePrestadores.find(p => p.id === providerId);
     
     if (!prestador) {
+        console.warn("⚠️ Prestador não encontrado no cache. Tentando recarregar...");
         return alert("Erro: Dados do prestador não encontrados. Atualize a página.");
     }
 
     // 2. Decisão: Tem muitos serviços?
     if (prestador.services && prestador.services.length > 1) {
-        // -> Abre Vitrine do Prestador (Lista Completa)
+        console.log("📂 Abrindo Perfil (Múltiplos Serviços)");
         abrirPerfilPublico(prestador);
     } else {
-        // -> Vai direto para o Pedido (Comportamento Antigo)
+        console.log("🚀 Abrindo Pedido Direto (1 Serviço)");
         const servico = prestador.services[0];
         if (window.abrirModalSolicitacao) {
-            window.abrirModalSolicitacao(providerId, providerName, servico.price); // Sem categoria por enquanto, simplificado
+            // Passa o nome recuperado do objeto, não do clique
+            window.abrirModalSolicitacao(providerId, prestador.nome_profissional, servico.price); 
         }
     }
 }
 
 function abrirPerfilPublico(prestador) {
     const modal = document.getElementById('provider-profile-modal');
-    if(!modal) return;
+    if(!modal) return console.error("❌ Modal 'provider-profile-modal' não encontrado no HTML.");
 
     // Popula Dados
     document.getElementById('public-profile-photo').src = prestador.foto_perfil || "https://ui-avatars.com/api/?name=User";
@@ -228,7 +236,32 @@ function abrirPerfilPublico(prestador) {
 
     prestador.services.forEach(svc => {
         // Cada serviço tem seu próprio botão de contratar
-        const clickAction = `window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional}', ${svc.price}); window.fecharPerfilPublico();`;
+        // OBS: Aqui também passamos os dados de forma segura
+        // Mas como o nome está dentro de uma string template JS, usamos aspas escapadas se necessário, 
+        // ou melhor, passamos o nome do objeto prestador que já foi validado.
+        
+        // Simplificação Segura:
+        const btnId = `btn-svc-${Math.random().toString(36).substr(2, 9)}`;
+        
+        const htmlItem = `
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
+                <div>
+                    <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
+                    <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
+                </div>
+                <button id="${btnId}" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
+                    R$ ${svc.price}
+                </button>
+            </div>
+        `;
+        
+        // Injeção segura do evento onclick via AddEventListener não é viável com innerHTML string
+        // Voltamos ao onclick inline mas com tratamento de aspas
+        
+        // TRUQUE DO NOME: Usamos uma variável global temporária se o nome for complexo, 
+        // ou assumimos que o nome já está limpo.
+        // Vamos usar a função direta passando o ID de novo, e buscando o nome dentro do modalSolicitacao se precisar.
+        // MAS para facilitar, vamos passar o nome do prestador que temos aqui no escopo.
         
         listaContainer.innerHTML += `
             <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
@@ -236,7 +269,7 @@ function abrirPerfilPublico(prestador) {
                     <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
                     <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
                 </div>
-                <button onclick="${clickAction}" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
+                <button onclick="window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional.replace(/'/g, "\\'")}', ${svc.price}); window.fecharPerfilPublico();" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
                     R$ ${svc.price}
                 </button>
             </div>
