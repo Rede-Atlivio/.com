@@ -11,14 +11,23 @@ let currentOffer = 0;
 export function abrirModalSolicitacao(providerId, providerName, price) {
     if(!auth.currentUser) return alert("Faça login para solicitar!");
 
+    // --- CORREÇÃO DE SEGURANÇA ---
+    if (!window.userProfile) {
+        console.error("Erro crítico: userProfile não carregado.");
+        alert("Erro de carregamento. Tente atualizar a página.");
+        return;
+    }
+
     targetProviderId = providerId;
     targetProviderName = providerName;
     serviceBasePrice = parseFloat(price);
     currentOffer = serviceBasePrice;
 
     // Preenche UI Inicial
-    document.getElementById('target-provider-id').value = providerId;
-    document.getElementById('service-base-price').value = price;
+    const elProvId = document.getElementById('target-provider-id');
+    if(elProvId) elProvId.value = providerId;
+    const elPrice = document.getElementById('service-base-price');
+    if(elPrice) elPrice.value = price;
     
     // Reseta Inputs
     const inputValor = document.getElementById('req-value');
@@ -136,11 +145,6 @@ export function validarOferta(val) {
 
 // --- 4. CÁLCULO FINANCEIRO (O PULO DO GATO) ---
 function atualizarResumoFinanceiro(valor) {
-    // Regra do Projeto:
-    // Reserva = 30% do valor ofertado (Garante o prestador)
-    // Taxa = 10% do valor ofertado (Sustenta a Atlivio)
-    // Cliente Paga Agora = Reserva + Taxa
-    
     const reserva = valor * 0.30; 
     const taxa = valor * 0.10;
     const totalPagarAgora = reserva + taxa;
@@ -169,6 +173,21 @@ export async function enviarPropostaAgora() {
     btn.innerText = "ENVIANDO...";
     btn.disabled = true;
 
+    // --- CORREÇÃO DE LEITURA DE CAMPOS ---
+    // Tenta pegar o ID correto ou fallback para querySelector se mudou o ID
+    const dateInput = document.getElementById('req-date') || document.querySelector('input[type="date"]');
+    const timeInput = document.getElementById('req-time') || document.querySelector('input[type="time"]');
+    // Campo Local pode ser um input text ou textarea
+    const localInput = document.getElementById('req-local') || document.querySelector('input[placeholder*="Local"]') || document.getElementById('agendamento-local');
+
+    // Validação Manual dos Campos Obrigatórios
+    if (!dateInput?.value || !timeInput?.value || !localInput?.value) {
+        alert("Preencha todos os campos (Data, Hora e Local)!");
+        btn.innerText = originalText;
+        btn.disabled = false;
+        return;
+    }
+
     try {
         // Dados do Pedido (Payload)
         const orderData = {
@@ -188,9 +207,9 @@ export async function enviarPropostaAgora() {
             total_paid_now: (currentOffer * 0.30) + (currentOffer * 0.10),
             remaining_amount: currentOffer * 0.70, // O que falta pagar ao final
 
-            service_date: document.getElementById('req-date').value || "A combinar",
-            service_time: document.getElementById('req-time').value || "A combinar",
-            location: document.getElementById('req-local').value || "A combinar",
+            service_date: dateInput.value,
+            service_time: timeInput.value,
+            location: localInput.value,
             
             created_at: serverTimestamp()
         };
@@ -198,7 +217,7 @@ export async function enviarPropostaAgora() {
         // 1. Salva Pedido na coleção 'orders'
         const docRef = await addDoc(collection(db, "orders"), orderData);
 
-        // 2. Cria Chat Automático (Ainda bloqueado para mensagens livres, mas inicia o canal)
+        // 2. Cria Chat Automático
         const msgTexto = `👋 Olá! Fiz uma proposta de R$ ${currentOffer.toFixed(2)} (Reserva garantida de R$ ${(currentOffer * 0.30).toFixed(2)}). Aguardo seu aceite!`;
         
         await addDoc(collection(db, `chats/${docRef.id}/messages`), {
@@ -218,7 +237,7 @@ export async function enviarPropostaAgora() {
             status: "pending_approval" // Chat travado até aceite
         });
 
-        alert(`✅ Proposta Enviada!\n\nSe o prestador aceitar, você será notificado para realizar o pagamento da reserva (R$ ${(currentOffer * 0.40).toFixed(2)}).`);
+        alert(`✅ Proposta Enviada!\n\nSe o prestador aceitar, você será notificado para realizar o pagamento da reserva.`);
         document.getElementById('request-modal').classList.add('hidden');
 
     } catch (e) {
@@ -231,7 +250,7 @@ export async function enviarPropostaAgora() {
 }
 
 // --- EXPOSIÇÃO GLOBAL (O SEGREDO PARA O BOTÃO FUNCIONAR) ---
-window.abrirSolicitacao = abrirModalSolicitacao; // Alias para compatibilidade com services.js
+window.abrirSolicitacao = abrirModalSolicitacao;
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
