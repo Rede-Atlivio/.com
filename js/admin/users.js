@@ -1,9 +1,9 @@
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc, runTransaction, setDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentType = 'users';
 let selectedUsers = new Set();
 let tempTransMode = null; 
-let allLoadedUsers = []; // Cache local para busca rápida
+let allLoadedUsers = []; 
 
 // ============================================================================
 // 1. INICIALIZAÇÃO
@@ -11,16 +11,16 @@ let allLoadedUsers = []; // Cache local para busca rápida
 export async function init(viewType) {
     currentType = viewType;
     selectedUsers.clear();
-    allLoadedUsers = []; // Limpa cache
+    allLoadedUsers = []; 
     updateUserBulkUI();
 
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
-    const searchInput = document.querySelector('.search-input') || document.querySelector('input[placeholder="Buscar..."]');
+    const searchInput = document.getElementById('list-search'); 
     const checkHeader = `<th class="p-3 w-10"><input type="checkbox" id="check-users-all" class="chk-custom"></th>`;
     
     if (viewType === 'users') {
-        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">FINANCEIRO / STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">STATUS / SALDO</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) btnAdd.innerHTML = "+ NOVO USUÁRIO";
     } else {
         headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
@@ -29,7 +29,7 @@ export async function init(viewType) {
 
     if(btnAdd) btnAdd.onclick = () => window.openEditor(viewType, null);
 
-    // Listener Mestre
+    // Listener Mestre (Checkbox)
     const chkAll = document.getElementById('check-users-all');
     if(chkAll) {
         const newChk = chkAll.cloneNode(true);
@@ -37,19 +37,14 @@ export async function init(viewType) {
         newChk.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
     }
     
-    // 🔥 ATIVAÇÃO DA BUSCA (ITEM 27)
+    // Listener Busca (Clone para remover anteriores)
     if(searchInput) {
-        // Remove listeners antigos clonando o elemento
         const newSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearch, searchInput);
-        
-        newSearch.addEventListener('input', (e) => {
-            const termo = e.target.value.toLowerCase();
-            filtrarListaLocal(termo);
-        });
-        console.log("🔍 Sistema de Busca Ativado.");
+        newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
     }
     
+    // Listener Bulk Delete
     const btnBulk = document.getElementById('btn-bulk-delete');
     if(btnBulk) btnBulk.onclick = executeUserBulkDelete;
 
@@ -58,7 +53,7 @@ export async function init(viewType) {
 }
 
 // ============================================================================
-// 2. LISTAGEM INTELIGENTE (ITEM 26)
+// 2. LISTAGEM INTELIGENTE (COM NOMES REAIS)
 // ============================================================================
 async function loadList() {
     const tbody = document.getElementById('list-body');
@@ -69,11 +64,11 @@ async function loadList() {
         const db = window.db;
         const col = currentType === 'users' ? 'usuarios' : 'active_providers';
         
-        // Em produção, aumentamos o limit para a busca funcionar melhor localmente
+        // Carrega mais itens para a busca funcionar bem localmente
         let q = query(collection(db, col), limit(100)); 
 
         const snap = await getDocs(q);
-        allLoadedUsers = []; // Reset do cache
+        allLoadedUsers = []; 
 
         if (snap.empty) {
             tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center opacity-50">Nada encontrado.</td></tr>`;
@@ -83,21 +78,19 @@ async function loadList() {
 
         snap.forEach(d => {
             const data = d.data();
-            data.id = d.id; // Garante ID no objeto
+            data.id = d.id; 
             
-            // 🕵️‍♂️ RESOLUÇÃO DE NOMES (SHERLOCK HOLMES)
-            // Tenta todas as possibilidades antes de desistir
+            // 🕵️‍♂️ SHERLOCK HOLMES: Descobre o nome real
             let nomeReal = 'Desconhecido';
-            
             if (data.nome_profissional) nomeReal = data.nome_profissional;
             else if (data.displayName) nomeReal = data.displayName;
             else if (data.nome && data.nome !== 'User') nomeReal = data.nome;
-            else if (data.email) nomeReal = data.email.split('@')[0]; // Pega o começo do email se não tiver nome
+            else if (data.email) nomeReal = data.email.split('@')[0];
             
-            // Formata Letra Maiúscula
+            // Capitaliza
             nomeReal = nomeReal.charAt(0).toUpperCase() + nomeReal.slice(1);
+            data._displayName = nomeReal; 
             
-            data._displayName = nomeReal; // Salva para uso na busca
             allLoadedUsers.push(data);
         });
 
@@ -107,21 +100,18 @@ async function loadList() {
     } catch (e) { console.error(e); }
 }
 
-// Função separada para renderizar (usada na busca também)
 function renderTable(lista) {
     const tbody = document.getElementById('list-body');
     tbody.innerHTML = "";
 
     if(lista.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-500">Nenhum resultado para a busca.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-500">Nenhum resultado.</td></tr>`;
         return;
     }
 
     lista.forEach(data => {
         const isChecked = selectedUsers.has(data.id) ? 'checked' : '';
         const checkbox = `<td class="p-3"><input type="checkbox" class="chk-user chk-custom" data-id="${data.id}" ${isChecked}></td>`;
-        
-        // Avatar Fallback
         const avatarImg = data.foto_perfil || data.photoURL || `https://ui-avatars.com/api/?name=${data._displayName}&background=random`;
 
         if(currentType === 'users') {
@@ -130,7 +120,7 @@ function renderTable(lista) {
             if(data.status === 'ativo') statusClass = "text-blue-400 border-blue-500/50 bg-blue-500/10";
             
             const saldo = parseFloat(data.saldo || 0);
-            const saldoClass = saldo < 0 ? 'text-red-400' : (saldo > 0 ? 'text-emerald-400' : 'text-gray-500');
+            const saldoClass = saldo < 0 ? 'text-red-400' : 'text-emerald-400';
 
             tbody.innerHTML += `
                 <tr class="border-b border-white/5 hover:bg-white/5 transition group">
@@ -140,7 +130,7 @@ function renderTable(lista) {
                             <img src="${avatarImg}" class="w-8 h-8 rounded-full object-cover border border-white/10">
                             <div>
                                 <div class="font-bold text-white text-sm">${data._displayName}</div>
-                                <div class="text-[10px] text-gray-500 font-mono">${data.email || data.id}</div>
+                                <div class="text-[10px] text-gray-500 font-mono">${data.email || data.id.substring(0,8)+'...'}</div>
                             </div>
                         </div>
                     </td>
@@ -159,7 +149,7 @@ function renderTable(lista) {
         } else {
             // LISTA DE PRESTADORES
             let statusIcon = data.is_online ? "🟢" : "⚫";
-            let statusLabel = data.status;
+            let statusLabel = data.status || "Novo";
             let rowOpacity = "opacity-100";
 
             if(data.status === 'em_analise') { statusIcon = "🟡"; statusLabel = "EM ANÁLISE"; }
@@ -197,11 +187,10 @@ function renderTable(lista) {
         }
     });
 
-    // Reatribui listeners de checkbox
+    // Reatribui listeners de checkbox para as novas linhas
     document.querySelectorAll('.chk-user').forEach(c => c.addEventListener('change', (e) => toggleUserItem(e.target.dataset.id, e.target.checked)));
 }
 
-// 🔥 FILTRO EM TEMPO REAL (ITEM 27)
 function filtrarListaLocal(termo) {
     if(!termo) {
         renderTable(allLoadedUsers);
@@ -211,78 +200,296 @@ function filtrarListaLocal(termo) {
         const nome = (u._displayName || "").toLowerCase();
         const email = (u.email || "").toLowerCase();
         const id = (u.id || "").toLowerCase();
-        const bio = (u.bio || "").toLowerCase();
         
-        return nome.includes(termo) || email.includes(termo) || id.includes(termo) || bio.includes(termo);
+        return nome.includes(termo) || email.includes(termo) || id.includes(termo);
     });
     renderTable(filtrados);
 }
 
 // ============================================================================
-// 3. SELEÇÃO EM MASSA (Mantida igual)
+// 3. SELEÇÃO EM MASSA
 // ============================================================================
-function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; toggleUserItem(c.dataset.id, checked); }); }
-function toggleUserItem(id, selected) { if(selected) selectedUsers.add(id); else selectedUsers.delete(id); updateUserBulkUI(); }
-function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); const count = document.getElementById('bulk-count'); if(selectedUsers.size > 0) { bar.classList.add('visible'); bar.style.transform = 'translateY(0)'; count.innerText = selectedUsers.size; } else { bar.classList.remove('visible'); bar.style.transform = 'translateY(100%)'; } }
-async function executeUserBulkDelete() { if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return; const btn = document.getElementById('btn-bulk-delete'); btn.innerText = "AGUARDE..."; try { const db = window.db; const batch = writeBatch(db); const col = currentType === 'users' ? 'usuarios' : 'active_providers'; selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); }); await batch.commit(); selectedUsers.clear(); updateUserBulkUI(); await loadList(); alert("✅ Exclusão concluída!"); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); } }
+function toggleUserSelectAll(checked) {
+    document.querySelectorAll('.chk-user').forEach(c => {
+        c.checked = checked;
+        toggleUserItem(c.dataset.id, checked);
+    });
+}
+function toggleUserItem(id, selected) {
+    if(selected) selectedUsers.add(id); else selectedUsers.delete(id);
+    updateUserBulkUI();
+}
+function updateUserBulkUI() {
+    const bar = document.getElementById('bulk-actions');
+    const count = document.getElementById('bulk-count');
+    if(selectedUsers.size > 0) {
+        bar.classList.add('visible');
+        bar.style.transform = 'translateY(0)';
+        count.innerText = selectedUsers.size;
+    } else {
+        bar.classList.remove('visible');
+        bar.style.transform = 'translateY(100%)';
+    }
+}
+async function executeUserBulkDelete() {
+    if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return;
+    const btn = document.getElementById('btn-bulk-delete');
+    btn.innerText = "AGUARDE...";
+    try {
+        const db = window.db;
+        const batch = writeBatch(db);
+        const col = currentType === 'users' ? 'usuarios' : 'active_providers';
+        selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); });
+        await batch.commit();
+        selectedUsers.clear();
+        updateUserBulkUI();
+        await loadList();
+        alert("✅ Exclusão concluída!");
+    } catch(e) { alert("Erro: " + e.message); } 
+    finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); }
+}
 
 // ============================================================================
-// 4. EDITOR COMPLETO (Mantido com melhorias visuais)
+// 4. EDITOR COMPLETO (PADRONIZADO)
 // ============================================================================
 window.openEditor = async (collectionName, id) => {
-    const modal = document.getElementById('modal-editor'); const content = document.getElementById('modal-content'); const title = document.getElementById('modal-title');
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
     const realCollection = collectionName === 'services' ? 'active_providers' : (collectionName === 'users' ? 'usuarios' : collectionName);
-    modal.classList.remove('hidden'); title.innerText = id ? "EDITAR / MODERAÇÃO" : "NOVO REGISTRO"; document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+
+    modal.classList.remove('hidden');
+    title.innerText = id ? "EDITAR / MODERAÇÃO" : "NOVO REGISTRO";
+    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
     content.innerHTML = `<div class="p-10 text-center"><div class="loader border-t-blue-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div></div>`;
+
     try {
-        let data = {}; if (id) { const docSnap = await getDoc(doc(window.db, realCollection, id)); if (docSnap.exists()) data = docSnap.data(); }
+        let data = {};
+        if (id) {
+            const docSnap = await getDoc(doc(window.db, realCollection, id));
+            if (docSnap.exists()) data = docSnap.data();
+        }
+
         let html = `<div class="space-y-4 animate-fade">`;
-        if (data.banner_url || data.foto_perfil) { html += `<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-4 flex gap-4">`; if(data.banner_url) html += `<div><p class="text-[9px]">Banner</p><img src="${data.banner_url}" class="h-20 w-32 object-cover rounded border border-gray-600"></div>`; if(data.foto_perfil) html += `<div><p class="text-[9px]">Avatar</p><img src="${data.foto_perfil}" class="w-16 h-16 object-cover rounded-full border border-gray-600"></div>`; html += `</div>`; }
-        if (realCollection === 'usuarios' && id) { const saldo = parseFloat(data.saldo || 0); const corSaldo = saldo < 0 ? 'text-red-400' : 'text-emerald-400'; html += `<div class="bg-slate-900/50 p-4 rounded-xl border border-white/10 flex justify-between items-center mb-4"><div><p class="text-[10px] text-gray-400 uppercase font-bold">Saldo</p><h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3></div><button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">Ajustar</button></div>`; }
-        const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo', '_displayName', 'id'];
-        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`; keys.forEach(key => { if(ignored.includes(key)) return; const val = data[key] || ""; html += `<div><label class="inp-label">${key.toUpperCase()}</label><input type="text" id="edit-${key}" value="${val}" class="inp-editor"></div>`; }); html += `</div>`;
-        html += `<div class="border-t border-slate-700 pt-6 mt-6"><p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
-        if (realCollection === 'active_providers') { html += `<div class="grid grid-cols-3 gap-3"><button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button><button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button><button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg shadow-green-900/20">✅ APROVAR (100)</button></div>`; } 
-        else { html += `<div class="grid grid-cols-2 gap-3 mb-3"><button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600/20 hover:bg-green-600 border border-green-600 text-white py-2 rounded text-xs font-bold transition">✅ ATIVAR / APROVAR</button><button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-600/20 hover:bg-yellow-600 border border-yellow-600 text-white py-2 rounded text-xs font-bold transition">⚠️ SUSPENDER</button></div><div class="grid grid-cols-2 gap-3"><button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="bg-red-600/20 hover:bg-red-600 border border-red-600 text-white py-2 rounded text-xs font-bold transition">⛔ BANIR / BLOQUEAR</button><button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold transition">💾 SALVAR DADOS</button></div>`; }
-        html += `</div></div>`; content.innerHTML = html;
+
+        // MÍDIA
+        if (data.banner_url || data.foto_perfil) {
+            html += `<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-4 flex gap-4">`;
+            if(data.banner_url) html += `<div><p class="text-[9px]">Banner</p><img src="${data.banner_url}" class="h-20 w-32 object-cover rounded border border-gray-600"></div>`;
+            if(data.foto_perfil) html += `<div><p class="text-[9px]">Avatar</p><img src="${data.foto_perfil}" class="w-16 h-16 object-cover rounded-full border border-gray-600"></div>`;
+            html += `</div>`;
+        }
+
+        // FINANCEIRO (Só para Usuários)
+        if (realCollection === 'usuarios' && id) {
+            const saldo = parseFloat(data.saldo || 0);
+            const corSaldo = saldo < 0 ? 'text-red-400' : 'text-emerald-400';
+            html += `
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-white/10 flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Saldo</p>
+                        <h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3>
+                    </div>
+                    <button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">
+                        Ajustar
+                    </button>
+                </div>
+            `;
+        }
+
+        // CAMPOS
+        const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; 
+        const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo', '_displayName', 'id'];
+        
+        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        keys.forEach(key => {
+            if(ignored.includes(key)) return;
+            const val = data[key] || "";
+            html += `<div><label class="inp-label">${key.toUpperCase()}</label><input type="text" id="edit-${key}" value="${val}" class="inp-editor"></div>`;
+        });
+        html += `</div>`;
+
+        // ==========================================
+        // 👮 BOTÕES DE AÇÃO (MODERAÇÃO REFINADA)
+        // ==========================================
+        html += `<div class="border-t border-slate-700 pt-6 mt-6">`;
+        html += `<p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
+        
+        if (realCollection === 'active_providers') {
+            html += `
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg shadow-green-900/20">✅ APROVAR (100)</button>
+                </div>
+            `;
+        } else {
+            // USUÁRIOS COMUNS (PADRONIZADO)
+            html += `
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600/20 hover:bg-green-600 border border-green-600 text-white py-2 rounded text-xs font-bold transition">✅ ATIVAR / APROVAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-600/20 hover:bg-yellow-600 border border-yellow-600 text-white py-2 rounded text-xs font-bold transition">⚠️ SUSPENDER</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="bg-red-600/20 hover:bg-red-600 border border-red-600 text-white py-2 rounded text-xs font-bold transition">⛔ BANIR / BLOQUEAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold transition">💾 SALVAR DADOS</button>
+                </div>
+            `;
+        }
+        html += `</div></div>`;
+
+        content.innerHTML = html;
+
     } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
 };
 
-// 5. SALVAR AÇÕES & NOTIFICAÇÕES
+// ============================================================================
+// 5. SALVAR AÇÕES (LÓGICA UNIFICADA)
+// ============================================================================
 window.saveAction = async (collectionName, id, action) => {
     if(!id) return alert("Criação manual ainda não implementada.");
     if(!confirm(`Confirmar ação: ${action.toUpperCase()}?`)) return;
+
     try {
         const ref = doc(window.db, collectionName, id);
         let updates = { updated_at: serverTimestamp() };
         let mensagemNotificacao = "";
-        const inputs = document.querySelectorAll('[id^="edit-"]'); if(inputs.length > 0) { inputs.forEach(inp => { const key = inp.id.replace('edit-', ''); updates[key] = inp.value; }); }
+
+        // Coleta inputs
+        const inputs = document.querySelectorAll('[id^="edit-"]');
+        if(inputs.length > 0) {
+            inputs.forEach(inp => {
+                const key = inp.id.replace('edit-', '');
+                updates[key] = inp.value;
+            });
+        }
+
+        // LÓGICA DE STATUS
         if (action === 'aprovar') {
-            if (collectionName === 'active_providers') { updates.status = 'aprovado'; updates.visibility_score = 100; updates.is_online = false; mensagemNotificacao = "✅ Seu perfil profissional foi APROVADO! Agora você pode ficar online."; } 
-            else { updates.status = 'ativo'; mensagemNotificacao = "✅ Sua conta foi reativada."; }
+            if (collectionName === 'active_providers') {
+                updates.status = 'aprovado';
+                updates.visibility_score = 100;
+                updates.is_online = false; // Começa offline
+                mensagemNotificacao = "✅ Seu perfil profissional foi APROVADO! Agora você pode ficar online.";
+            } else {
+                updates.status = 'ativo'; // Usuário comum volta a ser ativo
+                mensagemNotificacao = "✅ Sua conta foi reativada.";
+            }
+            alert("✅ Conta Ativada/Aprovada com sucesso!");
         } 
-        else if (action === 'rejeitar') { updates.status = 'rejeitado'; updates.visibility_score = 0; mensagemNotificacao = "🚫 Perfil rejeitado. Verifique os dados."; }
-        else if (action === 'suspender') { updates.status = 'suspenso'; updates.visibility_score = 0; updates.is_online = false; mensagemNotificacao = "⚠️ Conta SUSPENSA. Contate o suporte."; }
-        else if (action === 'banir') { updates.status = 'banido'; updates.visibility_score = 0; updates.is_online = false; updates.banned_at = serverTimestamp(); mensagemNotificacao = "⛔ Conta bloqueada permanentemente."; }
+        else if (action === 'rejeitar') { 
+            updates.status = 'rejeitado'; 
+            updates.visibility_score = 0; 
+            mensagemNotificacao = "🚫 Perfil rejeitado. Verifique os dados.";
+        }
+        else if (action === 'suspender') { 
+            updates.status = 'suspenso'; 
+            updates.visibility_score = 0; 
+            updates.is_online = false;
+            mensagemNotificacao = "⚠️ Conta SUSPENSA. Contate o suporte.";
+        }
+        else if (action === 'banir') { 
+            updates.status = 'banido'; 
+            updates.visibility_score = 0;
+            updates.is_online = false;
+            updates.banned_at = serverTimestamp();
+            mensagemNotificacao = "⛔ Conta bloqueada permanentemente.";
+        }
+
         await updateDoc(ref, updates);
+        
+        // Notificação
         if(mensagemNotificacao) {
-            // Envia notificação e cria um ticket de sistema
-            const db = window.db; // Garante referência correta
-            await addDoc(collection(db, "support_tickets"), { // Usando tickets para ficar no histórico do chat
+            await addDoc(collection(window.db, "support_tickets"), {
                 uid: id,
-                sender: 'admin',
+                sender: 'system',
                 message: mensagemNotificacao,
                 created_at: serverTimestamp(),
                 read: false,
                 system_msg: true
             });
         }
+
         document.getElementById('modal-editor').classList.add('hidden');
         await loadList();
+
     } catch (e) { alert("Erro ao salvar: " + e.message); }
 };
 
-// 6. FINANCEIRO
-window.openBalanceEditor = (uid, currentBalance, nomeUser) => { const modal = document.getElementById('modal-editor'); const content = document.getElementById('modal-content'); const title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "FINANCEIRO"; document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden'); content.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade"><p class="text-xs text-gray-400 uppercase font-bold">Saldo</p><h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2></div><div class="grid grid-cols-2 gap-4 animate-fade"><button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition"><p class="font-bold text-emerald-400">🟢 CRÉDITO</p></button><button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition"><p class="font-bold text-red-400">🔴 DÉBITO</p></button></div><div id="trans-form" class="mt-6 hidden animate-fade"><input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00"><input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Motivo"><button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR</button></div>`; tempTransMode = null; };
-window.setTransactionMode = (mode) => { tempTransMode = mode; document.getElementById('trans-form').classList.remove('hidden'); const btnCredit = document.getElementById('btn-mode-credit'); const btnDebit = document.getElementById('btn-mode-debit'); if (mode === 'credit') { btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1'; } else { btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1'; } };
-window.executeAdjustment = async (uid) => { const amount = parseFloat(document.getElementById('trans-amount').value); const desc = document.getElementById('trans-desc').value; const mode = tempTransMode; if (!amount || amount <= 0) return alert("Digite valor."); if (!desc) return alert("Digite motivo."); const finalAmount = mode === 'credit' ? amount : -amount; if(!confirm(`Confirmar?`)) return; const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true; try { const db = window.db; const userRef = doc(db, "usuarios", uid); await runTransaction(db, async (transaction) => { const userDoc = await transaction.get(userRef); if (!userDoc.exists()) throw "Usuário inexistente!"; const newBalance = (userDoc.data().saldo || 0) + finalAmount; transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() }); }); alert("✅ Saldo atualizado!"); document.getElementById('modal-editor').classList.add('hidden'); loadList(); } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR"; btn.disabled = false; } };
+// ============================================================================
+// 6. FINANCEIRO (MODAL)
+// ============================================================================
+window.openBalanceEditor = (uid, currentBalance, nomeUser) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+
+    modal.classList.remove('hidden');
+    title.innerText = "FINANCEIRO: " + (nomeUser || "Usuário").toUpperCase();
+    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+
+    content.innerHTML = `
+        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade">
+            <p class="text-xs text-gray-400 uppercase font-bold">Saldo Atual</p>
+            <h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 animate-fade">
+            <button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition">
+                <p class="font-bold text-emerald-400">🟢 ADICIONAR CRÉDITO</p>
+                <p class="text-[10px] text-gray-400">Bônus, Estorno, Depósito</p>
+            </button>
+            <button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition">
+                <p class="font-bold text-red-400">🔴 COBRAR / REMOVER</p>
+                <p class="text-[10px] text-gray-400">Taxas, Multas, Saque</p>
+            </button>
+        </div>
+
+        <div id="trans-form" class="mt-6 hidden animate-fade">
+            <label class="inp-label">VALOR (R$)</label>
+            <input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00">
+            <label class="inp-label">MOTIVO / DESCRIÇÃO</label>
+            <input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Ex: Bônus de boas vindas">
+            <button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR TRANSAÇÃO</button>
+        </div>
+    `;
+    tempTransMode = null;
+};
+
+window.setTransactionMode = (mode) => {
+    tempTransMode = mode;
+    document.getElementById('trans-form').classList.remove('hidden');
+    const btnCredit = document.getElementById('btn-mode-credit');
+    const btnDebit = document.getElementById('btn-mode-debit');
+    if (mode === 'credit') {
+        btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1';
+    } else {
+        btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1';
+    }
+};
+
+window.executeAdjustment = async (uid) => {
+    const amount = parseFloat(document.getElementById('trans-amount').value);
+    const desc = document.getElementById('trans-desc').value;
+    const mode = tempTransMode;
+    if (!amount || amount <= 0) return alert("Digite um valor válido.");
+    if (!desc) return alert("Digite um motivo.");
+    const finalAmount = mode === 'credit' ? amount : -amount;
+    if(!confirm(`Confirmar?`)) return;
+    const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true;
+    try {
+        const db = window.db;
+        const userRef = doc(db, "usuarios", uid);
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw "Usuário não existe!";
+            const currentSaldo = userDoc.data().saldo || 0;
+            const newBalance = currentSaldo + finalAmount;
+            transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() });
+        });
+        alert("✅ Saldo atualizado com sucesso!");
+        document.getElementById('modal-editor').classList.add('hidden');
+        loadList(); 
+    } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR TRANSAÇÃO"; btn.disabled = false; }
+};
