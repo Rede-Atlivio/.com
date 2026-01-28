@@ -1,5 +1,20 @@
 import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Função para abrir/fechar o detalhe do usuário (Exposta no Window)
+window.toggleFeed = (uid) => {
+    const el = document.getElementById(`feed-details-${uid}`);
+    const btn = document.getElementById(`btn-feed-${uid}`);
+    if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        btn.innerText = "▲ FECHAR";
+        btn.classList.add('text-red-400');
+    } else {
+        el.classList.add('hidden');
+        btn.innerText = "▼ EXPANDIR";
+        btn.classList.remove('text-red-400');
+    }
+};
+
 export async function init() {
     const container = document.getElementById('view-dashboard');
     
@@ -44,16 +59,16 @@ export async function init() {
                 </div>
             </div>
 
-            <div class="glass-panel p-0 flex flex-col h-[400px] overflow-hidden">
+            <div class="glass-panel p-0 flex flex-col h-[500px] overflow-hidden">
                 <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center">
                     <h4 class="font-bold text-white text-xs flex items-center gap-2">
-                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> AO VIVO
+                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> SESSÕES AO VIVO
                     </h4>
-                    <span class="text-[10px] text-gray-500 uppercase tracking-widest">Feed Real-Time</span>
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest">Tempo Real</span>
                 </div>
                 
-                <div id="live-feed-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                    <p class="text-center text-gray-500 text-xs mt-10">Aguardando ações...</p>
+                <div id="live-feed-list" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-black/20">
+                    <p class="text-center text-gray-500 text-xs mt-10">Monitorando...</p>
                 </div>
             </div>
         </div>
@@ -63,7 +78,7 @@ export async function init() {
         const db = window.db;
 
         // =================================================================================
-        // 2. CARREGAMENTO DOS DADOS ESTÁTICOS (KPIS + ANALYTICS)
+        // 2. CARREGAMENTO DOS DADOS ESTÁTICOS
         // =================================================================================
         const usersSnap = await getDocs(collection(db, "usuarios"));
         const qOnline = query(collection(db, "active_providers"), where("is_online", "==", true));
@@ -74,13 +89,21 @@ export async function init() {
         let totalSaldo = 0;
         let trafficStats = {}; 
 
+        // Mapa auxiliar para saber a origem de cada usuário pelo ID
+        let userSourceMap = {};
+
         usersSnap.forEach(doc => {
             const data = doc.data();
             const valor = parseFloat(data.wallet_balance || data.saldo || 0);
             totalSaldo += valor;
+            
             let source = data.traffic_source || 'orgânico';
             if(source === 'direct') source = 'orgânico';
+            
             trafficStats[source] = (trafficStats[source] || 0) + 1;
+            
+            // Guarda a origem para usar no feed
+            userSourceMap[doc.id] = source;
         });
 
         document.getElementById('kpi-users').innerText = usersSnap.size;
@@ -96,10 +119,9 @@ export async function init() {
         sortedTraffic.forEach(([origem, count]) => {
             const percent = ((count / totalUsers) * 100).toFixed(1);
             let colorClass = 'bg-gray-600';
-            if(origem.includes('zap') || origem.includes('whats')) colorClass = 'bg-green-500';
+            if(origem.includes('zap')) colorClass = 'bg-green-500';
             if(origem.includes('insta')) colorClass = 'bg-pink-500';
             if(origem.includes('teste')) colorClass = 'bg-amber-500';
-            if(origem === 'orgânico') colorClass = 'bg-slate-700';
 
             tbody.innerHTML += `
                 <tr class="border-b border-gray-800 last:border-0 hover:bg-white/5 transition">
@@ -112,33 +134,77 @@ export async function init() {
         });
 
         // =================================================================================
-        // 3. ATIVAÇÃO DO LIVE FEED (LISTENER REAL-TIME)
+        // 3. LIVE FEED AGRUPADO (Sessão por Usuário)
         // =================================================================================
         const feedContainer = document.getElementById('live-feed-list');
-        const qFeed = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(20));
+        const qFeed = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(50));
         
         onSnapshot(qFeed, (snap) => {
             if(snap.empty) return;
             
-            feedContainer.innerHTML = "";
+            // Lógica de Agrupamento
+            const sessions = {};
+            
             snap.forEach(d => {
                 const evt = d.data();
-                const time = evt.timestamp ? evt.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
+                const uid = evt.uid || "visitante";
                 
-                // Ícones baseados na ação
-                let icon = '🖱️';
-                if(evt.action.includes('Contratar')) icon = '🤝';
-                if(evt.action.includes('Cadastro')) icon = '👤';
-                if(evt.action.includes('Login')) icon = '🔑';
-                if(evt.action.includes('Vaga')) icon = '💼';
+                if(!sessions[uid]) {
+                    sessions[uid] = {
+                        user: evt.user,
+                        uid: uid,
+                        lastTime: evt.timestamp,
+                        actions: [],
+                        source: userSourceMap[uid] || 'visitante'
+                    };
+                }
+                sessions[uid].actions.push(evt);
+            });
+
+            // Renderização
+            feedContainer.innerHTML = "";
+            
+            Object.values(sessions).forEach(sessao => {
+                const timeStr = sessao.lastTime ? sessao.lastTime.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
+                const qtdAcoes = sessao.actions.length;
+                
+                // Badge de Origem
+                let badgeClass = "bg-gray-700 text-gray-300";
+                if(sessao.source.includes('zap')) badgeClass = "bg-green-900 text-green-300 border border-green-700";
+                if(sessao.source.includes('teste')) badgeClass = "bg-amber-900 text-amber-300 border border-amber-700";
+
+                // Ícones na lista interna
+                const actionsHtml = sessao.actions.map(a => {
+                    let icon = '🖱️';
+                    if(a.details.includes('tab-')) icon = '📑';
+                    if(a.action === 'Cadastro') icon = '🆕';
+                    
+                    const t = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([],{second:'2-digit'}) : '';
+                    return `<div class="flex items-center gap-2 text-[10px] text-gray-400 border-l border-gray-700 pl-2 ml-1">
+                        <span class="font-mono text-gray-600">${t}</span>
+                        <span>${icon} ${a.details.replace('Botão:', '')}</span>
+                    </div>`;
+                }).join('');
 
                 feedContainer.innerHTML += `
-                    <div class="flex gap-3 items-start animate-fadeIn border-b border-gray-800 pb-2 last:border-0">
-                        <div class="mt-1 opacity-70 text-sm">${icon}</div>
-                        <div>
-                            <p class="text-[10px] font-mono text-blue-400 mb-0.5">${time}</p>
-                            <p class="text-xs font-bold text-white leading-tight">${evt.details}</p>
-                            <p class="text-[9px] text-gray-500 mt-0.5 truncate max-w-[150px]">${evt.user}</p>
+                    <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 shadow-sm animate-fadeIn">
+                        <div class="flex justify-between items-center mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-xs text-blue-400">${timeStr}</span>
+                                <span class="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${badgeClass}">${sessao.source}</span>
+                            </div>
+                            <button id="btn-feed-${sessao.uid}" onclick="window.toggleFeed('${sessao.uid}')" class="text-[9px] font-bold text-blue-400 hover:text-white uppercase transition bg-black/20 px-2 py-1 rounded">
+                                ▼ EXPANDIR
+                            </button>
+                        </div>
+                        
+                        <div class="flex justify-between items-end">
+                            <p class="text-xs font-bold text-white truncate max-w-[150px]" title="${sessao.user}">${sessao.user.split('@')[0]}</p>
+                            <p class="text-[9px] text-gray-400">${qtdAcoes} ações recentes</p>
+                        </div>
+
+                        <div id="feed-details-${sessao.uid}" class="hidden mt-3 space-y-1 bg-black/20 p-2 rounded">
+                            ${actionsHtml}
                         </div>
                     </div>
                 `;
