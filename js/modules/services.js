@@ -16,6 +16,7 @@ if (tabServicos) {
 window.carregarServicos = carregarServicosDisponiveis;
 window.abrirModalContratacao = abrirModalContratacao;
 window.filtrarCategoria = filtrarCategoria;
+window.filtrarPorTexto = filtrarPorTexto; // 🆕 Nova Função Exposta
 window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
 
 // ============================================================================
@@ -28,21 +29,29 @@ export function carregarServicosDisponiveis() {
     
     if (!listaRender || !filtersRender) return;
 
-    // 🔒 TRAVA DE SEGURANÇA (Prestador não vê filtros)
+    // 🔒 TRAVA DE SEGURANÇA (Prestador não vê filtros/busca)
     if (userProfile && userProfile.is_provider) {
         filtersRender.classList.add('hidden');
         return; 
     }
 
-    // 🎨 MUDANÇA VISUAL: FORÇA GRID DE 2 COLUNAS (ITEM 43)
-    // Removemos as classes antigas e aplicamos o layout "Instagram"
+    // 🎨 LAYOUT GRID
     listaRender.className = "grid grid-cols-2 md:grid-cols-3 gap-2 pb-24"; 
 
-    // Se for cliente, MOSTRA os filtros
-    if(filtersRender.innerHTML.trim() === "") {
+    // 🔎 BARRA DE PESQUISA + FILTROS (ITEM 44)
+    if(filtersRender.innerHTML.trim() === "" || !document.getElementById('search-services')) {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2">
+            <div class="mb-3 px-1">
+                <div class="relative">
+                    <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
+                    <input type="text" id="search-services" oninput="window.filtrarPorTexto(this.value)" 
+                        placeholder="Buscar profissional ou serviço..." 
+                        class="w-full bg-white border border-gray-200 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-gray-700 outline-none focus:border-blue-500 transition shadow-sm">
+                </div>
+            </div>
+
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2 px-1">
                 <button onclick="window.filtrarCategoria('Todos', this)" class="filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm whitespace-nowrap">Todos</button>
                 <button onclick="window.filtrarCategoria('Limpeza', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Limpeza</button>
                 <button onclick="window.filtrarCategoria('Obras', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Obras</button>
@@ -84,6 +93,7 @@ export function carregarServicosDisponiveis() {
                 cachePrestadores.push({ id: d.id, ...d.data() });
             });
 
+            // Renderiza inicial (Todos)
             const validos = cachePrestadores.filter(p => p.services && p.services.length > 0);
             renderizarLista(validos);
         });
@@ -94,7 +104,59 @@ export function carregarServicosDisponiveis() {
     }
 }
 
+// 🔎 NOVA FUNÇÃO DE BUSCA (ITEM 44)
+function filtrarPorTexto(texto) {
+    const termo = texto.toLowerCase().trim();
+    
+    // Reseta botões de categoria visualmente
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+        btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+    });
+
+    if (termo === "") {
+        // Se limpou a busca, restaura "Todos"
+        const btnTodos = document.querySelector("button[onclick*='Todos']");
+        if(btnTodos) {
+            btnTodos.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
+            btnTodos.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+        }
+        renderizarLista(cachePrestadores);
+        return;
+    }
+
+    const filtrados = cachePrestadores.filter(p => {
+        if (!p.services) return false;
+        
+        // Busca no Nome
+        const matchNome = (p.nome_profissional || "").toLowerCase().includes(termo);
+        // Busca na Bio
+        const matchBio = (p.bio || "").toLowerCase().includes(termo);
+        // Busca nos Serviços
+        const matchServico = p.services.some(s => 
+            s.category.toLowerCase().includes(termo) || 
+            (s.description || "").toLowerCase().includes(termo)
+        );
+
+        return matchNome || matchBio || matchServico;
+    });
+
+    const container = document.getElementById('lista-prestadores-realtime');
+    if(filtrados.length === 0) {
+        container.innerHTML = `
+            <div class="col-span-2 text-center py-10 opacity-50">
+                <p class="text-xs">Nenhum resultado para "<b>${texto}</b>".</p>
+            </div>`;
+    } else {
+        renderizarLista(filtrados);
+    }
+}
+
 function filtrarCategoria(categoria, btnElement) {
+    // Limpa o campo de busca se clicar numa categoria
+    const inputBusca = document.getElementById('search-services');
+    if(inputBusca) inputBusca.value = "";
+
     if(btnElement) {
         document.querySelectorAll('.filter-pill').forEach(btn => {
             btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 transition whitespace-nowrap";
@@ -133,9 +195,7 @@ function renderizarLista(lista) {
         if(!isAprovado) return; 
 
         const nomeSafe = prestador.nome_profissional || "Profissional";
-        // Usa o primeiro nome para caber no card pequeno
         const primeiroNome = nomeSafe.split(' ')[0];
-        
         const fotoPerfil = prestador.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSafe)}&background=random&color=fff`;
         
         const servicoPrincipal = (prestador.services && prestador.services.length > 0) 
@@ -149,7 +209,6 @@ function renderizarLista(lista) {
 
         const onclickAction = `window.abrirModalContratacao('${prestador.id}')`;
 
-        // 🖼️ CARD COMPACTO (MOBILE FIRST)
         container.innerHTML += `
             <div class="${containerClass}" onclick="${onclickAction}">
                 <div class="absolute top-2 right-2 z-10">
