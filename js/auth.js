@@ -49,17 +49,20 @@ onAuthStateChanged(auth, async (user) => {
                 if(!docSnap.exists()) {
                     // 🚀 RASTREAMENTO: Pega a origem do localStorage (Salvo pelo index.html)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    console.log("📍 Cadastrando usuário com origem:", trafficSource);
-
+                    
                     const novoPerfil = { 
                         email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
                         photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
                         role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
                         wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: new Date(), status: 'ativo',
-                        traffic_source: trafficSource // GRAVA NO BANCO
+                        traffic_source: trafficSource 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
+                    
+                    // Log de Novo Cadastro
+                    logSystemEvent("Cadastro", `Novo usuário via ${trafficSource}`);
+
                 } else {
                     const data = docSnap.data();
                     
@@ -320,7 +323,6 @@ window.abrirConfiguracaoServicos = async () => {
     const b = d.banner_url||"", bi = d.bio||"", s = d.services||[];
     const inputStyle = "w-full border border-gray-300 rounded-lg p-2 text-xs font-bold text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none";
     
-    // LISTA DE SERVIÇOS
     const servicesHtml = s.length > 0 ? s.map((sv,i)=>`
         <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center mb-2">
             <div><p class="font-bold text-xs text-blue-900 flex items-center gap-1">🛠️ ${sv.category}</p><p class="text-[10px] text-gray-600">R$ ${sv.price}</p></div>
@@ -381,3 +383,44 @@ window.saveServicesAndGoOnline = async () => {
 window.removerServico = async (i) => { const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let s = snap.data().services; s.splice(i,1); await updateDoc(ref, {services: s}); window.abrirConfiguracaoServicos(); };
 window.uploadFotoPerfil = async (i) => { if (!i.files || i.files.length === 0) return; const f = i.files[0]; const u = auth.currentUser; if(!u) return; try { const sRef = ref(storage, `perfil/${u.uid}/foto.jpg`); await uploadBytes(sRef, f); const url = await getDownloadURL(sRef); await updateProfile(u, {photoURL:url}); await updateDoc(doc(db,"usuarios",u.uid),{photoURL:url}); alert("✅ Foto atualizada!"); location.reload(); } catch(e){ alert("Erro upload."); } };
 function toggleDisplay(id, s) { const el = document.getElementById(id); if(el) s ? el.classList.remove('hidden') : el.classList.add('hidden'); }
+
+// ============================================================================
+// 👁️ LIVE TRACKING (MONITOR DE CLIQUES)
+// ============================================================================
+// Função segura que grava eventos no banco sem travar a interface
+async function logSystemEvent(action, details) {
+    try {
+        const uid = auth.currentUser ? auth.currentUser.uid : "visitante";
+        const email = userProfile ? (userProfile.email || userProfile.displayName || "Sem Nome") : "Visitante";
+        
+        await addDoc(collection(db, "system_events"), {
+            action: action,
+            details: details,
+            user: email,
+            uid: uid,
+            timestamp: serverTimestamp(),
+            type: 'click'
+        });
+    } catch(e) {
+        // Silencioso para não incomodar o usuário
+        console.warn("Log failed:", e);
+    }
+}
+
+// Escuta Global de Cliques (Delega Eventos)
+window.addEventListener('click', (e) => {
+    // 1. Identifica o elemento clicado (ou o pai dele se for um ícone dentro de botão)
+    const el = e.target.closest('button') || e.target.closest('a') || e.target.closest('.subtab-btn');
+    
+    if (el) {
+        // Captura ID, Texto ou Classe relevante
+        let identificador = el.id || el.innerText || el.className;
+        if(identificador.length > 30) identificador = identificador.substring(0, 30) + "..."; // Corta texto longo
+
+        // Ignora cliques irrelevantes para não flodar o banco
+        if(!identificador || identificador.includes("container") || identificador.includes("wrapper")) return;
+
+        // Envia para o banco
+        logSystemEvent("Clique", `Botão: ${identificador}`);
+    }
+});
