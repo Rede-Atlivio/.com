@@ -91,7 +91,7 @@ function aplicarRestricoesDeStatus(status) {
     const oldBlock = document.getElementById(bloqueioID); const oldBar = document.getElementById(avisoID);
     if(oldBlock) oldBlock.remove(); if(oldBar) oldBar.remove();
 
-    if (status === 'banido') { /* Lógica de banimento já tratada */ } 
+    if (status === 'banido') { /* Lógica já tratada */ } 
     else if (status === 'suspenso') {
         const warningHtml = `<div id="${avisoID}" class="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-xl flex justify-between items-center"><span class="flex items-center gap-2"><i class="animate-pulse">⚠️</i> CONTA SUSPENSA</span><button onclick="alert('Entre em contato com o suporte.')" class="bg-white/20 px-2 py-1 rounded text-[10px]">Ajuda</button></div>`;
         body.insertAdjacentHTML('beforeend', warningHtml);
@@ -209,20 +209,16 @@ window.uploadBanner = async (input) => {
     try { const storageRef = ref(storage, `banners/${user.uid}/capa_vitrine.jpg`); await uploadBytes(storageRef, file); const dURL = await getDownloadURL(storageRef); document.getElementById('hidden-banner-url').value = dURL; document.getElementById('preview-banner').src = dURL; document.getElementById('preview-banner').classList.remove('hidden'); document.getElementById('banner-placeholder').classList.add('hidden'); } catch (e) { alert("Erro upload."); } finally { btn.innerText = t; btn.disabled = false; }
 };
 
-// 🔥 ATUALIZADO: Item 2.4 (Botão EDITAR e Layout)
 window.abrirConfiguracaoServicos = async () => {
     const modal = document.getElementById('provider-setup-modal'); modal.classList.remove('hidden'); const content = document.getElementById('provider-setup-content'); const form = modal.querySelector('div.bg-white') || modal.firstElementChild;
     let d = {}; try { const snap = await getDoc(doc(db, "active_providers", auth.currentUser.uid)); if(snap.exists()) d = snap.data(); } catch(e){}
     const b = d.banner_url||"", bi = d.bio||"", s = d.services||[];
     const inputStyle = "w-full border border-gray-300 rounded-lg p-2 text-xs font-bold text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none";
     
-    // LISTA DE SERVIÇOS COM BOTÕES EDITAR E EXCLUIR
+    // LISTA DE SERVIÇOS
     const servicesHtml = s.length > 0 ? s.map((sv,i)=>`
         <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center mb-2">
-            <div>
-                <p class="font-bold text-xs text-blue-900 flex items-center gap-1">🛠️ ${sv.category}</p>
-                <p class="text-[10px] text-gray-600">R$ ${sv.price}</p>
-            </div>
+            <div><p class="font-bold text-xs text-blue-900 flex items-center gap-1">🛠️ ${sv.category}</p><p class="text-[10px] text-gray-600">R$ ${sv.price}</p></div>
             <div class="flex gap-2">
                 <button onclick="window.editarServico(${i})" class="text-blue-500 hover:text-blue-700 p-1 rounded bg-white border border-blue-200" title="Editar">✏️</button>
                 <button onclick="window.removerServico(${i})" class="text-red-500 hover:text-red-700 p-1 rounded bg-white border border-red-200" title="Excluir">❌</button>
@@ -234,38 +230,33 @@ window.abrirConfiguracaoServicos = async () => {
             <div class="flex justify-between mb-2"><div><h2 class="text-xl font-black text-blue-900">🚀 Perfil</h2></div><button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="text-gray-400 font-bold text-xl px-2">&times;</button></div>
             <div class="mb-6"><label class="text-xs font-bold text-gray-700 uppercase">📸 Capa</label><div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer" onclick="document.getElementById('banner-input').click()"><img id="preview-banner" src="${b}" class="${b?'':'hidden'} w-full h-full object-cover"><div id="banner-placeholder" class="${b?'hidden':'flex'} flex-col items-center"><span class="text-2xl">🖼️</span></div></div><input type="file" id="banner-input" class="hidden" onchange="window.uploadBanner(this)"><input type="hidden" id="hidden-banner-url" value="${b}"></div>
             <div class="mb-6 space-y-3"><div><label class="text-xs font-bold text-gray-500 uppercase">Nome</label><input type="text" id="setup-name" value="${d.nome_profissional||auth.currentUser.displayName||''}" class="${inputStyle}"></div><div><label class="text-xs font-bold text-gray-500 uppercase">Bio</label><textarea id="setup-bio" rows="3" class="${inputStyle}">${bi}</textarea></div></div>
-            
-            <div class="mb-6">
-                <label class="text-xs font-bold text-gray-700 uppercase block mb-2">🛠️ Seus Serviços</label>
-                <div id="my-services-list" class="mb-4">${servicesHtml}</div>
-                
-                <div class="bg-gray-100 p-4 rounded-xl border border-gray-200">
-                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar / Editar</p>
-                    <div class="grid grid-cols-2 gap-2 mb-2"><select id="new-service-category" class="${inputStyle}"><option value="" disabled selected>Categoria...</option>${CATEGORIAS_SERVICOS.map(c=>`<option value="${c}">${c}</option>`).join('')}</select><input type="number" id="new-service-price" placeholder="R$" class="${inputStyle}"></div><textarea id="new-service-desc" placeholder="Detalhes (Ex: Material incluso?)" class="${inputStyle}" rows="1"></textarea><button onclick="window.addServiceLocal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded text-xs font-bold uppercase mt-3 transition shadow">⬇️ ADICIONAR A LISTA</button>
-                </div>
-            </div>
+            <div class="mb-6"><label class="text-xs font-bold text-gray-700 uppercase block mb-2">🛠️ Seus Serviços</label><div id="my-services-list" class="mb-4">${servicesHtml}</div><div class="bg-gray-100 p-4 rounded-xl border border-gray-200"><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar / Editar</p><div class="grid grid-cols-2 gap-2 mb-2"><select id="new-service-category" class="${inputStyle}"><option value="" disabled selected>Categoria...</option>${CATEGORIAS_SERVICOS.map(c=>`<option value="${c}">${c}</option>`).join('')}</select><input type="number" id="new-service-price" placeholder="R$" class="${inputStyle}"></div><textarea id="new-service-desc" placeholder="Detalhes" class="${inputStyle}" rows="1"></textarea><button onclick="window.addServiceLocal()" class="w-full bg-slate-800 hover:bg-slate-700 text-white py-3 rounded text-xs font-bold uppercase mt-3 transition shadow">⬇️ ADICIONAR A LISTA</button></div></div>
             <div class="pt-4 border-t flex gap-2"><button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="flex-1 bg-gray-200 py-4 rounded-xl font-bold text-xs uppercase text-gray-700">Cancelar</button><button onclick="window.saveServicesAndGoOnline()" class="flex-2 w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">💾 SALVAR TUDO</button></div>
         </div>`; 
 };
 
-// 🔥 NOVA FUNÇÃO: EDITAR SERVIÇO (Remove da lista e joga nos inputs)
+// 🔥 CORREÇÃO DA EDIÇÃO: Remove DB -> Recarrega Tela -> Preenche Campos
 window.editarServico = async (i) => {
     const ref = doc(db, "active_providers", auth.currentUser.uid);
     const snap = await getDoc(ref);
     let s = snap.data().services;
     const item = s[i];
 
-    // Preenche os campos
-    document.getElementById('new-service-category').value = item.category;
-    document.getElementById('new-service-price').value = item.price;
-    document.getElementById('new-service-desc').value = item.description || "";
+    // Remove manualmente
+    s.splice(i, 1);
+    await updateDoc(ref, { services: s });
 
-    // Remove da lista para evitar duplicação (o usuário clica em Adicionar dps)
-    await window.removerServico(i);
-    
-    // Foca no preço
-    document.getElementById('new-service-price').focus();
-    alert("✏️ Modo de Edição: Faça as alterações e clique em 'ADICIONAR A LISTA' novamente.");
+    // Recarrega
+    await window.abrirConfiguracaoServicos();
+
+    // Preenche com delay para o DOM existir
+    setTimeout(() => {
+        document.getElementById('new-service-category').value = item.category;
+        document.getElementById('new-service-price').value = item.price;
+        document.getElementById('new-service-desc').value = item.description || "";
+        document.getElementById('new-service-price').focus();
+        alert("✏️ ITEM MOVIDO PARA EDIÇÃO.\n\nAltere os dados abaixo e clique em 'ADICIONAR' para confirmar.");
+    }, 200);
 };
 
 window.addServiceLocal = async () => {
