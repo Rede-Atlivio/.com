@@ -24,9 +24,19 @@ window.fecharPerfilPublico = () => document.getElementById('provider-profile-mod
 export function carregarServicosDisponiveis() {
     const listaRender = document.getElementById('lista-prestadores-realtime');
     const filtersRender = document.getElementById('category-filters');
+    const userProfile = window.userProfile;
     
     if (!listaRender || !filtersRender) return;
 
+    // 🔒 TRAVA DE SEGURANÇA (ITEM 41)
+    // Se for prestador, ESCONDE os filtros e sai da função.
+    // O auth.js já esconde a div inteira 'servicos-cliente', mas isso aqui garante que o código não rode à toa.
+    if (userProfile && userProfile.is_provider) {
+        filtersRender.classList.add('hidden');
+        return; 
+    }
+
+    // Se for cliente, MOSTRA os filtros
     if(filtersRender.innerHTML.trim() === "") {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
@@ -235,33 +245,7 @@ function abrirPerfilPublico(prestador) {
     listaContainer.innerHTML = "";
 
     prestador.services.forEach(svc => {
-        // Cada serviço tem seu próprio botão de contratar
-        // OBS: Aqui também passamos os dados de forma segura
-        // Mas como o nome está dentro de uma string template JS, usamos aspas escapadas se necessário, 
-        // ou melhor, passamos o nome do objeto prestador que já foi validado.
-        
-        // Simplificação Segura:
         const btnId = `btn-svc-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const htmlItem = `
-            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
-                <div>
-                    <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
-                    <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
-                </div>
-                <button id="${btnId}" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
-                    R$ ${svc.price}
-                </button>
-            </div>
-        `;
-        
-        // Injeção segura do evento onclick via AddEventListener não é viável com innerHTML string
-        // Voltamos ao onclick inline mas com tratamento de aspas
-        
-        // TRUQUE DO NOME: Usamos uma variável global temporária se o nome for complexo, 
-        // ou assumimos que o nome já está limpo.
-        // Vamos usar a função direta passando o ID de novo, e buscando o nome dentro do modalSolicitacao se precisar.
-        // MAS para facilitar, vamos passar o nome do prestador que temos aqui no escopo.
         
         listaContainer.innerHTML += `
             <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
