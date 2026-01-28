@@ -16,8 +16,17 @@ if (tabServicos) {
 window.carregarServicos = carregarServicosDisponiveis;
 window.abrirModalContratacao = abrirModalContratacao;
 window.filtrarCategoria = filtrarCategoria;
-window.filtrarPorTexto = filtrarPorTexto; // 🆕 Nova Função Exposta
+window.filtrarPorTexto = filtrarPorTexto;
 window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
+
+// --- FUNÇÃO AUXILIAR: REMOVE ACENTOS E MAIÚSCULAS ---
+function normalizarTexto(texto) {
+    if (!texto) return "";
+    return texto
+        .normalize('NFD') // Separa os acentos das letras
+        .replace(/[\u0300-\u036f]/g, "") // Remove os acentos
+        .toLowerCase(); // Tudo minúsculo
+}
 
 // ============================================================================
 // 1. LISTAGEM DE SERVIÇOS (TEMPO REAL & GRID)
@@ -38,7 +47,7 @@ export function carregarServicosDisponiveis() {
     // 🎨 LAYOUT GRID
     listaRender.className = "grid grid-cols-2 md:grid-cols-3 gap-2 pb-24"; 
 
-    // 🔎 BARRA DE PESQUISA + FILTROS (ITEM 44)
+    // 🔎 BARRA DE PESQUISA + FILTROS
     if(filtersRender.innerHTML.trim() === "" || !document.getElementById('search-services')) {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
@@ -46,7 +55,7 @@ export function carregarServicosDisponiveis() {
                 <div class="relative">
                     <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
                     <input type="text" id="search-services" oninput="window.filtrarPorTexto(this.value)" 
-                        placeholder="Buscar profissional ou serviço..." 
+                        placeholder="Buscar (Ex: Tecnico, Joao...)" 
                         class="w-full bg-white border border-gray-200 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-gray-700 outline-none focus:border-blue-500 transition shadow-sm">
                 </div>
             </div>
@@ -104,9 +113,9 @@ export function carregarServicosDisponiveis() {
     }
 }
 
-// 🔎 NOVA FUNÇÃO DE BUSCA (ITEM 44)
+// 🔎 BUSCA INTELIGENTE (SEM ACENTOS)
 function filtrarPorTexto(texto) {
-    const termo = texto.toLowerCase().trim();
+    const termo = normalizarTexto(texto); // Limpa o que o usuário digitou
     
     // Reseta botões de categoria visualmente
     document.querySelectorAll('.filter-pill').forEach(btn => {
@@ -115,7 +124,6 @@ function filtrarPorTexto(texto) {
     });
 
     if (termo === "") {
-        // Se limpou a busca, restaura "Todos"
         const btnTodos = document.querySelector("button[onclick*='Todos']");
         if(btnTodos) {
             btnTodos.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
@@ -128,14 +136,12 @@ function filtrarPorTexto(texto) {
     const filtrados = cachePrestadores.filter(p => {
         if (!p.services) return false;
         
-        // Busca no Nome
-        const matchNome = (p.nome_profissional || "").toLowerCase().includes(termo);
-        // Busca na Bio
-        const matchBio = (p.bio || "").toLowerCase().includes(termo);
-        // Busca nos Serviços
+        // Limpa os dados do banco antes de comparar
+        const matchNome = normalizarTexto(p.nome_profissional).includes(termo);
+        const matchBio = normalizarTexto(p.bio).includes(termo);
         const matchServico = p.services.some(s => 
-            s.category.toLowerCase().includes(termo) || 
-            (s.description || "").toLowerCase().includes(termo)
+            normalizarTexto(s.category).includes(termo) || 
+            normalizarTexto(s.description).includes(termo)
         );
 
         return matchNome || matchBio || matchServico;
@@ -153,7 +159,6 @@ function filtrarPorTexto(texto) {
 }
 
 function filtrarCategoria(categoria, btnElement) {
-    // Limpa o campo de busca se clicar numa categoria
     const inputBusca = document.getElementById('search-services');
     if(inputBusca) inputBusca.value = "";
 
