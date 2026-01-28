@@ -10,20 +10,29 @@ export function carregarInterfaceEmpregos() {
     const containerEmpresa = document.getElementById('painel-empresa');
     const userProfile = window.userProfile; 
 
+    // Reset visual inicial
+    if(containerVagas) containerVagas.classList.add('hidden');
+    if(containerEmpresa) containerEmpresa.classList.add('hidden');
+
     if (userProfile && userProfile.is_provider) {
-        if(containerEmpresa) containerEmpresa.classList.add('hidden');
+        // --- VISÃO DO PRESTADOR ---
+        // Vê a lista de vagas para se candidatar
         if(containerVagas) {
             containerVagas.classList.remove('hidden');
             carregarVagas();
         }
     } else {
-        if(containerEmpresa && auth.currentUser) {
+        // --- VISÃO DA EMPRESA/CLIENTE ---
+        // Vê APENAS o painel de criar vagas e suas próprias vagas
+        if(auth.currentUser && containerEmpresa) {
              containerEmpresa.classList.remove('hidden');
              listarMinhasVagasEmpresa();
-        }
-        if(containerVagas) {
-             containerVagas.classList.remove('hidden');
-             carregarVagas();
+        } else {
+            // Se for visitante (sem login), mostra um teaser ou login
+            if(containerVagas) {
+                containerVagas.innerHTML = `<div class="text-center py-10"><p class="text-gray-400 text-xs">Faça login como Prestador para ver as vagas.</p></div>`;
+                containerVagas.classList.remove('hidden');
+            }
         }
     }
 }
@@ -55,9 +64,9 @@ export async function carregarVagas() {
         snap.forEach(d => {
             const job = d.data();
             
-            // 🛠️ CORREÇÃO UNDEFINED (Retrocompatibilidade PT-BR/EN)
+            // Correção Undefined + Formatação
             const tituloReal = job.title || job.titulo || "Vaga Sem Título";
-            const descReal = job.description || job.descricao || "Sem descrição.";
+            const descReal = job.description || job.descricao || "Sem descrição disponível.";
             const salarioVal = job.salary || job.salario;
             const salarioFmt = salarioVal ? (isNaN(salarioVal) ? salarioVal : `R$ ${salarioVal}`) : 'A combinar';
 
@@ -102,14 +111,15 @@ export async function publicarVaga() {
     try {
         await addDoc(collection(db, "jobs"), {
             owner_id: auth.currentUser.uid,
-            title: title,       // Salva em Inglês (Padrão Novo)
+            title: title,       
             salary: salary,
-            description: desc,  // Salva em Inglês (Padrão Novo)
+            description: desc,  
             empresa: auth.currentUser.displayName || "Empresa",
             created_at: serverTimestamp(),
             status: 'ativa',
             candidates_count: 0
         });
+        
         alert("✅ Vaga publicada com sucesso!");
         document.getElementById('job-post-modal').classList.add('hidden');
         
@@ -118,7 +128,6 @@ export async function publicarVaga() {
         document.getElementById('job-desc').value = "";
 
         listarMinhasVagasEmpresa();
-        carregarVagas(); 
 
     } catch(e) {
         alert("Erro: " + e.message);
@@ -143,7 +152,6 @@ export async function listarMinhasVagasEmpresa() {
     
     snap.forEach(d => {
         const v = d.data();
-        // Compatibilidade também aqui
         const titulo = v.title || v.titulo || "Sem Título";
         
         container.innerHTML += `
