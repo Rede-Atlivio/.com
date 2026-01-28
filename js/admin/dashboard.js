@@ -1,9 +1,9 @@
-import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function init() {
     const container = document.getElementById('view-dashboard');
     
-    // 1. ESTRUTURA VISUAL (SKELETON)
+    // 1. ESTRUTURA VISUAL
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="glass-panel p-5 border-l-2 border-blue-500">
@@ -26,9 +26,7 @@ export async function init() {
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel p-6 col-span-1 md:col-span-2">
-                <h4 class="font-bold text-white mb-4 flex items-center gap-2">
-                    📊 Fontes de Tráfego (Links Inteligentes)
-                </h4>
+                <h4 class="font-bold text-white mb-4 flex items-center gap-2">📊 Fontes de Tráfego</h4>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs">
                         <thead class="text-gray-400 uppercase border-b border-gray-700">
@@ -46,14 +44,16 @@ export async function init() {
                 </div>
             </div>
 
-            <div class="glass-panel p-6 flex flex-col justify-between">
-                <div>
-                    <h4 class="font-bold text-gray-300 mb-4 border-b border-gray-700 pb-2">📡 Status do Sistema</h4>
-                    <div id="chart-status" class="text-xs text-gray-500 space-y-2">Carregando métricas...</div>
+            <div class="glass-panel p-0 flex flex-col h-[400px] overflow-hidden">
+                <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center">
+                    <h4 class="font-bold text-white text-xs flex items-center gap-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> AO VIVO
+                    </h4>
+                    <span class="text-[10px] text-gray-500 uppercase tracking-widest">Feed Real-Time</span>
                 </div>
-                <div class="mt-6 text-center opacity-50">
-                    <p class="text-[10px] uppercase">Versão do Painel</p>
-                    <p class="font-bold text-blue-400">v16.1 (Analytics Ativo)</p>
+                
+                <div id="live-feed-list" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <p class="text-center text-gray-500 text-xs mt-10">Aguardando ações...</p>
                 </div>
             </div>
         </div>
@@ -63,62 +63,38 @@ export async function init() {
         const db = window.db;
 
         // =================================================================================
-        // 2. CARREGAMENTO DE DADOS (AGORA COM ANALYTICS)
+        // 2. CARREGAMENTO DOS DADOS ESTÁTICOS (KPIS + ANALYTICS)
         // =================================================================================
-        
         const usersSnap = await getDocs(collection(db, "usuarios"));
         const qOnline = query(collection(db, "active_providers"), where("is_online", "==", true));
         const providersSnap = await getDocs(qOnline);
         const qJobs = query(collection(db, "jobs"), where("status", "==", "ativa"));
         const jobsSnap = await getDocs(qJobs);
 
-        // =================================================================================
-        // 3. PROCESSAMENTO DE DADOS
-        // =================================================================================
         let totalSaldo = 0;
-        let trafficStats = {}; // { 'zap': 10, 'testedia28': 1 }
+        let trafficStats = {}; 
 
         usersSnap.forEach(doc => {
             const data = doc.data();
-            
-            // Soma Financeira
             const valor = parseFloat(data.wallet_balance || data.saldo || 0);
             totalSaldo += valor;
-
-            // Contagem de Analytics (O SEGREDO ESTÁ AQUI)
-            // Lê o campo traffic_source que gravamos no auth.js
             let source = data.traffic_source || 'orgânico';
-            
-            // Normaliza nomes para ficar bonito no gráfico
             if(source === 'direct') source = 'orgânico';
-            
             trafficStats[source] = (trafficStats[source] || 0) + 1;
         });
 
-        // =================================================================================
-        // 4. ATUALIZAÇÃO DA TELA
-        // =================================================================================
-        
-        // KPIs
         document.getElementById('kpi-users').innerText = usersSnap.size;
         document.getElementById('kpi-balance').innerText = `R$ ${totalSaldo.toFixed(2).replace('.', ',')}`;
         document.getElementById('kpi-providers').innerText = providersSnap.size;
         document.getElementById('kpi-jobs').innerText = jobsSnap.size;
 
-        // Tabela Analytics
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
-
-        // Ordena: Quem trouxe mais gente fica no topo
-        const sortedTraffic = Object.entries(trafficStats)
-            .sort(([,a], [,b]) => b - a); 
-
+        const sortedTraffic = Object.entries(trafficStats).sort(([,a], [,b]) => b - a); 
         const totalUsers = usersSnap.size || 1; 
 
         sortedTraffic.forEach(([origem, count]) => {
             const percent = ((count / totalUsers) * 100).toFixed(1);
-            
-            // Cores dinâmicas para as barras
             let colorClass = 'bg-gray-600';
             if(origem.includes('zap') || origem.includes('whats')) colorClass = 'bg-green-500';
             if(origem.includes('insta')) colorClass = 'bg-pink-500';
@@ -127,28 +103,49 @@ export async function init() {
 
             tbody.innerHTML += `
                 <tr class="border-b border-gray-800 last:border-0 hover:bg-white/5 transition">
-                    <td class="py-3 font-bold text-white capitalize">
-                        ${origem.replace(/_/g, ' ')} </td>
+                    <td class="py-3 font-bold text-white capitalize">${origem.replace(/_/g, ' ')}</td>
                     <td class="py-3 text-right font-mono">${count}</td>
                     <td class="py-3 text-right text-[10px] text-gray-400">${percent}%</td>
-                    <td class="py-3 pl-4">
-                        <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
-                            <div class="${colorClass} h-1.5 rounded-full" style="width: ${percent}%"></div>
-                        </div>
-                    </td>
+                    <td class="py-3 pl-4"><div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden"><div class="${colorClass} h-1.5 rounded-full" style="width: ${percent}%"></div></div></td>
                 </tr>
             `;
         });
 
-        // Status
-        document.getElementById('chart-status').innerHTML = `
-            <p>✅ Banco de Dados: <b>SINCRONIZADO</b></p>
-            <p>👥 Ticket Médio: <b>R$ ${(usersSnap.size > 0 ? totalSaldo / usersSnap.size : 0).toFixed(2)}</b></p>
-            <p class="mt-2 text-[10px] text-green-400">Rastreando <b>${Object.keys(trafficStats).length}</b> canais de aquisição.</p>
-        `;
+        // =================================================================================
+        // 3. ATIVAÇÃO DO LIVE FEED (LISTENER REAL-TIME)
+        // =================================================================================
+        const feedContainer = document.getElementById('live-feed-list');
+        const qFeed = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(20));
+        
+        onSnapshot(qFeed, (snap) => {
+            if(snap.empty) return;
+            
+            feedContainer.innerHTML = "";
+            snap.forEach(d => {
+                const evt = d.data();
+                const time = evt.timestamp ? evt.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'}) : '...';
+                
+                // Ícones baseados na ação
+                let icon = '🖱️';
+                if(evt.action.includes('Contratar')) icon = '🤝';
+                if(evt.action.includes('Cadastro')) icon = '👤';
+                if(evt.action.includes('Login')) icon = '🔑';
+                if(evt.action.includes('Vaga')) icon = '💼';
+
+                feedContainer.innerHTML += `
+                    <div class="flex gap-3 items-start animate-fadeIn border-b border-gray-800 pb-2 last:border-0">
+                        <div class="mt-1 opacity-70 text-sm">${icon}</div>
+                        <div>
+                            <p class="text-[10px] font-mono text-blue-400 mb-0.5">${time}</p>
+                            <p class="text-xs font-bold text-white leading-tight">${evt.details}</p>
+                            <p class="text-[9px] text-gray-500 mt-0.5 truncate max-w-[150px]">${evt.user}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        });
 
     } catch(e) { 
         console.error("Erro Dashboard:", e);
-        document.getElementById('chart-status').innerHTML = `<span class="text-red-400">Erro: ${e.message}</span>`;
     }
 }
