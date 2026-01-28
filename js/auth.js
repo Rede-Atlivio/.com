@@ -11,8 +11,10 @@ const DEFAULT_TENANT = "atlivio_fsa_01";
 const TAXA_PLATAFORMA = 0.20; 
 const LIMITE_CREDITO_NEGATIVO = -60.00; 
 
-// EXPOSIÇÃO GLOBAL (Correção do Diagnóstico)
-window.userProfile = null; 
+// 🔥 CORREÇÃO DO ERRO DE IMPORTAÇÃO (jobs.js) 🔥
+// Precisamos do 'export' para os módulos e do 'window' para o console.
+export let userProfile = null; 
+window.userProfile = null;
 
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
@@ -47,11 +49,11 @@ window.definirPerfil = async (tipo) => {
 };
 
 window.alternarPerfil = async () => {
-    if(!window.userProfile) return;
+    if(!userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
     if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
     try {
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !window.userProfile.is_provider });
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider });
         setTimeout(() => location.reload(), 500);
     } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
@@ -66,13 +68,13 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    // Criação Inicial (Mantida igual)
+                    // Criação Inicial
                     const userEmail = user.email || "";
                     const userPhone = user.phoneNumber || "";
                     const roleInicial = (userEmail && ADMIN_EMAILS.includes(userEmail)) ? 'admin' : 'user';
                     const nomePadrao = user.displayName || ("Usuário " + userPhone.slice(-4));
 
-                    window.userProfile = { 
+                    const novoPerfil = { 
                         email: userEmail,
                         phone: userPhone,
                         displayName: nomePadrao, 
@@ -81,16 +83,21 @@ onAuthStateChanged(auth, async (user) => {
                         perfil_completo: false, 
                         role: roleInicial, 
                         wallet_balance: 0.00, 
-                        saldo: 0.00, // Compatibilidade com Admin
+                        saldo: 0.00, 
                         is_provider: false, 
                         created_at: new Date(),
                         status: 'ativo'
                     };
-                    await setDoc(userRef, window.userProfile);
+                    
+                    // Sincroniza Variáveis
+                    userProfile = novoPerfil;
+                    window.userProfile = novoPerfil;
+                    
+                    await setDoc(userRef, novoPerfil);
                 } else {
                     const data = docSnap.data();
                     
-                    // 🚨 ENFORCER: BANIMENTO REAL (ITEM 21)
+                    // 🚨 ENFORCER: BANIMENTO REAL
                     if (data.status === 'banido' || data.status === 'suspenso') {
                         console.warn("🚫 USUÁRIO BANIDO DETECTADO. EXPULSANDO...");
                         alert(`⛔ ACESSO NEGADO\n\nSua conta foi ${data.status}.\nEntre em contato com o suporte.`);
@@ -99,18 +106,20 @@ onAuthStateChanged(auth, async (user) => {
                         return;
                     }
 
-                    // 💰 SINCRONIA DE SALDO (ITEM 20)
-                    // O Admin edita 'saldo', o App usa 'wallet_balance'. Vamos unificar na leitura.
+                    // 💰 SINCRONIA DE SALDO
                     const saldoReal = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     data.wallet_balance = saldoReal; 
 
+                    // ATUALIZAÇÃO DAS VARIÁVEIS EXPORTADAS E GLOBAIS
+                    userProfile = data;
                     window.userProfile = data;
-                    atualizarInterfaceUsuario(window.userProfile);
+
+                    atualizarInterfaceUsuario(userProfile);
                     iniciarAppLogado(user); 
                     
-                    if (window.userProfile.is_provider) {
+                    if (userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
-                        if (!window.userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
+                        if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                 }
             } catch (err) { 
@@ -132,7 +141,6 @@ function atualizarInterfaceUsuario(dados) {
     const nameEl = document.getElementById('header-user-name');
     if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
     
-    // Atualiza Header do Prestador com Saldo em Tempo Real
     const provNameEl = document.getElementById('provider-header-name');
     if(provNameEl) {
         const saldo = dados.wallet_balance || 0;
@@ -142,7 +150,7 @@ function atualizarInterfaceUsuario(dados) {
 }
 
 function iniciarAppLogado(user) {
-    if(!window.userProfile || !window.userProfile.perfil_completo) {
+    if(!userProfile || !userProfile.perfil_completo) {
         document.getElementById('app-container').classList.add('hidden');
         document.getElementById('role-selection').classList.remove('hidden');
         return;
@@ -156,7 +164,7 @@ function iniciarAppLogado(user) {
     
     if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
 
-    if (window.userProfile.is_provider) {
+    if (userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         document.getElementById('tab-servicos').innerText = "Serviços 🛠️";
         ['tab-servicos', 'tab-missoes', 'tab-oportunidades', 'tab-ganhar', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, true));
@@ -176,12 +184,7 @@ function iniciarAppLogado(user) {
         setTimeout(() => {
             console.log("🚀 Iniciando Auto-Carregamento da Vitrine...");
             const tab = document.getElementById('tab-servicos');
-            if(tab) {
-                console.log("👉 Clicando na aba Serviços...");
-                tab.click();
-            } else {
-                if(window.carregarServicos) window.carregarServicos();
-            }
+            if(tab) { tab.click(); } else { if(window.carregarServicos) window.carregarServicos(); }
             if(window.carregarVagas) window.carregarVagas();
             if(window.carregarOportunidades) window.carregarOportunidades();
         }, 1000); 
@@ -194,14 +197,10 @@ async function verificarStatusERadar(uid) {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const data = snap.data();
-            
-            // Lógica refinada: Só é online se status == aprovado E is_online == true
             const isOnline = data.is_online && data.status === 'aprovado';
             
             if(toggle) {
                 toggle.checked = isOnline;
-                // Se estiver em análise TOTAL (conta nova), bloqueia.
-                // Se for conta antiga adicionando serviço, status deve continuar 'aprovado', então não bloqueia.
                 if(data.status === 'em_analise') {
                     toggle.disabled = true;
                     document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
@@ -258,7 +257,7 @@ function iniciarRadarPrestador(uid) {
         if(toggle && !toggle.checked) return;
         radarContainer.innerHTML = "";
         if (snap.empty) {
-            radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${window.userProfile.wallet_balance?.toFixed(2)}</p></div>`;
+            radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${userProfile?.wallet_balance?.toFixed(2) || '0.00'}</p></div>`;
             return;
         }
         document.getElementById('notification-sound')?.play().catch(()=>{});
@@ -288,7 +287,6 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "usuarios", uid);
         const snap = await getDoc(userRef);
-        // Usa saldo ou wallet_balance, o que existir
         const saldoAtual = snap.data().saldo !== undefined ? snap.data().saldo : (snap.data().wallet_balance || 0);
         
         if (saldoAtual <= LIMITE_CREDITO_NEGATIVO) return alert(`⛔ LIMITE EXCEDIDO (R$ ${LIMITE_CREDITO_NEGATIVO}).\nSaldo atual: R$ ${saldoAtual.toFixed(2)}.\nRecarregue para continuar.`);
@@ -333,7 +331,7 @@ window.abrirConfiguracaoServicos = async () => {
     const bioAtual = dados.bio || "";
     const servicosAtuais = dados.services || [];
     
-    // Header com Botão Voltar (ITEM 2.1)
+    // Header com Botão Voltar
     formContainer.innerHTML = `
         <div class="p-6 h-[80vh] overflow-y-auto">
             <div class="flex justify-between items-start mb-2">
@@ -399,13 +397,12 @@ window.addServiceLocal = async () => {
     let svcs = snap.exists() ? snap.data().services || [] : [];
     svcs.push({ category: cat, price: parseFloat(price), description: desc });
     
-    // Salva Localmente sem mudar status (Isso é apenas temporário até o Save Final)
+    // Salva Localmente
     const dadosBase = snap.exists() ? {} : { uid: auth.currentUser.uid, created_at: serverTimestamp(), is_online: false, status: 'em_analise', visibility_score: 100 };
     await setDoc(ref, { ...dadosBase, services: svcs }, { merge: true });
     window.abrirConfiguracaoServicos(); 
 };
 
-// 🔥 REGRAS INTELIGENTES DE SALVAMENTO (ITEM 2.1 - Regra do Garçom)
 window.saveServicesAndGoOnline = async () => {
     const nome = document.getElementById('setup-name').value;
     const bio = document.getElementById('setup-bio').value;
@@ -421,24 +418,23 @@ window.saveServicesAndGoOnline = async () => {
     try {
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { nome_profissional: nome, setup_profissional_ok: true });
         
-        // 🧠 LÓGICA DE STATUS:
-        // Se já for aprovado, MANTÉM aprovado. Se for novo, vai para análise.
-        const currentStatus = window.userProfile?.status || 'em_analise';
+        // 🧠 LÓGICA DE STATUS: GARÇOM
+        const currentStatus = userProfile?.status || 'em_analise';
         const newStatus = (currentStatus === 'aprovado') ? 'aprovado' : 'em_analise';
 
         const activeRef = doc(db, "active_providers", auth.currentUser.uid);
         await setDoc(activeRef, { 
             uid: auth.currentUser.uid, 
             nome_profissional: nome, 
-            foto_perfil: window.userProfile.photoURL, 
+            foto_perfil: userProfile.photoURL, 
             bio: bio, 
             banner_url: banner, 
-            status: newStatus, // << AQUI ESTÁ O TRUQUE
+            status: newStatus,
             updated_at: serverTimestamp() 
         }, { merge: true });
         
         if (newStatus === 'aprovado') {
-            alert("✅ Serviço Adicionado!\n\nVocê continua ONLINE com seus serviços anteriores, mas o novo item passará por revisão da curadoria.");
+            alert("✅ Serviço Adicionado!\n\nVocê continua ONLINE com seus serviços anteriores, mas o novo item passará por revisão.");
         } else {
             alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise. Aguarde a aprovação.");
         }
@@ -446,7 +442,6 @@ window.saveServicesAndGoOnline = async () => {
         const modal = document.getElementById('provider-setup-modal');
         if(modal) modal.classList.add('hidden');
         
-        // Atualiza UI se necessário
         const toggle = document.getElementById('online-toggle');
         const label = document.getElementById('status-label');
         
