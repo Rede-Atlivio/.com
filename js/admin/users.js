@@ -1,8 +1,8 @@
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentType = 'users';
 let selectedUsers = new Set();
-let tempTransMode = null; // Variável para controlar o modo de transação (Crédito/Débito)
+let tempTransMode = null; 
 
 // ============================================================================
 // 1. INICIALIZAÇÃO
@@ -26,7 +26,7 @@ export async function init(viewType) {
 
     if(btnAdd) btnAdd.onclick = () => window.openEditor(viewType, null);
 
-    // Listener Mestre (Checkbox do Cabeçalho)
+    // Listener Mestre
     const chkAll = document.getElementById('check-users-all');
     if(chkAll) {
         const newChk = chkAll.cloneNode(true);
@@ -34,11 +34,10 @@ export async function init(viewType) {
         newChk.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
     }
     
-    // Listener Botão Excluir Global
     const btnBulk = document.getElementById('btn-bulk-delete');
     if(btnBulk) btnBulk.onclick = executeUserBulkDelete;
 
-    console.log(`✅ Módulo Users carregado: ${viewType} com Financeiro Integrado.`);
+    console.log(`✅ Módulo Users carregado: ${viewType}`);
     await loadList();
 }
 
@@ -76,8 +75,8 @@ async function loadList() {
             if(currentType === 'users') {
                 let statusClass = "text-green-400 border-green-500/50";
                 if(data.status === 'banido' || data.status === 'suspenso') statusClass = "text-red-400 border-red-500/50";
+                if(data.status === 'ativo') statusClass = "text-blue-400 border-blue-500/50";
                 
-                // Formatação de Saldo
                 const saldo = parseFloat(data.saldo || 0);
                 const saldoClass = saldo < 0 ? 'text-red-400' : (saldo > 0 ? 'text-emerald-400' : 'text-gray-500');
 
@@ -99,6 +98,7 @@ async function loadList() {
                 let statusIcon = data.is_online ? "🟢" : "⚫";
                 if(data.status === 'em_analise') statusIcon = "🟡";
                 if(data.status === 'rejeitado' || data.status === 'banido') statusIcon = "🔴";
+                if(data.status === 'suspenso') statusIcon = "⚠️";
                 
                 tbody.innerHTML += `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition">
@@ -111,14 +111,13 @@ async function loadList() {
             }
         });
 
-        // Reatribui listeners
         document.querySelectorAll('.chk-user').forEach(c => c.addEventListener('change', (e) => toggleUserItem(e.target.dataset.id, e.target.checked)));
 
     } catch (e) { console.error(e); }
 }
 
 // ============================================================================
-// 3. LÓGICA DE SELEÇÃO EM MASSA
+// 3. SELEÇÃO EM MASSA
 // ============================================================================
 function toggleUserSelectAll(checked) {
     document.querySelectorAll('.chk-user').forEach(c => {
@@ -126,12 +125,10 @@ function toggleUserSelectAll(checked) {
         toggleUserItem(c.dataset.id, checked);
     });
 }
-
 function toggleUserItem(id, selected) {
     if(selected) selectedUsers.add(id); else selectedUsers.delete(id);
     updateUserBulkUI();
 }
-
 function updateUserBulkUI() {
     const bar = document.getElementById('bulk-actions');
     const count = document.getElementById('bulk-count');
@@ -144,49 +141,36 @@ function updateUserBulkUI() {
         bar.style.transform = 'translateY(100%)';
     }
 }
-
 async function executeUserBulkDelete() {
-    if(!confirm(`EXCLUIR ${selectedUsers.size} usuários selecionados PERMANENTEMENTE?`)) return;
-    
+    if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return;
     const btn = document.getElementById('btn-bulk-delete');
     btn.innerText = "AGUARDE...";
-    
     try {
         const db = window.db;
         const batch = writeBatch(db);
         const col = currentType === 'users' ? 'usuarios' : 'active_providers';
-        
-        selectedUsers.forEach(id => {
-            const ref = doc(db, col, id);
-            batch.delete(ref);
-        });
-        
+        selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); });
         await batch.commit();
         selectedUsers.clear();
         updateUserBulkUI();
         await loadList();
-        alert("✅ Exclusão em massa concluída!");
-        
+        alert("✅ Exclusão concluída!");
     } catch(e) { alert("Erro: " + e.message); } 
-    finally {
-        btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`;
-        lucide.createIcons();
-    }
+    finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); }
 }
 
 // ============================================================================
-// 4. EDITOR COMPLETO & FUNÇÕES DE CURADORIA
+// 4. EDITOR COMPLETO (PADRONIZADO)
 // ============================================================================
 window.openEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
     
-    // Mapeamento correto
     const realCollection = collectionName === 'services' ? 'active_providers' : (collectionName === 'users' ? 'usuarios' : collectionName);
 
     modal.classList.remove('hidden');
-    title.innerText = id ? "EDITAR / CURADORIA" : "NOVO REGISTRO";
+    title.innerText = id ? "EDITAR / MODERAÇÃO" : "NOVO REGISTRO";
     document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
     content.innerHTML = `<div class="p-10 text-center"><div class="loader border-t-blue-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div></div>`;
 
@@ -199,7 +183,7 @@ window.openEditor = async (collectionName, id) => {
 
         let html = `<div class="space-y-4 animate-fade">`;
 
-        // ÁREA DE MÍDIA (CURADORIA)
+        // MÍDIA
         if (data.banner_url || data.foto_perfil) {
             html += `<div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-4 flex gap-4">`;
             if(data.banner_url) html += `<div><p class="text-[9px]">Banner</p><img src="${data.banner_url}" class="h-20 w-32 object-cover rounded border border-gray-600"></div>`;
@@ -207,26 +191,24 @@ window.openEditor = async (collectionName, id) => {
             html += `</div>`;
         }
 
-        // ==========================================
-        // 💰 ÁREA FINANCEIRA (NOVIDADE ITEM 20)
-        // ==========================================
+        // FINANCEIRO (Só para Usuários)
         if (realCollection === 'usuarios' && id) {
             const saldo = parseFloat(data.saldo || 0);
             const corSaldo = saldo < 0 ? 'text-red-400' : 'text-emerald-400';
             html += `
                 <div class="bg-slate-900/50 p-4 rounded-xl border border-white/10 flex justify-between items-center mb-4">
                     <div>
-                        <p class="text-[10px] text-gray-400 uppercase font-bold">Saldo em Carteira</p>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Saldo</p>
                         <h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3>
                     </div>
                     <button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">
-                        Ajustar Saldo
+                        Ajustar
                     </button>
                 </div>
             `;
         }
 
-        // CAMPOS DE TEXTO
+        // CAMPOS
         const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; 
         const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo'];
         
@@ -238,23 +220,30 @@ window.openEditor = async (collectionName, id) => {
         });
         html += `</div>`;
 
-        // BOTÕES DE PODER (AÇÃO - ITEM 21)
+        // ==========================================
+        // 👮 BOTÕES DE AÇÃO (MODERAÇÃO REFINADA)
+        // ==========================================
         html += `<div class="border-t border-slate-700 pt-6 mt-6">`;
+        html += `<p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
         
         if (realCollection === 'active_providers') {
             html += `
-                <p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">👮 Painel de Moderação</p>
                 <div class="grid grid-cols-3 gap-3">
                     <button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button>
                     <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg shadow-green-900/20">✅ APROVAR (SCORE 100)</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg shadow-green-900/20">✅ APROVAR (100)</button>
                 </div>
             `;
         } else {
+            // USUÁRIOS COMUNS (PADRONIZADO)
             html += `
-                <div class="flex gap-3">
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg shadow-red-900/20">⛔ BANIR / BLOQUEAR</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg shadow-blue-900/20">💾 SALVAR DADOS</button>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600/20 hover:bg-green-600 border border-green-600 text-white py-2 rounded text-xs font-bold transition">✅ ATIVAR / APROVAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-600/20 hover:bg-yellow-600 border border-yellow-600 text-white py-2 rounded text-xs font-bold transition">⚠️ SUSPENDER</button>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="bg-red-600/20 hover:bg-red-600 border border-red-600 text-white py-2 rounded text-xs font-bold transition">⛔ BANIR / BLOQUEAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold transition">💾 SALVAR DADOS</button>
                 </div>
             `;
         }
@@ -266,7 +255,7 @@ window.openEditor = async (collectionName, id) => {
 };
 
 // ============================================================================
-// 5. FUNÇÃO DE SALVAMENTO & BANIMENTO REAL (ITEM 21)
+// 5. SALVAR AÇÕES (LÓGICA UNIFICADA)
 // ============================================================================
 window.saveAction = async (collectionName, id, action) => {
     if(!id) return alert("Criação manual ainda não implementada.");
@@ -276,7 +265,7 @@ window.saveAction = async (collectionName, id, action) => {
         const ref = doc(window.db, collectionName, id);
         let updates = { updated_at: serverTimestamp() };
 
-        // Coleta dados dos inputs se existirem
+        // Coleta inputs
         const inputs = document.querySelectorAll('[id^="edit-"]');
         if(inputs.length > 0) {
             inputs.forEach(inp => {
@@ -285,12 +274,16 @@ window.saveAction = async (collectionName, id, action) => {
             });
         }
 
-        // Lógica de Negócio (ITEM 21)
+        // LÓGICA DE STATUS
         if (action === 'aprovar') {
-            updates.status = 'aprovado';
-            updates.visibility_score = 100;
-            updates.is_online = false;
-            alert("✅ Prestador Aprovado! Score 100.");
+            if (collectionName === 'active_providers') {
+                updates.status = 'aprovado';
+                updates.visibility_score = 100;
+                updates.is_online = false; // Começa offline
+            } else {
+                updates.status = 'ativo'; // Usuário comum volta a ser ativo
+            }
+            alert("✅ Conta Ativada/Aprovada com sucesso!");
         } 
         else if (action === 'rejeitar') { 
             updates.status = 'rejeitado'; 
@@ -305,7 +298,7 @@ window.saveAction = async (collectionName, id, action) => {
             updates.status = 'banido'; 
             updates.visibility_score = 0;
             updates.is_online = false;
-            updates.banned_at = serverTimestamp(); // Loga data do banimento
+            updates.banned_at = serverTimestamp();
         }
 
         await updateDoc(ref, updates);
@@ -316,7 +309,7 @@ window.saveAction = async (collectionName, id, action) => {
 };
 
 // ============================================================================
-// 6. GESTÃO FINANCEIRA MANUAL (ITEM 20 - INTEGRADO AQUI)
+// 6. FINANCEIRO (MODAL)
 // ============================================================================
 window.openBalanceEditor = (uid, currentBalance, nomeUser) => {
     const modal = document.getElementById('modal-editor');
@@ -347,36 +340,23 @@ window.openBalanceEditor = (uid, currentBalance, nomeUser) => {
         <div id="trans-form" class="mt-6 hidden animate-fade">
             <label class="inp-label">VALOR (R$)</label>
             <input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00">
-            
             <label class="inp-label">MOTIVO / DESCRIÇÃO</label>
             <input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Ex: Bônus de boas vindas">
-
-            <button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">
-                CONFIRMAR TRANSAÇÃO
-            </button>
+            <button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR TRANSAÇÃO</button>
         </div>
     `;
-    
     tempTransMode = null;
 };
 
 window.setTransactionMode = (mode) => {
     tempTransMode = mode;
     document.getElementById('trans-form').classList.remove('hidden');
-    
     const btnCredit = document.getElementById('btn-mode-credit');
     const btnDebit = document.getElementById('btn-mode-debit');
-    
     if (mode === 'credit') {
-        btnCredit.classList.add('ring-2', 'ring-emerald-400');
-        btnDebit.classList.remove('ring-2', 'ring-red-400');
-        btnDebit.style.opacity = '0.5';
-        btnCredit.style.opacity = '1';
+        btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1';
     } else {
-        btnDebit.classList.add('ring-2', 'ring-red-400');
-        btnCredit.classList.remove('ring-2', 'ring-emerald-400');
-        btnCredit.style.opacity = '0.5';
-        btnDebit.style.opacity = '1';
+        btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1';
     }
 };
 
@@ -384,43 +364,26 @@ window.executeAdjustment = async (uid) => {
     const amount = parseFloat(document.getElementById('trans-amount').value);
     const desc = document.getElementById('trans-desc').value;
     const mode = tempTransMode;
-
     if (!amount || amount <= 0) return alert("Digite um valor válido.");
     if (!desc) return alert("Digite um motivo.");
-
     const finalAmount = mode === 'credit' ? amount : -amount;
-
     if(!confirm(`Confirmar ${mode === 'credit' ? 'CRÉDITO' : 'DÉBITO'} de R$ ${amount}?\nMotivo: ${desc}`)) return;
 
     const btn = document.querySelector('#trans-form button');
-    btn.innerText = "PROCESSANDO...";
-    btn.disabled = true;
+    btn.innerText = "PROCESSANDO..."; btn.disabled = true;
 
     try {
         const db = window.db;
         const userRef = doc(db, "usuarios", uid);
-
         await runTransaction(db, async (transaction) => {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) throw "Usuário não existe!";
-
             const currentSaldo = userDoc.data().saldo || 0;
             const newBalance = currentSaldo + finalAmount;
-            
-            // Atualiza Saldo
-            transaction.update(userRef, { 
-                saldo: newBalance,
-                updated_at: serverTimestamp() 
-            });
+            transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() });
         });
-
         alert("✅ Saldo atualizado com sucesso!");
         document.getElementById('modal-editor').classList.add('hidden');
-        loadList(); // Recarrega a lista para mostrar saldo novo
-
-    } catch (e) {
-        alert("Erro: " + e.message);
-        btn.innerText = "CONFIRMAR TRANSAÇÃO";
-        btn.disabled = false;
-    }
+        loadList(); 
+    } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR TRANSAÇÃO"; btn.disabled = false; }
 };
