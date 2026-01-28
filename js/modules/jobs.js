@@ -1,245 +1,230 @@
 import { db, auth } from '../app.js';
-import { userProfile } from '../auth.js';
-import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// --- GATILHOS DA ABA ---
-const tabEmpregos = document.getElementById('tab-empregos');
-if(tabEmpregos) { 
-    tabEmpregos.addEventListener('click', () => { 
-        carregarInterfaceEmpregos(); 
-    }); 
-}
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
-// 1. CONTROLE DE INTERFACE (PAINEL EMPRESA vs PRESTADOR)
+// 1. ROTEADOR DE INTERFACE (QUEM VÊ O QUÊ)
 // ============================================================================
-export function carregarInterfaceEmpregos() {
-    const container = document.getElementById('lista-vagas');
+window.carregarInterfaceEmpregos = function() {
+    console.log("💼 Iniciando módulo de Vagas...");
+    const containerVagas = document.getElementById('lista-vagas');
     const containerEmpresa = document.getElementById('painel-empresa');
-    
-    // Se o usuário é prestador, ele vê vagas para se candidatar
+    const userProfile = window.userProfile; // Pega do escopo global (auth.js)
+
+    // Lógica: Se for prestador, vê lista de vagas. Se for cliente/empresa, vê painel.
+    // Se não tiver perfil carregado ainda, carrega a lista por padrão.
     if (userProfile && userProfile.is_provider) {
         if(containerEmpresa) containerEmpresa.classList.add('hidden');
-        if(container) {
-            container.classList.remove('hidden');
-            listarVagasParaCandidato(container);
+        if(containerVagas) {
+            containerVagas.classList.remove('hidden');
+            window.carregarVagas();
         }
     } else {
-        // Se é cliente/empresa, ele vê o painel de criar vagas
-        if(container) container.classList.add('hidden');
-        if(containerEmpresa) { 
-            containerEmpresa.classList.remove('hidden'); 
-            listarMinhasVagasEmpresa(); 
+        // Modo Empresa/Cliente (ou visitante)
+        // Se for visitante, mostra vagas também
+        if (!auth.currentUser || (userProfile && !userProfile.is_provider)) {
+             if(containerEmpresa && auth.currentUser) {
+                 containerEmpresa.classList.remove('hidden');
+                 window.listarMinhasVagasEmpresa();
+             }
+             // Mostra lista de vagas abaixo também para empresas verem o mercado
+             if(containerVagas) {
+                 containerVagas.classList.remove('hidden');
+                 window.carregarVagas();
+             }
         }
     }
 }
 
 // ============================================================================
-// 2. LISTAR VAGAS PARA O PRESTADOR (VISÃO DO CANDIDATO)
+// 2. CARREGAR LISTA DE VAGAS (CANDIDATOS)
 // ============================================================================
-function listarVagasParaCandidato(container) {
-    container.innerHTML = `<div class="text-center py-6 animate-fadeIn"><div class="loader mx-auto mb-2 border-blue-200 border-t-blue-600"></div><p class="text-[9px] text-gray-400">Buscando oportunidades...</p></div>`;
+window.carregarVagas = async () => {
+    const container = document.getElementById('lista-vagas');
+    if(!container) return;
+    
+    container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div><p class="text-xs text-gray-400">Buscando oportunidades...</p></div>`;
 
-    // Busca vagas ativas ordenadas por data
-    const q = query(collection(db, "jobs"), where("status", "==", "ativa"), orderBy("created_at", "desc"));
-
-    onSnapshot(q, (snap) => {
+    try {
+        const q = query(collection(db, "jobs"), orderBy("created_at", "desc"), limit(20));
+        const snap = await getDocs(q);
+        
         container.innerHTML = "";
+        
         if (snap.empty) {
-            container.innerHTML = `<div class="text-center py-10 bg-white rounded-xl border border-gray-100"><p class="text-4xl mb-2">💼</p><p class="text-xs font-bold text-gray-500">Nenhuma vaga aberta hoje.</p></div>`;
+            container.innerHTML = `
+                <div class="text-center py-10 opacity-50">
+                    <span class="text-4xl">📭</span>
+                    <p class="text-xs font-bold mt-2 uppercase">Nenhuma vaga no momento</p>
+                </div>`;
             return;
         }
 
         snap.forEach(d => {
-            const vaga = d.data();
-            const id = d.id;
-            const isDemo = vaga.is_demo === true;
-            
-            // Badge visual
-            let badge = `<span class="bg-blue-50 text-blue-700 text-[8px] font-bold px-2 py-1 rounded uppercase">${vaga.tipo || 'CLT'}</span>`;
-            if (isDemo) badge = `<span class="bg-purple-100 text-purple-600 text-[8px] px-2 py-0.5 rounded border border-purple-200 uppercase">DEMO</span>`;
-
-            // Lógica: Botão chama o NOVO modal de PDF
-            const btnHtml = `<button onclick="window.abrirModalCandidatura('${id}', '${vaga.titulo}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-[9px] font-bold uppercase shadow hover:bg-blue-700 transition">Enviar Proposta 🚀</button>`;
+            const job = d.data();
+            // Formatação de Salário
+            const salarioFmt = job.salary ? (isNaN(job.salary) ? job.salary : `R$ ${job.salary}`) : 'A combinar';
 
             container.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 animate-fadeIn">
-                    <div class="flex justify-between items-start mb-2">
-                        <h3 class="font-black text-blue-900 text-sm uppercase">${vaga.titulo}</h3>
-                        ${badge}
+                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition relative overflow-hidden group mb-3">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+                    <div class="flex justify-between items-start mb-2 pl-2">
+                        <div>
+                            <h3 class="font-black text-sm text-gray-800 uppercase">${job.title}</h3>
+                            <p class="text-[10px] text-gray-500 font-bold">${salarioFmt}</p>
+                        </div>
+                        <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold uppercase">Nova</span>
                     </div>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase mb-1">${vaga.empresa || "Confidencial"}</p>
-                    <p class="text-[10px] text-gray-500 mb-2 line-clamp-2">${vaga.descricao}</p>
-                    <div class="flex justify-between items-center mt-3 border-t border-gray-50 pt-2">
-                        <span class="text-[9px] font-bold text-green-600">R$ ${vaga.salario || 'A combinar'}</span>
-                        ${btnHtml}
-                    </div>
-                </div>`;
+                    <p class="text-xs text-gray-600 mb-3 pl-2 line-clamp-2">${job.description}</p>
+                    <button onclick="window.candidatarVaga('${d.id}', '${job.title}')" class="w-full bg-slate-800 text-white py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-600 transition">
+                        Candidatar-se
+                    </button>
+                </div>
+            `;
         });
-    });
-}
+
+    } catch (e) {
+        console.error("Erro vagas:", e);
+        container.innerHTML = `<p class="text-red-500 text-xs text-center">Erro de conexão.</p>`;
+    }
+};
 
 // ============================================================================
-// 3. PUBLICAR VAGA (VISÃO DA EMPRESA)
+// 3. GESTÃO DA EMPRESA (PUBLICAR)
 // ============================================================================
-export async function publicarVaga() {
-    const tituloEl = document.getElementById('job-title');
-    const salarioEl = document.getElementById('job-salary');
-    const descEl = document.getElementById('job-desc');
+window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
+
+window.publicarVaga = async () => {
+    const title = document.getElementById('job-title').value;
+    const salary = document.getElementById('job-salary').value;
+    const desc = document.getElementById('job-desc').value;
+
+    if(!title || !desc) return alert("Título e Descrição obrigatórios.");
+
     const btn = document.getElementById('btn-pub-job');
-
-    if (!tituloEl || !descEl) return alert("Erro interno: Campos não encontrados.");
-
-    const titulo = tituloEl.value;
-    const salario = salarioEl.value;
-    const descricao = descEl.value;
-
-    if (!titulo || !descricao) return alert("Por favor, preencha Título e Descrição.");
-
-    if(btn) { btn.innerText = "PUBLICANDO..."; btn.disabled = true; }
+    btn.innerText = "PUBLICANDO...";
+    btn.disabled = true;
 
     try {
         await addDoc(collection(db, "jobs"), {
-            titulo: titulo,
-            salario: salario || "A combinar",
-            descricao: descricao,
-            empresa: auth.currentUser ? (auth.currentUser.displayName || "Empresa Confidencial") : "Anônimo",
-            owner_id: auth.currentUser ? auth.currentUser.uid : "anon",
-            tipo: "CLT",
+            owner_id: auth.currentUser.uid,
+            title: title,
+            salary: salary,
+            description: desc,
             created_at: serverTimestamp(),
-            status: "ativa",
-            visibility_score: 100, 
-            is_demo: false // Vaga Real
+            status: 'ativa',
+            candidates_count: 0
         });
-
         alert("✅ Vaga publicada com sucesso!");
-        
-        tituloEl.value = ""; salarioEl.value = ""; descEl.value = "";
         document.getElementById('job-post-modal').classList.add('hidden');
-        listarMinhasVagasEmpresa();
+        
+        // Limpa campos
+        document.getElementById('job-title').value = "";
+        document.getElementById('job-salary').value = "";
+        document.getElementById('job-desc').value = "";
 
-    } catch (e) {
-        console.error("Erro ao publicar:", e);
+        window.listarMinhasVagasEmpresa();
+        window.carregarVagas(); // Atualiza a lista geral também
+
+    } catch(e) {
         alert("Erro: " + e.message);
     } finally {
-        if(btn) { btn.innerText = "PUBLICAR AGORA"; btn.disabled = false; }
+        btn.innerText = "PUBLICAR AGORA";
+        btn.disabled = false;
     }
-}
+};
 
-function listarMinhasVagasEmpresa() {
+window.listarMinhasVagasEmpresa = async () => {
     const container = document.getElementById('lista-minhas-vagas');
     if(!container || !auth.currentUser) return;
 
     const q = query(collection(db, "jobs"), where("owner_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    const snap = await getDocs(q);
     
-    onSnapshot(q, (snap) => {
-        container.innerHTML = "";
-        if (snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Você ainda não criou vagas.</p>`; return; }
-        
-        snap.forEach(d => {
-            const v = d.data();
-            container.innerHTML += `
-                <div class="bg-white p-3 rounded-lg border border-gray-100 flex justify-between items-center mb-2">
-                    <div>
-                        <p class="font-bold text-xs text-blue-900">${v.titulo}</p>
-                        <p class="text-[9px] text-gray-400">${v.status.toUpperCase()}</p>
-                    </div>
-                    <button class="text-[8px] text-red-400 font-bold border border-red-100 px-2 py-1 rounded">ENCERRAR</button>
+    container.innerHTML = "";
+    if (snap.empty) { 
+        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Você ainda não criou vagas.</p>`; 
+        return; 
+    }
+    
+    snap.forEach(d => {
+        const v = d.data();
+        container.innerHTML += `
+            <div class="bg-white p-3 rounded-lg border border-gray-100 flex justify-between items-center mb-2">
+                <div>
+                    <p class="font-bold text-xs text-blue-900">${v.title}</p>
+                    <p class="text-[9px] text-gray-400">${v.status.toUpperCase()}</p>
                 </div>
-            `;
-        });
+                <button class="text-[8px] text-red-400 font-bold border border-red-100 px-2 py-1 rounded">ENCERRAR</button>
+            </div>
+        `;
     });
-}
+};
 
 // ============================================================================
-// 4. NOVA LÓGICA DE CANDIDATURA (MODAL + PDF)
+// 4. CANDIDATURA (MODAL + PDF)
 // ============================================================================
-
-// Ação Global: Abre o Modal
-window.abrirModalCandidatura = (vagaId, vagaTitulo) => {
+window.candidatarVaga = (id, title) => {
     if(!auth.currentUser) return alert("Faça login para se candidatar.");
 
     const modal = document.getElementById('modal-apply');
-    if (!modal) return alert("Erro: Modal 'modal-apply' não encontrado no HTML. Verifique o index.html.");
-
-    // Reseta form
+    document.getElementById('apply-job-title').innerText = title;
+    document.getElementById('apply-job-id').value = id;
+    
+    // Limpa campos anteriores
     document.getElementById('apply-message').value = "";
     document.getElementById('apply-file').value = "";
 
-    // Preenche dados ocultos
-    document.getElementById('apply-job-id').value = vagaId;
-    document.getElementById('apply-job-title').innerText = vagaTitulo;
-    
-    // Mostra
     modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    
-    // Listener do botão enviar (remover anteriores para não duplicar)
+    modal.classList.add('flex'); // Garante flex para centralizar
+
+    // Configura o botão de envio
     const btnEnviar = document.getElementById('btn-submit-proposal');
+    // Remove listeners antigos clonando
     const newBtn = btnEnviar.cloneNode(true);
     btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
-    newBtn.addEventListener('click', enviarCandidaturaReal);
-};
-
-// Ação Global: Envia para o Admin
-async function enviarCandidaturaReal() {
-    const btn = document.getElementById('btn-submit-proposal');
-    const txtOriginal = btn.innerText;
     
-    const vagaId = document.getElementById('apply-job-id').value;
-    const vagaTitulo = document.getElementById('apply-job-title').innerText;
-    const msg = document.getElementById('apply-message')?.value || "";
-    const fileInput = document.getElementById('apply-file');
+    newBtn.addEventListener('click', async () => {
+        const msg = document.getElementById('apply-message').value;
+        const fileInput = document.getElementById('apply-file');
+        
+        if(!fileInput.files.length) return alert("⚠️ Anexe seu currículo em PDF.");
 
-    // Validação
-    if(!fileInput.files.length) {
-        return alert("⚠️ Por favor, anexe seu currículo em PDF.");
-    }
+        newBtn.innerText = "ENVIANDO...";
+        newBtn.disabled = true;
 
-    btn.innerText = "ENVIANDO...";
-    btn.disabled = true;
+        try {
+            // Simulação de Upload (MVP) - Em produção usaria Firebase Storage
+            const cvUrl = "https://example.com/cv-placeholder.pdf"; 
 
-    try {
-        // Link Fake do PDF (No MVP não temos Storage, o Admin sabe disso)
-        // Em produção, aqui faríamos uploadBytes() para o Storage
-        let cvUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; 
+            await addDoc(collection(db, "candidatos"), {
+                vaga_id: id,
+                vaga_titulo: title,
+                user_id: auth.currentUser.uid,
+                nome: auth.currentUser.displayName || "Candidato",
+                email: auth.currentUser.email,
+                mensagem: msg,
+                cv_url: cvUrl,
+                created_at: serverTimestamp(),
+                status: 'novo'
+            });
 
-        // CRUCIAL: Salva na coleção 'candidatos' (onde o Admin lê)
-        await addDoc(collection(db, "candidatos"), {
-            vaga_id: vagaId,
-            vaga_titulo: vagaTitulo,
-            user_id: auth.currentUser.uid,
-            nome_candidato: auth.currentUser.displayName || auth.currentUser.email,
-            email_candidato: auth.currentUser.email,
-            mensagem: msg,
-            cv_url: cvUrl, 
-            created_at: serverTimestamp(),
-            status: "novo",
-            is_demo: false
-        });
+            alert(`✅ Candidatura enviada para: ${title}`);
+            window.fecharModalCandidatura();
 
-        alert(`✅ Sucesso! Proposta enviada para "${vagaTitulo}".`);
-        window.fecharModalCandidatura();
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao enviar: " + e.message);
-    } finally {
-        btn.innerText = txtOriginal;
-        btn.disabled = false;
-    }
-}
+        } catch(e) {
+            console.error(e);
+            alert("Erro ao enviar: " + e.message);
+        } finally {
+            newBtn.innerText = "ENVIAR PROPOSTA 🚀";
+            newBtn.disabled = false;
+        }
+    });
+};
 
 window.fecharModalCandidatura = () => {
     const modal = document.getElementById('modal-apply');
-    if(modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 };
 
-// --- EXPORTAÇÃO GLOBAL (API) ---
-window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
-window.publicarVaga = publicarVaga;
-// Abrir modal de criação de vaga (empresa)
-window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
+console.log("✅ Módulo Jobs (Vagas) Carregado.");
