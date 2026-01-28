@@ -19,7 +19,7 @@ window.filtrarCategoria = filtrarCategoria;
 window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
 
 // ============================================================================
-// 1. LISTAGEM DE SERVIÇOS (TEMPO REAL)
+// 1. LISTAGEM DE SERVIÇOS (TEMPO REAL & GRID)
 // ============================================================================
 export function carregarServicosDisponiveis() {
     const listaRender = document.getElementById('lista-prestadores-realtime');
@@ -28,24 +28,26 @@ export function carregarServicosDisponiveis() {
     
     if (!listaRender || !filtersRender) return;
 
-    // 🔒 TRAVA DE SEGURANÇA (ITEM 41)
-    // Se for prestador, ESCONDE os filtros e sai da função.
-    // O auth.js já esconde a div inteira 'servicos-cliente', mas isso aqui garante que o código não rode à toa.
+    // 🔒 TRAVA DE SEGURANÇA (Prestador não vê filtros)
     if (userProfile && userProfile.is_provider) {
         filtersRender.classList.add('hidden');
         return; 
     }
 
+    // 🎨 MUDANÇA VISUAL: FORÇA GRID DE 2 COLUNAS (ITEM 43)
+    // Removemos as classes antigas e aplicamos o layout "Instagram"
+    listaRender.className = "grid grid-cols-2 md:grid-cols-3 gap-2 pb-24"; 
+
     // Se for cliente, MOSTRA os filtros
     if(filtersRender.innerHTML.trim() === "") {
         filtersRender.classList.remove('hidden');
         filtersRender.innerHTML = `
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-                <button onclick="window.filtrarCategoria('Todos', this)" class="filter-pill active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold border border-blue-600 shadow-md">Todos</button>
-                <button onclick="window.filtrarCategoria('Limpeza', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-50">Limpeza</button>
-                <button onclick="window.filtrarCategoria('Obras', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-50">Obras</button>
-                <button onclick="window.filtrarCategoria('Técnica', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-50">Técnica</button>
-                <button onclick="window.filtrarCategoria('Outros', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-50">Outros</button>
+            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2">
+                <button onclick="window.filtrarCategoria('Todos', this)" class="filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm whitespace-nowrap">Todos</button>
+                <button onclick="window.filtrarCategoria('Limpeza', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Limpeza</button>
+                <button onclick="window.filtrarCategoria('Obras', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Obras</button>
+                <button onclick="window.filtrarCategoria('Técnica', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Técnica</button>
+                <button onclick="window.filtrarCategoria('Outros', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Outros</button>
             </div>
         `;
     }
@@ -55,7 +57,7 @@ export function carregarServicosDisponiveis() {
     listaRender.innerHTML = `
         <div class="col-span-2 text-center py-10">
             <div class="loader mx-auto border-blue-200 border-t-blue-600 mb-2"></div>
-            <p class="text-[10px] text-gray-400">Conectando ao vivo...</p>
+            <p class="text-[10px] text-gray-400">Carregando vitrine...</p>
         </div>
     `;
 
@@ -72,8 +74,8 @@ export function carregarServicosDisponiveis() {
             if (snap.empty) {
                 listaRender.innerHTML = `
                     <div class="col-span-2 text-center py-12 opacity-60">
-                        <div class="text-5xl mb-3 grayscale">🏜️</div>
-                        <h3 class="font-bold text-gray-700">Nenhum profissional online.</h3>
+                        <div class="text-4xl mb-2 grayscale">🏜️</div>
+                        <h3 class="font-bold text-gray-700 text-xs">Nenhum profissional online.</h3>
                     </div>`;
                 return;
             }
@@ -95,9 +97,9 @@ export function carregarServicosDisponiveis() {
 function filtrarCategoria(categoria, btnElement) {
     if(btnElement) {
         document.querySelectorAll('.filter-pill').forEach(btn => {
-            btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold hover:bg-gray-50 transition";
+            btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 transition whitespace-nowrap";
         });
-        btnElement.className = "filter-pill active bg-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold border border-blue-600 shadow-md transition";
+        btnElement.className = "filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm transition whitespace-nowrap";
     }
 
     if (categoria === 'Todos') {
@@ -131,11 +133,10 @@ function renderizarLista(lista) {
         if(!isAprovado) return; 
 
         const nomeSafe = prestador.nome_profissional || "Profissional";
+        // Usa o primeiro nome para caber no card pequeno
+        const primeiroNome = nomeSafe.split(' ')[0];
+        
         const fotoPerfil = prestador.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSafe)}&background=random&color=fff`;
-        const bannerStyle = prestador.banner_url 
-            ? `background-image: url('${prestador.banner_url}');` 
-            : `background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);`; 
-        const bio = prestador.bio || "Profissional verificado.";
         
         const servicoPrincipal = (prestador.services && prestador.services.length > 0) 
             ? prestador.services[0] 
@@ -143,60 +144,39 @@ function renderizarLista(lista) {
 
         const qtdServicos = prestador.services ? prestador.services.length : 0;
         
-        // ✨ CORREÇÃO VISUAL: Badge muito mais destacado
-        const badgeMais = qtdServicos > 1 
-            ? `<span class="ml-2 text-[9px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200 font-bold shadow-sm animate-pulse">✨ +${qtdServicos - 1} opções</span>` 
-            : '';
+        let containerClass = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 relative flex flex-col";
+        if(!isOnline) containerClass += " grayscale opacity-70";
 
-        let statusDot = isOnline 
-            ? `<div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full animate-pulse" title="Online"></div>`
-            : `<div class="absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full" title="Offline"></div>`;
-        
-        let containerClass = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group relative";
-        if(!isOnline) containerClass += " grayscale opacity-90";
-
-        // 🛡️ CORREÇÃO DE CLIQUE: Passamos APENAS o ID para evitar erros de aspas no nome
         const onclickAction = `window.abrirModalContratacao('${prestador.id}')`;
 
+        // 🖼️ CARD COMPACTO (MOBILE FIRST)
         container.innerHTML += `
-            <div class="${containerClass}">
-                <div class="h-20 w-full bg-cover bg-center relative" style="${bannerStyle}">
-                    <div class="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition"></div>
+            <div class="${containerClass}" onclick="${onclickAction}">
+                <div class="absolute top-2 right-2 z-10">
+                    ${isOnline 
+                        ? '<span class="flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 border border-white"></span></span>' 
+                        : '<div class="w-2.5 h-2.5 bg-gray-300 rounded-full border border-white"></div>'}
                 </div>
 
-                <div class="px-4 relative">
-                    <div class="absolute -top-6 left-4">
-                        <img src="${fotoPerfil}" class="w-12 h-12 rounded-full border-4 border-white shadow-md object-cover bg-white">
-                        ${statusDot}
-                    </div>
+                <div class="h-16 w-full bg-gradient-to-r from-blue-600 to-blue-400 relative"></div>
+                <div class="flex justify-center -mt-8 relative px-2">
+                    <img src="${fotoPerfil}" class="w-14 h-14 rounded-full border-2 border-white shadow-sm object-cover bg-white">
                 </div>
 
-                <div class="pt-8 px-4 pb-4">
-                    <div class="mb-2">
-                        <h3 class="font-black text-gray-800 text-sm leading-tight truncate">${nomeSafe}</h3>
-                        <div class="flex items-center gap-1 mt-1">
-                            <span class="text-[9px] font-bold text-white bg-blue-600 px-1.5 py-0.5 rounded-full">⭐ 5.0</span>
-                            <span class="text-[9px] text-gray-400 truncate flex-1">${bio}</span>
+                <div class="p-2 text-center flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-gray-800 text-xs truncate mt-1">${primeiroNome}</h3>
+                        <p class="text-[9px] text-gray-400 truncate mb-1">⭐ 5.0 • ${qtdServicos} svcs</p>
+                        
+                        <div class="bg-blue-50 rounded py-1 px-2 mb-1">
+                            <p class="font-bold text-blue-900 text-[10px] truncate">${servicoPrincipal.category}</p>
                         </div>
                     </div>
-
-                    <div class="bg-gray-50 rounded-lg p-2 border border-gray-100 flex justify-between items-center mb-3">
-                        <div>
-                            <p class="text-[8px] uppercase font-bold text-gray-400 tracking-wider">Serviço Principal</p>
-                            <div class="flex items-center">
-                                <p class="font-bold text-blue-900 text-xs truncate max-w-[100px]">${servicoPrincipal.category}</p>
-                                ${badgeMais}
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[8px] text-gray-400">A partir de</p>
-                            <p class="font-black text-green-600 text-sm">R$ ${servicoPrincipal.price}</p>
-                        </div>
+                    
+                    <div>
+                        <p class="text-[10px] text-gray-400 mb-0.5">A partir de</p>
+                        <p class="font-black text-green-600 text-xs">R$ ${servicoPrincipal.price}</p>
                     </div>
-
-                    <button onclick="${onclickAction}" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-[10px] uppercase tracking-wide shadow-md transform active:scale-95 transition">
-                        ${isOnline ? (qtdServicos > 1 ? 'Ver Opções' : 'Contratar') : '📅 Agendar'}
-                    </button>
                 </div>
             </div>
         `;
@@ -204,12 +184,11 @@ function renderizarLista(lista) {
 }
 
 // ============================================================================
-// 2. MODAL DE CONTRATAÇÃO INTELIGENTE (ITEM 2.1)
+// 2. MODAL DE CONTRATAÇÃO INTELIGENTE
 // ============================================================================
 export function abrirModalContratacao(providerId) {
     console.log("🖱️ Clique detectado para ID:", providerId);
 
-    // 1. Busca os dados completos do prestador no cache
     const prestador = cachePrestadores.find(p => p.id === providerId);
     
     if (!prestador) {
@@ -217,7 +196,6 @@ export function abrirModalContratacao(providerId) {
         return alert("Erro: Dados do prestador não encontrados. Atualize a página.");
     }
 
-    // 2. Decisão: Tem muitos serviços?
     if (prestador.services && prestador.services.length > 1) {
         console.log("📂 Abrindo Perfil (Múltiplos Serviços)");
         abrirPerfilPublico(prestador);
@@ -225,7 +203,6 @@ export function abrirModalContratacao(providerId) {
         console.log("🚀 Abrindo Pedido Direto (1 Serviço)");
         const servico = prestador.services[0];
         if (window.abrirModalSolicitacao) {
-            // Passa o nome recuperado do objeto, não do clique
             window.abrirModalSolicitacao(providerId, prestador.nome_profissional, servico.price); 
         }
     }
@@ -235,18 +212,13 @@ function abrirPerfilPublico(prestador) {
     const modal = document.getElementById('provider-profile-modal');
     if(!modal) return console.error("❌ Modal 'provider-profile-modal' não encontrado no HTML.");
 
-    // Popula Dados
     document.getElementById('public-profile-photo').src = prestador.foto_perfil || "https://ui-avatars.com/api/?name=User";
     document.getElementById('public-profile-name').innerText = prestador.nome_profissional;
-    // document.getElementById('public-profile-rating').innerText = "5.0"; // Futuro: Item 9.1
 
-    // Popula Lista de Serviços
     const listaContainer = document.getElementById('public-services-list');
     listaContainer.innerHTML = "";
 
     prestador.services.forEach(svc => {
-        const btnId = `btn-svc-${Math.random().toString(36).substr(2, 9)}`;
-        
         listaContainer.innerHTML += `
             <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
                 <div>
