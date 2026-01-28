@@ -34,24 +34,17 @@
     </style>
 
     <script>
-        // Função Global de Troca de Abas (Blindada)
         window.switchTab = function(tabName) {
             console.log("👉 Trocando para aba:", tabName);
-            
-            // 1. Esconde todas as seções
             document.querySelectorAll('main > section').forEach(el => {
                 el.classList.add('hidden');
             });
-            
-            // 2. Mostra a seção alvo
             const alvo = document.getElementById(`sec-${tabName}`);
             if(alvo) {
                 alvo.classList.remove('hidden');
             } else {
                 console.warn(`⚠️ Seção sec-${tabName} não encontrada.`);
             }
-
-            // 3. Atualiza botões do menu (Visual)
             document.querySelectorAll('nav button').forEach(btn => {
                 btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
                 btn.classList.add('border-transparent', 'text-gray-400');
@@ -61,16 +54,13 @@
                 activeBtn.classList.remove('border-transparent', 'text-gray-400');
                 activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
             }
-
-            // 4. Aciona Carregamento de Dados (Se as funções existirem)
-            // Isso conecta o clique com os módulos jobs.js, products.js, etc.
+            // Aciona Carregamento de Dados
             if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
             if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
             if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
             if(tabName === 'chat' && window.carregarChat) window.carregarChat();
         };
 
-        // Funções de Sub-Abas (Cliente/Prestador)
         window.switchServiceSubTab = function(subTab) {
             ['contratar', 'andamento', 'historico'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
@@ -654,10 +644,12 @@
             } catch (e) { console.log("Erro config:", e); }
         }
 
-        // 2. Ler UTM da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.get('utm_source')) {
-            console.log("🔥 ACESSO VIA LINK ADMIN:", urlParams.get('ref'));
+        // 2. RASTREADOR UNIVERSAL (Item 39)
+        const p = new URLSearchParams(window.location.search);
+        const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
+        if(origem) {
+            console.log("🔗 RASTREADO:", origem);
+            localStorage.setItem("traffic_source", origem);
         }
 
         loadGlobalAlert();
