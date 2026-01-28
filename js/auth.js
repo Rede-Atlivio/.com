@@ -1,6 +1,6 @@
 import { auth, db, provider } from './app.js';
 import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 const storage = getStorage();
@@ -39,7 +39,7 @@ window.alternarPerfil = async () => {
     try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider }); setTimeout(() => location.reload(), 500); } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- ENFORCER V3 ---
+// --- ENFORCER & CORE ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
@@ -57,15 +57,22 @@ onAuthStateChanged(auth, async (user) => {
                     await setDoc(userRef, novoPerfil);
                 } else {
                     const data = docSnap.data();
+                    
+                    // Tratamento de Banimento (Sem Logout, apenas bloqueio visual)
                     if (data.status === 'banido') {
-                        console.warn("🚫 BANIDO."); alert(`⛔ ACESSO NEGADO\nConta BANIDA.`); await signOut(auth); location.reload(); return;
+                        console.warn("🚫 BANIDO.");
+                        // Não damos logout, apenas mostramos a tela. O Chat de suporte vai funcionar por cima.
                     }
                     if (data.status === 'suspenso' && data.is_online) {
                          updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     }
+                    
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     userProfile = data; window.userProfile = data;
+                    
                     aplicarRestricoesDeStatus(data.status);
+                    renderizarBotaoSuporte(); // <--- NOVO: Botão de Suporte Sempre Visível
+
                     if(data.status !== 'banido') {
                         atualizarInterfaceUsuario(userProfile);
                         iniciarAppLogado(user); 
@@ -85,15 +92,119 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// --- SISTEMA DE SUPORTE (NOVO ITEM 24) ---
+function renderizarBotaoSuporte() {
+    if(document.getElementById('btn-floating-support')) return;
+    const btn = document.createElement('div');
+    btn.id = 'btn-floating-support';
+    btn.className = 'fixed bottom-4 right-4 z-[200] animate-bounce-slow';
+    btn.innerHTML = `<button onclick="window.abrirChatSuporte()" class="bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl border-2 border-white transition transform hover:scale-110">💬</button>`;
+    document.body.appendChild(btn);
+}
+
+window.abrirChatSuporte = async () => {
+    // Cria o Modal de Chat se não existir
+    let modal = document.getElementById('modal-support-chat');
+    if(!modal) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="modal-support-chat" class="fixed inset-0 z-[210] bg-black/50 hidden flex items-end sm:items-center justify-center">
+                <div class="bg-white w-full sm:w-96 h-[80vh] sm:h-[600px] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-slideUp">
+                    <div class="bg-blue-900 p-4 text-white flex justify-between items-center">
+                        <div><h3 class="font-bold">Suporte Atlivio</h3><p class="text-[10px] opacity-75">Fale com nossa equipe</p></div>
+                        <button onclick="document.getElementById('modal-support-chat').classList.add('hidden')" class="text-white font-bold text-xl">&times;</button>
+                    </div>
+                    <div id="support-messages" class="flex-1 p-4 overflow-y-auto bg-gray-100 space-y-3">
+                        <p class="text-center text-gray-400 text-xs mt-4">Carregando histórico...</p>
+                    </div>
+                    <div class="p-3 bg-white border-t flex gap-2">
+                        <input type="text" id="support-input" class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Digite sua mensagem...">
+                        <button onclick="window.enviarMensagemSuporte()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow">➤</button>
+                    </div>
+                </div>
+            </div>
+        `);
+        modal = document.getElementById('modal-support-chat');
+    }
+    
+    modal.classList.remove('hidden');
+    carregarMensagensSuporte();
+};
+
+let unsubscribeSuporte = null;
+function carregarMensagensSuporte() {
+    const container = document.getElementById('support-messages');
+    const uid = auth.currentUser.uid;
+    
+    if(unsubscribeSuporte) unsubscribeSuporte(); // Limpa listener anterior
+
+    const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "asc"));
+    
+    unsubscribeSuporte = onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        if(snap.empty) {
+            container.innerHTML = `<div class="text-center py-10"><p class="text-4xl mb-2">👋</p><p class="text-gray-500 text-xs">Olá! Como podemos ajudar?</p></div>`;
+        }
+        
+        snap.forEach(doc => {
+            const msg = doc.data();
+            const isMe = msg.sender === 'user';
+            container.innerHTML += `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                    <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border'} max-w-[80%] rounded-xl px-4 py-2 text-xs shadow-sm">
+                        <p>${msg.message}</p>
+                        <p class="text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'} text-right mt-1">${msg.created_at?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '...'}</p>
+                    </div>
+                </div>
+            `;
+        });
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+window.enviarMensagemSuporte = async () => {
+    const input = document.getElementById('support-input');
+    const txt = input.value.trim();
+    if(!txt) return;
+    
+    input.value = ""; // Limpa rápido para UX
+    
+    try {
+        await addDoc(collection(db, "support_tickets"), {
+            uid: auth.currentUser.uid,
+            sender: 'user', // user ou admin
+            message: txt,
+            created_at: serverTimestamp(),
+            user_email: userProfile.email || "Sem Email",
+            user_name: userProfile.displayName || "Usuário",
+            read: false
+        });
+    } catch(e) {
+        alert("Erro ao enviar: " + e.message);
+    }
+};
+
+// --- RESTO DO CÓDIGO (Visual, Enforcer, Serviços) ---
 function aplicarRestricoesDeStatus(status) {
     const body = document.body;
     const bloqueioID = "bloqueio-total-overlay"; const avisoID = "aviso-suspenso-bar";
     const oldBlock = document.getElementById(bloqueioID); const oldBar = document.getElementById(avisoID);
     if(oldBlock) oldBlock.remove(); if(oldBar) oldBar.remove();
 
-    if (status === 'banido') { /* Lógica já tratada */ } 
+    if (status === 'banido') {
+        // Bloqueio Total (Mas permite clicar no botão de suporte z-index maior)
+        const jailHtml = `
+            <div id="${bloqueioID}" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-fade">
+                <div class="bg-red-500/10 p-6 rounded-full mb-6 border-4 border-red-500 animate-pulse"><span class="text-6xl">🚫</span></div>
+                <h1 class="text-3xl font-black text-white mb-2">CONTA BLOQUEADA</h1>
+                <p class="text-gray-400 mb-8 max-w-md">Violação dos termos de uso.</p>
+                <button onclick="window.abrirChatSuporte()" class="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg animate-bounce">Falar com Suporte</button>
+                <button onclick="window.logout()" class="text-gray-500 text-xs mt-4 underline">Sair</button>
+            </div>
+        `;
+        body.insertAdjacentHTML('beforeend', jailHtml);
+    } 
     else if (status === 'suspenso') {
-        const warningHtml = `<div id="${avisoID}" class="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-xl flex justify-between items-center"><span class="flex items-center gap-2"><i class="animate-pulse">⚠️</i> CONTA SUSPENSA</span><button onclick="alert('Entre em contato com o suporte.')" class="bg-white/20 px-2 py-1 rounded text-[10px]">Ajuda</button></div>`;
+        const warningHtml = `<div id="${avisoID}" class="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-xl flex justify-between items-center"><span class="flex items-center gap-2"><i class="animate-pulse">⚠️</i> SUSPENSO</span><button onclick="window.abrirChatSuporte()" class="bg-white/20 px-2 py-1 rounded text-[10px]">Suporte</button></div>`;
         body.insertAdjacentHTML('beforeend', warningHtml);
         document.getElementById('header-main')?.classList.add('mt-8');
     } else { document.getElementById('header-main')?.classList.remove('mt-8'); }
@@ -235,27 +346,15 @@ window.abrirConfiguracaoServicos = async () => {
         </div>`; 
 };
 
-// 🔥 CORREÇÃO DA EDIÇÃO: Remove DB -> Recarrega Tela -> Preenche Campos
 window.editarServico = async (i) => {
-    const ref = doc(db, "active_providers", auth.currentUser.uid);
-    const snap = await getDoc(ref);
-    let s = snap.data().services;
-    const item = s[i];
-
-    // Remove manualmente
-    s.splice(i, 1);
-    await updateDoc(ref, { services: s });
-
-    // Recarrega
-    await window.abrirConfiguracaoServicos();
-
-    // Preenche com delay para o DOM existir
+    const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let s = snap.data().services; const item = s[i];
+    s.splice(i, 1); await updateDoc(ref, { services: s }); await window.abrirConfiguracaoServicos();
     setTimeout(() => {
         document.getElementById('new-service-category').value = item.category;
         document.getElementById('new-service-price').value = item.price;
         document.getElementById('new-service-desc').value = item.description || "";
         document.getElementById('new-service-price').focus();
-        alert("✏️ ITEM MOVIDO PARA EDIÇÃO.\n\nAltere os dados abaixo e clique em 'ADICIONAR' para confirmar.");
+        alert("✏️ Modo de Edição Ativo.");
     }, 200);
 };
 
