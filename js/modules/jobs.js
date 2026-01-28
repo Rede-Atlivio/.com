@@ -2,43 +2,37 @@ import { db, auth } from '../app.js';
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
-// 1. ROTEADOR DE INTERFACE (QUEM VÊ O QUÊ)
+// 1. ROTEADOR DE INTERFACE
 // ============================================================================
-window.carregarInterfaceEmpregos = function() {
+export function carregarInterfaceEmpregos() {
     console.log("💼 Iniciando módulo de Vagas...");
     const containerVagas = document.getElementById('lista-vagas');
     const containerEmpresa = document.getElementById('painel-empresa');
-    const userProfile = window.userProfile; // Pega do escopo global (auth.js)
+    const userProfile = window.userProfile; 
 
-    // Lógica: Se for prestador, vê lista de vagas. Se for cliente/empresa, vê painel.
-    // Se não tiver perfil carregado ainda, carrega a lista por padrão.
+    // Se for prestador, vê lista. Se for empresa/visitante, vê painel + lista
     if (userProfile && userProfile.is_provider) {
         if(containerEmpresa) containerEmpresa.classList.add('hidden');
         if(containerVagas) {
             containerVagas.classList.remove('hidden');
-            window.carregarVagas();
+            carregarVagas();
         }
     } else {
-        // Modo Empresa/Cliente (ou visitante)
-        // Se for visitante, mostra vagas também
-        if (!auth.currentUser || (userProfile && !userProfile.is_provider)) {
-             if(containerEmpresa && auth.currentUser) {
-                 containerEmpresa.classList.remove('hidden');
-                 window.listarMinhasVagasEmpresa();
-             }
-             // Mostra lista de vagas abaixo também para empresas verem o mercado
-             if(containerVagas) {
-                 containerVagas.classList.remove('hidden');
-                 window.carregarVagas();
-             }
+        if(containerEmpresa && auth.currentUser) {
+             containerEmpresa.classList.remove('hidden');
+             listarMinhasVagasEmpresa();
+        }
+        if(containerVagas) {
+             containerVagas.classList.remove('hidden');
+             carregarVagas();
         }
     }
 }
 
 // ============================================================================
-// 2. CARREGAR LISTA DE VAGAS (CANDIDATOS)
+// 2. CARREGAR LISTA DE VAGAS
 // ============================================================================
-window.carregarVagas = async () => {
+export async function carregarVagas() {
     const container = document.getElementById('lista-vagas');
     if(!container) return;
     
@@ -61,7 +55,6 @@ window.carregarVagas = async () => {
 
         snap.forEach(d => {
             const job = d.data();
-            // Formatação de Salário
             const salarioFmt = job.salary ? (isNaN(job.salary) ? job.salary : `R$ ${job.salary}`) : 'A combinar';
 
             container.innerHTML += `
@@ -86,14 +79,12 @@ window.carregarVagas = async () => {
         console.error("Erro vagas:", e);
         container.innerHTML = `<p class="text-red-500 text-xs text-center">Erro de conexão.</p>`;
     }
-};
+}
 
 // ============================================================================
-// 3. GESTÃO DA EMPRESA (PUBLICAR)
+// 3. GESTÃO DA EMPRESA
 // ============================================================================
-window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
-
-window.publicarVaga = async () => {
+export async function publicarVaga() {
     const title = document.getElementById('job-title').value;
     const salary = document.getElementById('job-salary').value;
     const desc = document.getElementById('job-desc').value;
@@ -122,8 +113,8 @@ window.publicarVaga = async () => {
         document.getElementById('job-salary').value = "";
         document.getElementById('job-desc').value = "";
 
-        window.listarMinhasVagasEmpresa();
-        window.carregarVagas(); // Atualiza a lista geral também
+        listarMinhasVagasEmpresa();
+        carregarVagas(); 
 
     } catch(e) {
         alert("Erro: " + e.message);
@@ -131,9 +122,9 @@ window.publicarVaga = async () => {
         btn.innerText = "PUBLICAR AGORA";
         btn.disabled = false;
     }
-};
+}
 
-window.listarMinhasVagasEmpresa = async () => {
+export async function listarMinhasVagasEmpresa() {
     const container = document.getElementById('lista-minhas-vagas');
     if(!container || !auth.currentUser) return;
 
@@ -158,28 +149,25 @@ window.listarMinhasVagasEmpresa = async () => {
             </div>
         `;
     });
-};
+}
 
 // ============================================================================
-// 4. CANDIDATURA (MODAL + PDF)
+// 4. CANDIDATURA
 // ============================================================================
-window.candidatarVaga = (id, title) => {
+export function candidatarVaga(id, title) {
     if(!auth.currentUser) return alert("Faça login para se candidatar.");
 
     const modal = document.getElementById('modal-apply');
     document.getElementById('apply-job-title').innerText = title;
     document.getElementById('apply-job-id').value = id;
     
-    // Limpa campos anteriores
     document.getElementById('apply-message').value = "";
     document.getElementById('apply-file').value = "";
 
     modal.classList.remove('hidden');
-    modal.classList.add('flex'); // Garante flex para centralizar
+    modal.classList.add('flex'); 
 
-    // Configura o botão de envio
     const btnEnviar = document.getElementById('btn-submit-proposal');
-    // Remove listeners antigos clonando
     const newBtn = btnEnviar.cloneNode(true);
     btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
     
@@ -193,8 +181,7 @@ window.candidatarVaga = (id, title) => {
         newBtn.disabled = true;
 
         try {
-            // Simulação de Upload (MVP) - Em produção usaria Firebase Storage
-            const cvUrl = "https://example.com/cv-placeholder.pdf"; 
+            const cvUrl = "https://example.com/cv-placeholder.pdf"; // Simulado
 
             await addDoc(collection(db, "candidatos"), {
                 vaga_id: id,
@@ -209,7 +196,7 @@ window.candidatarVaga = (id, title) => {
             });
 
             alert(`✅ Candidatura enviada para: ${title}`);
-            window.fecharModalCandidatura();
+            fecharModalCandidatura();
 
         } catch(e) {
             console.error(e);
@@ -219,12 +206,21 @@ window.candidatarVaga = (id, title) => {
             newBtn.disabled = false;
         }
     });
-};
+}
 
-window.fecharModalCandidatura = () => {
+export function fecharModalCandidatura() {
     const modal = document.getElementById('modal-apply');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
-};
+}
 
-console.log("✅ Módulo Jobs (Vagas) Carregado.");
+// 🔥 EXPORTAÇÃO GLOBAL (O SEGREDO DA CONEXÃO) 🔥
+window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
+window.carregarVagas = carregarVagas;
+window.publicarVaga = publicarVaga;
+window.listarMinhasVagasEmpresa = listarMinhasVagasEmpresa;
+window.candidatarVaga = candidatarVaga;
+window.fecharModalCandidatura = fecharModalCandidatura;
+window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
+
+console.log("✅ Módulo Jobs (Vagas) Carregado e Conectado.");
