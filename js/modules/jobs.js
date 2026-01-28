@@ -54,20 +54,25 @@ export async function carregarVagas() {
 
         snap.forEach(d => {
             const job = d.data();
-            const salarioFmt = job.salary ? (isNaN(job.salary) ? job.salary : `R$ ${job.salary}`) : 'A combinar';
+            
+            // 🛠️ CORREÇÃO UNDEFINED (Retrocompatibilidade PT-BR/EN)
+            const tituloReal = job.title || job.titulo || "Vaga Sem Título";
+            const descReal = job.description || job.descricao || "Sem descrição.";
+            const salarioVal = job.salary || job.salario;
+            const salarioFmt = salarioVal ? (isNaN(salarioVal) ? salarioVal : `R$ ${salarioVal}`) : 'A combinar';
 
             container.innerHTML += `
                 <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition relative overflow-hidden group mb-3">
                     <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
                     <div class="flex justify-between items-start mb-2 pl-2">
                         <div>
-                            <h3 class="font-black text-sm text-gray-800 uppercase">${job.title}</h3>
+                            <h3 class="font-black text-sm text-gray-800 uppercase">${tituloReal}</h3>
                             <p class="text-[10px] text-gray-500 font-bold">${salarioFmt}</p>
                         </div>
                         <span class="text-[9px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold uppercase">Nova</span>
                     </div>
-                    <p class="text-xs text-gray-600 mb-3 pl-2 line-clamp-2">${job.description}</p>
-                    <button onclick="window.candidatarVaga('${d.id}', '${job.title}')" class="w-full bg-slate-800 text-white py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-600 transition">
+                    <p class="text-xs text-gray-600 mb-3 pl-2 line-clamp-2">${descReal}</p>
+                    <button onclick="window.candidatarVaga('${d.id}', '${tituloReal}')" class="w-full bg-slate-800 text-white py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-600 transition">
                         Candidatar-se
                     </button>
                 </div>
@@ -97,9 +102,10 @@ export async function publicarVaga() {
     try {
         await addDoc(collection(db, "jobs"), {
             owner_id: auth.currentUser.uid,
-            title: title,
+            title: title,       // Salva em Inglês (Padrão Novo)
             salary: salary,
-            description: desc,
+            description: desc,  // Salva em Inglês (Padrão Novo)
+            empresa: auth.currentUser.displayName || "Empresa",
             created_at: serverTimestamp(),
             status: 'ativa',
             candidates_count: 0
@@ -137,11 +143,14 @@ export async function listarMinhasVagasEmpresa() {
     
     snap.forEach(d => {
         const v = d.data();
+        // Compatibilidade também aqui
+        const titulo = v.title || v.titulo || "Sem Título";
+        
         container.innerHTML += `
             <div class="bg-white p-3 rounded-lg border border-gray-100 flex justify-between items-center mb-2">
                 <div>
-                    <p class="font-bold text-xs text-blue-900">${v.title}</p>
-                    <p class="text-[9px] text-gray-400">${v.status.toUpperCase()}</p>
+                    <p class="font-bold text-xs text-blue-900">${titulo}</p>
+                    <p class="text-[9px] text-gray-400">${v.status ? v.status.toUpperCase() : 'ATIVA'}</p>
                 </div>
                 <button class="text-[8px] text-red-400 font-bold border border-red-100 px-2 py-1 rounded">ENCERRAR</button>
             </div>
@@ -212,7 +221,7 @@ export function fecharModalCandidatura() {
     modal.classList.remove('flex');
 }
 
-// 🔥 CONEXÃO GLOBAL 🔥
+// 🔥 EXPORTAÇÃO GLOBAL 🔥
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.carregarVagas = carregarVagas;
 window.publicarVaga = publicarVaga;
