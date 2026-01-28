@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio Admin | Comando Central v3.0</title>
+    <title>Atlivio Admin | Comando Central v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,7 +11,7 @@
     <style>
         body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 80%); }
         .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; }
-        .nav-btn { text-align: left; padding: 12px 16px; border-radius: 8px; transition: all 0.2s; color: #94a3b8; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .nav-btn { text-align: left; padding: 12px 16px; border-radius: 8px; transition: all 0.2s; color: #94a3b8; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; width: 100%; }
         .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
         .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
         .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
@@ -47,7 +47,7 @@
     <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
         <div class="p-6 border-b border-white/5">
             <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v3.0 // MODULAR SYSTEM</p>
+            <p class="text-[10px] text-gray-500 mt-1">v3.1 // SUPPORT ENABLED</p>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
@@ -56,6 +56,9 @@
             <button class="nav-btn" data-view="services"><i data-lucide="wrench" size="16"></i> SERVIÇOS (VITRINE)</button>
             <button class="nav-btn" data-view="missions"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
             
+            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Atendimento</p>
+            <button class="nav-btn text-yellow-200 hover:text-yellow-100" data-view="support"><i data-lucide="message-circle" size="16"></i> SUPORTE & TICKETS</button>
+
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Vagas & RH</p>
             <button class="nav-btn" data-view="jobs"><i data-lucide="briefcase" size="16"></i> VAGAS DE EMPREGO</button>
             <button class="nav-btn text-blue-300" data-view="candidatos"><i data-lucide="file-text" size="16"></i> CANDIDATOS (CVs)</button>
@@ -84,7 +87,7 @@
             <div class="flex items-center gap-3">
                 <button id="btn-refresh" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                    <span class="status-dot dot-green"></span><span class="text-[10px] font-bold text-green-400">ONLINE</span>
+                    <span class="status-dot dot-green bg-green-500"></span><span class="text-[10px] font-bold text-green-400">ONLINE</span>
                 </div>
             </div>
         </header>
@@ -95,7 +98,7 @@
 
             <div id="view-list" class="hidden space-y-4 animate-fade">
                 <div class="flex justify-between items-center">
-                    <input type="text" id="list-search" placeholder="Buscar..." class="bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
+                    <input type="text" id="list-search" placeholder="Buscar..." class="search-input bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
                     <button id="btn-list-add" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">+ NOVO ITEM</button>
                 </div>
                 <div class="glass-panel overflow-hidden">
@@ -106,6 +109,8 @@
                 </div>
                 <p id="list-count" class="text-xs text-gray-500 text-right">0 registros</p>
             </div>
+
+            <div id="view-support" class="hidden h-full animate-fade"></div>
 
             <div id="view-finance" class="hidden space-y-6 animate-fade"></div>
 
@@ -138,6 +143,9 @@
 
     <script type="module" src="./js/admin/core.js"></script> 
     
-    <script>lucide.createIcons();</script>
+    <script>
+        // Inicializa ícones ao carregar
+        window.addEventListener('load', () => lucide.createIcons());
+    </script>
 </body>
 </html>
