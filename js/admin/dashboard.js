@@ -1,9 +1,9 @@
-import { collection, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function init() {
     const container = document.getElementById('view-dashboard');
     
-    // Renderiza a estrutura (Skeleton) com a NOVA seção de Analytics
+    // 1. ESTRUTURA VISUAL (SKELETON)
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="glass-panel p-5 border-l-2 border-blue-500">
@@ -36,11 +36,11 @@ export async function init() {
                                 <th class="pb-2">Origem (?ref=)</th>
                                 <th class="pb-2 text-right">Usuários</th>
                                 <th class="pb-2 text-right">%</th>
-                                <th class="pb-2 text-right">Barra</th>
+                                <th class="pb-2 text-right">Visual</th>
                             </tr>
                         </thead>
                         <tbody id="analytics-table-body" class="text-gray-300">
-                            <tr><td colspan="4" class="py-4 text-center">Calculando dados...</td></tr>
+                            <tr><td colspan="4" class="py-4 text-center text-gray-500">Analisando dados...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -53,7 +53,7 @@ export async function init() {
                 </div>
                 <div class="mt-6 text-center opacity-50">
                     <p class="text-[10px] uppercase">Versão do Painel</p>
-                    <p class="font-bold text-blue-400">v16.0 (Analytics)</p>
+                    <p class="font-bold text-blue-400">v16.1 (Analytics Ativo)</p>
                 </div>
             </div>
         </div>
@@ -63,25 +63,20 @@ export async function init() {
         const db = window.db;
 
         // =================================================================================
-        // 1. CARREGAMENTO DE DADOS DO BANCO
+        // 2. CARREGAMENTO DE DADOS (AGORA COM ANALYTICS)
         // =================================================================================
         
-        // Buscar Usuários (Para KPI e Analytics)
         const usersSnap = await getDocs(collection(db, "usuarios"));
-        
-        // Buscar Prestadores Online
         const qOnline = query(collection(db, "active_providers"), where("is_online", "==", true));
         const providersSnap = await getDocs(qOnline);
-
-        // Buscar Vagas Ativas
         const qJobs = query(collection(db, "jobs"), where("status", "==", "ativa"));
         const jobsSnap = await getDocs(qJobs);
 
         // =================================================================================
-        // 2. CÁLCULOS KPI (Financeiro e Totais)
+        // 3. PROCESSAMENTO DE DADOS
         // =================================================================================
         let totalSaldo = 0;
-        let trafficStats = {}; // Objeto para contar origens: { 'zap': 10, 'instagram': 5 }
+        let trafficStats = {}; // { 'zap': 10, 'testedia28': 1 }
 
         usersSnap.forEach(doc => {
             const data = doc.data();
@@ -90,47 +85,54 @@ export async function init() {
             const valor = parseFloat(data.wallet_balance || data.saldo || 0);
             totalSaldo += valor;
 
-            // Contagem de Analytics (Item 39/40)
-            // Se não tiver traffic_source, conta como 'orgânico/antigo'
-            const source = data.traffic_source || 'antigo/direto';
+            // Contagem de Analytics (O SEGREDO ESTÁ AQUI)
+            // Lê o campo traffic_source que gravamos no auth.js
+            let source = data.traffic_source || 'orgânico';
+            
+            // Normaliza nomes para ficar bonito no gráfico
+            if(source === 'direct') source = 'orgânico';
+            
             trafficStats[source] = (trafficStats[source] || 0) + 1;
         });
 
-        // Atualiza KPIs no topo
+        // =================================================================================
+        // 4. ATUALIZAÇÃO DA TELA
+        // =================================================================================
+        
+        // KPIs
         document.getElementById('kpi-users').innerText = usersSnap.size;
         document.getElementById('kpi-balance').innerText = `R$ ${totalSaldo.toFixed(2).replace('.', ',')}`;
         document.getElementById('kpi-providers').innerText = providersSnap.size;
         document.getElementById('kpi-jobs').innerText = jobsSnap.size;
 
-        // =================================================================================
-        // 3. RENDERIZAÇÃO DA TABELA ANALYTICS (NOVO)
-        // =================================================================================
+        // Tabela Analytics
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
 
-        // Converte o objeto trafficStats em array ordenado
+        // Ordena: Quem trouxe mais gente fica no topo
         const sortedTraffic = Object.entries(trafficStats)
-            .sort(([,a], [,b]) => b - a); // Ordena do maior para o menor
+            .sort(([,a], [,b]) => b - a); 
 
-        const totalUsers = usersSnap.size || 1; // Evita divisão por zero
+        const totalUsers = usersSnap.size || 1; 
 
         sortedTraffic.forEach(([origem, count]) => {
             const percent = ((count / totalUsers) * 100).toFixed(1);
             
-            // Define cor da barra baseada na origem
+            // Cores dinâmicas para as barras
             let colorClass = 'bg-gray-600';
-            if(origem.includes('zap') || origem.includes('whatsapp')) colorClass = 'bg-green-500';
+            if(origem.includes('zap') || origem.includes('whats')) colorClass = 'bg-green-500';
             if(origem.includes('insta')) colorClass = 'bg-pink-500';
-            if(origem.includes('google')) colorClass = 'bg-blue-500';
-            if(origem === 'antigo/direto') colorClass = 'bg-slate-700';
+            if(origem.includes('teste')) colorClass = 'bg-amber-500';
+            if(origem === 'orgânico') colorClass = 'bg-slate-700';
 
             tbody.innerHTML += `
                 <tr class="border-b border-gray-800 last:border-0 hover:bg-white/5 transition">
-                    <td class="py-3 font-bold text-white">${origem}</td>
+                    <td class="py-3 font-bold text-white capitalize">
+                        ${origem.replace(/_/g, ' ')} </td>
                     <td class="py-3 text-right font-mono">${count}</td>
                     <td class="py-3 text-right text-[10px] text-gray-400">${percent}%</td>
                     <td class="py-3 pl-4">
-                        <div class="w-full bg-gray-800 rounded-full h-1.5">
+                        <div class="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
                             <div class="${colorClass} h-1.5 rounded-full" style="width: ${percent}%"></div>
                         </div>
                     </td>
@@ -138,13 +140,11 @@ export async function init() {
             `;
         });
 
-        // =================================================================================
-        // 4. ATUALIZAÇÃO DO STATUS
-        // =================================================================================
+        // Status
         document.getElementById('chart-status').innerHTML = `
-            <p>✅ Banco de Dados: <b>CONECTADO</b></p>
+            <p>✅ Banco de Dados: <b>SINCRONIZADO</b></p>
             <p>👥 Ticket Médio: <b>R$ ${(usersSnap.size > 0 ? totalSaldo / usersSnap.size : 0).toFixed(2)}</b></p>
-            <p class="mt-2 text-[10px] text-blue-300">Rastreando <b>${Object.keys(trafficStats).length}</b> origens diferentes.</p>
+            <p class="mt-2 text-[10px] text-green-400">Rastreando <b>${Object.keys(trafficStats).length}</b> canais de aquisição.</p>
         `;
 
     } catch(e) { 
