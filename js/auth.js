@@ -11,8 +11,7 @@ const DEFAULT_TENANT = "atlivio_fsa_01";
 const TAXA_PLATAFORMA = 0.20; 
 const LIMITE_CREDITO_NEGATIVO = -60.00; 
 
-// 🔥 CORREÇÃO DO ERRO DE IMPORTAÇÃO (jobs.js) 🔥
-// Precisamos do 'export' para os módulos e do 'window' para o console.
+// EXPORTAÇÃO GLOBAL (Mantida)
 export let userProfile = null; 
 window.userProfile = null;
 
@@ -58,13 +57,13 @@ window.alternarPerfil = async () => {
     } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- NÚCLEO DE AUTENTICAÇÃO (O ENFORCER) ---
+// --- NÚCLEO DE AUTENTICAÇÃO (O ENFORCER V2) ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
         
-        // 🔥 MONITORAMENTO EM TEMPO REAL (ITEM 22 e 23) 🔥
+        // 🔥 MONITORAMENTO EM TEMPO REAL
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
@@ -89,28 +88,32 @@ onAuthStateChanged(auth, async (user) => {
                         status: 'ativo'
                     };
                     
-                    // Sincroniza Variáveis
                     userProfile = novoPerfil;
                     window.userProfile = novoPerfil;
-                    
                     await setDoc(userRef, novoPerfil);
                 } else {
                     const data = docSnap.data();
                     
-                    // 🚨 ENFORCER: BANIMENTO REAL
-                    if (data.status === 'banido' || data.status === 'suspenso') {
+                    // 🚨 ENFORCER REFINADO (ITEM 21 - CORREÇÃO)
+                    // Apenas 'banido' é expulso. 'suspenso' continua logado, mas restrito.
+                    if (data.status === 'banido') {
                         console.warn("🚫 USUÁRIO BANIDO DETECTADO. EXPULSANDO...");
-                        alert(`⛔ ACESSO NEGADO\n\nSua conta foi ${data.status}.\nEntre em contato com o suporte.`);
+                        alert(`⛔ ACESSO NEGADO\n\nSua conta foi BANIDA permanentemente.`);
                         await signOut(auth);
                         location.reload();
                         return;
+                    }
+                    
+                    // Se estiver suspenso, forçamos o offline no banco para garantir
+                    if (data.status === 'suspenso' && data.is_online) {
+                         // Desliga silenciosamente no banco se tentar burlar
+                         updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     }
 
                     // 💰 SINCRONIA DE SALDO
                     const saldoReal = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     data.wallet_balance = saldoReal; 
 
-                    // ATUALIZAÇÃO DAS VARIÁVEIS EXPORTADAS E GLOBAIS
                     userProfile = data;
                     window.userProfile = data;
 
@@ -201,13 +204,19 @@ async function verificarStatusERadar(uid) {
             
             if(toggle) {
                 toggle.checked = isOnline;
+                // ESTADOS DO TOGGLE
                 if(data.status === 'em_analise') {
                     toggle.disabled = true;
                     document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
-                } else if(data.status === 'banido' || data.status === 'suspenso') {
+                } else if(data.status === 'banido') {
                     toggle.disabled = true;
                     toggle.checked = false;
-                    document.getElementById('status-label').innerText = "🔴 BLOQUEADO";
+                    document.getElementById('status-label').innerText = "🔴 BANIDO";
+                } else if(data.status === 'suspenso') {
+                    // 🔥 CORREÇÃO: Suspenso apenas trava o toggle, mas mantém logado
+                    toggle.disabled = true;
+                    toggle.checked = false;
+                    document.getElementById('status-label').innerText = "⚠️ SUSPENSO";
                 } else {
                     toggle.disabled = false;
                     document.getElementById('status-label').innerText = isOnline ? "ONLINE" : "OFFLINE";
@@ -232,13 +241,18 @@ document.addEventListener('change', async (e) => {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const st = snap.data().status;
+            
             if(st === 'em_analise') {
                 e.target.checked = false;
-                return alert("⏳ Seu perfil está em análise.\nAguarde a aprovação para ficar online.");
+                return alert("⏳ Seu perfil está em análise.");
             }
-            if(st === 'banido' || st === 'suspenso') {
+            if(st === 'banido') {
                  e.target.checked = false;
-                 return alert("⛔ Você está bloqueado.");
+                 return alert("⛔ Você foi banido.");
+            }
+            if(st === 'suspenso') {
+                 e.target.checked = false;
+                 return alert("⚠️ CONTA SUSPENSA.\n\nVocê não pode ficar online devido a pendências (Ex: Saldo negativo ou denúncia).\nResolva para liberar.");
             }
         }
 
