@@ -2,12 +2,9 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimes
 
 let currentType = 'users';
 let selectedUsers = new Set();
-let tempTransMode = null; 
 let allLoadedUsers = []; 
 
-// ============================================================================
 // 1. INICIALIZAÇÃO
-// ============================================================================
 export async function init(viewType) {
     currentType = viewType;
     selectedUsers.clear();
@@ -29,22 +26,14 @@ export async function init(viewType) {
 
     if(btnAdd) btnAdd.onclick = () => window.openEditor(viewType, null);
 
-    // Listener Mestre (Checkbox)
-    const chkAll = document.getElementById('check-users-all');
-    if(chkAll) {
-        const newChk = chkAll.cloneNode(true);
-        chkAll.parentNode.replaceChild(newChk, chkAll);
-        newChk.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
-    }
-    
-    // Listener Busca (Clone para remover anteriores)
+    // Listener Busca
     if(searchInput) {
         const newSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearch, searchInput);
         newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
     }
     
-    // Listener Bulk Delete
+    // Listener Bulk
     const btnBulk = document.getElementById('btn-bulk-delete');
     if(btnBulk) btnBulk.onclick = executeUserBulkDelete;
 
@@ -52,9 +41,7 @@ export async function init(viewType) {
     await loadList();
 }
 
-// ============================================================================
-// 2. LISTAGEM INTELIGENTE (COM NOMES REAIS)
-// ============================================================================
+// 2. LISTAGEM COM SHERLOCK HOLMES
 async function loadList() {
     const tbody = document.getElementById('list-body');
     const countEl = document.getElementById('list-count');
@@ -63,8 +50,6 @@ async function loadList() {
     try {
         const db = window.db;
         const col = currentType === 'users' ? 'usuarios' : 'active_providers';
-        
-        // Carrega mais itens para a busca funcionar bem localmente
         let q = query(collection(db, col), limit(100)); 
 
         const snap = await getDocs(q);
@@ -80,14 +65,13 @@ async function loadList() {
             const data = d.data();
             data.id = d.id; 
             
-            // 🕵️‍♂️ SHERLOCK HOLMES: Descobre o nome real
+            // 🕵️‍♂️ SHERLOCK HOLMES
             let nomeReal = 'Desconhecido';
             if (data.nome_profissional) nomeReal = data.nome_profissional;
             else if (data.displayName) nomeReal = data.displayName;
             else if (data.nome && data.nome !== 'User') nomeReal = data.nome;
             else if (data.email) nomeReal = data.email.split('@')[0];
             
-            // Capitaliza
             nomeReal = nomeReal.charAt(0).toUpperCase() + nomeReal.slice(1);
             data._displayName = nomeReal; 
             
@@ -116,7 +100,7 @@ function renderTable(lista) {
 
         if(currentType === 'users') {
             let statusClass = "text-green-400 border-green-500/50 bg-green-500/10";
-            if(data.status === 'banido' || data.status === 'suspenso') statusClass = "text-red-400 border-red-500/50 bg-red-500/10";
+            if(data.status === 'banido' || data.status === 'suspenso' || data.status === 'rejeitado') statusClass = "text-red-400 border-red-500/50 bg-red-500/10";
             if(data.status === 'ativo') statusClass = "text-blue-400 border-blue-500/50 bg-blue-500/10";
             
             const saldo = parseFloat(data.saldo || 0);
@@ -147,7 +131,7 @@ function renderTable(lista) {
                     </td>
                 </tr>`;
         } else {
-            // LISTA DE PRESTADORES
+            // Prestadores
             let statusIcon = data.is_online ? "🟢" : "⚫";
             let statusLabel = data.status || "Novo";
             let rowOpacity = "opacity-100";
@@ -165,7 +149,7 @@ function renderTable(lista) {
                             <img src="${avatarImg}" class="w-8 h-8 rounded-full object-cover border border-white/10">
                             <div>
                                 <div class="font-bold text-white text-sm">${data._displayName}</div>
-                                <div class="text-[10px] text-gray-500">${data.bio ? data.bio.substring(0,30)+'...' : 'Sem bio'}</div>
+                                <div class="text-[10px] text-gray-500">${data.bio ? data.bio.substring(0,20)+'...' : 'Sem bio'}</div>
                             </div>
                         </div>
                     </td>
@@ -187,76 +171,31 @@ function renderTable(lista) {
         }
     });
 
-    // Reatribui listeners de checkbox para as novas linhas
     document.querySelectorAll('.chk-user').forEach(c => c.addEventListener('change', (e) => toggleUserItem(e.target.dataset.id, e.target.checked)));
 }
 
 function filtrarListaLocal(termo) {
-    if(!termo) {
-        renderTable(allLoadedUsers);
-        return;
-    }
+    if(!termo) { renderTable(allLoadedUsers); return; }
     const filtrados = allLoadedUsers.filter(u => {
         const nome = (u._displayName || "").toLowerCase();
         const email = (u.email || "").toLowerCase();
         const id = (u.id || "").toLowerCase();
-        
         return nome.includes(termo) || email.includes(termo) || id.includes(termo);
     });
     renderTable(filtrados);
 }
 
-// ============================================================================
 // 3. SELEÇÃO EM MASSA
-// ============================================================================
-function toggleUserSelectAll(checked) {
-    document.querySelectorAll('.chk-user').forEach(c => {
-        c.checked = checked;
-        toggleUserItem(c.dataset.id, checked);
-    });
-}
-function toggleUserItem(id, selected) {
-    if(selected) selectedUsers.add(id); else selectedUsers.delete(id);
-    updateUserBulkUI();
-}
-function updateUserBulkUI() {
-    const bar = document.getElementById('bulk-actions');
-    const count = document.getElementById('bulk-count');
-    if(selectedUsers.size > 0) {
-        bar.classList.add('visible');
-        bar.style.transform = 'translateY(0)';
-        count.innerText = selectedUsers.size;
-    } else {
-        bar.classList.remove('visible');
-        bar.style.transform = 'translateY(100%)';
-    }
-}
-async function executeUserBulkDelete() {
-    if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return;
-    const btn = document.getElementById('btn-bulk-delete');
-    btn.innerText = "AGUARDE...";
-    try {
-        const db = window.db;
-        const batch = writeBatch(db);
-        const col = currentType === 'users' ? 'usuarios' : 'active_providers';
-        selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); });
-        await batch.commit();
-        selectedUsers.clear();
-        updateUserBulkUI();
-        await loadList();
-        alert("✅ Exclusão concluída!");
-    } catch(e) { alert("Erro: " + e.message); } 
-    finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); }
-}
+function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; toggleUserItem(c.dataset.id, checked); }); }
+function toggleUserItem(id, selected) { if(selected) selectedUsers.add(id); else selectedUsers.delete(id); updateUserBulkUI(); }
+function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); const count = document.getElementById('bulk-count'); if(selectedUsers.size > 0) { bar.classList.add('visible'); bar.style.transform = 'translateY(0)'; count.innerText = selectedUsers.size; } else { bar.classList.remove('visible'); bar.style.transform = 'translateY(100%)'; } }
+async function executeUserBulkDelete() { if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return; const btn = document.getElementById('btn-bulk-delete'); btn.innerText = "AGUARDE..."; try { const db = window.db; const batch = writeBatch(db); const col = currentType === 'users' ? 'usuarios' : 'active_providers'; selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); }); await batch.commit(); selectedUsers.clear(); updateUserBulkUI(); await loadList(); alert("✅ Exclusão concluída!"); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); } }
 
-// ============================================================================
-// 4. EDITOR COMPLETO (PADRONIZADO)
-// ============================================================================
+// 4. EDITOR COMPLETO (ATUALIZADO COM BOTÃO REJEITAR PARA TODOS)
 window.openEditor = async (collectionName, id) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
-    
     const realCollection = collectionName === 'services' ? 'active_providers' : (collectionName === 'users' ? 'usuarios' : collectionName);
 
     modal.classList.remove('hidden');
@@ -281,27 +220,20 @@ window.openEditor = async (collectionName, id) => {
             html += `</div>`;
         }
 
-        // FINANCEIRO (Só para Usuários)
+        // FINANCEIRO
         if (realCollection === 'usuarios' && id) {
             const saldo = parseFloat(data.saldo || 0);
             const corSaldo = saldo < 0 ? 'text-red-400' : 'text-emerald-400';
             html += `
                 <div class="bg-slate-900/50 p-4 rounded-xl border border-white/10 flex justify-between items-center mb-4">
-                    <div>
-                        <p class="text-[10px] text-gray-400 uppercase font-bold">Saldo</p>
-                        <h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3>
-                    </div>
-                    <button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">
-                        Ajustar
-                    </button>
-                </div>
-            `;
+                    <div><p class="text-[10px] text-gray-400 uppercase font-bold">Saldo</p><h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3></div>
+                    <button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">Ajustar</button>
+                </div>`;
         }
 
         // CAMPOS
         const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; 
         const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo', '_displayName', 'id'];
-        
         html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
         keys.forEach(key => {
             if(ignored.includes(key)) return;
@@ -310,43 +242,28 @@ window.openEditor = async (collectionName, id) => {
         });
         html += `</div>`;
 
-        // ==========================================
-        // 👮 BOTÕES DE AÇÃO (MODERAÇÃO REFINADA)
-        // ==========================================
-        html += `<div class="border-t border-slate-700 pt-6 mt-6">`;
-        html += `<p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
+        // 👮 BOTÕES DE AÇÃO (ATUALIZADO)
+        html += `<div class="border-t border-slate-700 pt-6 mt-6"><p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
         
-        if (realCollection === 'active_providers') {
-            html += `
-                <div class="grid grid-cols-3 gap-3">
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg shadow-green-900/20">✅ APROVAR (100)</button>
-                </div>
-            `;
-        } else {
-            // USUÁRIOS COMUNS (PADRONIZADO)
-            html += `
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600/20 hover:bg-green-600 border border-green-600 text-white py-2 rounded text-xs font-bold transition">✅ ATIVAR / APROVAR</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-600/20 hover:bg-yellow-600 border border-yellow-600 text-white py-2 rounded text-xs font-bold transition">⚠️ SUSPENDER</button>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="bg-red-600/20 hover:bg-red-600 border border-red-600 text-white py-2 rounded text-xs font-bold transition">⛔ BANIR / BLOQUEAR</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="bg-blue-600 hover:bg-blue-500 text-white py-2 rounded text-xs font-bold transition">💾 SALVAR DADOS</button>
-                </div>
-            `;
-        }
+        // BOTÕES PADRONIZADOS PARA TODOS (USUÁRIOS E PRESTADORES)
+        html += `
+            <div class="grid grid-cols-3 gap-3 mb-3">
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button>
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button>
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg">✅ APROVAR</button>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">⛔ BANIR (BLOQUEIO TOTAL)</button>
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">💾 SALVAR DADOS</button>
+            </div>
+        `;
         html += `</div></div>`;
-
         content.innerHTML = html;
 
     } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
 };
 
-// ============================================================================
-// 5. SALVAR AÇÕES (LÓGICA UNIFICADA)
-// ============================================================================
+// 5. SALVAR AÇÕES
 window.saveAction = async (collectionName, id, action) => {
     if(!id) return alert("Criação manual ainda não implementada.");
     if(!confirm(`Confirmar ação: ${action.toUpperCase()}?`)) return;
@@ -356,7 +273,6 @@ window.saveAction = async (collectionName, id, action) => {
         let updates = { updated_at: serverTimestamp() };
         let mensagemNotificacao = "";
 
-        // Coleta inputs
         const inputs = document.querySelectorAll('[id^="edit-"]');
         if(inputs.length > 0) {
             inputs.forEach(inp => {
@@ -365,42 +281,48 @@ window.saveAction = async (collectionName, id, action) => {
             });
         }
 
-        // LÓGICA DE STATUS
         if (action === 'aprovar') {
             if (collectionName === 'active_providers') {
                 updates.status = 'aprovado';
                 updates.visibility_score = 100;
-                updates.is_online = false; // Começa offline
+                updates.is_online = false;
                 mensagemNotificacao = "✅ Seu perfil profissional foi APROVADO! Agora você pode ficar online.";
             } else {
-                updates.status = 'ativo'; // Usuário comum volta a ser ativo
+                updates.status = 'ativo';
                 mensagemNotificacao = "✅ Sua conta foi reativada.";
             }
-            alert("✅ Conta Ativada/Aprovada com sucesso!");
+            alert("✅ Aprovado!");
         } 
         else if (action === 'rejeitar') { 
             updates.status = 'rejeitado'; 
             updates.visibility_score = 0; 
-            mensagemNotificacao = "🚫 Perfil rejeitado. Verifique os dados.";
+            mensagemNotificacao = "🚫 Seu cadastro/atualização foi rejeitado. Verifique seus dados.";
         }
         else if (action === 'suspender') { 
             updates.status = 'suspenso'; 
             updates.visibility_score = 0; 
             updates.is_online = false;
-            mensagemNotificacao = "⚠️ Conta SUSPENSA. Contate o suporte.";
+            mensagemNotificacao = "⚠️ Conta SUSPENSA. Entre em contato com o suporte.";
         }
         else if (action === 'banir') { 
             updates.status = 'banido'; 
             updates.visibility_score = 0;
             updates.is_online = false;
             updates.banned_at = serverTimestamp();
-            mensagemNotificacao = "⛔ Conta bloqueada permanentemente.";
+            mensagemNotificacao = "⛔ Conta bloqueada permanentemente por violação dos termos.";
         }
 
         await updateDoc(ref, updates);
         
-        // Notificação
         if(mensagemNotificacao) {
+            await addDoc(collection(window.db, "notifications"), {
+                uid: id,
+                message: mensagemNotificacao,
+                read: false,
+                created_at: serverTimestamp(),
+                type: 'system'
+            });
+            // Cria ticket de sistema também para ficar no histórico do suporte
             await addDoc(collection(window.db, "support_tickets"), {
                 uid: id,
                 sender: 'system',
@@ -417,79 +339,7 @@ window.saveAction = async (collectionName, id, action) => {
     } catch (e) { alert("Erro ao salvar: " + e.message); }
 };
 
-// ============================================================================
-// 6. FINANCEIRO (MODAL)
-// ============================================================================
-window.openBalanceEditor = (uid, currentBalance, nomeUser) => {
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
-    const title = document.getElementById('modal-title');
-
-    modal.classList.remove('hidden');
-    title.innerText = "FINANCEIRO: " + (nomeUser || "Usuário").toUpperCase();
-    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
-
-    content.innerHTML = `
-        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade">
-            <p class="text-xs text-gray-400 uppercase font-bold">Saldo Atual</p>
-            <h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 animate-fade">
-            <button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition">
-                <p class="font-bold text-emerald-400">🟢 ADICIONAR CRÉDITO</p>
-                <p class="text-[10px] text-gray-400">Bônus, Estorno, Depósito</p>
-            </button>
-            <button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition">
-                <p class="font-bold text-red-400">🔴 COBRAR / REMOVER</p>
-                <p class="text-[10px] text-gray-400">Taxas, Multas, Saque</p>
-            </button>
-        </div>
-
-        <div id="trans-form" class="mt-6 hidden animate-fade">
-            <label class="inp-label">VALOR (R$)</label>
-            <input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00">
-            <label class="inp-label">MOTIVO / DESCRIÇÃO</label>
-            <input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Ex: Bônus de boas vindas">
-            <button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR TRANSAÇÃO</button>
-        </div>
-    `;
-    tempTransMode = null;
-};
-
-window.setTransactionMode = (mode) => {
-    tempTransMode = mode;
-    document.getElementById('trans-form').classList.remove('hidden');
-    const btnCredit = document.getElementById('btn-mode-credit');
-    const btnDebit = document.getElementById('btn-mode-debit');
-    if (mode === 'credit') {
-        btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1';
-    } else {
-        btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1';
-    }
-};
-
-window.executeAdjustment = async (uid) => {
-    const amount = parseFloat(document.getElementById('trans-amount').value);
-    const desc = document.getElementById('trans-desc').value;
-    const mode = tempTransMode;
-    if (!amount || amount <= 0) return alert("Digite um valor válido.");
-    if (!desc) return alert("Digite um motivo.");
-    const finalAmount = mode === 'credit' ? amount : -amount;
-    if(!confirm(`Confirmar?`)) return;
-    const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true;
-    try {
-        const db = window.db;
-        const userRef = doc(db, "usuarios", uid);
-        await runTransaction(db, async (transaction) => {
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) throw "Usuário não existe!";
-            const currentSaldo = userDoc.data().saldo || 0;
-            const newBalance = currentSaldo + finalAmount;
-            transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() });
-        });
-        alert("✅ Saldo atualizado com sucesso!");
-        document.getElementById('modal-editor').classList.add('hidden');
-        loadList(); 
-    } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR TRANSAÇÃO"; btn.disabled = false; }
-};
+// 6. FINANCEIRO
+window.openBalanceEditor = (uid, currentBalance, nomeUser) => { const modal = document.getElementById('modal-editor'); const content = document.getElementById('modal-content'); const title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "FINANCEIRO"; document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden'); content.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade"><p class="text-xs text-gray-400 uppercase font-bold">Saldo</p><h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2></div><div class="grid grid-cols-2 gap-4 animate-fade"><button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition"><p class="font-bold text-emerald-400">🟢 CRÉDITO</p></button><button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition"><p class="font-bold text-red-400">🔴 DÉBITO</p></button></div><div id="trans-form" class="mt-6 hidden animate-fade"><input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00"><input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Motivo"><button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR</button></div>`; tempTransMode = null; };
+window.setTransactionMode = (mode) => { tempTransMode = mode; document.getElementById('trans-form').classList.remove('hidden'); const btnCredit = document.getElementById('btn-mode-credit'); const btnDebit = document.getElementById('btn-mode-debit'); if (mode === 'credit') { btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1'; } else { btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1'; } };
+window.executeAdjustment = async (uid) => { const amount = parseFloat(document.getElementById('trans-amount').value); const desc = document.getElementById('trans-desc').value; const mode = tempTransMode; if (!amount || amount <= 0) return alert("Digite valor."); if (!desc) return alert("Digite motivo."); const finalAmount = mode === 'credit' ? amount : -amount; if(!confirm(`Confirmar?`)) return; const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true; try { const db = window.db; const userRef = doc(db, "usuarios", uid); await runTransaction(db, async (transaction) => { const userDoc = await transaction.get(userRef); if (!userDoc.exists()) throw "Usuário inexistente!"; const newBalance = (userDoc.data().saldo || 0) + finalAmount; transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() }); }); alert("✅ Saldo atualizado!"); document.getElementById('modal-editor').classList.add('hidden'); loadList(); } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR"; btn.disabled = false; } };
