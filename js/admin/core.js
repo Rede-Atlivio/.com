@@ -91,15 +91,16 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS (CORRIGIDO)
+// 2. ROTEADOR DE MÓDULOS (ATUALIZADO PARA SUPORTE)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Carregando módulo: ${viewName}`);
     
     // UI Cleanup
-    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
+    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.add('hidden');
     });
     document.getElementById('page-title').innerText = viewName.toUpperCase();
 
@@ -114,12 +115,10 @@ window.switchView = async function(viewName) {
         moduleFile = './users.js'; 
         containerId = 'view-list'; 
     }
-    // ✅ CORREÇÃO AQUI: 'opps' foi movido para cá
     else if (['jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
         moduleFile = './jobs.js'; 
         containerId = 'view-list'; 
     }
-    // ✅ CORREÇÃO AQUI: 'opps' foi removido daqui
     else if (['automation'].includes(viewName)) { 
         moduleFile = './automation.js'; 
         containerId = 'view-automation'; 
@@ -131,6 +130,11 @@ window.switchView = async function(viewName) {
     else if (viewName === 'settings') { 
         moduleFile = './settings.js'; 
         containerId = 'view-settings'; 
+    }
+    // ✅ NOVO: SUPORTE
+    else if (viewName === 'support') {
+        moduleFile = './support.js';
+        containerId = 'view-support';
     }
 
     if(containerId) document.getElementById(containerId).classList.remove('hidden');
