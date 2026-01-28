@@ -11,7 +11,9 @@ const DEFAULT_TENANT = "atlivio_fsa_01";
 const TAXA_PLATAFORMA = 0.20; 
 const LIMITE_CREDITO_NEGATIVO = -60.00; 
 
-export let userProfile = null;
+// EXPOSIÇÃO GLOBAL (Correção do Diagnóstico)
+window.userProfile = null; 
+
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
@@ -45,29 +47,32 @@ window.definirPerfil = async (tipo) => {
 };
 
 window.alternarPerfil = async () => {
-    if(!userProfile) return;
+    if(!window.userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
     if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
     try {
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider });
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !window.userProfile.is_provider });
         setTimeout(() => location.reload(), 500);
     } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- NÚCLEO DE AUTENTICAÇÃO ---
+// --- NÚCLEO DE AUTENTICAÇÃO (O ENFORCER) ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
+        
+        // 🔥 MONITORAMENTO EM TEMPO REAL (ITEM 22 e 23) 🔥
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
+                    // Criação Inicial (Mantida igual)
                     const userEmail = user.email || "";
                     const userPhone = user.phoneNumber || "";
                     const roleInicial = (userEmail && ADMIN_EMAILS.includes(userEmail)) ? 'admin' : 'user';
                     const nomePadrao = user.displayName || ("Usuário " + userPhone.slice(-4));
 
-                    userProfile = { 
+                    window.userProfile = { 
                         email: userEmail,
                         phone: userPhone,
                         displayName: nomePadrao, 
@@ -76,18 +81,36 @@ onAuthStateChanged(auth, async (user) => {
                         perfil_completo: false, 
                         role: roleInicial, 
                         wallet_balance: 0.00, 
+                        saldo: 0.00, // Compatibilidade com Admin
                         is_provider: false, 
-                        created_at: new Date()
+                        created_at: new Date(),
+                        status: 'ativo'
                     };
-                    await setDoc(userRef, userProfile);
+                    await setDoc(userRef, window.userProfile);
                 } else {
-                    userProfile = docSnap.data();
-                    if (userProfile.wallet_balance === undefined) userProfile.wallet_balance = 0.00;
-                    atualizarInterfaceUsuario(userProfile);
+                    const data = docSnap.data();
+                    
+                    // 🚨 ENFORCER: BANIMENTO REAL (ITEM 21)
+                    if (data.status === 'banido' || data.status === 'suspenso') {
+                        console.warn("🚫 USUÁRIO BANIDO DETECTADO. EXPULSANDO...");
+                        alert(`⛔ ACESSO NEGADO\n\nSua conta foi ${data.status}.\nEntre em contato com o suporte.`);
+                        await signOut(auth);
+                        location.reload();
+                        return;
+                    }
+
+                    // 💰 SINCRONIA DE SALDO (ITEM 20)
+                    // O Admin edita 'saldo', o App usa 'wallet_balance'. Vamos unificar na leitura.
+                    const saldoReal = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
+                    data.wallet_balance = saldoReal; 
+
+                    window.userProfile = data;
+                    atualizarInterfaceUsuario(window.userProfile);
                     iniciarAppLogado(user); 
-                    if (userProfile.is_provider) {
+                    
+                    if (window.userProfile.is_provider) {
                         verificarStatusERadar(user.uid);
-                        if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
+                        if (!window.userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                 }
             } catch (err) { 
@@ -108,6 +131,8 @@ function atualizarInterfaceUsuario(dados) {
     });
     const nameEl = document.getElementById('header-user-name');
     if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
+    
+    // Atualiza Header do Prestador com Saldo em Tempo Real
     const provNameEl = document.getElementById('provider-header-name');
     if(provNameEl) {
         const saldo = dados.wallet_balance || 0;
@@ -116,9 +141,8 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
-// CORREÇÃO CRÍTICA V2: Auto-Click System
 function iniciarAppLogado(user) {
-    if(!userProfile || !userProfile.perfil_completo) {
+    if(!window.userProfile || !window.userProfile.perfil_completo) {
         document.getElementById('app-container').classList.add('hidden');
         document.getElementById('role-selection').classList.remove('hidden');
         return;
@@ -132,14 +156,12 @@ function iniciarAppLogado(user) {
     
     if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
 
-    if (userProfile.is_provider) {
+    if (window.userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         document.getElementById('tab-servicos').innerText = "Serviços 🛠️";
-        // Prestador: Mostra Radar e afins
         ['tab-servicos', 'tab-missoes', 'tab-oportunidades', 'tab-ganhar', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, true));
         toggleDisplay('servicos-cliente', false);
         
-        // Auto-Click no Radar do Prestador
         setTimeout(() => {
             const tab = document.getElementById('tab-servicos');
             if(tab) { console.log("🤖 Auto-Click: Radar"); tab.click(); }
@@ -148,31 +170,21 @@ function iniciarAppLogado(user) {
     } else {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN 🔄` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
         document.getElementById('tab-servicos').innerText = "Contratar Serviço 🛠️";
-        // Cliente: Mostra Vitrine
         ['tab-servicos', 'tab-oportunidades', 'tab-loja', 'tab-ganhar', 'servicos-cliente'].forEach(id => toggleDisplay(id, true));
         ['tab-missoes', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, false));
         
-        // 🔥 CORREÇÃO FINAL: SIMULA CLIQUE NA ABA 🔥
-        // Isso garante que o CSS Ativo + Load de Dados aconteçam juntos
         setTimeout(() => {
             console.log("🚀 Iniciando Auto-Carregamento da Vitrine...");
-            
-            // 1. Tenta clicar na aba (Melhor opção pois ativa o visual)
             const tab = document.getElementById('tab-servicos');
             if(tab) {
                 console.log("👉 Clicando na aba Serviços...");
                 tab.click();
             } else {
-                // 2. Fallback: Chama a função direto se a aba falhar
-                console.warn("⚠️ Aba não encontrada, chamando função direto.");
                 if(window.carregarServicos) window.carregarServicos();
             }
-            
-            // Carrega dados secundários em silêncio
             if(window.carregarVagas) window.carregarVagas();
             if(window.carregarOportunidades) window.carregarOportunidades();
-            
-        }, 1000); // Tempo seguro para o DOM estabilizar
+        }, 1000); 
     }
 }
 
@@ -182,13 +194,21 @@ async function verificarStatusERadar(uid) {
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const data = snap.data();
+            
+            // Lógica refinada: Só é online se status == aprovado E is_online == true
             const isOnline = data.is_online && data.status === 'aprovado';
             
             if(toggle) {
                 toggle.checked = isOnline;
+                // Se estiver em análise TOTAL (conta nova), bloqueia.
+                // Se for conta antiga adicionando serviço, status deve continuar 'aprovado', então não bloqueia.
                 if(data.status === 'em_analise') {
                     toggle.disabled = true;
                     document.getElementById('status-label').innerText = "🟡 EM ANÁLISE";
+                } else if(data.status === 'banido' || data.status === 'suspenso') {
+                    toggle.disabled = true;
+                    toggle.checked = false;
+                    document.getElementById('status-label').innerText = "🔴 BLOQUEADO";
                 } else {
                     toggle.disabled = false;
                     document.getElementById('status-label').innerText = isOnline ? "ONLINE" : "OFFLINE";
@@ -211,9 +231,16 @@ document.addEventListener('change', async (e) => {
         if(!uid) return;
         
         const snap = await getDoc(doc(db, "active_providers", uid));
-        if(snap.exists() && snap.data().status === 'em_analise') {
-            e.target.checked = false;
-            return alert("⏳ Seu perfil está em análise.\nAguarde a aprovação para ficar online.");
+        if(snap.exists()) {
+            const st = snap.data().status;
+            if(st === 'em_analise') {
+                e.target.checked = false;
+                return alert("⏳ Seu perfil está em análise.\nAguarde a aprovação para ficar online.");
+            }
+            if(st === 'banido' || st === 'suspenso') {
+                 e.target.checked = false;
+                 return alert("⛔ Você está bloqueado.");
+            }
         }
 
         if (novoStatus) { iniciarRadarPrestador(uid); document.getElementById('online-sound')?.play().catch(()=>{}); } 
@@ -231,7 +258,7 @@ function iniciarRadarPrestador(uid) {
         if(toggle && !toggle.checked) return;
         radarContainer.innerHTML = "";
         if (snap.empty) {
-            radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${userProfile.wallet_balance?.toFixed(2)}</p></div>`;
+            radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${window.userProfile.wallet_balance?.toFixed(2)}</p></div>`;
             return;
         }
         document.getElementById('notification-sound')?.play().catch(()=>{});
@@ -261,7 +288,9 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "usuarios", uid);
         const snap = await getDoc(userRef);
-        const saldoAtual = snap.data().wallet_balance || 0;
+        // Usa saldo ou wallet_balance, o que existir
+        const saldoAtual = snap.data().saldo !== undefined ? snap.data().saldo : (snap.data().wallet_balance || 0);
+        
         if (saldoAtual <= LIMITE_CREDITO_NEGATIVO) return alert(`⛔ LIMITE EXCEDIDO (R$ ${LIMITE_CREDITO_NEGATIVO}).\nSaldo atual: R$ ${saldoAtual.toFixed(2)}.\nRecarregue para continuar.`);
         try {
             await updateDoc(doc(db, "orders", orderId), { status: 'accepted' });
@@ -289,7 +318,7 @@ window.uploadBanner = async (input) => {
         document.getElementById('preview-banner').src = downloadURL;
         document.getElementById('preview-banner').classList.remove('hidden');
         document.getElementById('banner-placeholder').classList.add('hidden');
-        alert("✅ Banner carregado! Clique em 'SALVAR E ENVIAR' no final para confirmar.");
+        alert("✅ Banner carregado! Salve as alterações para confirmar.");
     } catch (error) { console.error(error); alert("Erro no upload do banner."); } finally { btn.innerText = originalText; btn.disabled = false; }
 };
 
@@ -303,7 +332,61 @@ window.abrirConfiguracaoServicos = async () => {
     const bannerAtual = dados.banner_url || "";
     const bioAtual = dados.bio || "";
     const servicosAtuais = dados.services || [];
-    formContainer.innerHTML = `<div class="p-6 h-[80vh] overflow-y-auto"><h2 class="text-xl font-black text-blue-900 mb-1">🚀 Seu Perfil Profissional</h2><p class="text-xs text-gray-500 mb-6">Capriche! Essa é sua loja dentro do app.</p><div class="mb-6"><label class="block text-xs font-bold text-gray-700 uppercase mb-2">📸 Foto de Capa (Banner)</label><div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center group cursor-pointer" onclick="document.getElementById('banner-input').click()"><img id="preview-banner" src="${bannerAtual}" class="${bannerAtual ? '' : 'hidden'} w-full h-full object-cover"><div id="banner-placeholder" class="${bannerAtual ? 'hidden' : 'flex'} flex-col items-center"><span class="text-2xl">🖼️</span><span class="text-[10px] text-gray-400">Toque para adicionar</span></div><div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-bold">Trocar Imagem</div></div><input type="file" id="banner-input" accept="image/*" class="hidden" onchange="window.uploadBanner(this)"><input type="hidden" id="hidden-banner-url" value="${bannerAtual}"><p id="btn-upload-banner" class="text-[9px] text-center mt-1 text-gray-400">Recomendado: 1200x400px (Horizontal)</p></div><div class="mb-6 space-y-3"><div><label class="inp-label">Nome Profissional</label><input type="text" id="setup-name" value="${dados.nome_profissional || auth.currentUser.displayName || ''}" class="inp-editor" placeholder="Ex: João Eletricista"></div><div><label class="inp-label">Bio (Quem é você?)</label><textarea id="setup-bio" rows="3" class="inp-editor" placeholder="Ex: Especialista em elétrica residencial com 5 anos de experiência. Trabalho rápido e limpo.">${bioAtual}</textarea><p class="text-[9px] text-right text-gray-400">Seja breve e passe confiança.</p></div></div><div class="mb-6"><label class="block text-xs font-bold text-gray-700 uppercase mb-2">🛠️ Seus Serviços</label><div id="my-services-list" class="mb-3 space-y-2">${servicosAtuais.map((s, i) => `<div class="bg-blue-50 p-3 rounded border border-blue-100 flex justify-between items-center"><div><p class="font-bold text-xs text-blue-900">${s.category}</p><p class="text-[10px] text-gray-500">R$ ${s.price}</p></div><button onclick="removerServico(${i})" class="text-red-500 font-bold px-2">x</button></div>`).join('')}${servicosAtuais.length === 0 ? '<p class="text-xs text-gray-400 italic text-center py-2">Nenhum serviço adicionado.</p>' : ''}</div><div class="bg-gray-50 p-3 rounded-xl border border-gray-200"><p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p><div class="grid grid-cols-2 gap-2 mb-2"><select id="new-service-category" class="inp-editor"><option value="" disabled selected>Categoria...</option>${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}</select><input type="number" id="new-service-price" placeholder="Preço (R$)" class="inp-editor"></div><textarea id="new-service-desc" placeholder="Detalhes (Ex: Incluso material?)" class="inp-editor mb-2" rows="1"></textarea><button onclick="window.addServiceLocal()" class="w-full bg-slate-700 text-white py-2 rounded text-xs font-bold uppercase">Adicionar Serviço</button></div></div><div class="pt-4 border-t border-gray-100"><button onclick="window.saveServicesAndGoOnline()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">💾 SALVAR E ENVIAR PARA APROVAÇÃO</button><p class="text-[10px] text-center text-gray-400 mt-2">Seu perfil será analisado pela equipe Atlivio.</p></div></div>`;
+    
+    // Header com Botão Voltar (ITEM 2.1)
+    formContainer.innerHTML = `
+        <div class="p-6 h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <h2 class="text-xl font-black text-blue-900">🚀 Seu Perfil</h2>
+                    <p class="text-xs text-gray-500">Sua loja dentro do app.</p>
+                </div>
+                <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 font-bold text-xl px-2">&times;</button>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-2">📸 Foto de Capa (Banner)</label>
+                <div class="relative w-full h-32 bg-gray-100 rounded-xl overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center group cursor-pointer" onclick="document.getElementById('banner-input').click()">
+                    <img id="preview-banner" src="${bannerAtual}" class="${bannerAtual ? '' : 'hidden'} w-full h-full object-cover">
+                    <div id="banner-placeholder" class="${bannerAtual ? 'hidden' : 'flex'} flex-col items-center">
+                        <span class="text-2xl">🖼️</span><span class="text-[10px] text-gray-400">Toque para adicionar</span>
+                    </div>
+                    <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-bold">Trocar Imagem</div>
+                </div>
+                <input type="file" id="banner-input" accept="image/*" class="hidden" onchange="window.uploadBanner(this)">
+                <input type="hidden" id="hidden-banner-url" value="${bannerAtual}">
+                <p id="btn-upload-banner" class="text-[9px] text-center mt-1 text-gray-400">Recomendado: 1200x400px</p>
+            </div>
+            
+            <div class="mb-6 space-y-3">
+                <div><label class="inp-label">Nome Profissional</label><input type="text" id="setup-name" value="${dados.nome_profissional || auth.currentUser.displayName || ''}" class="inp-editor" placeholder="Ex: João Eletricista"></div>
+                <div><label class="inp-label">Bio (Quem é você?)</label><textarea id="setup-bio" rows="3" class="inp-editor" placeholder="Ex: Especialista em elétrica...">${bioAtual}</textarea></div>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-xs font-bold text-gray-700 uppercase mb-2">🛠️ Seus Serviços</label>
+                <div id="my-services-list" class="mb-3 space-y-2">
+                    ${servicosAtuais.map((s, i) => `<div class="bg-blue-50 p-3 rounded border border-blue-100 flex justify-between items-center"><div><p class="font-bold text-xs text-blue-900">${s.category}</p><p class="text-[10px] text-gray-500">R$ ${s.price}</p></div><button onclick="removerServico(${i})" class="text-red-500 font-bold px-2">x</button></div>`).join('')}
+                    ${servicosAtuais.length === 0 ? '<p class="text-xs text-gray-400 italic text-center py-2">Nenhum serviço adicionado.</p>' : ''}
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <p class="text-[10px] font-bold text-gray-500 uppercase mb-2">Adicionar Novo</p>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <select id="new-service-category" class="inp-editor"><option value="" disabled selected>Categoria...</option>${CATEGORIAS_SERVICOS.map(c => `<option value="${c}">${c}</option>`).join('')}</select>
+                        <input type="number" id="new-service-price" placeholder="Preço (R$)" class="inp-editor">
+                    </div>
+                    <textarea id="new-service-desc" placeholder="Detalhes (Ex: Incluso material?)" class="inp-editor mb-2" rows="1"></textarea>
+                    <button onclick="window.addServiceLocal()" class="w-full bg-slate-700 text-white py-2 rounded text-xs font-bold uppercase">Adicionar Serviço</button>
+                </div>
+            </div>
+            
+            <div class="pt-4 border-t border-gray-100 flex gap-2">
+                <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-4 rounded-xl font-bold text-xs uppercase">Cancelar</button>
+                <button onclick="window.saveServicesAndGoOnline()" class="flex-2 w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition">💾 SALVAR ALTERAÇÕES</button>
+            </div>
+            <p class="text-[10px] text-center text-gray-400 mt-2">Alterações de perfil passam por análise.</p>
+        </div>`;
 };
 
 window.addServiceLocal = async () => {
@@ -315,32 +398,64 @@ window.addServiceLocal = async () => {
     const snap = await getDoc(ref);
     let svcs = snap.exists() ? snap.data().services || [] : [];
     svcs.push({ category: cat, price: parseFloat(price), description: desc });
+    
+    // Salva Localmente sem mudar status (Isso é apenas temporário até o Save Final)
     const dadosBase = snap.exists() ? {} : { uid: auth.currentUser.uid, created_at: serverTimestamp(), is_online: false, status: 'em_analise', visibility_score: 100 };
     await setDoc(ref, { ...dadosBase, services: svcs }, { merge: true });
     window.abrirConfiguracaoServicos(); 
 };
 
+// 🔥 REGRAS INTELIGENTES DE SALVAMENTO (ITEM 2.1 - Regra do Garçom)
 window.saveServicesAndGoOnline = async () => {
     const nome = document.getElementById('setup-name').value;
     const bio = document.getElementById('setup-bio').value;
     const banner = document.getElementById('hidden-banner-url').value;
+    
     if(!nome) return alert("O nome profissional é obrigatório.");
     if(!bio) return alert("Escreva uma bio curta sobre você.");
     if(!banner) { if(!confirm("Tem certeza que quer enviar SEM foto de capa? Perfis com capa são aprovados mais rápido.")) return; }
+    
     const btn = document.querySelector('button[onclick="window.saveServicesAndGoOnline()"]');
     if(btn) { btn.innerText = "ENVIANDO..."; btn.disabled = true; }
+    
     try {
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { nome_profissional: nome, setup_profissional_ok: true });
+        
+        // 🧠 LÓGICA DE STATUS:
+        // Se já for aprovado, MANTÉM aprovado. Se for novo, vai para análise.
+        const currentStatus = window.userProfile?.status || 'em_analise';
+        const newStatus = (currentStatus === 'aprovado') ? 'aprovado' : 'em_analise';
+
         const activeRef = doc(db, "active_providers", auth.currentUser.uid);
-        await setDoc(activeRef, { uid: auth.currentUser.uid, nome_profissional: nome, foto_perfil: userProfile.photoURL, bio: bio, banner_url: banner, is_online: false, status: 'em_analise', updated_at: serverTimestamp() }, { merge: true });
-        alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise.\nAssim que aprovado, você poderá ficar online.");
+        await setDoc(activeRef, { 
+            uid: auth.currentUser.uid, 
+            nome_profissional: nome, 
+            foto_perfil: window.userProfile.photoURL, 
+            bio: bio, 
+            banner_url: banner, 
+            status: newStatus, // << AQUI ESTÁ O TRUQUE
+            updated_at: serverTimestamp() 
+        }, { merge: true });
+        
+        if (newStatus === 'aprovado') {
+            alert("✅ Serviço Adicionado!\n\nVocê continua ONLINE com seus serviços anteriores, mas o novo item passará por revisão da curadoria.");
+        } else {
+            alert("✅ PERFIL ENVIADO!\n\nSeus dados foram para análise. Aguarde a aprovação.");
+        }
+
         const modal = document.getElementById('provider-setup-modal');
         if(modal) modal.classList.add('hidden');
+        
+        // Atualiza UI se necessário
         const toggle = document.getElementById('online-toggle');
         const label = document.getElementById('status-label');
-        if(toggle) { toggle.checked = false; toggle.disabled = true; }
-        if(label) label.innerText = "🟡 EM ANÁLISE";
-    } catch(e) { alert("Erro: " + e.message); if(btn) { btn.innerText = "SALVAR E ENVIAR"; btn.disabled = false; } }
+        
+        if (newStatus === 'em_analise') {
+            if(toggle) { toggle.checked = false; toggle.disabled = true; }
+            if(label) label.innerText = "🟡 EM ANÁLISE";
+        }
+
+    } catch(e) { alert("Erro: " + e.message); if(btn) { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; } }
 };
 
 window.removerServico = async (i) => { const ref = doc(db, "active_providers", auth.currentUser.uid); const snap = await getDoc(ref); let s = snap.data().services; s.splice(i,1); await updateDoc(ref, {services: s}); window.abrirConfiguracaoServicos(); };
