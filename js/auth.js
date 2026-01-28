@@ -47,21 +47,24 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
+                    // 🚀 RASTREAMENTO: Pega a origem do localStorage (Salvo pelo index.html)
+                    const trafficSource = localStorage.getItem("traffic_source") || "direct";
+                    console.log("📍 Cadastrando usuário com origem:", trafficSource);
+
                     const novoPerfil = { 
                         email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
                         photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
                         role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
-                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: new Date(), status: 'ativo'
+                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: new Date(), status: 'ativo',
+                        traffic_source: trafficSource // GRAVA NO BANCO
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
                 } else {
                     const data = docSnap.data();
                     
-                    // Tratamento de Banimento (Sem Logout, apenas bloqueio visual)
                     if (data.status === 'banido') {
                         console.warn("🚫 BANIDO.");
-                        // Não damos logout, apenas mostramos a tela. O Chat de suporte vai funcionar por cima.
                     }
                     if (data.status === 'suspenso' && data.is_online) {
                          updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
@@ -71,7 +74,7 @@ onAuthStateChanged(auth, async (user) => {
                     userProfile = data; window.userProfile = data;
                     
                     aplicarRestricoesDeStatus(data.status);
-                    renderizarBotaoSuporte(); // <--- NOVO: Botão de Suporte Sempre Visível
+                    renderizarBotaoSuporte(); 
 
                     if(data.status !== 'banido') {
                         atualizarInterfaceUsuario(userProfile);
@@ -92,7 +95,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- SISTEMA DE SUPORTE (NOVO ITEM 24) ---
+// --- SISTEMA DE SUPORTE ---
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
     const btn = document.createElement('div');
@@ -103,7 +106,6 @@ function renderizarBotaoSuporte() {
 }
 
 window.abrirChatSuporte = async () => {
-    // Cria o Modal de Chat se não existir
     let modal = document.getElementById('modal-support-chat');
     if(!modal) {
         document.body.insertAdjacentHTML('beforeend', `
@@ -125,7 +127,6 @@ window.abrirChatSuporte = async () => {
         `);
         modal = document.getElementById('modal-support-chat');
     }
-    
     modal.classList.remove('hidden');
     carregarMensagensSuporte();
 };
@@ -134,17 +135,13 @@ let unsubscribeSuporte = null;
 function carregarMensagensSuporte() {
     const container = document.getElementById('support-messages');
     const uid = auth.currentUser.uid;
-    
-    if(unsubscribeSuporte) unsubscribeSuporte(); // Limpa listener anterior
-
+    if(unsubscribeSuporte) unsubscribeSuporte(); 
     const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "asc"));
-    
     unsubscribeSuporte = onSnapshot(q, (snap) => {
         container.innerHTML = "";
         if(snap.empty) {
             container.innerHTML = `<div class="text-center py-10"><p class="text-4xl mb-2">👋</p><p class="text-gray-500 text-xs">Olá! Como podemos ajudar?</p></div>`;
         }
-        
         snap.forEach(doc => {
             const msg = doc.data();
             const isMe = msg.sender === 'user';
@@ -165,13 +162,11 @@ window.enviarMensagemSuporte = async () => {
     const input = document.getElementById('support-input');
     const txt = input.value.trim();
     if(!txt) return;
-    
-    input.value = ""; // Limpa rápido para UX
-    
+    input.value = ""; 
     try {
         await addDoc(collection(db, "support_tickets"), {
             uid: auth.currentUser.uid,
-            sender: 'user', // user ou admin
+            sender: 'user', 
             message: txt,
             created_at: serverTimestamp(),
             user_email: userProfile.email || "Sem Email",
@@ -191,7 +186,6 @@ function aplicarRestricoesDeStatus(status) {
     if(oldBlock) oldBlock.remove(); if(oldBar) oldBar.remove();
 
     if (status === 'banido') {
-        // Bloqueio Total (Mas permite clicar no botão de suporte z-index maior)
         const jailHtml = `
             <div id="${bloqueioID}" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-fade">
                 <div class="bg-red-500/10 p-6 rounded-full mb-6 border-4 border-red-500 animate-pulse"><span class="text-6xl">🚫</span></div>
