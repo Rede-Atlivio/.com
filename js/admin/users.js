@@ -1,7 +1,8 @@
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, writeBatch, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let currentType = 'users';
 let selectedUsers = new Set();
+let tempTransMode = null; // Variável para controlar o modo de transação (Crédito/Débito)
 
 // ============================================================================
 // 1. INICIALIZAÇÃO
@@ -16,7 +17,7 @@ export async function init(viewType) {
     const checkHeader = `<th class="p-3 w-10"><input type="checkbox" id="check-users-all" class="chk-custom"></th>`;
     
     if (viewType === 'users') {
-        headers.innerHTML = `${checkHeader}<th class="p-3">NOME / ID</th><th class="p-3">TIPO</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+        headers.innerHTML = `${checkHeader}<th class="p-3">NOME / ID</th><th class="p-3">TIPO</th><th class="p-3">SALDO / STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) btnAdd.innerHTML = "+ NOVO USUÁRIO";
     } else {
         headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
@@ -28,7 +29,6 @@ export async function init(viewType) {
     // Listener Mestre (Checkbox do Cabeçalho)
     const chkAll = document.getElementById('check-users-all');
     if(chkAll) {
-        // Remove listener antigo para evitar duplicação (cloneNode)
         const newChk = chkAll.cloneNode(true);
         chkAll.parentNode.replaceChild(newChk, chkAll);
         newChk.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
@@ -38,7 +38,7 @@ export async function init(viewType) {
     const btnBulk = document.getElementById('btn-bulk-delete');
     if(btnBulk) btnBulk.onclick = executeUserBulkDelete;
 
-    console.log(`✅ Módulo Users carregado: ${viewType}`);
+    console.log(`✅ Módulo Users carregado: ${viewType} com Financeiro Integrado.`);
     await loadList();
 }
 
@@ -75,19 +75,30 @@ async function loadList() {
             
             if(currentType === 'users') {
                 let statusClass = "text-green-400 border-green-500/50";
-                if(data.status === 'banido') statusClass = "text-red-400 border-red-500/50";
+                if(data.status === 'banido' || data.status === 'suspenso') statusClass = "text-red-400 border-red-500/50";
                 
+                // Formatação de Saldo
+                const saldo = parseFloat(data.saldo || 0);
+                const saldoClass = saldo < 0 ? 'text-red-400' : (saldo > 0 ? 'text-emerald-400' : 'text-gray-500');
+
                 tbody.innerHTML += `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition">
                         ${checkbox}
                         <td class="p-3"><div class="font-bold text-white">${data.nome||'User'}</div><div class="text-[10px] text-gray-500">${d.id.substring(0,6)}...</div></td>
-                        <td class="p-3 text-gray-400 text-xs uppercase">${data.tipo}</td>
-                        <td class="p-3"><span class="border ${statusClass} px-2 py-1 rounded text-[10px]">${data.status||'Ativo'}</span></td>
-                        <td class="p-3 text-right"><button onclick="window.openEditor('users','${d.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">EDITAR</button></td>
+                        <td class="p-3 text-gray-400 text-xs uppercase">${data.tipo || 'comum'}</td>
+                        <td class="p-3">
+                            <div class="font-mono text-xs font-bold ${saldoClass} mb-1">R$ ${saldo.toFixed(2)}</div>
+                            <span class="border ${statusClass} px-2 py-0.5 rounded text-[9px] uppercase">${data.status||'Ativo'}</span>
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="window.openEditor('users','${d.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold mr-1">EDITAR</button>
+                            <button onclick="window.openBalanceEditor('${d.id}', ${saldo}, '${data.nome}')" class="bg-slate-700 hover:bg-emerald-600 text-white px-2 py-1 rounded text-xs font-bold" title="Ajustar Saldo">💰</button>
+                        </td>
                     </tr>`;
             } else {
                 let statusIcon = data.is_online ? "🟢" : "⚫";
                 if(data.status === 'em_analise') statusIcon = "🟡";
+                if(data.status === 'rejeitado' || data.status === 'banido') statusIcon = "🔴";
                 
                 tbody.innerHTML += `
                     <tr class="border-b border-white/5 hover:bg-white/5 transition">
@@ -186,7 +197,7 @@ window.openEditor = async (collectionName, id) => {
             if (docSnap.exists()) data = docSnap.data();
         }
 
-        let html = `<div class="space-y-4">`;
+        let html = `<div class="space-y-4 animate-fade">`;
 
         // ÁREA DE MÍDIA (CURADORIA)
         if (data.banner_url || data.foto_perfil) {
@@ -196,9 +207,28 @@ window.openEditor = async (collectionName, id) => {
             html += `</div>`;
         }
 
+        // ==========================================
+        // 💰 ÁREA FINANCEIRA (NOVIDADE ITEM 20)
+        // ==========================================
+        if (realCollection === 'usuarios' && id) {
+            const saldo = parseFloat(data.saldo || 0);
+            const corSaldo = saldo < 0 ? 'text-red-400' : 'text-emerald-400';
+            html += `
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-white/10 flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-[10px] text-gray-400 uppercase font-bold">Saldo em Carteira</p>
+                        <h3 class="text-2xl font-mono font-black ${corSaldo}">R$ ${saldo.toFixed(2)}</h3>
+                    </div>
+                    <button onclick="window.openBalanceEditor('${id}', ${saldo}, '${data.nome || 'Usuário'}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow">
+                        Ajustar Saldo
+                    </button>
+                </div>
+            `;
+        }
+
         // CAMPOS DE TEXTO
         const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; 
-        const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score'];
+        const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo'];
         
         html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
         keys.forEach(key => {
@@ -208,7 +238,7 @@ window.openEditor = async (collectionName, id) => {
         });
         html += `</div>`;
 
-        // BOTÕES DE PODER (AÇÃO)
+        // BOTÕES DE PODER (AÇÃO - ITEM 21)
         html += `<div class="border-t border-slate-700 pt-6 mt-6">`;
         
         if (realCollection === 'active_providers') {
@@ -223,8 +253,8 @@ window.openEditor = async (collectionName, id) => {
         } else {
             html += `
                 <div class="flex gap-3">
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded-lg font-bold text-xs">⛔ BANIR USUÁRIO</button>
-                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold text-xs">💾 SALVAR DADOS</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg shadow-red-900/20">⛔ BANIR / BLOQUEAR</button>
+                    <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg shadow-blue-900/20">💾 SALVAR DADOS</button>
                 </div>
             `;
         }
@@ -236,7 +266,7 @@ window.openEditor = async (collectionName, id) => {
 };
 
 // ============================================================================
-// 5. FUNÇÃO DE SALVAMENTO (RESTAURADA!)
+// 5. FUNÇÃO DE SALVAMENTO & BANIMENTO REAL (ITEM 21)
 // ============================================================================
 window.saveAction = async (collectionName, id, action) => {
     if(!id) return alert("Criação manual ainda não implementada.");
@@ -246,27 +276,151 @@ window.saveAction = async (collectionName, id, action) => {
         const ref = doc(window.db, collectionName, id);
         let updates = { updated_at: serverTimestamp() };
 
-        // Coleta dados dos inputs
+        // Coleta dados dos inputs se existirem
         const inputs = document.querySelectorAll('[id^="edit-"]');
-        inputs.forEach(inp => {
-            const key = inp.id.replace('edit-', '');
-            updates[key] = inp.value;
-        });
+        if(inputs.length > 0) {
+            inputs.forEach(inp => {
+                const key = inp.id.replace('edit-', '');
+                updates[key] = inp.value;
+            });
+        }
 
-        // Lógica de Negócio
+        // Lógica de Negócio (ITEM 21)
         if (action === 'aprovar') {
             updates.status = 'aprovado';
-            updates.visibility_score = 100; // Regra de Ouro
-            updates.is_online = false; // Começa offline
+            updates.visibility_score = 100;
+            updates.is_online = false;
             alert("✅ Prestador Aprovado! Score 100.");
         } 
-        else if (action === 'rejeitar') { updates.status = 'rejeitado'; updates.visibility_score = 0; }
-        else if (action === 'suspender') { updates.status = 'suspenso'; updates.visibility_score = 0; }
-        else if (action === 'banir') { updates.status = 'banido'; }
+        else if (action === 'rejeitar') { 
+            updates.status = 'rejeitado'; 
+            updates.visibility_score = 0; 
+        }
+        else if (action === 'suspender') { 
+            updates.status = 'suspenso'; 
+            updates.visibility_score = 0; 
+            updates.is_online = false;
+        }
+        else if (action === 'banir') { 
+            updates.status = 'banido'; 
+            updates.visibility_score = 0;
+            updates.is_online = false;
+            updates.banned_at = serverTimestamp(); // Loga data do banimento
+        }
 
         await updateDoc(ref, updates);
         document.getElementById('modal-editor').classList.add('hidden');
         await loadList();
 
     } catch (e) { alert("Erro ao salvar: " + e.message); }
+};
+
+// ============================================================================
+// 6. GESTÃO FINANCEIRA MANUAL (ITEM 20 - INTEGRADO AQUI)
+// ============================================================================
+window.openBalanceEditor = (uid, currentBalance, nomeUser) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+
+    modal.classList.remove('hidden');
+    title.innerText = "FINANCEIRO: " + (nomeUser || "Usuário").toUpperCase();
+    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+
+    content.innerHTML = `
+        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade">
+            <p class="text-xs text-gray-400 uppercase font-bold">Saldo Atual</p>
+            <h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4 animate-fade">
+            <button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition">
+                <p class="font-bold text-emerald-400">🟢 ADICIONAR CRÉDITO</p>
+                <p class="text-[10px] text-gray-400">Bônus, Estorno, Depósito</p>
+            </button>
+            <button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition">
+                <p class="font-bold text-red-400">🔴 COBRAR / REMOVER</p>
+                <p class="text-[10px] text-gray-400">Taxas, Multas, Saque</p>
+            </button>
+        </div>
+
+        <div id="trans-form" class="mt-6 hidden animate-fade">
+            <label class="inp-label">VALOR (R$)</label>
+            <input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00">
+            
+            <label class="inp-label">MOTIVO / DESCRIÇÃO</label>
+            <input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Ex: Bônus de boas vindas">
+
+            <button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">
+                CONFIRMAR TRANSAÇÃO
+            </button>
+        </div>
+    `;
+    
+    tempTransMode = null;
+};
+
+window.setTransactionMode = (mode) => {
+    tempTransMode = mode;
+    document.getElementById('trans-form').classList.remove('hidden');
+    
+    const btnCredit = document.getElementById('btn-mode-credit');
+    const btnDebit = document.getElementById('btn-mode-debit');
+    
+    if (mode === 'credit') {
+        btnCredit.classList.add('ring-2', 'ring-emerald-400');
+        btnDebit.classList.remove('ring-2', 'ring-red-400');
+        btnDebit.style.opacity = '0.5';
+        btnCredit.style.opacity = '1';
+    } else {
+        btnDebit.classList.add('ring-2', 'ring-red-400');
+        btnCredit.classList.remove('ring-2', 'ring-emerald-400');
+        btnCredit.style.opacity = '0.5';
+        btnDebit.style.opacity = '1';
+    }
+};
+
+window.executeAdjustment = async (uid) => {
+    const amount = parseFloat(document.getElementById('trans-amount').value);
+    const desc = document.getElementById('trans-desc').value;
+    const mode = tempTransMode;
+
+    if (!amount || amount <= 0) return alert("Digite um valor válido.");
+    if (!desc) return alert("Digite um motivo.");
+
+    const finalAmount = mode === 'credit' ? amount : -amount;
+
+    if(!confirm(`Confirmar ${mode === 'credit' ? 'CRÉDITO' : 'DÉBITO'} de R$ ${amount}?\nMotivo: ${desc}`)) return;
+
+    const btn = document.querySelector('#trans-form button');
+    btn.innerText = "PROCESSANDO...";
+    btn.disabled = true;
+
+    try {
+        const db = window.db;
+        const userRef = doc(db, "usuarios", uid);
+
+        await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw "Usuário não existe!";
+
+            const currentSaldo = userDoc.data().saldo || 0;
+            const newBalance = currentSaldo + finalAmount;
+            
+            // Atualiza Saldo
+            transaction.update(userRef, { 
+                saldo: newBalance,
+                updated_at: serverTimestamp() 
+            });
+        });
+
+        alert("✅ Saldo atualizado com sucesso!");
+        document.getElementById('modal-editor').classList.add('hidden');
+        loadList(); // Recarrega a lista para mostrar saldo novo
+
+    } catch (e) {
+        alert("Erro: " + e.message);
+        btn.innerText = "CONFIRMAR TRANSAÇÃO";
+        btn.disabled = false;
+    }
 };
