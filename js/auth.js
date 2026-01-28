@@ -58,20 +58,14 @@ onAuthStateChanged(auth, async (user) => {
                 } else {
                     const data = docSnap.data();
                     
-                    // Tratamento de Banimento (Sem Logout, apenas bloqueio visual)
-                    if (data.status === 'banido') {
-                        console.warn("🚫 BANIDO.");
-                        // Não damos logout, apenas mostramos a tela. O Chat de suporte vai funcionar por cima.
-                    }
-                    if (data.status === 'suspenso' && data.is_online) {
-                         updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
-                    }
+                    if (data.status === 'banido') console.warn("🚫 BANIDO.");
+                    if (data.status === 'suspenso' && data.is_online) updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     userProfile = data; window.userProfile = data;
                     
                     aplicarRestricoesDeStatus(data.status);
-                    renderizarBotaoSuporte(); // <--- NOVO: Botão de Suporte Sempre Visível
+                    renderizarBotaoSuporte(); // Botão Flutuante
 
                     if(data.status !== 'banido') {
                         atualizarInterfaceUsuario(userProfile);
@@ -92,7 +86,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- SISTEMA DE SUPORTE (NOVO ITEM 24) ---
+// --- SISTEMA DE SUPORTE (ATUALIZADO PARA CORRIGIR LOADING) ---
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
     const btn = document.createElement('div');
@@ -103,59 +97,68 @@ function renderizarBotaoSuporte() {
 }
 
 window.abrirChatSuporte = async () => {
-    // Cria o Modal de Chat se não existir
     let modal = document.getElementById('modal-support-chat');
     if(!modal) {
         document.body.insertAdjacentHTML('beforeend', `
-            <div id="modal-support-chat" class="fixed inset-0 z-[210] bg-black/50 hidden flex items-end sm:items-center justify-center">
-                <div class="bg-white w-full sm:w-96 h-[80vh] sm:h-[600px] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-slideUp">
-                    <div class="bg-blue-900 p-4 text-white flex justify-between items-center">
-                        <div><h3 class="font-bold">Suporte Atlivio</h3><p class="text-[10px] opacity-75">Fale com nossa equipe</p></div>
-                        <button onclick="document.getElementById('modal-support-chat').classList.add('hidden')" class="text-white font-bold text-xl">&times;</button>
+            <div id="modal-support-chat" class="fixed inset-0 z-[210] bg-black/50 hidden flex items-end sm:items-center justify-center animate-fadeIn">
+                <div class="bg-white w-full sm:w-96 h-[85vh] sm:h-[600px] sm:rounded-2xl flex flex-col shadow-2xl overflow-hidden">
+                    <div class="bg-blue-900 p-4 text-white flex justify-between items-center shadow-md z-10">
+                        <div><h3 class="font-bold text-lg flex items-center gap-2">🛟 Suporte Atlivio</h3><p class="text-[10px] text-blue-200">Estamos aqui para ajudar.</p></div>
+                        <button onclick="document.getElementById('modal-support-chat').classList.add('hidden')" class="text-white/80 hover:text-white font-bold text-2xl">&times;</button>
                     </div>
-                    <div id="support-messages" class="flex-1 p-4 overflow-y-auto bg-gray-100 space-y-3">
-                        <p class="text-center text-gray-400 text-xs mt-4">Carregando histórico...</p>
+                    <div id="support-alert-box" class="bg-amber-50 p-3 border-b border-amber-100 text-amber-800 text-[10px] flex gap-2 items-start hidden">
+                        <span class="text-lg">⏳</span><p><b>Atenção:</b> Nossa equipe é pequena. Descreva <b>tudo</b> em uma única mensagem.<br>Prazo de resposta: <b>24h a 48h</b>.</p>
                     </div>
-                    <div class="p-3 bg-white border-t flex gap-2">
-                        <input type="text" id="support-input" class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:border-blue-500" placeholder="Digite sua mensagem...">
-                        <button onclick="window.enviarMensagemSuporte()" class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow">➤</button>
+                    <div id="support-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-3">
+                        <div class="flex flex-col items-center justify-center h-full opacity-50"><div class="loader border-t-blue-500 w-8 h-8 mb-2"></div><p class="text-xs">Conectando...</p></div>
+                    </div>
+                    <div class="p-3 bg-white border-t flex gap-2 items-end">
+                        <textarea id="support-input" rows="1" class="flex-1 border border-gray-300 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-blue-500 resize-none max-h-24 text-gray-900" placeholder="Descreva seu problema aqui..."></textarea>
+                        <button onclick="window.enviarMensagemSuporte()" class="bg-blue-600 hover:bg-blue-700 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition transform active:scale-95 mb-1">➤</button>
                     </div>
                 </div>
             </div>
         `);
         modal = document.getElementById('modal-support-chat');
     }
-    
     modal.classList.remove('hidden');
+    setTimeout(() => document.getElementById('support-input').focus(), 500);
     carregarMensagensSuporte();
 };
 
 let unsubscribeSuporte = null;
 function carregarMensagensSuporte() {
     const container = document.getElementById('support-messages');
+    const alertBox = document.getElementById('support-alert-box');
     const uid = auth.currentUser.uid;
     
-    if(unsubscribeSuporte) unsubscribeSuporte(); // Limpa listener anterior
+    if(unsubscribeSuporte) unsubscribeSuporte();
 
     const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "asc"));
     
     unsubscribeSuporte = onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        if(snap.empty) {
-            container.innerHTML = `<div class="text-center py-10"><p class="text-4xl mb-2">👋</p><p class="text-gray-500 text-xs">Olá! Como podemos ajudar?</p></div>`;
-        }
         
+        if(snap.empty) {
+            if(alertBox) alertBox.classList.remove('hidden');
+            container.innerHTML = `<div class="text-center py-10 px-6"><div class="bg-blue-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">👋</div><h3 class="font-bold text-gray-700 mb-2">Olá, ${userProfile?.displayName?.split(' ')[0] || 'Visitante'}!</h3><p class="text-xs text-gray-500 leading-relaxed">Ainda não temos conversas.<br>Use o campo abaixo para relatar seu problema.<br>Seja detalhista para agilizar o atendimento.</p></div>`;
+            return;
+        } 
+        
+        if(alertBox) alertBox.classList.add('hidden'); 
+
         snap.forEach(doc => {
             const msg = doc.data();
             const isMe = msg.sender === 'user';
-            container.innerHTML += `
-                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                    <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-white text-gray-800 border'} max-w-[80%] rounded-xl px-4 py-2 text-xs shadow-sm">
-                        <p>${msg.message}</p>
-                        <p class="text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'} text-right mt-1">${msg.created_at?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '...'}</p>
-                    </div>
-                </div>
-            `;
+            const isSystem = msg.sender === 'system' || msg.system_msg;
+            
+            let bubbleHtml = '';
+            if (isSystem) {
+                bubbleHtml = `<div class="flex justify-center my-4 opacity-75"><span class="bg-gray-200 text-gray-600 text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">${msg.message}</span></div>`;
+            } else {
+                bubbleHtml = `<div class="flex ${isMe ? 'justify-end' : 'justify-start'} animate-fadeIn"><div class="${isMe ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-gray-800 border border-gray-200 rounded-tl-none'} max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm relative"><p>${msg.message}</p><p class="text-[9px] ${isMe ? 'text-blue-200' : 'text-gray-400'} text-right mt-1">${msg.created_at ? msg.created_at.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'} ${isMe ? '✓' : ''}</p></div></div>`;
+            }
+            container.innerHTML += bubbleHtml;
         });
         container.scrollTop = container.scrollHeight;
     });
@@ -165,22 +168,18 @@ window.enviarMensagemSuporte = async () => {
     const input = document.getElementById('support-input');
     const txt = input.value.trim();
     if(!txt) return;
-    
-    input.value = ""; // Limpa rápido para UX
-    
+    input.value = ""; 
     try {
         await addDoc(collection(db, "support_tickets"), {
             uid: auth.currentUser.uid,
-            sender: 'user', // user ou admin
+            sender: 'user',
             message: txt,
             created_at: serverTimestamp(),
             user_email: userProfile.email || "Sem Email",
             user_name: userProfile.displayName || "Usuário",
             read: false
         });
-    } catch(e) {
-        alert("Erro ao enviar: " + e.message);
-    }
+    } catch(e) { alert("Erro ao enviar: " + e.message); }
 };
 
 // --- RESTO DO CÓDIGO (Visual, Enforcer, Serviços) ---
@@ -191,16 +190,7 @@ function aplicarRestricoesDeStatus(status) {
     if(oldBlock) oldBlock.remove(); if(oldBar) oldBar.remove();
 
     if (status === 'banido') {
-        // Bloqueio Total (Mas permite clicar no botão de suporte z-index maior)
-        const jailHtml = `
-            <div id="${bloqueioID}" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-fade">
-                <div class="bg-red-500/10 p-6 rounded-full mb-6 border-4 border-red-500 animate-pulse"><span class="text-6xl">🚫</span></div>
-                <h1 class="text-3xl font-black text-white mb-2">CONTA BLOQUEADA</h1>
-                <p class="text-gray-400 mb-8 max-w-md">Violação dos termos de uso.</p>
-                <button onclick="window.abrirChatSuporte()" class="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg animate-bounce">Falar com Suporte</button>
-                <button onclick="window.logout()" class="text-gray-500 text-xs mt-4 underline">Sair</button>
-            </div>
-        `;
+        const jailHtml = `<div id="${bloqueioID}" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-fade"><div class="bg-red-500/10 p-6 rounded-full mb-6 border-4 border-red-500 animate-pulse"><span class="text-6xl">🚫</span></div><h1 class="text-3xl font-black text-white mb-2">CONTA BLOQUEADA</h1><p class="text-gray-400 mb-8 max-w-md">Violação dos termos de uso.</p><button onclick="window.abrirChatSuporte()" class="bg-blue-600 text-white px-6 py-3 rounded-full font-bold shadow-lg animate-bounce">Falar com Suporte</button><button onclick="window.logout()" class="text-gray-500 text-xs mt-4 underline">Sair</button></div>`;
         body.insertAdjacentHTML('beforeend', jailHtml);
     } 
     else if (status === 'suspenso') {
@@ -354,7 +344,7 @@ window.editarServico = async (i) => {
         document.getElementById('new-service-price').value = item.price;
         document.getElementById('new-service-desc').value = item.description || "";
         document.getElementById('new-service-price').focus();
-        alert("✏️ Modo de Edição Ativo.");
+        alert("✏️ ITEM MOVIDO PARA EDIÇÃO.\n\nAltere os dados abaixo e clique em 'ADICIONAR' para confirmar.");
     }, 200);
 };
 
