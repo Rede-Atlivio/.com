@@ -2,153 +2,347 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio Admin | Comando Central v3.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Atlivio - Marketplace Híbrido</title>
+    
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        body { background-color: #0f172a; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; background-image: radial-gradient(circle at 50% 0%, #1e3a8a 0%, #0f172a 80%); }
-        .glass-panel { background: rgba(30, 41, 59, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; }
-        .nav-btn { text-align: left; padding: 12px 16px; border-radius: 8px; transition: all 0.2s; color: #94a3b8; font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 10px; width: 100%; }
-        .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-btn.active { background: #2563eb; color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3); }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .inp-editor { width: 100%; background: #020617; border: 1px solid #1e293b; padding: 8px; border-radius: 6px; color: white; font-size: 0.75rem; margin-bottom: 5px; }
-        .inp-label { font-size: 0.65rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 2px; }
-        .chk-custom { width: 16px; height: 16px; accent-color: #2563eb; cursor: pointer; }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        
-        /* Utilitários de Animação */
-        @keyframes fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fade 0.3s ease-out forwards; }
-        
-        #bulk-actions { transition: transform 0.3s ease; transform: translateY(100%); }
-        #bulk-actions.visible { transform: translateY(0); }
-    </style>
-</head>
-<body class="h-screen overflow-hidden flex text-sm">
+        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .slider-container::-webkit-scrollbar { display: none; }
+        .slide { flex: 0 0 100%; scroll-snap-align: center; position: relative; }
+        .slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; transition: all 0.3s; }
+        .dot.active { background: #2563eb; width: 24px; border-radius: 4px; }
 
-    <div id="login-gate" class="fixed inset-0 bg-[#0f172a] z-50 flex items-center justify-center">
-        <div class="text-center p-8 border border-blue-900/50 rounded-2xl bg-slate-900/80 backdrop-blur glass-panel w-96">
-            <h1 class="text-3xl text-white font-black mb-1 italic tracking-tighter">ATLIVIO <span class="text-blue-500">ADMIN</span></h1>
-            <p class="text-xs text-slate-400 mb-8 font-mono">COMANDO CENTRAL MODULAR</p>
-            <button id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 shadow-lg">
-                <i data-lucide="shield" size="18"></i> AUTENTICAR
-            </button>
+        #splash-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        .splash-logo { width: 100px; height: 100px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: #1e3a8a; box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
+        
+        input { color: white !important; }
+        input::placeholder { color: #94a3b8 !important; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; -webkit-text-fill-color: white !important; font-weight: bold !important; }
+        
+        #auth-container, #modal-onboarding { display: none; } 
+    </style>
+
+    <script>
+        // Funções de UI puras (Navegação Visual)
+        window.ocultarSplash = () => {
+            const splash = document.getElementById('splash-screen');
+            if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
+        };
+
+        window.irParaLogin = () => {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('modal-onboarding').style.display = 'none'; 
+            const login = document.getElementById('auth-container');
+            login.classList.remove('hidden');
+            login.style.display = 'flex'; 
+        };
+
+        window.irParaCadastro = () => {
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('auth-container').style.display = 'none';
+            const modal = document.getElementById('modal-onboarding');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            setTimeout(() => { modal.querySelectorAll('input').forEach(i => { i.style.height = '50px'; i.style.display = 'block'; }); }, 100);
+        };
+
+        window.voltarParaLanding = () => {
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('modal-onboarding').style.display = 'none';
+            document.getElementById('landing-page').classList.remove('hidden');
+        };
+
+        window.switchTab = function(tabName) {
+            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+            const alvo = document.getElementById(`sec-${tabName}`);
+            if(alvo) alvo.classList.remove('hidden');
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+            }
+            // Acionadores Lazy Load
+            if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
+            if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
+            if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
+            if(tabName === 'chat' && window.carregarChat) window.carregarChat();
+        };
+
+        window.switchServiceSubTab = (subTab) => {
+            ['contratar', 'andamento', 'historico'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`subtab-${t}-btn`).classList.remove('active');
+            });
+            document.getElementById(`view-${subTab}`).classList.remove('hidden');
+            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
+        };
+
+        window.switchProviderSubTab = (subTab) => {
+            ['radar', 'ativos', 'historico'].forEach(t => {
+                document.getElementById(`pview-${t}`).classList.add('hidden');
+                document.getElementById(`ptab-${t}-btn`).classList.remove('active');
+            });
+            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
+            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+        };
+        
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); btn.classList.toggle('bg-blue-100'); btn.classList.toggle('border-blue-500'); };
+        
+        // Máscara Telefone Global
+        window.mascaraTelefone = (input) => {
+            let v = input.value.replace(/\D/g,'').substring(0, 11);
+            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
+            input.value = v;
+        };
+    </script>
+</head>
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
+
+    <div id="splash-screen">
+        <div class="splash-logo">A</div>
+        <p class="mt-4 text-gray-400 text-xs font-bold tracking-widest uppercase">Carregando...</p>
+    </div>
+
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
+    <audio id="online-sound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto"></audio>
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="window.uploadFotoPerfil && window.uploadFotoPerfil(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
+    <div id="landing-page" class="fixed inset-0 bg-slate-900 text-white flex flex-col z-50 overflow-y-auto">
+        <div class="p-6 flex justify-between items-center">
+            <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter">Atlivio</h1>
+            <div class="bg-slate-800 rounded-full px-3 py-1 flex items-center gap-1 border border-slate-700">
+                <span class="text-lg">🇧🇷</span> <span class="text-xs font-bold text-gray-400">BRA</span>
+            </div>
+        </div>
+        <div class="flex-1 flex flex-col justify-center pb-10">
+            <div class="slider-container" id="landing-slider">
+                <div class="slide px-6 text-center">
+                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Serviços e Negócios<br><span class="text-blue-500">em um só lugar</span></h2>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto">O primeiro marketplace híbrido que conecta você a profissionais e oportunidades reais.</p>
+                </div>
+                <div class="slide px-6 text-center">
+                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Pagamentos Seguros<br><span class="text-purple-500">via PIX</span></h2>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto">Sua carteira digital para receber por serviços ou contratar com segurança total.</p>
+                </div>
+            </div>
+            <div class="slide-dots"><div class="dot active"></div><div class="dot"></div></div>
+        </div>
+        <div class="p-6 bg-slate-900 pb-12">
+            <div class="space-y-3">
+                <button onclick="irParaLogin()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition shadow-lg">Já tenho uma conta</button>
+                <button onclick="irParaCadastro()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">Abrir conta gratuita</button>
+            </div>
+            <p class="text-[10px] text-center text-gray-500 mt-4">Ao continuar, concordo com a <a href="#" onclick="window.openTerms && window.openTerms('privacidade')" class="underline hover:text-blue-400">Política de Privacidade</a>.</p>
         </div>
     </div>
 
-    <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
-        <div class="p-6 border-b border-white/5">
-            <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v3.2 // AUDIT ENABLED</p>
-        </div>
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
-            <button class="nav-btn active" data-view="dashboard"><i data-lucide="layout-dashboard" size="16"></i> DASHBOARD</button>
-            <button class="nav-btn" data-view="users"><i data-lucide="users" size="16"></i> USUÁRIOS</button>
-            <button class="nav-btn" data-view="services"><i data-lucide="wrench" size="16"></i> SERVIÇOS (VITRINE)</button>
-            <button class="nav-btn" data-view="missions"><i data-lucide="map-pin" size="16"></i> MICRO TAREFAS</button>
-            
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Atendimento</p>
-            <button class="nav-btn text-yellow-200 hover:text-yellow-100" data-view="support"><i data-lucide="message-circle" size="16"></i> SUPORTE & TICKETS</button>
-            <button class="nav-btn text-indigo-400 hover:text-indigo-300" data-view="audit"><i data-lucide="search" size="16"></i> AUDITORIA & CHAT</button>
-
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Vagas & RH</p>
-            <button class="nav-btn" data-view="jobs"><i data-lucide="briefcase" size="16"></i> VAGAS DE EMPREGO</button>
-            <button class="nav-btn text-blue-300" data-view="candidatos"><i data-lucide="file-text" size="16"></i> CANDIDATOS (CVs)</button>
-            
-            <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Estratégia</p>
-            <button class="nav-btn" data-view="opps"><i data-lucide="zap" size="16"></i> OPORTUNIDADES</button>
-            <button class="nav-btn" data-view="finance"><i data-lucide="wallet" size="16"></i> FINANCEIRO</button>
-            <button class="nav-btn text-purple-400" data-view="automation"><i data-lucide="box" size="16"></i> GERADOR & ROBÔ</button>
-            <button class="nav-btn" data-view="settings"><i data-lucide="settings" size="16"></i> CONFIGURAÇÕES</button>
-        </nav>
-        <div class="p-4 border-t border-white/5 bg-red-900/10">
-            <button id="btn-logout" class="nav-btn text-red-400 hover:text-red-300 w-full"><i data-lucide="log-out" size="16"></i> ENCERRAR</button>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col h-full overflow-hidden hidden" id="admin-main">
-        <header class="h-16 border-b border-white/5 flex justify-between items-center px-6 bg-slate-900/30 backdrop-blur">
-            <div class="flex items-center gap-4">
-                <h2 id="page-title" class="text-lg font-bold text-white uppercase tracking-widest">DASHBOARD</h2>
-                <div class="h-4 w-[1px] bg-gray-700"></div>
-                <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                    <button id="mode-real" class="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition">DADOS REAIS</button>
-                    <button id="mode-demo" class="px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition">DEMONSTRATIVO</button>
+    <div id="auth-container" class="fixed inset-0 bg-slate-900 z-[55] flex-col items-center justify-center p-6 animate-fadeIn hidden">
+        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-3xl font-bold p-2 transition">&larr;</button>
+        <div class="w-full max-w-md text-center">
+            <h2 class="text-4xl font-black text-white italic uppercase mb-2 tracking-tighter">Atlivio</h2>
+            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Login Seguro</p>
+            <div id="login-step-phone" class="space-y-4">
+                <div class="relative">
+                    <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
+                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition placeholder-gray-600">
                 </div>
+                <button onclick="window.enviarSMSLogin && window.enviarSMSLogin('login')" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">RECEBER CÓDIGO SMS 📲</button>
             </div>
-            <div class="flex items-center gap-3">
-                <button id="btn-refresh" class="p-2 text-gray-400 hover:text-white transition bg-slate-800 rounded-lg border border-white/5"><i data-lucide="refresh-cw" size="16"></i></button>
-                <div class="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                    <span class="status-dot dot-green bg-green-500"></span><span class="text-[10px] font-bold text-green-400">ONLINE</span>
+            <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-800 mb-2">
+                    <p class="text-xs text-blue-300">SMS enviado para <span id="lbl-login-phone" class="font-bold text-white">...</span></p>
+                </div>
+                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
+                <button onclick="window.confirmarCodigoLogin && window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95 cursor-pointer z-50 relative">ENTRAR AGORA 🚀</button>
+                <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2 hover:text-gray-300">Corrigir número</button>
+            </div>
+            <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
+        </div>
+    </div>
+
+    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 flex-col items-center justify-center p-6 animate-fade hidden">
+        <button onclick="voltarParaLanding()" class="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
+        <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
+            <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
+            <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido</p>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
+                    <input type="text" id="inp-onboard-name" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="Nome e sobrenome" required minlength="3">
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu WhatsApp</label>
+                    <input type="tel" id="inp-onboard-phone" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)">
+                </div>
+                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
+                    <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600">
+                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">Li e aceito os <a href="#" onclick="window.openTerms && window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a>.</label>
+                </div>
+                <button type="button" onclick="window.finalizarCadastro && window.finalizarCadastro()" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">COMEÇAR 🚀</button>
+            </div>
+            <div class="mt-6 text-center"><p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p></div>
+        </div>
+    </div>
+
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4 fixed inset-0 z-[58]">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
+            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
+            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <button onclick="window.definirPerfil && window.definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">💎</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços.</div>
+                </button>
+                <button onclick="window.definirPerfil && window.definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar.</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+        <header class="bg-white shadow-sm p-4 z-30 sticky top-0" id="header-main">
+            <div id="global-alert-banner" class="hidden bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-3 mb-3 rounded shadow-sm flex justify-between items-center">
+                <p id="global-alert-text" class="text-xs font-bold"></p>
+                <button onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold">&times;</button>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-1"><h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1></div>
+                    <button onclick="window.alternarPerfil && window.alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">🔄 Carregando...</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
+                        <span id="status-label" class="text-[8px] font-bold text-gray-500 uppercase mr-2">OFFLINE</span>
+                        <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                            <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <button onclick="window.abrirConfiguracoes && window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta"><span class="text-xl">⚙️</span></button>
+                        <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">📲 SALVE SEU ACESSO</button>
+                        <button onclick="window.logout && window.logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full transition">SAIR</button>
+                    </div>
                 </div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-y-auto p-6 pb-24" id="content-area">
-            
-            <div id="view-dashboard" class="space-y-6 animate-fade"></div>
+        <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
+            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            <button onclick="switchTab('empregos')" id="tab-empregos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Empregos 💼</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Loja 🛒</button>
+            <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
+            <button onclick="location.href='admin.html'" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic bg-red-50">ADMIN 🛡️</button>
+        </nav>
 
-            <div id="view-list" class="hidden space-y-4 animate-fade">
-                <div class="flex justify-between items-center">
-                    <input type="text" id="list-search" placeholder="Buscar..." class="search-input bg-slate-900 border border-slate-700 text-white text-xs p-2 rounded-lg w-64 focus:border-blue-500 outline-none">
-                    <button id="btn-list-add" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase transition flex items-center gap-2">+ NOVO ITEM</button>
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn"><div id="lista-oportunidades" class="grid gap-3"></div></section>
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn"><div id="lista-missoes" class="grid gap-4"></div></section>
+            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+                <div id="category-filters" class="hidden"></div> 
+                <div id="servicos-cliente" class="hidden">
+                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+                        <div class="flex items-center gap-3"><div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()"><img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover"></div><div><h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3></div></div>
+                    </div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button><button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button><button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button></div>
+                    <div id="view-contratar"><div id="lista-prestadores-realtime" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div></div>
+                    <div id="view-andamento" class="hidden space-y-2"><div id="meus-pedidos-andamento" class="space-y-3"></div></div>
+                    <div id="view-historico" class="hidden space-y-2"><div id="meus-pedidos-historico" class="space-y-3"></div></div>
                 </div>
-                <div class="glass-panel overflow-hidden">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-900/50 text-[10px] uppercase text-gray-400 font-bold"><tr id="list-header"></tr></thead>
-                        <tbody id="list-body" class="text-xs font-mono"></tbody>
-                    </table>
+                <div id="servicos-prestador" class="hidden">
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn"><div class="flex items-center gap-3"><img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover"><div><h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3></div></div><button onclick="window.abrirConfiguracaoServicos && window.abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button></div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button><button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button><button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button></div>
+                    <div id="pview-radar" class="text-center py-10"></div>
+                    <div id="pview-ativos" class="hidden space-y-3"><div id="lista-chamados-ativos"></div></div>
+                    <div id="pview-historico" class="hidden space-y-3"><div id="lista-chamados-historico"></div></div>
                 </div>
-                <p id="list-count" class="text-xs text-gray-500 text-right">0 registros</p>
+            </section>
+            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn"><div id="lista-vagas" class="grid gap-3"></div><div id="painel-empresa" class="hidden"><button onclick="window.abrirModalVaga && window.abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">+ Anunciar Vaga Grátis</button><div id="lista-minhas-vagas" class="space-y-2 mt-4"></div></div></section>
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn"><div id="sec-produtos"></div></section>
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn"><div id="lista-chats" class="space-y-2"></div></section>
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn"><div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative"><p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p><h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2></div></section>
+        </main>
+    </div>
+
+    <div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-slate-900 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
+                <h3 class="text-white font-black uppercase italic flex items-center gap-2">⚙️ Minha Conta</h3>
+                <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
-
-            <div id="view-support" class="hidden h-full animate-fade"></div>
-
-            <div id="view-audit" class="hidden h-full animate-fade"></div>
-
-            <div id="view-finance" class="hidden space-y-6 animate-fade"></div>
-
-            <div id="view-automation" class="hidden space-y-6 animate-fade"></div>
-
-            <div id="view-settings" class="hidden space-y-6 animate-fade"></div>
-            
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                <div class="space-y-3"><div class="flex flex-col items-center mb-4"><div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()"><img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover"><div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-xs text-white font-bold">ALTERAR</span></div></div></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div></div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3"><div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div><div><label class="text-[10px] font-bold text-green-700 uppercase">Chave PIX</label><input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2"></div></div>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0"><button onclick="window.salvarConfiguracoes && window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button></div>
         </div>
-
-        <div id="bulk-actions" class="fixed bottom-0 left-64 right-0 bg-slate-800 border-t border-slate-700 p-4 flex justify-between items-center z-50 shadow-2xl translate-y-full">
-            <div class="flex items-center gap-3">
-                <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full" id="bulk-count">0</span>
-                <span class="text-xs text-white font-bold uppercase">Selecionados</span>
-            </div>
-            <div class="flex gap-2" id="bulk-buttons">
-                <button id="btn-bulk-delete" class="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded-lg font-bold text-xs uppercase flex items-center gap-2"><i data-lucide="trash-2"></i> EXCLUIR</button>
-            </div>
-        </div>
-    </main>
-
-    <div id="modal-editor" class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-slate-900 border border-slate-700 p-6 rounded-2xl w-full max-w-4xl flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-4">
-                <h2 id="modal-title" class="text-xl font-black text-white italic tracking-wide">EDITOR</h2>
-                <button id="btn-close-modal" class="text-gray-500 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div id="modal-content" class="space-y-4 overflow-y-auto flex-1 pr-2"></div>
+    </div>
+    
+    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
+        <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl"><h3 class="text-white font-bold" id="term-title">Termos de Uso</h3><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
+            <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center"><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button></div>
         </div>
     </div>
 
-    <script type="module" src="./js/admin/core.js?v=15.7"></script> 
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 font-bold">&times;</button><div id="provider-setup-content"></div></div></div>
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm"><div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative"><div id="public-services-list"></div></div></div>
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"><input type="hidden" id="target-provider-id"><input type="hidden" id="service-base-price"><div class="p-6"><p>Carregando...</p></div></div></div>
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><div id="star-container"></div></div></div>
+    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
+    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative"><button onclick="window.fecharModalCandidatura && window.fecharModalCandidatura()" class="absolute top-4 right-4">&times;</button></div></div>
+    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white"><div class="loader mb-4"></div></div>
+
+    <script type="module" src="./js/app.js?v=18.0"></script>
+    <script type="module" src="./js/auth.js?v=18.0"></script>
+    <script type="module" src="./js/modules/services.js?v=18.0"></script>
+    <script type="module" src="./js/modules/request.js?v=18.0"></script>
+    <script type="module" src="./js/modules/chat.js?v=18.0"></script>
+    <script type="module" src="./js/wallet.js?v=18.0"></script>
+    <script type="module" src="./js/modules/jobs.js?v=18.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=18.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=18.0"></script>
+    <script type="module" src="./js/modules/products.js?v=18.0"></script>
     
     <script>
-        // Inicializa ícones ao carregar
-        window.addEventListener('load', () => lucide.createIcons());
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Info:', err));
+            });
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-install-app');
+            if(btn) { btn.classList.remove('hidden'); btn.onclick = () => { e.prompt(); }; }
+        });
     </script>
 </body>
 </html>
