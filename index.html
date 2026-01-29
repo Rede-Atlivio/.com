@@ -6,54 +6,60 @@
     <title>Atlivio - Marketplace Híbrido</title>
     
     <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#1e3a8a">
+    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
+        /* ANIMAÇÕES E UTILITÁRIOS */
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* SLIDER TIPO BANCO INTER */
+        /* SLIDER (ESTILO ATLIVIO DARK) */
         .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .slider-container::-webkit-scrollbar { display: none; }
         .slide { flex: 0 0 100%; scroll-snap-align: center; position: relative; }
-        .slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
-        .dot.active { background: #ea580c; width: 24px; border-radius: 4px; }
+        .slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; transition: all 0.3s; }
+        .dot.active { background: #2563eb; width: 24px; border-radius: 4px; }
 
-        /* SPLASH SCREEN (LOGO PULSANDO) */
+        /* SPLASH SCREEN */
         #splash-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         .splash-logo { width: 100px; height: 100px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: #1e3a8a; box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
         
-        /* ESTILOS GERAIS */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* INPUTS E SCROLLBAR */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
-        .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         
-        /* CORREÇÃO DE INPUTS (NUCLEAR) */
-        #modal-onboarding input { color: white !important; }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important; -webkit-text-fill-color: #0f172a !important; font-weight: bold !important; }
+        /* CORREÇÃO NUCLEAR DE INPUTS (DARK MODE) */
+        input { color: white !important; }
+        input::placeholder { color: #94a3b8 !important; }
+        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; -webkit-text-fill-color: white !important; font-weight: bold !important; }
+        
+        /* GARANTIA DE VISIBILIDADE DOS MODAIS */
+        #auth-container, #modal-onboarding { display: none; } /* Controlado via JS */
     </style>
 
     <script>
-        // LÓGICA DE NAVEGAÇÃO INICIAL (INTERFACE)
+        // --- LÓGICA DE NAVEGAÇÃO ENTRE TELAS ---
+        
         window.irParaLogin = () => {
             document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('auth-container').classList.remove('hidden');
-            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('modal-onboarding').style.display = 'none'; // Garante que fecha o cadastro
+            const login = document.getElementById('auth-container');
+            login.classList.remove('hidden');
+            login.style.display = 'flex'; // Centraliza flex
         };
 
         window.irParaCadastro = () => {
             document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('auth-container').style.display = 'none';
             const modal = document.getElementById('modal-onboarding');
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
             
-            // Força renderização dos inputs (Garantia Nuclear)
+            // Força renderização visual dos inputs
             setTimeout(() => {
                 modal.querySelectorAll('input').forEach(i => {
                     i.style.height = '50px';
@@ -63,12 +69,12 @@
         };
 
         window.voltarParaLanding = () => {
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('modal-onboarding').classList.add('hidden');
+            document.getElementById('auth-container').style.display = 'none';
+            document.getElementById('modal-onboarding').style.display = 'none';
             document.getElementById('landing-page').classList.remove('hidden');
         };
 
-        // CONTROLES DE INTERFACE
+        // CONTROLES UI GERAIS
         window.ocultarSplash = () => {
             const splash = document.getElementById('splash-screen');
             if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
@@ -88,7 +94,6 @@
                 activeBtn.classList.remove('border-transparent', 'text-gray-400');
                 activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
             }
-            // Lazy Load Hooks
             if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
             if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
             if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
@@ -116,7 +121,7 @@
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); btn.classList.toggle('bg-blue-100'); btn.classList.toggle('border-blue-500'); };
     </script>
 </head>
-<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
 
     <div id="splash-screen">
         <div class="splash-logo">A</div>
@@ -128,31 +133,31 @@
     <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
-    <div id="landing-page" class="min-h-screen bg-white text-gray-900 flex flex-col relative z-50">
+    <div id="landing-page" class="fixed inset-0 bg-slate-900 text-white flex flex-col z-50 overflow-y-auto">
         <div class="p-6 flex justify-between items-center">
-            <h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1>
-            <div class="bg-gray-100 rounded-full px-3 py-1 flex items-center gap-1">
-                <span class="text-lg">🇧🇷</span> <span class="text-xs font-bold text-gray-600">BRA</span>
+            <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter">Atlivio</h1>
+            <div class="bg-slate-800 rounded-full px-3 py-1 flex items-center gap-1 border border-slate-700">
+                <span class="text-lg">🇧🇷</span> <span class="text-xs font-bold text-gray-400">BRA</span>
             </div>
         </div>
 
         <div class="flex-1 flex flex-col justify-center pb-10">
             <div class="slider-container" id="landing-slider">
                 <div class="slide px-6 text-center">
-                    <div class="mb-6 relative inline-block">
-                        <div class="absolute inset-0 bg-orange-500 rounded-full blur-2xl opacity-20"></div>
-                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[3rem] mx-auto shadow-2xl relative z-10">
+                    <div class="mb-8 relative inline-block">
+                        <div class="absolute inset-0 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
+                        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[2rem] mx-auto shadow-2xl relative z-10 border-4 border-slate-800">
                     </div>
-                    <h2 class="text-3xl font-black text-slate-900 leading-tight mb-3">Um jeito inteligente de cuidar dos seus serviços</h2>
-                    <p class="text-gray-500 text-sm">Com a Atlivio, você resolve o dia a dia e contrata profissionais locais.</p>
+                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Serviços e Negócios<br><span class="text-blue-500">em um só lugar</span></h2>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto">O primeiro marketplace híbrido que conecta você a profissionais e oportunidades reais.</p>
                 </div>
                 <div class="slide px-6 text-center">
-                    <div class="mb-6 relative inline-block">
-                        <div class="absolute inset-0 bg-blue-500 rounded-full blur-2xl opacity-20"></div>
-                        <img src="https://images.unsplash.com/photo-1580518337843-f959e992584b?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[3rem] mx-auto shadow-2xl relative z-10">
+                    <div class="mb-8 relative inline-block">
+                        <div class="absolute inset-0 bg-purple-600 rounded-full blur-3xl opacity-20"></div>
+                        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[2rem] mx-auto shadow-2xl relative z-10 border-4 border-slate-800">
                     </div>
-                    <h2 class="text-3xl font-black text-slate-900 leading-tight mb-3">Tudo em um Super App</h2>
-                    <p class="text-gray-500 text-sm">Faça de tudo sem sair do aplicativo. Serviços, pagamentos e chat seguro.</p>
+                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Pagamentos Seguros<br><span class="text-purple-500">via PIX</span></h2>
+                    <p class="text-gray-400 text-sm max-w-xs mx-auto">Sua carteira digital para receber por serviços ou contratar com segurança total.</p>
                 </div>
             </div>
             
@@ -162,31 +167,33 @@
             </div>
         </div>
 
-        <div class="p-6 bg-white pb-10">
-            <p class="text-[10px] text-center text-gray-400 mb-4">
-                Ao continuar, concordo com a <a href="#" onclick="openTerms('privacidade')" class="underline font-bold text-blue-600">Política de Privacidade</a>.
-            </p>
+        <div class="p-6 bg-slate-900 pb-12">
             <div class="space-y-3">
-                <button onclick="irParaLogin()" class="w-full bg-orange-50 text-orange-700 font-bold py-4 rounded-xl border border-orange-100 hover:bg-orange-100 transition shadow-sm">
+                <button onclick="irParaLogin()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition shadow-lg">
                     Já tenho uma conta
                 </button>
-                <button onclick="irParaCadastro()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 transition transform active:scale-95">
+                <button onclick="irParaCadastro()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">
                     Abrir conta gratuita
                 </button>
             </div>
+            <p class="text-[10px] text-center text-gray-500 mt-4">
+                Ao continuar, concordo com a <a href="#" onclick="openTerms('privacidade')" class="underline hover:text-blue-400">Política de Privacidade</a>.
+            </p>
         </div>
     </div>
 
-    <div id="auth-container" class="fixed inset-0 bg-white z-[55] hidden flex-col items-center justify-center p-6 animate-fadeIn">
-        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-400 text-2xl font-bold p-2 hover:text-gray-600">&larr;</button>
+    <div id="auth-container" class="fixed inset-0 bg-slate-900 z-[55] flex-col items-center justify-center p-6 animate-fadeIn hidden">
+        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-3xl font-bold p-2 transition">&larr;</button>
+        
         <div class="w-full max-w-md text-center">
-            <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
+            <h2 class="text-4xl font-black text-white italic uppercase mb-2 tracking-tighter">Atlivio</h2>
             <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Login Seguro</p>
             
             <div id="login-step-phone" class="space-y-4">
                 <div class="relative">
                     <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
-                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 pl-20 text-gray-900 text-lg font-bold focus:border-blue-500 outline-none transition">
+                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" 
+                           class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition placeholder-gray-600">
                 </div>
                 <button onclick="window.enviarSMSLogin('login')" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
                     RECEBER CÓDIGO SMS 📲
@@ -194,41 +201,42 @@
             </div>
 
             <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
-                    <p class="text-xs text-blue-800">SMS enviado para <span id="lbl-login-phone" class="font-bold">...</span></p>
+                <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-800 mb-2">
+                    <p class="text-xs text-blue-300">SMS enviado para <span id="lbl-login-phone" class="font-bold text-white">...</span></p>
                 </div>
-                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
+                <input type="tel" id="login-code" placeholder="000000" maxlength="6" 
+                       class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
+                
                 <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95">
                     ENTRAR AGORA 🚀
                 </button>
-                <button onclick="location.reload()" class="text-xs text-gray-400 underline mt-2 hover:text-blue-600">Corrigir número</button>
+                <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2 hover:text-gray-300">Corrigir número</button>
             </div>
             
             <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
         </div>
     </div>
 
-    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
-        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
+    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 flex-col items-center justify-center p-6 animate-fade hidden">
+        <button onclick="voltarParaLanding()" class="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
         
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
             <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
-            <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido do Mundo</p>
-            <p class="text-center text-xs text-gray-500 italic mb-6">Conectando serviços locais com pagamentos inteligentes</p>
+            <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido</p>
             
             <div class="space-y-4">
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
                     <input type="text" id="inp-onboard-name" 
-                           style="height: 50px !important; width: 100%; display: block !important; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white !important;"
-                           placeholder="[ Nome e sobrenome ]" required minlength="3">
+                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
+                           placeholder="Nome e sobrenome" required minlength="3">
                 </div>
 
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu WhatsApp</label>
                     <input type="tel" id="inp-onboard-phone" 
-                           style="height: 50px !important; width: 100%; display: block !important; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white !important;"
-                           placeholder="🇧🇷 +55 (00) 00000-0000" oninput="mascaraTelefone(this)" required>
+                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
+                           placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" required>
                 </div>
 
                 <button onclick="window.enviarSMSLogin('cadastro')" id="btn-onboard-sms" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">
@@ -236,9 +244,9 @@
                 </button>
 
                 <div class="flex items-center justify-center gap-2 opacity-50 py-2">
-                    <div class="h-px bg-gray-600 w-full"></div>
+                    <div class="h-px bg-slate-600 w-full"></div>
                     <span class="text-[10px] text-gray-400 whitespace-nowrap">ou continue com</span>
-                    <div class="h-px bg-gray-600 w-full"></div>
+                    <div class="h-px bg-slate-600 w-full"></div>
                 </div>
 
                 <button onclick="alert('🚧 EM MANUTENÇÃO\n\nO login com Google está passando por melhorias.\n\nPor favor, utilize a opção RECEBER CÓDIGO SMS logo acima. É mais rápido e seguro!')" class="w-full bg-white text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition border border-gray-200">
@@ -247,8 +255,7 @@
             </div>
 
             <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">Já tem cadastro?</p>
-                <button onclick="irParaLogin()" class="text-blue-400 font-bold text-sm hover:underline">Entrar</button>
+                <p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p>
             </div>
         </div>
     </div>
@@ -364,29 +371,6 @@
         </main>
     </div>
 
-    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
-            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-6">
-                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition"><div class="text-4xl mb-3">💎</div><div class="font-black text-blue-900 uppercase italic">Cliente</div></button>
-                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition"><div class="text-4xl mb-3">🛠️</div><div class="font-black text-blue-900 uppercase italic">Prestador</div></button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
-        <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl">
-                <h3 class="text-white font-bold" id="term-title">Termos de Uso</h3>
-                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
-            <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
-            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center">
-                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button>
-            </div>
-        </div>
-    </div>
-
     <div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
             <div class="bg-slate-900 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
@@ -403,16 +387,47 @@
                         </div>
                     </div>
                     <div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div>
+                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">E-mail (Contato)</label><input type="email" id="set-email" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition" placeholder="opcional"></div>
                     <div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div>
                 </div>
+                
                 <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
                     <div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div>
-                    <div><label class="text-[10px] font-bold text-green-700 uppercase">Sua Chave PIX</label><input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none"></div>
+                    
+                    <div>
+                        <label class="text-[10px] font-bold text-green-700 uppercase">Nome do Banco</label>
+                        <input type="text" id="set-bank" placeholder="Ex: Nubank, Inter..." class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-green-700 uppercase">Chave PIX</label>
+                        <input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-green-700 uppercase">CPF do Titular</label>
+                        <input type="text" id="set-cpf" placeholder="000.000.000-00" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none">
+                    </div>
+                    
+                    <p id="pix-warning" class="text-[9px] text-green-800 font-bold mt-2 bg-green-100 p-2 rounded border border-green-200 text-center">
+                        ⚠️ Importante: Transferências só serão realizadas para o titular da conta cadastrado acima.
+                    </p>
                 </div>
             </div>
             <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
                 <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
                 <button onclick="salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
+        <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl">
+                <h3 class="text-white font-bold" id="term-title">Termos de Uso</h3>
+                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center">
+                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button>
             </div>
         </div>
     </div>
@@ -536,7 +551,7 @@
         };
 
         // --- 2. GLOBAL SETTINGS & ALERTS ---
-        async function loadGlobalAlert() {
+        window.loadGlobalAlert = async function() {
             try {
                 const docSnap = await getDoc(doc(db, "settings", "global"));
                 if (docSnap.exists() && docSnap.data().top_message) {
@@ -548,7 +563,7 @@
                     }
                 }
             } catch (e) { console.log("Info config:", e); }
-        }
+        };
         
         // --- 3. TERMOS E PRIVACIDADE (TEXTOS COMPLETOS RESTAURADOS) ---
         const TEXTO_TERMOS = `
@@ -610,7 +625,6 @@
         
         // Verifica se já está logado ao abrir
         setTimeout(() => {
-             // Lógica simples: se tem user_uid no localStorage, esconde landing e mostra app
              if(localStorage.getItem('user_uid')) {
                  document.getElementById('landing-page').classList.add('hidden');
                  document.getElementById('app-container').classList.remove('hidden');
