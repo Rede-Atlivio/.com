@@ -23,62 +23,47 @@ window.db = db;
 window.auth = auth;
 
 // ============================================================================
-// 📱 PWA INSTALLER (RESTAURADO)
+// 📱 PWA INSTALLER (BOTÃO ROXO)
 // ============================================================================
 let deferredPrompt;
-
 window.addEventListener('beforeinstallprompt', (e) => {
-    // Previne o Chrome de mostrar o prompt nativo automático
     e.preventDefault();
     deferredPrompt = e;
-    
-    // Mostra o botão roxo no Header
     const btnInstall = document.getElementById('btn-install-app');
     if(btnInstall) {
         btnInstall.classList.remove('hidden');
-        
         btnInstall.onclick = async () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 const { outcome } = await deferredPrompt.userChoice;
-                console.log(`User response to the install prompt: ${outcome}`);
                 deferredPrompt = null;
-                // Esconde botão após instalar
                 btnInstall.classList.add('hidden');
             }
         };
     }
 });
 
-// Se o app já foi instalado, garante que o botão suma
-window.addEventListener('appinstalled', () => {
-    const btnInstall = document.getElementById('btn-install-app');
-    if(btnInstall) btnInstall.classList.add('hidden');
-    console.log('PWA was installed');
-});
-
 // ============================================================================
-// 🔔 CENTRAL DE NOTIFICAÇÕES
+// 🔔 CENTRAL DE NOTIFICAÇÕES (VISUAL CORRIGIDO)
 // ============================================================================
 
-// 1. Garante Container Visual
+// 1. Cria o Container com Z-INDEX EXTREMO (Igual ao teste que funcionou)
 (function criarContainerNotificacoes() {
     if (!document.getElementById('toast-container')) {
         const div = document.createElement('div');
         div.id = 'toast-container';
-        div.className = 'fixed top-4 right-4 z-[9999] space-y-2 max-w-xs w-full pointer-events-none'; 
+        // Z-Index 99999 para ficar acima de tudo
+        div.className = 'fixed top-5 right-5 z-[99999] space-y-3 max-w-sm w-full pointer-events-none'; 
         document.body.appendChild(div);
     }
 })();
 
 let unsubscribeNotifications = null;
 
-// 2. Inicia Listener
+// 2. Listener do Banco
 auth.onAuthStateChanged((user) => {
     if (user) {
         iniciarOuvinteNotificacoes(user.uid);
-    } else {
-        if(unsubscribeNotifications) unsubscribeNotifications();
     }
 });
 
@@ -97,19 +82,16 @@ function iniciarOuvinteNotificacoes(uid) {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
                 const notif = change.doc.data();
-                
                 const agora = new Date();
                 const dataNotif = notif.created_at ? notif.created_at.toDate() : new Date();
                 const diffSegundos = (agora - dataNotif) / 1000;
 
-                // Filtro de 2 minutos para evitar spam de velhas
+                // Mostra se for recente (< 2 min) ou se não tiver data (criado agora)
                 if (!notif.created_at || diffSegundos < 120) { 
                     mostrarToast(notif.message, change.doc.id, notif.type);
                 }
             }
         });
-    }, (error) => {
-        if(error.code !== 'permission-denied') console.warn("Erro notificações:", error);
     });
 }
 
@@ -117,28 +99,29 @@ function mostrarToast(mensagem, docId, tipo = 'info') {
     const container = document.getElementById('toast-container');
     if(!container) return;
 
+    // Sons
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); 
     if(tipo === 'money') audio.src = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'; 
-    audio.volume = 0.5;
     audio.play().catch(() => {}); 
 
-    let bgClass = "bg-white border-l-4 border-blue-500 text-gray-800";
+    // Estilos Visuais (Baseados no teste de sucesso)
+    let borderClass = "border-blue-500";
     let icon = "🔔";
     
-    if (tipo === 'money') { bgClass = "bg-green-50 border-l-4 border-green-500 text-green-900"; icon = "💰"; }
-    if (tipo === 'alert') { bgClass = "bg-red-50 border-l-4 border-red-500 text-red-900"; icon = "⚠️"; }
-    if (tipo === 'success') { bgClass = "bg-blue-50 border-l-4 border-blue-500 text-blue-900"; icon = "✅"; }
+    if (tipo === 'money') { borderClass = "border-emerald-500"; icon = "💰"; }
+    if (tipo === 'alert') { borderClass = "border-red-500"; icon = "⚠️"; }
+    if (tipo === 'success') { borderClass = "border-green-500"; icon = "✅"; }
 
     const toast = document.createElement('div');
-    toast.className = `${bgClass} p-4 rounded-lg shadow-2xl flex items-start gap-3 transform translate-x-full transition-all duration-500 pointer-events-auto cursor-pointer mb-2 relative overflow-hidden`;
+    // Classes Tailwind para replicar o visual do teste
+    toast.className = `bg-white border-l-4 ${borderClass} p-4 rounded shadow-2xl flex items-center gap-3 transform translate-x-full transition-all duration-500 pointer-events-auto cursor-pointer mb-2`;
     
     toast.innerHTML = `
-        <div class="text-xl mt-0.5 animate-bounce">${icon}</div>
+        <div class="text-2xl">${icon}</div>
         <div class="flex-1">
-            <p class="text-xs font-bold leading-tight">${mensagem}</p>
-            <p class="text-[9px] opacity-70 mt-1">Toque para fechar</p>
+            <p class="text-sm font-bold text-gray-800 leading-tight">${mensagem}</p>
+            <p class="text-[10px] text-gray-400 mt-1">Toque para fechar</p>
         </div>
-        <div class="absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full animate-shrink"></div>
     `;
 
     toast.onclick = async () => {
@@ -160,8 +143,4 @@ function removeToast(el) {
     setTimeout(() => el.remove(), 500);
 }
 
-const style = document.createElement('style');
-style.innerHTML = `@keyframes shrink { from { width: 100%; } to { width: 0%; } } .animate-shrink { animation: shrink 6s linear forwards; }`;
-document.head.appendChild(style);
-
-console.log("🔥 App Core V7.5 (PWA + Notificações) Carregado.");
+console.log("🔥 App Core V8.0 (Visual Fix) Carregado.");
