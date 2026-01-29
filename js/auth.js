@@ -59,6 +59,7 @@ getRedirectResult(auth).then(async (result) => {
                 dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
             }
 
+            // Criação inicial básica (o restante é feito no onAuthStateChanged)
             await setDoc(userRef, {
                 uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
             }, { merge: true });
@@ -68,7 +69,7 @@ getRedirectResult(auth).then(async (result) => {
 }).catch((error) => console.error("❌ Erro Login:", error));
 
 // ============================================================================
-// 2. PERFIL & CORE
+// 2. PERFIL & CORE (COM PROTOCOLO GUARDIÃO ATIVADO)
 // ============================================================================
 
 window.definirPerfil = async (tipo) => {
@@ -86,15 +87,16 @@ window.alternarPerfil = async () => {
 // --- ENFORCER & MONITOR ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        document.getElementById('auth-container').classList.add('hidden');
+        const authContainer = document.getElementById('auth-container');
+        if(authContainer) authContainer.classList.add('hidden');
+        
         const userRef = doc(db, "usuarios", user.uid);
         
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
+                    // CRIAÇÃO SEGURA DE PERFIL
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    
-                    // CORREÇÃO CRÍTICA: TRATAMENTO DE EMAIL NULO
                     const safeEmail = user.email ? user.email.toLowerCase() : "";
                     
                     const novoPerfil = { 
@@ -110,14 +112,49 @@ onAuthStateChanged(auth, async (user) => {
                         is_provider: false, 
                         created_at: serverTimestamp(), 
                         status: 'ativo',
-                        traffic_source: trafficSource 
+                        traffic_source: trafficSource,
+                        termos_aceitos: false, // NOVO: Flag Jurídica
+                        nome_real: "" 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
                 } else {
                     const data = docSnap.data();
                     
-                    if (data.status === 'banido') console.warn("🚫 BANIDO.");
+                    // 1. CHECAGEM DE BANIMENTO (Prioridade Máxima)
+                    if (data.status === 'banido') {
+                        aplicarRestricoesDeStatus('banido');
+                        if(window.ocultarSplash) window.ocultarSplash();
+                        return; // PARE TUDO.
+                    }
+
+                    // 2. GUARDIÃO DE ONBOARDING (Item 34)
+                    if (!data.termos_aceitos || !data.nome_real) {
+                        console.log("🔒 Usuário retido no Onboarding.");
+                        
+                        // Tenta preencher dados do Google se existirem
+                        const inpName = document.getElementById('inp-onboard-name');
+                        const inpPhone = document.getElementById('inp-onboard-phone');
+                        if(inpName && !inpName.value && data.displayName !== "Usuário") inpName.value = data.displayName;
+                        if(inpPhone && !inpPhone.value && data.phone) inpPhone.value = data.phone;
+
+                        // Exibe Modal
+                        const modal = document.getElementById('modal-onboarding');
+                        if(modal) {
+                            modal.classList.remove('hidden');
+                            modal.classList.add('flex');
+                        }
+                        
+                        // Esconde App
+                        const appCont = document.getElementById('app-container');
+                        if(appCont) appCont.classList.add('hidden');
+                        
+                        // Libera visão
+                        if(window.ocultarSplash) window.ocultarSplash();
+                        return; // PARE TUDO.
+                    }
+
+                    // 3. FLUXO NORMAL
                     if (data.status === 'suspenso' && data.is_online) updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
@@ -126,33 +163,52 @@ onAuthStateChanged(auth, async (user) => {
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
 
-                    if(data.status !== 'banido') {
-                        atualizarInterfaceUsuario(userProfile);
-                        iniciarAppLogado(user); 
-                        if (userProfile.is_provider) {
-                            verificarStatusERadar(user.uid);
-                            if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
-                        }
+                    // Garante que o onboarding suma se já foi feito
+                    const modalOnb = document.getElementById('modal-onboarding');
+                    if(modalOnb) {
+                        modalOnb.classList.add('hidden');
+                        modalOnb.classList.remove('flex');
+                    }
+
+                    atualizarInterfaceUsuario(userProfile);
+                    iniciarAppLogado(user); 
+                    
+                    if (userProfile.is_provider) {
+                        verificarStatusERadar(user.uid);
+                        if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                     
-                    // 🚀 REMOVE O SPLASH SCREEN AQUI (SUCESSO)
+                    // SUCESSO FINAL
                     if(window.ocultarSplash) window.ocultarSplash();
                 }
-            } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); if(window.ocultarSplash) window.ocultarSplash(); }
+            } catch (err) { 
+                console.error("Erro Crítico no Perfil:", err); 
+                // Tenta iniciar mesmo com erro para não travar
+                iniciarAppLogado(user); 
+                if(window.ocultarSplash) window.ocultarSplash(); 
+            }
         });
     } else {
-        document.getElementById('auth-container').classList.remove('hidden');
-        document.getElementById('role-selection').classList.add('hidden');
-        document.getElementById('app-container').classList.add('hidden');
+        // FLUXO DE LOGOUT
+        const authC = document.getElementById('auth-container');
+        const roleC = document.getElementById('role-selection');
+        const appC = document.getElementById('app-container');
+        const onbC = document.getElementById('modal-onboarding');
+
+        if(authC) authC.classList.remove('hidden');
+        if(roleC) roleC.classList.add('hidden');
+        if(appC) appC.classList.add('hidden');
+        if(onbC) onbC.classList.add('hidden');
+        
         removerBloqueiosVisuais();
         
-        // 🚀 REMOVE O SPLASH SCREEN SE NÃO TIVER USER (PARA MOSTRAR LOGIN)
+        // Garante destravamento
         if(window.ocultarSplash) window.ocultarSplash();
     }
 });
 
 // ============================================================================
-// 3. SISTEMA DE SUPORTE (RESTAURADO)
+// 3. SISTEMA DE SUPORTE
 // ============================================================================
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
@@ -237,7 +293,7 @@ window.enviarMensagemSuporte = async () => {
 };
 
 // ============================================================================
-// 4. HELPERS DE INTERFACE & STATUS (RESTAURADOS)
+// 4. HELPERS DE INTERFACE & STATUS (CORRIGIDOS PARA NULL SAFETY)
 // ============================================================================
 
 function aplicarRestricoesDeStatus(status) {
@@ -261,8 +317,12 @@ function aplicarRestricoesDeStatus(status) {
     else if (status === 'suspenso') {
         const warningHtml = `<div id="${avisoID}" class="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-xs font-bold px-4 py-2 text-center shadow-xl flex justify-between items-center"><span class="flex items-center gap-2"><i class="animate-pulse">⚠️</i> SUSPENSO</span><button onclick="window.abrirChatSuporte()" class="bg-white/20 px-2 py-1 rounded text-[10px]">Suporte</button></div>`;
         body.insertAdjacentHTML('beforeend', warningHtml);
-        document.getElementById('header-main')?.classList.add('mt-8');
-    } else { document.getElementById('header-main')?.classList.remove('mt-8'); }
+        const header = document.getElementById('header-main');
+        if(header) header.classList.add('mt-8');
+    } else { 
+        const header = document.getElementById('header-main');
+        if(header) header.classList.remove('mt-8'); 
+    }
 }
 
 function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-overlay")?.remove(); document.getElementById("aviso-suspenso-bar")?.remove(); }
@@ -277,28 +337,56 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
+// ===[ FUNÇÃO BLINDADA: CORREÇÃO DO ERRO CLASSLIST NULL ]===
 function iniciarAppLogado(user) {
-    if(!userProfile || !userProfile.perfil_completo) { document.getElementById('app-container').classList.add('hidden'); document.getElementById('role-selection').classList.remove('hidden'); return; }
-    document.getElementById('role-selection').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden');
+    console.log("🚀 Iniciando App para:", user.email);
+
+    const containerApp = document.getElementById('app-container');
+    const containerRole = document.getElementById('role-selection');
+    const containerAuth = document.getElementById('auth-container');
     const btnPerfil = document.getElementById('btn-trocar-perfil');
+    const tabAdmin = document.getElementById('tab-admin');
+    const tabServicos = document.getElementById('tab-servicos');
+
+    // 1. Verificações de Segurança (Null Safety)
+    if (!userProfile || !userProfile.perfil_completo) {
+        if(containerApp) containerApp.classList.add('hidden');
+        if(containerRole) containerRole.classList.remove('hidden');
+        return;
+    }
+
+    // 2. Libera o App
+    if(containerRole) containerRole.classList.add('hidden');
+    if(containerAuth) containerAuth.classList.add('hidden'); 
+    if(containerApp) containerApp.classList.remove('hidden');
+
+    // 3. Configura Admin
     const userEmail = user.email ? user.email.toLowerCase().trim() : "";
     const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
-    if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
+    if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
 
+    // 4. Configura Perfil (Prestador vs Cliente)
     if (userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
-        document.getElementById('tab-servicos').innerText = "Serviços 🛠️";
+        if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
+        
         ['tab-servicos', 'tab-missoes', 'tab-oportunidades', 'tab-ganhar', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, true));
         toggleDisplay('servicos-cliente', false);
-        setTimeout(() => { document.getElementById('tab-servicos')?.click(); }, 1000);
+        
+        setTimeout(() => { if(tabServicos) tabServicos.click(); }, 1000);
     } else {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
-        document.getElementById('tab-servicos').innerText = "Contratar 🛠️";
+        if(tabServicos) tabServicos.innerText = "Contratar 🛠️";
+        
         ['tab-servicos', 'tab-oportunidades', 'tab-loja', 'tab-ganhar', 'servicos-cliente'].forEach(id => toggleDisplay(id, true));
         ['tab-missoes', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, false));
+        
         setTimeout(() => { 
-            const tab = document.getElementById('tab-servicos'); if(tab) tab.click(); else if(window.carregarServicos) window.carregarServicos();
-            if(window.carregarVagas) window.carregarVagas(); if(window.carregarOportunidades) window.carregarOportunidades();
+            if(tabServicos) tabServicos.click(); 
+            else if(window.carregarServicos) window.carregarServicos();
+            
+            if(window.carregarVagas) window.carregarVagas(); 
+            if(window.carregarOportunidades) window.carregarOportunidades();
         }, 1000); 
     }
 }
