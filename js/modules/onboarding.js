@@ -1,15 +1,28 @@
 import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ATENÇÃO: Se este arquivo for importado no index.html, deve ter type="module"
 
 export async function checkOnboarding(user) {
     if (!user) return;
 
-    const db = window.db;
+    // Acesso ao DB Global (Garante que app.js já rodou)
+    const db = window.db; 
+    if (!db) {
+        console.warn("⚠️ Banco de dados não inicializado. Tentando novamente...");
+        setTimeout(() => checkOnboarding(user), 500);
+        return;
+    }
+
     const modal = document.getElementById('modal-onboarding');
     const form = document.getElementById('form-onboarding');
+    
+    // BLINDAGEM CONTRA NULL POINTER (O erro que travava tudo)
+    if(!modal || !form) {
+        console.warn("⚠️ HTML de Onboarding não encontrado. Pulando verificação.");
+        return; 
+    }
+
     const inpName = document.getElementById('inp-onboard-name');
     const inpPhone = document.getElementById('inp-onboard-phone');
-    
-    if(!modal) return; // Se não colocou o HTML, aborta silenciosamente
 
     try {
         // 1. Verifica no banco se já fez onboarding
@@ -18,10 +31,10 @@ export async function checkOnboarding(user) {
 
         if (snap.exists()) {
             const data = snap.data();
-            
-            // Lógica do Muro: Se já tem termos aceitos E nome, libera.
+            // Lógica do Muro: Se já tem termos aceitos E nome real, libera.
             if (data.terms_accepted && data.nome && data.nome !== "User") {
-                modal.classList.add('hidden'); // Libera o acesso
+                modal.classList.add('hidden'); 
+                modal.style.display = 'none';
                 return;
             }
         }
@@ -29,47 +42,45 @@ export async function checkOnboarding(user) {
         // 2. Se chegou aqui, precisa fazer o Onboarding
         console.log("🛡️ Iniciando Onboarding Obrigatório...");
         modal.classList.remove('hidden');
-        modal.style.display = 'flex'; // Garante flexbox
+        modal.style.display = 'flex'; 
 
-        // Pré-preenche se tiver dados parciais
-        if(user.displayName) inpName.value = user.displayName;
-        if(user.phoneNumber) inpPhone.value = user.phoneNumber;
+        // Pré-preenche se tiver dados parciais do Google Auth
+        if(user.displayName && inpName && !inpName.value) inpName.value = user.displayName;
+        if(user.phoneNumber && inpPhone && !inpPhone.value) inpPhone.value = user.phoneNumber;
 
-        // 3. Listener do Formulário
+        // 3. Listener do Formulário (Agora seguro)
         form.onsubmit = async (e) => {
             e.preventDefault();
             
             const nome = inpName.value.trim();
             const phone = inpPhone.value.trim();
-            const terms = document.getElementById('chk-terms').checked;
+            const chkTerms = document.getElementById('chk-terms');
+            const terms = chkTerms ? chkTerms.checked : false;
 
             if (!terms) return alert("Você precisa aceitar os termos.");
             if (nome.length < 3) return alert("Digite seu nome completo.");
 
             const btn = document.getElementById('btn-onboard-submit');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<div class="loader w-5 h-5 border-white animate-spin"></div> SALVANDO...`;
+            btn.innerHTML = `SALVANDO...`;
             btn.disabled = true;
 
             try {
                 // Salva no Banco
                 await updateDoc(userRef, {
                     nome: nome,
-                    nome_profissional: nome, // Replica para evitar falhas no admin
+                    nome_profissional: nome, 
                     whatsapp: phone,
                     terms_accepted: true,
                     onboarded_at: serverTimestamp(),
-                    status: 'ativo' // Garante que entra como ativo
+                    status: 'ativo'
                 });
-
-                // Atualiza perfil no Auth também (opcional mas bom)
-                /* try { await updateProfile(user, { displayName: nome }); } catch(e){} */
 
                 // Libera o usuário
                 modal.classList.add('hidden');
                 modal.style.display = 'none';
                 
-                // Recarrega a página para atualizar nomes no cabeçalho
+                // Recarrega para aplicar mudanças visuais
                 window.location.reload();
 
             } catch (error) {
