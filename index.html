@@ -481,5 +481,44 @@
 
         loadGlobalAlert();
     </script>
+    <script>
+        const TEXTO_TERMOS = `
+            1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
+            2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
+            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos internos da plataforma, vinculados a serviços intermediados.
+            4. RESPONSABILIDADE: A Atlivio conecta Clientes e Prestadores, não se responsabilizando pela execução dos serviços.
+            5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos a qualquer momento, sem aviso prévio.
+            6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
+            7. A ATLIVIO pode atualizar estes termos a qualquer momento.
+        `;
+
+        const TEXTO_PRIVACIDADE = `
+            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil.
+            2. USO: Seus dados servem para conectar Clientes e Prestadores.
+            3. SEGURANÇA: Utilizamos práticas de segurança com criptografia SSL e banco de dados Google Firebase.
+            4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
+        `;
+
+        window.openTerms = function(type) {
+            const modal = document.getElementById('modal-terms');
+            const title = document.getElementById('term-title');
+            const content = document.getElementById('term-content');
+            
+            if(modal && title && content) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                if(type === 'termos') {
+                    title.innerText = "Termos de Uso";
+                    content.innerText = TEXTO_TERMOS;
+                } else {
+                    title.innerText = "Política de Privacidade";
+                    content.innerText = TEXTO_PRIVACIDADE;
+                }
+            } else {
+                console.error("Erro: Modal de termos não encontrado no HTML.");
+            }
+        };
+    </script>
 </body>
 </html>
