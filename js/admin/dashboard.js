@@ -1,6 +1,7 @@
 import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { renderAssistant } from "./assistant.js"; // 👈 IMPORTA A SECRETÁRIA
 
-// Função para abrir/fechar o detalhe do usuário (Exposta no Window)
+// Função para abrir/fechar o detalhe do usuário
 window.toggleFeed = (uid) => {
     const el = document.getElementById(`feed-details-${uid}`);
     const btn = document.getElementById(`btn-feed-${uid}`);
@@ -18,8 +19,10 @@ window.toggleFeed = (uid) => {
 export async function init() {
     const container = document.getElementById('view-dashboard');
     
-    // 1. ESTRUTURA VISUAL
+    // 1. ESTRUTURA VISUAL (COM ÁREA DA SECRETÁRIA)
     container.innerHTML = `
+        <div id="admin-assistant-widget"></div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="glass-panel p-5 border-l-2 border-blue-500">
                 <p class="text-[10px] uppercase font-bold text-gray-400">USUÁRIOS TOTAIS</p>
@@ -77,8 +80,11 @@ export async function init() {
     try {
         const db = window.db;
 
+        // 🚀 CHAMA A SECRETÁRIA PARA TRABALHAR
+        renderAssistant('admin-assistant-widget');
+
         // =================================================================================
-        // 2. CARREGAMENTO DOS DADOS ESTÁTICOS
+        // CARREGAMENTO DOS DADOS (CÓDIGO ANTERIOR MANTIDO IGUAL)
         // =================================================================================
         const usersSnap = await getDocs(collection(db, "usuarios"));
         const qOnline = query(collection(db, "active_providers"), where("is_online", "==", true));
@@ -88,8 +94,6 @@ export async function init() {
 
         let totalSaldo = 0;
         let trafficStats = {}; 
-
-        // Mapa auxiliar para saber a origem de cada usuário pelo ID
         let userSourceMap = {};
 
         usersSnap.forEach(doc => {
@@ -101,8 +105,6 @@ export async function init() {
             if(source === 'direct') source = 'orgânico';
             
             trafficStats[source] = (trafficStats[source] || 0) + 1;
-            
-            // Guarda a origem para usar no feed
             userSourceMap[doc.id] = source;
         });
 
@@ -133,85 +135,53 @@ export async function init() {
             `;
         });
 
-        // =================================================================================
-        // 3. LIVE FEED AGRUPADO (Sessão por Usuário)
-        // =================================================================================
+        // 3. LIVE FEED
         const feedContainer = document.getElementById('live-feed-list');
         const qFeed = query(collection(db, "system_events"), orderBy("timestamp", "desc"), limit(50));
         
         onSnapshot(qFeed, (snap) => {
             if(snap.empty) return;
-            
-            // Lógica de Agrupamento
             const sessions = {};
             
             snap.forEach(d => {
                 const evt = d.data();
                 const uid = evt.uid || "visitante";
-                
                 if(!sessions[uid]) {
                     sessions[uid] = {
-                        user: evt.user,
-                        uid: uid,
-                        lastTime: evt.timestamp,
-                        actions: [],
-                        source: userSourceMap[uid] || 'visitante'
+                        user: evt.user, uid: uid, lastTime: evt.timestamp,
+                        actions: [], source: userSourceMap[uid] || 'visitante'
                     };
                 }
                 sessions[uid].actions.push(evt);
             });
 
-            // Renderização
             feedContainer.innerHTML = "";
-            
             Object.values(sessions).forEach(sessao => {
                 const timeStr = sessao.lastTime ? sessao.lastTime.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '--:--';
                 const qtdAcoes = sessao.actions.length;
-                
-                // Badge de Origem
                 let badgeClass = "bg-gray-700 text-gray-300";
                 if(sessao.source.includes('zap')) badgeClass = "bg-green-900 text-green-300 border border-green-700";
                 if(sessao.source.includes('teste')) badgeClass = "bg-amber-900 text-amber-300 border border-amber-700";
 
-                // Ícones na lista interna
                 const actionsHtml = sessao.actions.map(a => {
                     let icon = '🖱️';
                     if(a.details.includes('tab-')) icon = '📑';
                     if(a.action === 'Cadastro') icon = '🆕';
-                    
                     const t = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([],{second:'2-digit'}) : '';
-                    return `<div class="flex items-center gap-2 text-[10px] text-gray-400 border-l border-gray-700 pl-2 ml-1">
-                        <span class="font-mono text-gray-600">${t}</span>
-                        <span>${icon} ${a.details.replace('Botão:', '')}</span>
-                    </div>`;
+                    return `<div class="flex items-center gap-2 text-[10px] text-gray-400 border-l border-gray-700 pl-2 ml-1"><span class="font-mono text-gray-600">${t}</span><span>${icon} ${a.details.replace('Botão:', '')}</span></div>`;
                 }).join('');
 
                 feedContainer.innerHTML += `
                     <div class="bg-gray-800 rounded-lg p-3 border border-gray-700 shadow-sm animate-fadeIn">
                         <div class="flex justify-between items-center mb-1">
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono text-xs text-blue-400">${timeStr}</span>
-                                <span class="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${badgeClass}">${sessao.source}</span>
-                            </div>
-                            <button id="btn-feed-${sessao.uid}" onclick="window.toggleFeed('${sessao.uid}')" class="text-[9px] font-bold text-blue-400 hover:text-white uppercase transition bg-black/20 px-2 py-1 rounded">
-                                ▼ EXPANDIR
-                            </button>
+                            <div class="flex items-center gap-2"><span class="font-mono text-xs text-blue-400">${timeStr}</span><span class="text-[9px] px-1.5 py-0.5 rounded uppercase font-bold ${badgeClass}">${sessao.source}</span></div>
+                            <button id="btn-feed-${sessao.uid}" onclick="window.toggleFeed('${sessao.uid}')" class="text-[9px] font-bold text-blue-400 hover:text-white uppercase transition bg-black/20 px-2 py-1 rounded">▼ EXPANDIR</button>
                         </div>
-                        
-                        <div class="flex justify-between items-end">
-                            <p class="text-xs font-bold text-white truncate max-w-[150px]" title="${sessao.user}">${sessao.user.split('@')[0]}</p>
-                            <p class="text-[9px] text-gray-400">${qtdAcoes} ações recentes</p>
-                        </div>
-
-                        <div id="feed-details-${sessao.uid}" class="hidden mt-3 space-y-1 bg-black/20 p-2 rounded">
-                            ${actionsHtml}
-                        </div>
-                    </div>
-                `;
+                        <div class="flex justify-between items-end"><p class="text-xs font-bold text-white truncate max-w-[150px]" title="${sessao.user}">${sessao.user.split('@')[0]}</p><p class="text-[9px] text-gray-400">${qtdAcoes} ações recentes</p></div>
+                        <div id="feed-details-${sessao.uid}" class="hidden mt-3 space-y-1 bg-black/20 p-2 rounded">${actionsHtml}</div>
+                    </div>`;
             });
         });
 
-    } catch(e) { 
-        console.error("Erro Dashboard:", e);
-    }
+    } catch(e) { console.error("Erro Dashboard:", e); }
 }
