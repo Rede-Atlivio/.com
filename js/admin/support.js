@@ -1,230 +1,246 @@
-import { collection, getDocs, doc, updateDoc, query, orderBy, limit, serverTimestamp, getDoc, where, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let currentChatUid = null;
+let unsubscribeList = null;
 let unsubscribeChat = null;
+let currentChatUser = null;
 
 // ============================================================================
-// 1. INICIALIZAÇÃO DO MÓDULO
+// 1. INICIALIZAÇÃO
 // ============================================================================
-export async function init() {
-    // 🔥 CORREÇÃO CRÍTICA: O ID correto no admin.html é 'view-support'
-    const container = document.getElementById('view-support'); 
+export function init() {
+    const container = document.getElementById('view-support');
+    if(!container) return console.error("❌ Container 'view-support' não encontrado.");
     
-    if(!container) return console.error("❌ ERRO: Container 'view-support' não encontrado no HTML.");
-
+    // Layout
     container.innerHTML = `
         <div class="flex h-[calc(100vh-140px)] gap-4 animate-fade">
-            <div class="w-1/3 bg-slate-900 rounded-xl border border-slate-700 flex flex-col overflow-hidden">
-                <div class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center">
-                    <h2 class="text-white font-bold flex items-center gap-2 text-sm">
-                        📩 Tickets <span id="ticket-count" class="bg-blue-600 text-[10px] px-2 rounded-full">0</span>
-                    </h2>
-                    <button onclick="window.loadActiveTickets()" class="text-xs text-gray-400 hover:text-white">↻</button>
+            <div class="w-1/3 glass-panel p-0 flex flex-col overflow-hidden border-r border-gray-700">
+                <div class="p-4 bg-slate-900/50 border-b border-gray-700 flex justify-between items-center">
+                    <h3 class="font-bold text-white flex items-center gap-2">📥 Entrada <span id="ticket-count" class="bg-blue-600 text-[10px] px-2 rounded-full">0</span></h3>
+                    <button onclick="window.marcarTudoLido()" class="text-[10px] bg-slate-700 text-slate-300 px-2 py-1 rounded hover:bg-slate-600 transition border border-slate-600">Marcar tudo lido</button>
                 </div>
-                <div id="ticket-list" class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-                    <p class="text-gray-500 text-center text-xs mt-4 animate-pulse">Carregando...</p>
+                <div id="support-users-list" class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2">
+                    <p class="text-center text-gray-500 text-xs mt-10">Carregando...</p>
                 </div>
             </div>
 
-            <div class="w-2/3 bg-slate-900 rounded-xl border border-slate-700 flex flex-col overflow-hidden relative">
-                <div id="chat-header" class="p-4 border-b border-slate-700 bg-slate-800 flex justify-between items-center hidden">
+            <div class="w-2/3 glass-panel p-0 flex flex-col overflow-hidden relative bg-slate-900/30">
+                <div id="chat-header" class="p-4 border-b border-gray-700 bg-slate-800 hidden flex justify-between items-center">
                     <div>
-                        <h3 id="chat-user-name" class="text-white font-bold text-sm">Selecione um ticket</h3>
-                        <p id="chat-user-email" class="text-gray-400 text-[10px]">...</p>
+                        <h3 class="font-bold text-white" id="chat-user-name">Usuário</h3>
+                        <p class="text-[10px] text-gray-400" id="chat-user-id">ID: ...</p>
                     </div>
-                    <div class="text-[10px] text-gray-500 bg-slate-900 px-2 py-1 rounded border border-slate-700">
-                        UID: <span id="chat-user-uid">...</span>
-                    </div>
+                    <button onclick="window.fecharChat()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
                 </div>
-
-                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-900/50 relative">
+                
+                <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar flex flex-col-reverse bg-slate-900/50 relative">
                     <div class="absolute inset-0 flex flex-col items-center justify-center opacity-30 pointer-events-none">
-                        <i data-lucide="message-square" width="48" height="48" class="mb-2"></i>
+                        <span class="text-4xl mb-2">💬</span>
                         <p class="text-sm font-bold">Central de Suporte</p>
                         <p class="text-xs">Selecione uma conversa ao lado</p>
                     </div>
                 </div>
 
-                <div id="chat-input-area" class="p-4 bg-slate-800 border-t border-slate-700 hidden">
-                    <form onsubmit="event.preventDefault(); window.sendAdminMessage();" class="flex gap-2">
-                        <input type="text" id="admin-msg-input" class="flex-1 bg-slate-900 border border-slate-600 text-white rounded-lg px-4 py-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Escreva sua resposta (o usuário verá no app)...">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-6 rounded-lg font-bold transition">ENVIAR ➤</button>
+                <div id="chat-input-area" class="p-4 bg-slate-800 border-t border-gray-700 hidden">
+                    <form onsubmit="window.enviarRespostaAdmin(event)" class="flex gap-2">
+                        <input type="text" id="admin-reply-input" placeholder="Escreva sua resposta..." class="flex-1 bg-slate-900 border border-slate-600 rounded-full px-4 py-2 text-sm text-white focus:border-blue-500 outline-none">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition transform active:scale-95">➤</button>
                     </form>
                 </div>
             </div>
         </div>
     `;
 
-    // Recarrega ícones (caso use Lucide)
-    if(window.lucide) window.lucide.createIcons();
-    
-    // Torna funções globais para o HTML acessar
-    window.loadActiveTickets = loadActiveTickets;
-    window.openAdminChat = openAdminChat;
-    window.sendAdminMessage = sendAdminMessage;
-
-    console.log("✅ Painel de Suporte Renderizado.");
-    loadActiveTickets();
+    carregarListaUsuarios();
 }
 
 // ============================================================================
-// 2. LISTAR CONVERSAS ATIVAS
+// 2. LISTAGEM DE USUÁRIOS
 // ============================================================================
-async function loadActiveTickets() {
+function carregarListaUsuarios() {
+    const listContainer = document.getElementById('support-users-list');
     const db = window.db;
-    const listEl = document.getElementById('ticket-list');
-    
-    // Busca mensagens recentes para montar a lista de "Inbox"
-    // OBS: Se der erro de índice no console, o Firebase vai gerar um link para criar o índice.
-    const q = query(collection(db, "support_tickets"), orderBy("created_at", "desc"), limit(200));
-    
-    onSnapshot(q, async (snap) => {
-        const uniqueSenders = new Map();
-        
-        snap.forEach(doc => {
-            const data = doc.data();
-            // Agrupa por UID do usuário
-            if(!uniqueSenders.has(data.uid)) {
-                uniqueSenders.set(data.uid, {
-                    uid: data.uid,
-                    lastMsg: data.message,
-                    time: data.created_at,
-                    email: data.user_email,
-                    name: data.user_name,
-                    read: data.read,
-                    isSystem: data.sender === 'system'
+
+    // Pega todas as mensagens para agrupar
+    const q = query(collection(db, "support_tickets"), orderBy("created_at", "desc"));
+
+    unsubscribeList = onSnapshot(q, (snap) => {
+        const usersMap = new Map();
+
+        snap.forEach(d => {
+            const t = d.data();
+            // Agrupa por UID
+            if (!usersMap.has(t.uid)) {
+                usersMap.set(t.uid, {
+                    uid: t.uid,
+                    name: t.user_name || "Usuário",
+                    email: t.user_email,
+                    lastMsg: t.message,
+                    time: t.created_at,
+                    unreadCount: 0,
+                    lastSender: t.sender
                 });
+            }
+            // Conta não lidos (só conta se foi o usuário que mandou)
+            if (t.sender === 'user' && t.read === false) {
+                usersMap.get(t.uid).unreadCount++;
             }
         });
 
-        listEl.innerHTML = "";
-        document.getElementById('ticket-count').innerText = uniqueSenders.size;
+        // Atualiza contador do título
+        let totalPending = 0;
+        usersMap.forEach(u => totalPending += u.unreadCount);
+        const badgeEl = document.getElementById('ticket-count');
+        if(badgeEl) {
+            badgeEl.innerText = totalPending;
+            badgeEl.className = totalPending > 0 ? "bg-red-500 text-[10px] px-2 rounded-full animate-pulse" : "bg-gray-600 text-[10px] px-2 rounded-full";
+        }
 
-        if(uniqueSenders.size === 0) {
-            listEl.innerHTML = `<div class="text-center mt-10"><p class="text-2xl mb-2">📭</p><p class="text-gray-500 text-xs">Caixa de entrada vazia.</p></div>`;
+        listContainer.innerHTML = "";
+        if (usersMap.size === 0) {
+            listContainer.innerHTML = `<p class="text-center text-gray-500 text-xs mt-10">Nenhum chamado.</p>`;
             return;
         }
 
-        // Renderiza a lista
-        for (const [uid, info] of uniqueSenders) {
-            // 🕵️‍♂️ CORREÇÃO DE NOMES (ITEM 26 ADIANTADO)
-            let displayName = info.name || "Desconhecido";
-            
-            // Se o nome for genérico, tenta buscar no perfil do usuário
-            if(displayName === "User" || displayName === "Usuário" || !displayName) {
-                try {
-                    const uSnap = await getDoc(doc(db, "usuarios", uid));
-                    if(uSnap.exists()) {
-                        const uData = uSnap.data();
-                        displayName = uData.nome_profissional || uData.nome || uData.displayName || info.email || "User " + uid.substring(0,4);
-                    }
-                } catch(e) { console.warn("Erro ao buscar nome real:", e); }
-            }
+        usersMap.forEach(u => {
+            const timeStr = u.time ? u.time.toDate().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '';
+            const activeClass = (currentChatUser === u.uid) ? 'bg-blue-900/40 border-blue-500' : 'border-transparent hover:bg-slate-800';
+            const badge = u.unreadCount > 0 ? `<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">${u.unreadCount}</span>` : '';
+            const prefix = u.lastSender === 'admin' ? '↪️ ' : '';
 
-            const activeClass = currentChatUid === uid ? 'bg-blue-900/40 border-blue-500 ring-1 ring-blue-500' : 'bg-slate-800 border-slate-700 hover:bg-slate-700';
-            const timeStr = info.time?.toDate().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) || "";
-            const prefix = info.isSystem ? '<span class="text-yellow-500 mr-1">[SISTEMA]</span>' : '';
-
-            listEl.innerHTML += `
-                <div onclick="window.openAdminChat('${uid}', '${displayName}', '${info.email || ''}')" class="cursor-pointer p-3 rounded-lg border ${activeClass} transition relative group">
-                    <div class="flex justify-between items-start mb-1">
-                        <h4 class="text-white font-bold text-xs truncate w-2/3 flex items-center gap-1">
-                            ${displayName}
-                        </h4>
-                        <span class="text-[9px] text-gray-500">${timeStr}</span>
+            listContainer.innerHTML += `
+                <div onclick="window.abrirChatAdmin('${u.uid}', '${u.name}', '${u.email}')" class="p-3 rounded-lg border-l-4 ${activeClass} cursor-pointer transition flex justify-between items-start mb-1 bg-slate-900/50">
+                    <div class="overflow-hidden w-full">
+                        <div class="flex justify-between items-center w-full mb-1">
+                            <h4 class="font-bold text-gray-200 text-xs truncate max-w-[70%]">${u.name}</h4>
+                            ${badge}
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <p class="text-[10px] text-gray-400 truncate w-[70%]">${prefix}${u.lastMsg}</p>
+                            <span class="text-[8px] text-gray-600 whitespace-nowrap">${timeStr}</span>
+                        </div>
                     </div>
-                    <p class="text-gray-400 text-[10px] truncate group-hover:text-gray-300">${prefix}${info.lastMsg}</p>
                 </div>
             `;
-        }
+        });
     });
 }
 
 // ============================================================================
-// 3. ABRIR CHAT ESPECÍFICO
+// 3. CHAT E LÓGICA DE LEITURA (A MÁGICA DA SECRETÁRIA)
 // ============================================================================
-async function openAdminChat(uid, name, email) {
-    currentChatUid = uid;
+window.abrirChatAdmin = async (uid, name, email) => {
+    currentChatUser = uid;
     
-    // UI Update
+    // UI
     document.getElementById('chat-header').classList.remove('hidden');
     document.getElementById('chat-input-area').classList.remove('hidden');
     document.getElementById('chat-user-name').innerText = name;
-    document.getElementById('chat-user-email').innerText = email;
-    document.getElementById('chat-user-uid').innerText = uid;
-    
-    // Remove "vazio"
-    const messagesDiv = document.getElementById('chat-messages');
-    messagesDiv.innerHTML = `<div class="flex justify-center pt-10"><div class="loader border-t-blue-500 w-6 h-6 rounded-full animate-spin"></div></div>`;
+    document.getElementById('chat-user-id').innerText = email || uid;
+    carregarListaUsuarios(); // Atualiza visual da seleção
 
-    // Listener de Mensagens
+    const container = document.getElementById('chat-messages');
     const db = window.db;
-    const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "asc"));
+    
+    // 🔥 IMPORTANTE: Busca mensagens deste usuário
+    const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "desc"));
 
     if(unsubscribeChat) unsubscribeChat();
 
     unsubscribeChat = onSnapshot(q, (snap) => {
-        messagesDiv.innerHTML = "";
+        container.innerHTML = "";
         
-        if(snap.empty) {
-            messagesDiv.innerHTML = `<p class="text-center text-gray-500 text-xs mt-10">Histórico vazio.</p>`;
-            return;
-        }
+        // 🧼 LÓGICA DE LIMPEZA: Marca mensagens como lidas
+        const batch = writeBatch(db);
+        let needsCommit = false;
 
-        snap.forEach(docSnap => {
-            const msg = docSnap.data();
-            const isAdmin = msg.sender === 'admin';
-            const isSystem = msg.sender === 'system' || msg.system_msg; // Mensagens automáticas
+        snap.forEach(d => {
+            const msg = d.data();
+            const isMe = msg.sender === 'system' || msg.sender === 'admin';
             
-            let html = '';
+            // Visual
+            container.innerHTML += `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'} mb-3 animate-fadeIn w-full">
+                    <div class="${isMe ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-200'} max-w-[80%] rounded-xl px-4 py-2 text-xs shadow-md break-words">
+                        <p>${msg.message}</p>
+                        <p class="text-[9px] opacity-50 text-right mt-1">${msg.created_at?.toDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) || '...'}</p>
+                    </div>
+                </div>
+            `;
 
-            if (isSystem) {
-                html = `
-                    <div class="flex justify-center my-4 animate-fade">
-                        <span class="bg-slate-800 text-gray-400 text-[9px] font-bold px-3 py-1 rounded-full border border-slate-700 uppercase tracking-wider">
-                            🤖 ${msg.message}
-                        </span>
-                    </div>
-                `;
-            } else {
-                html = `
-                    <div class="flex ${isAdmin ? 'justify-end' : 'justify-start'} animate-fade">
-                        <div class="${isAdmin ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-slate-700 text-gray-200 rounded-tl-none'} max-w-[80%] rounded-xl px-4 py-2 text-xs shadow-md border ${isAdmin ? 'border-blue-500' : 'border-slate-600'}">
-                            <p>${msg.message}</p>
-                            <p class="text-[9px] ${isAdmin ? 'text-blue-200' : 'text-gray-500'} text-right mt-1">
-                                ${msg.created_at?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '...'}
-                            </p>
-                        </div>
-                    </div>
-                `;
+            // ✅ Se for mensagem do usuário e ainda estiver "read: false", marca como lida
+            if (msg.sender === 'user' && msg.read === false) {
+                const ref = doc(db, "support_tickets", d.id);
+                batch.update(ref, { read: true });
+                needsCommit = true;
             }
-            messagesDiv.innerHTML += html;
         });
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Envia atualização pro banco (A Secretária vai ver isso e ficar feliz)
+        if (needsCommit) {
+            batch.commit().then(() => console.log("🧹 Tickets marcados como lidos. Secretária atualizada."));
+        }
     });
-}
+};
 
 // ============================================================================
-// 4. ENVIAR RESPOSTA
+// 4. AÇÕES (ENVIAR E LIMPAR TUDO)
 // ============================================================================
-async function sendAdminMessage() {
-    const input = document.getElementById('admin-msg-input');
+window.enviarRespostaAdmin = async (e) => {
+    e.preventDefault();
+    const input = document.getElementById('admin-reply-input');
     const txt = input.value.trim();
-    if(!txt || !currentChatUid) return;
+    if(!txt || !currentChatUser) return;
 
     input.value = "";
-    input.focus();
-    
     try {
+        // Salva Ticket
         await addDoc(collection(window.db, "support_tickets"), {
-            uid: currentChatUid,
+            uid: currentChatUser,
             sender: 'admin',
             message: txt,
             created_at: serverTimestamp(),
-            read: false
+            read: true // Admin já manda lido
         });
-        // O snapshot já atualiza a tela
-    } catch(e) {
-        alert("Erro ao enviar: " + e.message);
-    }
-}
+        
+        // 🔔 Envia Notificação para o Usuário (Para ele saber que responderam)
+        await addDoc(collection(window.db, "notifications"), {
+            uid: currentChatUser,
+            message: "💬 Suporte respondeu: " + txt,
+            type: 'info',
+            read: false,
+            created_at: serverTimestamp()
+        });
+
+    } catch(err) { alert("Erro ao enviar."); }
+};
+
+window.marcarTudoLido = async () => {
+    if(!confirm("Tem certeza? Isso vai zerar o contador da Secretária.")) return;
+    const db = window.db;
+    // Busca todas as mensagens não lidas de usuários
+    const q = query(collection(db, "support_tickets"), where("read", "==", false), where("sender", "==", "user"));
+    const snap = await getDocs(q);
+    
+    if(snap.empty) return alert("Nada para marcar.");
+
+    const batch = writeBatch(db);
+    snap.forEach(d => batch.update(d.ref, { read: true }));
+    
+    await batch.commit();
+    alert("✅ Tudo limpo!");
+};
+
+window.fecharChat = () => {
+    currentChatUser = null;
+    if(unsubscribeChat) unsubscribeChat();
+    document.getElementById('chat-header').classList.add('hidden');
+    document.getElementById('chat-input-area').classList.add('hidden');
+    document.getElementById('chat-messages').innerHTML = `
+        <div class="absolute inset-0 flex flex-col items-center justify-center opacity-30 pointer-events-none">
+            <span class="text-4xl mb-2">💬</span>
+            <p class="text-sm font-bold">Central de Suporte</p>
+            <p class="text-xs">Selecione uma conversa ao lado</p>
+        </div>`;
+    carregarListaUsuarios();
+};
