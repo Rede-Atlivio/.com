@@ -29,16 +29,18 @@
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         
-        /* CORREÇÃO DO TEXTO INVISÍVEL */
-        input, textarea, select { color: #111827 !important; }
+        /* ✅ CORREÇÃO DE CORES DOS CAMPOS */
+        /* Estado Normal: Texto Branco (para combinar com fundo escuro) */
+        #modal-onboarding input { color: white !important; }
 
-        /* CORREÇÃO DO AUTO-PREENCHIMENTO (Fundo Escuro forçado) */
+        /* Estado Auto-preenchimento: Fundo Claro + Texto Escuro */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
         input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; /* Cor slate-900 */
-            -webkit-text-fill-color: white !important;
+            -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important; /* Fundo Cinza Claro */
+            -webkit-text-fill-color: #0f172a !important; /* Texto Escuro */
+            font-weight: bold !important;
             transition: background-color 5000s ease-in-out 0s;
         }
     </style>
@@ -670,8 +672,10 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
             
             <div class="text-center mb-6">
-                <h2 class="text-2xl font-black text-white mb-1">Bem-vindo! 👋</h2>
-                <p class="text-gray-400 text-sm">Para começar, precisamos te conhecer melhor.</p>
+                <h2 class="text-2xl font-black text-white mb-2">Bem-vindo à ATLIVIO 👋</h2>
+                <p class="text-gray-400 text-xs leading-relaxed">
+                    O primeiro Marketplace Híbrido do Mundo, uma plataforma que conecta serviços reais a clientes reais.
+                </p>
             </div>
 
             <form id="form-onboarding" class="space-y-4">
@@ -688,12 +692,12 @@
                 <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
                     <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
                     <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
-                        Declaro que li e aceito os <a href="#" class="text-blue-400 underline">Termos de Uso</a> e a <a href="#" class="text-blue-400 underline">Política de Privacidade</a> da Atlivio.
+                        Declaro que li e aceito os <a href="#" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a> e a <a href="#" class="text-blue-400 underline hover:text-blue-300">Política de Privacidade</a> da Atlivio.
                     </label>
                 </div>
 
                 <button type="submit" id="btn-onboard-submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2">
-                    ACESSAR A PLATAFORMA 🚀
+                    👉 Entrar gratuitamente
                 </button>
             </form>
         </div>
@@ -718,18 +722,18 @@
     </div>
 
     <script>
-        // TEXTOS JURÍDICOS PADRÃO (MVP)
+        // TEXTOS JURÍDICOS ATUALIZADOS (V2)
         const TEXTO_TERMOS = `
             1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
             2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
-            3. PAGAMENTOS: O saldo na carteira é virtual até o saque.
-            4. RESPONSABILIDADE: A Atlivio não se responsabiliza pela qualidade do serviço prestado, sendo apenas a conexão.
+            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos referentes aos serviços realizados e se tornam disponíveis para saque conforme as regras da plataforma.
+            4. RESPONSABILIDADE: A Atlivio atua como plataforma intermediadora, conectando Clientes e Prestadores, não se responsabilizando diretamente pela execução dos serviços, mas podendo intervir em casos de descumprimento das regras da plataforma.
             5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos sem aviso prévio.
             6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
         `;
 
         const TEXTO_PRIVACIDADE = `
-            1. COLETA: Coletamos Nome, WhatsApp e Email para identificar seu perfil.
+            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil na plataforma.
             2. USO: Seus dados servem para conectar Clientes e Prestadores.
             3. SEGURANÇA: Utilizamos criptografia SSL e banco de dados Google Firebase.
             4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
@@ -755,7 +759,6 @@
 
         // Ligar os cliques dos links
         document.addEventListener("DOMContentLoaded", () => {
-            // Encontra os links dentro do modal de onboarding
             const links = document.querySelectorAll('#form-onboarding a');
             if(links.length >= 2) {
                 links[0].href = "javascript:openTerms('termos')";
