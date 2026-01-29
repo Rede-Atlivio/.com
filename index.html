@@ -37,19 +37,23 @@
         input::placeholder { color: #94a3b8 !important; }
         input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; -webkit-text-fill-color: white !important; font-weight: bold !important; }
         
-        /* GARANTIA DE VISIBILIDADE DOS MODAIS */
-        #auth-container, #modal-onboarding { display: none; } /* Controlado via JS */
+        /* GARANTIA DE VISIBILIDADE DOS MODAIS - Controlado via JS */
+        #auth-container, #modal-onboarding { display: none; } 
     </style>
 
     <script>
+        // 🛡️ PREVENÇÃO DE CRASH (Define funções vazias antes do módulo carregar)
+        window.loadGlobalAlert = function() {}; 
+        window.enviarSMSLogin = function() {}; 
+        window.openTerms = function() {};
+
         // --- LÓGICA DE NAVEGAÇÃO ENTRE TELAS ---
-        
         window.irParaLogin = () => {
             document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('modal-onboarding').style.display = 'none'; // Garante que fecha o cadastro
+            document.getElementById('modal-onboarding').style.display = 'none'; 
             const login = document.getElementById('auth-container');
             login.classList.remove('hidden');
-            login.style.display = 'flex'; // Centraliza flex
+            login.style.display = 'flex'; 
         };
 
         window.irParaCadastro = () => {
