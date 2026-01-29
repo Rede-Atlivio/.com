@@ -308,7 +308,15 @@
         </main>
     </div>
 
-    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
+    <div <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
+                <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
+                <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
+                    Declaro que li e aceito os 
+                    <a href="#" onclick="window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300 font-bold">Termos de Uso</a> 
+                    e a 
+                    <a href="#" onclick="window.openTerms('privacidade')" class="text-blue-400 underline hover:text-blue-300 font-bold">Política de Privacidade</a>.
+                </label>
+            </div>
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
             <h2 class="text-2xl font-black text-white mb-2 text-center">Bem-vindo à ATLIVIO 👋</h2>
             <form id="form-onboarding" class="space-y-4 mt-6">
