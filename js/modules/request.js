@@ -49,35 +49,61 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
             elInputVal.style.fontWeight = "bold";
             elInputVal.classList.remove('text-gray-500');
             elInputVal.classList.add('text-black');
-            // Gatilho de validação ao digitar
             elInputVal.setAttribute("oninput", "window.validarOferta(this.value)");
         }
 
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
 
-        // Reseta botão
+        // 🧠 INJEÇÃO DE BOTÕES INTELIGENTES (CORREÇÃO PEDIDA)
+        injetarBotoesOferta(modal);
+
+        // Reseta botão de envio
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
-            btn.innerText = "ENVIAR SOLICITAÇÃO 🚀"; // <-- TEXTO CORRIGIDO AQUI
+            btn.innerText = "ENVIAR SOLICITAÇÃO 🚀"; 
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.onclick = enviarPropostaAgora; 
         } 
     }
 }
 
+// Função auxiliar para corrigir a UI dos botões de desconto/acréscimo
+function injetarBotoesOferta(modal) {
+    // Tenta encontrar o container onde ficam os botões de porcentagem
+    // Geralmente é uma div com grid logo acima do input "Outro Valor"
+    // Vamos procurar pela classe 'grid-cols-3' ou criar uma identificação
+    const containers = modal.querySelectorAll('.grid'); 
+    let targetContainer = null;
+
+    // Procura o container certo (aquele que tem botões de oferta)
+    containers.forEach(div => {
+        if(div.innerHTML.includes('%')) targetContainer = div;
+    });
+
+    if(targetContainer) {
+        // Substitui por botões lógicos (-10% a +20%)
+        targetContainer.className = "grid grid-cols-4 gap-2 mb-3"; // Ajusta para 4 colunas
+        targetContainer.innerHTML = `
+            <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-10%</button>
+            <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-5%</button>
+            <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+10%</button>
+            <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+20%</button>
+        `;
+    }
+}
+
 // ============================================================================
-// 2. CÁLCULOS E TRAVAS (CORRIGIDO)
+// 2. CÁLCULOS E TRAVAS (MATEMÁTICA CORRIGIDA)
 // ============================================================================
 export function selecionarDesconto(percent) {
-    // Garante que o percentual venha como número (ex: -0.05)
     const p = parseFloat(percent);
-    
     if(!mem_BasePrice) mem_BasePrice = parseFloat(document.getElementById('service-base-price')?.value || 0);
     
-    // Lógica Correta: Base * (1 + percentual_negativo)
-    // Ex: 100 * (1 + (-0.05)) = 100 * 0.95 = 95.
-    mem_CurrentOffer = mem_BasePrice * (1 + p);
+    // Cálculo Universal: Base + (Base * Porcentagem)
+    // Se p = -0.10 -> 100 + (-10) = 90
+    // Se p = +0.10 -> 100 + (10) = 110
+    mem_CurrentOffer = mem_BasePrice + (mem_BasePrice * p);
     
     atualizarVisualModal();
 }
@@ -109,8 +135,9 @@ export function validarOferta(val) {
         if(btn) btn.disabled = true;
         btn.classList.add('opacity-50');
         if(aviso) {
-            aviso.innerText = "Valor fora do limite";
+            aviso.innerText = "Valor fora do limite (-20% a +30%)";
             aviso.style.color = "red";
+            aviso.classList.add('text-xs');
         }
     } else {
         input.style.borderColor = "#e5e7eb";
@@ -120,6 +147,7 @@ export function validarOferta(val) {
         if(aviso) {
             aviso.innerText = `R$ ${offer.toFixed(2)}`;
             aviso.style.color = "black";
+            aviso.classList.remove('text-xs');
         }
         mem_CurrentOffer = offer;
     }
@@ -135,7 +163,6 @@ function atualizarVisualModal() {
         elTotal.style.color = "black";
     }
     
-    // Revalida para garantir que a porcentagem não quebrou a regra
     validarOferta(mem_CurrentOffer);
 }
 
@@ -154,7 +181,7 @@ export async function enviarPropostaAgora() {
     const min = mem_BasePrice * 0.80;
     const max = mem_BasePrice * 1.30;
     if (mem_CurrentOffer < min || mem_CurrentOffer > max) {
-        return alert(`O valor deve estar entre R$ ${min.toFixed(2)} e R$ ${max.toFixed(2)}`);
+        return alert(`Valor inválido! Limite: R$ ${min.toFixed(2)} a R$ ${max.toFixed(2)}`);
     }
 
     const btn = document.getElementById('btn-confirm-req'); 
@@ -191,10 +218,9 @@ export async function enviarPropostaAgora() {
             last_message: "Nova solicitação."
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAguarde o prestador aceitar na aba 'Em Andamento'.");
+        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAguarde o aceite do prestador na aba 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
         
-        // Redireciona para lista
         if(window.carregarPedidosAtivos) {
             const tabChat = document.getElementById('tab-chat');
             if(tabChat) tabChat.click();
@@ -209,7 +235,7 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 4. RADAR E ACEITE (TEXTO CORRIGIDO)
+// 4. RADAR E ACEITE (TEXTO CORRIGIDO: ACEITAR SOLICITAÇÃO)
 // ============================================================================
 function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
@@ -239,7 +265,7 @@ function mostrarModalRadar(pedido) {
     const taxa = valor * 0.20;
     const lucro = valor - taxa;
 
-    // AQUI ESTÁ A CORREÇÃO DE TEXTO DO RADAR
+    // ATENÇÃO: CORREÇÃO DO TEXTO DO BOTÃO AQUI EMBAIXO 👇
     modalContainer.innerHTML = `
         <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
             <div class="bg-slate-800 p-4 text-center border-b border-slate-700">
@@ -292,10 +318,10 @@ export async function recusarPedidoReq(orderId) {
 }
 
 export async function carregarPedidosEmAndamento() {
-    // Mantido para carregamento passivo se necessário
+    // Mantido para compatibilidade
 }
 
-// --- EXPORTAÇÃO GLOBAL (VITAL PARA OS BOTÕES HTML) ---
+// EXPORTAÇÃO GLOBAL
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
