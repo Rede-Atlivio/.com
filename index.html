@@ -654,5 +654,42 @@
 
         loadGlobalAlert();
     </script>
+   <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
+    <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-black text-white mb-1">Bem-vindo! 👋</h2>
+            <p class="text-gray-400 text-sm">Para começar, precisamos te conhecer melhor.</p>
+        </div>
+
+        <form id="form-onboarding" class="space-y-4">
+            <div>
+                <label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Como devemos te chamar?</label>
+                <input type="text" id="inp-onboard-name" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none transition" placeholder="Seu Nome e Sobrenome" required minlength="3">
+            </div>
+
+            <div>
+                <label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Seu WhatsApp</label>
+                <input type="tel" id="inp-onboard-phone" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono focus:border-green-500 focus:outline-none transition" placeholder="(00) 00000-0000" required>
+            </div>
+
+            <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
+                <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
+                <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
+                    Declaro que li e aceito os <a href="#" class="text-blue-400 underline">Termos de Uso</a> e a <a href="#" class="text-blue-400 underline">Política de Privacidade</a> da Atlivio.
+                </label>
+            </div>
+
+            <button type="submit" id="btn-onboard-submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2">
+                ACESSAR A PLATAFORMA 🚀
+            </button>
+        </form>
+    </div>
+    
+    <p class="text-center text-gray-600 text-[10px] mt-6 max-w-xs">
+        Seus dados estão protegidos. Ambiente seguro SSL.
+    </p>
+</div> 
 </body>
 </html>
