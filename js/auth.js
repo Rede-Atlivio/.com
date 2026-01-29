@@ -93,11 +93,23 @@ onAuthStateChanged(auth, async (user) => {
             try {
                 if(!docSnap.exists()) {
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
+                    
+                    // CORREÇÃO CRÍTICA: TRATAMENTO DE EMAIL NULO
+                    const safeEmail = user.email ? user.email.toLowerCase() : "";
+                    
                     const novoPerfil = { 
-                        email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
-                        photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
-                        role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
-                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: serverTimestamp(), status: 'ativo',
+                        email: safeEmail, 
+                        phone: user.phoneNumber, 
+                        displayName: user.displayName || "Usuário", 
+                        photoURL: user.photoURL, 
+                        tenant_id: DEFAULT_TENANT, 
+                        perfil_completo: false, 
+                        role: (safeEmail && ADMIN_EMAILS.includes(safeEmail)) ? 'admin' : 'user', 
+                        wallet_balance: 0.00, 
+                        saldo: 0.00, 
+                        is_provider: false, 
+                        created_at: serverTimestamp(), 
+                        status: 'ativo',
                         traffic_source: trafficSource 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
