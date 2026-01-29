@@ -39,6 +39,8 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         const elTotal = document.getElementById('calc-total-reserva');
         
         if(elId) elId.value = providerId || "";
+        
+        // GARANTE QUE O PREÇO BASE ESTÁ NO HTML
         if(elPrice) elPrice.value = price || "0";
         
         // 🎨 VISUAL DO INPUT
@@ -54,10 +56,10 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
 
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
 
-        // 🧠 INJEÇÃO DE BOTÕES INTELIGENTES (CORREÇÃO PEDIDA)
+        // 🧠 INJEÇÃO DE BOTÕES INTELIGENTES
         injetarBotoesOferta(modal);
 
-        // Reseta botão de envio
+        // Reseta botão
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
@@ -68,22 +70,18 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
     }
 }
 
-// Função auxiliar para corrigir a UI dos botões de desconto/acréscimo
+// Injeta os botões corretos (-10% a +20%)
 function injetarBotoesOferta(modal) {
-    // Tenta encontrar o container onde ficam os botões de porcentagem
-    // Geralmente é uma div com grid logo acima do input "Outro Valor"
-    // Vamos procurar pela classe 'grid-cols-3' ou criar uma identificação
     const containers = modal.querySelectorAll('.grid'); 
     let targetContainer = null;
 
-    // Procura o container certo (aquele que tem botões de oferta)
+    // Procura div que tem botões de %
     containers.forEach(div => {
         if(div.innerHTML.includes('%')) targetContainer = div;
     });
 
     if(targetContainer) {
-        // Substitui por botões lógicos (-10% a +20%)
-        targetContainer.className = "grid grid-cols-4 gap-2 mb-3"; // Ajusta para 4 colunas
+        targetContainer.className = "grid grid-cols-4 gap-2 mb-3"; 
         targetContainer.innerHTML = `
             <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-10%</button>
             <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-5%</button>
@@ -94,16 +92,29 @@ function injetarBotoesOferta(modal) {
 }
 
 // ============================================================================
-// 2. CÁLCULOS E TRAVAS (MATEMÁTICA CORRIGIDA)
+// 2. CÁLCULOS E TRAVAS (AGORA COM LEITURA FORÇADA)
 // ============================================================================
 export function selecionarDesconto(percent) {
     const p = parseFloat(percent);
-    if(!mem_BasePrice) mem_BasePrice = parseFloat(document.getElementById('service-base-price')?.value || 0);
     
-    // Cálculo Universal: Base + (Base * Porcentagem)
-    // Se p = -0.10 -> 100 + (-10) = 90
-    // Se p = +0.10 -> 100 + (10) = 110
-    mem_CurrentOffer = mem_BasePrice + (mem_BasePrice * p);
+    // 1. TENTA LER O PREÇO BASE DO HTML (Prioridade Máxima)
+    const elPrice = document.getElementById('service-base-price');
+    let base = 0;
+
+    if(elPrice && elPrice.value) {
+        base = parseFloat(elPrice.value);
+        mem_BasePrice = base; // Atualiza memória
+    } else {
+        base = mem_BasePrice; // Fallback para memória
+    }
+
+    if(base === 0) {
+        console.warn("⚠️ Preço base é 0. O cálculo resultará em 0.");
+    }
+    
+    // 2. CÁLCULO: Base + (Base * Porcentagem)
+    // Ex: 100 + (100 * 0.10) = 110
+    mem_CurrentOffer = base + (base * p);
     
     atualizarVisualModal();
 }
@@ -121,7 +132,12 @@ export function validarOferta(val) {
     let offer = parseFloat(val);
     if(isNaN(offer)) return;
 
-    // TRAVA: -20% a +30%
+    // Garante que temos um preço base para comparar
+    if(mem_BasePrice === 0) {
+        const elPrice = document.getElementById('service-base-price');
+        if(elPrice) mem_BasePrice = parseFloat(elPrice.value);
+    }
+
     const minAllowed = mem_BasePrice * 0.80; 
     const maxAllowed = mem_BasePrice * 1.30; 
     
@@ -130,24 +146,30 @@ export function validarOferta(val) {
     const aviso = document.getElementById('calc-total-reserva');
 
     if (offer < minAllowed || offer > maxAllowed) {
-        input.style.borderColor = "red";
-        input.style.color = "red";
-        if(btn) btn.disabled = true;
-        btn.classList.add('opacity-50');
+        if(input) {
+            input.style.borderColor = "red";
+            input.style.color = "red";
+        }
+        if(btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+        }
         if(aviso) {
-            aviso.innerText = "Valor fora do limite (-20% a +30%)";
+            aviso.innerText = "Valor fora do limite";
             aviso.style.color = "red";
-            aviso.classList.add('text-xs');
         }
     } else {
-        input.style.borderColor = "#e5e7eb";
-        input.style.color = "black";
-        if(btn) btn.disabled = false;
-        btn.classList.remove('opacity-50');
+        if(input) {
+            input.style.borderColor = "#e5e7eb";
+            input.style.color = "black";
+        }
+        if(btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+        }
         if(aviso) {
             aviso.innerText = `R$ ${offer.toFixed(2)}`;
             aviso.style.color = "black";
-            aviso.classList.remove('text-xs');
         }
         mem_CurrentOffer = offer;
     }
@@ -181,14 +203,11 @@ export async function enviarPropostaAgora() {
     const min = mem_BasePrice * 0.80;
     const max = mem_BasePrice * 1.30;
     if (mem_CurrentOffer < min || mem_CurrentOffer > max) {
-        return alert(`Valor inválido! Limite: R$ ${min.toFixed(2)} a R$ ${max.toFixed(2)}`);
+        return alert(`Valor inválido!`);
     }
 
     const btn = document.getElementById('btn-confirm-req'); 
-    if(btn) { 
-        btn.innerText = "⏳ ENVIANDO..."; 
-        btn.disabled = true; 
-    }
+    if(btn) { btn.innerText = "⏳ ENVIANDO..."; btn.disabled = true; }
 
     try {
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
@@ -218,7 +237,7 @@ export async function enviarPropostaAgora() {
             last_message: "Nova solicitação."
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAguarde o aceite do prestador na aba 'Em Andamento'.");
+        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAcompanhe em 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
         
         if(window.carregarPedidosAtivos) {
@@ -235,7 +254,7 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 4. RADAR E ACEITE (TEXTO CORRIGIDO: ACEITAR SOLICITAÇÃO)
+// 4. RADAR
 // ============================================================================
 function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
@@ -265,7 +284,6 @@ function mostrarModalRadar(pedido) {
     const taxa = valor * 0.20;
     const lucro = valor - taxa;
 
-    // ATENÇÃO: CORREÇÃO DO TEXTO DO BOTÃO AQUI EMBAIXO 👇
     modalContainer.innerHTML = `
         <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
             <div class="bg-slate-800 p-4 text-center border-b border-slate-700">
@@ -313,12 +331,12 @@ export async function aceitarPedidoRadar(orderId) {
 
 export async function recusarPedidoReq(orderId) {
     fecharModalRadar();
-    if(!confirm("Recusar solicitação?")) return;
+    if(!confirm("Recusar?")) return;
     await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
 }
 
 export async function carregarPedidosEmAndamento() {
-    // Mantido para compatibilidade
+    // Mantido
 }
 
 // EXPORTAÇÃO GLOBAL
