@@ -228,7 +228,7 @@
             <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
             <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido</p>
             
-            <div class="space-y-4">
+            <form id="form-onboarding" class="space-y-4">
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
                     <input type="text" id="inp-onboard-name" 
@@ -243,23 +243,39 @@
                            placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" required>
                 </div>
 
-                <button onclick="window.enviarSMSLogin('cadastro')" id="btn-onboard-sms" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">
-                    RECEBER CÓDIGO SMS 📲
-                </button>
-
-                <div class="flex items-center justify-center gap-2 opacity-50 py-2">
-                    <div class="h-px bg-slate-600 w-full"></div>
-                    <span class="text-[10px] text-gray-400 whitespace-nowrap">ou continue com</span>
-                    <div class="h-px bg-slate-600 w-full"></div>
+                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
+                    <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
+                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
+                        Li e aceito os <a href="#" onclick="openTerms('termos')" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a>.
+                    </label>
                 </div>
 
-                <button onclick="alert('🚧 EM MANUTENÇÃO\n\nO login com Google está passando por melhorias.\n\nPor favor, utilize a opção RECEBER CÓDIGO SMS logo acima. É mais rápido e seguro!')" class="w-full bg-white text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition border border-gray-200">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Google
+                <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">
+                    COMEÇAR 🚀
                 </button>
-            </div>
+            </form>
 
             <div class="mt-6 text-center">
                 <p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4 fixed inset-0 z-[58]">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
+            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
+            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">💎</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços.</div>
+                </button>
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar.</div>
+                </button>
             </div>
         </div>
     </div>
