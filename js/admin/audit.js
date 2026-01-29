@@ -60,10 +60,7 @@ function renderizarInterface() {
                 </div>
                 
                 <div id="audit-bulk-toolbar" class="hidden flex gap-2 animate-fade">
-                    <button onclick="window.audit_executarAcaoMassa()" id="btn-audit-action" class="text-xs bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2">
-                        🗑️ MOVER PARA LIXEIRA
-                    </button>
-                </div>
+                    </div>
             </div>
             
             <div id="audit-recent-list" class="divide-y divide-slate-800">
@@ -81,25 +78,15 @@ window.audit_alternarModo = (mode) => {
     selectedAuditItems.clear();
     atualizarToolbarAudit();
     
-    // Atualiza botões
     const btnIn = document.getElementById('btn-audit-inbox');
     const btnTr = document.getElementById('btn-audit-trash');
-    const btnAction = document.getElementById('btn-audit-action');
     
     if(mode === 'inbox') {
         btnIn.className = "px-4 py-2 rounded text-xs font-bold bg-indigo-600 text-white transition shadow-lg";
         btnTr.className = "px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition";
-        if(btnAction) {
-            btnAction.className = "text-xs bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2";
-            btnAction.innerHTML = "🗑️ MOVER PARA LIXEIRA";
-        }
     } else {
         btnIn.className = "px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition";
         btnTr.className = "px-4 py-2 rounded text-xs font-bold bg-red-600 text-white transition shadow-lg";
-        if(btnAction) {
-            btnAction.className = "text-xs bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2";
-            btnAction.innerHTML = "♻️ RESTAURAR";
-        }
     }
     
     carregarRecentes();
@@ -127,58 +114,79 @@ function atualizarToolbarAudit() {
     
     if(badge) badge.innerText = selectedAuditItems.size;
     
-    if(selectedAuditItems.size > 0) toolbar.classList.remove('hidden');
-    else toolbar.classList.add('hidden');
+    if(selectedAuditItems.size > 0) {
+        toolbar.classList.remove('hidden');
+        
+        // AQUI ESTÁ A LÓGICA DOS BOTÕES
+        if (auditViewMode === 'inbox') {
+            toolbar.innerHTML = `
+                <button onclick="window.audit_executarAcaoMassa('soft_delete')" class="text-xs bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2">
+                    🗑️ MOVER PARA LIXEIRA
+                </button>
+            `;
+        } else {
+            toolbar.innerHTML = `
+                <button onclick="window.audit_executarAcaoMassa('restore')" class="text-xs bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2">
+                    ♻️ RESTAURAR
+                </button>
+                <button onclick="window.audit_executarAcaoMassa('hard_delete')" class="text-xs bg-red-900 hover:bg-red-800 text-red-200 border border-red-700 px-4 py-1.5 rounded font-bold uppercase transition shadow-lg flex items-center gap-2">
+                    🔥 EXCLUIR DE VEZ
+                </button>
+            `;
+        }
+    } else {
+        toolbar.classList.add('hidden');
+    }
 }
 
-window.audit_executarAcaoMassa = async () => {
+window.audit_executarAcaoMassa = async (acao) => {
     if(selectedAuditItems.size === 0) return;
     const db = window.db;
     const batch = writeBatch(db);
     const ids = Array.from(selectedAuditItems);
     
-    const actionName = auditViewMode === 'inbox' ? "Mover para Lixeira" : "Restaurar";
-    if(!confirm(`${actionName} ${ids.length} pedidos selecionados?`)) return;
+    let msg = "";
+    if(acao === 'soft_delete') msg = `Mover ${ids.length} pedidos para a lixeira?`;
+    if(acao === 'restore') msg = `Restaurar ${ids.length} pedidos?`;
+    if(acao === 'hard_delete') msg = `⚠️ ATENÇÃO: Excluir PERMANENTEMENTE ${ids.length} pedidos? Essa ação não pode ser desfeita.`;
+
+    if(!confirm(msg)) return;
 
     for (const id of ids) {
-        // Se estiver no Inbox -> Move para Recycle Bin
-        if(auditViewMode === 'inbox') {
+        if (acao === 'soft_delete') {
+            // Inbox -> Lixeira
             const docRef = doc(db, "orders", id);
             const docSnap = await getDoc(docRef);
             if(docSnap.exists()) {
                 const data = docSnap.data();
                 const trashRef = doc(collection(db, "recycle_bin"));
-                
-                // Salva na lixeira com metadados
                 batch.set(trashRef, { 
                     ...data, 
                     original_id: id,
                     origin_collection: "orders",
                     deleted_at: serverTimestamp() 
                 });
-                // Deleta original
                 batch.delete(docRef);
             }
         } 
-        // Se estiver na Lixeira -> Restaura (ou deleta permanente se preferir)
-        else {
-            // Lógica de Restaurar: Pega da lixeira, põe de volta em orders
-            // Busca o documento na lixeira que tem o original_id igual ao selecionado (ou o ID da lixeira mesmo)
-            // OBS: Aqui estou simplificando assumindo que o ID selecionado é o ID do documento na lixeira.
-            const trashRef = doc(db, "recycle_bin", id);
+        else if (acao === 'restore') {
+            // Lixeira -> Inbox
+            const trashRef = doc(db, "recycle_bin", id); // ID da lixeira
             const trashSnap = await getDoc(trashRef);
-            
             if(trashSnap.exists()) {
                 const data = trashSnap.data();
                 const originalId = data.original_id || id;
                 const restoreRef = doc(db, "orders", originalId);
                 
-                // Remove campos de lixeira antes de restaurar
-                const { deleted_at, origin_collection, original_id, ...restoredData } = data;
-                
+                const { deleted_at, origin_collection, original_id: oid, ...restoredData } = data;
                 batch.set(restoreRef, restoredData);
                 batch.delete(trashRef);
             }
+        }
+        else if (acao === 'hard_delete') {
+            // Lixeira -> Além
+            const trashRef = doc(db, "recycle_bin", id);
+            batch.delete(trashRef);
         }
     }
 
@@ -224,18 +232,16 @@ async function carregarRecentes() {
 
         snap.forEach(docSnap => {
             const d = docSnap.data();
-            const docId = docSnap.id; // ID real do documento (seja order ou lixeira)
+            const docId = docSnap.id; 
             
-            // Status Badge
             let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
             if(d.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
             if(d.status === 'completed') statusBadge = `<span class="bg-green-900 text-green-300 text-[9px] px-1.5 py-0.5 rounded font-bold">PAGO</span>`;
             if(d.status === 'cancelled') statusBadge = `<span class="bg-red-900 text-red-300 text-[9px] px-1.5 py-0.5 rounded font-bold">CANCELADO</span>`;
 
-            // Se for lixeira, mostra data de exclusão
             const dateDisplay = auditViewMode === 'inbox' 
                 ? (d.created_at?.toDate().toLocaleDateString() || 'Data N/A')
-                : `Excluído em: ${d.deleted_at?.toDate().toLocaleDateString() || 'N/A'}`;
+                : `🗑️ ${d.deleted_at?.toDate().toLocaleDateString() || 'N/A'}`;
 
             container.innerHTML += `
                 <div class="flex items-center hover:bg-slate-800/50 transition border-l-2 border-transparent hover:border-indigo-500 pl-4 py-3">
@@ -268,7 +274,7 @@ async function carregarRecentes() {
 }
 
 // ============================================================================
-// FUNÇÕES DE BUSCA E DETALHES (MANTIDAS IGUAIS, SÓ RECONECTADAS)
+// FUNÇÕES DE BUSCA (Mantidas iguais ao anterior)
 // ============================================================================
 window.buscarPedidoAuditoria = async (idOpcional = null) => {
     const input = document.getElementById('audit-search-input');
@@ -286,18 +292,16 @@ window.buscarPedidoAuditoria = async (idOpcional = null) => {
 
     try {
         const db = window.db;
-        // Tenta buscar na coleção ativa primeiro
         let docSnap = await getDoc(doc(db, "orders", orderId));
         
-        // Se não achar, tenta na lixeira (buscando pelo original_id)
         if(!docSnap.exists()) {
             const qTrash = query(collection(db, "recycle_bin"), where("original_id", "==", orderId), limit(1));
             const snapTrash = await getDocs(qTrash);
             if(!snapTrash.empty) {
-                docSnap = snapTrash.docs[0]; // Pega o primeiro da lixeira
+                docSnap = snapTrash.docs[0];
                 alert("⚠️ Aviso: Este pedido está na LIXEIRA.");
             } else {
-                cardInfo.innerHTML = `<p class="text-red-400 font-bold text-center">Pedido não encontrado nem na Lixeira.</p>`;
+                cardInfo.innerHTML = `<p class="text-red-400 font-bold text-center">Pedido não encontrado.</p>`;
                 chatList.innerHTML = "";
                 return;
             }
@@ -305,7 +309,6 @@ window.buscarPedidoAuditoria = async (idOpcional = null) => {
 
         const data = docSnap.data();
         renderizarInfoPedido(data, data.original_id || docSnap.id);
-        // O ID do chat é sempre o ID original do pedido
         renderizarChatBackup(data.original_id || docSnap.id, data.client_id, data.provider_id);
 
     } catch(e) {
