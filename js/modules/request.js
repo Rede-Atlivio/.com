@@ -41,7 +41,7 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         if(elId) elId.value = providerId || "";
         if(elPrice) elPrice.value = price || "0";
         
-        // 🎨 CORREÇÃO VISUAL DO INPUT (Texto Preto Forte)
+        // 🎨 VISUAL DO INPUT
         if(elInputVal) {
             elInputVal.value = mem_CurrentOffer.toFixed(2);
             elInputVal.disabled = true;
@@ -49,6 +49,8 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
             elInputVal.style.fontWeight = "bold";
             elInputVal.classList.remove('text-gray-500');
             elInputVal.classList.add('text-black');
+            // Gatilho de validação ao digitar
+            elInputVal.setAttribute("oninput", "window.validarOferta(this.value)");
         }
 
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
@@ -57,7 +59,7 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
-            btn.innerText = "ENVIAR PROPOSTA 🚀";
+            btn.innerText = "ENVIAR SOLICITAÇÃO 🚀"; // <-- TEXTO CORRIGIDO AQUI
             btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.onclick = enviarPropostaAgora; 
         } 
@@ -68,15 +70,14 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
 // 2. CÁLCULOS E TRAVAS (CORRIGIDO)
 // ============================================================================
 export function selecionarDesconto(percent) {
+    // Garante que o percentual venha como número (ex: -0.05)
+    const p = parseFloat(percent);
+    
     if(!mem_BasePrice) mem_BasePrice = parseFloat(document.getElementById('service-base-price')?.value || 0);
     
-    // Percent é negativo (-0.10) ou positivo (0.10)
-    const discountValue = mem_BasePrice * percent;
-    // Se percent é -0.10, discountValue é negativo. Base + (-negativo) = Errado.
-    // Lógica correta: Novo Valor = Base * (1 + percent)
-    // Ex: 100 * (1 + (-0.10)) = 100 * 0.90 = 90.
-    
-    mem_CurrentOffer = mem_BasePrice * (1 + percent);
+    // Lógica Correta: Base * (1 + percentual_negativo)
+    // Ex: 100 * (1 + (-0.05)) = 100 * 0.95 = 95.
+    mem_CurrentOffer = mem_BasePrice * (1 + p);
     
     atualizarVisualModal();
 }
@@ -86,7 +87,7 @@ export function ativarInputPersonalizado() {
     if(input) { 
         input.disabled = false; 
         input.focus(); 
-        input.style.border = "2px solid #3b82f6"; // Azul para indicar foco
+        input.style.border = "2px solid #3b82f6"; 
     }
 }
 
@@ -94,48 +95,34 @@ export function validarOferta(val) {
     let offer = parseFloat(val);
     if(isNaN(offer)) return;
 
-    // 🔒 TRAVA DE VALORES (-20% a +30%)
-    const minAllowed = mem_BasePrice * 0.80; // -20%
-    const maxAllowed = mem_BasePrice * 1.30; // +30%
+    // TRAVA: -20% a +30%
+    const minAllowed = mem_BasePrice * 0.80; 
+    const maxAllowed = mem_BasePrice * 1.30; 
+    
     const input = document.getElementById('req-value');
     const btn = document.getElementById('btn-confirm-req');
-    const aviso = document.getElementById('calc-total-reserva'); // Usando label de total para aviso
+    const aviso = document.getElementById('calc-total-reserva');
 
-    if (offer < minAllowed) {
+    if (offer < minAllowed || offer > maxAllowed) {
         input.style.borderColor = "red";
         input.style.color = "red";
         if(btn) btn.disabled = true;
         btn.classList.add('opacity-50');
         if(aviso) {
-            aviso.innerText = `Mínimo: R$ ${minAllowed.toFixed(2)}`;
+            aviso.innerText = "Valor fora do limite";
             aviso.style.color = "red";
         }
-        return;
-    } 
-    
-    if (offer > maxAllowed) {
-        input.style.borderColor = "red";
-        input.style.color = "red";
-        if(btn) btn.disabled = true;
-        btn.classList.add('opacity-50');
+    } else {
+        input.style.borderColor = "#e5e7eb";
+        input.style.color = "black";
+        if(btn) btn.disabled = false;
+        btn.classList.remove('opacity-50');
         if(aviso) {
-            aviso.innerText = `Máximo: R$ ${maxAllowed.toFixed(2)}`;
-            aviso.style.color = "red";
+            aviso.innerText = `R$ ${offer.toFixed(2)}`;
+            aviso.style.color = "black";
         }
-        return;
+        mem_CurrentOffer = offer;
     }
-
-    // Se passou na trava
-    input.style.borderColor = "#e5e7eb"; // Cinza normal
-    input.style.color = "black";
-    if(btn) btn.disabled = false;
-    btn.classList.remove('opacity-50');
-    if(aviso) {
-        aviso.innerText = `R$ ${offer.toFixed(2)}`;
-        aviso.style.color = "black";
-    }
-
-    mem_CurrentOffer = offer;
 }
 
 function atualizarVisualModal() {
@@ -148,12 +135,12 @@ function atualizarVisualModal() {
         elTotal.style.color = "black";
     }
     
-    // Revalidar para garantir que o desconto automático não quebre a regra
+    // Revalida para garantir que a porcentagem não quebrou a regra
     validarOferta(mem_CurrentOffer);
 }
 
 // ============================================================================
-// 3. ENVIAR PROPOSTA (CORREÇÃO REDIRECIONAMENTO)
+// 3. ENVIAR PROPOSTA
 // ============================================================================
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
@@ -164,12 +151,10 @@ export async function enviarPropostaAgora() {
         return; 
     }
 
-    // Revalidação Final
     const min = mem_BasePrice * 0.80;
     const max = mem_BasePrice * 1.30;
     if (mem_CurrentOffer < min || mem_CurrentOffer > max) {
-        alert(`O valor deve estar entre R$ ${min.toFixed(2)} e R$ ${max.toFixed(2)}`);
-        return;
+        return alert(`O valor deve estar entre R$ ${min.toFixed(2)} e R$ ${max.toFixed(2)}`);
     }
 
     const btn = document.getElementById('btn-confirm-req'); 
@@ -198,51 +183,36 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
-        // Cria o chat mas NÃO abre
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
             status: "pending_approval",
             updated_at: serverTimestamp(),
-            last_message: "Nova proposta enviada."
+            last_message: "Nova solicitação."
         });
 
-        // 🎉 SUCESSO & REDIRECIONAMENTO CORRETO
-        alert("✅ PROPOSTA ENVIADA!\n\nAguarde o aceite do prestador na aba 'Em Andamento'.");
-        
+        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAguarde o prestador aceitar na aba 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
-        mem_ProviderId = null;
-
-        // 🔄 Redireciona para a LISTA (Tab Chat/Pedidos) e NÃO para o chat específico
+        
+        // Redireciona para lista
         if(window.carregarPedidosAtivos) {
-            // Simula clique na aba de chat/pedidos
             const tabChat = document.getElementById('tab-chat');
             if(tabChat) tabChat.click();
-            
-            // Força recarregamento da lista
             window.carregarPedidosAtivos();
         }
 
     } catch (e) {
-        alert(`❌ Falha no envio: ${e.message}`);
+        alert(`❌ Falha: ${e.message}`);
     } finally {
-        if(btn) { 
-            btn.innerText = "ENVIAR PROPOSTA 🚀"; 
-            btn.disabled = false; 
-        }
+        if(btn) { btn.innerText = "ENVIAR SOLICITAÇÃO 🚀"; btn.disabled = false; }
     }
 }
 
 // ============================================================================
-// 4. RADAR (PRESTADOR)
+// 4. RADAR E ACEITE (TEXTO CORRIGIDO)
 // ============================================================================
 function iniciarRadarPrestador(uid) {
-    const q = query(
-        collection(db, "orders"), 
-        where("provider_id", "==", uid), 
-        where("status", "==", "pending")
-    );
-
+    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
@@ -266,9 +236,10 @@ function mostrarModalRadar(pedido) {
     modalContainer.classList.remove('hidden');
 
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * 0.20; // 20%
+    const taxa = valor * 0.20;
     const lucro = valor - taxa;
 
+    // AQUI ESTÁ A CORREÇÃO DE TEXTO DO RADAR
     modalContainer.innerHTML = `
         <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
             <div class="bg-slate-800 p-4 text-center border-b border-slate-700">
@@ -284,11 +255,10 @@ function mostrarModalRadar(pedido) {
             <div class="mx-4 mb-4 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
                 <h3 class="text-white font-bold text-sm text-center">${pedido.client_name}</h3>
                 <p class="text-gray-400 text-xs text-center mt-1">📍 ${pedido.location || "Local a combinar"}</p>
-                <p class="text-gray-500 text-[10px] text-center mt-2">📅 ${pedido.service_date} • 🕒 ${pedido.service_time}</p>
             </div>
             <div class="grid grid-cols-2 gap-0 border-t border-slate-700">
                 <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-slate-800 text-gray-400 font-bold py-5 hover:bg-slate-700 border-r border-slate-700">RECUSAR</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-600 text-white font-black py-5 hover:bg-green-500">ACEITAR CORRIDA</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-600 text-white font-black py-5 hover:bg-green-500">ACEITAR SOLICITAÇÃO</button>
             </div>
         </div>
     `;
@@ -307,7 +277,6 @@ export async function aceitarPedidoRadar(orderId) {
         await updateDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() });
         await updateDoc(doc(db, "chats", orderId), { status: 'active' });
 
-        // Redireciona para LISTA DE PEDIDOS (não chat direto)
         if(window.carregarPedidosAtivos) {
             const tabChat = document.getElementById('tab-chat');
             if(tabChat) tabChat.click();
@@ -318,15 +287,15 @@ export async function aceitarPedidoRadar(orderId) {
 
 export async function recusarPedidoReq(orderId) {
     fecharModalRadar();
-    if(!confirm("Tem certeza que deseja recusar?")) return;
+    if(!confirm("Recusar solicitação?")) return;
     await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
 }
 
 export async function carregarPedidosEmAndamento() {
-    // Mantido para carregamento passivo
+    // Mantido para carregamento passivo se necessário
 }
 
-// EXPORTAÇÃO GLOBAL
+// --- EXPORTAÇÃO GLOBAL (VITAL PARA OS BOTÕES HTML) ---
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
