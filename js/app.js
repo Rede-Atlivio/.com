@@ -39,6 +39,7 @@ import './modules/jobs.js';          // Vagas de Emprego
 import './modules/opportunities.js'; // Robô de Ofertas e Afiliados
 import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (Token)
 import { checkOnboarding } from './modules/onboarding.js';
+import { abrirConfiguracoes } from './modules/profile.js'; // <--- IMPORTAR
 
 console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
 auth.onAuthStateChanged((user) => {
@@ -46,3 +47,5 @@ auth.onAuthStateChanged((user) => {
         checkOnboarding(user); // <--- O GATILHO QUE LEVANTA O MURO
     }
 });
+// EXPOR GLOBALMENTE PARA O BOTÃO FUNCIONAR
+window.abrirConfiguracoes = abrirConfiguracoes;
