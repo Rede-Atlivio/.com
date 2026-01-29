@@ -7,7 +7,7 @@ let selectedTickets = new Set();
 let viewMode = 'inbox'; // 'inbox' ou 'trash'
 
 // ============================================================================
-// 1. INICIALIZAÇÃO
+// 1. INICIALIZAÇÃO E LAYOUT
 // ============================================================================
 export function init() {
     const container = document.getElementById('view-support');
@@ -20,7 +20,7 @@ export function init() {
                 <div class="p-4 bg-slate-900/50 border-b border-gray-700">
                     <div class="flex justify-between items-center mb-2">
                         <div class="flex gap-2">
-                            <button onclick="window.alternarModoVisualizacao('inbox')" id="btn-mode-inbox" class="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white transition">📥 ENTRADA</button>
+                            <button onclick="window.alternarModoVisualizacao('inbox')" id="btn-mode-inbox" class="text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white transition shadow-lg">📥 ENTRADA</button>
                             <button onclick="window.alternarModoVisualizacao('trash')" id="btn-mode-trash" class="text-[10px] font-bold px-3 py-1 rounded-full bg-slate-700 text-gray-400 hover:text-white transition">🗑️ LIXEIRA</button>
                         </div>
                         <span id="ticket-count" class="bg-gray-700 text-gray-300 text-[10px] px-2 rounded-full">0</span>
@@ -31,10 +31,7 @@ export function init() {
                             <input type="checkbox" onchange="window.toggleSelecionarTudo(this)" class="chk-custom rounded border-gray-600 bg-slate-800">
                             Todos
                         </label>
-                        <div id="bulk-toolbar" class="hidden flex gap-2">
-                            <button onclick="window.executarAcaoMassa('lido')" class="text-[10px] bg-green-900/50 text-green-400 px-2 py-1 rounded border border-green-800 hover:bg-green-900">✅ Ler</button>
-                            <button onclick="window.executarAcaoMassa('lixeira')" class="text-[10px] bg-red-900/50 text-red-400 px-2 py-1 rounded border border-red-800 hover:bg-red-900" id="btn-trash-action">🗑️ Excluir</button>
-                        </div>
+                        <div id="bulk-toolbar" class="hidden flex gap-2"></div>
                     </div>
                 </div>
 
@@ -81,7 +78,6 @@ function carregarListaUsuarios() {
     const db = window.db;
     const collectionName = viewMode === 'inbox' ? 'support_tickets' : 'recycle_bin';
 
-    // Se for lixeira, filtramos apenas items que vieram do suporte
     let q;
     if(viewMode === 'inbox') {
         q = query(collection(db, "support_tickets"), orderBy("created_at", "desc"));
@@ -93,15 +89,14 @@ function carregarListaUsuarios() {
 
     unsubscribeList = onSnapshot(q, (snap) => {
         const usersMap = new Map();
-        selectedTickets.clear(); // Reseta seleção ao atualizar
+        selectedTickets.clear(); 
         atualizarToolbar();
 
         snap.forEach(d => {
             const t = d.data();
-            // Agrupa por UID (para mostrar a última conversa)
             if (!usersMap.has(t.uid)) {
                 usersMap.set(t.uid, {
-                    docId: d.id, // ID do documento mais recente
+                    docId: d.id, 
                     uid: t.uid,
                     name: t.user_name || "Usuário",
                     email: t.user_email,
@@ -116,7 +111,6 @@ function carregarListaUsuarios() {
             }
         });
 
-        // Atualiza contador
         const badgeEl = document.getElementById('ticket-count');
         if(badgeEl) badgeEl.innerText = usersMap.size;
 
@@ -132,13 +126,11 @@ function carregarListaUsuarios() {
             const badge = u.unreadCount > 0 ? `<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-sm ml-2">${u.unreadCount}</span>` : '';
             const prefix = u.lastSender === 'admin' ? '↪️ ' : '';
 
-            // Checkbox ID é o UID do usuário para agrupar conversas
             listContainer.innerHTML += `
                 <div class="group flex items-center p-2 rounded-lg border-l-4 ${activeClass} mb-1 bg-slate-900/50 transition relative">
                     <div class="mr-3 flex items-center h-full">
                         <input type="checkbox" value="${u.uid}" onchange="window.toggleSelecao(this)" class="chk-item chk-custom rounded border-gray-600 bg-slate-800">
                     </div>
-
                     <div onclick="window.abrirChatAdmin('${u.uid}', '${u.name}', '${u.email}')" class="flex-1 cursor-pointer overflow-hidden">
                         <div class="flex justify-between items-center w-full mb-1">
                             <h4 class="font-bold text-gray-200 text-xs truncate flex items-center">${u.name} ${badge}</h4>
@@ -160,19 +152,16 @@ window.alternarModoVisualizacao = (mode) => {
     currentChatUser = null;
     window.fecharChat();
     
-    // Atualiza botões
+    // Atualiza visual dos botões de modo
     const btnIn = document.getElementById('btn-mode-inbox');
     const btnTr = document.getElementById('btn-mode-trash');
-    const btnAction = document.getElementById('btn-trash-action');
     
     if(mode === 'inbox') {
         btnIn.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-blue-600 text-white transition shadow-lg";
         btnTr.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-slate-700 text-gray-400 hover:text-white transition";
-        if(btnAction) btnAction.innerHTML = "🗑️ Lixeira";
     } else {
         btnIn.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-slate-700 text-gray-400 hover:text-white transition";
         btnTr.className = "text-[10px] font-bold px-3 py-1 rounded-full bg-red-600 text-white transition shadow-lg";
-        if(btnAction) btnAction.innerHTML = "🔥 Excluir De Vez";
     }
     
     carregarListaUsuarios();
@@ -196,8 +185,25 @@ window.toggleSelecionarTudo = (chkMaster) => {
 
 function atualizarToolbar() {
     const toolbar = document.getElementById('bulk-toolbar');
-    if(selectedTickets.size > 0) toolbar.classList.remove('hidden');
-    else toolbar.classList.add('hidden');
+    
+    if(selectedTickets.size > 0) {
+        toolbar.classList.remove('hidden');
+        
+        // --- AQUI ESTÁ A LÓGICA DINÂMICA DOS BOTÕES ---
+        if (viewMode === 'inbox') {
+            toolbar.innerHTML = `
+                <button onclick="window.executarAcaoMassa('lido')" class="text-[10px] bg-green-900/50 text-green-400 px-2 py-1 rounded border border-green-800 hover:bg-green-900">✅ Ler</button>
+                <button onclick="window.executarAcaoMassa('lixeira')" class="text-[10px] bg-red-900/50 text-red-400 px-2 py-1 rounded border border-red-800 hover:bg-red-900">🗑️ Mover p/ Lixeira</button>
+            `;
+        } else {
+            toolbar.innerHTML = `
+                <button onclick="window.executarAcaoMassa('restaurar')" class="text-[10px] bg-green-900/50 text-green-400 px-2 py-1 rounded border border-green-800 hover:bg-green-900">♻️ Restaurar</button>
+                <button onclick="window.executarAcaoMassa('excluir_vez')" class="text-[10px] bg-red-900 text-white px-2 py-1 rounded border border-red-700 hover:bg-red-800 font-bold">🔥 Excluir de Vez</button>
+            `;
+        }
+    } else {
+        toolbar.classList.add('hidden');
+    }
 }
 
 window.executarAcaoMassa = async (acao) => {
@@ -206,34 +212,45 @@ window.executarAcaoMassa = async (acao) => {
     const batch = writeBatch(db);
     const uids = Array.from(selectedTickets);
     
-    const confirmMsg = acao === 'lixeira' 
-        ? (viewMode === 'inbox' ? `Mover ${uids.length} conversas para Lixeira?` : `Excluir PERMANENTEMENTE ${uids.length} conversas?`)
-        : `Marcar ${uids.length} conversas como lidas?`;
+    let confirmMsg = `Confirmar ação: ${acao}?`;
+    if(acao === 'excluir_vez') confirmMsg = `⚠️ ATENÇÃO: Isso apagará ${uids.length} conversas PERMANENTEMENTE. Continuar?`;
 
     if(!confirm(confirmMsg)) return;
 
-    // Processa cada UID selecionado
     for (const uid of uids) {
-        // Busca todas as mensagens desse usuário na coleção atual
+        // Define qual coleção buscar
         const colName = viewMode === 'inbox' ? "support_tickets" : "recycle_bin";
         const q = query(collection(db, colName), where("uid", "==", uid));
         const snap = await getDocs(q);
 
         snap.forEach(docSnap => {
+            const data = docSnap.data();
+
             if (acao === 'lido') {
                 batch.update(docSnap.ref, { read: true });
             } 
             else if (acao === 'lixeira') {
-                if(viewMode === 'inbox') {
-                    // MOVER PARA LIXEIRA (Copia -> Deleta)
-                    const data = docSnap.data();
-                    const trashRef = doc(collection(db, "recycle_bin"));
-                    batch.set(trashRef, { ...data, deleted_at: serverTimestamp(), origin_collection: "support_tickets", original_id: docSnap.id });
-                    batch.delete(docSnap.ref);
-                } else {
-                    // EXCLUIR DE VEZ (Hard Delete)
-                    batch.delete(docSnap.ref);
-                }
+                // Move para Lixeira
+                const trashRef = doc(collection(db, "recycle_bin"));
+                batch.set(trashRef, { 
+                    ...data, 
+                    deleted_at: serverTimestamp(), 
+                    origin_collection: "support_tickets", 
+                    original_id: docSnap.id 
+                });
+                batch.delete(docSnap.ref);
+            }
+            else if (acao === 'restaurar') {
+                // Restaura da Lixeira
+                // Se foi salvo com ID original, tenta restaurar (criando novo ID ou usando original se possível)
+                const restoreRef = doc(collection(db, "support_tickets")); // Novo ID para evitar colisão
+                const { deleted_at, origin_collection, original_id, ...restoredData } = data;
+                batch.set(restoreRef, restoredData);
+                batch.delete(docSnap.ref);
+            }
+            else if (acao === 'excluir_vez') {
+                // Deleta Permanente
+                batch.delete(docSnap.ref);
             }
         });
     }
@@ -249,12 +266,12 @@ window.executarAcaoMassa = async (acao) => {
 };
 
 // ============================================================================
-// 4. CHAT (MANTIDO DO ANTERIOR, SÓ CONECTADO)
+// 4. CHAT (MANTIDO)
 // ============================================================================
 window.abrirChatAdmin = async (uid, name, email) => {
     currentChatUser = uid;
     document.getElementById('chat-header').classList.remove('hidden');
-    // Só mostra input se não estiver na lixeira
+    
     if(viewMode === 'inbox') document.getElementById('chat-input-area').classList.remove('hidden');
     else document.getElementById('chat-input-area').classList.add('hidden');
 
@@ -264,9 +281,8 @@ window.abrirChatAdmin = async (uid, name, email) => {
     const container = document.getElementById('chat-messages');
     const db = window.db;
     const colName = viewMode === 'inbox' ? "support_tickets" : "recycle_bin";
-    
-    // Na lixeira, ordenamos por 'deleted_at', no inbox por 'created_at'
     const orderField = viewMode === 'inbox' ? 'created_at' : 'deleted_at';
+    
     const q = query(collection(db, colName), where("uid", "==", uid), orderBy(orderField, "desc"));
 
     if(unsubscribeChat) unsubscribeChat();
