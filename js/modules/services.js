@@ -1,4 +1,4 @@
-import { db, auth } from '../app.js';
+import { db, auth } from '../app.js'; // Caminho relativo correto
 import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let cachePrestadores = [];
@@ -161,7 +161,7 @@ function filtrarCategoria(categoria, btnElement) {
 }
 
 // ============================================================================
-// LÓGICA DE RENDERIZAÇÃO (AQUI ESTÁ A CORREÇÃO DO BOTÃO)
+// LÓGICA DE RENDERIZAÇÃO
 // ============================================================================
 function renderizarLista(lista) {
     const container = document.getElementById('lista-prestadores-realtime');
@@ -263,20 +263,36 @@ function abrirPerfilPublico(prestador) {
     const modal = document.getElementById('provider-profile-modal');
     if(!modal) return;
 
-    document.getElementById('public-profile-photo').src = prestador.foto_perfil || "https://ui-avatars.com/api/?name=User";
-    document.getElementById('public-profile-name').innerText = prestador.nome_profissional;
+    document.getElementById('public-services-list').innerHTML = ""; // Limpa antes
 
-    const listaContainer = document.getElementById('public-services-list');
-    listaContainer.innerHTML = "";
+    const containerModal = document.querySelector('#provider-profile-modal > div'); // Pega o container branco
+    
+    // Injeta header do modal se não existir (Opcional, mas fica bonito)
+    containerModal.innerHTML = `
+        <div class="bg-blue-600 p-4 rounded-t-2xl text-white relative">
+            <button onclick="window.fecharPerfilPublico()" class="absolute top-2 right-2 text-white font-bold text-xl">&times;</button>
+            <div class="flex items-center gap-3">
+                <img src="${prestador.foto_perfil || 'https://ui-avatars.com/api/?name=User'}" class="w-12 h-12 rounded-full border-2 border-white bg-white">
+                <div>
+                    <h3 class="font-bold text-sm">${prestador.nome_profissional}</h3>
+                    <p class="text-[10px] opacity-80">Selecione um serviço</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 space-y-3 max-h-[60vh] overflow-y-auto" id="lista-servicos-modal">
+            </div>
+    `;
+
+    const listaContainer = document.getElementById('lista-servicos-modal');
 
     prestador.services.forEach(svc => {
         listaContainer.innerHTML += `
-            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
+            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition cursor-pointer" onclick="window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional.replace(/'/g, "\\'")}', ${svc.price}); window.fecharPerfilPublico();">
                 <div>
                     <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
                     <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
                 </div>
-                <button onclick="window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional.replace(/'/g, "\\'")}', ${svc.price}); window.fecharPerfilPublico();" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
+                <button class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700 pointer-events-none">
                     R$ ${svc.price}
                 </button>
             </div>
