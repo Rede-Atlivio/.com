@@ -533,15 +533,47 @@
     </div>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                    console.log("🔥 Service Worker DESTRUÍDO para liberar o banco.");
+    // 1. REGISTRO DO PWA (Obrigatório para o botão funcionar)
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then((reg) => console.log('✅ Service Worker registrado com sucesso:', reg.scope))
+                .catch((err) => console.error('❌ Falha ao registrar SW:', err));
+        });
+    }
+
+    // 2. LÓGICA DO BOTÃO "INSTALAR"
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Impede o mini-infobar automático do Chrome para usarmos nosso botão bonitão
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Mostra o botão roxo que estava oculto
+        const btn = document.getElementById('btn-install-app');
+        if(btn) {
+            btn.classList.remove('hidden');
+            console.log("📲 Botão de Instalar ativado pelo navegador!");
+            
+            // Adiciona o clique para disparar a instalação
+            btn.onclick = async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`Opção escolhida: ${outcome}`);
+                    deferredPrompt = null;
+                    btn.classList.add('hidden'); // Esconde se instalou
                 }
-            });
+            };
         }
-    </script>
+    });
+
+    // 3. CORREÇÃO DE SOM (Link funcional)
+    document.addEventListener("DOMContentLoaded", () => {
+        const audio = document.getElementById('online-sound');
+        if(audio) audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
+    });
+</script>
 
     <script type="module" src="./js/app.js?v=15.4"></script>
     <script type="module" src="./js/auth.js?v=15.4"></script>
