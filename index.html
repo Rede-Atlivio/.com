@@ -31,6 +31,23 @@
         /* CORREÇÃO DE INPUTS */
         #modal-onboarding input { color: white !important; }
         input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important; -webkit-text-fill-color: #0f172a !important; font-weight: bold !important; }
+    /* CORREÇÃO DE COLAPSO DO FORMULÁRIO */
+        #form-onboarding input {
+            height: 48px !important; /* Força altura mínima */
+            min-height: 48px !important;
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        #form-onboarding label {
+            display: block !important;
+            margin-bottom: 4px;
+            color: #94a3b8; /* Cor cinza claro visível */
+        }
+        #btn-onboard-submit {
+            height: 56px !important;
+            min-height: 56px !important;
+        }
     </style>
 
     <script>
