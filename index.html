@@ -11,11 +11,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     
     <style>
-        /* ANIMAÇÕES E UTILITÁRIOS */
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* SLIDER (ESTILO ATLIVIO DARK) */
         .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
         .slider-container::-webkit-scrollbar { display: none; }
         .slide { flex: 0 0 100%; scroll-snap-align: center; position: relative; }
@@ -23,31 +21,27 @@
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; transition: all 0.3s; }
         .dot.active { background: #2563eb; width: 24px; border-radius: 4px; }
 
-        /* SPLASH SCREEN */
         #splash-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         .splash-logo { width: 100px; height: 100px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: #1e3a8a; box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
         
-        /* INPUTS E SCROLLBAR */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         
-        /* CORREÇÃO NUCLEAR DE INPUTS (DARK MODE) */
         input { color: white !important; }
         input::placeholder { color: #94a3b8 !important; }
         input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; -webkit-text-fill-color: white !important; font-weight: bold !important; }
         
-        /* GARANTIA DE VISIBILIDADE DOS MODAIS - Controlado via JS */
         #auth-container, #modal-onboarding { display: none; } 
     </style>
 
     <script>
-        // 🛡️ PREVENÇÃO DE CRASH (Define funções vazias antes do módulo carregar)
-        window.loadGlobalAlert = function() {}; 
-        window.enviarSMSLogin = function() {}; 
-        window.openTerms = function() {};
+        // Funções de UI puras (Navegação Visual)
+        window.ocultarSplash = () => {
+            const splash = document.getElementById('splash-screen');
+            if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
+        };
 
-        // --- LÓGICA DE NAVEGAÇÃO ENTRE TELAS ---
         window.irParaLogin = () => {
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('modal-onboarding').style.display = 'none'; 
@@ -62,14 +56,7 @@
             const modal = document.getElementById('modal-onboarding');
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
-            
-            // Força renderização visual dos inputs
-            setTimeout(() => {
-                modal.querySelectorAll('input').forEach(i => {
-                    i.style.height = '50px';
-                    i.style.display = 'block';
-                });
-            }, 100);
+            setTimeout(() => { modal.querySelectorAll('input').forEach(i => { i.style.height = '50px'; i.style.display = 'block'; }); }, 100);
         };
 
         window.voltarParaLanding = () => {
@@ -78,17 +65,10 @@
             document.getElementById('landing-page').classList.remove('hidden');
         };
 
-        // CONTROLES UI GERAIS
-        window.ocultarSplash = () => {
-            const splash = document.getElementById('splash-screen');
-            if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
-        };
-        
         window.switchTab = function(tabName) {
             document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
             const alvo = document.getElementById(`sec-${tabName}`);
             if(alvo) alvo.classList.remove('hidden');
-            
             document.querySelectorAll('nav button').forEach(btn => {
                 btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
                 btn.classList.add('border-transparent', 'text-gray-400');
@@ -98,13 +78,14 @@
                 activeBtn.classList.remove('border-transparent', 'text-gray-400');
                 activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
             }
+            // Acionadores Lazy Load
             if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
             if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
             if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
             if(tabName === 'chat' && window.carregarChat) window.carregarChat();
         };
 
-        window.switchServiceSubTab = function(subTab) {
+        window.switchServiceSubTab = (subTab) => {
             ['contratar', 'andamento', 'historico'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
                 document.getElementById(`subtab-${t}-btn`).classList.remove('active');
@@ -113,7 +94,7 @@
             document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
         };
 
-        window.switchProviderSubTab = function(subTab) {
+        window.switchProviderSubTab = (subTab) => {
             ['radar', 'ativos', 'historico'].forEach(t => {
                 document.getElementById(`pview-${t}`).classList.add('hidden');
                 document.getElementById(`ptab-${t}-btn`).classList.remove('active');
@@ -123,6 +104,14 @@
         };
         
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); btn.classList.toggle('bg-blue-100'); btn.classList.toggle('border-blue-500'); };
+        
+        // Máscara Telefone Global
+        window.mascaraTelefone = (input) => {
+            let v = input.value.replace(/\D/g,'').substring(0, 11);
+            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
+            input.value = v;
+        };
     </script>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
@@ -134,7 +123,7 @@
 
     <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
     <audio id="online-sound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto"></audio>
-    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="window.uploadFotoPerfil && window.uploadFotoPerfil(this)">
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
     <div id="landing-page" class="fixed inset-0 bg-slate-900 text-white flex flex-col z-50 overflow-y-auto">
@@ -144,120 +133,73 @@
                 <span class="text-lg">🇧🇷</span> <span class="text-xs font-bold text-gray-400">BRA</span>
             </div>
         </div>
-
         <div class="flex-1 flex flex-col justify-center pb-10">
             <div class="slider-container" id="landing-slider">
                 <div class="slide px-6 text-center">
-                    <div class="mb-8 relative inline-block">
-                        <div class="absolute inset-0 bg-blue-600 rounded-full blur-3xl opacity-20"></div>
-                        <img src="https://images.unsplash.com/photo-1521791136064-7986c2920216?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[2rem] mx-auto shadow-2xl relative z-10 border-4 border-slate-800">
-                    </div>
                     <h2 class="text-3xl font-black text-white leading-tight mb-4">Serviços e Negócios<br><span class="text-blue-500">em um só lugar</span></h2>
                     <p class="text-gray-400 text-sm max-w-xs mx-auto">O primeiro marketplace híbrido que conecta você a profissionais e oportunidades reais.</p>
                 </div>
                 <div class="slide px-6 text-center">
-                    <div class="mb-8 relative inline-block">
-                        <div class="absolute inset-0 bg-purple-600 rounded-full blur-3xl opacity-20"></div>
-                        <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=600&q=80" class="w-64 h-64 object-cover rounded-[2rem] mx-auto shadow-2xl relative z-10 border-4 border-slate-800">
-                    </div>
                     <h2 class="text-3xl font-black text-white leading-tight mb-4">Pagamentos Seguros<br><span class="text-purple-500">via PIX</span></h2>
                     <p class="text-gray-400 text-sm max-w-xs mx-auto">Sua carteira digital para receber por serviços ou contratar com segurança total.</p>
                 </div>
             </div>
-            
-            <div class="slide-dots">
-                <div class="dot active"></div>
-                <div class="dot"></div>
-            </div>
+            <div class="slide-dots"><div class="dot active"></div><div class="dot"></div></div>
         </div>
-
         <div class="p-6 bg-slate-900 pb-12">
             <div class="space-y-3">
-                <button onclick="irParaLogin()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition shadow-lg">
-                    Já tenho uma conta
-                </button>
-                <button onclick="irParaCadastro()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">
-                    Abrir conta gratuita
-                </button>
+                <button onclick="irParaLogin()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition shadow-lg">Já tenho uma conta</button>
+                <button onclick="irParaCadastro()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">Abrir conta gratuita</button>
             </div>
-            <p class="text-[10px] text-center text-gray-500 mt-4">
-                Ao continuar, concordo com a <a href="#" onclick="openTerms('privacidade')" class="underline hover:text-blue-400">Política de Privacidade</a>.
-            </p>
+            <p class="text-[10px] text-center text-gray-500 mt-4">Ao continuar, concordo com a <a href="#" onclick="window.openTerms && window.openTerms('privacidade')" class="underline hover:text-blue-400">Política de Privacidade</a>.</p>
         </div>
     </div>
 
     <div id="auth-container" class="fixed inset-0 bg-slate-900 z-[55] flex-col items-center justify-center p-6 animate-fadeIn hidden">
         <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-3xl font-bold p-2 transition">&larr;</button>
-        
         <div class="w-full max-w-md text-center">
             <h2 class="text-4xl font-black text-white italic uppercase mb-2 tracking-tighter">Atlivio</h2>
             <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Login Seguro</p>
-            
             <div id="login-step-phone" class="space-y-4">
                 <div class="relative">
                     <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
-                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" 
-                           class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition placeholder-gray-600">
+                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition placeholder-gray-600">
                 </div>
-                <button onclick="window.enviarSMSLogin('login')" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
-                    RECEBER CÓDIGO SMS 📲
-                </button>
+                <button onclick="window.enviarSMSLogin && window.enviarSMSLogin('login')" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">RECEBER CÓDIGO SMS 📲</button>
             </div>
-
             <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
                 <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-800 mb-2">
                     <p class="text-xs text-blue-300">SMS enviado para <span id="lbl-login-phone" class="font-bold text-white">...</span></p>
                 </div>
-                <input type="tel" id="login-code" placeholder="000000" maxlength="6" 
-                       class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
-                
-                <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95">
-                    ENTRAR AGORA 🚀
-                </button>
+                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
+                <button onclick="window.confirmarCodigoLogin && window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95 cursor-pointer z-50 relative">ENTRAR AGORA 🚀</button>
                 <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2 hover:text-gray-300">Corrigir número</button>
             </div>
-            
             <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
         </div>
     </div>
 
     <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 flex-col items-center justify-center p-6 animate-fade hidden">
         <button onclick="voltarParaLanding()" class="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
-        
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
             <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
             <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido</p>
-            
             <form id="form-onboarding" class="space-y-4">
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
-                    <input type="text" id="inp-onboard-name" 
-                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
-                           placeholder="Nome e sobrenome" required minlength="3">
+                    <input type="text" id="inp-onboard-name" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="Nome e sobrenome" required minlength="3">
                 </div>
-
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu WhatsApp</label>
-                    <input type="tel" id="inp-onboard-phone" 
-                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
-                           placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" required>
+                    <input type="tel" id="inp-onboard-phone" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)" required>
                 </div>
-
                 <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
                     <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
-                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
-                        Li e aceito os <a href="#" onclick="openTerms('termos')" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a>.
-                    </label>
+                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">Li e aceito os <a href="#" onclick="window.openTerms && window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a>.</label>
                 </div>
-
-                <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">
-                    COMEÇAR 🚀
-                </button>
+                <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">COMEÇAR 🚀</button>
             </form>
-
-            <div class="mt-6 text-center">
-                <p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p>
-            </div>
+            <div class="mt-6 text-center"><p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p></div>
         </div>
     </div>
 
@@ -266,12 +208,12 @@
             <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
             <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                <button onclick="window.definirPerfil && window.definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">💎</div>
                     <div class="font-black text-blue-900 uppercase italic">Cliente</div>
                     <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços.</div>
                 </button>
-                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                <button onclick="window.definirPerfil && window.definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
                     <div class="text-4xl mb-3">🛠️</div>
                     <div class="font-black text-blue-900 uppercase italic">Prestador</div>
                     <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar.</div>
@@ -288,10 +230,8 @@
             </div>
             <div class="flex justify-between items-center">
                 <div class="flex flex-col">
-                    <div class="flex flex-col md:flex-row md:items-baseline gap-1">
-                        <h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1>
-                    </div>
-                    <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">🔄 Carregando...</button>
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-1"><h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1></div>
+                    <button onclick="window.alternarPerfil && window.alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">🔄 Carregando...</button>
                 </div>
                 <div class="flex items-center gap-2">
                     <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
@@ -302,9 +242,9 @@
                         </div>
                     </div>
                     <div class="flex flex-col items-end gap-1">
-                        <button onclick="window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta"><span class="text-xl">⚙️</span></button>
+                        <button onclick="window.abrirConfiguracoes && window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta"><span class="text-xl">⚙️</span></button>
                         <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">📲 SALVE SEU ACESSO</button>
-                        <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full transition">SAIR</button>
+                        <button onclick="window.logout && window.logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full transition">SAIR</button>
                     </div>
                 </div>
             </div>
@@ -322,72 +262,31 @@
         </nav>
 
         <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
-            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
-                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos e Cashback</p>
-                <div id="lista-oportunidades" class="grid gap-3"></div>
-            </section>
-            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
-                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões e ganhe</p>
-                <div id="lista-missoes" class="grid gap-4"></div>
-            </section>
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn"><div id="lista-oportunidades" class="grid gap-3"></div></section>
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn"><div id="lista-missoes" class="grid gap-4"></div></section>
             <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
                 <div id="category-filters" class="hidden"></div> 
                 <div id="servicos-cliente" class="hidden">
                     <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
-                        <div class="flex items-center gap-3">
-                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
-                                <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                            </div>
-                            <div><h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3></div>
-                        </div>
+                        <div class="flex items-center gap-3"><div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()"><img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover"></div><div><h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3></div></div>
                     </div>
-                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
-                        <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
-                        <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
-                        <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
-                    </div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button><button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button><button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button></div>
                     <div id="view-contratar"><div id="lista-prestadores-realtime" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div></div>
                     <div id="view-andamento" class="hidden space-y-2"><div id="meus-pedidos-andamento" class="space-y-3"></div></div>
                     <div id="view-historico" class="hidden space-y-2"><div id="meus-pedidos-historico" class="space-y-3"></div></div>
                 </div>
                 <div id="servicos-prestador" class="hidden">
-                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
-                        <div class="flex items-center gap-3">
-                            <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                            <div><h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3></div>
-                        </div>
-                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button>
-                    </div>
-                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
-                        <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
-                        <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
-                        <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
-                    </div>
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn"><div class="flex items-center gap-3"><img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover"><div><h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3></div></div><button onclick="window.abrirConfiguracaoServicos && window.abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button></div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button><button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button><button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button></div>
                     <div id="pview-radar" class="text-center py-10"></div>
-                    <div id="pview-ativos" class="hidden space-y-3"><div id="lista-chamados-ativos"><p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p></div></div>
-                    <div id="pview-historico" class="hidden space-y-3"><div id="lista-chamados-historico"><p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p></div></div>
+                    <div id="pview-ativos" class="hidden space-y-3"><div id="lista-chamados-ativos"></div></div>
+                    <div id="pview-historico" class="hidden space-y-3"><div id="lista-chamados-historico"></div></div>
                 </div>
             </section>
-            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn">
-                <div id="lista-vagas" class="grid gap-3"></div>
-                <div id="painel-empresa" class="hidden">
-                    <button onclick="abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">+ Anunciar Vaga Grátis</button>
-                    <div id="lista-minhas-vagas" class="space-y-2 mt-4"></div>
-                </div>
-            </section>
-            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
-                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados</p>
-                <div id="sec-produtos"></div>
-            </section>
-            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
-                <div id="lista-chats" class="space-y-2"></div>
-            </section>
-            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
-                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
-                    <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-                </div>
-            </section>
+            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn"><div id="lista-vagas" class="grid gap-3"></div><div id="painel-empresa" class="hidden"><button onclick="window.abrirModalVaga && window.abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">+ Anunciar Vaga Grátis</button><div id="lista-minhas-vagas" class="space-y-2 mt-4"></div></div></section>
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn"><div id="sec-produtos"></div></section>
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn"><div id="lista-chats" class="space-y-2"></div></section>
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn"><div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative"><p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p><h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2></div></section>
         </main>
     </div>
 
@@ -398,236 +297,41 @@
                 <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
-                <div class="space-y-3">
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Identidade</p>
-                    <div class="flex flex-col items-center mb-4">
-                        <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
-                            <img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-xs text-white font-bold">ALTERAR</span></div>
-                        </div>
-                    </div>
-                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div>
-                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">E-mail (Contato)</label><input type="email" id="set-email" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition" placeholder="opcional"></div>
-                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div>
-                </div>
-                
-                <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
-                    <div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div>
-                    
-                    <div>
-                        <label class="text-[10px] font-bold text-green-700 uppercase">Nome do Banco</label>
-                        <input type="text" id="set-bank" placeholder="Ex: Nubank, Inter..." class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-green-700 uppercase">Chave PIX</label>
-                        <input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-green-700 uppercase">CPF do Titular</label>
-                        <input type="text" id="set-cpf" placeholder="000.000.000-00" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none">
-                    </div>
-                    
-                    <p id="pix-warning" class="text-[9px] text-green-800 font-bold mt-2 bg-green-100 p-2 rounded border border-green-200 text-center">
-                        ⚠️ Importante: Transferências só serão realizadas para o titular da conta cadastrado acima.
-                    </p>
-                </div>
+                <div class="space-y-3"><div class="flex flex-col items-center mb-4"><div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()"><img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover"><div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-xs text-white font-bold">ALTERAR</span></div></div></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div></div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3"><div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div><div><label class="text-[10px] font-bold text-green-700 uppercase">Chave PIX</label><input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2"></div></div>
             </div>
-            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
-                <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
-                <button onclick="salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button>
-            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0"><button onclick="window.salvarConfiguracoes && window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button></div>
         </div>
     </div>
-
+    
     <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
         <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl">
-                <h3 class="text-white font-bold" id="term-title">Termos de Uso</h3>
-                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-            </div>
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl"><h3 class="text-white font-bold" id="term-title">Termos de Uso</h3><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
             <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
-            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center">
-                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button>
-            </div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center"><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button></div>
         </div>
     </div>
 
-    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
-            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
-            <div id="provider-setup-content"><p class="text-center text-gray-400">Carregando editor...</p></div>
-        </div>
-    </div>
-    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative"><div id="public-services-list"></div></div> </div>
-    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <input type="hidden" id="target-provider-id"><input type="hidden" id="service-base-price">
-            <div class="p-6"><p>Carregando...</p></div>
-        </div>
-    </div>
-    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-       <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><div id="star-container"></div></div>
-    </div>
-    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div>
-    </div>
-    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative"><button onclick="window.fecharModalCandidatura()" class="absolute top-4 right-4">&times;</button></div>
-    </div>
-    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div>
-    </div>
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 font-bold">&times;</button><div id="provider-setup-content"></div></div></div>
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm"><div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative"><div id="public-services-list"></div></div></div>
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"><input type="hidden" id="target-provider-id"><input type="hidden" id="service-base-price"><div class="p-6"><p>Carregando...</p></div></div></div>
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><div id="star-container"></div></div></div>
+    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
+    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative"><button onclick="window.fecharModalCandidatura && window.fecharModalCandidatura()" class="absolute top-4 right-4">&times;</button></div></div>
+    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
     <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white"><div class="loader mb-4"></div></div>
 
-    <script type="module" src="./js/app.js?v=15.8"></script>
-    <script type="module" src="./js/auth.js?v=15.8"></script>
-    <script type="module" src="./js/modules/services.js?v=15.8"></script>
-    <script type="module" src="./js/modules/request.js?v=15.8"></script>
-    <script type="module" src="./js/modules/chat.js?v=15.8"></script>
-    <script type="module" src="./js/wallet.js?v=15.8"></script>
-    <script type="module" src="./js/modules/jobs.js?v=15.8"></script>
-    <script type="module" src="./js/modules/missions.js?v=15.8"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=15.8"></script>
-    <script type="module" src="./js/modules/products.js?v=15.8"></script>
+    <script type="module" src="./js/app.js?v=17.0"></script>
+    <script type="module" src="./js/auth.js?v=17.0"></script>
+    <script type="module" src="./js/modules/services.js?v=17.0"></script>
+    <script type="module" src="./js/modules/request.js?v=17.0"></script>
+    <script type="module" src="./js/modules/chat.js?v=17.0"></script>
+    <script type="module" src="./js/wallet.js?v=17.0"></script>
+    <script type="module" src="./js/modules/jobs.js?v=17.0"></script>
+    <script type="module" src="./js/modules/missions.js?v=17.0"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=17.0"></script>
+    <script type="module" src="./js/modules/products.js?v=17.0"></script>
     
-    <script type="module">
-        import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { app } from './js/app.js'; 
-
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        auth.languageCode = 'pt-br';
-
-        // --- 1. SMS LOGIN FUNCTIONS (Global Scope Binding) ---
-        window.mascaraTelefone = (input) => {
-            let v = input.value.replace(/\D/g,'').substring(0, 11);
-            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
-            input.value = v;
-        };
-
-        const setupRecaptcha = () => {
-            if(!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { 'size': 'invisible' });
-            }
-        };
-
-        window.enviarSMSLogin = async (origem) => {
-            let telefoneInput;
-            
-            if (origem === 'cadastro') {
-                telefoneInput = document.getElementById('inp-onboard-phone');
-                // Salva o nome para usar depois que logar
-                const nome = document.getElementById('inp-onboard-name').value;
-                if(nome.length < 3) return alert("Por favor, digite seu nome completo.");
-                localStorage.setItem("temp_user_name", nome);
-            } else {
-                telefoneInput = document.getElementById('login-phone');
-            }
-
-            let rawPhone = telefoneInput.value.replace(/\D/g, ''); 
-            if(rawPhone.length < 10) return alert("Número inválido.");
-            const finalPhone = '+55' + rawPhone;
-            
-            setupRecaptcha();
-            
-            // Feedback Visual
-            const btn = origem === 'cadastro' ? document.getElementById('btn-onboard-sms') : document.getElementById('btn-login-send');
-            const textoOriginal = btn.innerText;
-            btn.innerText = "ENVIANDO..."; btn.disabled = true;
-
-            try {
-                window.confirmationResult = await signInWithPhoneNumber(auth, finalPhone, window.recaptchaVerifier);
-                
-                // Se for cadastro, a gente esconde o onboarding e mostra o input de código do login
-                if(origem === 'cadastro') {
-                    alert(`Código enviado para ${finalPhone}. Digite-o na próxima tela.`);
-                    document.getElementById('modal-onboarding').classList.add('hidden');
-                    document.getElementById('landing-page').classList.add('hidden');
-                    document.getElementById('auth-container').classList.remove('hidden');
-                    document.getElementById('auth-container').style.display = 'flex';
-                }
-
-                document.getElementById('lbl-login-phone').innerText = finalPhone;
-                document.getElementById('login-step-phone').classList.add('hidden');
-                document.getElementById('login-step-code').classList.remove('hidden');
-
-            } catch (error) {
-                console.error(error);
-                alert("Erro ao enviar SMS: " + error.message);
-                btn.innerText = textoOriginal; btn.disabled = false;
-                if(window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
-            }
-        };
-
-        window.confirmarCodigoLogin = async () => {
-            const code = document.getElementById('login-code').value;
-            try {
-                await window.confirmationResult.confirm(code);
-            } catch (error) { alert("Código inválido."); }
-        };
-
-        // --- 2. GLOBAL SETTINGS & ALERTS ---
-        window.loadGlobalAlert = async function() {
-            try {
-                const docSnap = await getDoc(doc(db, "settings", "global"));
-                if (docSnap.exists() && docSnap.data().top_message) {
-                    const msgDiv = document.getElementById('global-alert-banner');
-                    const msgText = document.getElementById('global-alert-text');
-                    if(msgDiv && msgText) {
-                        msgText.innerText = "⚠️ AVISO: " + docSnap.data().top_message;
-                        msgDiv.classList.remove('hidden');
-                    }
-                }
-            } catch (e) { console.log("Info config:", e); }
-        };
-        
-        // --- 3. TERMOS E PRIVACIDADE (TEXTOS COMPLETOS RESTAURADOS) ---
-        const TEXTO_TERMOS = `
-            1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
-            2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
-            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos internos da plataforma, vinculados a serviços intermediados.
-            4. RESPONSABILIDADE: A Atlivio conecta Clientes e Prestadores, não se responsabilizando pela execução dos serviços.
-            5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos a qualquer momento.
-            6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
-            7. A ATLIVIO pode atualizar estes termos a qualquer momento.
-        `;
-
-        const TEXTO_PRIVACIDADE = `
-            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil.
-            2. USO: Seus dados servem para conectar Clientes e Prestadores.
-            3. SEGURANÇA: Utilizamos práticas de segurança com criptografia SSL e banco de dados Google Firebase.
-            4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
-        `;
-
-        window.openTerms = function(type) {
-            const modal = document.getElementById('modal-terms');
-            const title = document.getElementById('term-title');
-            const content = document.getElementById('term-content');
-            
-            if(modal && title && content) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                
-                if(type === 'termos') {
-                    title.innerText = "Termos de Uso";
-                    content.innerText = TEXTO_TERMOS;
-                } else {
-                    title.innerText = "Política de Privacidade";
-                    content.innerText = TEXTO_PRIVACIDADE;
-                }
-            } else {
-                console.error("Erro: Modal de termos não encontrado no HTML.");
-            }
-        };
-
-        // Initialize Global Alert
-        loadGlobalAlert();
-    </script>
-
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -637,19 +341,8 @@
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             const btn = document.getElementById('btn-install-app');
-            if(btn) {
-                btn.classList.remove('hidden');
-                btn.onclick = () => { e.prompt(); };
-            }
+            if(btn) { btn.classList.remove('hidden'); btn.onclick = () => { e.prompt(); }; }
         });
-        
-        // Verifica se já está logado ao abrir
-        setTimeout(() => {
-             if(localStorage.getItem('user_uid')) {
-                 document.getElementById('landing-page').classList.add('hidden');
-                 document.getElementById('app-container').classList.remove('hidden');
-             }
-        }, 500);
     </script>
 </body>
 </html>
