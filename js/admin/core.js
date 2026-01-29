@@ -17,7 +17,7 @@ window.currentDataMode = 'real';
 window.activeView = 'dashboard';
 
 // ============================================================================
-// 1. INICIALIZAÇÃO
+// 1. INICIALIZAÇÃO E AUTH
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // Auth Listeners
@@ -78,12 +78,14 @@ function setDataMode(mode) {
 
 async function loginAdmin() { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } }
 function logoutAdmin() { signOut(auth).then(() => location.reload()); }
+
 function unlockAdmin() {
     document.getElementById('login-gate').classList.add('hidden');
     document.getElementById('admin-sidebar').classList.remove('hidden');
     document.getElementById('admin-main').classList.remove('hidden');
     switchView('dashboard');
 }
+
 function lockAdmin() {
     document.getElementById('login-gate').classList.remove('hidden');
     document.getElementById('admin-sidebar').classList.add('hidden');
@@ -91,18 +93,20 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS (ATUALIZADO PARA SUPORTE)
+// 2. ROTEADOR DE MÓDULOS (ATUALIZADO COM AUDITORIA)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Carregando módulo: ${viewName}`);
     
-    // UI Cleanup
-    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support'].forEach(id => {
+    // UI Cleanup (ADICIONADO 'view-audit')
+    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support', 'view-audit'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
     });
-    document.getElementById('page-title').innerText = viewName.toUpperCase();
+    
+    const titleEl = document.getElementById('page-title');
+    if(titleEl) titleEl.innerText = viewName.toUpperCase();
 
     // Mapeamento
     let moduleFile, containerId;
@@ -111,12 +115,8 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
-    else if (['users', 'services'].includes(viewName)) { 
-        moduleFile = './users.js'; 
-        containerId = 'view-list'; 
-    }
-    else if (['jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
-        moduleFile = './jobs.js'; 
+    else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
+        moduleFile = viewName === 'users' || viewName === 'services' ? './users.js' : './jobs.js'; 
         containerId = 'view-list'; 
     }
     else if (['automation'].includes(viewName)) { 
@@ -131,13 +131,20 @@ window.switchView = async function(viewName) {
         moduleFile = './settings.js'; 
         containerId = 'view-settings'; 
     }
-    // ✅ NOVO: SUPORTE
     else if (viewName === 'support') {
         moduleFile = './support.js';
         containerId = 'view-support';
     }
+    // ✅ NOVA ROTA: AUDITORIA
+    else if (viewName === 'audit') {
+        moduleFile = './audit.js';
+        containerId = 'view-audit';
+    }
 
-    if(containerId) document.getElementById(containerId).classList.remove('hidden');
+    if(containerId) {
+        const el = document.getElementById(containerId);
+        if(el) el.classList.remove('hidden');
+    }
 
     if (moduleFile) {
         try {
