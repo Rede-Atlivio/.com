@@ -1,4 +1,4 @@
-const CACHE_NAME = "atlivio-v15.4";
+const CACHE_NAME = "atlivio-v15.6"; // Subi a versão para forçar atualização
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -12,10 +12,10 @@ const ASSETS_TO_CACHE = [
   "./js/modules/chat.js",
   "./js/modules/profile.js",
   "./js/modules/onboarding.js",
-  "https://cdn.tailwindcss.com"
+  // REMOVIDO: "https://cdn.tailwindcss.com" (Causava erro de CORS)
 ];
 
-// 1. INSTALAÇÃO (Cache Inicial)
+// 1. INSTALAÇÃO
 self.addEventListener("install", (e) => {
   self.skipWaiting();
   e.waitUntil(
@@ -25,13 +25,14 @@ self.addEventListener("install", (e) => {
   );
 });
 
-// 2. ATIVAÇÃO (Limpeza de Caches Antigos)
+// 2. ATIVAÇÃO (Limpa caches velhos)
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(
         keyList.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log("[SW] Limpando cache antigo:", key);
             return caches.delete(key);
           }
         })
@@ -41,21 +42,19 @@ self.addEventListener("activate", (e) => {
   return self.clients.claim();
 });
 
-// 3. INTERCEPTAÇÃO (Offline First com exceções)
+// 3. INTERCEPTAÇÃO
 self.addEventListener("fetch", (e) => {
-  // Ignora requisições do Firestore/Google/API (Deixa passar pra rede)
+  // Ignora Google, Firebase e Tailwind (Rede direta)
   if (e.request.url.includes('firestore') || 
       e.request.url.includes('googleapis') || 
       e.request.url.includes('firebase') ||
-      e.request.method !== 'GET') {
+      e.request.url.includes('tailwindcss')) {
       return; 
   }
 
   e.respondWith(
     caches.match(e.request).then((response) => {
-      // Se achou no cache, devolve. Se não, busca na rede.
       return response || fetch(e.request).catch(() => {
-          // Se falhar e for navegação (ex: sem internet), tenta retornar a home
           if (e.request.mode === 'navigate') {
               return caches.match('./index.html');
           }
