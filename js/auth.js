@@ -22,12 +22,11 @@ const CATEGORIAS_SERVICOS = [
 ];
 
 // ============================================================================
-// 1. LOGIN & RASTREAMENTO (ATUALIZADO)
+// 1. LOGIN & RASTREAMENTO
 // ============================================================================
 
 window.loginGoogle = async () => { 
     console.log("🔄 Login Iniciado..."); 
-    // Salva a origem no Session Storage para sobreviver ao Redirect
     const origem = localStorage.getItem("traffic_source");
     if(origem) sessionStorage.setItem("pending_ref", origem);
     signInWithRedirect(auth, provider); 
@@ -35,7 +34,6 @@ window.loginGoogle = async () => {
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
-// PROCESSAMENTO PÓS-LOGIN (Afiliados + Criação de Conta)
 getRedirectResult(auth).then(async (result) => { 
     if (result) {
         console.log("✅ Login Google OK.");
@@ -43,7 +41,6 @@ getRedirectResult(auth).then(async (result) => {
         const userRef = doc(db, "usuarios", user.uid);
         const docSnap = await getDoc(userRef);
 
-        // 🆕 Se for NOVO USUÁRIO, aplica a indicação
         if (!docSnap.exists()) {
             const indicatedBy = sessionStorage.getItem("pending_ref") || localStorage.getItem("traffic_source");
             let dadosIndicacao = {};
@@ -51,7 +48,6 @@ getRedirectResult(auth).then(async (result) => {
             if (indicatedBy && indicatedBy !== user.uid) {
                 console.log("🔗 Usuário indicado por:", indicatedBy);
                 dadosIndicacao = { invited_by: indicatedBy, traffic_source: 'afiliado' };
-                // Notifica o Padrinho
                 try {
                     await addDoc(collection(db, "notifications"), {
                         uid: indicatedBy,
@@ -63,7 +59,6 @@ getRedirectResult(auth).then(async (result) => {
                 dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
             }
 
-            // Cria perfil inicial (o resto vem no onAuthStateChanged)
             await setDoc(userRef, {
                 uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
             }, { merge: true });
@@ -73,7 +68,7 @@ getRedirectResult(auth).then(async (result) => {
 }).catch((error) => console.error("❌ Erro Login:", error));
 
 // ============================================================================
-// 2. PERFIL & CORE (FUNCIONALIDADES MANTIDAS)
+// 2. PERFIL & CORE
 // ============================================================================
 
 window.definirPerfil = async (tipo) => {
@@ -97,7 +92,6 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    // Fallback de segurança (Cria se não existir)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
                     const novoPerfil = { 
                         email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
@@ -128,19 +122,25 @@ onAuthStateChanged(auth, async (user) => {
                             if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                         }
                     }
+                    
+                    // 🚀 REMOVE O SPLASH SCREEN AQUI (SUCESSO)
+                    if(window.ocultarSplash) window.ocultarSplash();
                 }
-            } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); }
+            } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); if(window.ocultarSplash) window.ocultarSplash(); }
         });
     } else {
         document.getElementById('auth-container').classList.remove('hidden');
         document.getElementById('role-selection').classList.add('hidden');
         document.getElementById('app-container').classList.add('hidden');
         removerBloqueiosVisuais();
+        
+        // 🚀 REMOVE O SPLASH SCREEN SE NÃO TIVER USER (PARA MOSTRAR LOGIN)
+        if(window.ocultarSplash) window.ocultarSplash();
     }
 });
 
 // ============================================================================
-// 3. SISTEMA DE SUPORTE
+// 3. SISTEMA DE SUPORTE (RESTAURADO)
 // ============================================================================
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
@@ -225,7 +225,7 @@ window.enviarMensagemSuporte = async () => {
 };
 
 // ============================================================================
-// 4. HELPERS DE INTERFACE & STATUS
+// 4. HELPERS DE INTERFACE & STATUS (RESTAURADOS)
 // ============================================================================
 
 function aplicarRestricoesDeStatus(status) {
@@ -432,7 +432,7 @@ window.uploadFotoPerfil = async (i) => { if (!i.files || i.files.length === 0) r
 function toggleDisplay(id, s) { const el = document.getElementById(id); if(el) s ? el.classList.remove('hidden') : el.classList.add('hidden'); }
 
 // ============================================================================
-// 👁️ LIVE TRACKING (MONITOR DE CLIQUES)
+// 👁️ LIVE TRACKING
 // ============================================================================
 async function logSystemEvent(action, details) {
     try {
@@ -440,16 +440,9 @@ async function logSystemEvent(action, details) {
         const email = userProfile ? (userProfile.email || userProfile.displayName || "Sem Nome") : "Visitante";
         
         await addDoc(collection(db, "system_events"), {
-            action: action,
-            details: details,
-            user: email,
-            uid: uid,
-            timestamp: serverTimestamp(),
-            type: 'click'
+            action: action, details: details, user: email, uid: uid, timestamp: serverTimestamp(), type: 'click'
         });
-    } catch(e) {
-        console.warn("Log failed:", e);
-    }
+    } catch(e) { console.warn("Log failed:", e); }
 }
 
 window.addEventListener('click', (e) => {
