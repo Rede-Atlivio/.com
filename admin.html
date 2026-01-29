@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlivio Admin | Comando Central v3.1</title>
+    <title>Atlivio Admin | Comando Central v3.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -47,7 +47,7 @@
     <aside class="w-64 bg-slate-900/50 border-r border-white/5 flex flex-col hidden" id="admin-sidebar">
         <div class="p-6 border-b border-white/5">
             <h1 class="text-xl font-black text-white italic tracking-tighter">ATLIVIO <span class="text-blue-500">.OS</span></h1>
-            <p class="text-[10px] text-gray-500 mt-1">v3.1 // SUPPORT ENABLED</p>
+            <p class="text-[10px] text-gray-500 mt-1">v3.2 // AUDIT ENABLED</p>
         </div>
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Operacional</p>
@@ -58,6 +58,7 @@
             
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Atendimento</p>
             <button class="nav-btn text-yellow-200 hover:text-yellow-100" data-view="support"><i data-lucide="message-circle" size="16"></i> SUPORTE & TICKETS</button>
+            <button class="nav-btn text-indigo-400 hover:text-indigo-300" data-view="audit"><i data-lucide="search" size="16"></i> AUDITORIA & CHAT</button>
 
             <p class="text-[10px] text-gray-600 font-bold uppercase mt-4 mb-2 pl-2">Vagas & RH</p>
             <button class="nav-btn" data-view="jobs"><i data-lucide="briefcase" size="16"></i> VAGAS DE EMPREGO</button>
@@ -112,6 +113,8 @@
 
             <div id="view-support" class="hidden h-full animate-fade"></div>
 
+            <div id="view-audit" class="hidden h-full animate-fade"></div>
+
             <div id="view-finance" class="hidden space-y-6 animate-fade"></div>
 
             <div id="view-automation" class="hidden space-y-6 animate-fade"></div>
@@ -141,7 +144,7 @@
         </div>
     </div>
 
-    <script type="module" src="./js/admin/core.js?v=15.6"></script> 
+    <script type="module" src="./js/admin/core.js?v=15.7"></script> 
     
     <script>
         // Inicializa ícones ao carregar
