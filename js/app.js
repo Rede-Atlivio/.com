@@ -23,7 +23,7 @@ window.db = db;
 window.auth = auth;
 
 // ============================================================================
-// 🔔 CENTRAL DE NOTIFICAÇÕES (DEBUG MODE)
+// 🔔 CENTRAL DE NOTIFICAÇÕES (VERSÃO FINAL)
 // ============================================================================
 
 // 1. Garante Container Visual
@@ -41,54 +41,53 @@ let unsubscribeNotifications = null;
 // 2. Inicia Listener
 auth.onAuthStateChanged((user) => {
     if (user) {
-        console.log("👤 Auth Confirmado:", user.uid);
         iniciarOuvinteNotificacoes(user.uid);
+    } else {
+        if(unsubscribeNotifications) unsubscribeNotifications();
     }
 });
 
 function iniciarOuvinteNotificacoes(uid) {
     if (unsubscribeNotifications) unsubscribeNotifications();
 
-    console.log("📡 Conectando ao canal de notificações...");
-
     const q = query(
         collection(db, "notifications"), 
         where("uid", "==", uid), 
         where("read", "==", false),
         orderBy("created_at", "desc"),
-        limit(10)
+        limit(5)
     );
 
     unsubscribeNotifications = onSnapshot(q, (snapshot) => {
-        // LOG PARA SABER SE O BANCO RESPONDEU
-        console.log(`📨 SNAPSHOT RECEBIDO. Total Docs: ${snapshot.size}`);
-
         snapshot.docChanges().forEach((change) => {
-            const notif = change.doc.data();
-            console.log("👉 Mudança detectada:", change.type, notif);
-
             if (change.type === "added") {
-                // SEM FILTRO DE TEMPO AGORA (Para teste)
-                console.log("🔔 EXIBINDO TOAST:", notif.message);
-                mostrarToast(notif.message, change.doc.id, notif.type);
+                const notif = change.doc.data();
+                
+                // Filtro de tempo: Só mostra se for recente (menos de 2 minutos)
+                // Isso evita spam de notificações velhas no login
+                const agora = new Date();
+                const dataNotif = notif.created_at ? notif.created_at.toDate() : new Date();
+                const diffSegundos = (agora - dataNotif) / 1000;
+
+                // Se não tiver data (criado agora) ou for recente (< 120s), mostra
+                if (!notif.created_at || diffSegundos < 120) { 
+                    mostrarToast(notif.message, change.doc.id, notif.type);
+                }
             }
         });
     }, (error) => {
-        console.error("❌ ERRO CRÍTICO NO LISTENER:", error);
-        if (error.code === 'failed-precondition') {
-            console.error("🚨 FALTA ÍNDICE! Verifique o console anterior para o link.");
-        }
+        if(error.code !== 'permission-denied') console.warn("Erro notificações:", error);
     });
 }
 
 function mostrarToast(mensagem, docId, tipo = 'info') {
     const container = document.getElementById('toast-container');
-    if(!container) return console.error("Container de toast sumiu!");
+    if(!container) return;
 
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'); 
     if(tipo === 'money') audio.src = 'https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3'; 
     audio.volume = 0.5;
-    audio.play().catch((e) => console.log("Áudio bloqueado:", e.message)); 
+    audio.play().catch(() => {}); 
 
     let bgClass = "bg-white border-l-4 border-blue-500 text-gray-800";
     let icon = "🔔";
@@ -132,4 +131,4 @@ const style = document.createElement('style');
 style.innerHTML = `@keyframes shrink { from { width: 100%; } to { width: 0%; } } .animate-shrink { animation: shrink 6s linear forwards; }`;
 document.head.appendChild(style);
 
-console.log("🔥 App Core V7.3 (Debug Notificações) Carregado.");
+console.log("🔥 App Core V7.4 (Stable) Carregado.");
