@@ -16,7 +16,6 @@ window.userProfile = null;
 // 1. GESTÃO DE RECAPTCHA & LOGIN SMS
 // ============================================================================
 
-// Limpeza agressiva para evitar erro "Already Rendered"
 const resetRecaptcha = () => {
     if (window.recaptchaVerifier) {
         try { window.recaptchaVerifier.clear(); } catch (e) {}
@@ -27,7 +26,7 @@ const resetRecaptcha = () => {
 };
 
 const setupRecaptcha = () => {
-    resetRecaptcha(); // Limpa antes de criar
+    resetRecaptcha();
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => console.log("Captcha resolvido."),
@@ -38,40 +37,68 @@ const setupRecaptcha = () => {
     });
 };
 
-// EXPORTAÇÃO EXPLÍCITA PARA WINDOW (Garante que o HTML ache a função)
-window.enviarSMSLogin = async () => {
-    let rawPhone = document.getElementById('login-phone').value;
-    let cleanPhone = rawPhone.replace(/\D/g, ''); 
+// ATENÇÃO: Esta função pode estar sendo sobrescrita pelo HTML inline. 
+// Mantemos aqui para garantir robustez caso o HTML falhe.
+window.enviarSMSLogin = async (origem) => {
+    let telefoneInput;
+    if (origem === 'cadastro') {
+        telefoneInput = document.getElementById('inp-onboard-phone');
+        const nome = document.getElementById('inp-onboard-name').value;
+        if(nome.length < 3) return alert("Por favor, digite seu nome completo.");
+        localStorage.setItem("temp_user_name", nome);
+    } else {
+        telefoneInput = document.getElementById('login-phone');
+    }
 
-    if(cleanPhone.length < 10) return alert("Digite o número completo com DDD.");
+    if(!telefoneInput) return alert("Erro: Campo de telefone não encontrado.");
 
-    const finalPhone = '+55' + cleanPhone;
-    const btn = document.getElementById('btn-login-send');
-    const originalText = btn.innerText;
+    let rawPhone = telefoneInput.value.replace(/\D/g, ''); 
+    if(rawPhone.length < 10) return alert("Digite o número completo com DDD.");
+
+    const finalPhone = '+55' + rawPhone;
     
-    btn.disabled = true;
-    btn.innerText = "ENVIANDO...";
+    // Seleciona o botão correto baseado na origem
+    const btnId = origem === 'cadastro' ? 'btn-onboard-sms' : 'btn-login-send';
+    const btn = document.getElementById(btnId);
+    
+    if(btn) {
+        btn.disabled = true;
+        btn.innerText = "ENVIANDO...";
+    }
 
     try {
         setupRecaptcha();
         const appVerifier = window.recaptchaVerifier;
-
         const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
         
-        // SALVA NA MEMÓRIA GLOBAL
         window.confirmationResult = confirmationResult;
-        console.log("✅ SMS Enviado. ConfirmationResult salvo.");
+        console.log("✅ SMS Enviado via Auth.js");
         
-        document.getElementById('lbl-login-phone').innerText = finalPhone;
-        document.getElementById('login-step-phone').classList.add('hidden');
-        document.getElementById('login-step-code').classList.remove('hidden');
+        if(origem === 'cadastro') {
+            alert(`Código enviado para ${finalPhone}.`);
+            // Transição visual forçada
+            document.getElementById('modal-onboarding')?.classList.add('hidden');
+            document.getElementById('landing-page')?.classList.add('hidden');
+            const authC = document.getElementById('auth-container');
+            if(authC) {
+                authC.classList.remove('hidden');
+                authC.style.display = 'flex';
+            }
+        }
+
+        const lblPhone = document.getElementById('lbl-login-phone');
+        if(lblPhone) lblPhone.innerText = finalPhone;
+        
+        document.getElementById('login-step-phone')?.classList.add('hidden');
+        document.getElementById('login-step-code')?.classList.remove('hidden');
 
     } catch (error) {
         console.error("Erro SMS:", error);
         resetRecaptcha();
-        btn.disabled = false;
-        btn.innerText = originalText;
-        
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = "TENTAR NOVAMENTE";
+        }
         if(error.code === 'auth/invalid-phone-number') alert("Número inválido.");
         else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Aguarde.");
         else alert("Erro ao enviar: " + error.message);
@@ -80,42 +107,39 @@ window.enviarSMSLogin = async () => {
 
 window.confirmarCodigoLogin = async () => {
     const codeInput = document.getElementById('login-code');
-    const code = codeInput.value.replace(/\s/g, ''); // Remove espaços se houver
+    const code = codeInput.value.replace(/\s/g, '');
 
     if(code.length < 6) return alert("O código deve ter 6 números.");
-
-    // VERIFICAÇÃO CRÍTICA DE SESSÃO PERDIDA
     if (!window.confirmationResult) {
-        alert("⚠️ Sessão expirada ou página recarregada.\n\nPor favor, envie o SMS novamente.");
-        window.location.reload();
-        return;
+        alert("⚠️ Sessão expirada.\nRecarregue a página e tente novamente.");
+        return window.location.reload();
     }
 
     const btn = document.getElementById('btn-login-verify');
-    const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "VALIDANDO...";
+    if(btn) {
+        btn.disabled = true;
+        btn.innerText = "VALIDANDO...";
+    }
 
     try {
         const result = await window.confirmationResult.confirm(code);
         console.log("✅ Login Sucesso. UID:", result.user.uid);
-        // O onAuthStateChanged vai detectar o login e mudar a tela
     } catch (error) {
         console.error("Erro Validação:", error);
-        btn.disabled = false;
-        btn.innerText = originalText;
-        if (error.code === 'auth/invalid-verification-code') alert("Código incorreto.");
-        else alert("Erro: " + error.message);
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = "ENTRAR AGORA 🚀";
+        }
+        alert("Código incorreto.");
     }
 };
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
 // ============================================================================
-// 2. MONITORAMENTO DE ESTADO (ORQUESTRADOR)
+// 2. MONITORAMENTO DE ESTADO (ORQUESTRADOR DE TELAS V16.3)
 // ============================================================================
 
-// Helpers de Perfil
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
     try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); location.reload(); } catch(e) { alert("Erro: " + e.message); }
@@ -129,24 +153,38 @@ window.alternarPerfil = async () => {
 };
 
 onAuthStateChanged(auth, async (user) => {
+    // ELEMENTOS DE UI
+    const el = {
+        landing: document.getElementById('landing-page'),
+        auth: document.getElementById('auth-container'),
+        app: document.getElementById('app-container'),
+        role: document.getElementById('role-selection'),
+        onboard: document.getElementById('modal-onboarding'),
+        splash: document.getElementById('splash-screen')
+    };
+
     if (user) {
-        // Esconde login imediatamente
-        const authContainer = document.getElementById('auth-container');
-        if(authContainer) authContainer.classList.add('hidden');
+        // 1. ESCONDER TELAS DE LOGIN/LANDING IMEDIATAMENTE
+        if(el.landing) el.landing.classList.add('hidden');
+        if(el.auth) {
+            el.auth.classList.add('hidden');
+            el.auth.style.display = 'none'; // Força display none
+        }
         
         const userRef = doc(db, "usuarios", user.uid);
         
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    // Criação de Perfil Novo
+                    // Novo Usuário
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
                     const safeEmail = user.email ? user.email.toLowerCase() : "";
+                    const tempName = localStorage.getItem("temp_user_name") || user.displayName || "Usuário";
                     
                     const novoPerfil = { 
                         email: safeEmail, 
                         phone: user.phoneNumber, 
-                        displayName: user.displayName || "Usuário", 
+                        displayName: tempName, 
                         photoURL: user.photoURL, 
                         tenant_id: DEFAULT_TENANT, 
                         perfil_completo: false, 
@@ -158,27 +196,38 @@ onAuthStateChanged(auth, async (user) => {
                         status: 'ativo',
                         traffic_source: trafficSource,
                         termos_aceitos: false,
-                        nome_real: "" 
+                        nome_real: tempName !== "Usuário" ? tempName : "" 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
+                    localStorage.removeItem("temp_user_name");
                 } else {
-                    // Usuário Existente
                     const data = docSnap.data();
                     
-                    // 1. Checagem Banimento
+                    // 2. CHECAGEM DE BANIMENTO
                     if (data.status === 'banido') {
                         aplicarRestricoesDeStatus('banido');
                         if(window.ocultarSplash) window.ocultarSplash();
                         return; 
                     }
 
-                    // 2. Checagem Onboarding (Jurídico)
-                    if (typeof checkOnboarding === 'function') {
-                        await checkOnboarding(user); 
+                    // 3. GUARDIÃO DE ONBOARDING (PRIORIDADE ABSOLUTA)
+                    // Se não aceitou termos, força a tela de modal e esconde o resto
+                    if (!data.termos_aceitos || !data.nome_real) {
+                        console.log("🔒 Pendência de Cadastro. Redirecionando...");
+                        if(el.app) el.app.classList.add('hidden');
+                        if(el.landing) el.landing.classList.add('hidden');
+                        
+                        // Chama o módulo para exibir o modal
+                        if (typeof checkOnboarding === 'function') {
+                            await checkOnboarding(user); 
+                        }
+                        
+                        if(window.ocultarSplash) window.ocultarSplash();
+                        return; // Pára aqui.
                     }
 
-                    // 3. Atualiza Dados Locais
+                    // 4. FLUXO DE SUCESSO (APP LIBERADO)
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     userProfile = data; window.userProfile = data;
                     
@@ -188,7 +237,7 @@ onAuthStateChanged(auth, async (user) => {
                     renderizarBotaoSuporte(); 
                     atualizarInterfaceUsuario(userProfile);
                     
-                    // Inicia o App (Com proteção contra crash)
+                    // Inicia UI Principal
                     iniciarAppLogado(user); 
                     
                     if (userProfile.is_provider) {
@@ -205,22 +254,22 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
     } else {
-        // Logout ou Não Logado
-        const authC = document.getElementById('auth-container');
-        const appC = document.getElementById('app-container');
-        const roleC = document.getElementById('role-selection');
-        const onbC = document.getElementById('modal-onboarding');
-
-        if(authC) authC.classList.remove('hidden');
-        if(appC) appC.classList.add('hidden');
-        if(roleC) roleC.classList.add('hidden');
-        if(onbC) onbC.classList.add('hidden');
+        // ESTADO: DESLOGADO
+        // Garante que Landing Page apareça e App suma
+        if(el.landing) el.landing.classList.remove('hidden');
+        if(el.auth) {
+            el.auth.classList.add('hidden');
+            el.auth.style.display = 'none';
+        }
+        if(el.app) el.app.classList.add('hidden');
+        if(el.role) el.role.classList.add('hidden');
+        if(el.onboard) el.onboard.classList.add('hidden');
         
-        // Reset da tela de login para estado inicial
-        const stepPhone = document.getElementById('login-step-phone');
-        const stepCode = document.getElementById('login-step-code');
-        if(stepPhone) stepPhone.classList.remove('hidden');
-        if(stepCode) stepCode.classList.add('hidden');
+        // Reset inputs
+        const phoneStep = document.getElementById('login-step-phone');
+        const codeStep = document.getElementById('login-step-code');
+        if(phoneStep) phoneStep.classList.remove('hidden');
+        if(codeStep) codeStep.classList.add('hidden');
         
         removerBloqueiosVisuais();
         if(window.ocultarSplash) window.ocultarSplash();
@@ -232,31 +281,37 @@ onAuthStateChanged(auth, async (user) => {
 // ============================================================================
 
 function iniciarAppLogado(user) {
-    const containerApp = document.getElementById('app-container');
-    const containerRole = document.getElementById('role-selection');
-    const containerAuth = document.getElementById('auth-container');
-    const tabAdmin = document.getElementById('tab-admin');
-    const tabServicos = document.getElementById('tab-servicos');
-    const btnPerfil = document.getElementById('btn-trocar-perfil');
+    console.log("🚀 Renderizando App...");
+    const el = {
+        app: document.getElementById('app-container'),
+        role: document.getElementById('role-selection'),
+        landing: document.getElementById('landing-page'),
+        auth: document.getElementById('auth-container')
+    };
 
-    // Se perfil incompleto -> vai para seleção
+    // Garante limpeza de telas antigas
+    if(el.landing) el.landing.classList.add('hidden');
+    if(el.auth) el.auth.classList.add('hidden');
+
     if (!userProfile || !userProfile.perfil_completo) {
-        if(containerApp) containerApp.classList.add('hidden');
-        if(containerRole) containerRole.classList.remove('hidden');
-        if(containerAuth) containerAuth.classList.add('hidden');
+        if(el.app) el.app.classList.add('hidden');
+        if(el.role) el.role.classList.remove('hidden');
         return;
     }
 
-    // Se completo -> abre app
-    if(containerRole) containerRole.classList.add('hidden');
-    if(containerAuth) containerAuth.classList.add('hidden'); 
-    if(containerApp) containerApp.classList.remove('hidden');
+    if(el.role) el.role.classList.add('hidden');
+    if(el.app) el.app.classList.remove('hidden');
 
+    // Configurações visuais do Admin e Header
+    const btnPerfil = document.getElementById('btn-trocar-perfil');
+    const tabAdmin = document.getElementById('tab-admin');
+    const tabServicos = document.getElementById('tab-servicos');
+    
     const userEmail = user.email ? user.email.toLowerCase().trim() : "";
     const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
+    
     if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
 
-    // Configura Abas
     if (userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
@@ -323,11 +378,6 @@ function renderizarBotaoSuporte() {
     document.body.appendChild(btn);
 }
 
-// Funções de Suporte (Radar, Chat, Upload) são carregadas aqui ou via módulos, 
-// mantendo a estrutura original mas simplificando para não exceder limites.
-// ... (Mantenha as funções de verificarStatusERadar, uploadBanner, etc. do código anterior se necessário, 
-// mas o foco aqui foi corrigir o LOGIN e CRASH DE INICIALIZAÇÃO).
-
-// Placeholder para garantir que não quebre se chamado
+// Funções placeholder para evitar erros se módulos não carregarem
 window.abrirChatSuporte = window.abrirChatSuporte || async function() { alert("Carregando chat..."); };
 function toggleDisplay(id, s) { const el = document.getElementById(id); if(el) s ? el.classList.remove('hidden') : el.classList.add('hidden'); }
