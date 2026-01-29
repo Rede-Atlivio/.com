@@ -1,7 +1,9 @@
 import { auth, db, provider } from './app.js';
-import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+// Importa a função de onboarding para garantir uso correto
+import { checkOnboarding } from './modules/onboarding.js';
 
 const storage = getStorage();
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
@@ -12,64 +14,97 @@ const LIMITE_CREDITO_NEGATIVO = -60.00;
 export let userProfile = null; 
 window.userProfile = null;
 
-const CATEGORIAS_SERVICOS = [
-    "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
-    "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
-    "🛠️ Encanador", "🛠️ Pedreiro", "🛠️ Marido de Aluguel", "🛠️ Conserto de Eletrodoméstico",
-    "💻 Design Gráfico", "💻 Edição de Vídeo", "💻 Gestão de Redes Sociais", 
-    "💻 Digitação", "💻 Suporte Técnico", "💻 Aulas Particulares", 
-    "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "💅 Manicure/Pedicure", "💇 Cabeleireiro(a)", "Outros"
-];
-
 // ============================================================================
-// 1. LOGIN & RASTREAMENTO
+// 1. LOGIN SMS (CORRIGIDO: RECAPTCHA RESET)
 // ============================================================================
 
-window.loginGoogle = async () => { 
-    console.log("🔄 Login Iniciado..."); 
-    const origem = localStorage.getItem("traffic_source");
-    if(origem) sessionStorage.setItem("pending_ref", origem);
-    signInWithRedirect(auth, provider); 
+// Função auxiliar para limpar recaptcha antigo e evitar erro "Already Rendered"
+const resetRecaptcha = () => {
+    if (window.recaptchaVerifier) {
+        try { window.recaptchaVerifier.clear(); } catch (e) {}
+        window.recaptchaVerifier = null;
+    }
+    const container = document.getElementById('recaptcha-container');
+    if (container) container.innerHTML = ''; // Limpeza brutal do DOM
+};
+
+const setupRecaptcha = () => {
+    resetRecaptcha(); // Garante limpeza antes de criar
+    
+    // Cria novo verificador
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': (response) => {
+            console.log("Captcha resolvido.");
+        },
+        'expired-callback': () => {
+            console.warn("Captcha expirado. Resetando...");
+            resetRecaptcha();
+        }
+    });
+};
+
+window.enviarSMSLogin = async () => {
+    let rawPhone = document.getElementById('login-phone').value;
+    let cleanPhone = rawPhone.replace(/\D/g, ''); 
+
+    if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 759...)");
+
+    // Adiciona +55 se não tiver
+    const finalPhone = '+55' + cleanPhone;
+
+    const btn = document.getElementById('btn-login-send');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "ENVIANDO...";
+
+    try {
+        setupRecaptcha(); // Configura (agora com limpeza automática)
+        const appVerifier = window.recaptchaVerifier;
+
+        const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
+        window.confirmationResult = confirmationResult;
+        
+        document.getElementById('lbl-login-phone').innerText = finalPhone;
+        document.getElementById('login-step-phone').classList.add('hidden');
+        document.getElementById('login-step-code').classList.remove('hidden');
+
+    } catch (error) {
+        console.error("Erro SMS:", error);
+        resetRecaptcha(); // Limpa para permitir nova tentativa
+        
+        btn.disabled = false;
+        btn.innerText = originalText;
+        
+        if(error.code === 'auth/invalid-phone-number') alert("Número inválido. Verifique o DDD.");
+        else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Espere um pouco.");
+        else alert("Erro ao enviar SMS: " + error.message);
+    }
+};
+
+window.confirmarCodigoLogin = async () => {
+    const code = document.getElementById('login-code').value;
+    if(code.length < 6) return alert("O código deve ter 6 números.");
+
+    const btn = document.getElementById('btn-login-verify');
+    btn.disabled = true;
+    btn.innerText = "VALIDANDO...";
+
+    try {
+        const result = await window.confirmationResult.confirm(code);
+        console.log("Login SMS Sucesso:", result.user.uid);
+        // O onAuthStateChanged vai assumir daqui
+    } catch (error) {
+        btn.disabled = false;
+        btn.innerText = "ENTRAR AGORA 🚀";
+        alert("Código incorreto ou expirado.");
+    }
 };
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
-getRedirectResult(auth).then(async (result) => { 
-    if (result) {
-        console.log("✅ Login Google OK.");
-        const user = result.user;
-        const userRef = doc(db, "usuarios", user.uid);
-        const docSnap = await getDoc(userRef);
-
-        if (!docSnap.exists()) {
-            const indicatedBy = sessionStorage.getItem("pending_ref") || localStorage.getItem("traffic_source");
-            let dadosIndicacao = {};
-
-            if (indicatedBy && indicatedBy !== user.uid) {
-                console.log("🔗 Usuário indicado por:", indicatedBy);
-                dadosIndicacao = { invited_by: indicatedBy, traffic_source: 'afiliado' };
-                try {
-                    await addDoc(collection(db, "notifications"), {
-                        uid: indicatedBy,
-                        message: `🎉 Nova indicação! ${user.displayName || 'Alguém'} entrou pelo seu link.`,
-                        read: false, type: 'success', created_at: serverTimestamp()
-                    });
-                } catch(e) {}
-            } else {
-                dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
-            }
-
-            // Criação inicial básica (o restante é feito no onAuthStateChanged)
-            await setDoc(userRef, {
-                uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
-            }, { merge: true });
-        }
-        sessionStorage.removeItem("pending_ref");
-    }
-}).catch((error) => console.error("❌ Erro Login:", error));
-
 // ============================================================================
-// 2. PERFIL & CORE (COM PROTOCOLO GUARDIÃO ATIVADO)
+// 2. CORE & MONITORAMENTO (GATEKEEPER V16)
 // ============================================================================
 
 window.definirPerfil = async (tipo) => {
@@ -113,7 +148,7 @@ onAuthStateChanged(auth, async (user) => {
                         created_at: serverTimestamp(), 
                         status: 'ativo',
                         traffic_source: trafficSource,
-                        termos_aceitos: false, // NOVO: Flag Jurídica
+                        termos_aceitos: false,
                         nome_real: "" 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
@@ -121,37 +156,17 @@ onAuthStateChanged(auth, async (user) => {
                 } else {
                     const data = docSnap.data();
                     
-                    // 1. CHECAGEM DE BANIMENTO (Prioridade Máxima)
+                    // 1. CHECAGEM DE BANIMENTO
                     if (data.status === 'banido') {
                         aplicarRestricoesDeStatus('banido');
                         if(window.ocultarSplash) window.ocultarSplash();
-                        return; // PARE TUDO.
+                        return; 
                     }
 
-                    // 2. GUARDIÃO DE ONBOARDING (Item 34)
-                    if (!data.termos_aceitos || !data.nome_real) {
-                        console.log("🔒 Usuário retido no Onboarding.");
-                        
-                        // Tenta preencher dados do Google se existirem
-                        const inpName = document.getElementById('inp-onboard-name');
-                        const inpPhone = document.getElementById('inp-onboard-phone');
-                        if(inpName && !inpName.value && data.displayName !== "Usuário") inpName.value = data.displayName;
-                        if(inpPhone && !inpPhone.value && data.phone) inpPhone.value = data.phone;
-
-                        // Exibe Modal
-                        const modal = document.getElementById('modal-onboarding');
-                        if(modal) {
-                            modal.classList.remove('hidden');
-                            modal.classList.add('flex');
-                        }
-                        
-                        // Esconde App
-                        const appCont = document.getElementById('app-container');
-                        if(appCont) appCont.classList.add('hidden');
-                        
-                        // Libera visão
-                        if(window.ocultarSplash) window.ocultarSplash();
-                        return; // PARE TUDO.
+                    // 2. GUARDIÃO DE ONBOARDING (CHAMA O MÓDULO CORRIGIDO)
+                    // Verifica se importou a função, se não, usa lógica local ou ignora para não travar
+                    if (typeof checkOnboarding === 'function') {
+                        await checkOnboarding(user); // Isso gerencia o modal de termos
                     }
 
                     // 3. FLUXO NORMAL
@@ -163,13 +178,6 @@ onAuthStateChanged(auth, async (user) => {
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
 
-                    // Garante que o onboarding suma se já foi feito
-                    const modalOnb = document.getElementById('modal-onboarding');
-                    if(modalOnb) {
-                        modalOnb.classList.add('hidden');
-                        modalOnb.classList.remove('flex');
-                    }
-
                     atualizarInterfaceUsuario(userProfile);
                     iniciarAppLogado(user); 
                     
@@ -178,12 +186,10 @@ onAuthStateChanged(auth, async (user) => {
                         if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                     
-                    // SUCESSO FINAL
                     if(window.ocultarSplash) window.ocultarSplash();
                 }
             } catch (err) { 
                 console.error("Erro Crítico no Perfil:", err); 
-                // Tenta iniciar mesmo com erro para não travar
                 iniciarAppLogado(user); 
                 if(window.ocultarSplash) window.ocultarSplash(); 
             }
@@ -200,9 +206,11 @@ onAuthStateChanged(auth, async (user) => {
         if(appC) appC.classList.add('hidden');
         if(onbC) onbC.classList.add('hidden');
         
-        removerBloqueiosVisuais();
+        // Exibe tela de login (Telefone) e esconde código
+        document.getElementById('login-step-phone')?.classList.remove('hidden');
+        document.getElementById('login-step-code')?.classList.add('hidden');
         
-        // Garante destravamento
+        removerBloqueiosVisuais();
         if(window.ocultarSplash) window.ocultarSplash();
     }
 });
@@ -293,7 +301,7 @@ window.enviarMensagemSuporte = async () => {
 };
 
 // ============================================================================
-// 4. HELPERS DE INTERFACE & STATUS (CORRIGIDOS PARA NULL SAFETY)
+// 4. HELPERS DE INTERFACE & STATUS
 // ============================================================================
 
 function aplicarRestricoesDeStatus(status) {
@@ -337,7 +345,7 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
-// ===[ FUNÇÃO BLINDADA: CORREÇÃO DO ERRO CLASSLIST NULL ]===
+// ===[ FUNÇÃO BLINDADA: INICIAR APP ]===
 function iniciarAppLogado(user) {
     console.log("🚀 Iniciando App para:", user.email);
 
@@ -348,24 +356,20 @@ function iniciarAppLogado(user) {
     const tabAdmin = document.getElementById('tab-admin');
     const tabServicos = document.getElementById('tab-servicos');
 
-    // 1. Verificações de Segurança (Null Safety)
     if (!userProfile || !userProfile.perfil_completo) {
         if(containerApp) containerApp.classList.add('hidden');
         if(containerRole) containerRole.classList.remove('hidden');
         return;
     }
 
-    // 2. Libera o App
     if(containerRole) containerRole.classList.add('hidden');
     if(containerAuth) containerAuth.classList.add('hidden'); 
     if(containerApp) containerApp.classList.remove('hidden');
 
-    // 3. Configura Admin
     const userEmail = user.email ? user.email.toLowerCase().trim() : "";
     const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
     if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
 
-    // 4. Configura Perfil (Prestador vs Cliente)
     if (userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
@@ -384,7 +388,6 @@ function iniciarAppLogado(user) {
         setTimeout(() => { 
             if(tabServicos) tabServicos.click(); 
             else if(window.carregarServicos) window.carregarServicos();
-            
             if(window.carregarVagas) window.carregarVagas(); 
             if(window.carregarOportunidades) window.carregarOportunidades();
         }, 1000); 
