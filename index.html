@@ -434,10 +434,15 @@
     
     <script type="module">
         import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { app } from './js/app.js'; 
+
         const auth = getAuth(app);
+        const db = getFirestore(app);
         auth.languageCode = 'pt-br';
 
+        // --- 1. FUNÇÕES DE LOGIN SMS ---
         window.mascaraTelefone = (input) => {
             let v = input.value.replace(/\D/g,'').substring(0, 11);
             if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
@@ -478,18 +483,8 @@
                 await window.confirmationResult.confirm(code);
             } catch (error) { alert("Código inválido."); }
         };
-    </script>
-    
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Configuração Firebase (Mesma do app.js para garantir acesso ao Firestore aqui)
-        const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // 1. CARREGAR AVISO DO TOPO
+        // --- 2. CONFIGURAÇÕES GLOBAIS ---
         async function loadGlobalAlert() {
             try {
                 const docSnap = await getDoc(doc(db, "settings", "global"));
@@ -501,24 +496,20 @@
                         msgDiv.classList.remove('hidden');
                     }
                 }
-            } catch (e) { console.log("Erro config:", e); }
+            } catch (e) { console.log("Info:", e); }
         }
         
-        // 2. SISTEMA DE TERMOS DE USO (CORRIGIDO E ÚNICO)
+        // --- 3. TERMOS DE USO (DEFINIÇÃO ÚNICA) ---
         const TEXTO_TERMOS = `
             1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
-            2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
-            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos internos da plataforma.
-            4. RESPONSABILIDADE: A Atlivio conecta Clientes e Prestadores.
-            5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos.
-            6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
+            2. SERVIÇO: Somos uma plataforma intermediadora.
+            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos internos.
+            4. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
         `;
 
         const TEXTO_PRIVACIDADE = `
-            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil.
-            2. USO: Seus dados servem para conectar Clientes e Prestadores.
-            3. SEGURANÇA: Utilizamos criptografia SSL e banco de dados Google Firebase.
-            4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
+            1. COLETA: Coletamos Nome e WhatsApp para identificar seu perfil.
+            2. SEGURANÇA: Utilizamos criptografia SSL e banco de dados Google Firebase.
         `;
 
         window.openTerms = function(type) {
@@ -526,49 +517,34 @@
             const title = document.getElementById('term-title');
             const content = document.getElementById('term-content');
             
-            if(modal && title && content) {
+            if(modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
-                
                 if(type === 'termos') {
-                    title.innerText = "Termos de Uso";
-                    content.innerText = TEXTO_TERMOS;
+                    if(title) title.innerText = "Termos de Uso";
+                    if(content) content.innerText = TEXTO_TERMOS;
                 } else {
-                    title.innerText = "Política de Privacidade";
-                    content.innerText = TEXTO_PRIVACIDADE;
+                    if(title) title.innerText = "Política de Privacidade";
+                    if(content) content.innerText = TEXTO_PRIVACIDADE;
                 }
-            } else {
-                console.error("Erro: Modal de termos incompleto.");
             }
         };
 
-        // Inicia o alerta
         loadGlobalAlert();
     </script>
 
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('✅ Service Worker registrado!', reg.scope))
-                    .catch(err => console.error('❌ Falha no SW:', err));
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Info:', err));
             });
         }
-
-        let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
-            deferredPrompt = e;
             const btn = document.getElementById('btn-install-app');
             if(btn) {
                 btn.classList.remove('hidden');
-                btn.onclick = () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choice) => {
-                        if (choice.outcome === 'accepted') btn.classList.add('hidden');
-                        deferredPrompt = null;
-                    });
-                };
+                btn.onclick = () => { e.prompt(); };
             }
         });
     </script>
