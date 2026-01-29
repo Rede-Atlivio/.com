@@ -2,7 +2,7 @@ import { auth, db, provider } from './app.js';
 import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-// Importa a função de onboarding para garantir uso correto
+// Importação segura do onboarding
 import { checkOnboarding } from './modules/onboarding.js';
 
 const storage = getStorage();
@@ -15,27 +15,28 @@ export let userProfile = null;
 window.userProfile = null;
 
 // ============================================================================
-// 1. LOGIN SMS (CORRIGIDO: RECAPTCHA RESET)
+// 1. LOGIN SMS (COM AUTO-LIMPEZA DO RECAPTCHA)
 // ============================================================================
 
-// Função auxiliar para limpar recaptcha antigo e evitar erro "Already Rendered"
+// Função Brutal de Limpeza: Remove qualquer lixo do Recaptcha anterior
 const resetRecaptcha = () => {
     if (window.recaptchaVerifier) {
         try { window.recaptchaVerifier.clear(); } catch (e) {}
         window.recaptchaVerifier = null;
     }
     const container = document.getElementById('recaptcha-container');
-    if (container) container.innerHTML = ''; // Limpeza brutal do DOM
+    if (container) {
+        container.innerHTML = ''; // Esvazia o HTML forçadamente
+    }
 };
 
 const setupRecaptcha = () => {
-    resetRecaptcha(); // Garante limpeza antes de criar
+    resetRecaptcha(); // Limpa ANTES de criar um novo
     
-    // Cria novo verificador
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': (response) => {
-            console.log("Captcha resolvido.");
+            console.log("Captcha resolvido automaticamente.");
         },
         'expired-callback': () => {
             console.warn("Captcha expirado. Resetando...");
@@ -50,16 +51,15 @@ window.enviarSMSLogin = async () => {
 
     if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 759...)");
 
-    // Adiciona +55 se não tiver
     const finalPhone = '+55' + cleanPhone;
-
     const btn = document.getElementById('btn-login-send');
     const originalText = btn.innerText;
+    
     btn.disabled = true;
     btn.innerText = "ENVIANDO...";
 
     try {
-        setupRecaptcha(); // Configura (agora com limpeza automática)
+        setupRecaptcha(); // Configura com limpeza
         const appVerifier = window.recaptchaVerifier;
 
         const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
@@ -71,13 +71,13 @@ window.enviarSMSLogin = async () => {
 
     } catch (error) {
         console.error("Erro SMS:", error);
-        resetRecaptcha(); // Limpa para permitir nova tentativa
+        resetRecaptcha(); // Limpa para permitir tentar de novo imediatamente
         
         btn.disabled = false;
         btn.innerText = originalText;
         
         if(error.code === 'auth/invalid-phone-number') alert("Número inválido. Verifique o DDD.");
-        else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Espere um pouco.");
+        else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Aguarde um pouco.");
         else alert("Erro ao enviar SMS: " + error.message);
     }
 };
@@ -87,16 +87,17 @@ window.confirmarCodigoLogin = async () => {
     if(code.length < 6) return alert("O código deve ter 6 números.");
 
     const btn = document.getElementById('btn-login-verify');
+    const originalText = btn.innerText;
     btn.disabled = true;
     btn.innerText = "VALIDANDO...";
 
     try {
         const result = await window.confirmationResult.confirm(code);
         console.log("Login SMS Sucesso:", result.user.uid);
-        // O onAuthStateChanged vai assumir daqui
+        // O onAuthStateChanged vai assumir daqui e carregar a tela
     } catch (error) {
         btn.disabled = false;
-        btn.innerText = "ENTRAR AGORA 🚀";
+        btn.innerText = originalText;
         alert("Código incorreto ou expirado.");
     }
 };
@@ -104,7 +105,7 @@ window.confirmarCodigoLogin = async () => {
 window.logout = () => signOut(auth).then(() => location.reload());
 
 // ============================================================================
-// 2. CORE & MONITORAMENTO (GATEKEEPER V16)
+// 2. CORE & MONITORAMENTO (GATEKEEPER V16.1 BLINDADO)
 // ============================================================================
 
 window.definirPerfil = async (tipo) => {
@@ -163,10 +164,9 @@ onAuthStateChanged(auth, async (user) => {
                         return; 
                     }
 
-                    // 2. GUARDIÃO DE ONBOARDING (CHAMA O MÓDULO CORRIGIDO)
-                    // Verifica se importou a função, se não, usa lógica local ou ignora para não travar
+                    // 2. GUARDIÃO DE ONBOARDING
                     if (typeof checkOnboarding === 'function') {
-                        await checkOnboarding(user); // Isso gerencia o modal de termos
+                        await checkOnboarding(user); 
                     }
 
                     // 3. FLUXO NORMAL
@@ -186,6 +186,7 @@ onAuthStateChanged(auth, async (user) => {
                         if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
                     }
                     
+                    // DESTRAVA A TELA DE CARREGAMENTO
                     if(window.ocultarSplash) window.ocultarSplash();
                 }
             } catch (err) { 
@@ -206,7 +207,6 @@ onAuthStateChanged(auth, async (user) => {
         if(appC) appC.classList.add('hidden');
         if(onbC) onbC.classList.add('hidden');
         
-        // Exibe tela de login (Telefone) e esconde código
         document.getElementById('login-step-phone')?.classList.remove('hidden');
         document.getElementById('login-step-code')?.classList.add('hidden');
         
@@ -301,7 +301,7 @@ window.enviarMensagemSuporte = async () => {
 };
 
 // ============================================================================
-// 4. HELPERS DE INTERFACE & STATUS
+// 4. HELPERS DE INTERFACE & STATUS (BLINDADOS)
 // ============================================================================
 
 function aplicarRestricoesDeStatus(status) {
@@ -345,7 +345,7 @@ function atualizarInterfaceUsuario(dados) {
     }
 }
 
-// ===[ FUNÇÃO BLINDADA: INICIAR APP ]===
+// ===[ FUNÇÃO BLINDADA: INICIAR APP (SEM CRASH EM TELA BRANCA) ]===
 function iniciarAppLogado(user) {
     console.log("🚀 Iniciando App para:", user.email);
 
@@ -356,20 +356,24 @@ function iniciarAppLogado(user) {
     const tabAdmin = document.getElementById('tab-admin');
     const tabServicos = document.getElementById('tab-servicos');
 
+    // 1. Verificações de Segurança (Null Safety)
     if (!userProfile || !userProfile.perfil_completo) {
         if(containerApp) containerApp.classList.add('hidden');
         if(containerRole) containerRole.classList.remove('hidden');
         return;
     }
 
+    // 2. Libera o App
     if(containerRole) containerRole.classList.add('hidden');
     if(containerAuth) containerAuth.classList.add('hidden'); 
     if(containerApp) containerApp.classList.remove('hidden');
 
+    // 3. Configura Admin
     const userEmail = user.email ? user.email.toLowerCase().trim() : "";
     const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
     if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
 
+    // 4. Configura Perfil (Prestador vs Cliente)
     if (userProfile.is_provider) {
         if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
         if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
