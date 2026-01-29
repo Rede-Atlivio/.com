@@ -23,7 +23,42 @@ window.db = db;
 window.auth = auth;
 
 // ============================================================================
-// 🔔 CENTRAL DE NOTIFICAÇÕES (VERSÃO FINAL)
+// 📱 PWA INSTALLER (RESTAURADO)
+// ============================================================================
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Previne o Chrome de mostrar o prompt nativo automático
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // Mostra o botão roxo no Header
+    const btnInstall = document.getElementById('btn-install-app');
+    if(btnInstall) {
+        btnInstall.classList.remove('hidden');
+        
+        btnInstall.onclick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to the install prompt: ${outcome}`);
+                deferredPrompt = null;
+                // Esconde botão após instalar
+                btnInstall.classList.add('hidden');
+            }
+        };
+    }
+});
+
+// Se o app já foi instalado, garante que o botão suma
+window.addEventListener('appinstalled', () => {
+    const btnInstall = document.getElementById('btn-install-app');
+    if(btnInstall) btnInstall.classList.add('hidden');
+    console.log('PWA was installed');
+});
+
+// ============================================================================
+// 🔔 CENTRAL DE NOTIFICAÇÕES
 // ============================================================================
 
 // 1. Garante Container Visual
@@ -63,13 +98,11 @@ function iniciarOuvinteNotificacoes(uid) {
             if (change.type === "added") {
                 const notif = change.doc.data();
                 
-                // Filtro de tempo: Só mostra se for recente (menos de 2 minutos)
-                // Isso evita spam de notificações velhas no login
                 const agora = new Date();
                 const dataNotif = notif.created_at ? notif.created_at.toDate() : new Date();
                 const diffSegundos = (agora - dataNotif) / 1000;
 
-                // Se não tiver data (criado agora) ou for recente (< 120s), mostra
+                // Filtro de 2 minutos para evitar spam de velhas
                 if (!notif.created_at || diffSegundos < 120) { 
                     mostrarToast(notif.message, change.doc.id, notif.type);
                 }
@@ -131,4 +164,4 @@ const style = document.createElement('style');
 style.innerHTML = `@keyframes shrink { from { width: 100%; } to { width: 0%; } } .animate-shrink { animation: shrink 6s linear forwards; }`;
 document.head.appendChild(style);
 
-console.log("🔥 App Core V7.4 (Stable) Carregado.");
+console.log("🔥 App Core V7.5 (PWA + Notificações) Carregado.");
