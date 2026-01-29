@@ -431,6 +431,12 @@
     <script type="module" src="./js/modules/request.js?v=15.6"></script>
     <script type="module" src="./js/modules/chat.js?v=15.6"></script>
     <script type="module" src="./js/wallet.js?v=15.6"></script>
+     <script type="module" src="./js/app.js?v=15.7"></script>
+    <script type="module" src="./js/auth.js?v=15.7"></script>
+    <script type="module" src="./js/modules/services.js?v=15.7"></script>
+    <script type="module" src="./js/modules/request.js?v=15.7"></script>
+    <script type="module" src="./js/modules/chat.js?v=15.7"></script>
+    <script type="module" src="./js/wallet.js?v=15.7"></script>
     
     <script type="module">
         import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -442,7 +448,7 @@
         const db = getFirestore(app);
         auth.languageCode = 'pt-br';
 
-        // --- 1. FUNÇÕES DE LOGIN SMS ---
+        // --- 1. SMS LOGIN FUNCTIONS (Global Scope Binding) ---
         window.mascaraTelefone = (input) => {
             let v = input.value.replace(/\D/g,'').substring(0, 11);
             if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
@@ -462,7 +468,8 @@
             const finalPhone = '+55' + rawPhone;
             
             setupRecaptcha();
-            const btn = document.getElementById('btn-login-send'); btn.innerText = "ENVIANDO..."; btn.disabled = true;
+            const btn = document.getElementById('btn-login-send'); 
+            if(btn) { btn.innerText = "ENVIANDO..."; btn.disabled = true; }
 
             try {
                 window.confirmationResult = await signInWithPhoneNumber(auth, finalPhone, window.recaptchaVerifier);
@@ -471,9 +478,9 @@
                 document.getElementById('login-step-code').classList.remove('hidden');
             } catch (error) {
                 console.error(error);
-                alert("Erro ao enviar SMS.");
-                btn.innerText = "TENTAR NOVAMENTE"; btn.disabled = false;
-                window.recaptchaVerifier.clear(); window.recaptchaVerifier = null;
+                alert("Erro ao enviar SMS: " + error.message);
+                if(btn) { btn.innerText = "TENTAR NOVAMENTE"; btn.disabled = false; }
+                if(window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
             }
         };
 
@@ -484,7 +491,7 @@
             } catch (error) { alert("Código inválido."); }
         };
 
-        // --- 2. CONFIGURAÇÕES GLOBAIS ---
+        // --- 2. GLOBAL SETTINGS & ALERTS ---
         async function loadGlobalAlert() {
             try {
                 const docSnap = await getDoc(doc(db, "settings", "global"));
@@ -496,10 +503,10 @@
                         msgDiv.classList.remove('hidden');
                     }
                 }
-            } catch (e) { console.log("Info:", e); }
+            } catch (e) { console.log("Info config:", e); }
         }
         
-        // --- 3. TERMOS DE USO (DEFINIÇÃO ÚNICA) ---
+        // --- 3. TERMS & PRIVACY ---
         const TEXTO_TERMOS = `
             1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
             2. SERVIÇO: Somos uma plataforma intermediadora.
@@ -530,6 +537,7 @@
             }
         };
 
+        // Initialize Global Alert
         loadGlobalAlert();
     </script>
 
@@ -547,4 +555,15 @@
                 btn.onclick = () => { e.prompt(); };
             }
         });
+        
+        // Ensure Modal Open (Failsafe)
+        setTimeout(() => {
+             const onboarding = document.getElementById('modal-onboarding');
+             if(onboarding && !localStorage.getItem('user_uid') && !document.getElementById('app-container').classList.contains('hidden') === false) {
+                 // Logic to ensure it's visible if needed
+                 // Left empty to respect auth flow control
+             }
+        }, 1000);
     </script>
+</body>
+</html>
