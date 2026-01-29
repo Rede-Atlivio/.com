@@ -308,22 +308,36 @@
         </main>
     </div>
 
-    <div <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
-                <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
-                <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
-                    Declaro que li e aceito os 
-                    <a href="#" onclick="window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300 font-bold">Termos de Uso</a> 
-                    e a 
-                    <a href="#" onclick="window.openTerms('privacidade')" class="text-blue-400 underline hover:text-blue-300 font-bold">Política de Privacidade</a>.
-                </label>
-            </div>
+    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
-            <h2 class="text-2xl font-black text-white mb-2 text-center">Bem-vindo à ATLIVIO 👋</h2>
-            <form id="form-onboarding" class="space-y-4 mt-6">
-                <div><label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Como devemos te chamar?</label><input type="text" id="inp-onboard-name" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none transition" required minlength="3"></div>
-                <div><label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Seu WhatsApp</label><input type="tel" id="inp-onboard-phone" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono focus:border-green-500 focus:outline-none transition" required></div>
-                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3"><input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required><label for="chk-terms" class="text-xs text-gray-400 leading-tight">Li e aceito os <a href="#" onclick="openTerms('termos')" class="text-blue-400 underline">Termos</a> e <a href="#" onclick="openTerms('privacidade')" class="text-blue-400 underline">Privacidade</a>.</label></div>
-                <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg">👉 Entrar</button>
+            
+            <h2 class="text-2xl font-black text-white mb-6 text-center">Bem-vindo à ATLIVIO 👋</h2>
+            
+            <form id="form-onboarding" class="space-y-4">
+                
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Como devemos te chamar?</label>
+                    <input type="text" id="inp-onboard-name" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none transition" placeholder="Seu Nome" required minlength="3">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Seu WhatsApp</label>
+                    <input type="tel" id="inp-onboard-phone" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono focus:border-green-500 focus:outline-none transition" placeholder="(00) 00000-0000" required>
+                </div>
+
+                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
+                    <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
+                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
+                        Li e aceito os 
+                        <a href="#" onclick="window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300 font-bold">Termos</a> 
+                        e a 
+                        <a href="#" onclick="window.openTerms('privacidade')" class="text-blue-400 underline hover:text-blue-300 font-bold">Privacidade</a>.
+                    </label>
+                </div>
+
+                <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">
+                    👉 Entrar
+                </button>
             </form>
         </div>
     </div>
