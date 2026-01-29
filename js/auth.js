@@ -2,7 +2,6 @@ import { auth, db, provider } from './app.js';
 import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { checkOnboarding } from './modules/onboarding.js';
 
 const storage = getStorage();
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
@@ -12,7 +11,51 @@ export let userProfile = null;
 window.userProfile = null;
 
 // ============================================================================
-// 1. LÓGICA DE LOGIN SMS (EXPORTADA PARA WINDOW)
+// 1. LÓGICA DE CADASTRO (SALVA SEM DAR REFRESH)
+// ============================================================================
+
+window.finalizarCadastro = async () => {
+    const nome = document.getElementById('inp-onboard-name').value.trim();
+    const phone = document.getElementById('inp-onboard-phone').value.trim();
+    const termos = document.getElementById('chk-terms').checked;
+    const btn = document.getElementById('btn-onboard-submit');
+
+    if (!termos) return alert("⚠️ Você precisa aceitar os Termos de Uso.");
+    if (nome.length < 3) return alert("⚠️ Digite seu nome completo.");
+    
+    if(!auth.currentUser) return alert("⚠️ Erro de sessão. Faça login novamente.");
+
+    btn.innerText = "SALVANDO...";
+    btn.disabled = true;
+
+    try {
+        console.log("💾 Salvando dados do usuário...");
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
+            nome_real: nome,
+            displayName: nome,
+            whatsapp: phone,
+            termos_aceitos: true,
+            perfil_completo: true,
+            onboarded_at: serverTimestamp(),
+            status: 'ativo'
+        });
+        
+        // Atualiza perfil visual do Auth também
+        await updateProfile(auth.currentUser, { displayName: nome });
+
+        console.log("✅ Cadastro finalizado! Liberando App...");
+        // O onAuthStateChanged vai detectar a mudança e abrir o app sozinho
+        
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        alert("Erro ao salvar: " + error.message);
+        btn.innerText = "TENTAR NOVAMENTE";
+        btn.disabled = false;
+    }
+};
+
+// ============================================================================
+// 2. LÓGICA DE LOGIN SMS
 // ============================================================================
 
 const resetRecaptcha = () => {
@@ -28,7 +71,6 @@ const setupRecaptcha = () => {
     });
 };
 
-// EXPORTAÇÃO FORÇADA PARA O WINDOW (RESOLVE O ERRO DE "UNDEFINED")
 window.enviarSMSLogin = async (origem) => {
     let telefoneInput;
     if (origem === 'cadastro') {
@@ -46,6 +88,8 @@ window.enviarSMSLogin = async (origem) => {
     
     const btnId = origem === 'cadastro' ? 'btn-onboard-sms' : 'btn-login-send';
     const btn = document.getElementById(btnId);
+    const textoOriginal = btn ? btn.innerText : "ENVIAR";
+    
     if(btn) { btn.disabled = true; btn.innerText = "ENVIANDO..."; }
 
     try {
@@ -68,7 +112,7 @@ window.enviarSMSLogin = async (origem) => {
     } catch (error) {
         console.error("Erro SMS:", error);
         resetRecaptcha();
-        if(btn) { btn.disabled = false; btn.innerText = "TENTAR NOVAMENTE"; }
+        if(btn) { btn.disabled = false; btn.innerText = textoOriginal; }
         alert("Erro ao enviar: " + error.message);
     }
 };
@@ -81,19 +125,30 @@ window.confirmarCodigoLogin = async () => {
     const btn = document.getElementById('btn-login-verify');
     if(btn) { btn.disabled = true; btn.innerText = "VALIDANDO..."; }
 
+    // TIMEOUT DE SEGURANÇA (Para o botão não ficar travado pra sempre)
+    const safetyTimeout = setTimeout(() => {
+        if(btn && btn.innerText === "VALIDANDO...") {
+            btn.disabled = false;
+            btn.innerText = "ENTRAR AGORA 🚀";
+            alert("O servidor demorou para responder. Verifique sua conexão e tente novamente.");
+        }
+    }, 15000); // 15 segundos
+
     try {
         await window.confirmationResult.confirm(code);
-        // O onAuthStateChanged assume daqui
+        clearTimeout(safetyTimeout);
+        // Sucesso! O onAuthStateChanged assume.
     } catch (error) {
+        clearTimeout(safetyTimeout);
         if(btn) { btn.disabled = false; btn.innerText = "ENTRAR AGORA 🚀"; }
-        alert("Código incorreto.");
+        alert("Código incorreto ou inválido.");
     }
 };
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
 // ============================================================================
-// 2. FUNÇÕES DE PERFIL E UI (RESOLVEM O ERRO "ALTERNARPERFIL IS NOT DEFINED")
+// 3. ORQUESTRADOR DE ESTADO
 // ============================================================================
 
 window.definirPerfil = async (tipo) => {
@@ -128,10 +183,6 @@ window.abrirConfiguracoes = () => {
         document.getElementById('set-uid').innerText = userProfile.uid;
     }
 };
-
-// ============================================================================
-// 3. ORQUESTRADOR DE ESTADO (AUTH LISTENER)
-// ============================================================================
 
 onAuthStateChanged(auth, async (user) => {
     const ui = {
@@ -169,14 +220,27 @@ onAuthStateChanged(auth, async (user) => {
                         return; 
                     }
 
+                    // LÓGICA DE ONBOARDING
                     if (data.termos_aceitos !== true || !data.nome_real || data.nome_real.length < 3) {
                         if(ui.app) ui.app.classList.add('hidden');
                         if(ui.landing) ui.landing.classList.add('hidden');
-                        if (typeof checkOnboarding === 'function') await checkOnboarding(user);
+                        if(ui.onboard) {
+                            ui.onboard.classList.remove('hidden');
+                            ui.onboard.style.display = 'flex';
+                            
+                            // Preenche dados se tiver
+                            const inpN = document.getElementById('inp-onboard-name');
+                            const inpP = document.getElementById('inp-onboard-phone');
+                            if(inpN && !inpN.value && data.displayName && data.displayName !== "Usuário") inpN.value = data.displayName;
+                            if(inpP && !inpP.value && data.phone) inpP.value = data.phone;
+                        }
                         if(window.ocultarSplash) window.ocultarSplash();
                         return; 
                     }
 
+                    // LÓGICA DE SUCESSO
+                    if(ui.onboard) ui.onboard.classList.add('hidden'); // Esconde onboarding
+                    
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     userProfile = data; window.userProfile = data;
                     
@@ -196,6 +260,7 @@ onAuthStateChanged(auth, async (user) => {
         if(ui.app) ui.app.classList.add('hidden');
         if(ui.role) ui.role.classList.add('hidden');
         if(ui.auth) ui.auth.classList.add('hidden');
+        if(ui.onboard) ui.onboard.classList.add('hidden');
         
         document.getElementById('login-step-phone')?.classList.remove('hidden');
         document.getElementById('login-step-code')?.classList.add('hidden');
@@ -205,6 +270,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// Helpers de UI
 function iniciarAppLogado(user) {
     const el = { app: document.getElementById('app-container'), role: document.getElementById('role-selection') };
     
@@ -219,7 +285,8 @@ function iniciarAppLogado(user) {
 
     const userEmail = user.email ? user.email.toLowerCase().trim() : "";
     const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
-    if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
+    const tabAdmin = document.getElementById('tab-admin');
+    if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
 
     const tabServicos = document.getElementById('tab-servicos');
     const btnPerfil = document.getElementById('btn-trocar-perfil');
@@ -250,6 +317,12 @@ function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-ove
 function atualizarInterfaceUsuario(dados) {
     document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => { if(dados.photoURL) img.src = dados.photoURL; });
     const nameEl = document.getElementById('header-user-name'); if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
+    const provNameEl = document.getElementById('provider-header-name');
+    if(provNameEl) {
+        const saldo = dados.wallet_balance || 0; 
+        const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
+        provNameEl.innerHTML = `${dados.nome_profissional || dados.displayName} <br><span class="text-[10px] font-normal text-gray-300">Saldo: <span class="${corSaldo} font-bold">R$ ${saldo.toFixed(2)}</span></span>`;
+    }
 }
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
