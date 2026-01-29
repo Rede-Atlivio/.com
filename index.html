@@ -22,20 +22,25 @@
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; transition: all 0.3s; }
         .dot.active { background: #ea580c; width: 24px; border-radius: 4px; }
 
-        /* SPLASH E OUTROS */
+        /* SPLASH SCREEN (LOGO PULSANDO) */
         #splash-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         .splash-logo { width: 100px; height: 100px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: #1e3a8a; box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); animation: pulse 2s infinite; }
         @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
         
-        /* ESTILOS DE INPUT E TEXTO */
+        /* ESTILOS GERAIS */
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
+        .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
+        
+        /* CORREÇÃO DE INPUTS (NUCLEAR) */
         #modal-onboarding input { color: white !important; }
         input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important; -webkit-text-fill-color: #0f172a !important; font-weight: bold !important; }
     </style>
 
     <script>
-        // LÓGICA DE NAVEGAÇÃO INICIAL
+        // LÓGICA DE NAVEGAÇÃO INICIAL (INTERFACE)
         window.irParaLogin = () => {
             document.getElementById('landing-page').classList.add('hidden');
             document.getElementById('auth-container').classList.remove('hidden');
@@ -48,9 +53,12 @@
             modal.classList.remove('hidden');
             modal.style.display = 'flex';
             
-            // Força renderização dos inputs
+            // Força renderização dos inputs (Garantia Nuclear)
             setTimeout(() => {
-                modal.querySelectorAll('input').forEach(i => i.style.height = '50px');
+                modal.querySelectorAll('input').forEach(i => {
+                    i.style.height = '50px';
+                    i.style.display = 'block';
+                });
             }, 100);
         };
 
@@ -60,17 +68,52 @@
             document.getElementById('landing-page').classList.remove('hidden');
         };
 
-        // Outras funções de UI existentes
+        // CONTROLES DE INTERFACE
         window.ocultarSplash = () => {
             const splash = document.getElementById('splash-screen');
             if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
         };
-        window.switchTab = (tab) => { /* Mantida a lógica original */
+        
+        window.switchTab = function(tabName) {
             document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
-            const alvo = document.getElementById(`sec-${tab}`);
+            const alvo = document.getElementById(`sec-${tabName}`);
             if(alvo) alvo.classList.remove('hidden');
-            // ...resto da lógica de abas...
+            
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+            const activeBtn = document.getElementById(`tab-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-gray-400');
+                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+            }
+            // Lazy Load Hooks
+            if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
+            if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
+            if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
+            if(tabName === 'chat' && window.carregarChat) window.carregarChat();
         };
+
+        window.switchServiceSubTab = function(subTab) {
+            ['contratar', 'andamento', 'historico'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`subtab-${t}-btn`).classList.remove('active');
+            });
+            document.getElementById(`view-${subTab}`).classList.remove('hidden');
+            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
+        };
+
+        window.switchProviderSubTab = function(subTab) {
+            ['radar', 'ativos', 'historico'].forEach(t => {
+                document.getElementById(`pview-${t}`).classList.add('hidden');
+                document.getElementById(`ptab-${t}-btn`).classList.remove('active');
+            });
+            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
+            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+        };
+        
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); btn.classList.toggle('bg-blue-100'); btn.classList.toggle('border-blue-500'); };
     </script>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
@@ -79,6 +122,11 @@
         <div class="splash-logo">A</div>
         <p class="mt-4 text-gray-400 text-xs font-bold tracking-widest uppercase">Carregando...</p>
     </div>
+
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
+    <audio id="online-sound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto"></audio>
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
     <div id="landing-page" class="min-h-screen bg-white text-gray-900 flex flex-col relative z-50">
         <div class="p-6 flex justify-between items-center">
@@ -116,13 +164,13 @@
 
         <div class="p-6 bg-white pb-10">
             <p class="text-[10px] text-center text-gray-400 mb-4">
-                Ao continuar, concordo com a <a href="#" onclick="openTerms('privacidade')" class="underline font-bold">Política de Privacidade</a>.
+                Ao continuar, concordo com a <a href="#" onclick="openTerms('privacidade')" class="underline font-bold text-blue-600">Política de Privacidade</a>.
             </p>
             <div class="space-y-3">
-                <button onclick="irParaLogin()" class="w-full bg-orange-50 text-orange-700 font-bold py-4 rounded-xl border border-orange-100 hover:bg-orange-100 transition">
+                <button onclick="irParaLogin()" class="w-full bg-orange-50 text-orange-700 font-bold py-4 rounded-xl border border-orange-100 hover:bg-orange-100 transition shadow-sm">
                     Já tenho uma conta
                 </button>
-                <button onclick="irParaCadastro()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 transition">
+                <button onclick="irParaCadastro()" class="w-full bg-orange-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-orange-700 transition transform active:scale-95">
                     Abrir conta gratuita
                 </button>
             </div>
@@ -130,7 +178,7 @@
     </div>
 
     <div id="auth-container" class="fixed inset-0 bg-white z-[55] hidden flex-col items-center justify-center p-6 animate-fadeIn">
-        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-400 text-2xl font-bold">&larr;</button>
+        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-400 text-2xl font-bold p-2 hover:text-gray-600">&larr;</button>
         <div class="w-full max-w-md text-center">
             <h2 class="text-4xl font-black text-blue-900 italic uppercase mb-2 tracking-tighter">Atlivio</h2>
             <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Login Seguro</p>
@@ -153,7 +201,7 @@
                 <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95">
                     ENTRAR AGORA 🚀
                 </button>
-                <button onclick="location.reload()" class="text-xs text-gray-400 underline mt-2">Corrigir número</button>
+                <button onclick="location.reload()" class="text-xs text-gray-400 underline mt-2 hover:text-blue-600">Corrigir número</button>
             </div>
             
             <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
@@ -161,7 +209,7 @@
     </div>
 
     <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
-        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-2xl font-bold transition">&times;</button>
+        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
         
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
             <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
@@ -172,14 +220,14 @@
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
                     <input type="text" id="inp-onboard-name" 
-                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
+                           style="height: 50px !important; width: 100%; display: block !important; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white !important;"
                            placeholder="[ Nome e sobrenome ]" required minlength="3">
                 </div>
 
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu WhatsApp</label>
                     <input type="tel" id="inp-onboard-phone" 
-                           style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;"
+                           style="height: 50px !important; width: 100%; display: block !important; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white !important;"
                            placeholder="🇧🇷 +55 (00) 00000-0000" oninput="mascaraTelefone(this)" required>
                 </div>
 
@@ -187,13 +235,13 @@
                     RECEBER CÓDIGO SMS 📲
                 </button>
 
-                <div class="flex items-center justify-center gap-2 opacity-50">
+                <div class="flex items-center justify-center gap-2 opacity-50 py-2">
                     <div class="h-px bg-gray-600 w-full"></div>
                     <span class="text-[10px] text-gray-400 whitespace-nowrap">ou continue com</span>
                     <div class="h-px bg-gray-600 w-full"></div>
                 </div>
 
-                <button onclick="alert('🚧 EM BREVE: Login Google')" class="w-full bg-white text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition">
+                <button onclick="alert('🚧 EM MANUTENÇÃO\n\nO login com Google está passando por melhorias.\n\nPor favor, utilize a opção RECEBER CÓDIGO SMS logo acima. É mais rápido e seguro!')" class="w-full bg-white text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-100 transition border border-gray-200">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5"> Google
                 </button>
             </div>
@@ -205,58 +253,208 @@
         </div>
     </div>
 
+    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+        <header class="bg-white shadow-sm p-4 z-30 sticky top-0" id="header-main">
+            <div id="global-alert-banner" class="hidden bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-3 mb-3 rounded shadow-sm flex justify-between items-center">
+                <p id="global-alert-text" class="text-xs font-bold"></p>
+                <button onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold">&times;</button>
+            </div>
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-1">
+                        <h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1>
+                    </div>
+                    <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">🔄 Carregando...</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
+                        <span id="status-label" class="text-[8px] font-bold text-gray-500 uppercase mr-2">OFFLINE</span>
+                        <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                            <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+                        <button onclick="window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta"><span class="text-xl">⚙️</span></button>
+                        <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">📲 SALVE SEU ACESSO</button>
+                        <button onclick="logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full transition">SAIR</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
+            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
+            <button onclick="switchTab('empregos')" id="tab-empregos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Empregos 💼</button>
+            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
+            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Loja 🛒</button>
+            <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
+            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
+            <button onclick="location.href='admin.html'" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic bg-red-50">ADMIN 🛡️</button>
+        </nav>
+
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos e Cashback</p>
+                <div id="lista-oportunidades" class="grid gap-3"></div>
+            </section>
+            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões e ganhe</p>
+                <div id="lista-missoes" class="grid gap-4"></div>
+            </section>
+            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+                <div id="category-filters" class="hidden"></div> 
+                <div id="servicos-cliente" class="hidden">
+                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                                <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            </div>
+                            <div><h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3></div>
+                        </div>
+                    </div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
+                        <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
+                        <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+                    </div>
+                    <div id="view-contratar"><div id="lista-prestadores-realtime" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div></div>
+                    <div id="view-andamento" class="hidden space-y-2"><div id="meus-pedidos-andamento" class="space-y-3"></div></div>
+                    <div id="view-historico" class="hidden space-y-2"><div id="meus-pedidos-historico" class="space-y-3"></div></div>
+                </div>
+                <div id="servicos-prestador" class="hidden">
+                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div><h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3></div>
+                        </div>
+                        <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button>
+                    </div>
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
+                        <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
+                        <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
+                    </div>
+                    <div id="pview-radar" class="text-center py-10"></div>
+                    <div id="pview-ativos" class="hidden space-y-3"><div id="lista-chamados-ativos"><p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p></div></div>
+                    <div id="pview-historico" class="hidden space-y-3"><div id="lista-chamados-historico"><p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p></div></div>
+                </div>
+            </section>
+            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-vagas" class="grid gap-3"></div>
+                <div id="painel-empresa" class="hidden">
+                    <button onclick="abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">+ Anunciar Vaga Grátis</button>
+                    <div id="lista-minhas-vagas" class="space-y-2 mt-4"></div>
+                </div>
+            </section>
+            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados</p>
+                <div id="sec-produtos"></div>
+            </section>
+            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
+                <div id="lista-chats" class="space-y-2"></div>
+            </section>
+            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
+                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
+                    <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+                </div>
+            </section>
+        </main>
+    </div>
+
     <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
             <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left mt-6">
-                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">💎</div>
-                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
-                </button>
-                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">🛠️</div>
-                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
-                </button>
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition"><div class="text-4xl mb-3">💎</div><div class="font-black text-blue-900 uppercase italic">Cliente</div></button>
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition"><div class="text-4xl mb-3">🛠️</div><div class="font-black text-blue-900 uppercase italic">Prestador</div></button>
             </div>
         </div>
     </div>
 
-    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
-       <header class="bg-white shadow-sm p-4 z-30 sticky top-0" id="header-main">
-           <div class="flex justify-between items-center">
-               <h1 class="text-2xl font-black text-blue-900 italic uppercase">Atlivio</h1>
-               <button onclick="logout()" class="text-red-500 text-xs font-bold">SAIR</button>
-           </div>
-       </header>
-       <nav class="flex bg-white border-b border-gray-100 overflow-x-auto">
-           <button id="tab-servicos" class="p-4 text-xs font-bold text-blue-900 border-b-2 border-blue-900" onclick="switchTab('servicos')">SERVIÇOS</button>
-           <button id="tab-empregos" class="p-4 text-xs text-gray-400" onclick="switchTab('empregos')">EMPREGOS</button>
-           <button id="tab-chat" class="p-4 text-xs text-gray-400" onclick="switchTab('chat')">CHAT</button>
-       </nav>
-       <main class="flex-1 p-4 pb-24 overflow-y-auto">
-           <section id="sec-servicos">
-               <div id="servicos-cliente" class="hidden"> <div id="lista-prestadores-realtime"></div> </div>
-               <div id="servicos-prestador" class="hidden"> <div id="lista-chamados-ativos"></div> </div>
-           </section>
-           <section id="sec-empregos" class="hidden"> <div id="lista-vagas"></div> </section>
-           <section id="sec-chat" class="hidden"> <div id="lista-chats"></div> </section>
-       </main>
-    </div>
-
-    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4">
-        <div class="bg-slate-800 p-6 rounded-xl w-full max-w-lg text-white">
-            <h3 id="term-title" class="font-bold mb-4">Termos</h3>
-            <div id="term-content" class="text-xs text-gray-300 mb-4 h-64 overflow-y-auto"></div>
-            <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 px-4 py-2 rounded text-xs font-bold">FECHAR</button>
+    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
+        <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl">
+                <h3 class="text-white font-bold" id="term-title">Termos de Uso</h3>
+                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
+            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center">
+                <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button>
+            </div>
         </div>
     </div>
 
-    <script type="module" src="./js/app.js?v=15.7"></script>
-    <script type="module" src="./js/auth.js?v=15.7"></script>
-    <script type="module" src="./js/modules/services.js?v=15.7"></script>
-    <script type="module" src="./js/modules/request.js?v=15.7"></script>
-    <script type="module" src="./js/modules/chat.js?v=15.7"></script>
-    <script type="module" src="./js/wallet.js?v=15.7"></script>
+    <div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="bg-slate-900 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
+                <h3 class="text-white font-black uppercase italic flex items-center gap-2">⚙️ Minha Conta</h3>
+                <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
+                <div class="space-y-3">
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Identidade</p>
+                    <div class="flex flex-col items-center mb-4">
+                        <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
+                            <img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-xs text-white font-bold">ALTERAR</span></div>
+                        </div>
+                    </div>
+                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div>
+                    <div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
+                    <div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div>
+                    <div><label class="text-[10px] font-bold text-green-700 uppercase">Sua Chave PIX</label><input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
+                <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
+                <button onclick="salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            <div id="provider-setup-content"><p class="text-center text-gray-400">Carregando editor...</p></div>
+        </div>
+    </div>
+    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative"><div id="public-services-list"></div></div> </div>
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+            <input type="hidden" id="target-provider-id"><input type="hidden" id="service-base-price">
+            <div class="p-6"><p>Carregando...</p></div>
+        </div>
+    </div>
+    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+       <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><div id="star-container"></div></div>
+    </div>
+    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div>
+    </div>
+    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative"><button onclick="window.fecharModalCandidatura()" class="absolute top-4 right-4">&times;</button></div>
+    </div>
+    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div>
+    </div>
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white"><div class="loader mb-4"></div></div>
+
+    <script type="module" src="./js/app.js?v=15.8"></script>
+    <script type="module" src="./js/auth.js?v=15.8"></script>
+    <script type="module" src="./js/modules/services.js?v=15.8"></script>
+    <script type="module" src="./js/modules/request.js?v=15.8"></script>
+    <script type="module" src="./js/modules/chat.js?v=15.8"></script>
+    <script type="module" src="./js/wallet.js?v=15.8"></script>
+    <script type="module" src="./js/modules/jobs.js?v=15.8"></script>
+    <script type="module" src="./js/modules/missions.js?v=15.8"></script>
+    <script type="module" src="./js/modules/opportunities.js?v=15.8"></script>
+    <script type="module" src="./js/modules/products.js?v=15.8"></script>
     
     <script type="module">
         import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -268,7 +466,7 @@
         const db = getFirestore(app);
         auth.languageCode = 'pt-br';
 
-        // MÁSCARA
+        // --- 1. SMS LOGIN FUNCTIONS (Global Scope Binding) ---
         window.mascaraTelefone = (input) => {
             let v = input.value.replace(/\D/g,'').substring(0, 11);
             if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
@@ -282,7 +480,6 @@
             }
         };
 
-        // NOVA FUNÇÃO DE ENVIO HÍBRIDA (Cadastro ou Login)
         window.enviarSMSLogin = async (origem) => {
             let telefoneInput;
             
@@ -335,26 +532,90 @@
             const code = document.getElementById('login-code').value;
             try {
                 await window.confirmationResult.confirm(code);
-                // O app.js vai detectar o login e redirecionar
             } catch (error) { alert("Código inválido."); }
         };
 
-        // TERMOS
+        // --- 2. GLOBAL SETTINGS & ALERTS ---
+        async function loadGlobalAlert() {
+            try {
+                const docSnap = await getDoc(doc(db, "settings", "global"));
+                if (docSnap.exists() && docSnap.data().top_message) {
+                    const msgDiv = document.getElementById('global-alert-banner');
+                    const msgText = document.getElementById('global-alert-text');
+                    if(msgDiv && msgText) {
+                        msgText.innerText = "⚠️ AVISO: " + docSnap.data().top_message;
+                        msgDiv.classList.remove('hidden');
+                    }
+                }
+            } catch (e) { console.log("Info config:", e); }
+        }
+        
+        // --- 3. TERMOS E PRIVACIDADE (TEXTOS COMPLETOS RESTAURADOS) ---
+        const TEXTO_TERMOS = `
+            1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
+            2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
+            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos internos da plataforma, vinculados a serviços intermediados.
+            4. RESPONSABILIDADE: A Atlivio conecta Clientes e Prestadores, não se responsabilizando pela execução dos serviços.
+            5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos a qualquer momento.
+            6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
+            7. A ATLIVIO pode atualizar estes termos a qualquer momento.
+        `;
+
+        const TEXTO_PRIVACIDADE = `
+            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil.
+            2. USO: Seus dados servem para conectar Clientes e Prestadores.
+            3. SEGURANÇA: Utilizamos práticas de segurança com criptografia SSL e banco de dados Google Firebase.
+            4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
+        `;
+
         window.openTerms = function(type) {
             const modal = document.getElementById('modal-terms');
             const title = document.getElementById('term-title');
             const content = document.getElementById('term-content');
-            if(modal) {
+            
+            if(modal && title && content) {
                 modal.classList.remove('hidden');
-                modal.classList.add('flex'); // Flex para centralizar
-                if(title) title.innerText = type === 'termos' ? "Termos de Uso" : "Política de Privacidade";
-                if(content) content.innerText = "Carregando textos..."; // Simplificado para não duplicar
+                modal.classList.add('flex');
+                
+                if(type === 'termos') {
+                    title.innerText = "Termos de Uso";
+                    content.innerText = TEXTO_TERMOS;
+                } else {
+                    title.innerText = "Política de Privacidade";
+                    content.innerText = TEXTO_PRIVACIDADE;
+                }
+            } else {
+                console.error("Erro: Modal de termos não encontrado no HTML.");
             }
         };
+
+        // Initialize Global Alert
+        loadGlobalAlert();
     </script>
 
     <script>
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js')); }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Info:', err));
+            });
+        }
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-install-app');
+            if(btn) {
+                btn.classList.remove('hidden');
+                btn.onclick = () => { e.prompt(); };
+            }
+        });
+        
+        // Verifica se já está logado ao abrir
+        setTimeout(() => {
+             // Lógica simples: se tem user_uid no localStorage, esconde landing e mostra app
+             if(localStorage.getItem('user_uid')) {
+                 document.getElementById('landing-page').classList.add('hidden');
+                 document.getElementById('app-container').classList.remove('hidden');
+             }
+        }, 500);
     </script>
 </body>
 </html>
