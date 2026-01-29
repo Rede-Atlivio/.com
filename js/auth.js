@@ -21,17 +21,66 @@ const CATEGORIAS_SERVICOS = [
     "🚗 Motorista", "🛵 Entregador", "📷 Fotógrafo", "💅 Manicure/Pedicure", "💇 Cabeleireiro(a)", "Outros"
 ];
 
-// --- LOGIN / LOGOUT ---
-window.loginGoogle = () => { console.log("🔄 Login..."); signInWithRedirect(auth, provider); };
+// ============================================================================
+// 1. LOGIN & RASTREAMENTO (ATUALIZADO)
+// ============================================================================
+
+window.loginGoogle = async () => { 
+    console.log("🔄 Login Iniciado..."); 
+    // Salva a origem no Session Storage para sobreviver ao Redirect
+    const origem = localStorage.getItem("traffic_source");
+    if(origem) sessionStorage.setItem("pending_ref", origem);
+    signInWithRedirect(auth, provider); 
+};
+
 window.logout = () => signOut(auth).then(() => location.reload());
 
-getRedirectResult(auth).then((result) => { if (result) console.log("✅ Login OK."); }).catch((error) => console.error("❌ Erro Login:", error));
+// PROCESSAMENTO PÓS-LOGIN (Afiliados + Criação de Conta)
+getRedirectResult(auth).then(async (result) => { 
+    if (result) {
+        console.log("✅ Login Google OK.");
+        const user = result.user;
+        const userRef = doc(db, "usuarios", user.uid);
+        const docSnap = await getDoc(userRef);
 
-// --- PERFIL ---
+        // 🆕 Se for NOVO USUÁRIO, aplica a indicação
+        if (!docSnap.exists()) {
+            const indicatedBy = sessionStorage.getItem("pending_ref") || localStorage.getItem("traffic_source");
+            let dadosIndicacao = {};
+
+            if (indicatedBy && indicatedBy !== user.uid) {
+                console.log("🔗 Usuário indicado por:", indicatedBy);
+                dadosIndicacao = { invited_by: indicatedBy, traffic_source: 'afiliado' };
+                // Notifica o Padrinho
+                try {
+                    await addDoc(collection(db, "notifications"), {
+                        uid: indicatedBy,
+                        message: `🎉 Nova indicação! ${user.displayName || 'Alguém'} entrou pelo seu link.`,
+                        read: false, type: 'success', created_at: serverTimestamp()
+                    });
+                } catch(e) {}
+            } else {
+                dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
+            }
+
+            // Cria perfil inicial (o resto vem no onAuthStateChanged)
+            await setDoc(userRef, {
+                uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
+            }, { merge: true });
+        }
+        sessionStorage.removeItem("pending_ref");
+    }
+}).catch((error) => console.error("❌ Erro Login:", error));
+
+// ============================================================================
+// 2. PERFIL & CORE (FUNCIONALIDADES MANTIDAS)
+// ============================================================================
+
 window.definirPerfil = async (tipo) => {
     if(!auth.currentUser) return;
     try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); location.reload(); } catch(e) { alert("Erro: " + e.message); }
 };
+
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     const btn = document.getElementById('btn-trocar-perfil');
@@ -39,39 +88,31 @@ window.alternarPerfil = async () => {
     try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider }); setTimeout(() => location.reload(), 500); } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
 };
 
-// --- ENFORCER & CORE ---
+// --- ENFORCER & MONITOR ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
+        
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if(!docSnap.exists()) {
-                    // 🚀 RASTREAMENTO: Pega a origem do localStorage (Salvo pelo index.html)
+                    // Fallback de segurança (Cria se não existir)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    
                     const novoPerfil = { 
                         email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
                         photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
                         role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
-                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: new Date(), status: 'ativo',
+                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: serverTimestamp(), status: 'ativo',
                         traffic_source: trafficSource 
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
-                    
-                    // Log de Novo Cadastro
-                    logSystemEvent("Cadastro", `Novo usuário via ${trafficSource}`);
-
                 } else {
                     const data = docSnap.data();
                     
-                    if (data.status === 'banido') {
-                        console.warn("🚫 BANIDO.");
-                    }
-                    if (data.status === 'suspenso' && data.is_online) {
-                         updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
-                    }
+                    if (data.status === 'banido') console.warn("🚫 BANIDO.");
+                    if (data.status === 'suspenso' && data.is_online) updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
                     userProfile = data; window.userProfile = data;
@@ -98,7 +139,9 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- SISTEMA DE SUPORTE ---
+// ============================================================================
+// 3. SISTEMA DE SUPORTE
+// ============================================================================
 function renderizarBotaoSuporte() {
     if(document.getElementById('btn-floating-support')) return;
     const btn = document.createElement('div');
@@ -181,7 +224,10 @@ window.enviarMensagemSuporte = async () => {
     }
 };
 
-// --- RESTO DO CÓDIGO (Visual, Enforcer, Serviços) ---
+// ============================================================================
+// 4. HELPERS DE INTERFACE & STATUS
+// ============================================================================
+
 function aplicarRestricoesDeStatus(status) {
     const body = document.body;
     const bloqueioID = "bloqueio-total-overlay"; const avisoID = "aviso-suspenso-bar";
@@ -206,6 +252,7 @@ function aplicarRestricoesDeStatus(status) {
         document.getElementById('header-main')?.classList.add('mt-8');
     } else { document.getElementById('header-main')?.classList.remove('mt-8'); }
 }
+
 function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-overlay")?.remove(); document.getElementById("aviso-suspenso-bar")?.remove(); }
 
 function atualizarInterfaceUsuario(dados) {
@@ -387,7 +434,6 @@ function toggleDisplay(id, s) { const el = document.getElementById(id); if(el) s
 // ============================================================================
 // 👁️ LIVE TRACKING (MONITOR DE CLIQUES)
 // ============================================================================
-// Função segura que grava eventos no banco sem travar a interface
 async function logSystemEvent(action, details) {
     try {
         const uid = auth.currentUser ? auth.currentUser.uid : "visitante";
@@ -402,25 +448,16 @@ async function logSystemEvent(action, details) {
             type: 'click'
         });
     } catch(e) {
-        // Silencioso para não incomodar o usuário
         console.warn("Log failed:", e);
     }
 }
 
-// Escuta Global de Cliques (Delega Eventos)
 window.addEventListener('click', (e) => {
-    // 1. Identifica o elemento clicado (ou o pai dele se for um ícone dentro de botão)
     const el = e.target.closest('button') || e.target.closest('a') || e.target.closest('.subtab-btn');
-    
     if (el) {
-        // Captura ID, Texto ou Classe relevante
         let identificador = el.id || el.innerText || el.className;
-        if(identificador.length > 30) identificador = identificador.substring(0, 30) + "..."; // Corta texto longo
-
-        // Ignora cliques irrelevantes para não flodar o banco
+        if(identificador.length > 30) identificador = identificador.substring(0, 30) + "..."; 
         if(!identificador || identificador.includes("container") || identificador.includes("wrapper")) return;
-
-        // Envia para o banco
         logSystemEvent("Clique", `Botão: ${identificador}`);
     }
 });
