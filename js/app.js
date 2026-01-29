@@ -41,3 +41,8 @@ import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (T
 import { checkOnboarding } from './modules/onboarding.js';
 
 console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        checkOnboarding(user); // <--- O GATILHO QUE LEVANTA O MURO
+    }
+});
