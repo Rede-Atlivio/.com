@@ -4,7 +4,7 @@ import { collection, query, orderBy, limit, onSnapshot, where, doc } from "https
 let cachePrestadores = [];
 let unsubscribeVitrine = null;
 let unsubscribePedidosAtivos = null;
-let unsubscribeMeusServicos = null; // 🆕 Variável para monitorar os serviços do próprio prestador
+let unsubscribeMeusServicos = null;
 
 // --- GATILHOS ---
 const tabServicos = document.getElementById('tab-servicos');
