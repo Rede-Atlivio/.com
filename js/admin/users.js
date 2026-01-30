@@ -24,6 +24,14 @@ export async function init(viewType) {
         if(btnAdd) btnAdd.innerHTML = "+ NOVO PRESTADOR";
     }
 
+    // Expõe funções globalmente para o HTML acessar
+    window.openEditor = openEditor;
+    window.saveAction = saveAction;
+    window.saveServiceAction = saveServiceAction; // NOVA FUNÇÃO
+    window.openBalanceEditor = openBalanceEditor;
+    window.setTransactionMode = setTransactionMode;
+    window.executeAdjustment = executeAdjustment;
+
     if(btnAdd) btnAdd.onclick = () => window.openEditor(viewType, null);
 
     // Listener Busca
@@ -191,8 +199,8 @@ function toggleUserItem(id, selected) { if(selected) selectedUsers.add(id); else
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); const count = document.getElementById('bulk-count'); if(selectedUsers.size > 0) { bar.classList.add('visible'); bar.style.transform = 'translateY(0)'; count.innerText = selectedUsers.size; } else { bar.classList.remove('visible'); bar.style.transform = 'translateY(100%)'; } }
 async function executeUserBulkDelete() { if(!confirm(`EXCLUIR ${selectedUsers.size} registros PERMANENTEMENTE?`)) return; const btn = document.getElementById('btn-bulk-delete'); btn.innerText = "AGUARDE..."; try { const db = window.db; const batch = writeBatch(db); const col = currentType === 'users' ? 'usuarios' : 'active_providers'; selectedUsers.forEach(id => { const ref = doc(db, col, id); batch.delete(ref); }); await batch.commit(); selectedUsers.clear(); updateUserBulkUI(); await loadList(); alert("✅ Exclusão concluída!"); } catch(e) { alert("Erro: " + e.message); } finally { btn.innerHTML = `<i data-lucide="trash-2"></i> EXCLUIR`; lucide.createIcons(); } }
 
-// 4. EDITOR COMPLETO (ATUALIZADO COM BOTÃO REJEITAR PARA TODOS)
-window.openEditor = async (collectionName, id) => {
+// 4. EDITOR COMPLETO (ATUALIZADO COM CURADORIA INDIVIDUAL)
+async function openEditor(collectionName, id) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const title = document.getElementById('modal-title');
@@ -220,6 +228,41 @@ window.openEditor = async (collectionName, id) => {
             html += `</div>`;
         }
 
+        // --- 🔥 CURADORIA DE SERVIÇOS (INDIVIDUAL) ---
+        if (realCollection === 'active_providers' && id) {
+             const servicos = data.services || [];
+             if (servicos.length > 0) {
+                 html += `<div class="mb-6"><h4 class="text-xs font-black text-blue-300 uppercase mb-2 border-b border-blue-900 pb-1">🛡️ Curadoria de Serviços (${servicos.length})</h4><div class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">`;
+                 
+                 servicos.forEach((svc, idx) => {
+                     let badge = "";
+                     let border = "border-slate-700";
+                     const st = svc.status || 'em_analise';
+                     
+                     if(st === 'aprovado') { badge="✅"; border="border-green-500/50"; }
+                     else if(st === 'rejeitado' || st === 'suspenso') { badge="⛔"; border="border-red-500/50"; }
+                     else { badge="⏳"; border="border-yellow-500/50"; }
+
+                     html += `
+                        <div class="bg-slate-900 p-3 rounded-lg border ${border} flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-bold text-white flex items-center gap-2">${badge} ${svc.category}</p>
+                                <p class="text-[10px] text-gray-400 mt-0.5 max-w-[200px] truncate">${svc.description || 'Sem descrição'}</p>
+                                <p class="text-[10px] text-emerald-400 font-mono mt-1">R$ ${svc.price}</p>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="window.saveServiceAction('${id}', ${idx}, 'aprovado')" class="bg-green-900/40 hover:bg-green-600 border border-green-800 text-white p-1.5 rounded text-[9px] font-bold transition" title="Aprovar este serviço">✅</button>
+                                <button onclick="window.saveServiceAction('${id}', ${idx}, 'suspenso')" class="bg-red-900/40 hover:bg-red-600 border border-red-800 text-white p-1.5 rounded text-[9px] font-bold transition" title="Suspender este serviço">🚫</button>
+                            </div>
+                        </div>
+                     `;
+                 });
+                 html += `</div></div>`;
+             } else {
+                 html += `<div class="p-4 bg-yellow-900/20 border border-yellow-800 rounded mb-4 text-xs text-yellow-500">Este prestador ainda não cadastrou serviços.</div>`;
+             }
+        }
+
         // FINANCEIRO
         if (realCollection === 'usuarios' && id) {
             const saldo = parseFloat(data.saldo || 0);
@@ -231,7 +274,7 @@ window.openEditor = async (collectionName, id) => {
                 </div>`;
         }
 
-        // CAMPOS
+        // CAMPOS GERAIS
         const keys = id ? Object.keys(data).sort() : ['nome', 'email', 'tipo', 'status']; 
         const ignored = ['created_at', 'updated_at', 'services', 'geo_location', 'is_demo', 'visibility_score', 'saldo', '_displayName', 'id'];
         html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
@@ -242,31 +285,84 @@ window.openEditor = async (collectionName, id) => {
         });
         html += `</div>`;
 
-        // 👮 BOTÕES DE AÇÃO (ATUALIZADO)
-        html += `<div class="border-t border-slate-700 pt-6 mt-6"><p class="text-center text-gray-400 text-[10px] uppercase font-bold mb-3">Painel de Controle</p>`;
+        // 👮 BOTÕES DE AÇÃO (GLOBAL)
+        html += `<div class="border-t border-slate-700 pt-6 mt-6"><p class="text-center text-gray-500 text-[9px] uppercase font-bold mb-3">⚠️ Ações da Conta (Afeta Tudo)</p>`;
         
-        // BOTÕES PADRONIZADOS PARA TODOS (USUÁRIOS E PRESTADORES)
         html += `
-            <div class="grid grid-cols-3 gap-3 mb-3">
-                <button onclick="window.saveAction('${realCollection}', '${id}', 'rejeitar')" class="bg-red-900/50 hover:bg-red-600 border border-red-800 text-white py-3 rounded-lg font-bold text-xs">🚫 REJEITAR</button>
-                <button onclick="window.saveAction('${realCollection}', '${id}', 'suspender')" class="bg-yellow-900/50 hover:bg-yellow-600 border border-yellow-800 text-white py-3 rounded-lg font-bold text-xs">⚠️ SUSPENDER</button>
-                <button onclick="window.saveAction('${realCollection}', '${id}', 'aprovar')" class="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-black text-xs shadow-lg">✅ APROVAR</button>
-            </div>
             <div class="flex gap-3">
-                <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">⛔ BANIR (BLOQUEIO TOTAL)</button>
-                <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">💾 SALVAR DADOS</button>
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'banir')" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">⛔ BANIR CONTA</button>
+                <button onclick="window.saveAction('${realCollection}', '${id}', 'salvar')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs shadow-lg">💾 SALVAR DADOS GERAIS</button>
+            </div>
+            <div class="mt-2 text-center">
+                <p class="text-[9px] text-gray-600">Para aprovar serviços, use os botões na lista de serviços acima.</p>
             </div>
         `;
         html += `</div></div>`;
         content.innerHTML = html;
 
     } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
-};
+}
 
-// 5. SALVAR AÇÕES
-window.saveAction = async (collectionName, id, action) => {
+// 5. NOVA FUNÇÃO: SALVAR AÇÃO INDIVIDUAL DE SERVIÇO
+async function saveServiceAction(id, index, status) {
+    if(!confirm(`Mudar status deste serviço para: ${status.toUpperCase()}?`)) return;
+    
+    // Feedback visual imediato
+    const modalContent = document.getElementById('modal-content');
+    modalContent.style.opacity = '0.5';
+    modalContent.style.pointerEvents = 'none';
+
+    try {
+        const db = window.db;
+        const ref = doc(db, "active_providers", id);
+        
+        // 1. Busca o documento atual para garantir integridade do array
+        const snap = await getDoc(ref);
+        if(!snap.exists()) throw new Error("Prestador não encontrado.");
+        
+        const data = snap.data();
+        let services = data.services || [];
+        
+        // 2. Modifica apenas o índice específico
+        if (services[index]) {
+            services[index].status = status;
+        } else {
+            throw new Error("Índice de serviço inválido.");
+        }
+
+        // 3. Salva de volta
+        await updateDoc(ref, { 
+            services: services,
+            updated_at: serverTimestamp()
+        });
+        
+        // 4. Notifica o usuário (Opcional, mas bom para UX)
+        let msg = status === 'aprovado' ? `Seu serviço de ${services[index].category} foi APROVADO! 🟢` : `Seu serviço de ${services[index].category} foi colocado em análise/suspenso. 🔴`;
+        
+        await addDoc(collection(db, "notifications"), {
+            uid: id,
+            message: msg,
+            read: false,
+            created_at: serverTimestamp(),
+            type: status === 'aprovado' ? 'success' : 'alert'
+        });
+
+        alert("✅ Status do serviço atualizado!");
+        
+        // Recarrega o editor para mostrar a mudança
+        window.openEditor('active_providers', id);
+
+    } catch(e) {
+        alert("Erro ao atualizar serviço: " + e.message);
+        modalContent.style.opacity = '1';
+        modalContent.style.pointerEvents = 'auto';
+    }
+}
+
+// 6. SALVAR AÇÕES GERAIS (CONTA)
+async function saveAction(collectionName, id, action) {
     if(!id) return alert("Criação manual ainda não implementada.");
-    if(!confirm(`Confirmar ação: ${action.toUpperCase()}?`)) return;
+    if(!confirm(`Confirmar ação GLOBAL na CONTA: ${action.toUpperCase()}?`)) return;
 
     try {
         const ref = doc(window.db, collectionName, id);
@@ -281,35 +377,16 @@ window.saveAction = async (collectionName, id, action) => {
             });
         }
 
-        if (action === 'aprovar') {
-            if (collectionName === 'active_providers') {
-                updates.status = 'aprovado';
-                updates.visibility_score = 100;
-                updates.is_online = false;
-                mensagemNotificacao = "✅ Seu perfil profissional foi APROVADO! Agora você pode ficar online.";
-            } else {
-                updates.status = 'ativo';
-                mensagemNotificacao = "✅ Sua conta foi reativada.";
-            }
-            alert("✅ Aprovado!");
-        } 
-        else if (action === 'rejeitar') { 
-            updates.status = 'rejeitado'; 
-            updates.visibility_score = 0; 
-            mensagemNotificacao = "🚫 Seu cadastro/atualização foi rejeitado. Verifique seus dados.";
-        }
-        else if (action === 'suspender') { 
-            updates.status = 'suspenso'; 
-            updates.visibility_score = 0; 
-            updates.is_online = false;
-            mensagemNotificacao = "⚠️ Conta SUSPENSA. Entre em contato com o suporte.";
-        }
-        else if (action === 'banir') { 
+        // NOTA: Ações aqui afetam a CONTA INTEIRA
+        if (action === 'banir') { 
             updates.status = 'banido'; 
             updates.visibility_score = 0;
             updates.is_online = false;
             updates.banned_at = serverTimestamp();
             mensagemNotificacao = "⛔ Conta bloqueada permanentemente por violação dos termos.";
+        }
+        else if (action === 'salvar') {
+            // Apenas salva os inputs
         }
 
         await updateDoc(ref, updates);
@@ -322,24 +399,15 @@ window.saveAction = async (collectionName, id, action) => {
                 created_at: serverTimestamp(),
                 type: 'system'
             });
-            // Cria ticket de sistema também para ficar no histórico do suporte
-            await addDoc(collection(window.db, "support_tickets"), {
-                uid: id,
-                sender: 'system',
-                message: mensagemNotificacao,
-                created_at: serverTimestamp(),
-                read: false,
-                system_msg: true
-            });
         }
 
         document.getElementById('modal-editor').classList.add('hidden');
         await loadList();
 
     } catch (e) { alert("Erro ao salvar: " + e.message); }
-};
+}
 
-// 6. FINANCEIRO
-window.openBalanceEditor = (uid, currentBalance, nomeUser) => { const modal = document.getElementById('modal-editor'); const content = document.getElementById('modal-content'); const title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "FINANCEIRO"; document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden'); content.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade"><p class="text-xs text-gray-400 uppercase font-bold">Saldo</p><h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2></div><div class="grid grid-cols-2 gap-4 animate-fade"><button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition"><p class="font-bold text-emerald-400">🟢 CRÉDITO</p></button><button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition"><p class="font-bold text-red-400">🔴 DÉBITO</p></button></div><div id="trans-form" class="mt-6 hidden animate-fade"><input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00"><input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Motivo"><button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR</button></div>`; tempTransMode = null; };
-window.setTransactionMode = (mode) => { tempTransMode = mode; document.getElementById('trans-form').classList.remove('hidden'); const btnCredit = document.getElementById('btn-mode-credit'); const btnDebit = document.getElementById('btn-mode-debit'); if (mode === 'credit') { btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1'; } else { btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1'; } };
-window.executeAdjustment = async (uid) => { const amount = parseFloat(document.getElementById('trans-amount').value); const desc = document.getElementById('trans-desc').value; const mode = tempTransMode; if (!amount || amount <= 0) return alert("Digite valor."); if (!desc) return alert("Digite motivo."); const finalAmount = mode === 'credit' ? amount : -amount; if(!confirm(`Confirmar?`)) return; const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true; try { const db = window.db; const userRef = doc(db, "usuarios", uid); await runTransaction(db, async (transaction) => { const userDoc = await transaction.get(userRef); if (!userDoc.exists()) throw "Usuário inexistente!"; const newBalance = (userDoc.data().saldo || 0) + finalAmount; transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() }); }); alert("✅ Saldo atualizado!"); document.getElementById('modal-editor').classList.add('hidden'); loadList(); } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR"; btn.disabled = false; } };
+// 7. FINANCEIRO
+function openBalanceEditor(uid, currentBalance, nomeUser) { const modal = document.getElementById('modal-editor'); const content = document.getElementById('modal-content'); const title = document.getElementById('modal-title'); modal.classList.remove('hidden'); title.innerText = "FINANCEIRO"; document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden'); content.innerHTML = `<div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center animate-fade"><p class="text-xs text-gray-400 uppercase font-bold">Saldo</p><h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2></div><div class="grid grid-cols-2 gap-4 animate-fade"><button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition"><p class="font-bold text-emerald-400">🟢 CRÉDITO</p></button><button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition"><p class="font-bold text-red-400">🔴 DÉBITO</p></button></div><div id="trans-form" class="mt-6 hidden animate-fade"><input type="number" id="trans-amount" class="inp-editor text-lg font-bold text-white mb-4" placeholder="0.00"><input type="text" id="trans-desc" class="inp-editor mb-4" placeholder="Motivo"><button onclick="window.executeAdjustment('${uid}')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg">CONFIRMAR</button></div>`; window.tempTransMode = null; }
+function setTransactionMode(mode) { window.tempTransMode = mode; document.getElementById('trans-form').classList.remove('hidden'); const btnCredit = document.getElementById('btn-mode-credit'); const btnDebit = document.getElementById('btn-mode-debit'); if (mode === 'credit') { btnCredit.classList.add('ring-2', 'ring-emerald-400'); btnDebit.classList.remove('ring-2', 'ring-red-400'); btnDebit.style.opacity = '0.5'; btnCredit.style.opacity = '1'; } else { btnDebit.classList.add('ring-2', 'ring-red-400'); btnCredit.classList.remove('ring-2', 'ring-emerald-400'); btnCredit.style.opacity = '0.5'; btnDebit.style.opacity = '1'; } }
+async function executeAdjustment(uid) { const amount = parseFloat(document.getElementById('trans-amount').value); const desc = document.getElementById('trans-desc').value; const mode = window.tempTransMode; if (!amount || amount <= 0) return alert("Digite valor."); if (!desc) return alert("Digite motivo."); const finalAmount = mode === 'credit' ? amount : -amount; if(!confirm(`Confirmar?`)) return; const btn = document.querySelector('#trans-form button'); btn.innerText = "PROCESSANDO..."; btn.disabled = true; try { const db = window.db; const userRef = doc(db, "usuarios", uid); await runTransaction(db, async (transaction) => { const userDoc = await transaction.get(userRef); if (!userDoc.exists()) throw "Usuário inexistente!"; const newBalance = (userDoc.data().saldo || 0) + finalAmount; transaction.update(userRef, { saldo: newBalance, updated_at: serverTimestamp() }); }); alert("✅ Saldo atualizado!"); document.getElementById('modal-editor').classList.add('hidden'); loadList(); } catch (e) { alert("Erro: " + e.message); btn.innerText = "CONFIRMAR"; btn.disabled = false; } }
