@@ -115,10 +115,10 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
-    // ✅ COMO DEVE FICAR (CORRIGIDO):
+    // ✅ CORREÇÃO FINAL NO core.js:
 else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
-    // 👇 AQUI A MUDANÇA: Adicionamos 'admin/' no caminho
-    moduleFile = viewName === 'users' || viewName === 'services' ? './admin/users.js' : './jobs.js'; 
+    // Como o core.js já está em js/admin/, ele olha direto para o lado dele
+    moduleFile = viewName === 'users' || viewName === 'services' ? './users.js' : './jobs.js'; 
     containerId = 'view-list'; 
 }
     else if (['automation'].includes(viewName)) { 
