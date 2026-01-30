@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// Configuração oficial Atlivio (SUAS CHAVES REAIS)
+// Configuração oficial Atlivio
 const firebaseConfig = {
   apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
   authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
@@ -25,37 +25,27 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
-window.firebaseApp = app;
 
-// 🚨 AQUI ESTAVA O ERRO DE "SYNTAX ERROR": 
-// Precisamos exportar essas variáveis explicitamente para os outros arquivos (wallet.js, services.js) usarem.
 export { app, auth, db, storage, provider };
 
 // ============================================================================
 // 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// Aqui conectamos todas as funcionalidades novas que criamos
 // ============================================================================
 
-// Nota: Certifique-se que estes arquivos existem e estão na pasta certa
-import './auth.js';                  
-import './modules/services.js';      
-import './modules/jobs.js';          
-import './modules/opportunities.js'; 
-import './modules/chat.js';          
-// import './modules/wallet.js'; // O wallet geralmente é carregado sob demanda ou aqui, se der erro, descomente.
-
+import './auth.js';                  // Gerencia Login, Perfil e Saldo Financeiro
+import './modules/services.js';      // Lista de Prestadores e Serviços
+import './modules/jobs.js';          // Vagas de Emprego
+import './modules/opportunities.js'; // Robô de Ofertas e Afiliados
+import './modules/chat.js';          // <--- NOVO: Chat, Pedidos e Segurança (Token)
 import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js'; 
+import { abrirConfiguracoes } from './modules/profile.js'; // <--- IMPORTAR
 
 console.log("✅ Sistema Atlivio Carregado: App + Todos os Módulos.");
-
 auth.onAuthStateChanged((user) => {
     if (user) {
-        // Verifica se o checkOnboarding existe antes de chamar
-        if (typeof checkOnboarding === 'function') {
-            checkOnboarding(user); 
-        }
+        checkOnboarding(user); // <--- O GATILHO QUE LEVANTA O MURO
     }
 });
-
 // EXPOR GLOBALMENTE PARA O BOTÃO FUNCIONAR
 window.abrirConfiguracoes = abrirConfiguracoes;
