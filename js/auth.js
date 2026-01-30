@@ -370,9 +370,23 @@ window.abrirConfiguracaoServicos = async () => {
     const b = d.banner_url||"", bi = d.bio||"", s = d.services||[];
     const inputStyle = "w-full border border-gray-300 rounded-lg p-2 text-xs font-bold text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none";
     
+    // --- LÓGICA DA TARJA ---
+    const statusConta = d.status || 'em_analise';
+    let badgeHtml = "";
+    if(statusConta === 'aprovado') badgeHtml = `<span class="bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase ml-2 tracking-wide">✅ APROVADO</span>`;
+    else if(statusConta === 'suspenso') badgeHtml = `<span class="bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase ml-2 tracking-wide">🔴 SUSPENSO</span>`;
+    else badgeHtml = `<span class="bg-yellow-100 text-yellow-700 border border-yellow-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase ml-2 tracking-wide">⏳ EM ANÁLISE</span>`;
+    // -----------------------
+
     const servicesHtml = s.length > 0 ? s.map((sv,i)=>`
         <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 flex justify-between items-center mb-2">
-            <div><p class="font-bold text-xs text-blue-900 flex items-center gap-1">🛠️ ${sv.category}</p><p class="text-[10px] text-gray-600">R$ ${sv.price}</p></div>
+            <div>
+                <div class="flex items-center">
+                    <p class="font-bold text-xs text-blue-900 flex items-center gap-1">🛠️ ${sv.category}</p>
+                    ${badgeHtml}
+                </div>
+                <p class="text-[10px] text-gray-600">R$ ${sv.price}</p>
+            </div>
             <div class="flex gap-2">
                 <button onclick="window.editarServico(${i})" class="text-blue-500 hover:text-blue-700 p-1 rounded bg-white border border-blue-200" title="Editar">✏️</button>
                 <button onclick="window.removerServico(${i})" class="text-red-500 hover:text-red-700 p-1 rounded bg-white border border-red-200" title="Excluir">❌</button>
