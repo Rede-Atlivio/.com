@@ -72,16 +72,19 @@ function renderTable(lista) {
     });
 }
 
-// CANDIDATOS CORRIGIDO
+// ⚠️ CORREÇÃO DE CANDIDATOS E ÍNDICE
 window.verCandidatos = async (jobId, title) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
-    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+    
+    const btnClose = document.getElementById('btn-close-modal');
+    if(btnClose) btnClose.onclick = () => modal.classList.add('hidden');
 
     content.innerHTML = `<div class="text-center py-10 text-white">Buscando currículos...</div>`;
 
     try {
+        // Busca Simples (Sem orderBy primeiro para evitar erro de índice imediato)
         const q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId));
         const snap = await getDocs(q);
 
@@ -92,14 +95,13 @@ window.verCandidatos = async (jobId, title) => {
         } else {
             snap.forEach(d => {
                 const app = d.data();
-                // Tenta achar o link em várias variáveis
                 const linkPdf = app.resume_url || app.cv_url || app.file_url;
                 
                 html += `
-                    <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+                    <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 hover:border-blue-500 transition">
                         <div class="flex justify-between">
                             <span class="font-bold text-white text-sm">${app.user_name || 'Anônimo'}</span>
-                            <span class="text-xs text-gray-500">${app.created_at?.toDate().toLocaleDateString() || ''}</span>
+                            <span class="text-xs text-gray-500">${app.created_at?.toDate ? app.created_at.toDate().toLocaleDateString() : 'Data N/A'}</span>
                         </div>
                         <p class="text-xs text-gray-400 mt-1 italic">"${app.message || 'Sem mensagem'}"</p>
                         <div class="flex gap-2 mt-3">
@@ -112,7 +114,23 @@ window.verCandidatos = async (jobId, title) => {
         }
         html += `</div></div>`;
         content.innerHTML = html;
-    } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
+
+    } catch (e) {
+        // SE DER ERRO DE ÍNDICE, MOSTRA O LINK MÁGICO
+        if(e.message.includes("index")) {
+             const url = e.message.match(/https:\/\/\S+/);
+             content.innerHTML = `
+                <div class="p-6 text-center">
+                    <p class="text-yellow-400 mb-2 font-bold">⚠️ Configuração Necessária</p>
+                    <p class="text-gray-400 text-xs mb-4">O Firebase precisa criar um índice para listar os candidatos desta vaga.</p>
+                    <a href="${url}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded font-bold uppercase shadow-lg">⚡ CRIAR ÍNDICE AGORA</a>
+                    <p class="text-gray-500 text-[10px] mt-4">Clique no botão, espere o Firebase criar (leva 2 min) e tente de novo.</p>
+                </div>
+             `;
+        } else {
+            content.innerHTML = `<p class="text-red-500 p-4">Erro: ${e.message}</p>`;
+        }
+    }
 };
 
 function abrirModalVaga(id = null) {
