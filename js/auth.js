@@ -1,7 +1,6 @@
-```javascript
 import { auth, db, provider } from './app.js';
-import { onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, signOut } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js)";
-import { doc, setDoc, updateDoc, onSnapshot, serverTimestamp } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js)";
+import { onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, setDoc, updateDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"]; 
 const DEFAULT_TENANT = "atlivio_fsa_01";
@@ -10,7 +9,7 @@ export let userProfile = null;
 window.userProfile = null;
 
 // ============================================================================
-// 1. SISTEMA DE TERMOS E POLÍTICA (Essencial para Onboarding)
+// 1. SISTEMA DE TERMOS E POLÍTICA
 // ============================================================================
 window.openTerms = (tipo) => {
     const modal = document.getElementById('modal-terms');
@@ -36,7 +35,7 @@ window.openTerms = (tipo) => {
 };
 
 // ============================================================================
-// 2. LÓGICA DE CADASTRO (BLINDADA CONTRA ERROS E ATAQUES)
+// 2. LÓGICA DE CADASTRO (Função que estava faltando)
 // ============================================================================
 window.finalizarCadastro = async () => {
     const btn = document.getElementById('btn-onboard-submit');
@@ -44,18 +43,18 @@ window.finalizarCadastro = async () => {
     const nomeInput = document.getElementById('inp-onboard-name');
     const phoneInput = document.getElementById('inp-onboard-phone');
 
-    // Anti-Sabotagem: Verifica se os elementos existem
+    // Anti-Sabotagem
     if (!btn || !checkbox || !nomeInput) {
         return alert("Erro crítico: Formulário incompleto. Recarregue a página.");
     }
 
-    // Anti-Metralhadora: Bloqueia duplo clique
+    // Anti-Metralhadora
     if (btn.disabled) return;
     
     const nome = nomeInput.value.trim();
     const phone = phoneInput ? phoneInput.value.trim() : "";
 
-    // Validação de Termos (Jurídico)
+    // Validação de Termos
     if (!checkbox.checked) {
         return alert("⚠️ Você precisa aceitar os Termos de Uso para continuar.");
     }
@@ -69,7 +68,6 @@ window.finalizarCadastro = async () => {
         return alert("⚠️ Sessão perdida. Por favor, faça login novamente.");
     }
 
-    // Início do Processo
     btn.innerText = "SALVANDO...";
     btn.disabled = true;
 
@@ -86,20 +84,19 @@ window.finalizarCadastro = async () => {
         
         await updateProfile(auth.currentUser, { displayName: nome });
         
-        // Sucesso: O onAuthStateChanged vai redirecionar automaticamente
+        // O onAuthStateChanged fará o resto
+        console.log("Cadastro salvo com sucesso!");
         
     } catch (error) {
         console.error("Erro ao salvar:", error);
         alert("Erro ao salvar: " + error.message);
-        
-        // Destrava em caso de erro
         btn.innerText = "TENTAR NOVAMENTE";
         btn.disabled = false;
     }
 };
 
 // ============================================================================
-// 3. LOGIN SMS (COM PROTEÇÃO ANTI-TRAVAMENTO)
+// 3. LOGIN SMS
 // ============================================================================
 const setupRecaptcha = () => {
     if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
@@ -114,47 +111,37 @@ const setupRecaptcha = () => {
 
 window.enviarSMSLogin = async (origem) => {
     let telefoneInput;
-    
     if (origem === 'cadastro') {
         telefoneInput = document.getElementById('inp-onboard-phone');
-        // No cadastro, validamos o nome antes de gastar SMS
         const nome = document.getElementById('inp-onboard-name').value;
-        if(nome.length < 3) return alert("Digite seu nome antes de validar o telefone.");
+        if(nome.length < 3) return alert("Digite seu nome antes.");
         localStorage.setItem("temp_user_name", nome);
     } else {
         telefoneInput = document.getElementById('login-phone');
     }
 
     let rawPhone = telefoneInput.value.replace(/\D/g, ''); 
-    if(rawPhone.length < 10) return alert("Digite o número com DDD (Ex: 75999990000).");
+    if(rawPhone.length < 10) return alert("Digite o número com DDD.");
     const finalPhone = '+55' + rawPhone;
     
     const btnId = origem === 'cadastro' ? 'btn-onboard-submit' : 'btn-login-send';
     const btn = document.getElementById(btnId) || document.getElementById('btn-login-send');
     
-    if(btn) { btn.disabled = true; btn.innerText = "ENVIANDO SMS..."; }
+    if(btn) { btn.disabled = true; btn.innerText = "ENVIANDO..."; }
 
     try {
         setupRecaptcha();
         const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, window.recaptchaVerifier);
         window.confirmationResult = confirmationResult; 
         
-        // Troca de tela visual
         document.getElementById('lbl-login-phone').innerText = finalPhone;
         document.getElementById('login-step-phone').classList.add('hidden');
         document.getElementById('login-step-code').classList.remove('hidden');
 
     } catch (error) {
         console.error("Erro SMS:", error);
-        if(btn) { btn.disabled = false; btn.innerText = "RECEBER CÓDIGO SMS"; }
-        
-        if (error.code === 'auth/invalid-phone-number') {
-            alert("Número inválido. Verifique o DDD.");
-        } else if (error.code === 'auth/too-many-requests') {
-            alert("Muitas tentativas. Aguarde alguns minutos.");
-        } else {
-            alert("Erro ao enviar SMS: " + error.message);
-        }
+        if(btn) { btn.disabled = false; btn.innerText = "RECEBER CÓDIGO"; }
+        alert("Erro ao enviar SMS: " + error.message);
     }
 };
 
@@ -163,8 +150,7 @@ window.confirmarCodigoLogin = async () => {
     if(code.length < 6) return alert("O código tem 6 dígitos.");
     
     if (!window.confirmationResult) {
-        alert("⚠️ Sessão expirada! A página foi recarregada. Por favor, reinicie.");
-        location.reload(); 
+        alert("Sessão expirada. Recarregue.");
         return;
     }
 
@@ -173,18 +159,17 @@ window.confirmarCodigoLogin = async () => {
 
     try {
         await window.confirmationResult.confirm(code);
-        // Sucesso! O onAuthStateChanged assume.
     } catch (error) {
         console.error(error);
         if(btn) { btn.disabled = false; btn.innerText = "ENTRAR AGORA 🚀"; }
-        alert("Código inválido ou expirado.");
+        alert("Código inválido.");
     }
 };
 
 window.logout = () => signOut(auth).then(() => location.reload());
 
 // ============================================================================
-// 4. ORQUESTRADOR DE ESTADO (User Flow)
+// 4. ORQUESTRADOR
 // ============================================================================
 onAuthStateChanged(auth, async (user) => {
     const ui = {
@@ -197,7 +182,6 @@ onAuthStateChanged(auth, async (user) => {
     };
 
     if (user) {
-        // Usuário Logado
         if(ui.landing) ui.landing.classList.add('hidden');
         if(ui.auth) ui.auth.classList.add('hidden');
         
@@ -205,7 +189,6 @@ onAuthStateChanged(auth, async (user) => {
         
         onSnapshot(userRef, async (docSnap) => {
             if(!docSnap.exists()) {
-                // Cria usuário novo no banco (Primeiro Acesso)
                 const tempName = localStorage.getItem("temp_user_name") || user.displayName || "Usuário";
                 await setDoc(userRef, { 
                     email: user.email || "", 
@@ -222,14 +205,11 @@ onAuthStateChanged(auth, async (user) => {
             } else {
                 const data = docSnap.data();
                 
-                // Redireciona para Onboarding se não aceitou termos
                 if (!data.termos_aceitos || !data.nome_real) {
                     ui.app.classList.add('hidden');
                     if(ui.onboard) {
                         ui.onboard.classList.remove('hidden');
                         ui.onboard.style.display = 'flex';
-                        
-                        // Pré-preenche se tiver dados
                         const inpN = document.getElementById('inp-onboard-name');
                         if(inpN && !inpN.value && data.displayName) inpN.value = data.displayName;
                     }
@@ -237,11 +217,9 @@ onAuthStateChanged(auth, async (user) => {
                     return;
                 }
 
-                // Usuário Completo -> Entra no App
                 if(ui.onboard) ui.onboard.classList.add('hidden');
                 userProfile = data; window.userProfile = data;
                 
-                // Configuração de UI
                 ui.app.classList.remove('hidden');
                 atualizarInterfaceUsuario(data);
                 
@@ -258,7 +236,6 @@ onAuthStateChanged(auth, async (user) => {
         });
 
     } else {
-        // Usuário Deslogado
         if(ui.landing) ui.landing.classList.remove('hidden');
         if(ui.app) ui.app.classList.add('hidden');
         if(ui.onboard) ui.onboard.classList.add('hidden');
@@ -266,13 +243,9 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Helpers UI
 function atualizarInterfaceUsuario(dados) {
     const nameEl = document.getElementById('header-user-name');
-    // Sanitização simples (innerText previne XSS)
     if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
-    
-    // Atualiza saldo se existir elemento
     const saldoEl = document.getElementById('user-balance');
     if(saldoEl && dados.wallet_balance !== undefined) {
         saldoEl.innerText = dados.wallet_balance.toFixed(2);
