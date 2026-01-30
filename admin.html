@@ -2,679 +2,159 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Atlivio - Marketplace Híbrido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlivio Admin | Painel Mestre</title>
     
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#0f172a">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
     <style>
-        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .slider-container { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
-        .slider-container::-webkit-scrollbar { display: none; }
-        .slide { flex: 0 0 100%; scroll-snap-align: center; position: relative; }
-        .slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #475569; transition: all 0.3s; }
-        .dot.active { background: #2563eb; width: 24px; border-radius: 4px; }
-
-        #splash-screen { position: fixed; inset: 0; background: #0f172a; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
-        .splash-logo { width: 100px; height: 100px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 900; color: #1e3a8a; box-shadow: 0 0 20px rgba(37, 99, 235, 0.5); animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.8; } }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
-        
-        input { color: white !important; }
-        input::placeholder { color: #94a3b8 !important; }
-        input:-webkit-autofill { -webkit-box-shadow: 0 0 0 30px #0f172a inset !important; -webkit-text-fill-color: white !important; font-weight: bold !important; }
-        
-        #auth-container, #modal-onboarding { display: none; } 
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+        .chk-custom { width: 18px; height: 18px; accent-color: #2563eb; cursor: pointer; }
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.05); }
     </style>
-
-    <script>
-        window.ocultarSplash = () => {
-            const splash = document.getElementById('splash-screen');
-            if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 500); }
-        };
-
-        window.irParaLogin = () => {
-            document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('modal-onboarding').style.display = 'none'; 
-            const login = document.getElementById('auth-container');
-            login.classList.remove('hidden');
-            login.style.display = 'flex'; 
-        };
-
-        window.irParaCadastro = () => {
-            document.getElementById('landing-page').classList.add('hidden');
-            document.getElementById('auth-container').style.display = 'none';
-            const modal = document.getElementById('modal-onboarding');
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            setTimeout(() => { modal.querySelectorAll('input').forEach(i => { i.style.height = '50px'; i.style.display = 'block'; }); }, 100);
-        };
-
-        window.voltarParaLanding = () => {
-            document.getElementById('auth-container').style.display = 'none';
-            document.getElementById('modal-onboarding').style.display = 'none';
-            document.getElementById('landing-page').classList.remove('hidden');
-        };
-
-        window.switchTab = function(tabName) {
-            document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
-            const alvo = document.getElementById(`sec-${tabName}`);
-            if(alvo) alvo.classList.remove('hidden');
-            document.querySelectorAll('nav button').forEach(btn => {
-                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
-                btn.classList.add('border-transparent', 'text-gray-400');
-            });
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            if(activeBtn) {
-                activeBtn.classList.remove('border-transparent', 'text-gray-400');
-                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
-            }
-            if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-            if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
-            if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-            if(tabName === 'chat' && window.carregarChat) window.carregarChat();
-        };
-
-        window.switchServiceSubTab = (subTab) => {
-            ['contratar', 'andamento', 'historico'].forEach(t => {
-                document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`subtab-${t}-btn`).classList.remove('active');
-            });
-            document.getElementById(`view-${subTab}`).classList.remove('hidden');
-            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
-        };
-
-        window.switchProviderSubTab = (subTab) => {
-            ['radar', 'ativos', 'historico'].forEach(t => {
-                document.getElementById(`pview-${t}`).classList.add('hidden');
-                document.getElementById(`ptab-${t}-btn`).classList.remove('active');
-            });
-            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
-            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
-        };
-        
-        window.toggleTag = (btn) => { btn.classList.toggle('selected'); btn.classList.toggle('bg-blue-100'); btn.classList.toggle('border-blue-500'); };
-        
-        window.mascaraTelefone = (input) => {
-            let v = input.value.replace(/\D/g,'').substring(0, 11);
-            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
-            input.value = v;
-        };
-    </script>
 </head>
-<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
+<body class="bg-slate-950 text-gray-200 font-sans overflow-hidden h-screen flex">
 
-    <div id="splash-screen">
-        <div class="splash-logo">A</div>
-        <p class="mt-4 text-gray-400 text-xs font-bold tracking-widest uppercase">Carregando...</p>
-    </div>
-
-    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
-    <audio id="online-sound" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg" preload="auto"></audio>
-    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="window.uploadFotoPerfil && window.uploadFotoPerfil(this)">
-    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
-
-    <div id="landing-page" class="fixed inset-0 bg-slate-900 text-white flex flex-col z-50 overflow-y-auto">
-        <div class="p-6 flex justify-between items-center">
-            <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter">Atlivio</h1>
-            <div class="bg-slate-800 rounded-full px-3 py-1 flex items-center gap-1 border border-slate-700">
-                <span class="text-lg">🇧🇷</span> <span class="text-xs font-bold text-gray-400">BRA</span>
-            </div>
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-20 hidden md:flex">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-white italic tracking-tighter uppercase flex items-center gap-2">
+                <span class="text-blue-600">🛡️</span> Atlivio Admin
+            </h1>
         </div>
-        <div class="flex-1 flex flex-col justify-center pb-10">
-            <div class="slider-container" id="landing-slider">
-                <div class="slide px-6 text-center">
-                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Serviços e Negócios<br><span class="text-blue-500">em um só lugar</span></h2>
-                    <p class="text-gray-400 text-sm max-w-xs mx-auto">O primeiro marketplace híbrido que conecta você a profissionais e oportunidades reais.</p>
-                </div>
-                <div class="slide px-6 text-center">
-                    <h2 class="text-3xl font-black text-white leading-tight mb-4">Pagamentos Seguros<br><span class="text-purple-500">via PIX</span></h2>
-                    <p class="text-gray-400 text-sm max-w-xs mx-auto">Sua carteira digital para receber por serviços ou contratar com segurança total.</p>
-                </div>
-            </div>
-            <div class="slide-dots"><div class="dot active"></div><div class="dot"></div></div>
-        </div>
-        <div class="p-6 bg-slate-900 pb-12">
-            <div class="space-y-3">
-                <button onclick="irParaLogin()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl border border-slate-700 hover:bg-slate-700 transition shadow-lg">Já tenho uma conta</button>
-                <button onclick="irParaCadastro()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95">Abrir conta gratuita</button>
-            </div>
-            <p class="text-[10px] text-center text-gray-500 mt-4">Ao continuar, concordo com a <a href="#" onclick="window.openTerms && window.openTerms('privacidade')" class="underline hover:text-blue-400">Política de Privacidade</a>.</p>
-        </div>
-    </div>
-
-    <div id="auth-container" class="fixed inset-0 bg-slate-900 z-[55] flex-col items-center justify-center p-6 animate-fadeIn hidden">
-        <button onclick="voltarParaLanding()" class="absolute top-6 left-6 text-gray-500 hover:text-white text-3xl font-bold p-2 transition">&larr;</button>
-        <div class="w-full max-w-md text-center">
-            <h2 class="text-4xl font-black text-white italic uppercase mb-2 tracking-tighter">Atlivio</h2>
-            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-10">Login Seguro</p>
-            <div id="login-step-phone" class="space-y-4">
-                <div class="relative">
-                    <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
-                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition placeholder-gray-600">
-                </div>
-                <button onclick="window.enviarSMSLogin && window.enviarSMSLogin('login')" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">RECEBER CÓDIGO SMS 📲</button>
-            </div>
-            <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-blue-900/30 p-3 rounded-lg border border-blue-800 mb-2">
-                    <p class="text-xs text-blue-300">SMS enviado para <span id="lbl-login-phone" class="font-bold text-white">...</span></p>
-                </div>
-                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
-                <button onclick="window.confirmarCodigoLogin && window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95 cursor-pointer z-50 relative">ENTRAR AGORA 🚀</button>
-                <button onclick="location.reload()" class="text-xs text-gray-500 underline mt-2 hover:text-gray-300">Corrigir número</button>
-            </div>
-            <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
-        </div>
-    </div>
-
-    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 flex-col items-center justify-center p-6 animate-fade hidden">
-        <button onclick="voltarParaLanding()" class="absolute top-6 right-6 text-gray-500 hover:text-white text-2xl font-bold transition p-2">&times;</button>
-        <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
-            <h2 class="text-2xl font-black text-white mb-1 text-center">Bem-vindo à ATLIVIO 👋</h2>
-            <p class="text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">O Primeiro Marketplace Híbrido</p>
+        
+        <nav class="flex-1 p-4 space-y-2">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2">Gestão</p>
             
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu nome completo</label>
-                    <input type="text" id="inp-onboard-name" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="Nome e sobrenome" required minlength="3">
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-gray-400 ml-1 mb-1">Digite seu WhatsApp</label>
-                    <input type="tel" id="inp-onboard-phone" style="height: 50px !important; width: 100%; display: block; background: #0f172a; border: 1px solid #475569; border-radius: 10px; padding: 0 15px; color: white;" placeholder="(00) 00000-0000" oninput="mascaraTelefone(this)">
-                </div>
-                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
-                    <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600">
-                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">Li e aceito os <a href="#" onclick="window.openTerms && window.openTerms('termos')" class="text-blue-400 underline hover:text-blue-300">Termos de Uso</a>.</label>
-                </div>
-                <button type="button" onclick="window.finalizarCadastro && window.finalizarCadastro()" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition transform active:scale-95 uppercase">COMEÇAR 🚀</button>
-            </div>
-            <div class="mt-6 text-center"><p class="text-xs text-gray-500">Já tem cadastro? <button onclick="irParaLogin()" class="text-blue-400 font-bold hover:underline">Entrar</button></p></div>
-        </div>
-    </div>
+            <button onclick="window.switchAdminTab('users')" id="nav-users" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl bg-slate-800 text-white shadow-lg border border-slate-700 transition">
+                <i data-lucide="users" class="w-4 h-4"></i> Usuários
+            </button>
 
-    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4 fixed inset-0 z-[58]">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
-            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
-            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                <button onclick="window.definirPerfil && window.definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">💎</div>
-                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços.</div>
-                </button>
-                <button onclick="window.definirPerfil && window.definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
-                    <div class="text-4xl mb-3">🛠️</div>
-                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
-                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar.</div>
-                </button>
+            <button onclick="window.switchAdminTab('services')" id="nav-services" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl text-gray-400 hover:bg-slate-800/50 hover:text-white transition">
+                <i data-lucide="briefcase" class="w-4 h-4"></i> Prestadores
+            </button>
+
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mt-6 mb-2">Sistema</p>
+            <button onclick="window.location.href='index.html'" class="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl text-red-400 hover:bg-red-900/10 hover:text-red-300 transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sair do Admin
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                <span class="text-xs font-mono text-gray-500">Sistema Online</span>
             </div>
         </div>
-    </div>
+    </aside>
 
-    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
-        <header class="bg-white shadow-sm p-4 z-30 sticky top-0" id="header-main">
-            <div id="global-alert-banner" class="hidden bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-3 mb-3 rounded shadow-sm flex justify-between items-center">
-                <p id="global-alert-text" class="text-xs font-bold"></p>
-                <button onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold">&times;</button>
+    <main class="flex-1 flex flex-col relative overflow-hidden">
+        
+        <header class="h-16 bg-slate-900/50 border-b border-slate-800 flex justify-between items-center px-6 backdrop-blur-md">
+            <div class="md:hidden">
+                <button class="text-white"><i data-lucide="menu"></i></button>
             </div>
-            <div class="flex justify-between items-center">
-                <div class="flex flex-col">
-                    <div class="flex flex-col md:flex-row md:items-baseline gap-1"><h1 class="text-2xl font-black text-blue-900 italic uppercase tracking-tighter">Atlivio</h1></div>
-                    <button onclick="window.alternarPerfil && window.alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-bold text-gray-500 uppercase italic flex items-center gap-1 hover:text-blue-600 transition bg-gray-50 px-2 py-1 rounded mt-1 border border-gray-100 w-fit">🔄 Carregando...</button>
+            
+            <div class="flex-1 max-w-lg mx-auto">
+                <div class="relative group">
+                    <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-500 group-focus-within:text-blue-500 transition"></i>
+                    <input type="text" id="list-search" placeholder="Buscar por nome, email ou ID..." class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:border-blue-500 outline-none transition shadow-inner">
                 </div>
-                <div class="flex items-center gap-2">
-                    <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
-                        <span id="status-label" class="text-[8px] font-bold text-gray-500 uppercase mr-2">OFFLINE</span>
-                        <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
-                            <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <button onclick="window.abrirConfiguracoes && window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta"><span class="text-xl">⚙️</span></button>
-                        <button id="btn-install-app" class="hidden bg-purple-600 text-white text-[8px] font-black uppercase px-2 py-1 rounded shadow-md hover:bg-purple-700 transition animate-pulse whitespace-nowrap">📲 SALVE SEU ACESSO</button>
-                        <button onclick="window.logout && window.logout()" class="text-red-400 font-bold text-[10px] uppercase border border-red-100 px-3 py-1 rounded-lg hover:bg-red-50 w-full transition">SAIR</button>
-                    </div>
-                </div>
+            </div>
+
+            <div class="flex items-center gap-4 ml-4">
+                <button id="btn-list-add" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase shadow-lg shadow-blue-900/20 transition flex items-center gap-2">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Novo
+                </button>
             </div>
         </header>
 
-        <nav class="flex bg-white border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm">
-            <button onclick="switchTab('servicos')" id="tab-servicos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Serviços 🛠️</button>
-            <button onclick="switchTab('empregos')" id="tab-empregos" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Empregos 💼</button>
-            <button onclick="switchTab('missoes')" id="tab-missoes" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Micro Tarefas 📷</button>
-            <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Oportunidades ⚡</button>
-            <button onclick="switchTab('loja')" id="tab-loja" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Loja 🛒</button>
-            <button onclick="switchTab('chat')" id="tab-chat" class="flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-gray-400 uppercase italic">Chat 💬</button>
-            <button onclick="switchTab('ganhar')" id="tab-ganhar" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-green-600 uppercase italic">Carteira 💰</button>
-            <button onclick="location.href='admin.html'" id="tab-admin" class="hidden flex-shrink-0 py-4 px-4 text-[10px] font-black border-b-2 border-transparent text-red-600 uppercase italic bg-red-50">ADMIN 🛡️</button>
-        </nav>
-
-        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
-            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn"><div id="lista-oportunidades" class="grid gap-3"></div></section>
-            <section id="sec-missoes" class="hidden space-y-4 animate-fadeIn"><div id="lista-missoes" class="grid gap-4"></div></section>
-            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
-                <div id="category-filters" class="hidden"></div> 
-                <div id="servicos-cliente" class="hidden">
-                    <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
-                        <div class="flex items-center gap-3"><div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()"><img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover"></div><div><h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3></div></div>
-                    </div>
-                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button><button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button><button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button></div>
-                    <div id="view-contratar"><div id="lista-prestadores-realtime" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div></div>
-                    <div id="view-andamento" class="hidden space-y-2"><div id="meus-pedidos-andamento" class="space-y-3"></div></div>
-                    <div id="view-historico" class="hidden space-y-2"><div id="meus-pedidos-historico" class="space-y-3"></div></div>
-                </div>
-                <div id="servicos-prestador" class="hidden">
-                    <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn"><div class="flex items-center gap-3"><img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover"><div><h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3></div></div><button onclick="window.abrirConfiguracaoServicos && window.abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button></div>
-                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1"><button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button><button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button><button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button></div>
-                    <div id="pview-radar" class="text-center py-10"></div>
-                    <div id="pview-ativos" class="hidden space-y-3"><div id="lista-chamados-ativos"></div></div>
-                    <div id="pview-historico" class="hidden space-y-3"><div id="lista-chamados-historico"></div></div>
-                </div>
-            </section>
-            <section id="sec-empregos" class="hidden space-y-4 animate-fadeIn"><div id="lista-vagas" class="grid gap-3"></div><div id="painel-empresa" class="hidden"><button onclick="window.abrirModalVaga && window.abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">+ Anunciar Vaga Grátis</button><div id="lista-minhas-vagas" class="space-y-2 mt-4"></div></div></section>
-            <section id="sec-loja" class="hidden space-y-4 animate-fadeIn"><div id="sec-produtos"></div></section>
-            <section id="sec-chat" class="hidden space-y-4 animate-fadeIn"><div id="lista-chats" class="space-y-2"></div></section>
-            <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn"><div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative"><p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p><h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2></div></section>
-        </main>
-    </div>
-
-    <div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="bg-slate-900 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
-                <h3 class="text-white font-black uppercase italic flex items-center gap-2">⚙️ Minha Conta</h3>
-                <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+        <div class="flex-1 overflow-auto p-6 custom-scrollbar" id="workspace">
+            
+            <div id="bulk-actions" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl border border-slate-700 flex items-center gap-4 z-40 transition-all duration-300 translate-y-[200%] invisible">
+                <span class="text-xs font-bold text-gray-400"><span id="bulk-count" class="text-white">0</span> selecionados</span>
+                <div class="h-4 w-px bg-gray-600"></div>
+                <button id="btn-bulk-delete" class="text-red-400 hover:text-red-300 text-xs font-bold uppercase flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir
+                </button>
             </div>
-            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
-                <div class="space-y-3"><div class="flex flex-col items-center mb-4"><div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()"><img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover"><div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-xs text-white font-bold">ALTERAR</span></div></div></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label><input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition"></div><div><label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label><input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled></div></div>
-                <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3"><div class="flex justify-between items-center"><p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p><span class="text-lg">🤑</span></div><div><label class="text-[10px] font-bold text-green-700 uppercase">Chave PIX</label><input type="text" id="set-pix" placeholder="CPF, Email ou Telefone" class="w-full border border-green-300 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:ring-2 focus:ring-green-500 outline-none mb-2"></div></div>
+
+            <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-slate-950 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                        <tr id="list-header">
+                            </tr>
+                    </thead>
+                    <tbody id="list-body" class="divide-y divide-slate-800/50">
+                        <tr>
+                            <td colspan="5" class="p-10 text-center text-gray-500 animate-pulse">
+                                Carregando sistema...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="p-3 bg-slate-950 border-t border-slate-800 text-[10px] text-gray-500 text-center font-mono uppercase" id="list-count">
+                    0 Registros
+                </div>
             </div>
-            <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0"><button onclick="window.salvarConfiguracoes && window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">SALVAR</button></div>
         </div>
-    </div>
-    
-    <div id="modal-terms" class="fixed inset-0 z-[70] bg-black/90 hidden items-center justify-center p-4 animate-fade">
-        <div class="w-full max-w-lg bg-slate-800 rounded-xl border border-slate-700 shadow-2xl flex flex-col max-h-[80vh]">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900 rounded-t-xl"><h3 class="text-white font-bold" id="term-title">Termos de Uso</h3><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl">&times;</button></div>
-            <div class="p-6 overflow-y-auto text-gray-300 text-xs space-y-4 leading-relaxed" id="term-content"></div>
-            <div class="p-4 border-t border-slate-700 bg-slate-900 rounded-b-xl text-center"><button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button></div>
+    </main>
+
+    <div id="modal-editor" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4 animate-fade">
+        <div class="bg-slate-900 w-full max-w-2xl rounded-2xl border border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950 rounded-t-2xl">
+                <h3 id="modal-title" class="text-white font-black uppercase italic tracking-wide flex items-center gap-2">
+                    <span class="text-blue-500">⚡</span> Editor
+                </h3>
+                <button id="btn-close-modal" class="text-gray-500 hover:text-white transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div id="modal-content" class="p-6 overflow-y-auto custom-scrollbar flex-1">
+                </div>
         </div>
     </div>
 
-    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 font-bold">&times;</button><div id="provider-setup-content"></div></div></div>
-    <div id="provider-profile-modal" class="hidden fixed inset-0 bg-black/90 z-[100] flex flex-col items-center justify-center p-4 animate-fadeIn backdrop-blur-sm"><div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl relative"><div id="public-services-list"></div></div></div>
-    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]"><input type="hidden" id="target-provider-id"><input type="hidden" id="service-base-price"><div class="p-6"><p>Carregando...</p></div></div></div>
-    <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><div id="star-container"></div></div></div>
-    <div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
-    <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm"><div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative"><button onclick="window.fecharModalCandidatura && window.fecharModalCandidatura()" class="absolute top-4 right-4">&times;</button></div></div>
-    <div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn"><div class="bg-white w-full max-w-sm rounded-2xl p-6 relative"><button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4">&times;</button></div></div>
-    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white"><div class="loader mb-4"></div></div>
+    <script type="module">
+        // 1. Importa o App Principal (Isso garante que window.db e window.auth existam)
+        import './js/app.js?v=admin';
+        
+        // 2. Importa o Módulo de Usuários (V2)
+        import { init } from './js/admin/users.js?v=2.0';
 
-    <script type="module" src="./js/app.js?v=18.1"></script>
-    <script type="module" src="./js/auth.js?v=18.1"></script>
-    <script type="module" src="./js/modules/services.js?v=18.1"></script>
-    <script type="module" src="./js/modules/request.js?v=18.1"></script>
-    <script type="module" src="./js/modules/chat.js?v=18.1"></script>
-    <script type="module" src="./js/wallet.js?v=18.1"></script>
-    <script type="module" src="./js/modules/jobs.js?v=18.1"></script>
-    <script type="module" src="./js/modules/missions.js?v=18.1"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=18.1"></script>
-    <script type="module" src="./js/modules/products.js?v=18.1"></script>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW Info:', err));
+        // 3. Inicializa Ícones
+        lucide.createIcons();
+
+        // 4. Lógica de Abas do Admin
+        window.switchAdminTab = async (tab) => {
+            // UI Update
+            document.querySelectorAll('aside nav button').forEach(btn => {
+                btn.className = "w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl text-gray-400 hover:bg-slate-800/50 hover:text-white transition";
             });
-        }
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-install-app');
-            if(btn) { btn.classList.remove('hidden'); btn.onclick = () => { e.prompt(); }; }
-        });
+            const activeBtn = document.getElementById(`nav-${tab}`);
+            if(activeBtn) {
+                activeBtn.className = "w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl bg-slate-800 text-white shadow-lg border border-slate-700 transition";
+            }
+
+            // Chama o módulo users.js
+            console.log(`🔄 Trocando para aba: ${tab}`);
+            await init(tab); 
+        };
+
+        // 5. Boot Inicial (Aguarda o DB estar pronto)
+        setTimeout(() => {
+            if(window.db) {
+                window.switchAdminTab('users');
+            } else {
+                console.warn("⏳ Aguardando Firebase...");
+                setTimeout(() => window.switchAdminTab('users'), 1000); // Tentativa 2
+            }
+        }, 500);
+
     </script>
 </body>
 </html>
-
-#### 2. `auth.js` (V18.1 - FINAL)
-
-```javascript
-import { auth, db, provider } from './app.js';
-import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile, RecaptchaVerifier, signInWithPhoneNumber } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js)";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js)";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "[https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js](https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js)";
-
-const storage = getStorage();
-const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
-const DEFAULT_TENANT = "atlivio_fsa_01";
-
-export let userProfile = null; 
-window.userProfile = null;
-
-// ============================================================================
-// 1. LÓGICA DE CADASTRO (A CORREÇÃO DO REFRESH)
-// ============================================================================
-
-window.finalizarCadastro = async () => {
-    const nome = document.getElementById('inp-onboard-name').value.trim();
-    const phone = document.getElementById('inp-onboard-phone').value.trim();
-    const termos = document.getElementById('chk-terms').checked;
-    const btn = document.getElementById('btn-onboard-submit');
-
-    if (!termos) return alert("⚠️ Você precisa aceitar os Termos de Uso.");
-    if (nome.length < 3) return alert("⚠️ Digite seu nome completo.");
-    
-    // Proteção contra sessão perdida
-    if(!auth.currentUser) return alert("⚠️ Erro de sessão. Faça login novamente.");
-
-    btn.innerText = "SALVANDO...";
-    btn.disabled = true;
-
-    try {
-        console.log("💾 Salvando dados do usuário...");
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
-            nome_real: nome,
-            displayName: nome,
-            whatsapp: phone,
-            termos_aceitos: true,
-            perfil_completo: true,
-            onboarded_at: serverTimestamp(),
-            status: 'ativo'
-        });
-        
-        await updateProfile(auth.currentUser, { displayName: nome });
-
-        console.log("✅ Cadastro finalizado! Liberando App...");
-        // O onAuthStateChanged vai detectar a mudança e abrir o app sozinho
-        
-    } catch (error) {
-        console.error("Erro ao salvar:", error);
-        alert("Erro ao salvar: " + error.message);
-        btn.innerText = "TENTAR NOVAMENTE";
-        btn.disabled = false;
-    }
-};
-
-// ============================================================================
-// 2. LÓGICA DE LOGIN SMS
-// ============================================================================
-
-const resetRecaptcha = () => {
-    if (window.recaptchaVerifier) { try { window.recaptchaVerifier.clear(); } catch (e) {} window.recaptchaVerifier = null; }
-    const container = document.getElementById('recaptcha-container'); if (container) container.innerHTML = ''; 
-};
-
-const setupRecaptcha = () => {
-    resetRecaptcha();
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => console.log("Captcha resolvido.")
-    });
-};
-
-window.enviarSMSLogin = async (origem) => {
-    let telefoneInput;
-    if (origem === 'cadastro') {
-        telefoneInput = document.getElementById('inp-onboard-phone');
-        const nome = document.getElementById('inp-onboard-name').value;
-        if(nome.length < 3) return alert("Por favor, digite seu nome completo.");
-        localStorage.setItem("temp_user_name", nome);
-    } else {
-        telefoneInput = document.getElementById('login-phone');
-    }
-
-    let rawPhone = telefoneInput.value.replace(/\D/g, ''); 
-    if(rawPhone.length < 10) return alert("Digite o número completo com DDD.");
-    const finalPhone = '+55' + rawPhone;
-    
-    const btnId = origem === 'cadastro' ? 'btn-onboard-sms' : 'btn-login-send';
-    const btn = document.getElementById(btnId);
-    const textoOriginal = btn ? btn.innerText : "ENVIAR";
-    
-    if(btn) { btn.disabled = true; btn.innerText = "ENVIANDO..."; }
-
-    try {
-        setupRecaptcha();
-        const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, window.recaptchaVerifier);
-        window.confirmationResult = confirmationResult;
-        
-        if(origem === 'cadastro') {
-            alert(`Código enviado para ${finalPhone}.`);
-            document.getElementById('modal-onboarding')?.classList.add('hidden');
-            document.getElementById('landing-page')?.classList.add('hidden');
-            document.getElementById('auth-container').classList.remove('hidden');
-            document.getElementById('auth-container').style.display = 'flex';
-        }
-
-        document.getElementById('lbl-login-phone').innerText = finalPhone;
-        document.getElementById('login-step-phone')?.classList.add('hidden');
-        document.getElementById('login-step-code')?.classList.remove('hidden');
-
-    } catch (error) {
-        console.error("Erro SMS:", error);
-        resetRecaptcha();
-        if(btn) { btn.disabled = false; btn.innerText = textoOriginal; }
-        alert("Erro ao enviar: " + error.message);
-    }
-};
-
-window.confirmarCodigoLogin = async () => {
-    const code = document.getElementById('login-code').value.replace(/\s/g, '');
-    if(code.length < 6) return alert("O código deve ter 6 números.");
-    if (!window.confirmationResult) return alert("Sessão expirada. Recarregue.");
-
-    const btn = document.getElementById('btn-login-verify');
-    if(btn) { btn.disabled = true; btn.innerText = "VALIDANDO..."; }
-
-    const safetyTimeout = setTimeout(() => {
-        if(btn && btn.innerText === "VALIDANDO...") {
-            btn.disabled = false;
-            btn.innerText = "ENTRAR AGORA 🚀";
-            alert("O servidor demorou para responder. Verifique sua conexão e tente novamente.");
-        }
-    }, 15000);
-
-    try {
-        await window.confirmationResult.confirm(code);
-        clearTimeout(safetyTimeout);
-        // Sucesso! O onAuthStateChanged assume.
-    } catch (error) {
-        clearTimeout(safetyTimeout);
-        if(btn) { btn.disabled = false; btn.innerText = "ENTRAR AGORA 🚀"; }
-        alert("Código incorreto ou inválido.");
-    }
-};
-
-window.logout = () => signOut(auth).then(() => location.reload());
-
-// ============================================================================
-// 3. ORQUESTRADOR DE ESTADO
-// ============================================================================
-
-window.definirPerfil = async (tipo) => {
-    if(!auth.currentUser) return;
-    try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); location.reload(); } catch(e) { alert("Erro: " + e.message); }
-};
-
-window.alternarPerfil = async () => {
-    if(!userProfile) return;
-    const btn = document.getElementById('btn-trocar-perfil');
-    if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
-    try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider }); setTimeout(() => location.reload(), 500); } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
-};
-
-window.salvarConfiguracoes = async () => {
-    const nome = document.getElementById('set-nome').value;
-    const pix = document.getElementById('set-pix').value;
-    const btn = document.getElementById('btn-save-settings');
-    btn.innerText = "SALVANDO..."; btn.disabled = true;
-    try {
-        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { displayName: nome, pix_key: pix }, { merge: true });
-        alert("✅ Salvo com sucesso!"); location.reload();
-    } catch(e) { alert("Erro: " + e.message); btn.innerText = "SALVAR"; btn.disabled = false; }
-};
-
-window.abrirConfiguracoes = () => {
-    document.getElementById('modal-settings').classList.remove('hidden');
-    if(userProfile) {
-        document.getElementById('set-nome').value = userProfile.displayName || "";
-        document.getElementById('set-pix').value = userProfile.pix_key || "";
-        document.getElementById('set-phone').value = userProfile.phone || "";
-        document.getElementById('set-uid').innerText = userProfile.uid;
-    }
-};
-
-onAuthStateChanged(auth, async (user) => {
-    const ui = {
-        landing: document.getElementById('landing-page'),
-        auth: document.getElementById('auth-container'),
-        app: document.getElementById('app-container'),
-        role: document.getElementById('role-selection'),
-        splash: document.getElementById('splash-screen'),
-        onboard: document.getElementById('modal-onboarding')
-    };
-
-    if (user) {
-        if(ui.landing) ui.landing.classList.add('hidden');
-        if(ui.auth) ui.auth.classList.add('hidden');
-        
-        const userRef = doc(db, "usuarios", user.uid);
-        onSnapshot(userRef, async (docSnap) => {
-            try {
-                if(!docSnap.exists()) {
-                    const tempName = localStorage.getItem("temp_user_name") || user.displayName || "Usuário";
-                    await setDoc(userRef, { 
-                        email: user.email || "", phone: user.phoneNumber, displayName: tempName, 
-                        photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
-                        role: 'user', wallet_balance: 0.00, saldo: 0.00, is_provider: false, 
-                        created_at: serverTimestamp(), status: 'ativo', 
-                        termos_aceitos: false, nome_real: tempName !== "Usuário" ? tempName : "" 
-                    });
-                    localStorage.removeItem("temp_user_name");
-                } else {
-                    const data = docSnap.data();
-                    
-                    if (data.status === 'banido') {
-                        aplicarRestricoesDeStatus('banido');
-                        if(window.ocultarSplash) window.ocultarSplash();
-                        return; 
-                    }
-
-                    if (data.termos_aceitos !== true || !data.nome_real || data.nome_real.length < 3) {
-                        if(ui.app) ui.app.classList.add('hidden');
-                        if(ui.landing) ui.landing.classList.add('hidden');
-                        if(ui.onboard) {
-                            ui.onboard.classList.remove('hidden');
-                            ui.onboard.style.display = 'flex';
-                            
-                            const inpN = document.getElementById('inp-onboard-name');
-                            const inpP = document.getElementById('inp-onboard-phone');
-                            if(inpN && !inpN.value && data.displayName && data.displayName !== "Usuário") inpN.value = data.displayName;
-                            if(inpP && !inpP.value && data.phone) inpP.value = data.phone;
-                        }
-                        if(window.ocultarSplash) window.ocultarSplash();
-                        return; 
-                    }
-
-                    if(ui.onboard) ui.onboard.classList.add('hidden'); // Esconde onboarding
-                    
-                    data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
-                    userProfile = data; window.userProfile = data;
-                    
-                    atualizarInterfaceUsuario(userProfile);
-                    iniciarAppLogado(user); 
-                    
-                    if(window.ocultarSplash) window.ocultarSplash();
-                }
-            } catch (err) { 
-                console.error("Erro Auth:", err);
-                iniciarAppLogado(user); 
-                if(window.ocultarSplash) window.ocultarSplash(); 
-            }
-        });
-    } else {
-        if(ui.landing) ui.landing.classList.remove('hidden');
-        if(ui.app) ui.app.classList.add('hidden');
-        if(ui.role) ui.role.classList.add('hidden');
-        if(ui.auth) ui.auth.classList.add('hidden');
-        if(ui.onboard) ui.onboard.classList.add('hidden');
-        
-        document.getElementById('login-step-phone')?.classList.remove('hidden');
-        document.getElementById('login-step-code')?.classList.add('hidden');
-        
-        removerBloqueiosVisuais();
-        if(window.ocultarSplash) window.ocultarSplash();
-    }
-});
-
-// Helpers de UI
-function iniciarAppLogado(user) {
-    const el = { app: document.getElementById('app-container'), role: document.getElementById('role-selection') };
-    
-    if (!userProfile || !userProfile.perfil_completo) {
-        el.app.classList.add('hidden');
-        el.role.classList.remove('hidden');
-        return;
-    }
-
-    el.role.classList.add('hidden');
-    el.app.classList.remove('hidden');
-
-    const userEmail = user.email ? user.email.toLowerCase().trim() : "";
-    const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
-    const tabAdmin = document.getElementById('tab-admin');
-    if(isAdmin && tabAdmin) tabAdmin.classList.remove('hidden');
-
-    const tabServicos = document.getElementById('tab-servicos');
-    const btnPerfil = document.getElementById('btn-trocar-perfil');
-
-    if (userProfile.is_provider) {
-        if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
-        if(tabServicos) tabServicos.innerText = "Serviços 🛠️";
-        ['tab-servicos', 'tab-missoes', 'tab-oportunidades', 'tab-ganhar', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, true));
-        toggleDisplay('servicos-cliente', false);
-        setTimeout(() => { if(tabServicos) tabServicos.click(); }, 500);
-    } else {
-        if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
-        if(tabServicos) tabServicos.innerText = "Contratar 🛠️";
-        ['tab-servicos', 'tab-oportunidades', 'tab-loja', 'tab-ganhar', 'servicos-cliente'].forEach(id => toggleDisplay(id, true));
-        ['tab-missoes', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, false));
-        setTimeout(() => { if(tabServicos) tabServicos.click(); }, 500); 
-    }
-}
-
-function aplicarRestricoesDeStatus(status) {
-    document.getElementById("bloqueio-total-overlay")?.remove(); 
-    if (status === 'banido') {
-        const jailHtml = `<div id="bloqueio-total-overlay" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-8 text-center animate-fade"><h1 class="text-3xl font-black text-white mb-2">🚫 CONTA BLOQUEADA</h1><button onclick="window.logout()" class="text-gray-500 text-xs underline">Sair</button></div>`;
-        document.body.insertAdjacentHTML('beforeend', jailHtml);
-    }
-}
-function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-overlay")?.remove(); }
-function atualizarInterfaceUsuario(dados) {
-    document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => { if(dados.photoURL) img.src = dados.photoURL; });
-    const nameEl = document.getElementById('header-user-name'); if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
-    const provNameEl = document.getElementById('provider-header-name');
-    if(provNameEl) {
-        const saldo = dados.wallet_balance || 0; 
-        const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
-        provNameEl.innerHTML = `${dados.nome_profissional || dados.displayName} <br><span class="text-[10px] font-normal text-gray-300">Saldo: <span class="${corSaldo} font-bold">R$ ${saldo.toFixed(2)}</span></span>`;
-    }
-}
-function renderizarBotaoSuporte() {
-    if(document.getElementById('btn-floating-support')) return;
-    const btn = document.createElement('div'); btn.id = 'btn-floating-support'; btn.className = 'fixed bottom-4 right-4 z-[200] animate-bounce-slow';
-    btn.innerHTML = `<button onclick="window.abrirChatSuporte()" class="bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-2xl border-2 border-white transition transform hover:scale-110">💬</button>`;
-    document.body.appendChild(btn);
-}
-window.abrirChatSuporte = window.abrirChatSuporte || async function() { alert("Carregando chat..."); };
-function toggleDisplay(id, s) { const el = document.getElementById(id); if(el) s ? el.classList.remove('hidden') : el.classList.add('hidden'); }
