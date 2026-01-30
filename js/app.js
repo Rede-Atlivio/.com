@@ -3,28 +3,37 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// SUAS CONFIGURAÇÕES (Não apague suas chaves, estou usando placeholders)
-// Se você já tem esse arquivo com suas chaves, APENAS ADICIONE O BLOCO FINAL "EXPORTAÇÃO GLOBAL"
+// --- SUAS CHAVES DO FIREBASE AQUI ---
+// (Substitua pelos dados reais que você já tinha)
 const firebaseConfig = {
-    // ... SUAS CHAVES AQUI (MANTENHA AS SUAS) ...
-    // Se você não souber onde estão, NÃO SUBSTITUA ESSE ARQUIVO, VÁ PARA O PASSO 2.
-    // Mas certifique-se que no final do arquivo tem as linhas de window abaixo.
+    apiKey: "SUA_API_KEY_AQUI",
+    authDomain: "SEU_PROJETO.firebaseapp.com",
+    projectId: "SEU_PROJETO",
+    storageBucket: "SEU_PROJETO.appspot.com",
+    messagingSenderId: "SEU_ID",
+    appId: "SEU_APP_ID"
 };
 
-// Se você já tem o app.js funcionando com suas chaves, 
-// APENAS GARANTA QUE ESTAS LINHAS ESTÃO NO FINAL DELE:
+// --- INICIALIZAÇÃO ---
+let app, db, auth, storage;
 
-/*
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app);
+try {
+    app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+    storage = getStorage(app);
 
-// 🔥 EXPORTAÇÃO GLOBAL (ISSO SALVA O SISTEMA)
-window.db = db;
-window.auth = auth;
-window.storage = storage;
+    // 🔥 TORNAR GLOBAL (Salva a vida dos scripts antigos)
+    window.db = db;
+    window.auth = auth;
+    window.storage = storage;
+    window.firebaseApp = app;
+    
+    console.log("✅ [app.js] Firebase conectado e exportado com sucesso.");
 
-export { db, auth, storage, app };
-console.log("✅ APP.JS CARREGADO E EXPORTADO.");
-*/
+} catch (error) {
+    console.error("❌ [app.js] Erro fatal ao iniciar Firebase:", error);
+}
+
+// --- EXPORTAÇÃO OFICIAL (O que os outros arquivos procuram) ---
+export { app, db, auth, storage };
