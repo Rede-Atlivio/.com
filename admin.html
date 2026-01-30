@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atlivio Admin | Painel Mestre</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        /* CORREÇÃO VISUAL: Texto dos inputs sempre escuro */
         input, textarea, select { color: #111827 !important; background-color: #f9fafb !important; }
-        
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
@@ -47,10 +44,16 @@
             <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="jobs">
                 <i data-lucide="building-2" class="w-4 h-4"></i> Vagas & Empresas
             </button>
+            
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2 mt-6">Renda Extra</p>
             <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="missions">
-                 <i data-lucide="target" class="w-4 h-4"></i> Micro Tarefas
-             </button>
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2 mt-6">Conteúdo & Robô</p>
+                <i data-lucide="target" class="w-4 h-4 text-emerald-400"></i> Micro Tarefas
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="opportunities">
+                <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Oportunidades
+            </button>
+
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-2 mb-2 mt-6">Conteúdo</p>
             <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="automation">
                 <i data-lucide="bot" class="w-4 h-4 text-purple-400"></i> Robô / Dados
             </button>
@@ -146,7 +149,7 @@
     </div>
 
     <script type="module">
-        import './js/admin/core.js?v=fixed';
+        import './js/admin/core.js?v=final2';
         lucide.createIcons();
     </script>
 </body>
