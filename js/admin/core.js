@@ -115,10 +115,10 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
-    // ✅ CORREÇÃO FINAL NO core.js:
+    // ✅ COMO DEVE FICAR (CORRIGIDO):
 else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
-    // Como o core.js já está em js/admin/, ele olha direto para o lado dele
-    moduleFile = viewName === 'users' || viewName === 'services' ? './users.js' : './jobs.js'; 
+    // 👇 AQUI A MUDANÇA: Adicionamos 'admin/' no caminho
+    moduleFile = viewName === 'users' || viewName === 'services' ? './admin/users.js' : './jobs.js'; 
     containerId = 'view-list'; 
 }
     else if (['automation'].includes(viewName)) { 
@@ -137,11 +137,11 @@ else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].include
         moduleFile = './support.js';
         containerId = 'view-support';
     }
-    // ✅ NOVA ROTA: AUDITORIA
-    else if (viewName === 'audit') {
-        moduleFile = './audit.js';
-        containerId = 'view-audit';
-    }
+    // ✅ NOVA ROTA: AUDITORIA - FOI ALTERADA NA RIAÇAO E TARJAS
+    else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
+    moduleFile = viewName === 'users' || viewName === 'services' ? './users.js' : './jobs.js'; 
+    containerId = 'view-list'; 
+}
 
     if(containerId) {
         const el = document.getElementById(containerId);
