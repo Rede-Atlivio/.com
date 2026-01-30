@@ -76,13 +76,14 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS (CORRIGIDO CAMINHO RELATIVO)
+// 2. ROTEADOR DE MÓDULOS (COMPLETO)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Carregando módulo: ${viewName}`);
     
-    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support', 'view-audit'].forEach(id => {
+    // Esconde todas as views
+    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support', 'view-audit', 'view-tutorials'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
     });
@@ -96,7 +97,6 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
-    // 🔥 CORREÇÃO AQUI: Removemos 'admin/' do caminho pois já estamos na pasta admin
     else if (['users', 'services', 'active_providers'].includes(viewName)) { 
         moduleFile = './users.js'; 
         containerId = 'view-list'; 
@@ -125,6 +125,11 @@ window.switchView = async function(viewName) {
         moduleFile = './audit.js';
         containerId = 'view-audit';
     }
+    // ✅ ADICIONADO: ROTA DE TUTORIAIS
+    else if (viewName === 'tutorials') {
+        moduleFile = './tutorials.js';
+        containerId = 'view-tutorials';
+    }
 
     if(containerId) {
         const el = document.getElementById(containerId);
@@ -137,7 +142,7 @@ window.switchView = async function(viewName) {
             if (module.init) await module.init(viewName);
         } catch (e) {
             console.error(e);
-            // alert(`Erro ao carregar ${viewName}: ${e.message}`);
+            alert(`Erro ao carregar ${viewName}: Arquivo JS não encontrado.`);
         }
     }
 };
