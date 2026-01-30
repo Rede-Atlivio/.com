@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(btnLogin) btnLogin.addEventListener('click', loginAdmin);
     if(btnLogout) btnLogout.addEventListener('click', logoutAdmin);
 
-    // Navegação
+    // Navegação (Garante que o clique funcione)
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -80,26 +80,35 @@ async function loginAdmin() { try { await signInWithPopup(auth, provider); } cat
 function logoutAdmin() { signOut(auth).then(() => location.reload()); }
 
 function unlockAdmin() {
-    document.getElementById('login-gate').classList.add('hidden');
-    document.getElementById('admin-sidebar').classList.remove('hidden');
-    document.getElementById('admin-main').classList.remove('hidden');
+    const gate = document.getElementById('login-gate');
+    const side = document.getElementById('admin-sidebar');
+    const main = document.getElementById('admin-main');
+    
+    if(gate) gate.classList.add('hidden');
+    if(side) side.classList.remove('hidden');
+    if(main) main.classList.remove('hidden');
+    
     switchView('dashboard');
 }
 
 function lockAdmin() {
-    document.getElementById('login-gate').classList.remove('hidden');
-    document.getElementById('admin-sidebar').classList.add('hidden');
-    document.getElementById('admin-main').classList.add('hidden');
+    const gate = document.getElementById('login-gate');
+    const side = document.getElementById('admin-sidebar');
+    const main = document.getElementById('admin-main');
+
+    if(gate) gate.classList.remove('hidden');
+    if(side) side.classList.add('hidden');
+    if(main) main.classList.add('hidden');
 }
 
 // ============================================================================
-// 2. ROTEADOR DE MÓDULOS (ATUALIZADO COM AUDITORIA)
+// 2. ROTEADOR DE MÓDULOS (CORRIGIDO)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Carregando módulo: ${viewName}`);
     
-    // UI Cleanup (ADICIONADO 'view-audit')
+    // UI Cleanup
     ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support', 'view-audit'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.classList.add('hidden');
@@ -115,12 +124,16 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
-    // ✅ COMO DEVE FICAR (CORRIGIDO):
-else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
-    // 👇 AQUI A MUDANÇA: Adicionamos 'admin/' no caminho
-    moduleFile = viewName === 'users' || viewName === 'services' ? './admin/users.js' : './jobs.js'; 
-    containerId = 'view-list'; 
-}
+    // ✅ ROTA CORRIGIDA PARA USUÁRIOS E SERVIÇOS
+    else if (['users', 'services', 'active_providers'].includes(viewName)) { 
+        // Importante: Como core.js está em /js/admin/, o users.js (vizinho) é ./users.js
+        moduleFile = './users.js'; 
+        containerId = 'view-list'; 
+    }
+    else if (['jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) {
+        moduleFile = './jobs.js';
+        containerId = 'view-list';
+    }
     else if (['automation'].includes(viewName)) { 
         moduleFile = './automation.js'; 
         containerId = 'view-automation'; 
@@ -137,11 +150,10 @@ else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].include
         moduleFile = './support.js';
         containerId = 'view-support';
     }
-    // ✅ NOVA ROTA: AUDITORIA - FOI ALTERADA NA RIAÇAO E TARJAS
-    else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].includes(viewName)) { 
-    moduleFile = viewName === 'users' || viewName === 'services' ? './users.js' : './jobs.js'; 
-    containerId = 'view-list'; 
-}
+    else if (viewName === 'audit') {
+        moduleFile = './audit.js';
+        containerId = 'view-audit';
+    }
 
     if(containerId) {
         const el = document.getElementById(containerId);
@@ -150,12 +162,12 @@ else if (['users', 'services', 'jobs', 'candidatos', 'missions', 'opps'].include
 
     if (moduleFile) {
         try {
-            // Cache busting simples
+            // Cache busting
             const module = await import(`${moduleFile}?v=${Date.now()}`);
             if (module.init) await module.init(viewName);
         } catch (e) {
             console.error(e);
-            alert(`Erro ao carregar ${viewName}: ${e.message}`);
+            // alert(`Erro ao carregar ${viewName}: ${e.message}`); // Comentado para não travar se faltar arquivo
         }
     }
 };
