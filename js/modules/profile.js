@@ -6,30 +6,45 @@ export async function abrirConfiguracoes() {
     if (!user) return alert("Você precisa estar logado.");
 
     const modal = document.getElementById('modal-settings');
+    
+    // Elementos Básicos
     const img = document.getElementById('settings-pic');
     const nome = document.getElementById('set-nome');
     const phone = document.getElementById('set-phone');
-    const pix = document.getElementById('set-pix');
     const uidLabel = document.getElementById('set-uid');
+
+    // Elementos do PIX (Novos IDs)
+    const pixChave = document.getElementById('set-pix-chave');
+    const pixBanco = document.getElementById('set-pix-banco');
+    const pixCpf = document.getElementById('set-pix-cpf');
+    const pixNome = document.getElementById('set-pix-nome');
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 
     // Preenchimento inicial visual (cache ou auth)
-    uidLabel.innerText = user.uid.substring(0, 6) + "...";
-    img.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`;
-    nome.value = user.displayName || "";
-    phone.value = user.phoneNumber || "";
+    if(uidLabel) uidLabel.innerText = user.uid.substring(0, 6) + "...";
+    if(img) img.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`;
+    if(nome) nome.value = user.displayName || "";
+    if(phone) phone.value = user.phoneNumber || "";
 
-    // Busca dados completos no Firestore (Pix, etc)
+    // Busca dados completos no Firestore
     try {
         const docSnap = await getDoc(doc(window.db, "usuarios", user.uid));
         if (docSnap.exists()) {
             const data = docSnap.data();
-            if (data.nome) nome.value = data.nome;
-            if (data.whatsapp) phone.value = data.whatsapp; // Prioridade banco
-            if (data.chave_pix) pix.value = data.chave_pix;
-            if (data.foto_perfil) img.src = data.foto_perfil;
+            
+            // Dados Pessoais
+            if (data.nome && nome) nome.value = data.nome;
+            if (data.whatsapp && phone) phone.value = data.whatsapp;
+            if (data.foto_perfil && img) img.src = data.foto_perfil;
+
+            // Dados Financeiros (PIX)
+            // Tenta pegar os campos novos, se não existirem, deixa vazio
+            if (pixChave) pixChave.value = data.pix_chave || ""; 
+            if (pixBanco) pixBanco.value = data.pix_banco || "";
+            if (pixCpf) pixCpf.value = data.pix_cpf || "";
+            if (pixNome) pixNome.value = data.pix_nome || "";
         }
     } catch (e) {
         console.error("Erro ao carregar perfil:", e);
@@ -43,8 +58,13 @@ export async function salvarConfiguracoes() {
 
     const btn = document.getElementById('btn-save-settings');
     const nome = document.getElementById('set-nome').value.trim();
-    const pix = document.getElementById('set-pix').value.trim();
     
+    // Captura os dados do PIX
+    const pixChave = document.getElementById('set-pix-chave')?.value.trim() || "";
+    const pixBanco = document.getElementById('set-pix-banco')?.value.trim() || "";
+    const pixCpf = document.getElementById('set-pix-cpf')?.value.trim() || "";
+    const pixNome = document.getElementById('set-pix-nome')?.value.trim() || "";
+
     if (nome.length < 3) return alert("Nome muito curto.");
 
     const originalText = btn.innerText;
@@ -54,8 +74,12 @@ export async function salvarConfiguracoes() {
     try {
         const updates = {
             nome: nome,
-            nome_profissional: nome, // Mantém sincronizado
-            chave_pix: pix,
+            nome_profissional: nome,
+            // Salva os 4 campos no banco
+            pix_chave: pixChave,
+            pix_banco: pixBanco,
+            pix_cpf: pixCpf,
+            pix_nome: pixNome,
             updated_at: serverTimestamp()
         };
 
@@ -65,7 +89,7 @@ export async function salvarConfiguracoes() {
         const headerName = document.getElementById('header-user-name');
         if(headerName) headerName.innerText = nome;
         
-        alert("✅ Dados atualizados com sucesso!");
+        alert("✅ Dados bancários atualizados com sucesso!");
         document.getElementById('modal-settings').classList.add('hidden');
 
     } catch (e) {
