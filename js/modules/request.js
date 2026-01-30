@@ -12,8 +12,9 @@ let mem_CurrentOffer = 0;
 auth.onAuthStateChanged(user => {
     if (user) {
         iniciarRadarPrestador(user.uid);
-        if (typeof window.carregarPedidosEmAndamento === 'function') {
-             window.carregarPedidosEmAndamento();
+        // Garante que a lista de pedidos seja carregada no início
+        if (typeof window.iniciarMonitoramentoPedidos === 'function') {
+            window.iniciarMonitoramentoPedidos();
         }
     }
 });
@@ -39,15 +40,14 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         const elTotal = document.getElementById('calc-total-reserva');
         
         if(elId) elId.value = providerId || "";
-        
-        // GARANTE QUE O PREÇO BASE ESTÁ NO HTML
         if(elPrice) elPrice.value = price || "0";
         
-        // 🎨 VISUAL DO INPUT
+        // 🎨 VISUAL DO INPUT (CORREÇÃO DA COR PRETA)
         if(elInputVal) {
             elInputVal.value = mem_CurrentOffer.toFixed(2);
             elInputVal.disabled = true;
-            elInputVal.style.color = "#000000"; 
+            elInputVal.style.color = "#000000"; // FORÇA PRETO
+            elInputVal.style.opacity = "1";
             elInputVal.style.fontWeight = "bold";
             elInputVal.classList.remove('text-gray-500');
             elInputVal.classList.add('text-black');
@@ -56,10 +56,8 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
 
         if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
 
-        // 🧠 INJEÇÃO DE BOTÕES INTELIGENTES
         injetarBotoesOferta(modal);
 
-        // Reseta botão
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
@@ -70,15 +68,10 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
     }
 }
 
-// Injeta os botões corretos (-10% a +20%)
 function injetarBotoesOferta(modal) {
     const containers = modal.querySelectorAll('.grid'); 
     let targetContainer = null;
-
-    // Procura div que tem botões de %
-    containers.forEach(div => {
-        if(div.innerHTML.includes('%')) targetContainer = div;
-    });
+    containers.forEach(div => { if(div.innerHTML.includes('%')) targetContainer = div; });
 
     if(targetContainer) {
         targetContainer.className = "grid grid-cols-4 gap-2 mb-3"; 
@@ -92,47 +85,33 @@ function injetarBotoesOferta(modal) {
 }
 
 // ============================================================================
-// 2. CÁLCULOS E TRAVAS (AGORA COM LEITURA FORÇADA)
+// 2. CÁLCULOS
 // ============================================================================
 export function selecionarDesconto(percent) {
     const p = parseFloat(percent);
-    
-    // 1. TENTA LER O PREÇO BASE DO HTML (Prioridade Máxima)
     const elPrice = document.getElementById('service-base-price');
     let base = 0;
 
     if(elPrice && elPrice.value) {
         base = parseFloat(elPrice.value);
-        mem_BasePrice = base; // Atualiza memória
+        mem_BasePrice = base; 
     } else {
-        base = mem_BasePrice; // Fallback para memória
-    }
-
-    if(base === 0) {
-        console.warn("⚠️ Preço base é 0. O cálculo resultará em 0.");
+        base = mem_BasePrice; 
     }
     
-    // 2. CÁLCULO: Base + (Base * Porcentagem)
-    // Ex: 100 + (100 * 0.10) = 110
     mem_CurrentOffer = base + (base * p);
-    
     atualizarVisualModal();
 }
 
 export function ativarInputPersonalizado() {
     const input = document.getElementById('req-value');
-    if(input) { 
-        input.disabled = false; 
-        input.focus(); 
-        input.style.border = "2px solid #3b82f6"; 
-    }
+    if(input) { input.disabled = false; input.focus(); input.style.border = "2px solid #3b82f6"; }
 }
 
 export function validarOferta(val) {
     let offer = parseFloat(val);
     if(isNaN(offer)) return;
 
-    // Garante que temos um preço base para comparar
     if(mem_BasePrice === 0) {
         const elPrice = document.getElementById('service-base-price');
         if(elPrice) mem_BasePrice = parseFloat(elPrice.value);
@@ -146,31 +125,13 @@ export function validarOferta(val) {
     const aviso = document.getElementById('calc-total-reserva');
 
     if (offer < minAllowed || offer > maxAllowed) {
-        if(input) {
-            input.style.borderColor = "red";
-            input.style.color = "red";
-        }
-        if(btn) {
-            btn.disabled = true;
-            btn.classList.add('opacity-50');
-        }
-        if(aviso) {
-            aviso.innerText = "Valor fora do limite";
-            aviso.style.color = "red";
-        }
+        if(input) { input.style.borderColor = "red"; input.style.color = "red"; }
+        if(btn) { btn.disabled = true; btn.classList.add('opacity-50'); }
+        if(aviso) { aviso.innerText = "Valor fora do limite"; aviso.style.color = "red"; }
     } else {
-        if(input) {
-            input.style.borderColor = "#e5e7eb";
-            input.style.color = "black";
-        }
-        if(btn) {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50');
-        }
-        if(aviso) {
-            aviso.innerText = `R$ ${offer.toFixed(2)}`;
-            aviso.style.color = "black";
-        }
+        if(input) { input.style.borderColor = "#e5e7eb"; input.style.color = "black"; }
+        if(btn) { btn.disabled = false; btn.classList.remove('opacity-50'); }
+        if(aviso) { aviso.innerText = `R$ ${offer.toFixed(2)}`; aviso.style.color = "black"; }
         mem_CurrentOffer = offer;
     }
 }
@@ -180,30 +141,24 @@ function atualizarVisualModal() {
     if(inputValor) inputValor.value = mem_CurrentOffer.toFixed(2);
     
     const elTotal = document.getElementById('calc-total-reserva');
-    if(elTotal) {
-        elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
-        elTotal.style.color = "black";
-    }
+    if(elTotal) { elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`; elTotal.style.color = "black"; }
     
     validarOferta(mem_CurrentOffer);
 }
 
 // ============================================================================
-// 3. ENVIAR PROPOSTA
+// 3. ENVIAR PROPOSTA (CORRIGIDO PARA IR PARA LISTA, NÃO CHAT)
 // ============================================================================
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     if (!user) return alert("Sessão expirada.");
 
-    if (!podeTrabalhar()) {
-        console.warn("⛔ Bloqueio Financeiro Ativado.");
-        return; 
-    }
+    if (!podeTrabalhar()) return; 
 
     const min = mem_BasePrice * 0.80;
     const max = mem_BasePrice * 1.30;
     if (mem_CurrentOffer < min || mem_CurrentOffer > max) {
-        return alert(`Valor inválido!`);
+        return alert(`Valor inválido! Mínimo R$ ${min.toFixed(2)}`);
     }
 
     const btn = document.getElementById('btn-confirm-req'); 
@@ -229,6 +184,7 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
+        // Cria a sala de chat (mas não entra nela ainda)
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -237,14 +193,19 @@ export async function enviarPropostaAgora() {
             last_message: "Nova solicitação."
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA!\n\nAcompanhe em 'Em Andamento'.");
+        alert("✅ SOLICITAÇÃO ENVIADA!\nVerifique a aba 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
         
-        if(window.carregarPedidosAtivos) {
-            const tabChat = document.getElementById('tab-chat');
-            if(tabChat) tabChat.click();
-            window.carregarPedidosAtivos();
-        }
+        // 🚨 REDIRECIONAMENTO ESTRATÉGICO
+        // Em vez de ir pro chat, força a ida para a lista de pedidos em andamento
+        const tabServicos = document.getElementById('tab-servicos');
+        if(tabServicos) tabServicos.click(); // Garante que a aba "Serviços" esteja ativa
+
+        setTimeout(() => {
+            // Se o services.js estiver carregado, chamamos as funções dele
+            if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
+            if(window.iniciarMonitoramentoPedidos) window.iniciarMonitoramentoPedidos();
+        }, 500);
 
     } catch (e) {
         alert(`❌ Falha: ${e.message}`);
@@ -254,18 +215,14 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 4. RADAR
+// 4. RADAR E FUNÇÕES AUXILIARES
 // ============================================================================
 function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
-            }
-            if (change.type === "removed") {
-                fecharModalRadar();
-            }
+            if (change.type === "added") mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "removed") fecharModalRadar();
         });
     });
 }
@@ -321,11 +278,15 @@ export async function aceitarPedidoRadar(orderId) {
         await updateDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() });
         await updateDoc(doc(db, "chats", orderId), { status: 'active' });
 
-        if(window.carregarPedidosAtivos) {
-            const tabChat = document.getElementById('tab-chat');
-            if(tabChat) tabChat.click();
-            window.carregarPedidosAtivos();
-        }
+        // Redireciona Prestador para aba Ativos
+        const tabServicos = document.getElementById('tab-servicos');
+        if(tabServicos) tabServicos.click();
+        
+        setTimeout(() => {
+            if(window.switchProviderSubTab) window.switchProviderSubTab('ativos');
+            if(window.iniciarMonitoramentoPedidos) window.iniciarMonitoramentoPedidos();
+        }, 300);
+
     } catch (e) { alert("Erro: " + e.message); }
 }
 
@@ -335,8 +296,14 @@ export async function recusarPedidoReq(orderId) {
     await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
 }
 
+// ⚠️ AQUI ESTÁ A FUNÇÃO RESTAURADA PARA O SCANNER FICAR FELIZ
 export async function carregarPedidosEmAndamento() {
-    // Mantido
+    // Esta função agora é um "alias" (atalho) para a nova lógica centralizada no services.js
+    // Mantemos ela aqui para compatibilidade caso algum botão antigo a chame.
+    console.log("🔄 Redirecionando para o monitoramento central...");
+    if (window.iniciarMonitoramentoPedidos) {
+        window.iniciarMonitoramentoPedidos();
+    }
 }
 
 // EXPORTAÇÃO GLOBAL
