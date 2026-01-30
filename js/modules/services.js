@@ -1,16 +1,43 @@
 import { db, auth } from '../app.js';
-import { collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, orderBy, limit, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let cachePrestadores = [];
 let unsubscribeVitrine = null;
+let unsubscribePedidosAtivos = null; // 🆕 Variável para controlar a escuta dos pedidos
 
 // --- GATILHOS ---
 const tabServicos = document.getElementById('tab-servicos');
 if (tabServicos) {
     tabServicos.addEventListener('click', () => {
         carregarServicosDisponiveis();
+        iniciarMonitoramentoPedidos(); // 🆕 Chama a função que popula as listas
     });
 }
+
+// GATILHO EXTRA: Chama também quando troca de sub-aba para garantir atualização
+window.switchServiceSubTab = function(subTab) {
+    ['contratar', 'andamento', 'historico'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`subtab-${t}-btn`).classList.remove('active');
+    });
+    document.getElementById(`view-${subTab}`).classList.remove('hidden');
+    document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
+    
+    // Se for para andamento, força atualização
+    if(subTab === 'andamento') iniciarMonitoramentoPedidos();
+};
+
+window.switchProviderSubTab = function(subTab) {
+    ['radar', 'ativos', 'historico'].forEach(t => {
+        document.getElementById(`pview-${t}`).classList.add('hidden');
+        document.getElementById(`ptab-${t}-btn`).classList.remove('active');
+    });
+    document.getElementById(`pview-${subTab}`).classList.remove('hidden');
+    document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+
+    // Se for para ativos, força atualização
+    if(subTab === 'ativos') iniciarMonitoramentoPedidos();
+};
 
 // Expõe globalmente
 window.carregarServicos = carregarServicosDisponiveis;
@@ -18,6 +45,8 @@ window.abrirModalContratacao = abrirModalContratacao;
 window.filtrarCategoria = filtrarCategoria;
 window.filtrarPorTexto = filtrarPorTexto;
 window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
+// 🆕 Expõe a nova função para ser chamada pelo auth.js se necessário
+window.iniciarMonitoramentoPedidos = iniciarMonitoramentoPedidos;
 
 function normalizarTexto(texto) {
     if (!texto) return "";
@@ -25,13 +54,105 @@ function normalizarTexto(texto) {
 }
 
 // ============================================================================
-// 1. LISTAGEM (GRID + LÓGICA DO BOTÃO ONLINE)
+// 🆕 0. MONITORAMENTO DE PEDIDOS (ATIVOS E EM ANDAMENTO)
+// ============================================================================
+export function iniciarMonitoramentoPedidos() {
+    const uid = auth.currentUser?.uid;
+    const userProfile = window.userProfile;
+    
+    if (!uid || !userProfile) return;
+
+    // Evita duplicidade de listeners
+    if (unsubscribePedidosAtivos) unsubscribePedidosAtivos();
+
+    if (userProfile.is_provider) {
+        // --- VISÃO PRESTADOR (Pedidos Aceitos/Em Andamento) ---
+        const container = document.getElementById('lista-chamados-ativos');
+        if (!container) return;
+
+        const q = query(
+            collection(db, "orders"),
+            where("provider_id", "==", uid),
+            where("status", "in", ["accepted", "in_progress"]), // Aceito ou Iniciado
+            orderBy("created_at", "desc")
+        );
+
+        unsubscribePedidosAtivos = onSnapshot(q, (snap) => {
+            container.innerHTML = "";
+            if (snap.empty) {
+                container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs border-2 border-dashed border-gray-200 rounded-xl">Nenhum serviço em execução.</div>`;
+                return;
+            }
+            snap.forEach(doc => renderCardPedido(container, doc.data(), doc.id, true));
+        });
+
+    } else {
+        // --- VISÃO CLIENTE (Pendentes/Aceitos/Em Andamento) ---
+        const container = document.getElementById('meus-pedidos-andamento');
+        if (!container) return;
+
+        const q = query(
+            collection(db, "orders"),
+            where("client_id", "==", uid),
+            where("status", "in", ["pending", "accepted", "in_progress"]), 
+            orderBy("created_at", "desc")
+        );
+
+        unsubscribePedidosAtivos = onSnapshot(q, (snap) => {
+            container.innerHTML = "";
+            if (snap.empty) {
+                container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs border-2 border-dashed border-gray-200 rounded-xl">Você não tem pedidos ativos.</div>`;
+                return;
+            }
+            snap.forEach(doc => renderCardPedido(container, doc.data(), doc.id, false));
+        });
+    }
+}
+
+// Helper para desenhar o card do pedido nas abas
+function renderCardPedido(container, pedido, id, isProvider) {
+    let statusLabel = "";
+    let statusColor = "";
+    
+    if (pedido.status === 'pending') {
+        statusLabel = "🕒 Aguardando Aceite";
+        statusColor = "bg-yellow-100 text-yellow-700";
+    } else if (pedido.status === 'accepted') {
+        statusLabel = "🚗 Prestador a Caminho";
+        statusColor = "bg-orange-100 text-orange-700";
+    } else if (pedido.status === 'in_progress') {
+        statusLabel = "▶️ Em Execução";
+        statusColor = "bg-blue-100 text-blue-700 animate-pulse";
+    }
+
+    const nomeExibicao = isProvider ? pedido.client_name : (pedido.provider_name || "Prestador");
+    
+    container.innerHTML += `
+        <div onclick="window.abrirChatPedido('${id}')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:shadow-md transition relative overflow-hidden">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${pedido.status === 'in_progress' ? 'bg-blue-600' : 'bg-gray-300'}"></div>
+            <div>
+                <span class="text-[9px] font-bold uppercase tracking-wider ${statusColor} px-2 py-0.5 rounded mb-1 inline-block">${statusLabel}</span>
+                <h4 class="font-bold text-gray-800 text-sm">${nomeExibicao}</h4>
+                <p class="text-xs text-gray-500">R$ ${pedido.offer_value} • ${pedido.service_date || 'Hoje'}</p>
+            </div>
+            <button class="bg-blue-50 text-blue-600 p-2 rounded-full">
+                💬
+            </button>
+        </div>
+    `;
+}
+
+// ============================================================================
+// 1. LISTAGEM VITRINE (Mantida Original)
 // ============================================================================
 export function carregarServicosDisponiveis() {
     const listaRender = document.getElementById('lista-prestadores-realtime');
     const filtersRender = document.getElementById('category-filters');
     const userProfile = window.userProfile;
     
+    // Chama o monitoramento também para garantir
+    iniciarMonitoramentoPedidos();
+
     if (!listaRender || !filtersRender) return;
 
     if (userProfile && userProfile.is_provider) {
@@ -106,7 +227,7 @@ export function carregarServicosDisponiveis() {
     }
 }
 
-// 🔎 BUSCA E FILTROS (Mantidos Iguais, lógica omitida pra economizar espaço pois não mudou)
+// 🔎 BUSCA E FILTROS
 function filtrarPorTexto(texto) {
     const termo = normalizarTexto(texto);
     document.querySelectorAll('.filter-pill').forEach(btn => {
@@ -137,32 +258,30 @@ function filtrarPorTexto(texto) {
 
 function filtrarCategoria(categoria, btnElement) {
    const inputBusca = document.getElementById('search-services');
-    if(inputBusca) inputBusca.value = "";
+   if(inputBusca) inputBusca.value = "";
 
-    if(btnElement) {
-        document.querySelectorAll('.filter-pill').forEach(btn => {
-            btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 transition whitespace-nowrap";
-        });
-        btnElement.className = "filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm transition whitespace-nowrap";
-    }
+   if(btnElement) {
+       document.querySelectorAll('.filter-pill').forEach(btn => {
+           btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 transition whitespace-nowrap";
+       });
+       btnElement.className = "filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm transition whitespace-nowrap";
+   }
 
-    if (categoria === 'Todos') {
-        renderizarLista(cachePrestadores);
-    } else {
-        const filtrados = cachePrestadores.filter(p => {
-            if (!p.services) return false;
-            if (categoria === 'Outros') {
-                return p.services.some(s => !['Limpeza', 'Obras', 'Técnica'].some(c => s.category.includes(c)));
-            }
-            return p.services.some(s => s.category.includes(categoria));
-        });
-        renderizarLista(filtrados);
-    }
+   if (categoria === 'Todos') {
+       renderizarLista(cachePrestadores);
+   } else {
+       const filtrados = cachePrestadores.filter(p => {
+           if (!p.services) return false;
+           if (categoria === 'Outros') {
+               return p.services.some(s => !['Limpeza', 'Obras', 'Técnica'].some(c => s.category.includes(c)));
+           }
+           return p.services.some(s => s.category.includes(categoria));
+       });
+       renderizarLista(filtrados);
+   }
 }
 
-// ============================================================================
-// LÓGICA DE RENDERIZAÇÃO (AQUI ESTÁ A CORREÇÃO DO BOTÃO)
-// ============================================================================
+// LÓGICA DE RENDERIZAÇÃO DA VITRINE
 function renderizarLista(lista) {
     const container = document.getElementById('lista-prestadores-realtime');
     container.innerHTML = "";
@@ -183,19 +302,16 @@ function renderizarLista(lista) {
 
         const qtdServicos = prestador.services ? prestador.services.length : 0;
         
-        // CORREÇÃO: Botão Dinâmico Baseado no Status
         let botaoAcaoHTML = "";
         let containerClass = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 relative flex flex-col";
         
         if(isOnline) {
-            // ONLINE: Botão Vibrante "Solicitar"
             botaoAcaoHTML = `
                 <div class="mt-2 bg-blue-600 text-white text-[10px] font-black py-1.5 rounded text-center uppercase tracking-wide flex items-center justify-center gap-1 shadow-sm group-hover:bg-blue-700 transition">
                     <span>⚡</span> Solicitar
                 </div>
             `;
         } else {
-            // OFFLINE: Botão Neutro "Agendar" e Card levemente apagado
             containerClass += " opacity-90";
             botaoAcaoHTML = `
                 <div class="mt-2 bg-gray-100 text-gray-600 text-[10px] font-bold py-1.5 rounded text-center uppercase tracking-wide flex items-center justify-center gap-1 border border-gray-200">
@@ -240,7 +356,7 @@ function renderizarLista(lista) {
 }
 
 // ============================================================================
-// 2. MODAL DE CONTRATAÇÃO (Mantido, apenas conecta com o request.js)
+// 2. MODAL DE CONTRATAÇÃO (Mantido)
 // ============================================================================
 export function abrirModalContratacao(providerId) {
     const prestador = cachePrestadores.find(p => p.id === providerId);
