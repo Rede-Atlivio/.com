@@ -9,11 +9,7 @@ export async function checkOnboarding(user) {
     const inpName = document.getElementById('inp-onboard-name');
     const inpPhone = document.getElementById('inp-onboard-phone');
     
-    // BLINDAGEM 1: Se o modal não existe, não há o que fazer.
-    if(!modal) {
-        console.warn("⚠️ HTML do Modal de Onboarding não encontrado. Verifique index.html.");
-        return; 
-    }
+    if(!modal) return; // Se não colocou o HTML, aborta silenciosamente
 
     try {
         // 1. Verifica no banco se já fez onboarding
@@ -26,7 +22,6 @@ export async function checkOnboarding(user) {
             // Lógica do Muro: Se já tem termos aceitos E nome, libera.
             if (data.terms_accepted && data.nome && data.nome !== "User") {
                 modal.classList.add('hidden'); // Libera o acesso
-                modal.style.display = 'none';
                 return;
             }
         }
@@ -37,34 +32,24 @@ export async function checkOnboarding(user) {
         modal.style.display = 'flex'; // Garante flexbox
 
         // Pré-preenche se tiver dados parciais
-        if(inpName && user.displayName) inpName.value = user.displayName;
-        if(inpPhone && user.phoneNumber) inpPhone.value = user.phoneNumber;
-
-        // BLINDAGEM 2 (CORREÇÃO DO ERRO): Verifica se o form existe antes de criar o evento
-        if (!form) {
-            console.error("❌ ERRO CRÍTICO: Elemento 'form-onboarding' não encontrado no DOM. Impossível salvar.");
-            return;
-        }
+        if(user.displayName) inpName.value = user.displayName;
+        if(user.phoneNumber) inpPhone.value = user.phoneNumber;
 
         // 3. Listener do Formulário
         form.onsubmit = async (e) => {
             e.preventDefault();
             
-            const nome = inpName ? inpName.value.trim() : "";
-            const phone = inpPhone ? inpPhone.value.trim() : "";
-            const chkTerms = document.getElementById('chk-terms');
-            const terms = chkTerms ? chkTerms.checked : false;
+            const nome = inpName.value.trim();
+            const phone = inpPhone.value.trim();
+            const terms = document.getElementById('chk-terms').checked;
 
             if (!terms) return alert("Você precisa aceitar os termos.");
             if (nome.length < 3) return alert("Digite seu nome completo.");
 
             const btn = document.getElementById('btn-onboard-submit');
-            // Salvaguarda para botão
-            const originalText = btn ? btn.innerHTML : "Salvar";
-            if(btn) {
-                btn.innerHTML = `<div class="loader w-5 h-5 border-white animate-spin"></div> SALVANDO...`;
-                btn.disabled = true;
-            }
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<div class="loader w-5 h-5 border-white animate-spin"></div> SALVANDO...`;
+            btn.disabled = true;
 
             try {
                 // Salva no Banco
@@ -77,6 +62,9 @@ export async function checkOnboarding(user) {
                     status: 'ativo' // Garante que entra como ativo
                 });
 
+                // Atualiza perfil no Auth também (opcional mas bom)
+                /* try { await updateProfile(user, { displayName: nome }); } catch(e){} */
+
                 // Libera o usuário
                 modal.classList.add('hidden');
                 modal.style.display = 'none';
@@ -87,10 +75,8 @@ export async function checkOnboarding(user) {
             } catch (error) {
                 console.error("Erro onboarding:", error);
                 alert("Erro ao salvar: " + error.message);
-                if(btn) {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
+                btn.innerHTML = originalText;
+                btn.disabled = false;
             }
         };
 
