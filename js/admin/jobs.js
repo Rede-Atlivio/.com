@@ -8,23 +8,33 @@ export async function init() {
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
     
+    // Configura UI
     headers.innerHTML = `<th class="p-3 w-10"><input type="checkbox" id="check-all-jobs" class="chk-custom"></th><th class="p-3">VAGA</th><th class="p-3">EMPRESA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
     
-    if(btnAdd) { btnAdd.innerHTML = "+ NOVA VAGA"; btnAdd.onclick = () => abrirModalVaga(); }
+    if(btnAdd) { 
+        btnAdd.innerHTML = "+ NOVA VAGA"; 
+        btnAdd.onclick = () => abrirModalVaga(); 
+    }
     document.getElementById('btn-bulk-delete').onclick = executeBulkDelete;
 
+    // Exporta Globais (Crucial para o HTML funcionar)
     window.abrirModalVaga = abrirModalVaga;
     window.salvarVaga = salvarVaga;
     window.verCandidatos = verCandidatos;
     window.excluirVaga = excluirVaga;
     window.alterarStatusVaga = alterarStatusVaga;
-    
-    setTimeout(() => {
-        const chk = document.getElementById('check-all-jobs');
-        if(chk) chk.onclick = (e) => toggleSelectAll(e.target.checked);
-    }, 500);
+    window.fecharModalJobs = fecharModalJobs; // Nova função segura
 
     await loadList();
+}
+
+function fecharModalJobs() {
+    const modal = document.getElementById('modal-editor');
+    modal.classList.add('hidden');
+    // Destrava caso tenha ficado travado
+    const content = document.getElementById('modal-content');
+    content.style.pointerEvents = 'auto';
+    content.style.opacity = '1';
 }
 
 async function loadList() {
@@ -58,34 +68,30 @@ function renderTable(lista) {
                 <td class="p-3 text-gray-400 text-xs">${job.company || job.empresa}</td>
                 <td class="p-3 ${stClass} font-bold text-xs uppercase">${job.status || 'pendente'}</td>
                 <td class="p-3 text-right flex justify-end gap-2">
-                    <button onclick="window.verCandidatos('${job.id}', '${(job.title||'Vaga').replace(/'/g,"")}')" class="bg-blue-900/30 text-blue-300 border border-blue-800 px-3 py-1 rounded text-xs hover:bg-blue-900">📄 CANDIDATOS</button>
+                    <button onclick="window.verCandidatos('${job.id}', '${(job.title||'Vaga').replace(/'/g,"")}')" class="bg-blue-900/30 text-blue-300 border border-blue-800 px-3 py-1 rounded text-xs hover:bg-blue-900 transition">📄 CANDIDATOS</button>
                     <button onclick="window.abrirModalVaga('${job.id}')" class="text-gray-400 hover:text-white px-2">✏️</button>
                     <button onclick="window.excluirVaga('${job.id}')" class="text-red-500 hover:text-red-400 px-2">🗑️</button>
                 </td>
             </tr>
         `;
     });
-    
-    document.querySelectorAll('.chk-job').forEach(c => c.onclick = (e) => {
-        if(e.target.checked) selectedJobs.add(e.target.dataset.id); else selectedJobs.delete(e.target.dataset.id);
-        updateBulkUI();
-    });
 }
 
-// ⚠️ CORREÇÃO DE CANDIDATOS E ÍNDICE
+// --- VISUALIZADOR DE CANDIDATOS (COM CORREÇÃO DE ÍNDICE) ---
 window.verCandidatos = async (jobId, title) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
-    modal.classList.remove('hidden');
     
+    // Configura Fechamento Seguro
     const btnClose = document.getElementById('btn-close-modal');
-    if(btnClose) btnClose.onclick = () => modal.classList.add('hidden');
+    btnClose.onclick = window.fecharModalJobs;
 
+    modal.classList.remove('hidden');
     content.innerHTML = `<div class="text-center py-10 text-white">Buscando currículos...</div>`;
 
     try {
-        // Busca Simples (Sem orderBy primeiro para evitar erro de índice imediato)
-        const q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId));
+        // Tenta buscar COM ordenação (O ideal)
+        const q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
 
         let html = `<div class="p-2"><h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Candidatos: ${title} (${snap.size})</h3><div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">`;
@@ -95,7 +101,7 @@ window.verCandidatos = async (jobId, title) => {
         } else {
             snap.forEach(d => {
                 const app = d.data();
-                const linkPdf = app.resume_url || app.cv_url || app.file_url;
+                const linkPdf = app.resume_url || app.cv_url || app.file_url; // Tenta todos
                 
                 html += `
                     <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 hover:border-blue-500 transition">
@@ -116,15 +122,19 @@ window.verCandidatos = async (jobId, title) => {
         content.innerHTML = html;
 
     } catch (e) {
-        // SE DER ERRO DE ÍNDICE, MOSTRA O LINK MÁGICO
+        // SE DER ERRO DE ÍNDICE, MOSTRA O LINK AZUL NA TELA
         if(e.message.includes("index")) {
              const url = e.message.match(/https:\/\/\S+/);
              content.innerHTML = `
                 <div class="p-6 text-center">
-                    <p class="text-yellow-400 mb-2 font-bold">⚠️ Configuração Necessária</p>
-                    <p class="text-gray-400 text-xs mb-4">O Firebase precisa criar um índice para listar os candidatos desta vaga.</p>
-                    <a href="${url}" target="_blank" class="bg-blue-600 text-white px-4 py-2 rounded font-bold uppercase shadow-lg">⚡ CRIAR ÍNDICE AGORA</a>
-                    <p class="text-gray-500 text-[10px] mt-4">Clique no botão, espere o Firebase criar (leva 2 min) e tente de novo.</p>
+                    <p class="text-yellow-400 mb-2 font-bold text-lg">⚠️ Ação Necessária no Firebase</p>
+                    <p class="text-gray-400 text-xs mb-6">Para listar os candidatos em ordem, precisamos criar um índice.</p>
+                    
+                    <a href="${url}" target="_blank" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold uppercase shadow-lg hover:bg-blue-500 transition animate-pulse">
+                        ⚡ CRIAR ÍNDICE AUTOMÁTICO
+                    </a>
+                    
+                    <p class="text-gray-500 text-[10px] mt-6">1. Clique no botão acima.<br>2. Salve no Firebase.<br>3. Aguarde 2 minutos e tente de novo.</p>
                 </div>
              `;
         } else {
@@ -137,7 +147,9 @@ function abrirModalVaga(id = null) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
-    document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
+    
+    // Garante fechamento
+    document.getElementById('btn-close-modal').onclick = window.fecharModalJobs;
 
     let dados = { title: '', company: '', salary: '', description: '' };
     if(id) {
@@ -159,17 +171,38 @@ function abrirModalVaga(id = null) {
 }
 
 window.salvarVaga = async (id) => {
-    const data = { title: document.getElementById('job-title').value, titulo: document.getElementById('job-title').value, company: document.getElementById('job-company').value, salary: document.getElementById('job-salary').value, updated_at: serverTimestamp() };
+    const data = { 
+        title: document.getElementById('job-title').value, 
+        titulo: document.getElementById('job-title').value, 
+        company: document.getElementById('job-company').value, 
+        salary: document.getElementById('job-salary').value, 
+        updated_at: serverTimestamp() 
+    };
+    
     if(!data.title) return alert("Título obrigatório");
+
     try {
-        if(id) { await updateDoc(doc(window.db, "jobs", id), data); } 
-        else { data.status = 'ativo'; data.created_at = serverTimestamp(); await addDoc(collection(window.db, "jobs"), data); }
-        document.getElementById('modal-editor').classList.add('hidden'); loadList();
+        if(id) { 
+            await updateDoc(doc(window.db, "jobs", id), data); 
+        } else { 
+            data.status = 'ativo'; 
+            data.created_at = serverTimestamp(); 
+            await addDoc(collection(window.db, "jobs"), data); 
+        }
+        window.fecharModalJobs();
+        loadList();
     } catch(e) { alert(e.message); }
 };
 
-function toggleSelectAll(checked) { document.querySelectorAll('.chk-job').forEach(c => { c.checked = checked; if(checked) selectedJobs.add(c.dataset.id); else selectedJobs.delete(c.dataset.id); }); updateBulkUI(); }
-function updateBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedJobs.size > 0) { bar.classList.remove('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedJobs.size; } else { bar.classList.add('invisible', 'translate-y-[200%]'); } }
-async function executeBulkDelete() { if(!confirm("Excluir selecionados?")) return; const batch = writeBatch(window.db); selectedJobs.forEach(id => batch.delete(doc(window.db, "jobs", id))); await batch.commit(); alert("Vagas excluídas."); selectedJobs.clear(); loadList(); }
+// BULK ACTIONS
+async function executeBulkDelete() {
+    if(!confirm("Excluir selecionados?")) return;
+    const batch = writeBatch(window.db);
+    selectedJobs.forEach(id => batch.delete(doc(window.db, "jobs", id)));
+    await batch.commit();
+    alert("Vagas excluídas.");
+    selectedJobs.clear();
+    loadList();
+}
 window.alterarStatusVaga = async (id, st) => { await updateDoc(doc(window.db, "jobs", id), {status: st}); loadList(); };
 window.excluirVaga = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(window.db, "jobs", id)); loadList(); } };
