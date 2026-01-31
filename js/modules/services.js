@@ -301,6 +301,7 @@ async function carregarPedidosPrestador() {
     });
 }
 
+// ✅ SUBSTITUA APENAS ESTA FUNÇÃO NO FINAL DO ARQUIVO
 async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
     if(!container) return;
@@ -316,13 +317,21 @@ async function carregarHistoricoPrestador() {
 
         snap.forEach(d => {
             const order = d.data();
+            // Tratamento de segurança para nomes com aspas
+            const safeName = (order.client_name || 'Cliente').replace(/'/g, "");
+            
             container.innerHTML += `
                 <div class="bg-green-50 p-3 rounded-xl mb-2 border border-green-100 flex justify-between items-center">
                     <div>
-                        <h3 class="font-bold text-xs text-green-900">${order.client_name}</h3>
+                        <h3 class="font-bold text-xs text-green-900">${safeName}</h3>
                         <p class="text-[10px] text-green-700">Concluído em ${order.completed_at?.toDate().toLocaleDateString()}</p>
                     </div>
-                    <span class="font-black text-green-700 text-xs">+ R$ ${order.offer_value}</span>
+                    <div class="text-right">
+                        <span class="block font-black text-green-700 text-xs">+ R$ ${order.offer_value}</span>
+                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.client_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer mt-1 hover:text-blue-800">
+                            Avaliar Cliente ⭐
+                        </button>
+                    </div>
                 </div>
             `;
         });
