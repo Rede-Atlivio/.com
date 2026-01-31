@@ -41,7 +41,6 @@ import './modules/opportunities.js'; // Afiliados
 
 // 🚨 ORDEM CRÍTICA DE CHAT 🚨
 import './modules/chat.js';      // 1º: Base (Serviços)
-import './modules/job_chat.js';  // 2º: Plugin (Vagas) - Adiciona aba de entrevistas
 
 import { checkOnboarding } from './modules/onboarding.js';
 import { abrirConfiguracoes } from './modules/profile.js';
