@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 1. CONFIGURAÇÃO FIREBASE
+// CONFIGURAÇÃO FIREBASE
 const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -10,102 +10,74 @@ const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// 2. EXPOR GLOBAIS
+// EXPOR GLOBAIS
 window.auth = auth;
 window.db = db;
 window.currentDataMode = 'real';
 window.activeView = 'dashboard';
 
 // ============================================================================
-// 3. INICIALIZAÇÃO, LISTENERS E VACINA ANTI-TRAVAMENTO
+// INICIALIZAÇÃO SEGURA
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth Listeners
-    const btnLogin = document.getElementById('btn-login');
-    const btnLogout = document.getElementById('btn-logout');
-    if(btnLogin) btnLogin.addEventListener('click', loginAdmin);
-    if(btnLogout) btnLogout.addEventListener('click', logoutAdmin);
+    // Listeners com verificação de existência (Para não travar se o botão não existir)
+    const safeListener = (id, event, func) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, func);
+    };
 
-    // Navegação Sidebar
+    safeListener('btn-login', 'click', loginAdmin);
+    safeListener('btn-logout', 'click', logoutAdmin);
+    safeListener('mode-real', 'click', () => setDataMode('real'));
+    safeListener('mode-demo', 'click', () => setDataMode('demo'));
+    safeListener('btn-refresh', 'click', () => switchView(window.activeView));
+
+    // Navegação
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             e.currentTarget.classList.add('active');
-            const view = e.currentTarget.getAttribute('data-view');
-            switchView(view);
+            switchView(e.currentTarget.getAttribute('data-view'));
         });
     });
 
-    // Toggle Real/Demo
-    const btnReal = document.getElementById('mode-real');
-    const btnDemo = document.getElementById('mode-demo');
-    if(btnReal && btnDemo) {
-        btnReal.addEventListener('click', () => setDataMode('real'));
-        btnDemo.addEventListener('click', () => setDataMode('demo'));
-    }
-
-    // Refresh
-    const btnRefresh = document.getElementById('btn-refresh');
-    if(btnRefresh) btnRefresh.addEventListener('click', () => switchView(window.activeView));
-
-    // --- 💉 VACINA UNIVERSAL (ANTI-TRAVAMENTO) ---
-    // Isso garante que o modal feche e DESTRAVE a tela, não importa o que aconteça
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
-
-    window.fecharModalUniversal = () => {
-        if(modal) modal.classList.add('hidden');
-        if(content) {
-            content.style.pointerEvents = 'auto'; // Destrava o mouse
-            content.style.opacity = '1';          // Restaura a cor
-            content.innerHTML = '';               // Limpa o lixo
+    // VACINA ANTI-TRAVAMENTO (MODAL)
+    const fecharTudo = () => {
+        const modal = document.getElementById('modal-editor');
+        const content = document.getElementById('modal-content');
+        if (modal) modal.classList.add('hidden');
+        if (content) {
+            content.style.pointerEvents = 'auto';
+            content.style.opacity = '1';
+            content.innerHTML = '';
         }
     };
+    window.fecharModalUniversal = fecharTudo;
 
-    // 1. Clique no X (Funciona mesmo se o botão for recriado dinamicamente)
     document.addEventListener('click', (e) => {
-        if(e.target.closest('#btn-close-modal')) {
-            window.fecharModalUniversal();
-        }
+        if(e.target.closest('#btn-close-modal') || e.target.id === 'modal-editor') fecharTudo();
     });
+    document.addEventListener('keydown', (e) => { if(e.key === "Escape") fecharTudo(); });
 
-    // 2. Clique Fora (No fundo preto)
-    if(modal) {
-        modal.addEventListener('click', (e) => {
-            if(e.target === modal) window.fecharModalUniversal();
-        });
-    }
-
-    // 3. Tecla ESC
-    document.addEventListener('keydown', (e) => {
-        if(e.key === "Escape") window.fecharModalUniversal();
-    });
-    // ----------------------------------------------
-
-    // Monitor de Autenticação
+    // Monitor Auth
     onAuthStateChanged(auth, (user) => {
-        if (user && user.email.toLowerCase() === ADMIN_EMAIL) {
-            unlockAdmin();
-        } else {
-            lockAdmin();
-        }
+        if (user && user.email.toLowerCase() === ADMIN_EMAIL) unlockAdmin();
+        else lockAdmin();
     });
 });
 
-// ============================================================================
-// 4. FUNÇÕES AUXILIARES
-// ============================================================================
 function setDataMode(mode) {
     window.currentDataMode = mode;
     const btnReal = document.getElementById('mode-real');
     const btnDemo = document.getElementById('mode-demo');
-
-    if (mode === 'real') {
-        btnReal.className = "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white transition shadow-lg";
-        btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
-    } else {
-        btnReal.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
-        btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold bg-purple-600 text-white transition shadow-lg";
+    if (btnReal && btnDemo) {
+        if (mode === 'real') {
+            btnReal.className = "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white shadow-lg transition";
+            btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+        } else {
+            btnReal.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+            btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold bg-purple-600 text-white shadow-lg transition";
+        }
     }
     switchView(window.activeView);
 }
@@ -114,98 +86,86 @@ async function loginAdmin() { try { await signInWithPopup(auth, provider); } cat
 function logoutAdmin() { signOut(auth).then(() => location.reload()); }
 
 function unlockAdmin() {
-    document.getElementById('login-gate').classList.add('hidden');
-    document.getElementById('admin-sidebar').classList.remove('hidden');
-    document.getElementById('admin-main').classList.remove('hidden');
+    const ids = ['login-gate', 'admin-sidebar', 'admin-main'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id === 'login-gate') el.classList.add('hidden');
+            else el.classList.remove('hidden');
+        }
+    });
     switchView('dashboard');
 }
 
 function lockAdmin() {
-    document.getElementById('login-gate').classList.remove('hidden');
-    document.getElementById('admin-sidebar').classList.add('hidden');
-    document.getElementById('admin-main').classList.add('hidden');
+    const ids = ['login-gate', 'admin-sidebar', 'admin-main'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            if (id === 'login-gate') el.classList.remove('hidden');
+            else el.classList.add('hidden');
+        }
+    });
 }
 
 // ============================================================================
-// 5. ROTEADOR DE MÓDULOS (COMPLETO)
+// ROTEADOR BLINDADO (AQUI ESTAVA O ERRO DE TRAVAMENTO)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
-    console.log(`🚀 Carregando módulo: ${viewName}`);
+    console.log(`🚀 Carregando: ${viewName}`);
     
-    // Esconde todas as views
-    ['view-dashboard', 'view-list', 'view-finance', 'view-automation', 'view-settings', 'view-support', 'view-audit', 'view-tutorials'].forEach(id => {
+    // LISTA DE TODAS AS VIEWS POSSÍVEIS
+    const allViews = [
+        'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
+        'view-settings', 'view-support', 'view-audit', 'view-tutorials',
+        'view-missions', 'view-opportunities' // Novas views que causavam erro se faltassem
+    ];
+
+    // 1. ESCONDER TUDO (COM SEGURANÇA)
+    allViews.forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.classList.add('hidden');
+        if (el) el.classList.add('hidden'); // SÓ ESCONDE SE EXISTIR! (Isso previne o erro null)
     });
     
-    // Atualiza Título
     const titleEl = document.getElementById('page-title');
     if(titleEl) titleEl.innerText = viewName.toUpperCase();
 
     let moduleFile, containerId;
     
-    // --- MAPA DE ROTAS ---
-    if (viewName === 'dashboard') { 
-        moduleFile = './dashboard.js'; 
-        containerId = 'view-dashboard'; 
-    }
-    else if (['users', 'services', 'active_providers'].includes(viewName)) { 
-        moduleFile = './users.js'; 
-        containerId = 'view-list'; 
-    }
-    else if (['jobs', 'vagas'].includes(viewName)) { 
-        moduleFile = './jobs.js'; 
-        containerId = 'view-list'; 
-    }
-    else if (viewName === 'missions') { 
-        moduleFile = './missions.js'; 
-        containerId = 'view-list'; 
-    }
-    else if (viewName === 'opportunities') { 
-        moduleFile = './opportunities.js'; 
-        containerId = 'view-list'; 
-    }
-    else if (viewName === 'automation') { 
-        moduleFile = './automation.js'; 
-        containerId = 'view-automation'; 
-    }
-    else if (viewName === 'finance') { 
-        moduleFile = './finance.js'; 
-        containerId = 'view-finance'; 
-    }
-    else if (viewName === 'settings') { 
-        moduleFile = './settings.js'; 
-        containerId = 'view-settings'; 
-    }
-    else if (viewName === 'support') {
-        moduleFile = './support.js';
-        containerId = 'view-support';
-    }
-    else if (viewName === 'audit') {
-        moduleFile = './audit.js';
-        containerId = 'view-audit';
-    }
-    else if (viewName === 'tutorials') {
-        moduleFile = './tutorials.js';
-        containerId = 'view-tutorials';
-    }
+    // 2. DEFINIR ROTA
+    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
+    else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
+    else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
+    else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
+    else if (viewName === 'opportunities') { moduleFile = './opportunities.js'; containerId = 'view-list'; }
+    else if (viewName === 'automation') { moduleFile = './automation.js'; containerId = 'view-automation'; }
+    else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
+    else if (viewName === 'settings') { moduleFile = './settings.js'; containerId = 'view-settings'; }
+    else if (viewName === 'support') { moduleFile = './support.js'; containerId = 'view-support'; }
+    else if (viewName === 'audit') { moduleFile = './audit.js'; containerId = 'view-audit'; }
+    else if (viewName === 'tutorials') { moduleFile = './tutorials.js'; containerId = 'view-tutorials'; }
 
-    // Mostra o container correto
+    // 3. MOSTRAR CONTAINER (COM SEGURANÇA)
     if(containerId) {
         const el = document.getElementById(containerId);
-        if(el) el.classList.remove('hidden');
+        if(el) {
+            el.classList.remove('hidden');
+        } else {
+            console.error(`❌ ERRO FATAL: Container HTML '${containerId}' não encontrado! Verifique admin.html`);
+            // Se o container não existe, tenta jogar na lista genérica para não ficar tela preta
+            const fallback = document.getElementById('view-list');
+            if(fallback) fallback.classList.remove('hidden');
+        }
     }
 
-    // Carrega o JS Dinamicamente
+    // 4. CARREGAR JS
     if (moduleFile) {
         try {
-            // Cache busting para evitar código velho
             const module = await import(`${moduleFile}?v=${Date.now()}`);
             if (module.init) await module.init(viewName);
         } catch (e) {
-            console.error(e);
-            // alert(`Erro ao carregar ${viewName}: ${e.message}`); // Silenciado para não incomodar
+            console.warn(`⚠️ Módulo ${viewName} falhou ou não existe: ${e.message}`);
         }
     }
 };
