@@ -1,5 +1,5 @@
 import { db, auth } from '../app.js';
-import { podeTrabalhar } from '../wallet.js'; 
+import { podeTrabalhar } from './wallet.js'; 
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- VARIÁVEIS DE MEMÓRIA ---
