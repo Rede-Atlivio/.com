@@ -16,7 +16,6 @@ export async function init() {
     }
     document.getElementById('btn-bulk-delete').onclick = executeBulkDelete;
 
-    // Exporta Globais
     window.abrirModalVaga = abrirModalVaga;
     window.salvarVaga = salvarVaga;
     window.verCandidatos = verCandidatos;
@@ -88,21 +87,23 @@ window.verCandidatos = async (jobId, title) => {
     try {
         console.log(`🔎 Buscando candidatos para JobID: ${jobId}`);
         
-        // BUSCA 1: Pelo ID da vaga (Padrão)
+        // Tenta buscar por job_id
         let q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId));
         let snap = await getDocs(q);
 
-        // BUSCA 2: Se não achar, tenta buscar TODOS e filtrar no JS (Backup de segurança)
+        // Se não achar, tenta buscar TODOS e filtrar no JS (Backup de segurança)
         if(snap.empty) {
             console.warn("⚠️ Busca direta vazia. Tentando busca ampla...");
-            const qAll = query(collection(window.db, "job_applications"), orderBy("created_at", "desc"));
+            // Busca os últimos 50 currículos gerais
+            const qAll = query(collection(window.db, "job_applications"), orderBy("created_at", "desc"), limit(50));
             const snapAll = await getDocs(qAll);
+            // Filtra manualmente
             const filtrados = snapAll.docs.filter(d => d.data().job_id === jobId || d.data().vaga_id === jobId);
             
-            // Se achou na busca ampla, usamos ela
             if(filtrados.length > 0) {
                 console.log(`✅ Achamos ${filtrados.length} candidatos na busca ampla!`);
-                snap = { empty: false, size: filtrados.length, forEach: (cb) => filtrados.forEach(cb) };
+                // Cria um objeto fake de snapshot
+                snap = { size: filtrados.length, empty: false, forEach: (cb) => filtrados.forEach(cb) };
             }
         }
 
@@ -112,21 +113,19 @@ window.verCandidatos = async (jobId, title) => {
             html += `<p class="text-gray-500 text-center">Nenhum candidato encontrado no sistema para esta vaga.</p>`;
         } else {
             snap.forEach(d => {
-                const app = d.data(); // Se for snap real usa .data(), se for array usa direto
-                const dataReal = app.data ? app.data() : app; 
-                
-                const linkPdf = dataReal.resume_url || dataReal.cv_url || dataReal.file_url;
+                const app = d.data ? d.data() : d; // Suporte para snapshot fake
+                const linkPdf = app.resume_url || app.cv_url || app.file_url;
                 
                 html += `
                     <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 hover:border-blue-500 transition">
                         <div class="flex justify-between">
-                            <span class="font-bold text-white text-sm">${dataReal.user_name || 'Anônimo'}</span>
-                            <span class="text-xs text-gray-500">${dataReal.created_at?.toDate ? dataReal.created_at.toDate().toLocaleDateString() : 'Hoje'}</span>
+                            <span class="font-bold text-white text-sm">${app.user_name || 'Anônimo'}</span>
+                            <span class="text-xs text-gray-500">${app.created_at?.toDate ? app.created_at.toDate().toLocaleDateString() : 'Hoje'}</span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1 italic">"${dataReal.message || 'Sem mensagem'}"</p>
+                        <p class="text-xs text-gray-400 mt-1 italic">"${app.message || 'Sem mensagem'}"</p>
                         <div class="flex gap-2 mt-3">
                             ${linkPdf ? `<a href="${linkPdf}" target="_blank" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-red-500">📄 VER PDF</a>` : '<span class="text-gray-600 text-xs border border-gray-600 px-2 rounded">Sem PDF</span>'}
-                            <a href="https://wa.me/55${(dataReal.user_phone||'').replace(/\D/g,'')}" target="_blank" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">💬 WHATSAPP</a>
+                            <a href="https://wa.me/55${(app.user_phone||'').replace(/\D/g,'')}" target="_blank" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">💬 WHATSAPP</a>
                         </div>
                     </div>
                 `;
@@ -141,8 +140,6 @@ window.verCandidatos = async (jobId, title) => {
     }
 };
 
-// ... Restante das funções (abrirModalVaga, salvarVaga, etc) mantidas iguais ao V3 ...
-// (Copie as funções auxiliares do código anterior se precisar, elas não mudaram)
 function abrirModalVaga(id = null) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
