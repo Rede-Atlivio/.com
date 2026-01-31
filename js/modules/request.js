@@ -1,12 +1,13 @@
 import { db, auth } from '../app.js';
 import { podeTrabalhar } from '../wallet.js'; 
-import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, orderBy, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- VARIÁVEIS DE MEMÓRIA ---
 let mem_ProviderId = null;
 let mem_ProviderName = null;
 let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
+let mem_SelectedServiceTitle = ""; // Novo: Guarda o nome do serviço escolhido
 
 // --- GATILHOS ---
 auth.onAuthStateChanged(user => {
@@ -15,50 +16,98 @@ auth.onAuthStateChanged(user => {
     }
 });
 
-export function abrirModalSolicitacao(providerId, providerName, price) {
+// ============================================================================
+// 1. ABRIR O MODAL E CARREGAR LISTA DE SERVIÇOS
+// ============================================================================
+export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
-    mem_BasePrice = parseFloat(price);
-    mem_CurrentOffer = mem_BasePrice;
-
+    
     const modal = document.getElementById('request-modal');
     if(modal) {
         modal.classList.remove('hidden');
         
-        const elId = document.getElementById('target-provider-id');
-        const elPrice = document.getElementById('service-base-price');
-        const elInputVal = document.getElementById('req-value');
-        const elTotal = document.getElementById('calc-total-reserva');
+        // Elementos visuais
+        const elTitle = modal.querySelector('h3') || modal.querySelector('.font-bold'); // Tenta achar o título
+        if(elTitle) elTitle.innerText = `Contratar ${providerName}`;
+
+        const containerServicos = document.getElementById('service-selection-container');
         
-        if(elId) elId.value = providerId || "";
-        if(elPrice) elPrice.value = price || "0";
-        
-        if(elInputVal) {
-            elInputVal.value = mem_CurrentOffer.toFixed(2);
-            elInputVal.disabled = true;
-            elInputVal.style.color = "#000000"; 
-            elInputVal.style.opacity = "1";
-            elInputVal.style.fontWeight = "bold";
-            elInputVal.classList.remove('text-gray-500');
-            elInputVal.classList.add('text-black');
-            elInputVal.setAttribute("oninput", "window.validarOferta(this.value)");
+        // 1. BUSCA OS SERVIÇOS DO PRESTADOR PARA O DROPDOWN
+        try {
+            if(containerServicos) containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
+            
+            const docSnap = await getDoc(doc(db, "active_providers", providerId));
+            let htmlSelect = "";
+            let servicos = [];
+
+            if (docSnap.exists() && docSnap.data().services) {
+                servicos = docSnap.data().services;
+            }
+
+            // Se tiver serviços cadastrados, cria o dropdown
+            if (servicos.length > 0) {
+                htmlSelect = `
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Escolha o Serviço:</label>
+                    <select id="select-service-type" onchange="window.mudarServicoSelecionado(this)" class="w-full bg-blue-50 border border-blue-200 text-gray-800 text-sm rounded-lg p-3 font-bold mb-3 focus:ring-2 focus:ring-blue-500 outline-none">
+                        ${servicos.map((s, idx) => `
+                            <option value="${s.price}" data-title="${s.title || s.category}">
+                                ${s.title || s.category} - R$ ${s.price}
+                            </option>
+                        `).join('')}
+                    </select>
+                `;
+                // Define o preço inicial como o do primeiro item da lista
+                mem_BasePrice = parseFloat(servicos[0].price);
+                mem_SelectedServiceTitle = servicos[0].title || servicos[0].category;
+            } else {
+                // Fallback se não tiver lista (usa o preço do card)
+                htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2">Serviço Geral</p>`;
+                mem_BasePrice = parseFloat(initialPrice);
+                mem_SelectedServiceTitle = "Serviço Geral";
+            }
+
+            if(containerServicos) containerServicos.innerHTML = htmlSelect;
+
+        } catch (e) {
+            console.error("Erro ao carregar serviços:", e);
+            mem_BasePrice = parseFloat(initialPrice);
         }
 
-        if(elTotal) elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`;
-
+        // Configuração Inicial de Valores
+        mem_CurrentOffer = mem_BasePrice;
+        atualizarVisualModal();
         injetarBotoesOferta(modal);
 
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
             btn.innerText = "ENVIAR SOLICITAÇÃO 🚀"; 
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
             btn.onclick = enviarPropostaAgora; 
         } 
     }
 }
+
+// Função chamada quando o cliente muda o <select>
+window.mudarServicoSelecionado = (select) => {
+    const price = parseFloat(select.value);
+    const title = select.options[select.selectedIndex].getAttribute('data-title');
+    
+    mem_BasePrice = price;
+    mem_CurrentOffer = price; // Reseta a oferta para o preço base
+    mem_SelectedServiceTitle = title;
+    
+    atualizarVisualModal(); // Recalcula totais
+    
+    // Animação visual de feedback
+    const display = document.getElementById('calc-total-reserva');
+    if(display) {
+        display.classList.add('scale-110', 'text-blue-600');
+        setTimeout(() => display.classList.remove('scale-110', 'text-blue-600'), 200);
+    }
+};
 
 function injetarBotoesOferta(modal) {
     const containers = modal.querySelectorAll('.grid'); 
@@ -78,16 +127,7 @@ function injetarBotoesOferta(modal) {
 
 export function selecionarDesconto(percent) {
     const p = parseFloat(percent);
-    const elPrice = document.getElementById('service-base-price');
-    let base = 0;
-
-    if(elPrice && elPrice.value) {
-        base = parseFloat(elPrice.value);
-        mem_BasePrice = base; 
-    } else {
-        base = mem_BasePrice; 
-    }
-    
+    const base = mem_BasePrice; 
     mem_CurrentOffer = base + (base * p);
     atualizarVisualModal();
 }
@@ -100,11 +140,6 @@ export function ativarInputPersonalizado() {
 export function validarOferta(val) {
     let offer = parseFloat(val);
     if(isNaN(offer)) return;
-
-    if(mem_BasePrice === 0) {
-        const elPrice = document.getElementById('service-base-price');
-        if(elPrice) mem_BasePrice = parseFloat(elPrice.value);
-    }
 
     const minAllowed = mem_BasePrice * 0.80; 
     const maxAllowed = mem_BasePrice * 1.30; 
@@ -127,11 +162,16 @@ export function validarOferta(val) {
 
 function atualizarVisualModal() {
     const inputValor = document.getElementById('req-value');
-    if(inputValor) inputValor.value = mem_CurrentOffer.toFixed(2);
+    if(inputValor) {
+        inputValor.value = mem_CurrentOffer.toFixed(2);
+        inputValor.style.color = "black";
+        inputValor.disabled = true; // Trava de novo após selecionar botão
+    }
     
     const elTotal = document.getElementById('calc-total-reserva');
-    if(elTotal) { elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`; elTotal.style.color = "black"; }
+    if(elTotal) { elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`; }
     
+    // Chama validação para garantir cores corretas
     validarOferta(mem_CurrentOffer);
 }
 
@@ -161,6 +201,7 @@ export async function enviarPropostaAgora() {
             client_phone: user.phoneNumber || "Não informado", 
             provider_id: mem_ProviderId,
             provider_name: mem_ProviderName || "Prestador",
+            service_title: mem_SelectedServiceTitle, // SALVA O NOME DO SERVIÇO ESCOLHIDO
             status: 'pending', 
             base_price: mem_BasePrice,
             offer_value: mem_CurrentOffer,
@@ -181,13 +222,11 @@ export async function enviarPropostaAgora() {
         alert("✅ SOLICITAÇÃO ENVIADA!\nVerifique a aba 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
         
-        // REDIRECIONAMENTO ESTRATÉGICO
         const tabServicos = document.getElementById('tab-servicos');
         if(tabServicos) tabServicos.click(); 
 
         setTimeout(() => {
             if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
-            // Recarrega a lista explicitamente para garantir
             if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
         }, 500);
 
@@ -198,7 +237,7 @@ export async function enviarPropostaAgora() {
     }
 }
 
-// RADAR DO PRESTADOR
+// RADAR DO PRESTADOR (Mantido igual)
 export function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
@@ -230,6 +269,7 @@ function mostrarModalRadar(pedido) {
             </div>
             <div class="text-center py-6 bg-slate-900 relative">
                 <h1 class="text-5xl font-black text-white mb-2">R$ ${valor.toFixed(0)}</h1>
+                <p class="text-blue-300 font-bold text-sm mb-1">${pedido.service_title || 'Serviço'}</p>
                 <div class="flex justify-center gap-3 text-[10px] font-bold text-gray-400">
                     <span>Taxa: -R$ ${taxa.toFixed(2)}</span>
                     <span class="text-green-400">Lucro: R$ ${lucro.toFixed(2)}</span>
@@ -257,8 +297,8 @@ export async function aceitarPedidoRadar(orderId) {
     if (!podeTrabalhar()) return;
 
     try {
-        await updateDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() });
-        await updateDoc(doc(db, "chats", orderId), { status: 'active' });
+        await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
+        await setDoc(doc(db, "chats", orderId), { status: 'active' }, { merge: true });
 
         const tabServicos = document.getElementById('tab-servicos');
         if(tabServicos) tabServicos.click();
@@ -274,12 +314,11 @@ export async function aceitarPedidoRadar(orderId) {
 export async function recusarPedidoReq(orderId) {
     fecharModalRadar();
     if(!confirm("Recusar?")) return;
-    await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
+    await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
 }
 
-// ⚠️ FUNÇÃO DE COMPATIBILIDADE (RESTAURADA)
+// Compatibilidade
 export async function carregarPedidosEmAndamento() {
-    console.log("🔄 Redirecionamento de compatibilidade ativado.");
     if (window.iniciarMonitoramentoPedidos) {
         window.iniciarMonitoramentoPedidos();
     }
@@ -294,4 +333,4 @@ window.enviarPropostaAgora = enviarPropostaAgora;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
-window.carregarPedidosEmAndamento = carregarPedidosEmAndamento; // ✅ AGORA SIM!
+window.carregarPedidosEmAndamento = carregarPedidosEmAndamento;
