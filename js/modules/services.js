@@ -1,5 +1,5 @@
 import { db, auth } from '../app.js';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
@@ -63,7 +63,7 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // ORDENAÇÃO: Demo no final -> Online primeiro -> Melhor Avaliação
+        // Ordenação Inteligente
         servicos.sort((a, b) => {
             if (!!a.is_demo !== !!b.is_demo) return a.is_demo ? 1 : -1;
             if (a.is_online !== b.is_online) return a.is_online ? -1 : 1;
@@ -116,6 +116,7 @@ function renderizarCards(servicos, container) {
                 ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
                 : `window.verPerfilCompleto('${user.id}')`;
 
+            // Agora chama o modal passando os dados corretos
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
                 : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
@@ -176,12 +177,12 @@ export async function carregarPedidosAtivos() {
 
         pedidos.forEach(p => {
             container.innerHTML += `
-                <div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn hover:bg-blue-50 transition">
+                <div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
                     <div>
                         <h3 class="font-bold text-gray-800 text-sm">${p.provider_name}</h3>
-                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • <span class="uppercase text-blue-600 font-bold">${p.status}</span></p>
+                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • ${p.status}</p>
                     </div>
-                    <span class="bg-blue-100 text-blue-600 p-2 rounded-full text-xs">💬 Chat</span>
+                    <span>💬</span>
                 </div>
             `;
         });
@@ -222,22 +223,22 @@ export async function carregarHistorico() {
 
 export function switchServiceSubTab(tabName) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
-        const view = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`subtab-${t}-btn`);
-        if(view) view.classList.add('hidden');
-        if(btn) {
-            btn.classList.remove('active', 'text-blue-900', 'border-blue-600');
-            btn.classList.add('text-gray-400');
+        const elView = document.getElementById(`view-${t}`);
+        const elBtn = document.getElementById(`subtab-${t}-btn`);
+        if(elView) elView.classList.add('hidden');
+        if(elBtn) {
+            elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
+            elBtn.classList.add('text-gray-400');
         }
     });
     
-    const activeView = document.getElementById(`view-${tabName}`);
-    const activeBtn = document.getElementById(`subtab-${tabName}-btn`);
+    const targetView = document.getElementById(`view-${tabName}`);
+    const targetBtn = document.getElementById(`subtab-${tabName}-btn`);
     
-    if(activeView) activeView.classList.remove('hidden');
-    if(activeBtn) {
-        activeBtn.classList.remove('text-gray-400');
-        activeBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
+    if(targetView) targetView.classList.remove('hidden');
+    if(targetBtn) {
+        targetBtn.classList.remove('text-gray-400');
+        targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
 
     if(tabName === 'contratar') carregarServicos();
@@ -251,17 +252,17 @@ export function switchServiceSubTab(tabName) {
 
 export function switchProviderSubTab(tabName) {
     ['radar', 'ativos', 'historico'].forEach(t => {
-        const view = document.getElementById(`pview-${t}`);
-        const btn = document.getElementById(`ptab-${t}-btn`);
-        if(view) view.classList.add('hidden');
-        if(btn) btn.classList.remove('active', 'text-blue-900', 'border-blue-600');
+        const elView = document.getElementById(`pview-${t}`);
+        const elBtn = document.getElementById(`ptab-${t}-btn`);
+        if(elView) elView.classList.add('hidden');
+        if(elBtn) elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
     });
     
-    const activeView = document.getElementById(`pview-${tabName}`);
-    const activeBtn = document.getElementById(`ptab-${tabName}-btn`);
-    
-    if(activeView) activeView.classList.remove('hidden');
-    if(activeBtn) activeBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
+    const targetView = document.getElementById(`pview-${tabName}`);
+    const targetBtn = document.getElementById(`ptab-${tabName}-btn`);
+
+    if(targetView) targetView.classList.remove('hidden');
+    if(targetBtn) targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
 
     if(tabName === 'ativos') carregarPedidosPrestador();
     if(tabName === 'historico') carregarHistoricoPrestador();
@@ -350,50 +351,54 @@ export async function abrirConfiguracaoServicos() {
         if(servicos.length > 0) {
             currentHtml = `<div class="bg-gray-50 p-3 rounded-xl mb-4 max-h-48 overflow-y-auto space-y-2 border border-gray-100 custom-scrollbar">
                 <p class="text-[9px] font-bold text-gray-400 uppercase sticky top-0 bg-gray-50 z-10">Seus Serviços</p>
-                ${servicos.map((s, index) => `
+                ${servicos.map((s, index) => {
+                    const safeObj = JSON.stringify(s).replace(/"/g, '&quot;');
+                    return `
                     <div class="flex flex-col bg-white p-2 rounded border border-gray-200">
                         <div class="flex justify-between items-center">
                             <span class="text-xs font-bold text-gray-800">${s.title || s.category}</span>
                             <div class="flex items-center gap-2">
                                 <span class="text-xs font-black text-green-600">R$ ${s.price}</span>
+                                <button onclick="window.prepararEdicao(${safeObj})" class="text-blue-500 font-bold text-xs hover:bg-blue-50 px-2 rounded">✏️</button>
                                 <button onclick="window.removerServico('${s.category}', ${s.price}, '${s.title || ''}')" class="text-red-500 font-bold text-xs hover:bg-red-50 px-2 rounded">🗑️</button>
                             </div>
                         </div>
                         ${s.description ? `<p class="text-[10px] text-gray-500 mt-1 truncate">${s.description}</p>` : ''}
                         ${s.title ? `<span class="text-[8px] text-blue-400 bg-blue-50 w-fit px-1 rounded mt-1">${s.category}</span>` : ''}
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>`;
         }
     }
 
     const options = CATEGORIAS_ATIVAS.map(c => `<option value="${c.label}" data-min="${c.minPrice}">${c.label} (Min: R$ ${c.minPrice})</option>`).join('');
 
-    // FORMULÁRIO COM CAMPOS NOVOS
     content.innerHTML = `
         <h3 class="text-lg font-black text-blue-900 uppercase mb-2 text-center">Gerenciar Serviços</h3>
         ${currentHtml}
-        <div class="space-y-3 pt-2 border-t border-gray-100">
-            <p class="text-[10px] font-bold text-blue-600 uppercase">Adicionar Novo</p>
+        <div class="space-y-3 pt-2 border-t border-gray-100 relative">
+            <p id="form-mode-title" class="text-[10px] font-bold text-blue-600 uppercase">Adicionar Novo</p>
             
+            <input type="hidden" id="prov-old-data" value="">
+
             <div>
                 <input type="text" id="prov-title" class="w-full border p-2 rounded-lg text-sm bg-gray-50 focus:bg-white transition" placeholder="Título (ex: Faxina Completa)">
             </div>
-
             <div>
                 <select id="prov-cat" class="w-full border p-2 rounded-lg text-sm bg-white" onchange="window.atualizarMinimo(this)">${options}</select>
             </div>
-
             <div>
                 <textarea id="prov-desc" rows="2" class="w-full border p-2 rounded-lg text-sm bg-gray-50 focus:bg-white resize-none" placeholder="Detalhes (ex: Inclui vidros e varanda)"></textarea>
             </div>
-
             <div>
                 <input type="number" id="prov-price" class="w-full border p-2 rounded-lg text-sm font-bold text-green-600" placeholder="0.00">
                 <p id="msg-min-price" class="text-[9px] text-red-500 mt-1 font-bold hidden"></p>
             </div>
 
-            <button onclick="salvarServicoPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">ADICIONAR SERVIÇO</button>
+            <div class="flex gap-2">
+                <button id="btn-cancel-edit" onclick="window.cancelarEdicao()" class="hidden w-1/3 bg-gray-200 text-gray-600 py-3 rounded-xl font-bold">CANCELAR</button>
+                <button id="btn-save-service" onclick="salvarServicoPrestador()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">ADICIONAR SERVIÇO</button>
+            </div>
         </div>
     `;
     setTimeout(() => {
@@ -402,7 +407,45 @@ export async function abrirConfiguracaoServicos() {
     }, 100);
 }
 
-// REMOÇÃO INTELIGENTE (Busca pelo índice ou match perfeito não é necessário se filtrarmos)
+// --- FUNÇÕES DE EDIÇÃO ---
+
+window.prepararEdicao = (obj) => {
+    document.getElementById('prov-title').value = obj.title || "";
+    document.getElementById('prov-desc').value = obj.description || "";
+    document.getElementById('prov-price').value = obj.price;
+    
+    const select = document.getElementById('prov-cat');
+    for(let i=0; i<select.options.length; i++) {
+        if(select.options[i].value === obj.category) {
+            select.selectedIndex = i;
+            break;
+        }
+    }
+    
+    document.getElementById('prov-old-data').value = JSON.stringify(obj);
+
+    document.getElementById('form-mode-title').innerText = "Editando Serviço";
+    document.getElementById('btn-save-service').innerText = "SALVAR ALTERAÇÕES";
+    document.getElementById('btn-save-service').classList.replace('bg-blue-600', 'bg-green-600');
+    document.getElementById('btn-cancel-edit').classList.remove('hidden');
+    
+    document.getElementById('prov-title').focus();
+};
+
+window.cancelarEdicao = () => {
+    document.getElementById('prov-title').value = "";
+    document.getElementById('prov-desc').value = "";
+    document.getElementById('prov-price').value = "";
+    document.getElementById('prov-old-data').value = "";
+    
+    document.getElementById('form-mode-title').innerText = "Adicionar Novo";
+    document.getElementById('btn-save-service').innerText = "ADICIONAR SERVIÇO";
+    document.getElementById('btn-save-service').classList.replace('bg-green-600', 'bg-blue-600');
+    document.getElementById('btn-cancel-edit').classList.add('hidden');
+};
+
+// --- FUNÇÕES CRUD ---
+
 window.removerServico = async (cat, price, title) => {
     if(!confirm(`Remover este serviço?`)) return;
     
@@ -410,21 +453,16 @@ window.removerServico = async (cat, price, title) => {
     const ref = doc(db, "active_providers", uid);
 
     try {
-        // Método seguro: Baixa o array, filtra no JS e sobe de volta
-        // Isso evita falhas do arrayRemove com objetos complexos
         const snap = await getDoc(ref);
         if(snap.exists()) {
             let services = snap.data().services || [];
-            
-            // Filtra removendo o item que bate com os critérios
             const newServices = services.filter(s => {
-                // Se tiver título, usa ele como chave forte. Se não, usa cat+price (legado)
                 if (title && s.title) return s.title !== title;
                 return !(s.category === cat && parseFloat(s.price) === parseFloat(price));
             });
 
             await updateDoc(ref, { services: newServices });
-            abrirConfiguracaoServicos();
+            abrirConfiguracaoServicos(); 
         }
     } catch(e) { alert("Erro ao remover: " + e.message); }
 };
@@ -443,6 +481,7 @@ export async function salvarServicoPrestador() {
     const priceInput = document.getElementById('prov-price');
     const titleInput = document.getElementById('prov-title');
     const descInput = document.getElementById('prov-desc');
+    const oldDataInput = document.getElementById('prov-old-data');
     
     if(!select || !priceInput) return;
 
@@ -452,33 +491,43 @@ export async function salvarServicoPrestador() {
     const description = descInput.value.trim();
     const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
 
-    // Validação
-    if(!title) return alert("❌ Por favor, dê um título ao seu serviço.\nEx: 'Show de Mágica', 'Faxina Padrão'");
-    
+    if(!title) return alert("❌ Digite um título para o serviço.");
     if(isNaN(price) || price < minPrice) {
         alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
         return;
     }
 
+    const newService = { 
+        title: title,
+        category: category, 
+        price: price, 
+        description: description,
+        status: 'ativo' 
+    };
+
     try {
         const ref = doc(db, "active_providers", user.uid);
-        const newService = { 
-            title: title,
-            category: category, 
-            price: price, 
-            description: description,
-            status: 'ativo' 
-        };
         
-        try {
-            await updateDoc(ref, { services: arrayUnion(newService), is_online: true });
-        } catch(e) {
-            await setDoc(ref, { uid: user.uid, nome: user.displayName, services: [newService], is_online: true, rating_avg: 5.0, status: 'aprovado' });
+        // Verifica se é uma EDIÇÃO (se tem dados velhos guardados)
+        if (oldDataInput.value) {
+            const oldService = JSON.parse(oldDataInput.value);
+            // Remove o velho primeiro
+            await updateDoc(ref, { services: arrayRemove(oldService) });
         }
-        alert("✅ Serviço adicionado!");
-        abrirConfiguracaoServicos();
+
+        // Adiciona o novo
+        await updateDoc(ref, { services: arrayUnion(newService), is_online: true });
+        
+        alert("✅ Serviço salvo com sucesso!");
+        abrirConfiguracaoServicos(); // Recarrega a lista
     } catch(e) { 
-        alert("Erro ao salvar: " + e.message); 
+        // Se falhar (ex: doc não existe), tenta criar
+        try {
+            await setDoc(ref, { uid: user.uid, nome: user.displayName, services: [newService], is_online: true, rating_avg: 5.0, status: 'aprovado' });
+            abrirConfiguracaoServicos();
+        } catch(err2) {
+            alert("Erro ao salvar: " + e.message); 
+        }
     }
 }
 
