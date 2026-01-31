@@ -499,8 +499,33 @@
     </div>
 
     <div id="modal-apply" class="fixed inset-0 bg-black/80 z-[60] hidden items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative">
-            <button onclick="window.fecharModalCandidatura()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4 relative">
+        <button onclick="window.fecharModalCandidatura()" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-2xl">&times;</button>
+        
+        <h3 class="text-xl font-black text-blue-900 mb-1">Nova Candidatura</h3>
+        <p class="text-sm text-gray-500 mb-4">Vaga: <span id="apply-job-title" class="font-bold text-blue-600">...</span></p>
+        <input type="hidden" id="apply-job-id">
+
+        <div class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">MENSAGEM AO RECRUTADOR</label>
+                <textarea id="apply-message" class="w-full border border-gray-200 rounded-lg p-3 text-sm focus:border-blue-500 outline-none" placeholder="Olá, gostaria de me candidatar..."></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-xs font-bold text-gray-500 mb-1">ANEXAR CURRÍCULO (PDF)</label>
+                <input type="file" id="apply-file" accept="application/pdf" class="w-full text-xs text-gray-500 border border-gray-200 rounded-lg p-2 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                <p class="text-[9px] text-red-500 font-bold mt-1 flex items-center gap-1">
+                    <span>⚠️</span> Formato obrigatório: Apenas arquivos .PDF
+                </p>
+            </div>
+            
+            <button id="btn-submit-proposal" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg">
+                ENVIAR PROPOSTA 🚀
+            </button>
+        </div>
+    </div>
+</div>
             
             <h3 class="text-xl font-black text-blue-900 mb-1">Nova Candidatura</h3>
             <p class="text-sm text-gray-500 mb-4">Vaga: <span id="apply-job-title" class="font-bold text-blue-600">...</span></p>
