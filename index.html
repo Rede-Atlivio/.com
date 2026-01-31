@@ -445,16 +445,36 @@
                 <input type="text" id="req-local" placeholder="Endereço ou Ponto de Encontro" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold outline-none focus:border-blue-500">
             </div>
 
-            <div class="grid grid-cols-4 gap-2 mb-3"></div>
-            
-            <div class="bg-gray-100 p-3 rounded-xl text-center mb-3 border border-gray-200">
-                <p class="text-[10px] text-gray-500 uppercase font-bold">Valor da Proposta</p>
-                <div class="flex items-center justify-center gap-1">
-                    <span class="text-lg font-bold text-gray-400">R$</span>
-                    <input type="number" id="req-value" class="text-3xl font-black text-center bg-transparent w-32 outline-none text-black p-0 m-0" value="0.00">
+            <div class="border-t border-gray-100 pt-2 mb-3"></div>
+
+            <div>
+                <p class="text-[10px] font-bold text-blue-900 uppercase mb-3">Quanto você quer ofertar?</p>
+                
+                <div class="mb-4">
+                    <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="window.selecionarDesconto(-0.05)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
+                        <button onclick="window.selecionarDesconto(-0.10)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
+                        <button onclick="window.selecionarDesconto(-0.15)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
+                    </div>
                 </div>
-                <p id="calc-total-reserva" class="hidden text-xs font-bold text-blue-600 mt-1">R$ 0.00</p>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="window.ativarInputPersonalizado()">
+                            <span class="text-xs font-bold text-gray-700">✏️ Outro Valor</span>
+                        </label>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500 font-bold text-sm">R$</span>
+                        <input type="number" id="req-value" placeholder="0,00" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-800 bg-white outline-none transition" oninput="window.validarOferta(this.value)">
+                    </div>
+                    <p id="calc-total-reserva" class="hidden text-xs font-bold text-blue-600 mt-1 text-center">R$ 0.00</p>
+                </div>
             </div>
+
+        </div>
 
             <button id="btn-confirm-req" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 text-sm uppercase">
                 ENVIAR PROPOSTA
