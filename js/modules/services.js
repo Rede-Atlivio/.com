@@ -1,5 +1,6 @@
 import { db, auth } from '../app.js';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 👇 ADICIONEI 'getDocs' AQUI NO IMPORT
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 📌 CATEGORIAS
 export const CATEGORIAS_ATIVAS = [
@@ -28,7 +29,6 @@ export async function carregarServicos(filtroCategoria = null) {
     
     if (!container) return;
 
-    // Filtros
     if(containerFiltros && containerFiltros.innerHTML.trim() === "") {
         containerFiltros.innerHTML = `
             <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
@@ -57,7 +57,6 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // Ordenação
         servicos.sort((a, b) => {
             if (a.is_demo !== b.is_demo) return a.is_demo ? 1 : -1;
             return (b.rating_avg || 0) - (a.rating_avg || 0);
@@ -87,15 +86,12 @@ function renderizarCards(servicos, container) {
     }
 
     servicos.forEach(user => {
-        // --- 🛡️ VACINA ANTI-CRASH (SEGURANÇA DE DADOS) ---
-        // Se o usuário não tiver serviços cadastrados, cria um fake para não quebrar
         const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
         const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
         
         const nomeProf = user.nome_profissional || user.nome || "Prestador";
         const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
         const categoriaDisplay = mainService.category || 'Serviços Gerais';
-        // --------------------------------------------------
 
         const isOnline = user.is_online === true;
         const grayscaleClass = isOnline ? "" : "grayscale opacity-75";
@@ -118,37 +114,36 @@ function renderizarCards(servicos, container) {
         }
 
         container.innerHTML += `
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${grayscaleClass} transition-all duration-300 hover:shadow-md animate-fadeIn">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${grayscaleClass} transition-all duration-300 hover:shadow-md animate-fadeIn flex flex-col h-full">
                 ${demoBadge}
-                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-28 bg-gray-200 relative cursor-pointer group">
+                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-24 bg-gray-200 relative cursor-pointer group">
                     <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Capa">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 flex items-center gap-2">
                         <img src="${user.foto_perfil || 'https://ui-avatars.com/api/?name='+nomeProf}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
                         <div>
-                            <h3 class="text-white font-bold text-sm leading-tight text-shadow">${nomeProf}</h3>
-                            <div class="flex items-center gap-1 text-[10px] text-yellow-300">
+                            <h3 class="text-white font-bold text-xs leading-tight text-shadow line-clamp-1">${nomeProf}</h3>
+                            <div class="flex items-center gap-1 text-[8px] text-yellow-300">
                                 <span>${starsHtml}</span> <span class="text-white/80">(${ratingCount})</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="p-4">
+                <div class="p-3 flex flex-col flex-1 justify-between">
                     <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <p class="text-xs font-bold text-gray-600 uppercase truncate max-w-[150px]">${categoriaDisplay}</p>
-                            <p class="text-[10px] text-gray-400 line-clamp-1">${user.bio || 'Pronto para atender.'}</p>
+                        <div class="flex-1 pr-1">
+                            <p class="text-[10px] font-bold text-gray-600 uppercase truncate">${categoriaDisplay}</p>
+                            <p class="text-[9px] text-gray-400 line-clamp-1">${user.bio || 'Pronto.'}</p>
                         </div>
-                        <div class="text-right">
-                            <span class="block font-black text-green-600 text-sm">${precoDisplay}</span>
+                        <div class="text-right whitespace-nowrap">
+                            <span class="block font-black text-green-600 text-xs">${precoDisplay}</span>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
-                        <div class="flex items-center gap-1.5 flex-1">
-                            <span class="w-2 h-2 rounded-full ${statusDot}"></span>
-                            <span class="text-[10px] font-bold text-gray-500 uppercase">${statusText}</span>
+                    <div class="flex items-center gap-2 pt-2 border-t border-gray-50 mt-auto">
+                        <div class="flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
                         </div>
-                        <button onclick="${btnAcao}" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-slate-800 transition active:scale-95 flex-1 whitespace-nowrap">
+                        <button onclick="${btnAcao}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow-lg hover:bg-slate-800 transition active:scale-95 flex-1 whitespace-nowrap">
                             ${btnTexto}
                         </button>
                     </div>
@@ -159,7 +154,7 @@ function renderizarCards(servicos, container) {
 }
 
 // ============================================================================
-// 2. MEUS PEDIDOS & HISTÓRICO
+// 2. MEUS PEDIDOS & HISTÓRICO (AGORA FUNCIONANDO)
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('meus-pedidos-andamento');
@@ -186,7 +181,7 @@ export async function carregarPedidosAtivos() {
         pedidos.forEach(pedido => {
             let statusLabel = "Pendente";
             if(pedido.status === 'in_progress') statusLabel = "Em Andamento";
-            if(pedido.status === 'accepted') statusLabel = "Aceito - Aguardando";
+            if(pedido.status === 'accepted') statusLabel = "Aceito";
 
             container.innerHTML += `
                 <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer hover:bg-blue-50 flex justify-between items-center animate-fadeIn">
@@ -228,35 +223,42 @@ async function carregarHistorico() {
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
 
     const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), 
-        where("client_id", "==", uid), 
-        where("status", "==", "completed"),
-        orderBy("completed_at", "desc")
-    );
-
-    const snap = await getDocs(q);
-    container.innerHTML = "";
     
-    if(snap.empty) {
-        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum serviço finalizado.</p>`;
-        return;
-    }
+    // CORREÇÃO: getDocs agora está importado
+    try {
+        const q = query(collection(db, "orders"), 
+            where("client_id", "==", uid), 
+            where("status", "==", "completed"),
+            orderBy("completed_at", "desc")
+        );
 
-    snap.forEach(d => {
-        const order = d.data();
-        container.innerHTML += `
-            <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
-                <div>
-                    <p class="font-bold text-xs text-gray-700">${order.provider_name}</p>
-                    <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
+        const snap = await getDocs(q);
+        container.innerHTML = "";
+        
+        if(snap.empty) {
+            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum serviço finalizado.</p>`;
+            return;
+        }
+
+        snap.forEach(d => {
+            const order = d.data();
+            container.innerHTML += `
+                <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
+                    <div>
+                        <p class="font-bold text-xs text-gray-700">${order.provider_name}</p>
+                        <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
+                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[9px] text-blue-600 font-bold underline hover:text-blue-800">Avaliar ⭐</button>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                    <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[9px] text-blue-600 font-bold underline hover:text-blue-800">Avaliar ⭐</button>
-                </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    } catch(e) {
+        console.error("Erro histórico:", e);
+        container.innerHTML = `<p class="text-red-500 text-xs">Erro ao carregar.</p>`;
+    }
 }
 
 window.carregarServicos = carregarServicos;
