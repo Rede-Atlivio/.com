@@ -410,8 +410,7 @@
         </div>
     </div>
 </div>
-
-    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
     <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         
         <input type="hidden" id="target-provider-id">
@@ -422,12 +421,13 @@
                 <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
                 <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
             </div>
-            <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
+            <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold px-2">&times;</button>
         </div>
 
         <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
 
             <div id="service-selection-container" class="mb-4 w-full"></div>
+
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div>
                     <label class="text-[10px] font-bold text-gray-500 uppercase">Data</label>
@@ -461,7 +461,6 @@
         </div>
     </div>
 </div>
-
             <div class="p-6 space-y-5 overflow-y-auto flex-1">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
