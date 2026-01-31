@@ -20,19 +20,15 @@ export const CATEGORIAS_ATIVAS = [
 let servicesUnsubscribe = null;
 
 // ============================================================================
-// 1. VITRINE (OFERTA) - CORRIGIDA
+// 1. VITRINE (OFERTA)
 // ============================================================================
 export async function carregarServicos(filtroCategoria = null) {
-    // Tenta achar o container novo, se não, usa o antigo
     const container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
-    const containerFiltros = document.getElementById('category-filters'); // ID corrigido conforme HTML novo
+    const containerFiltros = document.getElementById('category-filters');
     
-    if (!container) {
-        console.error("❌ ERRO CRÍTICO: Container da vitrine não encontrado no HTML.");
-        return;
-    }
+    if (!container) return;
 
-    // Renderiza Filtros se necessário
+    // Filtros
     if(containerFiltros && containerFiltros.innerHTML.trim() === "") {
         containerFiltros.innerHTML = `
             <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
@@ -61,7 +57,7 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // Ordenação Inteligente
+        // Ordenação
         servicos.sort((a, b) => {
             if (a.is_demo !== b.is_demo) return a.is_demo ? 1 : -1;
             return (b.rating_avg || 0) - (a.rating_avg || 0);
@@ -91,6 +87,16 @@ function renderizarCards(servicos, container) {
     }
 
     servicos.forEach(user => {
+        // --- 🛡️ VACINA ANTI-CRASH (SEGURANÇA DE DADOS) ---
+        // Se o usuário não tiver serviços cadastrados, cria um fake para não quebrar
+        const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
+        const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
+        
+        const nomeProf = user.nome_profissional || user.nome || "Prestador";
+        const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
+        const categoriaDisplay = mainService.category || 'Serviços Gerais';
+        // --------------------------------------------------
+
         const isOnline = user.is_online === true;
         const grayscaleClass = isOnline ? "" : "grayscale opacity-75";
         const statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
@@ -102,7 +108,7 @@ function renderizarCards(servicos, container) {
         const starsHtml = "⭐".repeat(Math.floor(rating));
 
         let btnTexto = "SOLICITAR SERVIÇO";
-        let btnAcao = `window.abrirModalSolicitacao('${user.id}', '${user.nome_profissional || user.nome}', '${user.services[0]?.price || 0}')`;
+        let btnAcao = `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price || 0}')`;
         let demoBadge = "";
 
         if (user.is_demo) {
@@ -111,8 +117,6 @@ function renderizarCards(servicos, container) {
             demoBadge = `<div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-1 rounded uppercase shadow-sm z-10">Demonstração</div>`;
         }
 
-        const mainService = user.services && user.services.length > 0 ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
-
         container.innerHTML += `
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${grayscaleClass} transition-all duration-300 hover:shadow-md animate-fadeIn">
                 ${demoBadge}
@@ -120,9 +124,9 @@ function renderizarCards(servicos, container) {
                     <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Capa">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 flex items-center gap-2">
-                        <img src="${user.foto_perfil || 'https://ui-avatars.com/api/?name='+user.nome}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
+                        <img src="${user.foto_perfil || 'https://ui-avatars.com/api/?name='+nomeProf}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
                         <div>
-                            <h3 class="text-white font-bold text-sm leading-tight text-shadow">${user.nome_profissional || user.nome}</h3>
+                            <h3 class="text-white font-bold text-sm leading-tight text-shadow">${nomeProf}</h3>
                             <div class="flex items-center gap-1 text-[10px] text-yellow-300">
                                 <span>${starsHtml}</span> <span class="text-white/80">(${ratingCount})</span>
                             </div>
@@ -132,11 +136,11 @@ function renderizarCards(servicos, container) {
                 <div class="p-4">
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="text-xs font-bold text-gray-600 uppercase truncate max-w-[150px]">${mainService.category}</p>
+                            <p class="text-xs font-bold text-gray-600 uppercase truncate max-w-[150px]">${categoriaDisplay}</p>
                             <p class="text-[10px] text-gray-400 line-clamp-1">${user.bio || 'Pronto para atender.'}</p>
                         </div>
                         <div class="text-right">
-                            <span class="block font-black text-green-600 text-sm">R$ ${mainService.price}</span>
+                            <span class="block font-black text-green-600 text-sm">${precoDisplay}</span>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
@@ -158,7 +162,7 @@ function renderizarCards(servicos, container) {
 // 2. MEUS PEDIDOS & HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
-    const container = document.getElementById('meus-pedidos-andamento'); // ID CORRIGIDO
+    const container = document.getElementById('meus-pedidos-andamento');
     if (!container || !auth.currentUser) return;
 
     container.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600 mt-2"></div>`;
@@ -198,14 +202,12 @@ export async function carregarPedidosAtivos() {
 }
 
 export function switchServiceSubTab(tabName) {
-    // Esconde todas as views
     ['contratar', 'andamento', 'historico'].forEach(t => {
         document.getElementById(`view-${t}`).classList.add('hidden');
         document.getElementById(`subtab-${t}-btn`).classList.remove('active', 'text-blue-900', 'border-blue-600');
         document.getElementById(`subtab-${t}-btn`).classList.add('text-gray-400');
     });
 
-    // Mostra a view certa
     const viewAlvo = document.getElementById(`view-${tabName}`);
     const btnAlvo = document.getElementById(`subtab-${tabName}-btn`);
     
@@ -215,14 +217,13 @@ export function switchServiceSubTab(tabName) {
         btnAlvo.classList.remove('text-gray-400');
     }
 
-    // Carrega dados específicos
     if(tabName === 'contratar') carregarServicos();
     if(tabName === 'andamento') carregarPedidosAtivos();
     if(tabName === 'historico') carregarHistorico();
 }
 
 async function carregarHistorico() {
-    const container = document.getElementById('meus-pedidos-historico'); // ID CORRIGIDO
+    const container = document.getElementById('meus-pedidos-historico');
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
 
@@ -258,7 +259,6 @@ async function carregarHistorico() {
     });
 }
 
-// EXPORTAÇÕES GLOBAIS
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
 window.switchServiceSubTab = switchServiceSubTab;
