@@ -1,119 +1,137 @@
-import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db, auth, storage } from '../app.js';
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 1. ABRIR MODAL E CARREGAR DADOS
-export async function abrirConfiguracoes() {
-    const user = window.auth.currentUser;
-    if (!user) return alert("Você precisa estar logado.");
+// ============================================================================
+// 1. CARREGAMENTO E VISUALIZAÇÃO
+// ============================================================================
+export async function carregarDadosPerfil() {
+    const user = auth.currentUser;
+    if (!user) return;
 
-    const modal = document.getElementById('modal-settings');
+    // Header (Foto pequena no menu)
+    const imgHeader = document.getElementById('header-profile-img');
+    if(imgHeader) {
+        imgHeader.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=0D8ABC&color=fff`;
+    }
+
+    const docRef = doc(db, "usuarios", user.uid);
+    const docSnap = await getDoc(docRef);
     
-    // Elementos Básicos
-    const img = document.getElementById('settings-pic');
-    const nome = document.getElementById('set-nome');
-    const phone = document.getElementById('set-phone');
-    const uidLabel = document.getElementById('set-uid');
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        
+        // Inputs do Formulário
+        if(document.getElementById('input-nome')) document.getElementById('input-nome').value = data.nome || user.displayName;
+        if(document.getElementById('input-bio')) document.getElementById('input-bio').value = data.bio || "";
+        if(document.getElementById('input-pix')) document.getElementById('input-pix').value = data.pix || "";
+        
+        // Link de Afiliado (Visual)
+        const refDisplay = document.getElementById('ref-link-display');
+        if(refDisplay) refDisplay.innerText = `${window.location.origin}/?ref=${user.uid}`;
 
-    // Elementos do PIX (Novos IDs)
-    const pixChave = document.getElementById('set-pix-chave');
-    const pixBanco = document.getElementById('set-pix-banco');
-    const pixCpf = document.getElementById('set-pix-cpf');
-    const pixNome = document.getElementById('set-pix-nome');
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    // Preenchimento inicial visual (cache ou auth)
-    if(uidLabel) uidLabel.innerText = user.uid.substring(0, 6) + "...";
-    if(img) img.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'User'}&background=random`;
-    if(nome) nome.value = user.displayName || "";
-    if(phone) phone.value = user.phoneNumber || "";
-
-    // Busca dados completos no Firestore
-    try {
-        const docSnap = await getDoc(doc(window.db, "usuarios", user.uid));
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            
-            // Dados Pessoais
-            if (data.nome && nome) nome.value = data.nome;
-            if (data.whatsapp && phone) phone.value = data.whatsapp;
-            if (data.foto_perfil && img) img.src = data.foto_perfil;
-
-            // Dados Financeiros (PIX)
-            // Tenta pegar os campos novos, se não existirem, deixa vazio
-            if (pixChave) pixChave.value = data.pix_chave || ""; 
-            if (pixBanco) pixBanco.value = data.pix_banco || "";
-            if (pixCpf) pixCpf.value = data.pix_cpf || "";
-            if (pixNome) pixNome.value = data.pix_nome || "";
+        // Capa (Preview)
+        const bannerPreview = document.getElementById('banner-preview');
+        if(bannerPreview && data.cover_image) {
+            bannerPreview.src = data.cover_image;
         }
-    } catch (e) {
-        console.error("Erro ao carregar perfil:", e);
     }
 }
 
-// 2. SALVAR DADOS
-export async function salvarConfiguracoes() {
-    const user = window.auth.currentUser;
-    if (!user) return;
+// ============================================================================
+// 2. UPLOAD DE CAPA (MARKETING)
+// ============================================================================
+export async function uploadCapa() {
+    const fileInput = document.getElementById('input-banner');
+    if (!fileInput.files.length) return;
 
-    const btn = document.getElementById('btn-save-settings');
-    const nome = document.getElementById('set-nome').value.trim();
+    const file = fileInput.files[0];
+    const user = auth.currentUser;
+    const btn = document.getElementById('btn-upload-banner');
     
-    // Captura os dados do PIX
-    const pixChave = document.getElementById('set-pix-chave')?.value.trim() || "";
-    const pixBanco = document.getElementById('set-pix-banco')?.value.trim() || "";
-    const pixCpf = document.getElementById('set-pix-cpf')?.value.trim() || "";
-    const pixNome = document.getElementById('set-pix-nome')?.value.trim() || "";
-
-    if (nome.length < 3) return alert("Nome muito curto.");
-
-    const originalText = btn.innerText;
-    btn.innerText = "SALVANDO...";
-    btn.disabled = true;
+    btn.innerText = "⏳"; btn.disabled = true;
 
     try {
-        const updates = {
-            nome: nome,
-            nome_profissional: nome,
-            // Salva os 4 campos no banco
-            pix_chave: pixChave,
-            pix_banco: pixBanco,
-            pix_cpf: pixCpf,
-            pix_nome: pixNome,
-            updated_at: serverTimestamp()
-        };
+        const storageRef = ref(storage, `capas/${user.uid}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
 
-        await updateDoc(doc(window.db, "usuarios", user.uid), updates);
+        // Atualiza no Perfil de Usuário
+        await updateDoc(doc(db, "usuarios", user.uid), { cover_image: downloadURL });
         
-        // Atualiza interface principal sem reload
-        const headerName = document.getElementById('header-user-name');
-        if(headerName) headerName.innerText = nome;
-        
-        alert("✅ Dados bancários atualizados com sucesso!");
-        document.getElementById('modal-settings').classList.add('hidden');
+        // Tenta atualizar na Vitrine de Prestadores (se existir)
+        try {
+            await updateDoc(doc(db, "active_providers", user.uid), { cover_image: downloadURL });
+        } catch(e) { /* Não é prestador, ignora */ }
 
-    } catch (e) {
-        alert("Erro ao salvar: " + e.message);
-    } finally {
-        btn.innerText = originalText;
-        btn.disabled = false;
+        document.getElementById('banner-preview').src = downloadURL;
+        alert("✅ Capa atualizada! Seu perfil ficou mais profissional.");
+
+    } catch (error) { 
+        console.error(error); 
+        alert("Erro ao enviar imagem."); 
+    } finally { 
+        btn.innerText = "📷"; btn.disabled = false; 
     }
 }
 
-// 3. EXTRAS (Afiliado)
+// ============================================================================
+// 3. CONFIGURAÇÕES & AFILIADO
+// ============================================================================
+export function abrirConfiguracoes() {
+    let modal = document.getElementById('modal-configuracoes');
+    if(modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    } else {
+        // Fallback: vai para a aba perfil
+        const tab = document.getElementById('tab-perfil');
+        if(tab) tab.click();
+    }
+}
+
+export async function salvarConfiguracoes() {
+    const user = auth.currentUser;
+    if(!user) return;
+
+    const btn = document.getElementById('btn-save-profile');
+    if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
+
+    try {
+        const nome = document.getElementById('input-nome')?.value;
+        const bio = document.getElementById('input-bio')?.value;
+        const pix = document.getElementById('input-pix')?.value;
+
+        await updateDoc(doc(db, "usuarios", user.uid), {
+            nome: nome,
+            bio: bio,
+            pix: pix
+        });
+        alert("✅ Perfil salvo com sucesso!");
+    } catch(e) { 
+        alert("Erro ao salvar: " + e.message); 
+    } finally { 
+        if(btn) { btn.innerText = "Salvar Alterações"; btn.disabled = false; } 
+    }
+}
+
+// 🔥 FUNÇÃO RESTAURADA (O Auditor sentiu falta)
 export function copiarLinkAfiliado() {
-    const user = window.auth.currentUser;
-    if (!user) return;
+    const user = auth.currentUser;
+    if(!user) return alert("Faça login.");
     
-    const link = `${window.location.origin}${window.location.pathname}?ref=${user.uid}`;
+    const link = `${window.location.origin}/?ref=${user.uid}`;
     
     navigator.clipboard.writeText(link).then(() => {
-        alert("🔗 Link copiado! Envie para seus amigos.\n\n" + link);
-    }).catch(() => {
+        alert("✅ Link copiado! Espalhe e ganhe.");
+    }).catch(err => {
         prompt("Copie seu link:", link);
     });
 }
 
-// Torna global para o HTML acessar
+// EXPORTAÇÕES GLOBAIS
+window.uploadCapa = uploadCapa;
+window.carregarDadosPerfil = carregarDadosPerfil;
+window.abrirConfiguracoes = abrirConfiguracoes;
 window.salvarConfiguracoes = salvarConfiguracoes;
 window.copiarLinkAfiliado = copiarLinkAfiliado;
