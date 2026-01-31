@@ -1,12 +1,12 @@
-import { db, auth, storage } from '../app.js'; // <--- ADICIONEI 'storage' AQUI
+import { db, auth, storage } from '../app.js';
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js"; // <--- IMPORTAÇÃO DO UPLOAD
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // ============================================================================
 // 1. ROTEADOR DE INTERFACE
 // ============================================================================
 export function carregarInterfaceEmpregos() {
-    console.log("💼 Iniciando módulo de Vagas (Com Upload Real)...");
+    console.log("💼 Módulo Vagas: Modo WhatsApp Ativo");
     const containerVagas = document.getElementById('lista-vagas');
     const containerEmpresa = document.getElementById('painel-empresa');
     const userProfile = window.userProfile || {}; 
@@ -96,15 +96,11 @@ export async function listarMinhasCandidaturas() {
 
         snap.forEach(d => {
             const app = d.data();
-            let areaChat = "";
             let statusColor = "text-gray-400";
-            let statusText = "Aguardando";
+            let statusText = "Enviado";
 
-            if (app.status === 'chat_aberto') {
-                statusColor = "text-green-500";
-                statusText = "EMPRESA CHAMOU";
-                areaChat = `<div class="mt-2 bg-green-50 border border-green-100 p-2 rounded flex items-center justify-between animate-pulse"><span class="text-[10px] font-bold text-green-700">👋 A empresa quer falar com você!</span><button onclick="window.irParaChat('${app.owner_id}', 'Empresa')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">ABRIR CHAT</button></div>`;
-            }
+            if (app.status === 'visto') { statusColor = "text-blue-500"; statusText = "Visualizado"; }
+            if (app.status === 'contato') { statusColor = "text-green-500"; statusText = "Em Contato"; }
 
             container.innerHTML += `
                 <div class="bg-white p-4 rounded-xl border border-gray-200 mb-2 shadow-sm">
@@ -113,7 +109,6 @@ export async function listarMinhasCandidaturas() {
                         <span class="text-[9px] font-bold uppercase ${statusColor}">${statusText}</span>
                     </div>
                     <p class="text-[9px] text-gray-400 mb-2">Enviado em: ${app.created_at?.toDate().toLocaleDateString()}</p>
-                    ${areaChat}
                     <button onclick="window.desistirVaga('${d.id}')" class="mt-2 w-full text-[9px] text-red-400 border border-red-100 py-1 rounded hover:bg-red-50">Cancelar Candidatura</button>
                 </div>`;
         });
@@ -189,6 +184,7 @@ export async function listarMinhasVagasEmpresa() {
     });
 }
 
+// 🔥 LISTA DE CANDIDATOS COM BOTÃO DE WHATSAPP 🔥
 export async function verCandidatosEmpresa(jobId, jobTitle) {
     const modal = document.getElementById('modal-candidatos-empresa');
     const lista = document.getElementById('lista-candidatos-ul');
@@ -207,77 +203,58 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
 
         snap.forEach(d => {
             const cand = d.data();
-            const linkCv = cand.resume_url || cand.cv_url || cand.file_url;
+            const linkCv = cand.resume_url || cand.cv_url;
+            const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-bold">📄 Ver PDF</a>` : `<span class="text-gray-400 text-[10px]">Sem PDF</span>`;
             
-            // Link Real do PDF
-            const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-bold hover:text-blue-700">📄 BAIXAR CURRÍCULO (PDF)</a>` : `<span class="text-gray-400 text-[10px]">Sem PDF</span>`;
+            // LÓGICA DO WHATSAPP
+            let btnZap = `<span class="text-gray-400 text-[10px]">Sem WhatsApp</span>`;
             
-            const jaChamou = cand.status === 'chat_aberto';
-            
-            const btnChat = jaChamou 
-                ? `<button onclick="window.irParaChat('${cand.user_id}', '${cand.nome}')" class="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1 rounded text-[10px] font-bold w-full">💬 ABRIR CONVERSA (JÁ INICIADA)</button>`
-                : `<button onclick="window.iniciarConversaEmpresa('${d.id}', '${cand.user_id}', '${cand.nome}')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold w-full shadow hover:bg-green-500">✅ CHAMAR P/ ENTREVISTA</button>`;
+            if (cand.whatsapp) {
+                // Limpa o número (deixa só digitos)
+                const cleanPhone = cand.whatsapp.replace(/\D/g, '');
+                // Mensagem pronta
+                const msg = `Olá ${cand.nome}, vi seu currículo para a vaga de ${jobTitle} na Atlivio. Podemos conversar?`;
+                const zapLink = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`;
+                
+                btnZap = `
+                    <a href="${zapLink}" target="_blank" onclick="window.marcarContato('${d.id}')" class="bg-green-500 hover:bg-green-600 text-white w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition">
+                        <span>📱</span> CHAMAR NO WHATSAPP
+                    </a>
+                `;
+            }
 
             lista.innerHTML += `
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-2">
-                    <div class="flex justify-between items-start">
-                        <div><p class="font-bold text-xs text-slate-800">${cand.nome || 'Candidato'}</p><p class="text-[10px] text-slate-500 italic">"${cand.mensagem || ''}"</p></div>
-                        <div class="mt-1">${btnCv}</div>
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="font-bold text-xs text-slate-800">${cand.nome || 'Candidato'}</p>
+                            <p class="text-[10px] text-slate-500 italic">"${cand.mensagem || ''}"</p>
+                        </div>
+                        ${btnCv}
                     </div>
-                    <div class="mt-3">${btnChat}</div>
+                    ${btnZap}
                 </div>`;
         });
     } catch(e) { console.error(e); lista.innerHTML = "Erro ao carregar."; }
 }
 
-export async function iniciarConversaEmpresa(appId, userId, userName) {
-    if(!confirm(`Iniciar conversa com ${userName}?`)) return;
-    try {
-        await updateDoc(doc(db, "job_applications", appId), { status: 'chat_aberto' });
-        const chatID = [auth.currentUser.uid, userId].sort().join("_");
-        await setDoc(doc(db, "chats", chatID), {
-            users: [auth.currentUser.uid, userId],
-            user_names: [auth.currentUser.displayName, userName],
-            last_msg: "Olá! Vimos seu currículo.",
-            last_time: serverTimestamp(),
-            job_context: appId
-        }, { merge: true });
-        
-        alert(`✅ Chat iniciado com ${userName}! Redirecionando...`);
-        document.getElementById('modal-candidatos-empresa').classList.remove('flex');
-        document.getElementById('modal-candidatos-empresa').classList.add('hidden');
-        
-        if(window.switchTab) window.switchTab('chat');
-        else document.getElementById('tab-chat').click();
-
-    } catch(e) { alert("Erro: " + e.message); }
+// Atualiza status quando clica no Zap
+export async function marcarContato(appId) {
+    try { await updateDoc(doc(db, "job_applications", appId), { status: 'contato' }); } catch(e){}
 }
 
 // ============================================================================
-// 4. UTILITÁRIOS & UPLOAD DE PDF (CORREÇÃO APLICADA)
+// 4. CANDIDATURA (AGORA SALVA O ZAP)
 // ============================================================================
-function criarModalCandidatos() {
-    const div = document.createElement('div');
-    div.id = "modal-candidatos-empresa";
-    div.className = "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4";
-    div.innerHTML = `
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="bg-slate-900 p-4 flex justify-between items-center"><h3 class="text-white font-bold text-sm uppercase flex items-center gap-2">📄 Candidatos: <span id="modal-job-title" class="text-blue-400">...</span></h3><button onclick="document.getElementById('modal-candidatos-empresa').classList.add('hidden'); document.getElementById('modal-candidatos-empresa').classList.remove('flex')" class="text-gray-400 hover:text-white">✕</button></div>
-            <div id="lista-candidatos-ul" class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white"></div>
-        </div>`;
-    document.body.appendChild(div);
-}
-
-export function irParaChat(targetUid, name) {
-    if(window.switchTab) window.switchTab('chat');
-    else document.getElementById('tab-chat').click();
-}
-
 export function candidatarVaga(id, title, ownerId) {
     if(!auth.currentUser) return alert("Faça login.");
     const modal = document.getElementById('modal-apply');
     document.getElementById('apply-job-title').innerText = title;
     
+    // Limpa inputs
+    document.getElementById('apply-message').value = "";
+    document.getElementById('apply-file').value = "";
+
     const btnEnviar = document.getElementById('btn-submit-proposal');
     const newBtn = btnEnviar.cloneNode(true);
     btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
@@ -288,44 +265,60 @@ export function candidatarVaga(id, title, ownerId) {
         const msg = document.getElementById('apply-message').value;
         const fileInput = document.getElementById('apply-file');
         
-        // 1. Validação de Arquivo
         if (fileInput.files.length === 0) return alert("⚠️ Anexe seu currículo em PDF.");
         const file = fileInput.files[0];
-        if (file.type !== "application/pdf") {
-            fileInput.value = "";
-            return alert("❌ Apenas arquivos .PDF são permitidos!");
-        }
+        if (file.type !== "application/pdf") return alert("❌ Apenas arquivos .PDF são permitidos!");
 
-        newBtn.innerText = "ENVIANDO PDF..."; newBtn.disabled = true;
+        newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
 
         try {
-            // 2. 🔥 UPLOAD REAL PARA O FIREBASE STORAGE 🔥
+            // 🔥 PASSO 1: Busca o WhatsApp do perfil do usuário para salvar na candidatura
+            let userZap = "";
+            const userDoc = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+            if (userDoc.exists()) {
+                userZap = userDoc.data().whatsapp || userDoc.data().phone || "";
+            }
+
+            // PASSO 2: Upload PDF
             const storageRef = ref(storage, `curriculos/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
-            console.log("✅ PDF Enviado. URL:", downloadURL);
-
-            // 3. Salva no Firestore com o Link Real
+            // PASSO 3: Salva Candidatura COM O ZAP
             await addDoc(collection(db, "job_applications"), {
                 job_id: id, vaga_titulo: title, owner_id: ownerId,
-                user_id: auth.currentUser.uid, nome: auth.currentUser.displayName || "Candidato",
+                user_id: auth.currentUser.uid, 
+                nome: auth.currentUser.displayName || "Candidato",
+                whatsapp: userZap, // <--- SALVANDO O ZAP AQUI
                 message: msg, 
-                resume_url: downloadURL, // <--- LINK REAL AQUI
+                resume_url: downloadURL,
                 created_at: serverTimestamp(), 
                 status: 'novo'
             });
 
-            alert("✅ Currículo Enviado com Sucesso!");
+            alert("✅ Candidatura enviada! A empresa entrará em contato.");
             fecharModalCandidatura();
 
         } catch(e) { 
             console.error(e);
-            alert("Erro ao enviar: " + e.message); 
+            alert("Erro: " + e.message); 
         } finally { 
             newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false; 
         }
     });
+}
+
+// UTILITÁRIOS
+function criarModalCandidatos() {
+    const div = document.createElement('div');
+    div.id = "modal-candidatos-empresa";
+    div.className = "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4";
+    div.innerHTML = `
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+            <div class="bg-slate-900 p-4 flex justify-between items-center"><h3 class="text-white font-bold text-sm uppercase flex items-center gap-2">📄 Candidatos: <span id="modal-job-title" class="text-blue-400">...</span></h3><button onclick="document.getElementById('modal-candidatos-empresa').classList.add('hidden'); document.getElementById('modal-candidatos-empresa').classList.remove('flex')" class="text-gray-400 hover:text-white">✕</button></div>
+            <div id="lista-candidatos-ul" class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white"></div>
+        </div>`;
+    document.body.appendChild(div);
 }
 
 export function fecharModalCandidatura() {
@@ -344,17 +337,16 @@ export function desistirVaga(appId) {
     deleteDoc(doc(db, "job_applications", appId)).then(() => listarMinhasCandidaturas());
 }
 
-// 🔥 ZONA DE EXPORTAÇÃO (OBRIGATÓRIO) 🔥
+// EXPORTAÇÕES GLOBAIS
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.carregarVagas = carregarVagas;
 window.publicarVaga = publicarVaga;
 window.listarMinhasVagasEmpresa = listarMinhasVagasEmpresa;
 window.candidatarVaga = candidatarVaga;
 window.verCandidatosEmpresa = verCandidatosEmpresa;
-window.iniciarConversaEmpresa = iniciarConversaEmpresa;
+window.marcarContato = marcarContato; // <--- NOVA FUNÇÃO
 window.fecharModalCandidatura = fecharModalCandidatura;
 window.encerrarVaga = encerrarVaga;
 window.desistirVaga = desistirVaga;
 window.listarMinhasCandidaturas = listarMinhasCandidaturas;
-window.irParaChat = irParaChat;
 window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
