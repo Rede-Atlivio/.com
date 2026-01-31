@@ -1,5 +1,5 @@
-import { db, auth } from '../app.js';
-import { processarCobrancaTaxa } from '../wallet.js'; 
+import { db, auth } from '../app.js'; // ✅ Fica igual (Pasta de cima)
+import { processarCobrancaTaxa } from './wallet.js'; // ✅ MUDA AQUI (Mesma pasta: usa apenas um ponto)
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GATILHOS E NAVEGAÇÃO ---
