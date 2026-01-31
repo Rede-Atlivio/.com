@@ -21,16 +21,21 @@ export async function carregarDadosPerfil() {
     if (docSnap.exists()) {
         const data = docSnap.data();
         
-        // Inputs do Formulário
-        if(document.getElementById('input-nome')) document.getElementById('input-nome').value = data.nome || user.displayName;
-        if(document.getElementById('input-bio')) document.getElementById('input-bio').value = data.bio || "";
-        if(document.getElementById('input-pix')) document.getElementById('input-pix').value = data.pix || "";
+        // Preenche Configurações
+        if(document.getElementById('set-nome')) document.getElementById('set-nome').value = data.nome || user.displayName;
+        if(document.getElementById('set-phone')) document.getElementById('set-phone').value = data.whatsapp || user.phoneNumber || "";
         
-        // Link de Afiliado (Visual)
-        const refDisplay = document.getElementById('ref-link-display');
-        if(refDisplay) refDisplay.innerText = `${window.location.origin}/?ref=${user.uid}`;
+        // PIX
+        if(document.getElementById('set-pix-chave')) document.getElementById('set-pix-chave').value = data.pix_key || "";
+        if(document.getElementById('set-pix-banco')) document.getElementById('set-pix-banco').value = data.pix_bank || "";
+        if(document.getElementById('set-pix-nome')) document.getElementById('set-pix-nome').value = data.pix_name || "";
+        if(document.getElementById('set-pix-cpf')) document.getElementById('set-pix-cpf').value = data.pix_cpf || "";
 
-        // Capa (Preview)
+        // Foto nas Configurações
+        const imgSet = document.getElementById('settings-pic');
+        if(imgSet) imgSet.src = data.foto_perfil || user.photoURL;
+
+        // Capa
         const bannerPreview = document.getElementById('banner-preview');
         if(bannerPreview && data.cover_image) {
             bannerPreview.src = data.cover_image;
@@ -39,54 +44,58 @@ export async function carregarDadosPerfil() {
 }
 
 // ============================================================================
-// 2. UPLOAD DE CAPA (MARKETING)
+// 2. UPLOAD DE CAPA E FOTO
 // ============================================================================
 export async function uploadCapa() {
     const fileInput = document.getElementById('input-banner');
     if (!fileInput.files.length) return;
-
     const file = fileInput.files[0];
     const user = auth.currentUser;
-    const btn = document.getElementById('btn-upload-banner');
     
-    btn.innerText = "⏳"; btn.disabled = true;
-
     try {
         const storageRef = ref(storage, `capas/${user.uid}`);
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        // Atualiza no Perfil de Usuário
         await updateDoc(doc(db, "usuarios", user.uid), { cover_image: downloadURL });
-        
-        // Tenta atualizar na Vitrine de Prestadores (se existir)
-        try {
-            await updateDoc(doc(db, "active_providers", user.uid), { cover_image: downloadURL });
-        } catch(e) { /* Não é prestador, ignora */ }
+        try { await updateDoc(doc(db, "active_providers", user.uid), { cover_image: downloadURL }); } catch(e){}
 
         document.getElementById('banner-preview').src = downloadURL;
-        alert("✅ Capa atualizada! Seu perfil ficou mais profissional.");
+        alert("✅ Capa atualizada!");
+    } catch (error) { alert("Erro ao enviar imagem."); }
+}
 
-    } catch (error) { 
-        console.error(error); 
-        alert("Erro ao enviar imagem."); 
-    } finally { 
-        btn.innerText = "📷"; btn.disabled = false; 
-    }
+export async function uploadFotoPerfil(input) {
+    if (!input.files.length) return;
+    const file = input.files[0];
+    const user = auth.currentUser;
+
+    try {
+        const storageRef = ref(storage, `perfil/${user.uid}/foto.jpg`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        await updateDoc(doc(db, "usuarios", user.uid), { foto_perfil: downloadURL, photoURL: downloadURL });
+        try { await updateDoc(doc(db, "active_providers", user.uid), { foto_perfil: downloadURL }); } catch(e){}
+
+        // Atualiza na hora
+        document.querySelectorAll('img[src*="ui-avatars"], #header-profile-img, #settings-pic').forEach(img => img.src = downloadURL);
+        alert("✅ Foto de perfil atualizada!");
+    } catch (e) { alert("Erro no upload: " + e.message); }
 }
 
 // ============================================================================
 // 3. CONFIGURAÇÕES & AFILIADO
 // ============================================================================
 export function abrirConfiguracoes() {
-    let modal = document.getElementById('modal-configuracoes');
+    console.log("⚙️ Abrindo configurações...");
+    carregarDadosPerfil(); // Carrega dados frescos
+    let modal = document.getElementById('modal-settings');
     if(modal) {
         modal.classList.remove('hidden');
         modal.classList.add('flex');
     } else {
-        // Fallback: vai para a aba perfil
-        const tab = document.getElementById('tab-perfil');
-        if(tab) tab.click();
+        alert("Erro: Modal de configurações não encontrado no HTML.");
     }
 }
 
@@ -94,43 +103,38 @@ export async function salvarConfiguracoes() {
     const user = auth.currentUser;
     if(!user) return;
 
-    const btn = document.getElementById('btn-save-profile');
+    const btn = document.getElementById('btn-save-settings');
     if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
 
     try {
-        const nome = document.getElementById('input-nome')?.value;
-        const bio = document.getElementById('input-bio')?.value;
-        const pix = document.getElementById('input-pix')?.value;
+        const payload = {
+            nome: document.getElementById('set-nome')?.value,
+            pix_key: document.getElementById('set-pix-chave')?.value,
+            pix_bank: document.getElementById('set-pix-banco')?.value,
+            pix_name: document.getElementById('set-pix-nome')?.value,
+            pix_cpf: document.getElementById('set-pix-cpf')?.value
+        };
 
-        await updateDoc(doc(db, "usuarios", user.uid), {
-            nome: nome,
-            bio: bio,
-            pix: pix
-        });
-        alert("✅ Perfil salvo com sucesso!");
+        await updateDoc(doc(db, "usuarios", user.uid), payload);
+        alert("✅ Dados salvos com sucesso!");
+        document.getElementById('modal-settings').classList.add('hidden');
     } catch(e) { 
         alert("Erro ao salvar: " + e.message); 
     } finally { 
-        if(btn) { btn.innerText = "Salvar Alterações"; btn.disabled = false; } 
+        if(btn) { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; } 
     }
 }
 
-// 🔥 FUNÇÃO RESTAURADA (O Auditor sentiu falta)
 export function copiarLinkAfiliado() {
     const user = auth.currentUser;
     if(!user) return alert("Faça login.");
-    
     const link = `${window.location.origin}/?ref=${user.uid}`;
-    
-    navigator.clipboard.writeText(link).then(() => {
-        alert("✅ Link copiado! Espalhe e ganhe.");
-    }).catch(err => {
-        prompt("Copie seu link:", link);
-    });
+    navigator.clipboard.writeText(link).then(() => alert("✅ Link copiado!")).catch(() => prompt("Copie:", link));
 }
 
-// EXPORTAÇÕES GLOBAIS
+// 🚨 EXPORTAÇÕES GLOBAIS OBRIGATÓRIAS
 window.uploadCapa = uploadCapa;
+window.uploadFotoPerfil = uploadFotoPerfil;
 window.carregarDadosPerfil = carregarDadosPerfil;
 window.abrirConfiguracoes = abrirConfiguracoes;
 window.salvarConfiguracoes = salvarConfiguracoes;
