@@ -12,16 +12,9 @@ let mem_CurrentOffer = 0;
 auth.onAuthStateChanged(user => {
     if (user) {
         iniciarRadarPrestador(user.uid);
-        // Garante que a lista de pedidos seja carregada no início
-        if (typeof window.iniciarMonitoramentoPedidos === 'function') {
-            window.iniciarMonitoramentoPedidos();
-        }
     }
 });
 
-// ============================================================================
-// 1. ABRIR O MODAL
-// ============================================================================
 export function abrirModalSolicitacao(providerId, providerName, price) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
@@ -42,11 +35,10 @@ export function abrirModalSolicitacao(providerId, providerName, price) {
         if(elId) elId.value = providerId || "";
         if(elPrice) elPrice.value = price || "0";
         
-        // 🎨 VISUAL DO INPUT (CORREÇÃO DA COR PRETA)
         if(elInputVal) {
             elInputVal.value = mem_CurrentOffer.toFixed(2);
             elInputVal.disabled = true;
-            elInputVal.style.color = "#000000"; // FORÇA PRETO
+            elInputVal.style.color = "#000000"; 
             elInputVal.style.opacity = "1";
             elInputVal.style.fontWeight = "bold";
             elInputVal.classList.remove('text-gray-500');
@@ -84,9 +76,6 @@ function injetarBotoesOferta(modal) {
     }
 }
 
-// ============================================================================
-// 2. CÁLCULOS
-// ============================================================================
 export function selecionarDesconto(percent) {
     const p = parseFloat(percent);
     const elPrice = document.getElementById('service-base-price');
@@ -146,9 +135,6 @@ function atualizarVisualModal() {
     validarOferta(mem_CurrentOffer);
 }
 
-// ============================================================================
-// 3. ENVIAR PROPOSTA (CORRIGIDO PARA IR PARA LISTA, NÃO CHAT)
-// ============================================================================
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     if (!user) return alert("Sessão expirada.");
@@ -184,7 +170,6 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
-        // Cria a sala de chat (mas não entra nela ainda)
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -196,15 +181,14 @@ export async function enviarPropostaAgora() {
         alert("✅ SOLICITAÇÃO ENVIADA!\nVerifique a aba 'Em Andamento'.");
         document.getElementById('request-modal').classList.add('hidden');
         
-        // 🚨 REDIRECIONAMENTO ESTRATÉGICO
-        // Em vez de ir pro chat, força a ida para a lista de pedidos em andamento
+        // REDIRECIONAMENTO ESTRATÉGICO
         const tabServicos = document.getElementById('tab-servicos');
-        if(tabServicos) tabServicos.click(); // Garante que a aba "Serviços" esteja ativa
+        if(tabServicos) tabServicos.click(); 
 
         setTimeout(() => {
-            // Se o services.js estiver carregado, chamamos as funções dele
             if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
-            if(window.iniciarMonitoramentoPedidos) window.iniciarMonitoramentoPedidos();
+            // Recarrega a lista explicitamente para garantir
+            if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
         }, 500);
 
     } catch (e) {
@@ -214,10 +198,8 @@ export async function enviarPropostaAgora() {
     }
 }
 
-// ============================================================================
-// 4. RADAR E FUNÇÕES AUXILIARES
-// ============================================================================
-function iniciarRadarPrestador(uid) {
+// RADAR DO PRESTADOR
+export function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
@@ -278,7 +260,6 @@ export async function aceitarPedidoRadar(orderId) {
         await updateDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() });
         await updateDoc(doc(db, "chats", orderId), { status: 'active' });
 
-        // Redireciona Prestador para aba Ativos
         const tabServicos = document.getElementById('tab-servicos');
         if(tabServicos) tabServicos.click();
         
@@ -296,11 +277,9 @@ export async function recusarPedidoReq(orderId) {
     await updateDoc(doc(db, "orders", orderId), { status: 'rejected' });
 }
 
-// ⚠️ AQUI ESTÁ A FUNÇÃO RESTAURADA PARA O SCANNER FICAR FELIZ
+// ⚠️ FUNÇÃO DE COMPATIBILIDADE (RESTAURADA)
 export async function carregarPedidosEmAndamento() {
-    // Esta função agora é um "alias" (atalho) para a nova lógica centralizada no services.js
-    // Mantemos ela aqui para compatibilidade caso algum botão antigo a chame.
-    console.log("🔄 Redirecionando para o monitoramento central...");
+    console.log("🔄 Redirecionamento de compatibilidade ativado.");
     if (window.iniciarMonitoramentoPedidos) {
         window.iniciarMonitoramentoPedidos();
     }
@@ -315,4 +294,4 @@ window.enviarPropostaAgora = enviarPropostaAgora;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
-window.carregarPedidosEmAndamento = carregarPedidosEmAndamento;
+window.carregarPedidosEmAndamento = carregarPedidosEmAndamento; // ✅ AGORA SIM!
