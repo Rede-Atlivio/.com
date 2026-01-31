@@ -1,6 +1,6 @@
 import { db, auth } from '../app.js';
 import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; // <--- IMPORTANTE
 
 export async function checkOnboarding(user) {
     if (!user) return;
@@ -22,8 +22,16 @@ export async function checkOnboarding(user) {
             // Lógica do Muro: Se já tem termos aceitos E nome, libera.
             if (data.terms_accepted && data.nome && data.nome !== "User") {
                 modal.classList.add('hidden');
-                document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('app-container').classList.remove('hidden');
+                // Se já estiver logado, garante que a tela de login suma
+                const authContainer = document.getElementById('auth-container');
+                if(authContainer) authContainer.classList.add('hidden');
+                
+                // Redireciona para o app ou seleção de perfil
+                if(data.perfil_completo) {
+                    document.getElementById('app-container').classList.remove('hidden');
+                } else {
+                    document.getElementById('role-selection').classList.remove('hidden');
+                }
                 return;
             }
         }
@@ -33,7 +41,7 @@ export async function checkOnboarding(user) {
         modal.classList.remove('hidden');
         modal.style.display = 'flex'; 
 
-        // Pré-preenche se tiver dados
+        // Pré-preenche se tiver dados parciais
         if(user.displayName) inpName.value = user.displayName;
         if(user.phoneNumber) inpPhone.value = user.phoneNumber;
 
@@ -50,33 +58,33 @@ export async function checkOnboarding(user) {
 
             const btn = document.getElementById('btn-onboard-submit');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `SALVANDO...`;
+            btn.innerHTML = `<div class="loader w-5 h-5 border-white animate-spin"></div> SALVANDO...`;
             btn.disabled = true;
 
             try {
-                // 🔥 PASSO CRUCIAL: Atualiza o nome no AUTH do Firebase
-                // Isso garante que auth.currentUser.displayName não seja null
+                // A. 🔥 ATUALIZA O NOME NO AUTH (CRÍTICO PARA O CHAT/VAGAS)
                 await updateProfile(user, { displayName: nome });
 
-                // Salva no Banco de Dados
+                // B. Salva no Banco de Dados
                 await updateDoc(userRef, {
-                    displayName: nome, // Importante para o chat e vagas
+                    displayName: nome, // Garante redundância
                     nome: nome,
                     nome_profissional: nome, 
                     whatsapp: phone,
                     terms_accepted: true,
                     onboarded_at: serverTimestamp(),
                     status: 'ativo',
-                    perfil_completo: true // Marca como completo
+                    perfil_completo: true // Marca como completo para liberar o app
                 });
 
-                // Libera o usuário
+                // C. Libera o usuário
                 modal.classList.add('hidden');
                 modal.style.display = 'none';
-                
-                // Redireciona para seleção de perfil ou app
                 document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('role-selection').classList.remove('hidden');
+                document.getElementById('role-selection').classList.remove('hidden'); // Manda escolher perfil
+
+                // Recarrega para aplicar o nome novo em todo o site
+                setTimeout(() => window.location.reload(), 500);
 
             } catch (error) {
                 console.error("Erro onboarding:", error);
