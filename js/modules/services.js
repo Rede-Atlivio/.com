@@ -1,27 +1,26 @@
 import { db, auth } from '../app.js';
-// 👇 ADICIONEI 'getDocs' AQUI NO IMPORT
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 📌 CATEGORIAS
+// 📌 CATEGORIAS E VALORES MÍNIMOS (ANTI-GOLPE)
 export const CATEGORIAS_ATIVAS = [
-    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
-    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
-    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹' },
-    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗' },
-    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵' },
-    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸' },
-    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻' },
-    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫' },
-    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆' },
-    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶' },
-    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗' },
-    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝' }
+    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 }, // Garçom base
+    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 }, // Eletricista base
+    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹', minPrice: 130 }, // Diarista base
+    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗', minPrice: 60 }, // Motoboy base
+    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵', minPrice: 250 }, // Músico solo base
+    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸', minPrice: 300 }, // Social Media base
+    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻', minPrice: 150 }, // Suporte base
+    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫', minPrice: 80 }, // Aula base
+    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆', minPrice: 100 }, // Massagem base
+    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶', minPrice: 50 }, // Passeio base
+    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 }, // Mesas base
+    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 } // Ajudante base
 ];
 
 let servicesUnsubscribe = null;
 
 // ============================================================================
-// 1. VITRINE (OFERTA)
+// 1. VITRINE (LEITURA)
 // ============================================================================
 export async function carregarServicos(filtroCategoria = null) {
     const container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
@@ -116,7 +115,7 @@ function renderizarCards(servicos, container) {
         container.innerHTML += `
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${grayscaleClass} transition-all duration-300 hover:shadow-md animate-fadeIn flex flex-col h-full">
                 ${demoBadge}
-                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-24 bg-gray-200 relative cursor-pointer group">
+                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-28 bg-gray-200 relative cursor-pointer group">
                     <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Capa">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 flex items-center gap-2">
@@ -132,8 +131,8 @@ function renderizarCards(servicos, container) {
                 <div class="p-3 flex flex-col flex-1 justify-between">
                     <div class="flex justify-between items-start mb-2">
                         <div class="flex-1 pr-1">
-                            <p class="text-[10px] font-bold text-gray-600 uppercase truncate">${categoriaDisplay}</p>
-                            <p class="text-[9px] text-gray-400 line-clamp-1">${user.bio || 'Pronto.'}</p>
+                            <p class="text-[10px] font-bold text-gray-600 uppercase truncate max-w-[150px]">${categoriaDisplay}</p>
+                            <p class="text-[9px] text-gray-400 line-clamp-1">${user.bio || 'Pronto para atender.'}</p>
                         </div>
                         <div class="text-right whitespace-nowrap">
                             <span class="block font-black text-green-600 text-xs">${precoDisplay}</span>
@@ -154,7 +153,7 @@ function renderizarCards(servicos, container) {
 }
 
 // ============================================================================
-// 2. MEUS PEDIDOS & HISTÓRICO (AGORA FUNCIONANDO)
+// 2. MEUS PEDIDOS & HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('meus-pedidos-andamento');
@@ -224,7 +223,6 @@ async function carregarHistorico() {
 
     const uid = auth.currentUser.uid;
     
-    // CORREÇÃO: getDocs agora está importado
     try {
         const q = query(collection(db, "orders"), 
             where("client_id", "==", uid), 
@@ -242,15 +240,22 @@ async function carregarHistorico() {
 
         snap.forEach(d => {
             const order = d.data();
+            
+            // CORREÇÃO BOTÃO AVALIAR
+            // Passamos strings seguras (sem aspas dentro)
+            const safeName = (order.provider_name || 'Prestador').replace(/'/g, "");
+            
             container.innerHTML += `
                 <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
                     <div>
-                        <p class="font-bold text-xs text-gray-700">${order.provider_name}</p>
+                        <p class="font-bold text-xs text-gray-700">${safeName}</p>
                         <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
                     </div>
                     <div class="text-right">
                         <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[9px] text-blue-600 font-bold underline hover:text-blue-800">Avaliar ⭐</button>
+                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline hover:text-blue-800 cursor-pointer p-1">
+                            Avaliar ⭐
+                        </button>
                     </div>
                 </div>
             `;
@@ -261,7 +266,102 @@ async function carregarHistorico() {
     }
 }
 
+// ============================================================================
+// 3. EDITOR DE SERVIÇOS DO PRESTADOR (COM PREÇO MÍNIMO)
+// ============================================================================
+export function abrirConfiguracaoServicos() {
+    const modal = document.getElementById('provider-setup-modal');
+    const content = document.getElementById('provider-setup-content');
+    modal.classList.remove('hidden');
+    
+    const options = CATEGORIAS_ATIVAS.map(c => `<option value="${c.label}" data-min="${c.minPrice}">${c.label} (Min: R$ ${c.minPrice})</option>`).join('');
+
+    content.innerHTML = `
+        <h3 class="text-lg font-black text-blue-900 uppercase mb-4 text-center">Configurar Serviços</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Categoria Principal</label>
+                <select id="prov-cat" class="w-full border p-2 rounded-lg text-sm bg-white" onchange="window.atualizarMinimo(this)">
+                    ${options}
+                </select>
+            </div>
+            <div>
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Preço Base (R$)</label>
+                <input type="number" id="prov-price" class="w-full border p-2 rounded-lg text-sm font-bold text-green-600" placeholder="0.00">
+                <p id="msg-min-price" class="text-[9px] text-red-500 mt-1 font-bold hidden"></p>
+            </div>
+            <button onclick="salvarServicoPrestador()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">SALVAR SERVIÇO</button>
+        </div>
+    `;
+}
+
+// Helper para mostrar preço mínimo
+window.atualizarMinimo = (select) => {
+    const min = select.options[select.selectedIndex].dataset.min;
+    const input = document.getElementById('prov-price');
+    const msg = document.getElementById('msg-min-price');
+    
+    input.placeholder = `Mínimo: ${min}`;
+    msg.innerText = `⚠️ Valor mínimo para esta categoria: R$ ${min},00`;
+    msg.classList.remove('hidden');
+};
+
+export async function salvarServicoPrestador() {
+    const user = auth.currentUser;
+    if(!user) return;
+
+    const select = document.getElementById('prov-cat');
+    const priceInput = document.getElementById('prov-price');
+    
+    const category = select.value;
+    const price = parseFloat(priceInput.value);
+    const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
+
+    // 🛡️ TRAVA ANTI-GOLPE
+    if(isNaN(price) || price < minPrice) {
+        alert(`⛔ VALOR INVÁLIDO!\n\nPara manter a qualidade da plataforma e evitar fraudes, o valor mínimo para ${category} é R$ ${minPrice},00.`);
+        priceInput.value = minPrice;
+        return;
+    }
+
+    try {
+        const newService = { category, price, status: 'ativo' };
+        
+        // Atualiza Active Providers
+        const ref = doc(db, "active_providers", user.uid);
+        // Primeiro tenta criar se não existir, ou atualizar
+        try {
+            await updateDoc(ref, { 
+                services: arrayUnion(newService),
+                is_online: true 
+            });
+        } catch(e) {
+            // Se der erro (doc não existe), cria
+            const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            await setDoc(ref, {
+                uid: user.uid,
+                nome: user.displayName,
+                services: [newService],
+                is_online: true,
+                rating_avg: 5.0,
+                status: 'aprovado'
+            });
+        }
+
+        alert("✅ Serviço adicionado com sucesso!");
+        document.getElementById('provider-setup-modal').classList.add('hidden');
+        location.reload(); // Recarrega para ver na vitrine
+
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao salvar serviço.");
+    }
+}
+
+// EXPORTAÇÕES GLOBAIS
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
 window.switchServiceSubTab = switchServiceSubTab;
 window.carregarPedidosAtivos = carregarPedidosAtivos;
+window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
+window.salvarServicoPrestador = salvarServicoPrestador;
