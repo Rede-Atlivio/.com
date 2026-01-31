@@ -12,6 +12,7 @@ import './modules/services.js';      // Marketplace de Serviços
 import './modules/jobs.js';          // Vagas de Emprego (WhatsApp) & Upload PDF
 import './modules/opportunities.js'; // Afiliados
 import './modules/chat.js';          // Chat de Serviços (Original e Seguro)
+import './modules/reviews.js';       // ⭐️ Sistema de Reputação (NOVO)
 
 // Funcionalidades Específicas
 import { checkOnboarding } from './modules/onboarding.js';
@@ -34,7 +35,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // ✅ Storage configurado
+const storage = getStorage(app); 
 const provider = new GoogleAuthProvider();
 
 // ============================================================================
