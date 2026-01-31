@@ -1,7 +1,7 @@
 import { db, auth } from '../app.js';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 📌 NOVAS CATEGORIAS
+// 📌 CATEGORIAS
 export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
     { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
@@ -20,13 +20,17 @@ export const CATEGORIAS_ATIVAS = [
 let servicesUnsubscribe = null;
 
 // ============================================================================
-// 1. VITRINE (OFERTA)
+// 1. VITRINE (OFERTA) - CORRIGIDA
 // ============================================================================
 export async function carregarServicos(filtroCategoria = null) {
-    const container = document.getElementById('lista-servicos');
-    const containerFiltros = document.getElementById('filtros-servicos');
+    // Tenta achar o container novo, se não, usa o antigo
+    const container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
+    const containerFiltros = document.getElementById('category-filters'); // ID corrigido conforme HTML novo
     
-    if (!container) return;
+    if (!container) {
+        console.error("❌ ERRO CRÍTICO: Container da vitrine não encontrado no HTML.");
+        return;
+    }
 
     // Renderiza Filtros se necessário
     if(containerFiltros && containerFiltros.innerHTML.trim() === "") {
@@ -40,9 +44,10 @@ export async function carregarServicos(filtroCategoria = null) {
                 `).join('')}
             </div>
         `;
+        containerFiltros.classList.remove('hidden');
     }
 
-    container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
+    container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-10"></div>`;
 
     let q = query(collection(db, "active_providers"), where("status", "==", "aprovado"));
 
@@ -56,7 +61,7 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // Ordenação Inteligente: Reais > Avaliados > Demos
+        // Ordenação Inteligente
         servicos.sort((a, b) => {
             if (a.is_demo !== b.is_demo) return a.is_demo ? 1 : -1;
             return (b.rating_avg || 0) - (a.rating_avg || 0);
@@ -77,7 +82,7 @@ function renderizarCards(servicos, container) {
 
     if (servicos.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-12 opacity-60">
+            <div class="col-span-full text-center py-12 opacity-60">
                 <div class="text-4xl mb-2">🤷‍♂️</div>
                 <h3 class="font-bold text-gray-600">Nenhum profissional nesta categoria.</h3>
                 <button onclick="window.abrirPerfilProfissional()" class="mt-4 text-blue-600 font-bold text-xs underline">Quero Trabalhar Aqui</button>
@@ -109,9 +114,9 @@ function renderizarCards(servicos, container) {
         const mainService = user.services && user.services.length > 0 ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
 
         container.innerHTML += `
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 relative ${grayscaleClass} transition-all duration-300 hover:shadow-md">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${grayscaleClass} transition-all duration-300 hover:shadow-md animate-fadeIn">
                 ${demoBadge}
-                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-24 bg-gray-200 relative cursor-pointer group">
+                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-28 bg-gray-200 relative cursor-pointer group">
                     <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Capa">
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div class="absolute bottom-2 left-3 flex items-center gap-2">
@@ -127,7 +132,7 @@ function renderizarCards(servicos, container) {
                 <div class="p-4">
                     <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="text-xs font-bold text-gray-600 uppercase">${mainService.category}</p>
+                            <p class="text-xs font-bold text-gray-600 uppercase truncate max-w-[150px]">${mainService.category}</p>
                             <p class="text-[10px] text-gray-400 line-clamp-1">${user.bio || 'Pronto para atender.'}</p>
                         </div>
                         <div class="text-right">
@@ -139,7 +144,7 @@ function renderizarCards(servicos, container) {
                             <span class="w-2 h-2 rounded-full ${statusDot}"></span>
                             <span class="text-[10px] font-bold text-gray-500 uppercase">${statusText}</span>
                         </div>
-                        <button onclick="${btnAcao}" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-slate-800 transition active:scale-95 flex-1">
+                        <button onclick="${btnAcao}" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-slate-800 transition active:scale-95 flex-1 whitespace-nowrap">
                             ${btnTexto}
                         </button>
                     </div>
@@ -150,21 +155,16 @@ function renderizarCards(servicos, container) {
 }
 
 // ============================================================================
-// 2. MEUS PEDIDOS (RESTAURADO) - CRUCIAL PARA A ABA 'EM ANDAMENTO'
+// 2. MEUS PEDIDOS & HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
-    const container = document.getElementById('lista-pedidos-render');
+    const container = document.getElementById('meus-pedidos-andamento'); // ID CORRIGIDO
     if (!container || !auth.currentUser) return;
 
-    container.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600 mt-10"></div>`;
+    container.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600 mt-2"></div>`;
     
-    // Busca pedidos onde sou cliente ou prestador (status != completed)
-    // Nota: Simplificando query para evitar erro de índice composto complexo.
-    // Buscamos tudo onde participo e filtro no cliente por status.
     const uid = auth.currentUser.uid;
     const q1 = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
-    
-    // Obs: Idealmente faríamos duas queries e uníamos, mas vamos focar no cliente ver seus pedidos.
     
     onSnapshot(q1, (snap) => {
         container.innerHTML = "";
@@ -175,66 +175,56 @@ export async function carregarPedidosAtivos() {
         });
 
         if (pedidos.length === 0) {
-            container.innerHTML = `<div class="text-center py-10 opacity-50"><p class="text-xs text-gray-400">Nenhum pedido ativo.</p></div>`;
+            container.innerHTML = `<div class="text-center py-6 opacity-50"><p class="text-xs text-gray-400">Nenhum pedido ativo.</p></div>`;
             return;
         }
 
         pedidos.forEach(pedido => {
-            // Reutiliza lógica de card de pedido existente no seu chat.js se houver, 
-            // ou renderiza simples aqui para garantir que aparece.
             let statusLabel = "Pendente";
             if(pedido.status === 'in_progress') statusLabel = "Em Andamento";
             if(pedido.status === 'accepted') statusLabel = "Aceito - Aguardando";
 
             container.innerHTML += `
-                <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer hover:bg-blue-50">
-                    <div class="flex justify-between">
+                <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer hover:bg-blue-50 flex justify-between items-center animate-fadeIn">
+                    <div>
                         <h3 class="font-bold text-gray-800 text-sm">${pedido.provider_name}</h3>
-                        <span class="text-[10px] bg-blue-100 text-blue-700 px-2 rounded-full">${statusLabel}</span>
+                        <p class="text-[10px] text-gray-500 mt-1">R$ ${pedido.offer_value} • ${statusLabel}</p>
                     </div>
-                    <p class="text-[10px] text-gray-500 mt-1">R$ ${pedido.offer_value} • Toque para ver</p>
+                    <span class="text-xl">💬</span>
                 </div>
             `;
         });
     });
 }
 
-// ============================================================================
-// 3. NAVEGAÇÃO INTERNA (Abas Pedidos/Histórico)
-// ============================================================================
 export function switchServiceSubTab(tabName) {
-    const painelPedidos = document.getElementById('painel-pedidos');
-    const painelHistorico = document.getElementById('painel-historico');
-    
-    // Remove active
-    document.querySelectorAll('.subtab-btn').forEach(b => {
-        b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-        b.classList.add('text-gray-400');
+    // Esconde todas as views
+    ['contratar', 'andamento', 'historico'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`subtab-${t}-btn`).classList.remove('active', 'text-blue-900', 'border-blue-600');
+        document.getElementById(`subtab-${t}-btn`).classList.add('text-gray-400');
     });
 
-    if(tabName === 'andamento') {
-        if(painelPedidos) painelPedidos.classList.remove('hidden');
-        if(painelHistorico) painelHistorico.classList.add('hidden');
-        
-        const btn = document.getElementById('btn-tab-andamento');
-        if(btn) btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-        
-        carregarPedidosAtivos();
-    } else {
-        if(painelPedidos) painelPedidos.classList.add('hidden');
-        if(painelHistorico) painelHistorico.classList.remove('hidden');
-        
-        const btn = document.getElementById('btn-tab-historico');
-        if(btn) btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-        
-        carregarHistorico();
+    // Mostra a view certa
+    const viewAlvo = document.getElementById(`view-${tabName}`);
+    const btnAlvo = document.getElementById(`subtab-${tabName}-btn`);
+    
+    if(viewAlvo) viewAlvo.classList.remove('hidden');
+    if(btnAlvo) {
+        btnAlvo.classList.add('active', 'text-blue-900', 'border-blue-600');
+        btnAlvo.classList.remove('text-gray-400');
     }
+
+    // Carrega dados específicos
+    if(tabName === 'contratar') carregarServicos();
+    if(tabName === 'andamento') carregarPedidosAtivos();
+    if(tabName === 'historico') carregarHistorico();
 }
 
 async function carregarHistorico() {
-    const container = document.getElementById('lista-historico-render');
+    const container = document.getElementById('meus-pedidos-historico'); // ID CORRIGIDO
     if(!container) return;
-    container.innerHTML = `<div class="loader mx-auto"></div>`;
+    container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
 
     const uid = auth.currentUser.uid;
     const q = query(collection(db, "orders"), 
@@ -247,34 +237,29 @@ async function carregarHistorico() {
     container.innerHTML = "";
     
     if(snap.empty) {
-        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum serviço finalizado.</p>`;
+        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum serviço finalizado.</p>`;
         return;
     }
 
     snap.forEach(d => {
         const order = d.data();
-        // Botão para avaliar
         container.innerHTML += `
-            <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100">
-                <div class="flex justify-between items-center mb-2">
+            <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
+                <div>
                     <p class="font-bold text-xs text-gray-700">${order.provider_name}</p>
-                    <span class="font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                </div>
-                <div class="flex justify-between items-center">
                     <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
-                    <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[10px] text-blue-600 font-bold underline">Avaliar ⭐</button>
+                </div>
+                <div class="text-right">
+                    <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
+                    <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[9px] text-blue-600 font-bold underline hover:text-blue-800">Avaliar ⭐</button>
                 </div>
             </div>
         `;
     });
 }
 
-// ============================================================================
-// 4. EXPORTAÇÕES GLOBAIS (ESSENCIAL PARA O HTML FUNCIONAR)
-// ============================================================================
+// EXPORTAÇÕES GLOBAIS
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
 window.switchServiceSubTab = switchServiceSubTab;
 window.carregarPedidosAtivos = carregarPedidosAtivos;
-// Alias para compatibilidade antiga
-window.iniciarMonitoramentoPedidos = carregarPedidosAtivos;
