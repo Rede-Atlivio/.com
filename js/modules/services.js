@@ -1,9 +1,7 @@
 import { db, auth } from '../app.js';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// ✅ NOVO: Importação do Storage para a Capa
+// ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
-const storage = getStorage();
 
 // CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
@@ -213,7 +211,7 @@ export async function carregarHistorico() {
                     </div>
                     <div class="text-right">
                         <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer">Avaliar ⭐</button>
+                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer mt-1">Avaliar ⭐</button>
                     </div>
                 </div>
             `;
@@ -231,17 +229,24 @@ export function switchServiceSubTab(tabName) {
             elBtn.classList.add('text-gray-400');
         }
     });
+    
     const targetView = document.getElementById(`view-${tabName}`);
     const targetBtn = document.getElementById(`subtab-${tabName}-btn`);
+    
     if(targetView) targetView.classList.remove('hidden');
     if(targetBtn) {
         targetBtn.classList.remove('text-gray-400');
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
+
     if(tabName === 'contratar') carregarServicos();
     if(tabName === 'andamento') carregarPedidosAtivos();
     if(tabName === 'historico') carregarHistorico();
 }
+
+// ============================================================================
+// 3. GESTÃO DO PRESTADOR (PAINEL + ANTI-GOLPE)
+// ============================================================================
 
 export function switchProviderSubTab(tabName) {
     ['radar', 'ativos', 'historico'].forEach(t => {
@@ -250,10 +255,13 @@ export function switchProviderSubTab(tabName) {
         if(elView) elView.classList.add('hidden');
         if(elBtn) elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
     });
+    
     const targetView = document.getElementById(`pview-${tabName}`);
     const targetBtn = document.getElementById(`ptab-${tabName}-btn`);
+
     if(targetView) targetView.classList.remove('hidden');
     if(targetBtn) targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
+
     if(tabName === 'ativos') carregarPedidosPrestador();
     if(tabName === 'historico') carregarHistoricoPrestador();
 }
@@ -262,11 +270,19 @@ async function carregarPedidosPrestador() {
     const container = document.getElementById('lista-chamados-ativos');
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
+
     const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "in", ["pending", "accepted", "in_progress"]), orderBy("created_at", "desc"));
+    const q = query(collection(db, "orders"), 
+        where("provider_id", "==", uid), 
+        where("status", "in", ["pending", "accepted", "in_progress"]), 
+        orderBy("created_at", "desc")
+    );
+
     const snap = await getDocs(q);
     container.innerHTML = "";
+
     if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos.</p>`; return; }
+
     snap.forEach(d => {
         const order = d.data();
         let statusColor = order.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
@@ -289,12 +305,15 @@ async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
+
     const uid = auth.currentUser.uid;
     try {
         const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "completed"), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         container.innerHTML = "";
+
         if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum serviço finalizado.</p>`; return; }
+
         snap.forEach(d => {
             const order = d.data();
             container.innerHTML += `
@@ -324,7 +343,6 @@ export async function abrirConfiguracaoServicos() {
     const docSnap = await getDoc(doc(db, "active_providers", uid));
     let currentHtml = "";
     
-    // ✅ RECUPERA A CAPA ATUAL OU USA PADRÃO
     const currentCover = (docSnap.exists() && docSnap.data().cover_image) 
         ? docSnap.data().cover_image 
         : 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
@@ -400,7 +418,7 @@ export async function abrirConfiguracaoServicos() {
     }, 100);
 }
 
-// ✅ NOVA FUNÇÃO: UPLOAD DA CAPA
+// ✅ NOVA FUNÇÃO: UPLOAD DA CAPA (CORRIGIDA)
 window.salvarCapaPrestador = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -414,12 +432,15 @@ window.salvarCapaPrestador = async (input) => {
     reader.readAsDataURL(file);
 
     try {
-        // Upload para o Storage
+        // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SEGURANÇA)
+        const storage = getStorage(); // Agora chama apenas no clique
+        
+        // Upload
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
-        // Atualiza no Firestore
+        // Atualiza
         await updateDoc(doc(db, "active_providers", user.uid), { cover_image: url });
         alert("✅ Capa atualizada com sucesso!");
     } catch (e) {
@@ -542,4 +563,4 @@ window.switchProviderSubTab = switchProviderSubTab;
 window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
 window.iniciarMonitoramentoPedidos = carregarPedidosPrestador;
-window.salvarCapaPrestador = window.salvarCapaPrestador; // Garante exportação
+window.salvarCapaPrestador = window.salvarCapaPrestador;
