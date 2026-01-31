@@ -3,48 +3,62 @@ import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// Configuração
-const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
+// 1. CONFIGURAÇÃO (Sua chave oficial)
+const firebaseConfig = { 
+    apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
+    authDomain: "atlivio-oficial-a1a29.firebaseapp.com", 
+    projectId: "atlivio-oficial-a1a29", 
+    storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", 
+    messagingSenderId: "887430049204", 
+    appId: "1:887430049204:web:d205864a4b42d6799dd6e1" 
+};
 
-// 1. INICIALIZAÇÃO (Cria as ferramentas)
+// 2. INICIALIZAÇÃO
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // <--- AGORA SIM, CRIAMOS O STORAGE
+const storage = getStorage(app); // ✅ Storage criado corretamente
 const provider = new GoogleAuthProvider();
 
-// 2. EXPOSIÇÃO GLOBAL (Para o HTML e Robôs verem)
+// 3. EXPOSIÇÃO GLOBAL (Para HTML e Debug)
 window.auth = auth;
 window.db = db;
-window.storage = storage; // <--- Agora funciona porque 'storage' existe
+window.storage = storage; // ✅ Storage exposto
 window.provider = provider;
 
-// 3. EXPORTAÇÃO (Para os arquivos .js verem)
+// 4. EXPORTAÇÃO (Para módulos .js)
 export { app, auth, db, storage, provider };
 
-// CARREGAMENTO DOS MÓDULOS
-import './auth.js';                
-import './modules/auth_sms.js';    
-import './modules/services.js';     
-import './modules/jobs.js';         
-import './modules/opportunities.js'; 
+// ============================================================================
+// 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// ============================================================================
 
-// 🚨 ORDEM CRÍTICA AQUI 👇
-import './modules/chat.js';      // 1º: Carrega o sistema base de chat (Serviços)
-import './modules/job_chat.js';  // 2º: Carrega o plugin de Vagas (que se conecta ao base)
+import './auth.js';                // Auth Core
+import './modules/auth_sms.js';    // SMS & Máscara
+import './modules/services.js';    // Marketplace de Serviços
+import './modules/jobs.js';        // Vagas de Emprego & Upload PDF
+import './modules/opportunities.js'; // Afiliados
+
+// 🚨 ORDEM CRÍTICA DE CHAT 🚨
+import './modules/chat.js';      // 1º: Base (Serviços)
+import './modules/job_chat.js';  // 2º: Plugin (Vagas) - Adiciona aba de entrevistas
 
 import { checkOnboarding } from './modules/onboarding.js';
 import { abrirConfiguracoes } from './modules/profile.js';
 
-console.log("✅ App Carregado com Storage.");
+console.log("✅ App Carregado: Sistema Híbrido Online.");
 
+// 5. MONITORAMENTO DE LOGIN
 auth.onAuthStateChanged((user) => {
     if (user) {
-        console.log("👤 Usuário detectado:", user.uid);
-        checkOnboarding(user);
+        console.log("👤 Usuário online:", user.uid);
+        checkOnboarding(user); // Verifica nome e termos
+        
+        // Remove tela de login
         const loginScreen = document.getElementById('auth-container');
         if(loginScreen) loginScreen.classList.add('hidden');
     }
 });
 
+// Expõe menu de perfil
 window.abrirConfiguracoes = abrirConfiguracoes;
