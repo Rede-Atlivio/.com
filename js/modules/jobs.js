@@ -1,5 +1,4 @@
 import { db, auth } from '../app.js';
-// ✅ CORREÇÃO: Removemos onAuthStateChanged daqui pois usamos o auth do app.js
 import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
@@ -11,14 +10,10 @@ export function carregarInterfaceEmpregos() {
     const containerEmpresa = document.getElementById('painel-empresa');
     const userProfile = window.userProfile || {}; 
 
-    // Reset visual
     if(containerVagas) containerVagas.classList.add('hidden');
     if(containerEmpresa) containerEmpresa.classList.add('hidden');
 
-    // Injeta o Modal de Candidatos no HTML se não existir
-    if(!document.getElementById('modal-candidatos-empresa')) {
-        criarModalCandidatos();
-    }
+    if(!document.getElementById('modal-candidatos-empresa')) criarModalCandidatos();
 
     if (!auth.currentUser) {
         if(containerVagas) {
@@ -28,9 +23,7 @@ export function carregarInterfaceEmpregos() {
         return;
     }
 
-    // Lógica de Perfil (Usando dados globais carregados no app.js)
     if (userProfile.is_provider) {
-        // --- VISÃO DO PRESTADOR ---
         if(containerVagas) {
             containerVagas.classList.remove('hidden');
             containerVagas.innerHTML = `
@@ -43,7 +36,6 @@ export function carregarInterfaceEmpregos() {
             carregarVagas();
         }
     } else {
-        // --- VISÃO DA EMPRESA ---
         if(containerEmpresa) {
              containerEmpresa.classList.remove('hidden');
              listarMinhasVagasEmpresa();
@@ -52,12 +44,11 @@ export function carregarInterfaceEmpregos() {
 }
 
 // ============================================================================
-// 2. PRESTADOR (CANDIDATO)
+// 2. FUNÇÕES DE VAGAS (CANDIDATO)
 // ============================================================================
 export async function carregarVagas() {
     const container = document.getElementById('vagas-content');
     if(!container) return;
-    
     container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div></div>`;
 
     try {
@@ -108,15 +99,10 @@ export async function listarMinhasCandidaturas() {
             let statusColor = "text-gray-400";
             let statusText = "Aguardando";
 
-            if (app.status === 'chat_aberto' || app.status === 'interview') {
+            if (app.status === 'chat_aberto') {
                 statusColor = "text-green-500";
                 statusText = "EMPRESA CHAMOU";
-                areaChat = `
-                    <div class="mt-2 bg-green-50 border border-green-100 p-2 rounded flex items-center justify-between animate-pulse">
-                        <span class="text-[10px] font-bold text-green-700">👋 A empresa quer falar com você!</span>
-                        <button onclick="window.irParaChat('${app.owner_id}', 'Empresa')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">ABRIR CHAT</button>
-                    </div>
-                `;
+                areaChat = `<div class="mt-2 bg-green-50 border border-green-100 p-2 rounded flex items-center justify-between animate-pulse"><span class="text-[10px] font-bold text-green-700">👋 A empresa quer falar com você!</span><button onclick="window.irParaChat('${app.owner_id}', 'Empresa')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">ABRIR CHAT</button></div>`;
             }
 
             container.innerHTML += `
@@ -128,15 +114,50 @@ export async function listarMinhasCandidaturas() {
                     <p class="text-[9px] text-gray-400 mb-2">Enviado em: ${app.created_at?.toDate().toLocaleDateString()}</p>
                     ${areaChat}
                     <button onclick="window.desistirVaga('${d.id}')" class="mt-2 w-full text-[9px] text-red-400 border border-red-100 py-1 rounded hover:bg-red-50">Cancelar Candidatura</button>
-                </div>
-            `;
+                </div>`;
         });
     } catch (e) { console.error(e); }
 }
 
 // ============================================================================
-// 3. EMPRESA (PAINEL DE SELEÇÃO)
+// 3. FUNÇÕES DE EMPRESA (PUBLICAR, LISTAR, ENTREVISTAR)
 // ============================================================================
+
+// 🔥 ESTA É A FUNÇÃO QUE FALTAVA 🔥
+export async function publicarVaga() {
+    const title = document.getElementById('job-title').value;
+    const salary = document.getElementById('job-salary').value;
+    const desc = document.getElementById('job-desc').value;
+
+    if(!title || !desc) return alert("Preencha título e descrição.");
+
+    const btn = document.getElementById('btn-pub-job');
+    btn.innerText = "⏳ PUBLICANDO..."; btn.disabled = true;
+
+    try {
+        const nomeEmpresa = auth.currentUser.displayName || "Empresa Confidencial";
+        await addDoc(collection(db, "jobs"), {
+            owner_id: auth.currentUser.uid,
+            title: title, titulo: title, 
+            salary: salary, description: desc,   
+            empresa: nomeEmpresa,
+            created_at: serverTimestamp(),
+            status: 'ativa', is_demo: false
+        });
+
+        alert("✅ Vaga publicada com sucesso!");
+        document.getElementById('job-post-modal').classList.add('hidden');
+        document.getElementById('job-title').value = "";
+        document.getElementById('job-desc').value = "";
+        listarMinhasVagasEmpresa();
+
+    } catch(e) { 
+        alert("Erro: " + e.message); 
+    } finally { 
+        btn.innerText = "PUBLICAR AGORA"; btn.disabled = false; 
+    }
+}
+
 export async function listarMinhasVagasEmpresa() {
     const container = document.getElementById('lista-minhas-vagas');
     if(!container || !auth.currentUser) return;
@@ -165,12 +186,10 @@ export async function listarMinhasVagasEmpresa() {
                     <button onclick="window.verCandidatosEmpresa('${d.id}', '${titulo}')" class="flex-1 bg-blue-600 text-white text-[10px] font-bold py-2 rounded-lg shadow hover:bg-blue-500 flex items-center justify-center gap-2">📄 VER CANDIDATOS</button>
                     ${isAtiva ? `<button onclick="window.encerrarVaga('${d.id}')" class="px-3 bg-red-50 text-red-500 font-bold border border-red-100 rounded-lg text-[10px]">⛔</button>` : ''}
                 </div>
-            </div>
-        `;
+            </div>`;
     });
 }
 
-// --- MODAL DE CANDIDATOS ---
 export async function verCandidatosEmpresa(jobId, jobTitle) {
     const modal = document.getElementById('modal-candidatos-empresa');
     const lista = document.getElementById('lista-candidatos-ul');
@@ -204,13 +223,11 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
                         ${btnCv}
                     </div>
                     <div class="mt-3">${btnChat}</div>
-                </div>
-            `;
+                </div>`;
         });
     } catch(e) { console.error(e); lista.innerHTML = "Erro ao carregar."; }
 }
 
-// AÇÃO DA EMPRESA: INICIAR CONVERSA
 export async function iniciarConversaEmpresa(appId, userId, userName) {
     if(!confirm(`Iniciar conversa com ${userName}?`)) return;
     try {
@@ -219,7 +236,7 @@ export async function iniciarConversaEmpresa(appId, userId, userName) {
         await setDoc(doc(db, "chats", chatID), {
             users: [auth.currentUser.uid, userId],
             user_names: [auth.currentUser.displayName, userName],
-            last_msg: "Olá! Vimos seu currículo e gostaríamos de conversar.",
+            last_msg: "Olá! Vimos seu currículo.",
             last_time: serverTimestamp(),
             job_context: appId
         }, { merge: true });
@@ -229,7 +246,9 @@ export async function iniciarConversaEmpresa(appId, userId, userName) {
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// UTILITÁRIOS
+// ============================================================================
+// 4. UTILITÁRIOS & MODAIS
+// ============================================================================
 function criarModalCandidatos() {
     const div = document.createElement('div');
     div.id = "modal-candidatos-empresa";
@@ -245,7 +264,6 @@ function criarModalCandidatos() {
 export function irParaChat(targetUid, name) {
     const tabChat = document.querySelector('[data-target="chat"]');
     if(tabChat) tabChat.click();
-    // Aqui você pode adicionar lógica para abrir o chat específico automaticamente se o módulo chat.js suportar
 }
 
 export function candidatarVaga(id, title, ownerId) {
@@ -291,9 +309,10 @@ export function desistirVaga(appId) {
     deleteDoc(doc(db, "job_applications", appId)).then(() => listarMinhasCandidaturas());
 }
 
-// EXPORTAÇÕES GLOBAIS
+// 🔥 ZONA DE EXPORTAÇÃO (OBRIGATÓRIO) 🔥
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.carregarVagas = carregarVagas;
+window.publicarVaga = publicarVaga; // <--- AQUI ESTÁ ELA!
 window.listarMinhasVagasEmpresa = listarMinhasVagasEmpresa;
 window.candidatarVaga = candidatarVaga;
 window.verCandidatosEmpresa = verCandidatosEmpresa;
