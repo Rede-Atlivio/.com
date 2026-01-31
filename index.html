@@ -411,80 +411,57 @@
     </div>
 </div>
 
-    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <input type="hidden" id="target-provider-id">
-            <input type="hidden" id="service-base-price">
+    <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        
+        <input type="hidden" id="target-provider-id">
+        <input type="hidden" id="service-base-price">
+        
+        <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
+            <div>
+                <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
+            </div>
+            <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold px-2">&times;</button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
+
+            <div id="service-selection-container" class="mb-4 w-full"></div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data</label>
+                    <input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Hora</label>
+                    <input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Local</label>
+                <input type="text" id="req-local" placeholder="Endereço ou Ponto de Encontro" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold outline-none focus:border-blue-500">
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mb-3"></div>
             
-            <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
-                <div>
-                    <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
-                    <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
+            <div class="bg-gray-100 p-3 rounded-xl text-center mb-3 border border-gray-200">
+                <p class="text-[10px] text-gray-500 uppercase font-bold">Valor da Proposta</p>
+                <div class="flex items-center justify-center gap-1">
+                    <span class="text-lg font-bold text-gray-400">R$</span>
+                    <input type="number" id="req-value" class="text-3xl font-black text-center bg-transparent w-32 outline-none text-black p-0 m-0" value="0.00">
                 </div>
-                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
+                <p id="calc-total-reserva" class="hidden text-xs font-bold text-blue-600 mt-1">R$ 0.00</p>
             </div>
 
-            <div class="p-6 space-y-5 overflow-y-auto flex-1">
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-[9px] font-bold text-gray-500 uppercase">Data</label>
-                        <input type="date" id="req-date" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                    </div>
-                    <div>
-                        <label class="text-[9px] font-bold text-gray-500 uppercase">Horário</label>
-                        <input type="time" id="req-time" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                    </div>
-                </div>
-                <div>
-                    <label class="text-[9px] font-bold text-gray-500 uppercase">Local</label>
-                    <input type="text" id="req-local" placeholder="Endereço do serviço" class="w-full border p-2 rounded-lg text-sm text-gray-900 bg-white">
-                </div>
-
-                <div class="border-t border-gray-100 pt-2"></div>
-
-                <div>
-                    <p class="text-[10px] font-bold text-blue-900 uppercase mb-3">Quanto você quer ofertar?</p>
-                    
-                    <div class="mb-4">
-                        <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button onclick="selecionarDesconto(0.05)" id="btn-desc-5" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
-                            <button onclick="selecionarDesconto(0.10)" id="btn-desc-10" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
-                            <button onclick="selecionarDesconto(0.15)" id="btn-desc-15" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="ativarInputPersonalizado()">
-                                <span class="text-xs font-bold text-gray-700">✏️ Outro Valor</span>
-                            </label>
-                            <span class="text-[8px] text-gray-400">(Min: -20% | Max: +30%)</span>
-                        </div>
-                        <div class="relative">
-                            <span class="absolute left-3 top-2.5 text-gray-500 font-bold text-sm">R$</span>
-                            <input type="number" id="req-value" placeholder="0,00" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-400 bg-gray-100 outline-none transition" oninput="validarOferta(this.value)">
-                        </div>
-                        <p id="msg-erro-valor" class="hidden text-[9px] text-red-500 mt-2 bg-red-50 p-2 rounded border border-red-100 font-bold text-center">
-                            Para manter a qualidade, a oferta mínima é R$ <span id="val-min">00</span>.
-                        </p>
-                    </div>
-                </div>
-
-                <div id="financial-summary" class="bg-yellow-50 p-4 rounded-xl border border-yellow-200 hidden">
-                    <div class="flex justify-between text-xs mb-1 text-yellow-900"><span>Reserva (30%)</span><span class="font-bold" id="calc-security">R$ 0,00</span></div>
-                    <div class="flex justify-between text-xs mb-3 border-b border-yellow-300 pb-2 text-yellow-900"><span>Taxa (10%)</span><span class="font-bold" id="calc-fee">R$ 0,00</span></div>
-                    <div class="flex justify-between text-sm text-blue-900 font-black"><span>PAGAR AGORA</span><span id="calc-total-reserva">R$ 0,00</span></div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white border-t border-gray-100 flex gap-2 flex-shrink-0 z-10 rounded-b-2xl md:rounded-b-2xl">
-                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="flex-1 py-3 text-xs font-bold text-gray-500 border border-gray-200 rounded-xl hover:bg-gray-50">Cancelar</button>
-                <button onclick="enviarPropostaAgora()" id="btn-confirm-req" class="flex-1 py-3 text-xs font-bold text-white bg-blue-600 rounded-xl shadow-md opacity-50 cursor-not-allowed transition hover:bg-blue-700" disabled>ENVIAR PROPOSTA 🚀</button>
-            </div>
+            <button id="btn-confirm-req" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 text-sm uppercase">
+                ENVIAR PROPOSTA
+            </button>
         </div>
     </div>
+</div>
 
     <div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
         <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center"><h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3><p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p><div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container"><span class="rate-star" data-val="1">★</span><span class="rate-star" data-val="2">★</span><span class="rate-star" data-val="3">★</span><span class="rate-star" data-val="4">★</span><span class="rate-star" data-val="5">★</span></div><div class="grid grid-cols-2 gap-2 mb-6"><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button><button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button></div><div class="flex items-center justify-center gap-4 mb-6"><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="yes" class="accent-blue-600" checked><span class="text-xs font-bold text-gray-700">👍 Recomendo</span></label><label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="no" class="accent-red-600"><span class="text-xs font-bold text-gray-700">👎 Não Indico</span></label></div><textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea><button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button><button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button></div>
