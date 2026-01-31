@@ -866,43 +866,41 @@
             </div>
 
             <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
-                <div class="flex justify-between items-center">
+                <div class="flex justify-between items-center border-b border-green-200 pb-2">
                     <p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p>
                     <span class="text-lg">🤑</span>
                 </div>
                 
-                <div>
-                    <label class="text-[10px] font-bold text-green-700 uppercase">Sua Chave PIX</label>
-                    <div class="space-y-3 mt-4 border-t pt-4">
-    <p class="text-xs font-bold text-gray-500 uppercase">Dados para Recebimento (PIX)</p>
-    
-    <div class="grid grid-cols-2 gap-2">
-        <div class="col-span-2">
-            <label class="text-[10px] text-gray-400">Chave PIX</label>
-            <input type="text" id="set-pix-chave" placeholder="E-mail, CPF ou Aleatória" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
-        </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold">Chave PIX</label>
+                        <input type="text" id="set-pix-chave" placeholder="CPF, Email ou Aleatória" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-green-500">
+                    </div>
 
-        <div>
-            <label class="text-[10px] text-gray-400">Banco</label>
-            <input type="text" id="set-pix-banco" placeholder="Ex: Nubank" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
-        </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-bold">Banco</label>
+                            <input type="text" id="set-pix-banco" placeholder="Ex: Nubank" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-bold">CPF Titular</label>
+                            <input type="text" id="set-pix-cpf" placeholder="000..." class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                        </div>
+                    </div>
 
-        <div>
-            <label class="text-[10px] text-gray-400">CPF do Titular</label>
-            <input type="text" id="set-pix-cpf" placeholder="000.000.000-00" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
-        </div>
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold">Nome do Titular</label>
+                        <input type="text" id="set-pix-nome" placeholder="Nome igual no banco" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                    </div>
+                    
+                    <p class="text-[9px] text-red-600 font-bold mt-1 bg-red-50 p-2 rounded border border-red-100">
+                        ⚠️ Atenção: A conta bancária deve ser do mesmo titular do perfil.
+                    </p>
+                </div>
+            </div>
 
-        <div class="col-span-2">
-            <label class="text-[10px] text-gray-400">Nome Completo do Titular</label>
-            <input type="text" id="set-pix-nome" placeholder="Nome igual está no banco" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm text-gray-700 outline-none focus:border-blue-500">
-            
-            <p class="text-[9px] text-green-600 mt-1">*Usada para transferir seu saldo.</p>
-            <p class="text-[9px] text-red-600 font-bold mt-1">⚠️ Atenção: Transferências só serão realizadas para o titular da conta na ATLIVIO.</p>
-        </div>
-    </div>
-</div>
             <div class="space-y-2 pt-2">
-                <button onclick="copiarLinkAfiliado()" class="w-full border border-blue-200 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-100 transition">
+                <button onclick="window.copiarLinkAfiliado()" class="w-full border border-blue-200 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-100 transition">
                     🔗 Copiar Meu Link de Indicação
                 </button>
             </div>
@@ -911,7 +909,7 @@
 
         <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
             <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
-            <button onclick="salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">
+            <button onclick="window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">
                 SALVAR ALTERAÇÕES
             </button>
         </div>
