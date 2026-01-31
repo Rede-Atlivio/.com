@@ -6,7 +6,7 @@ const ASSETS_TO_CACHE = [
   "./manifest.json",
   "./js/app.js",
   "./js/auth.js",
-  "./js/wallet.js",
+  './js/modules/wallet.js',
   "./js/modules/services.js",
   "./js/modules/jobs.js",
   "./js/modules/chat.js",
