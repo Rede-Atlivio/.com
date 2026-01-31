@@ -10,7 +10,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <style>
+    <style> 
         .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
@@ -29,27 +29,32 @@
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         
-        /* ✅ CORREÇÃO DE CORES DOS CAMPOS (MODAIS BRANCOS) */
+        /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
         input, textarea, select { 
-            color: #1f2937 !important; /* Cinza Escuro (Quase preto) */
-            background-color: #f9fafb !important; /* Fundo Cinza muito claro */
+            color: #1f2937 !important; /* Cinza Escuro */
+            background-color: #f9fafb !important; /* Fundo Claro */
         }
 
-        /* ✅ EXCEÇÃO: MODAL DE ONBOARDING (FUNDO ESCURO) */
+        /* ✅ EXCEÇÃO: ONBOARDING (LETRA BRANCA) */
         #modal-onboarding input { 
             color: white !important; 
-            background-color: #0f172a !important;
+            background-color: #0f172a !important; /* Fundo Escuro */
         }
 
-        /* Estado Auto-preenchimento (Ajuste do navegador) */
+        /* AJUSTE DO AUTO-PREENCHIMENTO (CHROME) */
         input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
         input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important;
-            -webkit-text-fill-color: #0f172a !important;
-            font-weight: bold !important;
+            -webkit-box-shadow: 0 0 0 30px #f9fafb inset !important;
+            -webkit-text-fill-color: #1f2937 !important;
             transition: background-color 5000s ease-in-out 0s;
+        }
+
+        /* AUTO-PREENCHIMENTO NO ONBOARDING */
+        #modal-onboarding input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+            -webkit-text-fill-color: white !important;
         }
     </style>
 
