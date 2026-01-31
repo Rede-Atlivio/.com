@@ -1,4 +1,5 @@
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, query, orderBy, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ✅ ADICIONADO 'limit' NA IMPORTAÇÃO (CORREÇÃO DO ERRO)
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let allLoadedJobs = [];
 let selectedJobs = new Set();
@@ -8,14 +9,18 @@ export async function init() {
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
     
-    headers.innerHTML = `<th class="p-3 w-10"><input type="checkbox" id="check-all-jobs" class="chk-custom"></th><th class="p-3">VAGA</th><th class="p-3">EMPRESA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+    // Configura UI
+    if(headers) headers.innerHTML = `<th class="p-3 w-10"><input type="checkbox" id="check-all-jobs" class="chk-custom"></th><th class="p-3">VAGA</th><th class="p-3">EMPRESA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
     
     if(btnAdd) { 
+        btnAdd.style.display = 'block';
         btnAdd.innerHTML = "+ NOVA VAGA"; 
         btnAdd.onclick = () => abrirModalVaga(); 
     }
-    document.getElementById('btn-bulk-delete').onclick = executeBulkDelete;
+    const btnBulk = document.getElementById('btn-bulk-delete');
+    if(btnBulk) btnBulk.onclick = executeBulkDelete;
 
+    // Exporta Globais
     window.abrirModalVaga = abrirModalVaga;
     window.salvarVaga = salvarVaga;
     window.verCandidatos = verCandidatos;
@@ -30,8 +35,10 @@ function fecharModalJobs() {
     const modal = document.getElementById('modal-editor');
     modal.classList.add('hidden');
     const content = document.getElementById('modal-content');
-    content.style.pointerEvents = 'auto';
-    content.style.opacity = '1';
+    if(content) {
+        content.style.pointerEvents = 'auto';
+        content.style.opacity = '1';
+    }
 }
 
 async function loadList() {
@@ -50,7 +57,8 @@ async function loadList() {
 function renderTable(lista) {
     const tbody = document.getElementById('list-body');
     tbody.innerHTML = "";
-    document.getElementById('list-count').innerText = `${lista.length} vagas`;
+    const countEl = document.getElementById('list-count');
+    if(countEl) countEl.innerText = `${lista.length} vagas`;
 
     if(lista.length === 0) { tbody.innerHTML = `<tr><td colspan="5" class="text-center text-gray-500 p-10">Nada encontrado.</td></tr>`; return; }
 
@@ -58,14 +66,18 @@ function renderTable(lista) {
         const isChecked = selectedJobs.has(job.id) ? 'checked' : '';
         let stClass = job.status === 'ativo' ? 'text-green-400' : 'text-yellow-400';
         
+        // TRATAMENTO HÍBRIDO (RESOLVE O "UNDEFINED")
+        const titulo = job.title || job.titulo || "Sem Título";
+        const empresa = job.company || job.empresa || "Confidencial";
+        
         tbody.innerHTML += `
             <tr class="border-b border-slate-800 hover:bg-slate-800/50">
                 <td class="p-3"><input type="checkbox" class="chk-job chk-custom" data-id="${job.id}" ${isChecked}></td>
-                <td class="p-3 font-bold text-white">${job.title || job.titulo}</td>
-                <td class="p-3 text-gray-400 text-xs">${job.company || job.empresa}</td>
+                <td class="p-3 font-bold text-white">${titulo}</td>
+                <td class="p-3 text-gray-400 text-xs">${empresa}</td>
                 <td class="p-3 ${stClass} font-bold text-xs uppercase">${job.status || 'pendente'}</td>
                 <td class="p-3 text-right flex justify-end gap-2">
-                    <button onclick="window.verCandidatos('${job.id}', '${(job.title||'Vaga').replace(/'/g,"")}')" class="bg-blue-900/30 text-blue-300 border border-blue-800 px-3 py-1 rounded text-xs hover:bg-blue-900 transition">📄 CANDIDATOS</button>
+                    <button onclick="window.verCandidatos('${job.id}', '${titulo.replace(/'/g,"")}')" class="bg-blue-900/30 text-blue-300 border border-blue-800 px-3 py-1 rounded text-xs hover:bg-blue-900 transition">📄 CANDIDATOS</button>
                     <button onclick="window.abrirModalVaga('${job.id}')" class="text-gray-400 hover:text-white px-2">✏️</button>
                     <button onclick="window.excluirVaga('${job.id}')" class="text-red-500 hover:text-red-400 px-2">🗑️</button>
                 </td>
@@ -74,12 +86,12 @@ function renderTable(lista) {
     });
 }
 
-// --- VISUALIZADOR DE CANDIDATOS (BUSCA PROFUNDA) ---
+// --- VISUALIZADOR DE CANDIDATOS ---
 window.verCandidatos = async (jobId, title) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     const btnClose = document.getElementById('btn-close-modal');
-    btnClose.onclick = window.fecharModalJobs;
+    if(btnClose) btnClose.onclick = window.fecharModalJobs;
 
     modal.classList.remove('hidden');
     content.innerHTML = `<div class="text-center py-10 text-white">Buscando currículos para ID: ${jobId}...</div>`;
@@ -91,18 +103,14 @@ window.verCandidatos = async (jobId, title) => {
         let q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId));
         let snap = await getDocs(q);
 
-        // Se não achar, tenta buscar TODOS e filtrar no JS (Backup de segurança)
+        // Se não achar, tenta buscar TODOS e filtrar no JS (Backup)
         if(snap.empty) {
             console.warn("⚠️ Busca direta vazia. Tentando busca ampla...");
-            // Busca os últimos 50 currículos gerais
-            const qAll = query(collection(window.db, "job_applications"), orderBy("created_at", "desc"), limit(50));
+            const qAll = query(collection(window.db, "job_applications"), orderBy("created_at", "desc"), limit(50)); // AGORA O LIMIT VAI FUNCIONAR
             const snapAll = await getDocs(qAll);
-            // Filtra manualmente
             const filtrados = snapAll.docs.filter(d => d.data().job_id === jobId || d.data().vaga_id === jobId);
             
             if(filtrados.length > 0) {
-                console.log(`✅ Achamos ${filtrados.length} candidatos na busca ampla!`);
-                // Cria um objeto fake de snapshot
                 snap = { size: filtrados.length, empty: false, forEach: (cb) => filtrados.forEach(cb) };
             }
         }
@@ -113,7 +121,7 @@ window.verCandidatos = async (jobId, title) => {
             html += `<p class="text-gray-500 text-center">Nenhum candidato encontrado no sistema para esta vaga.</p>`;
         } else {
             snap.forEach(d => {
-                const app = d.data ? d.data() : d; // Suporte para snapshot fake
+                const app = d.data ? d.data() : d;
                 const linkPdf = app.resume_url || app.cv_url || app.file_url;
                 
                 html += `
@@ -140,6 +148,7 @@ window.verCandidatos = async (jobId, title) => {
     }
 };
 
+// ... Funções de Salvar (Mantidas) ...
 function abrirModalVaga(id = null) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
