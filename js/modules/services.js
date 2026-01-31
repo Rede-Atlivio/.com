@@ -1,7 +1,7 @@
 import { db, auth } from '../app.js';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 📌 CATEGORIAS E VALORES MÍNIMOS (ANTI-GOLPE)
+// CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
     { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
@@ -28,9 +28,8 @@ export async function carregarServicos(filtroCategoria = null) {
     
     if (!container) return;
 
-    // LÓGICA DE FILTROS: SÓ MOSTRA SE O CONTAINER DA VITRINE ESTIVER VISÍVEL
+    // Filtros apenas se vitrine visível
     const isVitrineVisible = container.offsetParent !== null;
-    
     if(containerFiltros) {
         if(isVitrineVisible) {
             containerFiltros.classList.remove('hidden');
@@ -47,14 +46,13 @@ export async function carregarServicos(filtroCategoria = null) {
                 `;
             }
         } else {
-            containerFiltros.classList.add('hidden'); // Esconde no modo prestador
+            containerFiltros.classList.add('hidden');
         }
     }
 
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-10"></div>`;
 
     let q = query(collection(db, "active_providers"), where("status", "==", "aprovado"));
-
     if (servicesUnsubscribe) servicesUnsubscribe();
 
     servicesUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -65,7 +63,6 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // Ordenação
         servicos.sort((a, b) => {
             if (a.is_demo !== b.is_demo) return a.is_demo ? 1 : -1;
             return (b.rating_avg || 0) - (a.rating_avg || 0);
@@ -76,21 +73,18 @@ export async function carregarServicos(filtroCategoria = null) {
                 s.services && s.services.some(sub => sub.category.includes(filtroCategoria) || sub.category === filtroCategoria)
             );
         }
-
         renderizarCards(servicos, container);
     });
 }
 
 function renderizarCards(servicos, container) {
     container.innerHTML = "";
-
     if (servicos.length === 0) {
         container.innerHTML = `<div class="col-span-full text-center py-12 opacity-50"><p>Nenhum profissional encontrado.</p></div>`;
         return;
     }
 
     servicos.forEach(user => {
-        // VACINA ANTI-CRASH
         const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
         const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
         
@@ -100,11 +94,12 @@ function renderizarCards(servicos, container) {
         const statusClass = isOnline ? "" : "grayscale opacity-75";
         const statusText = isOnline ? "ONLINE" : "OFFLINE";
         const statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
+        const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
 
         container.innerHTML += `
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${statusClass} transition hover:shadow-md flex flex-col h-full animate-fadeIn">
                 <div onclick="window.verPerfilCompleto('${user.id}')" class="h-24 bg-gray-200 relative cursor-pointer">
-                    <img src="${user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500'}" class="w-full h-full object-cover">
+                    <img src="${coverImg}" class="w-full h-full object-cover">
                     <div class="absolute bottom-2 left-3 flex items-center gap-2">
                         <img src="${user.foto_perfil || 'https://ui-avatars.com/api/?name='+nomeProf}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
                         <div>
@@ -116,7 +111,7 @@ function renderizarCards(servicos, container) {
                 <div class="p-3 flex-1 flex flex-col justify-between">
                     <div class="flex justify-between items-start mb-2">
                         <div class="pr-1 flex-1">
-                            <p class="text-[10px] font-bold text-gray-600 uppercase truncate">${mainService.category}</p>
+                            <p class="text-[10px] font-bold text-gray-600 uppercase truncate max-w-[140px]">${mainService.category}</p>
                             <p class="text-[9px] text-gray-400 line-clamp-1">${user.bio || 'Pronto.'}</p>
                         </div>
                         <span class="font-black text-green-600 text-xs whitespace-nowrap">${precoDisplay}</span>
@@ -132,13 +127,13 @@ function renderizarCards(servicos, container) {
 }
 
 // ============================================================================
-// 2. MEUS PEDIDOS & HISTÓRICO (CLIENTE) - RESTAURADOS!
+// 2. MEUS PEDIDOS & HISTÓRICO (CLIENTE)
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('meus-pedidos-andamento');
     if (!container || !auth.currentUser) return;
-
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
+    
     const uid = auth.currentUser.uid;
     const q = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
     
@@ -150,10 +145,7 @@ export async function carregarPedidosAtivos() {
             if(p.status !== 'completed' && p.status !== 'rejected') pedidos.push({id: d.id, ...p});
         });
 
-        if (pedidos.length === 0) {
-            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`;
-            return;
-        }
+        if (pedidos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
 
         pedidos.forEach(p => {
             container.innerHTML += `
@@ -209,11 +201,7 @@ export function switchServiceSubTab(tabName) {
     });
     
     document.getElementById(`view-${tabName}`).classList.remove('hidden');
-    const btn = document.getElementById(`subtab-${tabName}-btn`);
-    if(btn) {
-        btn.classList.add('active', 'text-blue-900', 'border-blue-600');
-        btn.classList.remove('text-gray-400');
-    }
+    document.getElementById(`subtab-${tabName}-btn`).classList.add('active', 'text-blue-900', 'border-blue-600');
 
     if(tabName === 'contratar') carregarServicos();
     if(tabName === 'andamento') carregarPedidosAtivos();
@@ -233,6 +221,7 @@ export function switchProviderSubTab(tabName) {
     document.getElementById(`ptab-${tabName}-btn`).classList.add('active', 'text-blue-900', 'border-blue-600');
 
     if(tabName === 'ativos') carregarPedidosPrestador();
+    if(tabName === 'historico') carregarHistoricoPrestador();
 }
 
 async function carregarPedidosPrestador() {
@@ -268,6 +257,34 @@ async function carregarPedidosPrestador() {
             </div>
         `;
     });
+}
+
+async function carregarHistoricoPrestador() {
+    const container = document.getElementById('lista-chamados-historico');
+    if(!container) return;
+    container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
+
+    const uid = auth.currentUser.uid;
+    try {
+        const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "completed"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        container.innerHTML = "";
+
+        if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum serviço finalizado.</p>`; return; }
+
+        snap.forEach(d => {
+            const order = d.data();
+            container.innerHTML += `
+                <div class="bg-green-50 p-3 rounded-xl mb-2 border border-green-100 flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-xs text-green-900">${order.client_name}</h3>
+                        <p class="text-[10px] text-green-700">Concluído em ${order.completed_at?.toDate().toLocaleDateString()}</p>
+                    </div>
+                    <span class="font-black text-green-700 text-xs">+ R$ ${order.offer_value}</span>
+                </div>
+            `;
+        });
+    } catch(e) { console.error(e); }
 }
 
 export async function abrirConfiguracaoServicos() {
@@ -359,11 +376,12 @@ export async function salvarServicoPrestador() {
     } catch(e) { alert("Erro ao salvar."); }
 }
 
-// EXPORTAÇÕES
+// EXPORTAÇÕES FINAIS
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
 window.switchServiceSubTab = switchServiceSubTab;
 window.carregarPedidosAtivos = carregarPedidosAtivos;
+window.carregarHistorico = carregarHistorico;
 window.switchProviderSubTab = switchProviderSubTab;
 window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
