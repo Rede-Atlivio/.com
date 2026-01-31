@@ -412,17 +412,55 @@
 </div>
 
     <div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
-        <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-            <input type="hidden" id="target-provider-id">
-            <input type="hidden" id="service-base-price">
-            
-            <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
-                <div>
-                    <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
-                    <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
-                </div>
-                <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
+    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        
+        <input type="hidden" id="target-provider-id">
+        <input type="hidden" id="service-base-price">
+        
+        <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
+            <div>
+                <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
             </div>
+            <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold">&times;</button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
+
+            <div id="service-selection-container" class="mb-4 w-full"></div>
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data</label>
+                    <input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Hora</label>
+                    <input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Local</label>
+                <input type="text" id="req-local" placeholder="Endereço ou Ponto de Encontro" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold outline-none focus:border-blue-500">
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 mb-3"></div>
+            
+            <div class="bg-gray-100 p-3 rounded-xl text-center mb-3 border border-gray-200">
+                <p class="text-[10px] text-gray-500 uppercase font-bold">Valor da Proposta</p>
+                <div class="flex items-center justify-center gap-1">
+                    <span class="text-lg font-bold text-gray-400">R$</span>
+                    <input type="number" id="req-value" class="text-3xl font-black text-center bg-transparent w-32 outline-none text-black p-0 m-0" value="0.00">
+                </div>
+                <p id="calc-total-reserva" class="hidden text-xs font-bold text-blue-600 mt-1">R$ 0.00</p>
+            </div>
+
+            <button id="btn-confirm-req" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 text-sm uppercase">
+                ENVIAR PROPOSTA
+            </button>
+        </div>
+    </div>
+</div>
 
             <div class="p-6 space-y-5 overflow-y-auto flex-1">
                 <div class="grid grid-cols-2 gap-3">
