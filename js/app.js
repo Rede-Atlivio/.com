@@ -4,23 +4,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // ============================================================================
-// 1. CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
-// ============================================================================
-import './auth.js';                  // Auth Core
-import './modules/auth_sms.js';      // SMS & Máscara
-import './modules/services.js';      // Marketplace de Serviços
-import './modules/jobs.js';          // Vagas de Emprego (WhatsApp) & Upload PDF
-import './modules/opportunities.js'; // Afiliados
-import './modules/chat.js';          // Chat de Serviços (Original e Seguro)
-import './modules/reviews.js';       // ⭐️ Sistema de Reputação (NOVO)
-
-// Funcionalidades Específicas
-import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js';
-import { iniciarSistemaNotificacoes } from './modules/user_notifications.js';
-
-// ============================================================================
-// 2. CONFIGURAÇÃO E INICIALIZAÇÃO FIREBASE
+// 1. CONFIGURAÇÃO E INICIALIZAÇÃO (PRIMEIRO DE TUDO!)
 // ============================================================================
 const firebaseConfig = { 
     apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
@@ -31,42 +15,65 @@ const firebaseConfig = {
     appId: "1:887430049204:web:d205864a4b42d6799dd6e1" 
 };
 
-// Inicializa as ferramentas
+// Inicializa as ferramentas AGORA
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app); 
 const provider = new GoogleAuthProvider();
 
-// ============================================================================
-// 3. EXPOSIÇÃO GLOBAL (Para o HTML e outros scripts)
-// ============================================================================
+// EXPORTAÇÃO IMEDIATA (Para que auth.js e wallet.js consigam ler)
+export { app, auth, db, storage, provider };
+
+// Exposição Global (Para Debug e HTML)
 window.auth = auth;
 window.db = db;
 window.storage = storage;
 window.provider = provider;
-window.abrirConfiguracoes = abrirConfiguracoes;
-
-// Exportação para módulos ES6
-export { app, auth, db, storage, provider };
 
 // ============================================================================
-// 4. INICIALIZAÇÃO DE SISTEMAS
+// 2. CARREGAMENTO DOS MÓDULOS (AGORA É SEGURO)
+// ============================================================================
+// Importação dinâmica evita travamento se a internet estiver lenta
+import './auth.js';                   // Auth Core
+import './modules/auth_sms.js';       // SMS
+import './modules/services.js';       // Marketplace
+import './modules/jobs.js';           // Vagas
+import './modules/opportunities.js';  // Afiliados
+import './modules/chat.js';           // Chat
+import './modules/reviews.js';        // Reviews
+import './modules/wallet.js';         // 💰 CARTEIRA (Adicionei aqui pois faltava no seu)
+
+// Funcionalidades Específicas
+import { checkOnboarding } from './modules/onboarding.js';
+import { abrirConfiguracoes } from './modules/profile.js';
+import { iniciarSistemaNotificacoes } from './modules/user_notifications.js';
+import { iniciarMonitoramentoCarteira } from './modules/wallet.js'; // Importa o monitor
+
+window.abrirConfiguracoes = abrirConfiguracoes;
+
+// ============================================================================
+// 3. INICIALIZAÇÃO DE SISTEMAS
 // ============================================================================
 
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
 // Inicia o radar de notificações (CRM)
-iniciarSistemaNotificacoes(); 
+if(iniciarSistemaNotificacoes) iniciarSistemaNotificacoes(); 
 
 // Monitoramento de Login
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("👤 Usuário online:", user.uid);
-        checkOnboarding(user); // Verifica se precisa completar cadastro
         
-        // Remove tela de login se ela estiver visível
+        // Inicia sistemas vitais
+        checkOnboarding(user); 
+        if(iniciarMonitoramentoCarteira) iniciarMonitoramentoCarteira(); // Inicia Carteira V3.0
+        
+        // Libera a tela
         const loginScreen = document.getElementById('auth-container');
         if(loginScreen) loginScreen.classList.add('hidden');
+        const appContainer = document.getElementById('app-container');
+        if(appContainer) appContainer.classList.remove('hidden');
     }
 });
