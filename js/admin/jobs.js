@@ -8,7 +8,6 @@ export async function init() {
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
     
-    // Configura UI
     headers.innerHTML = `<th class="p-3 w-10"><input type="checkbox" id="check-all-jobs" class="chk-custom"></th><th class="p-3">VAGA</th><th class="p-3">EMPRESA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
     
     if(btnAdd) { 
@@ -17,13 +16,13 @@ export async function init() {
     }
     document.getElementById('btn-bulk-delete').onclick = executeBulkDelete;
 
-    // Exporta Globais (Crucial para o HTML funcionar)
+    // Exporta Globais
     window.abrirModalVaga = abrirModalVaga;
     window.salvarVaga = salvarVaga;
     window.verCandidatos = verCandidatos;
     window.excluirVaga = excluirVaga;
     window.alterarStatusVaga = alterarStatusVaga;
-    window.fecharModalJobs = fecharModalJobs; // Nova função segura
+    window.fecharModalJobs = fecharModalJobs;
 
     await loadList();
 }
@@ -31,7 +30,6 @@ export async function init() {
 function fecharModalJobs() {
     const modal = document.getElementById('modal-editor');
     modal.classList.add('hidden');
-    // Destrava caso tenha ficado travado
     const content = document.getElementById('modal-content');
     content.style.pointerEvents = 'auto';
     content.style.opacity = '1';
@@ -77,42 +75,58 @@ function renderTable(lista) {
     });
 }
 
-// --- VISUALIZADOR DE CANDIDATOS (COM CORREÇÃO DE ÍNDICE) ---
+// --- VISUALIZADOR DE CANDIDATOS (BUSCA PROFUNDA) ---
 window.verCandidatos = async (jobId, title) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
-    
-    // Configura Fechamento Seguro
     const btnClose = document.getElementById('btn-close-modal');
     btnClose.onclick = window.fecharModalJobs;
 
     modal.classList.remove('hidden');
-    content.innerHTML = `<div class="text-center py-10 text-white">Buscando currículos...</div>`;
+    content.innerHTML = `<div class="text-center py-10 text-white">Buscando currículos para ID: ${jobId}...</div>`;
 
     try {
-        // Tenta buscar COM ordenação (O ideal)
-        const q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId), orderBy("created_at", "desc"));
-        const snap = await getDocs(q);
+        console.log(`🔎 Buscando candidatos para JobID: ${jobId}`);
+        
+        // BUSCA 1: Pelo ID da vaga (Padrão)
+        let q = query(collection(window.db, "job_applications"), where("job_id", "==", jobId));
+        let snap = await getDocs(q);
 
-        let html = `<div class="p-2"><h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Candidatos: ${title} (${snap.size})</h3><div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">`;
+        // BUSCA 2: Se não achar, tenta buscar TODOS e filtrar no JS (Backup de segurança)
+        if(snap.empty) {
+            console.warn("⚠️ Busca direta vazia. Tentando busca ampla...");
+            const qAll = query(collection(window.db, "job_applications"), orderBy("created_at", "desc"));
+            const snapAll = await getDocs(qAll);
+            const filtrados = snapAll.docs.filter(d => d.data().job_id === jobId || d.data().vaga_id === jobId);
+            
+            // Se achou na busca ampla, usamos ela
+            if(filtrados.length > 0) {
+                console.log(`✅ Achamos ${filtrados.length} candidatos na busca ampla!`);
+                snap = { empty: false, size: filtrados.length, forEach: (cb) => filtrados.forEach(cb) };
+            }
+        }
+
+        let html = `<div class="p-2"><h3 class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Candidatos: ${title} (${snap.size || 0})</h3><div class="space-y-2 max-h-[60vh] overflow-y-auto custom-scrollbar">`;
 
         if (snap.empty) {
-            html += `<p class="text-gray-500 text-center">Nenhum candidato.</p>`;
+            html += `<p class="text-gray-500 text-center">Nenhum candidato encontrado no sistema para esta vaga.</p>`;
         } else {
             snap.forEach(d => {
-                const app = d.data();
-                const linkPdf = app.resume_url || app.cv_url || app.file_url; // Tenta todos
+                const app = d.data(); // Se for snap real usa .data(), se for array usa direto
+                const dataReal = app.data ? app.data() : app; 
+                
+                const linkPdf = dataReal.resume_url || dataReal.cv_url || dataReal.file_url;
                 
                 html += `
                     <div class="bg-slate-800 p-3 rounded-lg border border-slate-700 hover:border-blue-500 transition">
                         <div class="flex justify-between">
-                            <span class="font-bold text-white text-sm">${app.user_name || 'Anônimo'}</span>
-                            <span class="text-xs text-gray-500">${app.created_at?.toDate ? app.created_at.toDate().toLocaleDateString() : 'Data N/A'}</span>
+                            <span class="font-bold text-white text-sm">${dataReal.user_name || 'Anônimo'}</span>
+                            <span class="text-xs text-gray-500">${dataReal.created_at?.toDate ? dataReal.created_at.toDate().toLocaleDateString() : 'Hoje'}</span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1 italic">"${app.message || 'Sem mensagem'}"</p>
+                        <p class="text-xs text-gray-400 mt-1 italic">"${dataReal.message || 'Sem mensagem'}"</p>
                         <div class="flex gap-2 mt-3">
-                            ${linkPdf ? `<a href="${linkPdf}" target="_blank" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-red-500">📄 VER PDF</a>` : '<span class="text-gray-600 text-xs">Sem PDF</span>'}
-                            <a href="https://wa.me/55${(app.user_phone||'').replace(/\D/g,'')}" target="_blank" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">💬 WHATSAPP</a>
+                            ${linkPdf ? `<a href="${linkPdf}" target="_blank" class="bg-red-600 text-white px-3 py-1 rounded text-xs font-bold flex items-center gap-1 hover:bg-red-500">📄 VER PDF</a>` : '<span class="text-gray-600 text-xs border border-gray-600 px-2 rounded">Sem PDF</span>'}
+                            <a href="https://wa.me/55${(dataReal.user_phone||'').replace(/\D/g,'')}" target="_blank" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-500">💬 WHATSAPP</a>
                         </div>
                     </div>
                 `;
@@ -122,33 +136,17 @@ window.verCandidatos = async (jobId, title) => {
         content.innerHTML = html;
 
     } catch (e) {
-        // SE DER ERRO DE ÍNDICE, MOSTRA O LINK AZUL NA TELA
-        if(e.message.includes("index")) {
-             const url = e.message.match(/https:\/\/\S+/);
-             content.innerHTML = `
-                <div class="p-6 text-center">
-                    <p class="text-yellow-400 mb-2 font-bold text-lg">⚠️ Ação Necessária no Firebase</p>
-                    <p class="text-gray-400 text-xs mb-6">Para listar os candidatos em ordem, precisamos criar um índice.</p>
-                    
-                    <a href="${url}" target="_blank" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold uppercase shadow-lg hover:bg-blue-500 transition animate-pulse">
-                        ⚡ CRIAR ÍNDICE AUTOMÁTICO
-                    </a>
-                    
-                    <p class="text-gray-500 text-[10px] mt-6">1. Clique no botão acima.<br>2. Salve no Firebase.<br>3. Aguarde 2 minutos e tente de novo.</p>
-                </div>
-             `;
-        } else {
-            content.innerHTML = `<p class="text-red-500 p-4">Erro: ${e.message}</p>`;
-        }
+        console.error(e);
+        content.innerHTML = `<p class="text-red-500 p-4">Erro: ${e.message}</p>`;
     }
 };
 
+// ... Restante das funções (abrirModalVaga, salvarVaga, etc) mantidas iguais ao V3 ...
+// (Copie as funções auxiliares do código anterior se precisar, elas não mudaram)
 function abrirModalVaga(id = null) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
-    
-    // Garante fechamento
     document.getElementById('btn-close-modal').onclick = window.fecharModalJobs;
 
     let dados = { title: '', company: '', salary: '', description: '' };
@@ -171,30 +169,15 @@ function abrirModalVaga(id = null) {
 }
 
 window.salvarVaga = async (id) => {
-    const data = { 
-        title: document.getElementById('job-title').value, 
-        titulo: document.getElementById('job-title').value, 
-        company: document.getElementById('job-company').value, 
-        salary: document.getElementById('job-salary').value, 
-        updated_at: serverTimestamp() 
-    };
-    
+    const data = { title: document.getElementById('job-title').value, titulo: document.getElementById('job-title').value, company: document.getElementById('job-company').value, salary: document.getElementById('job-salary').value, updated_at: serverTimestamp() };
     if(!data.title) return alert("Título obrigatório");
-
     try {
-        if(id) { 
-            await updateDoc(doc(window.db, "jobs", id), data); 
-        } else { 
-            data.status = 'ativo'; 
-            data.created_at = serverTimestamp(); 
-            await addDoc(collection(window.db, "jobs"), data); 
-        }
-        window.fecharModalJobs();
-        loadList();
+        if(id) { await updateDoc(doc(window.db, "jobs", id), data); } 
+        else { data.status = 'ativo'; data.created_at = serverTimestamp(); await addDoc(collection(window.db, "jobs"), data); }
+        window.fecharModalJobs(); loadList();
     } catch(e) { alert(e.message); }
 };
 
-// BULK ACTIONS
 async function executeBulkDelete() {
     if(!confirm("Excluir selecionados?")) return;
     const batch = writeBatch(window.db);
