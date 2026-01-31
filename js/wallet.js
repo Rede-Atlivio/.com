@@ -1,38 +1,36 @@
-import { db, auth } from './app.js';
+import { db, auth } from '../app.js';
 import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 💰 CONFIGURAÇÕES
 const TAXA_PLATAFORMA = 0.20; 
 const LIMITE_DIVIDA = -60.00; 
 
-let unsubscribeWallet = null; // Controle da conexão real-time
+let unsubscribeWallet = null;
 
 // ============================================================================
-// 1. MONITORAMENTO REAL-TIME (ATUALIZA TUDO NA HORA)
+// 1. MONITORAMENTO REAL-TIME
 // ============================================================================
 export function iniciarMonitoramentoCarteira() {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
+    // Verificação de segurança: Se auth ainda não existe, aborta sem erro
+    if (!auth || !auth.currentUser) return; 
+    
+    const uid = auth.currentUser.uid;
 
-    // Evita duplicar a conexão
     if (unsubscribeWallet) unsubscribeWallet();
 
     const ref = doc(db, "active_providers", uid);
 
-    // ESCUTA O BANCO: Se mudar 1 centavo, ele avisa na hora
+    console.log("📡 Carteira: Iniciando conexão Real-Time...");
+
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             const saldo = parseFloat(data.balance || 0);
 
-            // 1. Atualiza Memória Global
             if (!window.userProfile) window.userProfile = {};
             window.userProfile.balance = saldo;
 
-            // 2. Atualiza UI da Carteira (Aba Ganhar)
             atualizarInterfaceCarteira(saldo);
-
-            // 3. Atualiza UI do Header (Perfil)
             atualizarInterfaceHeader(saldo);
         }
     });
@@ -42,7 +40,6 @@ function atualizarInterfaceCarteira(saldo) {
     const el = document.getElementById('user-balance');
     if (el) {
         el.innerText = saldo.toFixed(2).replace('.', ',');
-        
         el.classList.remove('text-white', 'text-green-400', 'text-red-400');
         if (saldo < 0) {
             el.classList.add('text-red-400');
@@ -55,34 +52,29 @@ function atualizarInterfaceCarteira(saldo) {
 function atualizarInterfaceHeader(saldo) {
     const headerName = document.getElementById('provider-header-name');
     if (headerName) {
-        // Procura ou cria o badge de saldo
         let badge = document.getElementById('header-balance-badge');
         if (!badge) {
             badge = document.createElement('span');
             badge.id = 'header-balance-badge';
             headerName.appendChild(badge);
         }
-
         badge.innerText = ` R$ ${saldo.toFixed(2)}`;
-        
-        // Estilo Condicional
         badge.className = saldo < 0 
             ? "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-600 font-bold"
             : "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600 font-bold";
     }
 }
 
-// Alias para compatibilidade
 export async function carregarCarteira() {
     iniciarMonitoramentoCarteira();
 }
 
 // ============================================================================
-// 2. LÓGICA DE TRAVA (ENFORCEMENT)
+// 2. LÓGICA DE TRAVA
 // ============================================================================
 export function podeTrabalhar() {
     const user = window.userProfile;
-    if (!user) { console.warn("Perfil offline."); return false; }
+    if (!user) return false;
 
     const saldo = parseFloat(user.balance || 0);
     
@@ -95,39 +87,28 @@ export function podeTrabalhar() {
 }
 
 // ============================================================================
-// 3. O COBRADOR (TRANSAÇÃO COM SINCRONIA DUPLA)
+// 3. O COBRADOR
 // ============================================================================
 export async function processarCobrancaTaxa(orderId, valorServico) {
     if (!auth.currentUser) return;
     const uid = auth.currentUser.uid;
     const valorTaxa = valorServico * TAXA_PLATAFORMA;
 
-    console.log(`💰 Cobrando taxa de R$ ${valorTaxa.toFixed(2)}...`);
-
     try {
         await runTransaction(db, async (transaction) => {
-            // REFERÊNCIAS
             const providerRef = doc(db, "active_providers", uid);
-            const userRef = doc(db, "usuarios", uid); // <--- AQUI ESTÁ O SEGREDO
+            const userRef = doc(db, "usuarios", uid);
             const ledgerRef = doc(db, "sys_finance", "stats");
             
-            // LEITURAS
             const provDoc = await transaction.get(providerRef);
             if (!provDoc.exists()) throw "Prestador offline!";
             
-            // CÁLCULOS
             const saldoAtual = provDoc.data().balance || 0;
             const novoSaldo = saldoAtual - valorTaxa;
 
-            // GRAVAÇÕES (WRITES)
-            
-            // 1. Atualiza a Carteira (Principal)
             transaction.update(providerRef, { balance: novoSaldo });
-
-            // 2. Atualiza o Perfil (Backup/Header) - ESSA LINHA FALTAVA 👇
             transaction.update(userRef, { wallet_balance: novoSaldo }); 
 
-            // 3. Histórico
             const newHistRef = doc(collection(db, "transactions")); 
             transaction.set(newHistRef, {
                 provider_id: uid,
@@ -138,12 +119,9 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
                 created_at: serverTimestamp()
             });
 
-            // 4. Livro Razão
             transaction.set(ledgerRef, { total_receivables: increment(valorTaxa) }, { merge: true });
         });
-
         console.log("✅ Taxa cobrada e sincronizada!");
-
     } catch (e) {
         console.error("❌ Erro financeiro:", e);
     }
@@ -156,9 +134,6 @@ window.carregarCarteira = carregarCarteira;
 window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
-window.atualizarCarteira = carregarCarteira; // Compatibilidade
+window.atualizarCarteira = carregarCarteira;
 
-// Gatilho de início
-auth.onAuthStateChanged(user => {
-    if(user) iniciarMonitoramentoCarteira();
-});
+// 🚨 REMOVIDO O auth.onAuthStateChanged() DAQUI PARA EVITAR O ERRO
