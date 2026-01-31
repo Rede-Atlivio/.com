@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
+        /* Ajustes Visuais */
         input, textarea, select { color: #111827 !important; background-color: #f9fafb !important; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
@@ -70,6 +71,9 @@
             <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="support">
                 <i data-lucide="message-square" class="w-4 h-4"></i> Suporte
             </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="audit">
+                <i data-lucide="shield-alert" class="w-4 h-4"></i> Auditoria
+            </button>
             <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 text-sm font-bold rounded-xl transition" data-view="settings">
                 <i data-lucide="settings" class="w-4 h-4"></i> Configurações
             </button>
@@ -130,6 +134,26 @@
             <div id="view-support" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
             <div id="view-automation" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
             <div id="view-tutorials" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
+
+            <div id="view-audit" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
+
+            <div id="view-missions" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter">
+                        <span class="text-emerald-500">🎯</span> Micro Tarefas
+                    </h2>
+                </div>
+                <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-950 text-xs uppercase text-gray-400 font-bold tracking-wider">
+                            <tr id="list-header-missions"></tr> </thead>
+                        <tbody id="list-body-missions" class="divide-y divide-slate-800/50"></tbody>
+                    </table>
+                    <div class="p-3 bg-slate-950 border-t border-slate-800 text-[10px] text-gray-500 text-center font-mono uppercase" id="list-count-missions"></div>
+                </div>
+            </div>
+
+            <div id="view-opportunities" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
         </div>
     </main>
 
