@@ -20,7 +20,6 @@ window.activeView = 'dashboard';
 // INICIALIZAÇÃO SEGURA
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Listeners com verificação de existência (Para não travar se o botão não existir)
     const safeListener = (id, event, func) => {
         const el = document.getElementById(id);
         if (el) el.addEventListener(event, func);
@@ -41,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // VACINA ANTI-TRAVAMENTO (MODAL)
     const fecharTudo = () => {
         const modal = document.getElementById('modal-editor');
         const content = document.getElementById('modal-content');
@@ -59,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     document.addEventListener('keydown', (e) => { if(e.key === "Escape") fecharTudo(); });
 
-    // Monitor Auth
     onAuthStateChanged(auth, (user) => {
         if (user && user.email.toLowerCase() === ADMIN_EMAIL) unlockAdmin();
         else lockAdmin();
@@ -109,23 +106,21 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// ROTEADOR BLINDADO (AQUI ESTAVA O ERRO DE TRAVAMENTO)
+// ROTEADOR BLINDADO (ATUALIZADO COM PRODUTOS)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Carregando: ${viewName}`);
     
-    // LISTA DE TODAS AS VIEWS POSSÍVEIS
     const allViews = [
         'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
         'view-settings', 'view-support', 'view-audit', 'view-tutorials',
-        'view-missions', 'view-opportunities' // Novas views que causavam erro se faltassem
+        'view-missions', 'view-opportunities' 
     ];
 
-    // 1. ESCONDER TUDO (COM SEGURANÇA)
     allViews.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.classList.add('hidden'); // SÓ ESCONDE SE EXISTIR! (Isso previne o erro null)
+        if (el) el.classList.add('hidden'); 
     });
     
     const titleEl = document.getElementById('page-title');
@@ -133,12 +128,13 @@ window.switchView = async function(viewName) {
 
     let moduleFile, containerId;
     
-    // 2. DEFINIR ROTA
+    // 2. DEFINIR ROTA (AGORA COM PRODUTOS)
     if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
     else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
     else if (viewName === 'opportunities') { moduleFile = './opportunities.js'; containerId = 'view-list'; }
+    else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-list'; } // <--- LINHA NOVA AQUI!
     else if (viewName === 'automation') { moduleFile = './automation.js'; containerId = 'view-automation'; }
     else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
     else if (viewName === 'settings') { moduleFile = './settings.js'; containerId = 'view-settings'; }
@@ -146,14 +142,13 @@ window.switchView = async function(viewName) {
     else if (viewName === 'audit') { moduleFile = './audit.js'; containerId = 'view-audit'; }
     else if (viewName === 'tutorials') { moduleFile = './tutorials.js'; containerId = 'view-tutorials'; }
 
-    // 3. MOSTRAR CONTAINER (COM SEGURANÇA)
+    // 3. MOSTRAR CONTAINER
     if(containerId) {
         const el = document.getElementById(containerId);
         if(el) {
             el.classList.remove('hidden');
         } else {
             console.error(`❌ ERRO FATAL: Container HTML '${containerId}' não encontrado! Verifique admin.html`);
-            // Se o container não existe, tenta jogar na lista genérica para não ficar tela preta
             const fallback = document.getElementById('view-list');
             if(fallback) fallback.classList.remove('hidden');
         }
