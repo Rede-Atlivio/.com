@@ -29,17 +29,25 @@
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
         
-        /* ✅ CORREÇÃO DE CORES DOS CAMPOS */
-        /* Estado Normal: Texto Branco (para combinar com fundo escuro) */
-        #modal-onboarding input { color: white !important; }
+        /* ✅ CORREÇÃO DE CORES DOS CAMPOS (MODAIS BRANCOS) */
+        input, textarea, select { 
+            color: #1f2937 !important; /* Cinza Escuro (Quase preto) */
+            background-color: #f9fafb !important; /* Fundo Cinza muito claro */
+        }
 
-        /* Estado Auto-preenchimento: Fundo Claro + Texto Escuro */
+        /* ✅ EXCEÇÃO: MODAL DE ONBOARDING (FUNDO ESCURO) */
+        #modal-onboarding input { 
+            color: white !important; 
+            background-color: #0f172a !important;
+        }
+
+        /* Estado Auto-preenchimento (Ajuste do navegador) */
         input:-webkit-autofill,
         input:-webkit-autofill:hover,
         input:-webkit-autofill:focus,
         input:-webkit-autofill:active {
-            -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important; /* Fundo Cinza Claro */
-            -webkit-text-fill-color: #0f172a !important; /* Texto Escuro */
+            -webkit-box-shadow: 0 0 0 30px #e2e8f0 inset !important;
+            -webkit-text-fill-color: #0f172a !important;
             font-weight: bold !important;
             transition: background-color 5000s ease-in-out 0s;
         }
