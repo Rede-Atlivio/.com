@@ -2,7 +2,7 @@ import { db, auth } from '../app.js';
 import { doc, updateDoc, addDoc, collection, serverTimestamp, runTransaction, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
-// LÓGICA DE AVALIAÇÃO (BILATERAL: CLIENTE <-> PRESTADOR)
+// LÓGICA DE AVALIAÇÃO (BILATERAL)
 // ============================================================================
 export async function enviarAvaliacao(orderId, targetId, stars, complimentsArray, comment) {
     if(!auth.currentUser) return;
@@ -11,13 +11,11 @@ export async function enviarAvaliacao(orderId, targetId, stars, complimentsArray
         const userRef = doc(db, "usuarios", targetId);
         const providerRef = doc(db, "active_providers", targetId);
 
-        // TRANSAÇÃO ATÔMICA
         await runTransaction(db, async (transaction) => {
-            // 1. LEITURA (READ)
+            // 1. LEITURA
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) throw "Usuário alvo não encontrado!";
             
-            // Verifica se o alvo também é um prestador (para atualizar a vitrine)
             const providerDoc = await transaction.get(providerRef);
             const isTargetProvider = providerDoc.exists();
 
@@ -27,28 +25,18 @@ export async function enviarAvaliacao(orderId, targetId, stars, complimentsArray
             let currentAvg = data.rating_avg || 5.0;
             
             let newCount = currentCount + 1;
-            // Fórmula da média acumulada
             let newAvg = ((currentAvg * currentCount) + parseInt(stars)) / newCount;
-            newAvg = Math.round(newAvg * 100) / 100; // Arredonda 2 casas
+            newAvg = Math.round(newAvg * 100) / 100;
 
-            // 3. ESCRITA (WRITE)
-            
-            // Atualiza o Perfil de Usuário (Todos têm)
-            transaction.update(userRef, {
-                rating_avg: newAvg,
-                rating_count: newCount
-            });
+            // 3. ESCRITA
+            transaction.update(userRef, { rating_avg: newAvg, rating_count: newCount });
 
-            // Se for prestador, atualiza também na coleção da Vitrine
             if(isTargetProvider) {
-                transaction.update(providerRef, { 
-                    rating_avg: newAvg, 
-                    rating_count: newCount 
-                });
+                transaction.update(providerRef, { rating_avg: newAvg, rating_count: newCount });
             }
         });
 
-        // 4. SALVA O DOCUMENTO DA REVIEW (Histórico)
+        // 4. SALVAR NO HISTÓRICO
         await addDoc(collection(db, "reviews"), {
             order_id: orderId,
             from_user: auth.currentUser.uid,
@@ -59,23 +47,18 @@ export async function enviarAvaliacao(orderId, targetId, stars, complimentsArray
             created_at: serverTimestamp()
         });
 
-        // 5. MARCA O PEDIDO COMO AVALIADO (Opcional, para não avaliar 2x)
-        // const orderRef = doc(db, "orders", orderId);
-        // await updateDoc(orderRef, { [`reviewed_by_${auth.currentUser.uid}`]: true });
-
         return true;
     } catch (e) {
-        console.error("Erro transação:", e);
+        console.error("Erro avaliação:", e);
         alert("Erro ao avaliar: " + e.message);
         return false;
     }
 }
 
 // ============================================================================
-// INTERFACE DO MODAL
+// MODAL DE AVALIAÇÃO
 // ============================================================================
 export function abrirModalAvaliacao(orderId, targetId, targetName) {
-    // Remove anterior se existir
     const antigo = document.getElementById('modal-review');
     if(antigo) antigo.remove();
 
@@ -95,7 +78,7 @@ export function abrirModalAvaliacao(orderId, targetId, targetName) {
                 <input type="hidden" id="selected-star" value="0">
 
                 <div class="flex flex-wrap gap-2 justify-center mb-4">
-                    ${['Pontual ⏰', 'Educado 🤝', 'Profissional 💼', 'Rápido ⚡', 'Limpo ✨', 'Pagou Rápido 💸'].map(tag => 
+                    ${['Pontual ⏰', 'Educado 🤝', 'Profissional 💼', 'Rápido ⚡', 'Pagou Rápido 💸'].map(tag => 
                         `<button onclick="this.classList.toggle('bg-blue-100'); this.classList.toggle('text-blue-600');" class="tag-btn border border-gray-200 rounded-full px-3 py-1 text-xs text-gray-500 transition">${tag}</button>`
                     ).join('')}
                 </div>
@@ -112,8 +95,7 @@ export function abrirModalAvaliacao(orderId, targetId, targetName) {
 window.setStar = (val) => {
     document.getElementById('selected-star').value = val;
     document.querySelectorAll('.star-btn').forEach(b => {
-        if(parseInt(b.dataset.val) <= val) b.style.color = "#FFD700";
-        else b.style.color = "#E5E7EB";
+        b.style.color = parseInt(b.dataset.val) <= val ? "#FFD700" : "#E5E7EB";
     });
 };
 
@@ -137,5 +119,6 @@ window.confirmarAvaliacao = async (oid, tid) => {
     }
 };
 
-// EXPORTAÇÃO GLOBAL
+// EXPORTAÇÕES GLOBAIS
 window.abrirModalAvaliacao = abrirModalAvaliacao;
+window.enviarAvaliacao = enviarAvaliacao;
