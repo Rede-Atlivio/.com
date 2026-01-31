@@ -3,7 +3,24 @@ import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 1. CONFIGURAÇÃO (Sua chave oficial)
+// ============================================================================
+// 1. CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// ============================================================================
+import './auth.js';                  // Auth Core
+import './modules/auth_sms.js';      // SMS & Máscara
+import './modules/services.js';      // Marketplace de Serviços
+import './modules/jobs.js';          // Vagas de Emprego (WhatsApp) & Upload PDF
+import './modules/opportunities.js'; // Afiliados
+import './modules/chat.js';          // Chat de Serviços (Original e Seguro)
+
+// Funcionalidades Específicas
+import { checkOnboarding } from './modules/onboarding.js';
+import { abrirConfiguracoes } from './modules/profile.js';
+import { iniciarSistemaNotificacoes } from './modules/user_notifications.js';
+
+// ============================================================================
+// 2. CONFIGURAÇÃO E INICIALIZAÇÃO FIREBASE
+// ============================================================================
 const firebaseConfig = { 
     apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
     authDomain: "atlivio-oficial-a1a29.firebaseapp.com", 
@@ -13,51 +30,42 @@ const firebaseConfig = {
     appId: "1:887430049204:web:d205864a4b42d6799dd6e1" 
 };
 
-// 2. INICIALIZAÇÃO
+// Inicializa as ferramentas
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app); // ✅ Storage criado corretamente
+const storage = getStorage(app); // ✅ Storage configurado
 const provider = new GoogleAuthProvider();
 
-// 3. EXPOSIÇÃO GLOBAL (Para HTML e Debug)
+// ============================================================================
+// 3. EXPOSIÇÃO GLOBAL (Para o HTML e outros scripts)
+// ============================================================================
 window.auth = auth;
 window.db = db;
-window.storage = storage; // ✅ Storage exposto
+window.storage = storage;
 window.provider = provider;
+window.abrirConfiguracoes = abrirConfiguracoes;
 
-// 4. EXPORTAÇÃO (Para módulos .js)
+// Exportação para módulos ES6
 export { app, auth, db, storage, provider };
 
 // ============================================================================
-// 👇 CARREGAMENTO DOS MÓDULOS (O Cérebro do Site)
+// 4. INICIALIZAÇÃO DE SISTEMAS
 // ============================================================================
-
-import './auth.js';                // Auth Core
-import './modules/auth_sms.js';    // SMS & Máscara
-import './modules/services.js';    // Marketplace de Serviços
-import './modules/jobs.js';        // Vagas de Emprego & Upload PDF
-import './modules/opportunities.js'; // Afiliados
-
-// 🚨 ORDEM CRÍTICA DE CHAT 🚨
-import './modules/chat.js';      // 1º: Base (Serviços)
-
-import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js';
 
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
-// 5. MONITORAMENTO DE LOGIN
+// Inicia o radar de notificações (CRM)
+iniciarSistemaNotificacoes(); 
+
+// Monitoramento de Login
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("👤 Usuário online:", user.uid);
-        checkOnboarding(user); // Verifica nome e termos
+        checkOnboarding(user); // Verifica se precisa completar cadastro
         
-        // Remove tela de login
+        // Remove tela de login se ela estiver visível
         const loginScreen = document.getElementById('auth-container');
         if(loginScreen) loginScreen.classList.add('hidden');
     }
 });
-
-// Expõe menu de perfil
-window.abrirConfiguracoes = abrirConfiguracoes;
