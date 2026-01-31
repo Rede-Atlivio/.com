@@ -261,7 +261,7 @@ function atualizarInterfaceUsuario(dados) {
     const provNameEl = document.getElementById('provider-header-name');
     if(provNameEl) {
         const saldo = dados.wallet_balance || 0; const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
-        provNameEl.innerHTML = `${dados.nome_profissional || dados.displayName} <br><span class="text-[10px] font-normal text-gray-300">Saldo: <span class="${corSaldo} font-bold">R$ ${saldo.toFixed(2)}</span></span>`;
+        provNameEl.innerHTML = `${dados.nome_profissional || dados.displayName}`;
     }
 }
 
