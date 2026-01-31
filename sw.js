@@ -12,7 +12,6 @@ const ASSETS_TO_CACHE = [
   "./js/modules/chat.js",
   "./js/modules/profile.js",
   "./js/modules/onboarding.js",
-  "https://cdn.tailwindcss.com"
 ];
 
 // 1. INSTALAÇÃO (Cache Inicial)
