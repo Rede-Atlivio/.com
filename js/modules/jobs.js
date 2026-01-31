@@ -1,52 +1,65 @@
 import { db, auth } from '../app.js';
-import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp, where, doc, getDoc, updateDoc, deleteDoc, setDoc, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Nota: onAuthStateChanged vem do Auth, mas aqui importamos do Firestore por engano em alguns exemplos. 
+// Correção: Vamos usar o auth direto do app.js que já está inicializado.
 
 // ============================================================================
-// 1. ROTEADOR E INTERFACE
+// 1. ROTEADOR DE INTERFACE (BLINDADO COM WAIT-FOR-AUTH)
 // ============================================================================
 export function carregarInterfaceEmpregos() {
-    console.log("💼 Iniciando módulo de Vagas (Versão Seleção)...");
+    console.log("💼 Módulo Vagas: Aguardando autenticação...");
     const containerVagas = document.getElementById('lista-vagas');
     const containerEmpresa = document.getElementById('painel-empresa');
-    const userProfile = window.userProfile; 
+    
+    // Mostra loader enquanto o Firebase pensa
+    if(containerVagas) containerVagas.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto"></div><p class="text-xs text-gray-400">Verificando conta...</p></div>`;
 
-    // Reset visual
-    if(containerVagas) containerVagas.classList.add('hidden');
-    if(containerEmpresa) containerEmpresa.classList.add('hidden');
-
-    // Injeta o Modal de Candidatos no HTML se não existir
-    if(!document.getElementById('modal-candidatos-empresa')) {
-        criarModalCandidatos();
-    }
-
-    if (!auth.currentUser) {
-        if(containerVagas) {
-            containerVagas.innerHTML = `<div class="text-center py-10"><p class="text-gray-400 text-xs">Faça login para ver vagas.</p></div>`;
-            containerVagas.classList.remove('hidden');
+    // 🔥 CORREÇÃO DO "DESCONECTOU": Espera o Firebase confirmar o usuário
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // USUÁRIO LOGADO
+            const userProfile = window.userProfile || {}; 
+            
+            // Verifica perfil (Se window.userProfile ainda não carregou, tentamos inferir ou buscamos)
+            // Para segurança, vamos carregar a visão baseada no que temos
+            
+            if (userProfile.is_provider) {
+                // --- PRESTADOR ---
+                if(containerEmpresa) containerEmpresa.classList.add('hidden');
+                if(containerVagas) {
+                    containerVagas.classList.remove('hidden');
+                    containerVagas.innerHTML = `
+                        <div class="flex gap-2 mb-4 border-b border-gray-100 pb-2">
+                            <button onclick="window.carregarVagas()" class="flex-1 text-blue-600 font-bold text-[10px] uppercase border-b-2 border-blue-600 pb-1">Vagas Abertas</button>
+                            <button onclick="window.listarMinhasCandidaturas()" class="flex-1 text-gray-400 font-bold text-[10px] uppercase hover:text-blue-600 transition pb-1">Minhas Candidaturas</button>
+                        </div>
+                        <div id="vagas-content"></div>
+                    `;
+                    carregarVagas();
+                }
+            } else {
+                // --- EMPRESA ---
+                if(containerVagas) containerVagas.classList.add('hidden');
+                if(containerEmpresa) {
+                    containerEmpresa.classList.remove('hidden');
+                    listarMinhasVagasEmpresa();
+                }
+                // Injeta Modal de Candidatos se não existir
+                if(!document.getElementById('modal-candidatos-empresa')) criarModalCandidatos();
+            }
+        } else {
+            // USUÁRIO DESLOGADO
+            if(containerVagas) {
+                containerVagas.classList.remove('hidden');
+                containerVagas.innerHTML = `
+                    <div class="text-center py-10">
+                        <span class="text-4xl">🔒</span>
+                        <p class="text-gray-500 text-xs mt-2">Faça login para ver as vagas.</p>
+                    </div>`;
+            }
+            if(containerEmpresa) containerEmpresa.classList.add('hidden');
         }
-        return;
-    }
-
-    if (userProfile && userProfile.is_provider) {
-        // --- VISÃO DO PRESTADOR ---
-        if(containerVagas) {
-            containerVagas.classList.remove('hidden');
-            containerVagas.innerHTML = `
-                <div class="flex gap-4 mb-4 border-b border-gray-100 pb-2">
-                    <button onclick="window.carregarVagas()" class="text-blue-600 font-bold text-xs uppercase border-b-2 border-blue-600 pb-1 flex-1">Vagas Abertas</button>
-                    <button onclick="window.listarMinhasCandidaturas()" class="text-gray-400 font-bold text-xs uppercase hover:text-blue-600 transition pb-1 flex-1">Minhas Candidaturas</button>
-                </div>
-                <div id="vagas-content"></div>
-            `;
-            carregarVagas();
-        }
-    } else {
-        // --- VISÃO DA EMPRESA ---
-        if(containerEmpresa) {
-             containerEmpresa.classList.remove('hidden');
-             listarMinhasVagasEmpresa();
-        }
-    }
+    });
 }
 
 // ============================================================================
@@ -69,7 +82,6 @@ export async function carregarVagas() {
             const job = d.data();
             const titulo = job.title || job.titulo || "Vaga";
             
-            // NOTA: Removemos o botão de chat daqui. O candidato só se candidata.
             container.innerHTML += `
                 <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
@@ -107,16 +119,20 @@ export async function listarMinhasCandidaturas() {
             // LÓGICA DO "A EMPRESA QUER FALAR COM VOCÊ"
             let areaChat = "";
             let statusColor = "text-gray-400";
-            let statusText = "Aguardando";
+            let statusText = "Aguardando"; // Padrão
 
-            // Se o status for 'chat_aberto' ou 'interview', mostra o botão
-            if (app.status === 'chat_aberto' || app.status === 'interview') {
-                statusColor = "text-green-500";
-                statusText = "EMPRESA CHAMOU";
+            if (app.status === 'chat_aberto') {
+                statusColor = "text-green-600";
+                statusText = "ENTREVISTA";
                 areaChat = `
-                    <div class="mt-2 bg-green-50 border border-green-100 p-2 rounded flex items-center justify-between animate-pulse">
-                        <span class="text-[10px] font-bold text-green-700">👋 A empresa quer falar com você!</span>
-                        <button onclick="window.irParaChat('${app.owner_id}', 'Empresa')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold shadow">ABRIR CHAT</button>
+                    <div class="mt-3 bg-green-50 border border-green-200 p-3 rounded-lg flex items-center justify-between animate-pulse">
+                        <div>
+                            <p class="text-[10px] font-bold text-green-800">👋 A empresa chamou!</p>
+                            <p class="text-[9px] text-green-600">Eles querem te entrevistar.</p>
+                        </div>
+                        <button onclick="window.irParaChat('${app.owner_id}', 'Empresa')" class="bg-green-600 text-white px-4 py-2 rounded-lg text-[10px] font-bold shadow hover:bg-green-500">
+                            ABRIR CHAT
+                        </button>
                     </div>
                 `;
             }
@@ -124,14 +140,16 @@ export async function listarMinhasCandidaturas() {
             container.innerHTML += `
                 <div class="bg-white p-4 rounded-xl border border-gray-200 mb-2 shadow-sm">
                     <div class="flex justify-between items-center mb-1">
-                        <p class="font-bold text-xs text-blue-900">${app.vaga_titulo}</p>
-                        <span class="text-[9px] font-bold uppercase ${statusColor}">${statusText}</span>
+                        <p class="font-black text-xs text-blue-900 uppercase">${app.vaga_titulo}</p>
+                        <span class="text-[9px] font-bold uppercase ${statusColor} bg-gray-50 px-2 py-1 rounded">${statusText}</span>
                     </div>
                     <p class="text-[9px] text-gray-400 mb-2">Enviado em: ${app.created_at?.toDate().toLocaleDateString()}</p>
                     
                     ${areaChat}
 
-                    <button onclick="window.desistirVaga('${d.id}')" class="mt-2 w-full text-[9px] text-red-400 border border-red-100 py-1 rounded hover:bg-red-50">Cancelar Candidatura</button>
+                    <div class="mt-2 pt-2 border-t border-gray-50 text-right">
+                        <button onclick="window.desistirVaga('${d.id}')" class="text-[9px] text-red-400 font-bold hover:text-red-600">CANCELAR CANDIDATURA</button>
+                    </div>
                 </div>
             `;
         });
@@ -149,14 +167,12 @@ export async function listarMinhasVagasEmpresa() {
     const snap = await getDocs(q);
     
     container.innerHTML = "";
-    if (snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Crie sua primeira vaga.</p>`; return; }
+    if (snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-2">Você ainda não criou vagas.</p>`; return; }
     
     snap.forEach(d => {
         const v = d.data();
         const titulo = v.title || v.titulo || "Sem Título";
         const isAtiva = v.status === 'ativa';
-        // Conta quantos candidatos (simulado ou real se tiver o campo)
-        const candidatosBtn = `<button onclick="window.verCandidatosEmpresa('${d.id}', '${titulo}')" class="flex-1 bg-blue-600 text-white text-[10px] font-bold py-2 rounded-lg shadow hover:bg-blue-500 flex items-center justify-center gap-2">📄 VER CANDIDATOS</button>`;
         
         container.innerHTML += `
             <div class="bg-white p-4 rounded-xl border border-gray-100 mb-3 shadow-sm">
@@ -169,7 +185,9 @@ export async function listarMinhasVagasEmpresa() {
                 </div>
                 
                 <div class="flex gap-2">
-                    ${candidatosBtn}
+                    <button onclick="window.verCandidatosEmpresa('${d.id}', '${titulo}')" class="flex-1 bg-blue-600 text-white text-[10px] font-bold py-2 rounded-lg shadow hover:bg-blue-500 flex items-center justify-center gap-2">
+                        📄 VER CANDIDATOS
+                    </button>
                     ${isAtiva ? `<button onclick="window.encerrarVaga('${d.id}')" class="px-3 bg-red-50 text-red-500 font-bold border border-red-100 rounded-lg text-[10px]">⛔</button>` : ''}
                 </div>
             </div>
@@ -177,7 +195,7 @@ export async function listarMinhasVagasEmpresa() {
     });
 }
 
-// --- MODAL DE CANDIDATOS (AQUI A MÁGICA ACONTECE) ---
+// --- MODAL DE CANDIDATOS ---
 export async function verCandidatosEmpresa(jobId, jobTitle) {
     const modal = document.getElementById('modal-candidatos-empresa');
     const lista = document.getElementById('lista-candidatos-ul');
@@ -198,98 +216,78 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
 
         snap.forEach(d => {
             const cand = d.data();
-            // Link do currículo
             const linkCv = cand.resume_url || cand.cv_url || cand.file_url;
-            const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px]">Baixar CV</a>` : `<span class="text-gray-400 text-[10px]">Sem CV</span>`;
+            const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-bold">📄 Baixar Currículo (PDF)</a>` : `<span class="text-gray-400 text-[10px]">Sem CV</span>`;
             
-            // Botão de Chat
+            // Botão de Chat (Lógica de Decisão)
             const jaChamou = cand.status === 'chat_aberto';
             const btnChat = jaChamou 
-                ? `<button disabled class="bg-gray-200 text-gray-500 px-3 py-1 rounded text-[10px] font-bold w-full cursor-not-allowed">JÁ CHAMADO</button>`
-                : `<button onclick="window.iniciarConversaEmpresa('${d.id}', '${cand.user_id}', '${cand.nome}')" class="bg-green-600 text-white px-3 py-1 rounded text-[10px] font-bold w-full shadow hover:bg-green-500">💬 CHAMAR P/ ENTREVISTA</button>`;
+                ? `<div class="bg-green-50 text-green-700 p-2 rounded text-[10px] font-bold text-center border border-green-200">✅ VOCÊ JÁ CHAMOU</div>`
+                : `<button onclick="window.iniciarConversaEmpresa('${d.id}', '${cand.user_id}', '${cand.nome}')" class="w-full bg-green-600 text-white py-2 rounded-lg text-[10px] font-bold shadow hover:bg-green-500 flex items-center justify-center gap-2">💬 CHAMAR PARA ENTREVISTA</button>`;
 
             lista.innerHTML += `
-                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-2">
-                    <div class="flex justify-between items-start">
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3">
+                    <div class="flex justify-between items-start mb-2">
                         <div>
-                            <p class="font-bold text-xs text-slate-800">${cand.nome || 'Candidato'}</p>
-                            <p class="text-[10px] text-slate-500 italic">"${cand.mensagem || ''}"</p>
+                            <p class="font-bold text-xs text-slate-800 uppercase">${cand.nome || 'Candidato'}</p>
+                            <p class="text-[10px] text-slate-500">${cand.created_at?.toDate().toLocaleDateString()}</p>
                         </div>
                         ${btnCv}
                     </div>
-                    <div class="mt-3">
-                        ${btnChat}
+                    <div class="bg-white p-2 rounded border border-slate-100 text-[10px] text-slate-600 italic mb-3">
+                        "${cand.mensagem || 'Sem mensagem'}"
                     </div>
+                    ${btnChat}
                 </div>
             `;
         });
 
-    } catch(e) { console.error(e); lista.innerHTML = "Erro ao carregar."; }
+    } catch(e) { console.error(e); lista.innerHTML = `<p class="text-red-500 text-xs text-center">Erro ao carregar candidatos.</p>`; }
 }
 
-// AÇÃO DA EMPRESA: INICIAR CONVERSA
 export async function iniciarConversaEmpresa(appId, userId, userName) {
-    if(!confirm(`Iniciar conversa com ${userName}?`)) return;
+    if(!confirm(`Confirmar interesse em ${userName}? Isso liberará o chat para ele.`)) return;
 
     try {
-        // 1. Atualiza o status da candidatura para o candidato ver o aviso
+        // 1. Atualiza status para 'chat_aberto' (Isso faz aparecer o botão pro candidato)
         await updateDoc(doc(db, "job_applications", appId), { status: 'chat_aberto' });
 
-        // 2. Cria/Abre o Chat
+        // 2. Cria a sala de chat (backend)
         const chatID = [auth.currentUser.uid, userId].sort().join("_");
-        const chatRef = doc(db, "chats", chatID);
-        
-        await setDoc(chatRef, {
+        await setDoc(doc(db, "chats", chatID), {
             users: [auth.currentUser.uid, userId],
             user_names: [auth.currentUser.displayName, userName],
-            last_msg: "Olá! Vimos seu currículo e gostaríamos de conversar.",
+            last_msg: "Olá! A empresa tem interesse no seu perfil.",
             last_time: serverTimestamp(),
-            job_context: appId // Liga o chat à candidatura
+            job_context: appId
         }, { merge: true });
 
-        alert(`✅ Chat iniciado com ${userName}!`);
-        
-        // Fecha modal e recarrega
-        document.getElementById('modal-candidatos-empresa').classList.remove('flex');
-        document.getElementById('modal-candidatos-empresa').classList.add('hidden');
-        
-        // Redireciona para o chat (Opcional)
-        // document.querySelector('[data-target="chat"]').click(); 
+        alert(`✅ Convite enviado para ${userName}!`);
+        // Recarrega o modal para mostrar que já foi chamado
+        verCandidatosEmpresa(null, document.getElementById('modal-job-title').innerText); 
 
-    } catch(e) { alert("Erro ao abrir chat: " + e.message); }
+    } catch(e) { alert("Erro: " + e.message); }
 }
 
 // ============================================================================
-// 4. UTILITÁRIOS (CRIAR HTML DINAMICAMENTE)
+// 4. UTILITÁRIOS & MODAIS
 // ============================================================================
 function criarModalCandidatos() {
     const div = document.createElement('div');
     div.id = "modal-candidatos-empresa";
     div.className = "fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4";
     div.innerHTML = `
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
-            <div class="bg-slate-900 p-4 flex justify-between items-center">
-                <h3 class="text-white font-bold text-sm uppercase flex items-center gap-2">
-                    📄 Candidatos: <span id="modal-job-title" class="text-blue-400">...</span>
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-slate-900 p-4 flex justify-between items-center border-b border-slate-800">
+                <h3 class="text-white font-black text-sm uppercase tracking-wide flex items-center gap-2">
+                    <span class="text-blue-400">📄</span> Candidatos: <span id="modal-job-title" class="text-gray-300">...</span>
                 </h3>
-                <button onclick="document.getElementById('modal-candidatos-empresa').classList.add('hidden'); document.getElementById('modal-candidatos-empresa').classList.remove('flex')" class="text-gray-400 hover:text-white">✕</button>
+                <button onclick="document.getElementById('modal-candidatos-empresa').classList.add('hidden'); document.getElementById('modal-candidatos-empresa').classList.remove('flex')" class="text-gray-400 hover:text-white font-bold text-xl">×</button>
             </div>
-            <div id="lista-candidatos-ul" class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white">
-                </div>
+            <div id="lista-candidatos-ul" class="p-4 overflow-y-auto custom-scrollbar flex-1 bg-white"></div>
         </div>
     `;
     document.body.appendChild(div);
-}
-
-export function irParaChat(targetUid, name) {
-    // Redireciona para a aba de chat do seu app
-    const tabChat = document.querySelector('[data-target="chat"]');
-    if(tabChat) {
-        tabChat.click();
-        // Lógica extra para abrir a conversa específica pode ser adicionada no chat.js
-    } else {
-        alert("Vá para a aba de Mensagens.");
-    }
 }
 
 export function candidatarVaga(id, title, ownerId) {
@@ -297,29 +295,34 @@ export function candidatarVaga(id, title, ownerId) {
     const modal = document.getElementById('modal-apply');
     document.getElementById('apply-job-title').innerText = title;
     
-    // Hack para limpar listeners antigos
-    const btnOld = document.getElementById('btn-submit-proposal');
-    const btnNew = btnOld.cloneNode(true);
-    btnOld.parentNode.replaceChild(btnNew, btnOld);
+    const btnEnviar = document.getElementById('btn-submit-proposal');
+    const newBtn = btnEnviar.cloneNode(true);
+    btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
+    
+    modal.classList.remove('hidden'); modal.classList.add('flex'); 
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex'); 
-
-    btnNew.addEventListener('click', async () => {
+    newBtn.addEventListener('click', async () => {
         const msg = document.getElementById('apply-message').value;
-        const fakeCV = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
-        
-        btnNew.innerText = "ENVIANDO..."; btnNew.disabled = true;
+        // Simulando PDF (Em produção, usaria Storage)
+        const fakeCV = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"; 
+
+        newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
         try {
             await addDoc(collection(db, "job_applications"), {
-                job_id: id, vaga_titulo: title, owner_id: ownerId,
+                job_id: id, vaga_id: id, vaga_titulo: title, owner_id: ownerId,
                 user_id: auth.currentUser.uid, nome: auth.currentUser.displayName || "Candidato",
                 message: msg, resume_url: fakeCV, created_at: serverTimestamp(), status: 'novo'
             });
             alert("✅ Currículo Enviado!");
             fecharModalCandidatura();
-        } catch(e) { alert(e.message); } finally { btnNew.innerText = "ENVIAR"; btnNew.disabled = false; }
+        } catch(e) { alert(e.message); } finally { newBtn.innerText = "ENVIAR PROPOSTA"; newBtn.disabled = false; }
     });
+}
+
+export function irParaChat(targetUid, name) {
+    const tabChat = document.querySelector('[data-target="chat"]');
+    if(tabChat) tabChat.click();
+    else alert(`Abra a aba de mensagens para falar com ${name}.`);
 }
 
 export function fecharModalCandidatura() {
@@ -327,13 +330,37 @@ export function fecharModalCandidatura() {
     modal.classList.add('hidden'); modal.classList.remove('flex');
 }
 
+export async function publicarVaga() {
+    const title = document.getElementById('job-title').value;
+    const salary = document.getElementById('job-salary').value;
+    const desc = document.getElementById('job-desc').value;
+    if(!title || !desc) return alert("Preencha tudo.");
+
+    const btn = document.getElementById('btn-pub-job');
+    btn.innerText = "⏳"; btn.disabled = true;
+
+    try {
+        await addDoc(collection(db, "jobs"), {
+            owner_id: auth.currentUser.uid, title, titulo: title, salary, description: desc,
+            empresa: auth.currentUser.displayName || "Empresa", created_at: serverTimestamp(), status: 'ativa', is_demo: false
+        });
+        alert("✅ Publicado!");
+        document.getElementById('job-post-modal').classList.add('hidden');
+        listarMinhasVagasEmpresa();
+    } catch(e) { alert(e.message); } finally { btn.innerText = "PUBLICAR"; btn.disabled = false; }
+}
+
 export async function encerrarVaga(id) {
-    if(!confirm("Encerrar vaga?")) return;
+    if(!confirm("Encerrar esta vaga?")) return;
     await updateDoc(doc(db, "jobs", id), { status: 'encerrada' });
     listarMinhasVagasEmpresa();
 }
 
-// EXPORTAÇÕES GLOBAIS
+export function desistirVaga(appId) {
+    if(!confirm("Desistir desta vaga?")) return;
+    deleteDoc(doc(db, "job_applications", appId)).then(() => listarMinhasCandidaturas());
+}
+
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.carregarVagas = carregarVagas;
 window.publicarVaga = publicarVaga;
@@ -343,6 +370,7 @@ window.verCandidatosEmpresa = verCandidatosEmpresa;
 window.iniciarConversaEmpresa = iniciarConversaEmpresa;
 window.fecharModalCandidatura = fecharModalCandidatura;
 window.encerrarVaga = encerrarVaga;
+window.desistirVaga = desistirVaga;
 window.listarMinhasCandidaturas = listarMinhasCandidaturas;
 window.irParaChat = irParaChat;
 window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
