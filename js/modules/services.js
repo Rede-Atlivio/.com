@@ -1,5 +1,9 @@
 import { db, auth } from '../app.js';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ✅ NOVO: Importação do Storage para a Capa
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+const storage = getStorage();
 
 // CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
@@ -28,7 +32,6 @@ export async function carregarServicos(filtroCategoria = null) {
     
     if (!container) return;
 
-    // Filtros apenas se vitrine visível
     const isVitrineVisible = container.offsetParent !== null;
     if(containerFiltros) {
         if(isVitrineVisible) {
@@ -63,7 +66,6 @@ export async function carregarServicos(filtroCategoria = null) {
             servicos.push(data);
         });
 
-        // Ordenação Inteligente
         servicos.sort((a, b) => {
             if (!!a.is_demo !== !!b.is_demo) return a.is_demo ? 1 : -1;
             if (a.is_online !== b.is_online) return a.is_online ? -1 : 1;
@@ -89,12 +91,11 @@ function renderizarCards(servicos, container) {
     servicos.forEach(user => {
         try {
             const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
-            // Pega o primeiro serviço ou cria um default
             const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
             
             const nomeProf = user.nome_profissional || user.nome || "Prestador";
             const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
-            const tituloServico = mainService.title || mainService.category; // Usa o Título novo ou a Categoria
+            const tituloServico = mainService.title || mainService.category;
             
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
@@ -116,7 +117,6 @@ function renderizarCards(servicos, container) {
                 ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
                 : `window.verPerfilCompleto('${user.id}')`;
 
-            // Agora chama o modal passando os dados corretos
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
                 : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
@@ -155,7 +155,7 @@ function renderizarCards(servicos, container) {
 }
 
 // ============================================================================
-// 2. MEUS PEDIDOS & HISTÓRICO (CLIENTE)
+// 2. PEDIDOS E HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('meus-pedidos-andamento');
@@ -213,7 +213,7 @@ export async function carregarHistorico() {
                     </div>
                     <div class="text-right">
                         <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer mt-1">Avaliar ⭐</button>
+                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer">Avaliar ⭐</button>
                     </div>
                 </div>
             `;
@@ -231,24 +231,17 @@ export function switchServiceSubTab(tabName) {
             elBtn.classList.add('text-gray-400');
         }
     });
-    
     const targetView = document.getElementById(`view-${tabName}`);
     const targetBtn = document.getElementById(`subtab-${tabName}-btn`);
-    
     if(targetView) targetView.classList.remove('hidden');
     if(targetBtn) {
         targetBtn.classList.remove('text-gray-400');
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
-
     if(tabName === 'contratar') carregarServicos();
     if(tabName === 'andamento') carregarPedidosAtivos();
     if(tabName === 'historico') carregarHistorico();
 }
-
-// ============================================================================
-// 3. GESTÃO DO PRESTADOR (PAINEL + ANTI-GOLPE)
-// ============================================================================
 
 export function switchProviderSubTab(tabName) {
     ['radar', 'ativos', 'historico'].forEach(t => {
@@ -257,13 +250,10 @@ export function switchProviderSubTab(tabName) {
         if(elView) elView.classList.add('hidden');
         if(elBtn) elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
     });
-    
     const targetView = document.getElementById(`pview-${tabName}`);
     const targetBtn = document.getElementById(`ptab-${tabName}-btn`);
-
     if(targetView) targetView.classList.remove('hidden');
     if(targetBtn) targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
-
     if(tabName === 'ativos') carregarPedidosPrestador();
     if(tabName === 'historico') carregarHistoricoPrestador();
 }
@@ -272,19 +262,11 @@ async function carregarPedidosPrestador() {
     const container = document.getElementById('lista-chamados-ativos');
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
-
     const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), 
-        where("provider_id", "==", uid), 
-        where("status", "in", ["pending", "accepted", "in_progress"]), 
-        orderBy("created_at", "desc")
-    );
-
+    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "in", ["pending", "accepted", "in_progress"]), orderBy("created_at", "desc"));
     const snap = await getDocs(q);
     container.innerHTML = "";
-
     if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos.</p>`; return; }
-
     snap.forEach(d => {
         const order = d.data();
         let statusColor = order.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
@@ -307,15 +289,12 @@ async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
-
     const uid = auth.currentUser.uid;
     try {
         const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "completed"), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         container.innerHTML = "";
-
         if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum serviço finalizado.</p>`; return; }
-
         snap.forEach(d => {
             const order = d.data();
             container.innerHTML += `
@@ -332,7 +311,7 @@ async function carregarHistoricoPrestador() {
 }
 
 // ============================================================================
-// 4. EDITOR DE SERVIÇOS (COM TÍTULO E DESCRIÇÃO)
+// 4. EDITOR DE SERVIÇOS (COM CAPA, TÍTULO E DESCRIÇÃO)
 // ============================================================================
 export async function abrirConfiguracaoServicos() {
     const modal = document.getElementById('provider-setup-modal');
@@ -341,11 +320,15 @@ export async function abrirConfiguracaoServicos() {
 
     modal.classList.remove('hidden');
     
-    // Lista serviços atuais
     const uid = auth.currentUser.uid;
     const docSnap = await getDoc(doc(db, "active_providers", uid));
     let currentHtml = "";
     
+    // ✅ RECUPERA A CAPA ATUAL OU USA PADRÃO
+    const currentCover = (docSnap.exists() && docSnap.data().cover_image) 
+        ? docSnap.data().cover_image 
+        : 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+
     if(docSnap.exists() && docSnap.data().services) {
         const servicos = docSnap.data().services;
         if(servicos.length > 0) {
@@ -375,7 +358,17 @@ export async function abrirConfiguracaoServicos() {
 
     content.innerHTML = `
         <h3 class="text-lg font-black text-blue-900 uppercase mb-2 text-center">Gerenciar Serviços</h3>
+        
+        <div class="mb-4 relative h-32 rounded-xl bg-gray-200 overflow-hidden group cursor-pointer shadow-md" onclick="document.getElementById('input-banner').click()">
+            <img id="preview-banner" src="${currentCover}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                <span class="text-white font-bold text-xs border border-white px-3 py-1 rounded-full">📷 ALTERAR CAPA</span>
+            </div>
+            <input type="file" id="input-banner" accept="image/*" class="hidden" onchange="window.salvarCapaPrestador(this)">
+        </div>
+
         ${currentHtml}
+        
         <div class="space-y-3 pt-2 border-t border-gray-100 relative">
             <p id="form-mode-title" class="text-[10px] font-bold text-blue-600 uppercase">Adicionar Novo</p>
             
@@ -407,13 +400,38 @@ export async function abrirConfiguracaoServicos() {
     }, 100);
 }
 
-// --- FUNÇÕES DE EDIÇÃO ---
+// ✅ NOVA FUNÇÃO: UPLOAD DA CAPA
+window.salvarCapaPrestador = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const user = auth.currentUser;
+    if (!user) return alert("Erro de autenticação.");
+
+    // Preview Imediato
+    const reader = new FileReader();
+    reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
+    reader.readAsDataURL(file);
+
+    try {
+        // Upload para o Storage
+        const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+
+        // Atualiza no Firestore
+        await updateDoc(doc(db, "active_providers", user.uid), { cover_image: url });
+        alert("✅ Capa atualizada com sucesso!");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao enviar imagem. Tente novamente.");
+    }
+};
 
 window.prepararEdicao = (obj) => {
     document.getElementById('prov-title').value = obj.title || "";
     document.getElementById('prov-desc').value = obj.description || "";
     document.getElementById('prov-price').value = obj.price;
-    
     const select = document.getElementById('prov-cat');
     for(let i=0; i<select.options.length; i++) {
         if(select.options[i].value === obj.category) {
@@ -421,14 +439,11 @@ window.prepararEdicao = (obj) => {
             break;
         }
     }
-    
     document.getElementById('prov-old-data').value = JSON.stringify(obj);
-
     document.getElementById('form-mode-title').innerText = "Editando Serviço";
     document.getElementById('btn-save-service').innerText = "SALVAR ALTERAÇÕES";
     document.getElementById('btn-save-service').classList.replace('bg-blue-600', 'bg-green-600');
     document.getElementById('btn-cancel-edit').classList.remove('hidden');
-    
     document.getElementById('prov-title').focus();
 };
 
@@ -437,21 +452,16 @@ window.cancelarEdicao = () => {
     document.getElementById('prov-desc').value = "";
     document.getElementById('prov-price').value = "";
     document.getElementById('prov-old-data').value = "";
-    
     document.getElementById('form-mode-title').innerText = "Adicionar Novo";
     document.getElementById('btn-save-service').innerText = "ADICIONAR SERVIÇO";
     document.getElementById('btn-save-service').classList.replace('bg-green-600', 'bg-blue-600');
     document.getElementById('btn-cancel-edit').classList.add('hidden');
 };
 
-// --- FUNÇÕES CRUD ---
-
 window.removerServico = async (cat, price, title) => {
     if(!confirm(`Remover este serviço?`)) return;
-    
     const uid = auth.currentUser.uid;
     const ref = doc(db, "active_providers", uid);
-
     try {
         const snap = await getDoc(ref);
         if(snap.exists()) {
@@ -460,7 +470,6 @@ window.removerServico = async (cat, price, title) => {
                 if (title && s.title) return s.title !== title;
                 return !(s.category === cat && parseFloat(s.price) === parseFloat(price));
             });
-
             await updateDoc(ref, { services: newServices });
             abrirConfiguracaoServicos(); 
         }
@@ -493,8 +502,7 @@ export async function salvarServicoPrestador() {
 
     if(!title) return alert("❌ Digite um título para o serviço.");
     if(isNaN(price) || price < minPrice) {
-        alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
-        return;
+        return alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
     }
 
     const newService = { 
@@ -507,21 +515,14 @@ export async function salvarServicoPrestador() {
 
     try {
         const ref = doc(db, "active_providers", user.uid);
-        
-        // Verifica se é uma EDIÇÃO (se tem dados velhos guardados)
         if (oldDataInput.value) {
             const oldService = JSON.parse(oldDataInput.value);
-            // Remove o velho primeiro
             await updateDoc(ref, { services: arrayRemove(oldService) });
         }
-
-        // Adiciona o novo
         await updateDoc(ref, { services: arrayUnion(newService), is_online: true });
-        
         alert("✅ Serviço salvo com sucesso!");
-        abrirConfiguracaoServicos(); // Recarrega a lista
+        abrirConfiguracaoServicos();
     } catch(e) { 
-        // Se falhar (ex: doc não existe), tenta criar
         try {
             await setDoc(ref, { uid: user.uid, nome: user.displayName, services: [newService], is_online: true, rating_avg: 5.0, status: 'aprovado' });
             abrirConfiguracaoServicos();
@@ -540,5 +541,5 @@ window.carregarHistorico = carregarHistorico;
 window.switchProviderSubTab = switchProviderSubTab;
 window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
-// Alias de compatibilidade
 window.iniciarMonitoramentoPedidos = carregarPedidosPrestador;
+window.salvarCapaPrestador = window.salvarCapaPrestador; // Garante exportação
