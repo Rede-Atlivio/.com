@@ -1,353 +1,147 @@
 import { db, auth } from '../app.js';
-import { collection, query, orderBy, limit, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-let cachePrestadores = [];
-let unsubscribeVitrine = null;
-let unsubscribePedidosAtivos = null; // 🆕 Variável para controlar a escuta dos pedidos
+// 📌 NOVAS CATEGORIAS
+export const CATEGORIAS_ATIVAS = [
+    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
+    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
+    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹' },
+    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗' },
+    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵' },
+    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸' },
+    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻' },
+    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫' },
+    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆' },
+    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶' },
+    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗' },
+    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝' }
+];
 
-// --- GATILHOS ---
-const tabServicos = document.getElementById('tab-servicos');
-if (tabServicos) {
-    tabServicos.addEventListener('click', () => {
-        carregarServicosDisponiveis();
-        iniciarMonitoramentoPedidos(); // 🆕 Chama a função que popula as listas
-    });
-}
-
-// GATILHO EXTRA: Chama também quando troca de sub-aba para garantir atualização
-window.switchServiceSubTab = function(subTab) {
-    ['contratar', 'andamento', 'historico'].forEach(t => {
-        document.getElementById(`view-${t}`).classList.add('hidden');
-        document.getElementById(`subtab-${t}-btn`).classList.remove('active');
-    });
-    document.getElementById(`view-${subTab}`).classList.remove('hidden');
-    document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
-    
-    // Se for para andamento, força atualização
-    if(subTab === 'andamento') iniciarMonitoramentoPedidos();
-};
-
-window.switchProviderSubTab = function(subTab) {
-    ['radar', 'ativos', 'historico'].forEach(t => {
-        document.getElementById(`pview-${t}`).classList.add('hidden');
-        document.getElementById(`ptab-${t}-btn`).classList.remove('active');
-    });
-    document.getElementById(`pview-${subTab}`).classList.remove('hidden');
-    document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
-
-    // Se for para ativos, força atualização
-    if(subTab === 'ativos') iniciarMonitoramentoPedidos();
-};
-
-// Expõe globalmente
-window.carregarServicos = carregarServicosDisponiveis;
-window.abrirModalContratacao = abrirModalContratacao;
-window.filtrarCategoria = filtrarCategoria;
-window.filtrarPorTexto = filtrarPorTexto;
-window.fecharPerfilPublico = () => document.getElementById('provider-profile-modal')?.classList.add('hidden');
-// 🆕 Expõe a nova função para ser chamada pelo auth.js se necessário
-window.iniciarMonitoramentoPedidos = iniciarMonitoramentoPedidos;
-
-function normalizarTexto(texto) {
-    if (!texto) return "";
-    return texto.normalize('NFD').replace(/[\u0300-\u036f]/g, "").toLowerCase();
-}
+let servicesUnsubscribe = null;
 
 // ============================================================================
-// 🆕 0. MONITORAMENTO DE PEDIDOS (ATIVOS E EM ANDAMENTO)
+// 1. VITRINE (OFERTA)
 // ============================================================================
-export function iniciarMonitoramentoPedidos() {
-    const uid = auth.currentUser?.uid;
-    const userProfile = window.userProfile;
+export async function carregarServicos(filtroCategoria = null) {
+    const container = document.getElementById('lista-servicos');
+    const containerFiltros = document.getElementById('filtros-servicos');
     
-    if (!uid || !userProfile) return;
+    if (!container) return;
 
-    // Evita duplicidade de listeners
-    if (unsubscribePedidosAtivos) unsubscribePedidosAtivos();
-
-    if (userProfile.is_provider) {
-        // --- VISÃO PRESTADOR (Pedidos Aceitos/Em Andamento) ---
-        const container = document.getElementById('lista-chamados-ativos');
-        if (!container) return;
-
-        const q = query(
-            collection(db, "orders"),
-            where("provider_id", "==", uid),
-            where("status", "in", ["accepted", "in_progress"]), // Aceito ou Iniciado
-            orderBy("created_at", "desc")
-        );
-
-        unsubscribePedidosAtivos = onSnapshot(q, (snap) => {
-            container.innerHTML = "";
-            if (snap.empty) {
-                container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs border-2 border-dashed border-gray-200 rounded-xl">Nenhum serviço em execução.</div>`;
-                return;
-            }
-            snap.forEach(doc => renderCardPedido(container, doc.data(), doc.id, true));
-        });
-
-    } else {
-        // --- VISÃO CLIENTE (Pendentes/Aceitos/Em Andamento) ---
-        const container = document.getElementById('meus-pedidos-andamento');
-        if (!container) return;
-
-        const q = query(
-            collection(db, "orders"),
-            where("client_id", "==", uid),
-            where("status", "in", ["pending", "accepted", "in_progress"]), 
-            orderBy("created_at", "desc")
-        );
-
-        unsubscribePedidosAtivos = onSnapshot(q, (snap) => {
-            container.innerHTML = "";
-            if (snap.empty) {
-                container.innerHTML = `<div class="text-center py-6 text-gray-400 text-xs border-2 border-dashed border-gray-200 rounded-xl">Você não tem pedidos ativos.</div>`;
-                return;
-            }
-            snap.forEach(doc => renderCardPedido(container, doc.data(), doc.id, false));
-        });
-    }
-}
-
-// Helper para desenhar o card do pedido nas abas
-function renderCardPedido(container, pedido, id, isProvider) {
-    let statusLabel = "";
-    let statusColor = "";
-    
-    if (pedido.status === 'pending') {
-        statusLabel = "🕒 Aguardando Aceite";
-        statusColor = "bg-yellow-100 text-yellow-700";
-    } else if (pedido.status === 'accepted') {
-        statusLabel = "🚗 Prestador a Caminho";
-        statusColor = "bg-orange-100 text-orange-700";
-    } else if (pedido.status === 'in_progress') {
-        statusLabel = "▶️ Em Execução";
-        statusColor = "bg-blue-100 text-blue-700 animate-pulse";
-    }
-
-    const nomeExibicao = isProvider ? pedido.client_name : (pedido.provider_name || "Prestador");
-    
-    container.innerHTML += `
-        <div onclick="window.abrirChatPedido('${id}')" class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:shadow-md transition relative overflow-hidden">
-            <div class="absolute left-0 top-0 bottom-0 w-1 ${pedido.status === 'in_progress' ? 'bg-blue-600' : 'bg-gray-300'}"></div>
-            <div>
-                <span class="text-[9px] font-bold uppercase tracking-wider ${statusColor} px-2 py-0.5 rounded mb-1 inline-block">${statusLabel}</span>
-                <h4 class="font-bold text-gray-800 text-sm">${nomeExibicao}</h4>
-                <p class="text-xs text-gray-500">R$ ${pedido.offer_value} • ${pedido.service_date || 'Hoje'}</p>
-            </div>
-            <button class="bg-blue-50 text-blue-600 p-2 rounded-full">
-                💬
-            </button>
-        </div>
-    `;
-}
-
-// ============================================================================
-// 1. LISTAGEM VITRINE (Mantida Original)
-// ============================================================================
-export function carregarServicosDisponiveis() {
-    const listaRender = document.getElementById('lista-prestadores-realtime');
-    const filtersRender = document.getElementById('category-filters');
-    const userProfile = window.userProfile;
-    
-    // Chama o monitoramento também para garantir
-    iniciarMonitoramentoPedidos();
-
-    if (!listaRender || !filtersRender) return;
-
-    if (userProfile && userProfile.is_provider) {
-        filtersRender.classList.add('hidden');
-        return; 
-    }
-
-    // Grid Layout
-    listaRender.className = "grid grid-cols-2 md:grid-cols-3 gap-2 pb-24"; 
-
-    // Renderiza Filtros (se vazio)
-    if(filtersRender.innerHTML.trim() === "" || !document.getElementById('search-services')) {
-        filtersRender.classList.remove('hidden');
-        filtersRender.innerHTML = `
-            <div class="mb-3 px-1">
-                <div class="relative">
-                    <span class="absolute left-3 top-2.5 text-gray-400 text-xs">🔍</span>
-                    <input type="text" id="search-services" oninput="window.filtrarPorTexto(this.value)" 
-                        placeholder="Buscar (Ex: Eletricista...)" 
-                        class="w-full bg-white border border-gray-200 rounded-xl py-2 pl-9 pr-4 text-xs font-bold text-gray-700 outline-none focus:border-blue-500 transition shadow-sm">
-                </div>
-            </div>
-            <div class="flex gap-2 overflow-x-auto no-scrollbar pb-2 mb-2 px-1">
-                <button onclick="window.filtrarCategoria('Todos', this)" class="filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm whitespace-nowrap">Todos</button>
-                <button onclick="window.filtrarCategoria('Limpeza', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Limpeza</button>
-                <button onclick="window.filtrarCategoria('Obras', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Obras</button>
-                <button onclick="window.filtrarCategoria('Técnica', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Técnica</button>
-                <button onclick="window.filtrarCategoria('Outros', this)" class="filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 whitespace-nowrap">Outros</button>
+    // Renderiza Filtros se necessário
+    if(containerFiltros && containerFiltros.innerHTML.trim() === "") {
+        containerFiltros.innerHTML = `
+            <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                <button onclick="window.filtrarServicos('todos')" class="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md hover:bg-blue-600 transition">Todos</button>
+                ${CATEGORIAS_ATIVAS.map(cat => `
+                    <button onclick="window.filtrarServicos('${cat.label}')" class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-blue-50 hover:border-blue-200 transition">
+                        ${cat.icon} ${cat.label.split(' ')[1]}...
+                    </button>
+                `).join('')}
             </div>
         `;
     }
 
-    if (unsubscribeVitrine) return;
+    container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
 
-    listaRender.innerHTML = `
-        <div class="col-span-2 text-center py-10">
-            <div class="loader mx-auto border-blue-200 border-t-blue-600 mb-2"></div>
-            <p class="text-[10px] text-gray-400">Carregando vitrine...</p>
-        </div>
-    `;
+    let q = query(collection(db, "active_providers"), where("status", "==", "aprovado"));
 
-    try {
-        const q = query(
-            collection(db, "active_providers"), 
-            orderBy("visibility_score", "desc"), 
-            limit(50)
-        );
-        
-        unsubscribeVitrine = onSnapshot(q, (snap) => {
-            cachePrestadores = []; 
+    if (servicesUnsubscribe) servicesUnsubscribe();
 
-            if (snap.empty) {
-                listaRender.innerHTML = `
-                    <div class="col-span-2 text-center py-12 opacity-60">
-                        <div class="text-4xl mb-2 grayscale">🏜️</div>
-                        <h3 class="font-bold text-gray-700 text-xs">Nenhum profissional disponível.</h3>
-                    </div>`;
-                return;
-            }
-
-            snap.forEach(d => {
-                cachePrestadores.push({ id: d.id, ...d.data() });
-            });
-
-            const validos = cachePrestadores.filter(p => p.services && p.services.length > 0);
-            renderizarLista(validos);
+    servicesUnsubscribe = onSnapshot(q, (snapshot) => {
+        let servicos = [];
+        snapshot.forEach((doc) => {
+            let data = doc.data();
+            data.id = doc.id;
+            servicos.push(data);
         });
 
-    } catch (e) {
-        console.error("Erro ao conectar vitrine:", e);
-        listaRender.innerHTML = `<p class="col-span-2 text-center text-red-500 text-xs">Erro de conexão.</p>`;
-    }
+        // Ordenação Inteligente: Reais > Avaliados > Demos
+        servicos.sort((a, b) => {
+            if (a.is_demo !== b.is_demo) return a.is_demo ? 1 : -1;
+            return (b.rating_avg || 0) - (a.rating_avg || 0);
+        });
+
+        if (filtroCategoria && filtroCategoria !== 'todos') {
+            servicos = servicos.filter(s => 
+                s.services && s.services.some(sub => sub.category.includes(filtroCategoria) || sub.category === filtroCategoria)
+            );
+        }
+
+        renderizarCards(servicos, container);
+    });
 }
 
-// 🔎 BUSCA E FILTROS
-function filtrarPorTexto(texto) {
-    const termo = normalizarTexto(texto);
-    document.querySelectorAll('.filter-pill').forEach(btn => {
-        btn.classList.remove('active', 'bg-blue-600', 'text-white', 'border-blue-600');
-        btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
-    });
+function renderizarCards(servicos, container) {
+    container.innerHTML = "";
 
-    if (termo === "") {
-        const btnTodos = document.querySelector("button[onclick*='Todos']");
-        if(btnTodos) {
-            btnTodos.classList.add('active', 'bg-blue-600', 'text-white', 'border-blue-600');
-            btnTodos.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
-        }
-        renderizarLista(cachePrestadores);
+    if (servicos.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-12 opacity-60">
+                <div class="text-4xl mb-2">🤷‍♂️</div>
+                <h3 class="font-bold text-gray-600">Nenhum profissional nesta categoria.</h3>
+                <button onclick="window.abrirPerfilProfissional()" class="mt-4 text-blue-600 font-bold text-xs underline">Quero Trabalhar Aqui</button>
+            </div>`;
         return;
     }
 
-    const filtrados = cachePrestadores.filter(p => {
-        if (!p.services) return false;
-        const matchNome = normalizarTexto(p.nome_profissional).includes(termo);
-        const matchBio = normalizarTexto(p.bio).includes(termo);
-        const matchServico = p.services.some(s => normalizarTexto(s.category).includes(termo) || normalizarTexto(s.description).includes(termo));
-        return matchNome || matchBio || matchServico;
-    });
-
-    renderizarLista(filtrados);
-}
-
-function filtrarCategoria(categoria, btnElement) {
-   const inputBusca = document.getElementById('search-services');
-   if(inputBusca) inputBusca.value = "";
-
-   if(btnElement) {
-       document.querySelectorAll('.filter-pill').forEach(btn => {
-           btn.className = "filter-pill bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full text-[10px] font-bold hover:bg-gray-50 transition whitespace-nowrap";
-       });
-       btnElement.className = "filter-pill active bg-blue-600 text-white px-3 py-1.5 rounded-full text-[10px] font-bold border border-blue-600 shadow-sm transition whitespace-nowrap";
-   }
-
-   if (categoria === 'Todos') {
-       renderizarLista(cachePrestadores);
-   } else {
-       const filtrados = cachePrestadores.filter(p => {
-           if (!p.services) return false;
-           if (categoria === 'Outros') {
-               return p.services.some(s => !['Limpeza', 'Obras', 'Técnica'].some(c => s.category.includes(c)));
-           }
-           return p.services.some(s => s.category.includes(categoria));
-       });
-       renderizarLista(filtrados);
-   }
-}
-
-// LÓGICA DE RENDERIZAÇÃO DA VITRINE
-function renderizarLista(lista) {
-    const container = document.getElementById('lista-prestadores-realtime');
-    container.innerHTML = "";
-
-    lista.forEach(prestador => {
-        const isOnline = prestador.is_online === true;
-        const isAprovado = prestador.status === 'aprovado';
+    servicos.forEach(user => {
+        const isOnline = user.is_online === true;
+        const grayscaleClass = isOnline ? "" : "grayscale opacity-75";
+        const statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
+        const statusText = isOnline ? "Online Agora" : "Indisponível";
+        const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=500&q=60';
         
-        if(!isAprovado) return; 
+        const rating = user.rating_avg || 5.0;
+        const ratingCount = user.rating_count || 0;
+        const starsHtml = "⭐".repeat(Math.floor(rating));
 
-        const nomeSafe = prestador.nome_profissional || "Profissional";
-        const primeiroNome = nomeSafe.split(' ')[0];
-        const fotoPerfil = prestador.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeSafe)}&background=random&color=fff`;
-        
-        const servicoPrincipal = (prestador.services && prestador.services.length > 0) 
-            ? prestador.services[0] 
-            : { category: "Geral", price: 0 };
+        let btnTexto = "SOLICITAR SERVIÇO";
+        let btnAcao = `window.abrirModalSolicitacao('${user.id}', '${user.nome_profissional || user.nome}', '${user.services[0]?.price || 0}')`;
+        let demoBadge = "";
 
-        const qtdServicos = prestador.services ? prestador.services.length : 0;
-        
-        let botaoAcaoHTML = "";
-        let containerClass = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 relative flex flex-col";
-        
-        if(isOnline) {
-            botaoAcaoHTML = `
-                <div class="mt-2 bg-blue-600 text-white text-[10px] font-black py-1.5 rounded text-center uppercase tracking-wide flex items-center justify-center gap-1 shadow-sm group-hover:bg-blue-700 transition">
-                    <span>⚡</span> Solicitar
-                </div>
-            `;
-        } else {
-            containerClass += " opacity-90";
-            botaoAcaoHTML = `
-                <div class="mt-2 bg-gray-100 text-gray-600 text-[10px] font-bold py-1.5 rounded text-center uppercase tracking-wide flex items-center justify-center gap-1 border border-gray-200">
-                    <span>📅</span> Agendar
-                </div>
-            `;
+        if (user.is_demo) {
+            btnTexto = "VER EXEMPLO";
+            btnAcao = "alert('Este é um perfil demonstrativo.')";
+            demoBadge = `<div class="absolute top-2 right-2 bg-yellow-400 text-yellow-900 text-[9px] font-black px-2 py-1 rounded uppercase shadow-sm z-10">Demonstração</div>`;
         }
 
-        const onclickAction = `window.abrirModalContratacao('${prestador.id}')`;
+        const mainService = user.services && user.services.length > 0 ? user.services[0] : { category: 'Geral', price: 'A Combinar' };
 
         container.innerHTML += `
-            <div class="${containerClass} group" onclick="${onclickAction}">
-                <div class="absolute top-2 right-2 z-10">
-                    ${isOnline 
-                        ? '<span class="flex h-2.5 w-2.5"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500 border border-white"></span></span>' 
-                        : '<div class="w-2.5 h-2.5 bg-gray-300 rounded-full border border-white"></div>'}
-                </div>
-
-                <div class="h-14 w-full bg-gradient-to-r from-blue-600 to-blue-400 relative"></div>
-                <div class="flex justify-center -mt-7 relative px-2">
-                    <img src="${fotoPerfil}" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover bg-white">
-                </div>
-
-                <div class="p-2 text-center flex-1 flex flex-col justify-between">
-                    <div>
-                        <h3 class="font-black text-gray-800 text-xs truncate mt-0.5">${primeiroNome}</h3>
-                        <p class="text-[9px] text-gray-400 truncate mb-1">⭐ 5.0 • ${qtdServicos} svcs</p>
-                        
-                        <div class="bg-blue-50 rounded py-0.5 px-2 mb-1">
-                            <p class="font-bold text-blue-900 text-[9px] truncate">${servicoPrincipal.category}</p>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-4 relative ${grayscaleClass} transition-all duration-300 hover:shadow-md">
+                ${demoBadge}
+                <div onclick="window.verPerfilCompleto('${user.id}')" class="h-24 bg-gray-200 relative cursor-pointer group">
+                    <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="Capa">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                    <div class="absolute bottom-2 left-3 flex items-center gap-2">
+                        <img src="${user.foto_perfil || 'https://ui-avatars.com/api/?name='+user.nome}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
+                        <div>
+                            <h3 class="text-white font-bold text-sm leading-tight text-shadow">${user.nome_profissional || user.nome}</h3>
+                            <div class="flex items-center gap-1 text-[10px] text-yellow-300">
+                                <span>${starsHtml}</span> <span class="text-white/80">(${ratingCount})</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div>
-                        <p class="font-black text-green-600 text-xs">R$ ${servicoPrincipal.price}</p>
-                        ${botaoAcaoHTML} 
+                </div>
+                <div class="p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <p class="text-xs font-bold text-gray-600 uppercase">${mainService.category}</p>
+                            <p class="text-[10px] text-gray-400 line-clamp-1">${user.bio || 'Pronto para atender.'}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="block font-black text-green-600 text-sm">R$ ${mainService.price}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3 pt-3 border-t border-gray-50">
+                        <div class="flex items-center gap-1.5 flex-1">
+                            <span class="w-2 h-2 rounded-full ${statusDot}"></span>
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">${statusText}</span>
+                        </div>
+                        <button onclick="${btnAcao}" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-bold shadow-lg hover:bg-slate-800 transition active:scale-95 flex-1">
+                            ${btnTexto}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -356,48 +150,131 @@ function renderizarLista(lista) {
 }
 
 // ============================================================================
-// 2. MODAL DE CONTRATAÇÃO (Mantido)
+// 2. MEUS PEDIDOS (RESTAURADO) - CRUCIAL PARA A ABA 'EM ANDAMENTO'
 // ============================================================================
-export function abrirModalContratacao(providerId) {
-    const prestador = cachePrestadores.find(p => p.id === providerId);
-    
-    if (!prestador) {
-        return alert("Erro: Dados não encontrados. Atualize a página.");
-    }
+export async function carregarPedidosAtivos() {
+    const container = document.getElementById('lista-pedidos-render');
+    if (!container || !auth.currentUser) return;
 
-    if (prestador.services && prestador.services.length > 1) {
-        abrirPerfilPublico(prestador);
-    } else {
-        const servico = prestador.services[0];
-        if (window.abrirModalSolicitacao) {
-            window.abrirModalSolicitacao(providerId, prestador.nome_profissional, servico.price); 
+    container.innerHTML = `<div class="loader mx-auto border-blue-200 border-t-blue-600 mt-10"></div>`;
+    
+    // Busca pedidos onde sou cliente ou prestador (status != completed)
+    // Nota: Simplificando query para evitar erro de índice composto complexo.
+    // Buscamos tudo onde participo e filtro no cliente por status.
+    const uid = auth.currentUser.uid;
+    const q1 = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
+    
+    // Obs: Idealmente faríamos duas queries e uníamos, mas vamos focar no cliente ver seus pedidos.
+    
+    onSnapshot(q1, (snap) => {
+        container.innerHTML = "";
+        let pedidos = [];
+        snap.forEach(d => {
+            const p = d.data();
+            if(p.status !== 'completed' && p.status !== 'rejected') pedidos.push({id: d.id, ...p});
+        });
+
+        if (pedidos.length === 0) {
+            container.innerHTML = `<div class="text-center py-10 opacity-50"><p class="text-xs text-gray-400">Nenhum pedido ativo.</p></div>`;
+            return;
         }
+
+        pedidos.forEach(pedido => {
+            // Reutiliza lógica de card de pedido existente no seu chat.js se houver, 
+            // ou renderiza simples aqui para garantir que aparece.
+            let statusLabel = "Pendente";
+            if(pedido.status === 'in_progress') statusLabel = "Em Andamento";
+            if(pedido.status === 'accepted') statusLabel = "Aceito - Aguardando";
+
+            container.innerHTML += `
+                <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer hover:bg-blue-50">
+                    <div class="flex justify-between">
+                        <h3 class="font-bold text-gray-800 text-sm">${pedido.provider_name}</h3>
+                        <span class="text-[10px] bg-blue-100 text-blue-700 px-2 rounded-full">${statusLabel}</span>
+                    </div>
+                    <p class="text-[10px] text-gray-500 mt-1">R$ ${pedido.offer_value} • Toque para ver</p>
+                </div>
+            `;
+        });
+    });
+}
+
+// ============================================================================
+// 3. NAVEGAÇÃO INTERNA (Abas Pedidos/Histórico)
+// ============================================================================
+export function switchServiceSubTab(tabName) {
+    const painelPedidos = document.getElementById('painel-pedidos');
+    const painelHistorico = document.getElementById('painel-historico');
+    
+    // Remove active
+    document.querySelectorAll('.subtab-btn').forEach(b => {
+        b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+        b.classList.add('text-gray-400');
+    });
+
+    if(tabName === 'andamento') {
+        if(painelPedidos) painelPedidos.classList.remove('hidden');
+        if(painelHistorico) painelHistorico.classList.add('hidden');
+        
+        const btn = document.getElementById('btn-tab-andamento');
+        if(btn) btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+        
+        carregarPedidosAtivos();
+    } else {
+        if(painelPedidos) painelPedidos.classList.add('hidden');
+        if(painelHistorico) painelHistorico.classList.remove('hidden');
+        
+        const btn = document.getElementById('btn-tab-historico');
+        if(btn) btn.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+        
+        carregarHistorico();
     }
 }
 
-function abrirPerfilPublico(prestador) {
-    const modal = document.getElementById('provider-profile-modal');
-    if(!modal) return;
+async function carregarHistorico() {
+    const container = document.getElementById('lista-historico-render');
+    if(!container) return;
+    container.innerHTML = `<div class="loader mx-auto"></div>`;
 
-    document.getElementById('public-profile-photo').src = prestador.foto_perfil || "https://ui-avatars.com/api/?name=User";
-    document.getElementById('public-profile-name').innerText = prestador.nome_profissional;
+    const uid = auth.currentUser.uid;
+    const q = query(collection(db, "orders"), 
+        where("client_id", "==", uid), 
+        where("status", "==", "completed"),
+        orderBy("completed_at", "desc")
+    );
 
-    const listaContainer = document.getElementById('public-services-list');
-    listaContainer.innerHTML = "";
+    const snap = await getDocs(q);
+    container.innerHTML = "";
+    
+    if(snap.empty) {
+        container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum serviço finalizado.</p>`;
+        return;
+    }
 
-    prestador.services.forEach(svc => {
-        listaContainer.innerHTML += `
-            <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center hover:bg-blue-50 transition">
-                <div>
-                    <span class="block font-bold text-xs text-blue-900">${svc.category}</span>
-                    <span class="text-[10px] text-gray-500">${svc.description || "Serviço padrão"}</span>
+    snap.forEach(d => {
+        const order = d.data();
+        // Botão para avaliar
+        container.innerHTML += `
+            <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100">
+                <div class="flex justify-between items-center mb-2">
+                    <p class="font-bold text-xs text-gray-700">${order.provider_name}</p>
+                    <span class="font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
                 </div>
-                <button onclick="window.abrirModalSolicitacao('${prestador.id}', '${prestador.nome_profissional.replace(/'/g, "\\'")}', ${svc.price}); window.fecharPerfilPublico();" class="bg-green-600 text-white text-[10px] font-bold px-3 py-1.5 rounded shadow-sm hover:bg-green-700">
-                    R$ ${svc.price}
-                </button>
+                <div class="flex justify-between items-center">
+                    <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
+                    <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${order.provider_name}')" class="text-[10px] text-blue-600 font-bold underline">Avaliar ⭐</button>
+                </div>
             </div>
         `;
     });
-
-    modal.classList.remove('hidden');
 }
+
+// ============================================================================
+// 4. EXPORTAÇÕES GLOBAIS (ESSENCIAL PARA O HTML FUNCIONAR)
+// ============================================================================
+window.carregarServicos = carregarServicos;
+window.filtrarServicos = (cat) => carregarServicos(cat);
+window.switchServiceSubTab = switchServiceSubTab;
+window.carregarPedidosAtivos = carregarPedidosAtivos;
+// Alias para compatibilidade antiga
+window.iniciarMonitoramentoPedidos = carregarPedidosAtivos;
