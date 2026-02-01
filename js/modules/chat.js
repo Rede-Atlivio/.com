@@ -200,9 +200,8 @@ export async function sugerirDetalhe(orderId, tipo) {
     const msgFinal = `🔹 [DETALHE] ${tipo.toUpperCase()}: ${valor}`;
     await addDoc(collection(db, `chats/${orderId}/messages`), { text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
 }
-
 // ============================================================================
-// 🚨 FASE 4: ACORDO MÚTUO COM RESERVA DE SALDO REAL
+// 🚨 FASE 4: ACORDO MÚTUO COM RESERVA DE SALDO REAL (ESTILO MERCADO PAGO)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
     if(!aceitar) return alert("Negociação continua. Utilize os botões de detalhes para ajustar os termos.");
@@ -211,18 +210,18 @@ export async function confirmarAcordo(orderId, aceitar) {
     const orderRef = doc(db, "orders", orderId);
     
     try {
-        // Usamos runTransaction para garantir que o dinheiro não "suma" em erros de conexão
+        // runTransaction garante que o dinheiro só sai se o acordo for gravado com sucesso
         await runTransaction(db, async (transaction) => {
             const orderSnap = await transaction.get(orderRef);
             if (!orderSnap.exists()) throw "Pedido não encontrado!";
             const pedido = orderSnap.data();
 
-            // 1. Registra o aceite de quem clicou
+            // 1. Registra quem clicou no aceite
             const isProvider = uid === pedido.provider_id;
             const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
             transaction.update(orderRef, campoUpdate);
 
-            // 2. Verifica se com esse clique AMBOS confirmaram
+            // 2. Verifica se este clique é o segundo (que fecha o ciclo)
             const vaiFecharAgora = (isProvider && pedido.client_confirmed) || (!isProvider && pedido.provider_confirmed);
 
             if (vaiFecharAgora) {
@@ -232,20 +231,20 @@ export async function confirmarAcordo(orderId, aceitar) {
                 if (!clientSnap.exists()) throw "Erro ao localizar carteira do cliente.";
                 
                 const saldoAtual = clientSnap.data().wallet_balance || 0;
-                const valorReserva = 20.00; // Valor fixo da sua regra de negócio
+                const valorReserva = 20.00; // Regra ATLIVIO: Taxa de reserva garantida
 
-                // 🛑 TRAVA DE SEGURANÇA: Cliente precisa ter o bônus ou saldo
+                // 🛑 TRAVA FINANCEIRA: Se o cliente não tiver saldo, o acordo não fecha
                 if (saldoAtual < valorReserva) {
-                    throw "O Cliente não possui saldo suficiente para a reserva de garantia (R$ 20,00).";
+                    throw "O Cliente não possui saldo suficiente (R$ 20,00) para garantir este acordo. Solicite que ele recarregue a carteira.";
                 }
 
-                // 💸 MOVIMENTAÇÃO FINANCEIRA (RESERVA)
+                // 💸 MOVIMENTAÇÃO FINANCEIRA (CONGELAMENTO DE SALDO)
                 transaction.update(clientRef, {
                     wallet_balance: saldoAtual - valorReserva,
                     wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
                 });
 
-                // 🔓 LIBERAÇÃO DO PEDIDO
+                // 🔓 LIBERAÇÃO GERAL DO PEDIDO
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     address_visible: true, 
@@ -255,21 +254,21 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp()
                 });
 
-                // 📝 MENSAGEM DE SISTEMA NO CHAT
+                // 📝 REGISTRO NO CHAT (PARA PROVA JUDICIAL/AUDITORIA)
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 RESERVA DE R$ ${valorReserva.toFixed(2)} REALIZADA. O valor está sob custódia da ATLIVIO e o contato foi liberado para ambos.`,
+                    text: `🔒 GARANTIA ATLIVIO: R$ ${valorReserva.toFixed(2)} reservados com sucesso. O contato foi liberado. Boa parceria!`,
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
             }
         });
 
-        console.log("✅ Processo de acordo/reserva concluído.");
+        console.log("✅ Acordo e Reserva Financeira processados.");
 
     } catch(e) { 
         console.error("Erro no Acordo:", e);
-        alert(e); // Avisa se o cliente estiver sem saldo
+        alert("⚠️ " + e); 
     }
 }
 function escutarMensagens(orderId) {
