@@ -232,56 +232,47 @@ window.executeAdjustment = async (uid) => {
         const db = window.db;
         
         await runTransaction(db, async (transaction) => {
-            // 1. Referências
             const userRef = doc(db, "usuarios", uid);
             const providerRef = doc(db, "active_providers", uid);
-            const ledgerRef = doc(db, "sys_finance", "stats");
-            const newHistRef = doc(collection(db, "transactions")); // Cria ID novo para o extrato
+            const newHistRef = doc(collection(db, "transactions"));
 
-            // 2. Leituras (Obrigatório fazer todas as leituras antes das escritas)
             const userDoc = await transaction.get(userRef);
             const provDoc = await transaction.get(providerRef);
             
             if (!userDoc.exists()) throw "Usuário não encontrado!";
 
-            // 3. Cálculos
-            // Pega o saldo atual (prioriza wallet_balance, se não tiver usa saldo)
-            const currentBalance = userDoc.data().wallet_balance !== undefined ? userDoc.data().wallet_balance : (userDoc.data().saldo || 0);
+            // 1. Pega o saldo atual (prioriza wallet_balance)
+            const currentBalance = userDoc.data().wallet_balance !== undefined ? 
+                                   userDoc.data().wallet_balance : (userDoc.data().saldo || 0);
             const newBalance = currentBalance + finalAmount;
 
-            // 4. Atualizações (Escritas)
-            
-            // A) Atualiza o Usuário (Carteira Nova + Legado para garantir)
+            // 2. Sincronia Tripla: Usuarios + Active Providers + Extrato
             transaction.update(userRef, { 
                 wallet_balance: newBalance,
-                saldo: newBalance // Mantém sincronizado por segurança
+                saldo: newBalance 
             });
 
-            // B) Se for Prestador, atualiza a tabela de prestadores também
+            // AQUI É O SEGREDO: Atualiza o campo 'balance' que deu undefined no teste
             if (provDoc.exists()) {
-                transaction.update(providerRef, { balance: newBalance });
+                transaction.update(providerRef, { 
+                    balance: newBalance 
+                });
             }
 
-            // C) Cria o Extrato (Essencial para o usuário ver o histórico)
             transaction.set(newHistRef, {
-                provider_id: uid, // Pode ser user comum, mas usamos esse campo
+                provider_id: uid,
                 type: mode === 'credit' ? 'manual_credit' : 'manual_debit',
                 amount: finalAmount,
                 description: `Admin: ${desc}`,
-                order_id: 'admin_adjust',
                 created_at: serverTimestamp()
             });
-
-            // D) (Opcional) Atualiza estatísticas gerais do sistema se quiser
-            // transaction.set(ledgerRef, { total_adjustments: increment(finalAmount) }, { merge: true });
         });
 
-        alert("✅ Saldo atualizado e sincronizado com a Carteira V3!");
+        alert("✅ Saldo sincronizado em todas as bases!");
         document.getElementById('modal-editor').classList.add('hidden');
-        loadFinanceData(); // Recarrega a tela do Admin
+        if(window.loadFinanceData) window.loadFinanceData();
 
     } catch (e) {
-        console.error(e);
-        alert("Erro na transação: " + e.message);
+        alert("Erro na sincronia: " + e.message);
     }
 };
