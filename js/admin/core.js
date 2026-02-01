@@ -183,3 +183,33 @@ window.updateBulkBar = () => {
         bar.style.transform = "translate(-50%, 200%)"; // Faz sumir
     }
 };
+// --- ABRE O MENU DE AÇÕES EM MASSA (EXCLUIR, BANIR, APROVAR) ---
+window.abrirMenuAcoesMassa = () => {
+    const selecionados = document.querySelectorAll('.row-checkbox:checked');
+    const count = selecionados.length;
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    
+    if (!modal || !content) return console.error("Modal não encontrado!");
+
+    modal.classList.remove('hidden');
+    document.getElementById('modal-title').innerText = `CONTROLE EM MASSA (${count})`;
+
+    content.innerHTML = `
+        <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 mb-6">
+            <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-widest">Ações Destrutivas / Status</p>
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">✅ Aprovar Todos</button>
+                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">🚫 Banir Todos</button>
+                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">🗑️ Excluir Definitivamente</button>
+            </div>
+        </div>
+        <div class="p-4 bg-slate-950 rounded-xl border border-white/5">
+            <p class="text-[10px] text-gray-500 font-bold mb-3 uppercase tracking-widest">Financeiro (Opcional)</p>
+            <div class="flex gap-2">
+                <input type="number" id="bulk-credit-val" placeholder="R$ 0,00" class="flex-1 p-3 rounded-lg bg-slate-900 text-white border border-slate-800 text-sm focus:border-blue-500 outline-none">
+                <button onclick="window.executarAcaoMassa('credito')" class="bg-blue-600 text-white px-4 rounded-lg font-black text-[10px] uppercase">Enviar</button>
+            </div>
+        </div>
+    `;
+};
