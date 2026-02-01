@@ -543,24 +543,31 @@ export async function salvarServicoPrestador() {
         status: 'ativo' 
     };
 
-    try {
+try {
         const ref = doc(db, "active_providers", user.uid);
+        
+        // Se estiver editando, remove o antigo antes (usando setDoc com merge para segurança)
         if (oldDataInput.value) {
             const oldService = JSON.parse(oldDataInput.value);
-            await updateDoc(ref, { services: arrayRemove(oldService) });
+            await setDoc(ref, { services: arrayRemove(oldService) }, { merge: true });
         }
-        await updateDoc(ref, { services: arrayUnion(newService), is_online: true });
+        
+        // Salva o novo serviço (Cria o documento se ele não existir)
+        await setDoc(ref, { 
+            uid: user.uid,
+            nome_profissional: user.displayName || 'Prestador',
+            services: arrayUnion(newService), 
+            is_online: true,
+            status: 'aprovado', // Garante que ele já nasça aprovado para seus testes
+            updated_at: new Date()
+        }, { merge: true });
+
         alert("✅ Serviço salvo com sucesso!");
         abrirConfiguracaoServicos();
     } catch(e) { 
-        try {
-            await setDoc(ref, { uid: user.uid, nome: user.displayName, services: [newService], is_online: true, rating_avg: 5.0, status: 'aprovado' });
-            abrirConfiguracaoServicos();
-        } catch(err2) {
-            alert("Erro ao salvar: " + e.message); 
-        }
+        console.error("Erro fatal no salvamento:", e);
+        alert("Erro ao salvar: " + e.message); 
     }
-}
 
 // EXPORTAÇÕES GLOBAIS
 window.carregarServicos = carregarServicos;
