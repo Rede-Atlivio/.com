@@ -202,24 +202,77 @@ export async function sugerirDetalhe(orderId, tipo) {
     await addDoc(collection(db, `chats/${orderId}/messages`), { text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
 }
 
+// ============================================================================
+// 🚨 FASE 4: ACORDO MÚTUO COM RESERVA DE SALDO REAL
+// ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
-    if(!aceitar) return alert("Negociação continua.");
+    if(!aceitar) return alert("Negociação continua. Utilize os botões de detalhes para ajustar os termos.");
+    
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
-    const snap = await getDoc(orderRef);
-    const updates = uid === snap.data().provider_id ? { provider_confirmed: true } : { client_confirmed: true };
-
+    
     try {
-        await updateDoc(orderRef, updates);
-        const upSnap = await getDoc(orderRef);
-        const p = upSnap.data();
-        if (p.client_confirmed && p.provider_confirmed) {
-            await updateDoc(orderRef, { system_step: 3, address_visible: true, contact_visible: true, status: 'confirmed_hold' });
-            await addDoc(collection(db, `chats/${orderId}/messages`), { text: "🔒 RESERVA CONFIRMADA: O contato foi liberado.", sender_id: "system", timestamp: serverTimestamp() });
-        }
-    } catch(e) { console.error(e); }
-}
+        // Usamos runTransaction para garantir que o dinheiro não "suma" em erros de conexão
+        await runTransaction(db, async (transaction) => {
+            const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Pedido não encontrado!";
+            const pedido = orderSnap.data();
 
+            // 1. Registra o aceite de quem clicou
+            const isProvider = uid === pedido.provider_id;
+            const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
+            transaction.update(orderRef, campoUpdate);
+
+            // 2. Verifica se com esse clique AMBOS confirmaram
+            const vaiFecharAgora = (isProvider && pedido.client_confirmed) || (!isProvider && pedido.provider_confirmed);
+
+            if (vaiFecharAgora) {
+                const clientRef = doc(db, "usuarios", pedido.client_id);
+                const clientSnap = await transaction.get(clientRef);
+                
+                if (!clientSnap.exists()) throw "Erro ao localizar carteira do cliente.";
+                
+                const saldoAtual = clientSnap.data().wallet_balance || 0;
+                const valorReserva = 20.00; // Valor fixo da sua regra de negócio
+
+                // 🛑 TRAVA DE SEGURANÇA: Cliente precisa ter o bônus ou saldo
+                if (saldoAtual < valorReserva) {
+                    throw "O Cliente não possui saldo suficiente para a reserva de garantia (R$ 20,00).";
+                }
+
+                // 💸 MOVIMENTAÇÃO FINANCEIRA (RESERVA)
+                transaction.update(clientRef, {
+                    wallet_balance: saldoAtual - valorReserva,
+                    wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
+                });
+
+                // 🔓 LIBERAÇÃO DO PEDIDO
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    address_visible: true, 
+                    contact_visible: true,
+                    status: 'confirmed_hold',
+                    value_reserved: valorReserva,
+                    confirmed_at: serverTimestamp()
+                });
+
+                // 📝 MENSAGEM DE SISTEMA NO CHAT
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: `🔒 RESERVA DE R$ ${valorReserva.toFixed(2)} REALIZADA. O valor está sob custódia da ATLIVIO e o contato foi liberado para ambos.`,
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
+        });
+
+        console.log("✅ Processo de acordo/reserva concluído.");
+
+    } catch(e) { 
+        console.error("Erro no Acordo:", e);
+        alert(e); // Avisa se o cliente estiver sem saldo
+    }
+}
 function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
