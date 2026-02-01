@@ -3,154 +3,153 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, limit, where, serv
 // ============================================================================
 // 1. INICIALIZAÇÃO
 // ============================================================================
+// ============================================================================
+// 1. INICIALIZAÇÃO COM BUSCA E FILTROS
+// ============================================================================
 export async function init() {
     const container = document.getElementById('view-finance');
     
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade">
             <div class="glass-panel p-6 border-l-4 border-amber-500 relative overflow-hidden">
-                <div class="absolute right-0 top-0 p-4 opacity-10"><i data-lucide="wallet" size="64"></i></div>
                 <p class="text-[10px] uppercase font-bold text-amber-400 mb-1">EM CUSTÓDIA (PASSIVO)</p>
                 <h3 class="text-3xl font-black text-white" id="fin-custodia">R$ 0,00</h3>
-                <p class="text-[10px] text-gray-500 mt-2">Dinheiro dos usuários parado na plataforma.</p>
             </div>
-
             <div class="glass-panel p-6 border-l-4 border-red-500 relative overflow-hidden">
-                <div class="absolute right-0 top-0 p-4 opacity-10"><i data-lucide="alert-circle" size="64"></i></div>
                 <p class="text-[10px] uppercase font-bold text-red-400 mb-1">A RECEBER (DÍVIDAS)</p>
                 <h3 class="text-3xl font-black text-white" id="fin-receber">R$ 0,00</h3>
-                <p class="text-[10px] text-gray-500 mt-2">Soma de saldos negativos (Prestadores).</p>
             </div>
-
             <div class="glass-panel p-6 border-l-4 border-emerald-500 relative overflow-hidden">
-                <div class="absolute right-0 top-0 p-4 opacity-10"><i data-lucide="pie-chart" size="64"></i></div>
-                <p class="text-[10px] uppercase font-bold text-emerald-400 mb-1">USUÁRIOS COM SALDO</p>
+                <p class="text-[10px] uppercase font-bold text-emerald-400 mb-1">CONTAS ATIVAS</p>
                 <h3 class="text-3xl font-black text-white" id="fin-total-users">0</h3>
-                <p class="text-[10px] text-gray-500 mt-2">Contas movimentadas (Positivas ou Negativas).</p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade">
+        <div class="glass-panel p-4 mb-6 flex flex-col md:flex-row gap-4 items-center bg-slate-900/50 border border-slate-800">
+            <div class="relative flex-1 w-full">
+                <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-500"></i>
+                <input type="text" id="fin-search-input" placeholder="Pesquisar por nome ou email..." 
+                    class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:border-blue-500 outline-none transition">
+            </div>
             
-            <div class="glass-panel overflow-hidden border border-red-900/30">
-                <div class="bg-red-900/20 p-4 border-b border-red-900/30 flex justify-between items-center">
-                    <h3 class="font-bold text-red-400 text-xs uppercase">⚠️ Top Devedores (Negativados)</h3>
-                </div>
-                <div class="max-h-80 overflow-y-auto">
-                    <table class="w-full text-left">
-                        <tbody id="list-debtors" class="text-xs">
-                            <tr><td class="p-4 text-center text-gray-500">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <select id="fin-filter-mode" class="bg-slate-950 border border-slate-800 text-white text-xs font-bold rounded-xl px-4 py-2 outline-none focus:border-blue-500 cursor-pointer">
+                <option value="all">👥 TODOS OS USUÁRIOS</option>
+                <option value="creditors">💎 MAIORES CREDORES</option>
+                <option value="debtors">⚠️ TOP DEVEDORES</option>
+            </select>
 
-            <div class="glass-panel overflow-hidden border border-emerald-900/30">
-                <div class="bg-emerald-900/20 p-4 border-b border-emerald-900/30 flex justify-between items-center">
-                    <h3 class="font-bold text-emerald-400 text-xs uppercase">💎 Maiores Saldos (Credores)</h3>
-                </div>
-                <div class="max-h-80 overflow-y-auto">
-                    <table class="w-full text-left">
-                        <tbody id="list-creditors" class="text-xs">
-                            <tr><td class="p-4 text-center text-gray-500">Carregando...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <button onclick="window.loadFinanceData()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase transition">
+                Atualizar
+            </button>
+        </div>
 
+        <div class="glass-panel overflow-hidden border border-slate-800">
+            <div class="bg-slate-800/50 p-4 border-b border-slate-800">
+                <h3 class="font-bold text-white text-xs uppercase tracking-widest">Gestão de Saldos Real-Time</h3>
+            </div>
+            <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-950 text-[10px] uppercase text-gray-500 font-bold sticky top-0 z-10">
+                        <tr>
+                            <th class="p-4">USUÁRIO</th>
+                            <th class="p-4 text-right">SALDO ATUAL</th>
+                            <th class="p-4 text-right">AÇÕES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fin-master-list" class="text-xs divide-y divide-white/5">
+                        <tr><td colspan="3" class="p-10 text-center text-gray-500 italic">Carregando dados...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     `;
 
     lucide.createIcons();
-    console.log("✅ Módulo Financeiro Carregado.");
+    
+    // Listeners para busca em tempo real (local)
+    document.getElementById('fin-search-input').addEventListener('input', window.filterFinanceList);
+    document.getElementById('fin-filter-mode').addEventListener('change', window.filterFinanceList);
+
     await loadFinanceData();
 }
 
-// ============================================================================
-// 2. CÁLCULO E LISTAGEM
-// ============================================================================
+// Global para armazenar os dados baixados e filtrar localmente sem sobrecarregar o Firebase
+window.allFinData = [];
+
 async function loadFinanceData() {
     try {
         const db = window.db;
-        const isDemo = window.currentDataMode === 'demo';
-        
-        // Busca usuários (Filtra por demo se necessário)
-        let q;
-        if (isDemo) {
-            q = query(collection(db, "usuarios"), where("is_demo", "==", true));
-        } else {
-            // Em produção real, pegamos todos (pode ser pesado se tiver milhares, mas ok por agora)
-            q = query(collection(db, "usuarios"));
-        }
-
+        // Buscamos os usuários (limitado a 500 para performance, ajustável)
+        const q = query(collection(db, "usuarios"), limit(500));
         const snap = await getDocs(q);
         
+        window.allFinData = [];
         let custodia = 0;
         let receber = 0;
-        let usersWithBalance = 0;
-        
-        let debtors = [];
-        let creditors = [];
 
         snap.forEach(doc => {
             const d = doc.data();
-            const saldo = parseFloat(d.saldo || 0);
+            // 🚨 INVESTIGAÇÃO DIVERGÊNCIA: Pega wallet_balance E saldo para comparar
+            const saldoFinal = parseFloat(d.wallet_balance || d.saldo || 0);
             
-            if (saldo !== 0) usersWithBalance++;
-            
-            if (saldo > 0) {
-                custodia += saldo;
-                creditors.push({ id: doc.id, ...d, saldo });
-            } else if (saldo < 0) {
-                receber += Math.abs(saldo);
-                debtors.push({ id: doc.id, ...d, saldo });
-            }
+            if (saldoFinal > 0) custodia += saldoFinal;
+            if (saldoFinal < 0) receber += Math.abs(saldoFinal);
+
+            window.allFinData.push({ id: doc.id, ...d, saldoCalculado: saldoFinal });
         });
 
-        // Atualiza KPIs
         document.getElementById('fin-custodia').innerText = `R$ ${custodia.toFixed(2)}`;
         document.getElementById('fin-receber').innerText = `R$ ${receber.toFixed(2)}`;
-        document.getElementById('fin-total-users').innerText = usersWithBalance;
+        document.getElementById('fin-total-users').innerText = window.allFinData.length;
 
-        // Renderiza Tabelas
-        renderTable('list-debtors', debtors.sort((a,b) => a.saldo - b.saldo), 'red'); // Menor saldo primeiro (mais negativo)
-        renderTable('list-creditors', creditors.sort((a,b) => b.saldo - a.saldo), 'emerald'); // Maior saldo primeiro
-
-    } catch (e) {
-        console.error("Erro financeiro:", e);
-    }
+        window.filterFinanceList(); // Renderiza a lista inicial
+    } catch (e) { console.error(e); }
 }
 
-function renderTable(elementId, list, color) {
-    const el = document.getElementById(elementId);
-    el.innerHTML = "";
-    
-    if (list.length === 0) {
-        el.innerHTML = `<tr><td class="p-4 text-center text-gray-500 text-[10px]">Nenhum registro.</td></tr>`;
-        return;
-    }
+window.filterFinanceList = () => {
+    const searchTerm = document.getElementById('fin-search-input').value.toLowerCase();
+    const filterMode = document.getElementById('fin-filter-mode').value;
+    const tbody = document.getElementById('fin-master-list');
 
-    list.slice(0, 20).forEach(u => { // Top 20
-        const isNeg = u.saldo < 0;
-        const moneyClass = isNeg ? "text-red-400" : "text-emerald-400";
+    let filtered = window.allFinData.filter(u => {
+        const nome = (u.nome || u.displayName || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        const matchesSearch = nome.includes(searchTerm) || email.includes(searchTerm);
         
-        el.innerHTML += `
-            <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                <td class="p-3">
-                    <div class="font-bold text-white text-[11px]">${u.nome || "Usuário"}</div>
-                    <div class="text-[9px] text-gray-500">${u.email}</div>
+        if (filterMode === 'creditors') return matchesSearch && u.saldoCalculado > 0;
+        if (filterMode === 'debtors') return matchesSearch && u.saldoCalculado < 0;
+        return matchesSearch;
+    });
+
+    // Ordenação dinâmica
+    if (filterMode === 'creditors') filtered.sort((a, b) => b.saldoCalculado - a.saldoCalculado);
+    else if (filterMode === 'debtors') filtered.sort((a, b) => a.saldoCalculado - b.saldoCalculado);
+    else filtered.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+
+    tbody.innerHTML = filtered.length ? "" : `<tr><td colspan="3" class="p-10 text-center text-gray-500">Nenhum usuário encontrado.</td></tr>`;
+
+    filtered.forEach(u => {
+        const color = u.saldoCalculado < 0 ? 'text-red-400' : (u.saldoCalculado > 0 ? 'text-emerald-400' : 'text-gray-500');
+        tbody.innerHTML += `
+            <tr class="hover:bg-white/5 transition">
+                <td class="p-4">
+                    <div class="font-bold text-white">${u.nome || u.displayName || 'Usuário'}</div>
+                    <div class="text-[9px] text-gray-500 font-mono">${u.id}</div>
                 </td>
-                <td class="p-3 text-right">
-                    <div class="font-mono font-bold ${moneyClass}">R$ ${u.saldo.toFixed(2)}</div>
+                <td class="p-4 text-right font-mono font-bold ${color}">
+                    R$ ${u.saldoCalculado.toFixed(2)}
                 </td>
-                <td class="p-3 text-right w-10">
-                    <button onclick="window.openBalanceEditor('${u.id}', ${u.saldo})" class="text-gray-400 hover:text-white transition">⚙️</button>
+                <td class="p-4 text-right">
+                    <button onclick="window.openBalanceEditor('${u.id}', ${u.saldoCalculado})" 
+                        class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition border border-slate-700">
+                        ⚙️ Ajustar
+                    </button>
                 </td>
             </tr>
         `;
     });
-}
-
+};
+// Certifique-se de manter a window.executeAdjustment que enviamos anteriormente no final do arquivo.
 // ============================================================================
 // 3. EDITOR DE SALDO (AJUSTE MANUAL)
 // ============================================================================
