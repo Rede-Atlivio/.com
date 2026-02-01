@@ -345,6 +345,7 @@ window.finalizarServicoPassoFinal = async (orderId) => {
         });
 
         alert("✅ Pagamento liberado ao prestador com sucesso!");
+        window.abrirModalAvaliacao(pedido.provider_id, orderId, outroNome);
     } catch(e) { alert("Erro ao finalizar: " + e); }
 };
 
