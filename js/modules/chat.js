@@ -13,7 +13,7 @@ window.irParaChat = () => {
 window.carregarChat = carregarPedidosAtivos;
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
-window.confirmarAcordo = confirmarAcordo; // Nova função global
+window.confirmarAcordo = confirmarAcordo;
 window.voltarParaListaPedidos = () => {
     document.getElementById('painel-chat-individual')?.classList.add('hidden');
     const painelLista = document.getElementById('painel-pedidos');
@@ -100,7 +100,6 @@ export async function abrirChatPedido(orderId) {
 
     const pedidoRef = doc(db, "orders", orderId);
     
-    // Escuta em Tempo Real do Pedido (Coração da Intermediação)
     onSnapshot(pedidoRef, (snap) => {
         if (!snap.exists()) return;
         const pedido = snap.data();
@@ -124,7 +123,7 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     <h3 class="font-bold text-gray-800 text-xs">${outroNome}</h3>
                     <p class="text-[9px] font-black text-blue-600">ACORDO: R$ ${pedido.offer_value}</p>
                 </div>
-                ${contatoLiberado ? `<a href="https://wa.me/55${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-500 text-white p-2 rounded-full text-xs">ZAP ✅</a>` : 
+                ${contatoLiberado ? `<a href="tel:${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-500 text-white p-2 rounded-full text-xs">📞</a>` : 
                 `<div class="bg-gray-100 text-gray-400 p-2 rounded-full text-[8px] font-bold">🔒 PRIVADO</div>`}
             </div>
 
@@ -135,74 +134,61 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
 
             ${pedido.status !== 'completed' ? `
             <div class="bg-white p-3 border-t fixed bottom-0 w-full max-w-2xl flex gap-2 items-center">
-                <input type="text" id="chat-input-msg" placeholder="${step < 3 ? '🔒 Combine valor e hora aqui...' : 'Digite sua mensagem...'}" 
+                <input type="text" id="chat-input-msg" placeholder="${step < 3 ? '🔒 Combine valor e detalhes aqui...' : 'Digite sua mensagem...'}" 
                     class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm outline-none">
                 <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">➤</button>
             </div>` : ''}
         </div>
     `;
 
-    // Carregar Bolhas
     escutarMensagens(orderId);
 }
 
-// ============================================================================
-// 3. LÓGICA DE ETAPAS (BANNER DE CONTROLE)
-// ============================================================================
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     if (step === 1 || step === 2) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
-        
         if (jaConfirmei) {
             return `<div class="bg-blue-600 p-4 rounded-2xl text-white text-center animate-pulse mb-4">
-                <p class="text-xs font-bold italic">Aguardando a confirmação da outra parte...</p>
+                <p class="text-xs font-bold italic">Aguardando confirmação da outra parte...</p>
                 <p class="text-[9px] opacity-80 mt-1">O contato será liberado após o aceite mútuo.</p>
             </div>`;
         }
-
         return `<div class="bg-slate-900 p-5 rounded-2xl text-white shadow-2xl mb-4 border-b-4 border-blue-600">
             <p class="text-xs font-bold mb-3 text-center">🤝 Confirmar este acordo?</p>
             <div class="flex gap-2">
                 <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 py-3 rounded-xl text-[10px] font-black uppercase">✅ ACEITAR</button>
                 <button onclick="window.confirmarAcordo('${orderId}', false)" class="bg-slate-700 px-4 rounded-xl text-[10px]">❌</button>
             </div>
-            <p class="text-[8px] text-gray-400 mt-3 text-center uppercase tracking-tighter">Ao confirmar, R$ 20,00 de crédito serão reservados.</p>
+            <p class="text-[8px] text-gray-400 mt-3 text-center uppercase tracking-tighter text-balance">R$ 20,00 de crédito serão reservados como garantia.</p>
         </div>`;
     }
-
     if (step === 3) {
         return `<div class="bg-green-600 p-4 rounded-2xl text-white text-center mb-4 shadow-lg">
             <p class="text-xs font-black italic">✨ ACORDO FECHADO! ✨</p>
-            <p class="text-[9px] mt-1">Dados de contato e endereço liberados no topo.</p>
-            <button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="mt-3 w-full bg-white text-green-700 py-2 rounded-lg text-[10px] font-black uppercase">FINALIZAR SERVIÇO</button>
+            <p class="text-[9px] mt-1">Contato liberado no ícone acima.</p>
         </div>`;
     }
     return "";
 }
 
 // ============================================================================
-// 4. AÇÕES DE INTERMEDIAÇÃO
+// 3. AÇÕES DE INTERMEDIAÇÃO E FILTRO (PADRÃO 99)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
     if(!aceitar) return alert("Negociação continua. Use o chat.");
-    
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
     const orderSnap = await getDoc(orderRef);
     const pedido = orderSnap.data();
 
-    const isProvider = pedido.provider_id === uid;
-    const updates = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
+    const updates = uid === pedido.provider_id ? { provider_confirmed: true } : { client_confirmed: true };
 
     try {
         await updateDoc(orderRef, updates);
-
-        // Verifica se AMBOS confirmaram para saltar para o Step 3
         const updatedSnap = await getDoc(orderRef);
         const p = updatedSnap.data();
         
         if (p.client_confirmed && p.provider_confirmed) {
-            // EXECUTA RESERVA DE SALDO (LOGICA DA FASE 4)
             await updateDoc(orderRef, { 
                 system_step: 3, 
                 address_visible: true, 
@@ -210,7 +196,6 @@ export async function confirmarAcordo(orderId, aceitar) {
                 status: 'confirmed_hold' 
             });
             
-            // Injeta mensagem de sistema
             await addDoc(collection(db, `chats/${orderId}/messages`), {
                 text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado. Use o botão no topo.",
                 sender_id: "system",
@@ -225,12 +210,22 @@ export async function enviarMensagemChat(orderId, step) {
     let texto = input.value.trim();
     if(!texto) return;
 
-    // 🚨 FILTRO ANTI-GOLPE (ETAPA 1)
     if (step < 3) {
-        const regexZap = /(\d{2,5}\s?\d{4,5}[-\s]?\d{4})|(\(?[1-9]{2}\)?\s?9?[0-9]{4}[-\s]?[0-9]{4})|(zap|whatsapp|meu num|me chama)/gi;
-        if (regexZap.test(texto)) {
-            alert("🚫 Por segurança, troca de contatos é bloqueada nesta etapa.");
-            texto = " [CONTATO BLOQUEADO PELA ATLIVIO - Confirme o acordo para liberar] ";
+        const textoNormalizado = texto.toLowerCase().replace(/[.\-_ @310]/g, (char) => {
+            return {'.':'','-':'','_':'',' ':'','@':'a','3':'e','1':'i','0':'o'}[char] || '';
+        });
+
+        const proibidas = ["whatsapp","whats","wpp","zap","telefone","contato","celular","instagram","insta","meuchama","porfora","diretocomigo","seunumber"];
+        const encontrouPalavra = proibidas.some(p => textoNormalizado.includes(p));
+
+        const regexTelefone = /(?:\d[\s.\-_()]*){8,}/g;
+        const regexExtenso = /(zero|um|dois|tres|três|quatro|cinco|seis|sete|oito|nove)/gi;
+        const contagemExtenso = (texto.match(regexExtenso) || []).length;
+
+        if (encontrouPalavra || regexTelefone.test(texto) || contagemExtenso >= 3) {
+            alert("🚫 Por segurança, troca de contatos é bloqueada nesta etapa.\n\nConfirme o acordo para liberar os dados oficiais.");
+            input.value = ""; 
+            return;
         }
     }
 
