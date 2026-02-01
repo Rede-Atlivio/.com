@@ -2,7 +2,21 @@ import { auth, db, provider } from './app.js';
 import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+// FUNÇÃO DE AUTOMAÇÃO (Insira após os imports)
+async function concederBonusSeAtivo(userUid) {
+    try {
+        const configSnap = await getDoc(doc(db, "settings", "global"));
+        const config = configSnap.data();
 
+        if (config?.bonus_boas_vindas_ativo) {
+            await updateDoc(doc(db, "usuarios", userUid), {
+                wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
+                bonus_inicial_ok: true
+            });
+            console.log("🎁 Bônus de R$ 20 concedido via Painel!");
+        }
+    } catch(e) { console.error("Erro ao dar bônus:", e); }
+}
 const storage = getStorage();
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
 const DEFAULT_TENANT = "atlivio_fsa_01";
