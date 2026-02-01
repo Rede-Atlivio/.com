@@ -1,6 +1,6 @@
 import { db, auth } from '../app.js';
 import { processarCobrancaTaxa } from './wallet.js';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GATILHOS E NAVEGAÇÃO ---
 window.irParaChat = () => {
@@ -14,6 +14,7 @@ window.carregarChat = carregarPedidosAtivos;
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
+window.sugerirDetalhe = sugerirDetalhe; // Nova função global
 window.voltarParaListaPedidos = () => {
     document.getElementById('painel-chat-individual')?.classList.add('hidden');
     const painelLista = document.getElementById('painel-pedidos');
@@ -96,17 +97,13 @@ export async function abrirChatPedido(orderId) {
 
     document.getElementById('painel-pedidos')?.classList.add('hidden');
     painelChat.classList.remove('hidden');
-    painelChat.innerHTML = `<div class="flex items-center justify-center h-full"><div class="loader border-blue-600"></div></div>`;
 
     const pedidoRef = doc(db, "orders", orderId);
-    
     onSnapshot(pedidoRef, (snap) => {
         if (!snap.exists()) return;
         const pedido = snap.data();
-        const uid = auth.currentUser.uid;
-        const isProvider = pedido.provider_id === uid;
+        const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
-
         renderizarEstruturaChat(painelChat, pedido, isProvider, orderId, step);
     });
 }
@@ -127,126 +124,102 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                 `<div class="bg-gray-100 text-gray-400 p-2 rounded-full text-[8px] font-bold">🔒 PRIVADO</div>`}
             </div>
 
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-32">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-40">
                 ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                 <div id="bubbles-area"></div>
             </div>
 
             ${pedido.status !== 'completed' ? `
-            <div class="bg-white p-3 border-t fixed bottom-0 w-full max-w-2xl flex gap-2 items-center">
-                <input type="text" id="chat-input-msg" placeholder="${step < 3 ? '🔒 Combine valor e detalhes aqui...' : 'Digite sua mensagem...'}" 
-                    class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm outline-none">
-                <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">➤</button>
+            <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40">
+                <div class="flex gap-2 p-2 bg-gray-50 border-b overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    <button onclick="window.sugerirDetalhe('${orderId}', 'Horário')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">⏰ Definir Hora</button>
+                    <button onclick="window.sugerirDetalhe('${orderId}', 'Quantidade')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">🔢 Quantidade</button>
+                    <button onclick="window.sugerirDetalhe('${orderId}', 'Valor Final')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">💰 Valor Total</button>
+                </div>
+                <div class="p-3 flex gap-2 items-center">
+                    <input type="text" id="chat-input-msg" placeholder="${step < 3 ? '🔒 Combine detalhes aqui...' : 'Digite sua mensagem...'}" 
+                        class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm outline-none">
+                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">➤</button>
+                </div>
             </div>` : ''}
         </div>
     `;
-
     escutarMensagens(orderId);
 }
 
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
-    if (step === 1 || step === 2) {
+    if (step < 3) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
-        if (jaConfirmei) {
-            return `<div class="bg-blue-600 p-4 rounded-2xl text-white text-center animate-pulse mb-4">
-                <p class="text-xs font-bold italic">Aguardando confirmação da outra parte...</p>
-                <p class="text-[9px] opacity-80 mt-1">O contato será liberado após o aceite mútuo.</p>
-            </div>`;
-        }
+        if (jaConfirmei) return `<div class="bg-blue-600 p-4 rounded-2xl text-white text-center animate-pulse mb-4"><p class="text-xs font-bold">Aguardando a outra parte confirmar...</p></div>`;
+        
         return `<div class="bg-slate-900 p-5 rounded-2xl text-white shadow-2xl mb-4 border-b-4 border-blue-600">
             <p class="text-xs font-bold mb-3 text-center">🤝 Confirmar este acordo?</p>
             <div class="flex gap-2">
                 <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 py-3 rounded-xl text-[10px] font-black uppercase">✅ ACEITAR</button>
                 <button onclick="window.confirmarAcordo('${orderId}', false)" class="bg-slate-700 px-4 rounded-xl text-[10px]">❌</button>
             </div>
-            <p class="text-[8px] text-gray-400 mt-3 text-center uppercase tracking-tighter text-balance">R$ 20,00 de crédito serão reservados como garantia.</p>
+            <p class="text-[8px] text-gray-400 mt-3 text-center uppercase tracking-tighter">R$ 20,00 de crédito promocional serão reservados como garantia.</p>
         </div>`;
     }
-    if (step === 3) {
-        return `<div class="bg-green-600 p-4 rounded-2xl text-white text-center mb-4 shadow-lg">
-            <p class="text-xs font-black italic">✨ ACORDO FECHADO! ✨</p>
-            <p class="text-[9px] mt-1">Contato liberado no ícone acima.</p>
-        </div>`;
-    }
+    if (step === 3) return `<div class="bg-green-600 p-4 rounded-2xl text-white text-center mb-4 shadow-lg"><p class="text-xs font-black italic">✨ ACORDO FECHADO! ✨</p><p class="text-[9px] mt-1">Contato liberado no ícone acima.</p></div>`;
     return "";
 }
 
 // ============================================================================
-// 3. AÇÕES DE INTERMEDIAÇÃO E FILTRO (PADRÃO 99)
+// 3. LOGICA DE FILTRO E MENSAGENS (CAMADA TITAN)
 // ============================================================================
-export async function confirmarAcordo(orderId, aceitar) {
-    if(!aceitar) return alert("Negociação continua. Use o chat.");
-    const uid = auth.currentUser.uid;
-    const orderRef = doc(db, "orders", orderId);
-    const orderSnap = await getDoc(orderRef);
-    const pedido = orderSnap.data();
-
-    const updates = uid === pedido.provider_id ? { provider_confirmed: true } : { client_confirmed: true };
-
-    try {
-        await updateDoc(orderRef, updates);
-        const updatedSnap = await getDoc(orderRef);
-        const p = updatedSnap.data();
-        
-        if (p.client_confirmed && p.provider_confirmed) {
-            await updateDoc(orderRef, { 
-                system_step: 3, 
-                address_visible: true, 
-                contact_visible: true,
-                status: 'confirmed_hold' 
-            });
-            
-            await addDoc(collection(db, `chats/${orderId}/messages`), {
-                text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado. Use o botão no topo.",
-                sender_id: "system",
-                timestamp: serverTimestamp()
-            });
-        }
-    } catch(e) { console.error(e); }
-}
-
 export async function enviarMensagemChat(orderId, step) {
     const input = document.getElementById('chat-input-msg');
     let texto = input.value.trim();
     if(!texto) return;
 
     if (step < 3) {
-        // 🧱 CAMADA 1: BLACKLIST DE ABUSOS (Inspirada no Facebook)
-        const blacklistOfensiva = ["porra", "caralho", "fdp", "puta", "viado", "gay", "lixo", "merda", "otario", "golpe", "ladrão"];
-        const encontrouAbuso = blacklistOfensiva.some(p => texto.toLowerCase().includes(p));
-
-        // 🔢 CAMADA 2: BLOQUEIO TOTAL DE NÚMEROS (Regex Radical)
-        // Detecta qualquer sequência numérica ou número isolado no meio do texto
-        const temNumero = /\d/.test(texto); 
-
-        // 🧠 CAMADA 3: NORMALIZAÇÃO ANTI-EVASÃO
+        // 🧱 MURALHA CONTRA ABUSOS E NÚMEROS (INSPIRADO EM FB/99)
+        const blacklist = ["porra", "caralho", "fdp", "puta", "viado", "lixo", "merda", "golpe", "ladrão"];
+        const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora", "diretocomigo"];
+        
         const textoLimpo = texto.toLowerCase().replace(/[.\-_ @310]/g, "");
-        const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora"];
+        const temNumero = /\d/.test(texto); 
+        const encontrouAbuso = blacklist.some(p => texto.toLowerCase().includes(p));
         const encontrouEvasao = proibidas.some(p => textoLimpo.includes(p));
 
         if (encontrouAbuso || temNumero || encontrouEvasao) {
-            alert("🚫 ATLIVIO: Por segurança e ética, mensagens com números, contatos ou termos ofensivos são bloqueadas antes do acordo.\n\nUse os botões de 'Ação Rápida' para combinar detalhes técnicos.");
+            alert("🚫 Por segurança e ética, a ATLIVIO bloqueia números, contatos ou termos ofensivos antes do acordo.\n\nUse os botões de 'Ação Rápida' acima para combinar detalhes.");
             input.value = ""; 
             return;
         }
     }
 
     input.value = "";
-    await addDoc(collection(db, `chats/${orderId}/messages`), { 
-        text: texto, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
-    });
+    await addDoc(collection(db, `chats/${orderId}/messages`), { text: texto, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
 }
 
-// 🛠️ NOVO: BOTÕES DE NEGOCIAÇÃO ESTRUTURADA
-window.sugerirDetalhe = async (orderId, tipo) => {
-    let valor = prompt(`Informe a ${tipo}:`);
+// BOTÕES DE NEGOCIAÇÃO ESTRUTURADA
+export async function sugerirDetalhe(orderId, tipo) {
+    let valor = prompt(`Informe o(a) ${tipo}:`);
     if(!valor) return;
-    
-    const msgFinal = `🔹 [DETALHE DO ACORDO] ${tipo.toUpperCase()}: ${valor}`;
-    await addDoc(collection(db, `chats/${orderId}/messages`), { 
-        text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
-    });
-};
+    const msgFinal = `🔹 [DETALHE] ${tipo.toUpperCase()}: ${valor}`;
+    await addDoc(collection(db, `chats/${orderId}/messages`), { text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
+}
+
+export async function confirmarAcordo(orderId, aceitar) {
+    if(!aceitar) return alert("Negociação continua.");
+    const uid = auth.currentUser.uid;
+    const orderRef = doc(db, "orders", orderId);
+    const snap = await getDoc(orderRef);
+    const updates = uid === snap.data().provider_id ? { provider_confirmed: true } : { client_confirmed: true };
+
+    try {
+        await updateDoc(orderRef, updates);
+        const upSnap = await getDoc(orderRef);
+        const p = upSnap.data();
+        if (p.client_confirmed && p.provider_confirmed) {
+            await updateDoc(orderRef, { system_step: 3, address_visible: true, contact_visible: true, status: 'confirmed_hold' });
+            await addDoc(collection(db, `chats/${orderId}/messages`), { text: "🔒 RESERVA CONFIRMADA: O contato foi liberado.", sender_id: "system", timestamp: serverTimestamp() });
+        }
+    } catch(e) { console.error(e); }
+}
+
 function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
@@ -257,16 +230,10 @@ function escutarMensagens(orderId) {
             const m = d.data();
             const souEu = m.sender_id === auth.currentUser.uid;
             const isSystem = m.sender_id === 'system';
-
             if(isSystem) {
                 area.innerHTML += `<div class="flex justify-center my-2"><span class="text-[8px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-bold">${m.text}</span></div>`;
             } else {
-                area.innerHTML += `
-                    <div class="flex ${souEu ? 'justify-end' : 'justify-start'} animate-fadeIn">
-                        <div class="${souEu ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'} px-4 py-2 rounded-2xl max-w-[85%] text-xs shadow-sm">
-                            <p>${m.text}</p>
-                        </div>
-                    </div>`;
+                area.innerHTML += `<div class="flex ${souEu ? 'justify-end' : 'justify-start'} animate-fadeIn"><div class="${souEu ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'} px-4 py-2 rounded-2xl max-w-[85%] text-xs shadow-sm"><p>${m.text}</p></div></div>`;
             }
         });
         const divMsgs = document.getElementById('chat-messages');
