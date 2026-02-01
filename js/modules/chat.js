@@ -1,7 +1,6 @@
 import { db, auth } from '../app.js';
 import { processarCobrancaTaxa } from './wallet.js';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 // --- GATILHOS E NAVEGAÇÃO ---
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
