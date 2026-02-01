@@ -213,32 +213,81 @@ export async function confirmarAcordo(orderId, aceitar) {
     
     try {
         await runTransaction(db, async (transaction) => {
+export async function confirmarAcordo(orderId, aceitar) {
+    if(!aceitar) return alert("Negociação continua.");
+    
+    const uid = auth.currentUser.uid;
+    const orderRef = doc(db, "orders", orderId);
+    
+    try {
+        await runTransaction(db, async (transaction) => {
             // --- 1. LEITURAS (READS FIRST) ---
             const orderSnap = await transaction.get(orderRef);
             if (!orderSnap.exists()) throw "Pedido não encontrado!";
             const pedido = orderSnap.data();
 
+            // 🕵️ RASTREIO DE SEGURANÇA
+            console.log("DEBUG: O Pedido pertence ao Cliente ID:", pedido.client_id);
+
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const clientSnap = await transaction.get(clientRef);
-            if (!clientSnap.exists()) throw "Erro ao localizar carteira do cliente.";
 
-            // --- 2. DEFINIÇÃO DE LÓGICA (NO DATABASE HITS HERE) ---
+            if (!clientSnap.exists()) {
+                throw "A carteira do cliente (" + pedido.client_id + ") não foi encontrada.";
+            }
+
+            // --- 2. DEFINIÇÃO DE LÓGICA ---
             const isProvider = uid === pedido.provider_id;
             const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
-            
-            // Verifica se este clique vai completar o aceite duplo
             const vaiFecharAgora = (isProvider && pedido.client_confirmed) || (!isProvider && pedido.provider_confirmed);
 
             // --- 3. ESCRITAS (WRITES LAST) ---
             transaction.update(orderRef, campoUpdate);
 
             if (vaiFecharAgora) {
+                // Aqui o sistema usa o saldo que o robô encontrou
                 const saldoAtual = clientSnap.data().wallet_balance || 0;
                 const valorReserva = 20.00;
+
+                console.log("DEBUG: Saldo do Cliente no Banco:", saldoAtual);
 
                 if (saldoAtual < valorReserva) {
                     throw "O Cliente não possui saldo suficiente (R$ 20,00) para garantir este acordo.";
                 }
+
+                // Desconto e Reserva
+                transaction.update(clientRef, {
+                    wallet_balance: saldoAtual - valorReserva,
+                    wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
+                });
+
+                // Liberação de Dados e Step 3
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    address_visible: true, 
+                    contact_visible: true,
+                    status: 'confirmed_hold',
+                    value_reserved: valorReserva,
+                    confirmed_at: serverTimestamp()
+                });
+
+                // Registro no Chat
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado no topo.",
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
+        });
+
+        console.log("✅ Processo concluído com sucesso.");
+
+    } catch(e) { 
+        console.error("Erro na Transação:", e);
+        alert("⚠️ " + e); 
+    }
+}
 
                 // Desconto e Reserva
                 transaction.update(clientRef, {
