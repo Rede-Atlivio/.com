@@ -213,3 +213,49 @@ window.abrirMenuAcoesMassa = () => {
         </div>
     `;
 };
+// --- EXECUTOR REAL DAS AÇÕES (APROVAR, BANIR, EXCLUIR, CRÉDITO) ---
+window.executarAcaoMassa = async (acao) => {
+    const selecionados = document.querySelectorAll('.row-checkbox:checked');
+    if (selecionados.length === 0) return;
+
+    if (!confirm(`Deseja aplicar a ação [${acao.toUpperCase()}] em ${selecionados.length} registros?`)) return;
+
+    // Importação dinâmica dos comandos necessários do Firebase
+    const { writeBatch, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const batch = writeBatch(window.db);
+    
+    // Identifica se estamos na aba de Usuários ou Prestadores para saber a coleção
+    const colecaoPrincipal = window.activeView === 'users' ? 'usuarios' : 'active_providers';
+
+    selecionados.forEach(cb => {
+        const uid = cb.value;
+        const refPrincipal = doc(window.db, colecaoPrincipal, uid);
+
+        if (acao === 'excluir') {
+            // PRUDÊNCIA: Deleta de ambas as coleções para não deixar rastro
+            batch.delete(doc(window.db, "usuarios", uid));
+            batch.delete(doc(window.db, "active_providers", uid));
+        } else if (acao === 'banir') {
+            batch.update(refPrincipal, { status: 'banido' });
+        } else if (acao === 'aprovar') {
+            batch.update(refPrincipal, { status: 'aprovado' });
+        } else if (acao === 'credito') {
+            const valor = parseFloat(document.getElementById('bulk-credit-val').value) || 0;
+            if (valor > 0) {
+                batch.update(doc(window.db, "usuarios", uid), { 
+                    wallet_balance: (window.db.FieldValue?.increment(valor) || valor) 
+                });
+            }
+        }
+    });
+
+    try {
+        await batch.commit();
+        alert("✅ Ação concluída com sucesso em massa!");
+        window.fecharModalUniversal();
+        window.switchView(window.activeView); // Recarrega a aba atual
+    } catch (e) {
+        console.error("Erro na execução em massa:", e);
+        alert("❌ Falha na operação: " + e.message);
+    }
+};
