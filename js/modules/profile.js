@@ -1,5 +1,5 @@
 import { db, auth, storage } from '../app.js';
-import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // ============================================================================
@@ -57,8 +57,8 @@ export async function uploadCapa() {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        await updateDoc(doc(db, "usuarios", user.uid), { cover_image: downloadURL });
-        try { await updateDoc(doc(db, "active_providers", user.uid), { cover_image: downloadURL }); } catch(e){}
+        await setDoc(doc(db, "usuarios", user.uid), { cover_image: downloadURL }, { merge: true });
+        await setDoc(doc(db, "active_providers", user.uid), { cover_image: downloadURL }, { merge: true });
 
         document.getElementById('banner-preview').src = downloadURL;
         alert("✅ Capa atualizada!");
@@ -75,9 +75,8 @@ export async function uploadFotoPerfil(input) {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
 
-        await updateDoc(doc(db, "usuarios", user.uid), { foto_perfil: downloadURL, photoURL: downloadURL });
-        try { await updateDoc(doc(db, "active_providers", user.uid), { foto_perfil: downloadURL }); } catch(e){}
-
+        await setDoc(doc(db, "usuarios", user.uid), { foto_perfil: downloadURL, photoURL: downloadURL }, { merge: true });
+        await setDoc(doc(db, "active_providers", user.uid), { foto_perfil: downloadURL }, { merge: true });
         // Atualiza na hora
         document.querySelectorAll('img[src*="ui-avatars"], #header-profile-img, #settings-pic').forEach(img => img.src = downloadURL);
         alert("✅ Foto de perfil atualizada!");
@@ -115,7 +114,7 @@ export async function salvarConfiguracoes() {
             pix_cpf: document.getElementById('set-pix-cpf')?.value
         };
 
-        await updateDoc(doc(db, "usuarios", user.uid), payload);
+        await setDoc(doc(db, "usuarios", user.uid), payload, { merge: true });
         alert("✅ Dados salvos com sucesso!");
         document.getElementById('modal-settings').classList.add('hidden');
     } catch(e) { 
