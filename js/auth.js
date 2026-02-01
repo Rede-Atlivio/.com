@@ -339,7 +339,18 @@ function iniciarRadarPrestador(uid) {
     onSnapshot(q, (snap) => {
         const toggle = document.getElementById('online-toggle'); if(toggle && !toggle.checked) return;
         radarContainer.innerHTML = "";
-        if (snap.empty) { radarContainer.innerHTML = `<div class="flex flex-col items-center justify-center py-10"><div class="relative flex h-32 w-32 items-center justify-center mb-4"><div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div><div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div><span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span></div><p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p><p class="text-[9px] text-gray-400 mt-2">Saldo Atual: R$ ${userProfile?.wallet_balance?.toFixed(2) || '0.00'}</p></div>`; return; }
+        if (snap.empty) { 
+    radarContainer.innerHTML = `
+        <div class="flex flex-col items-center justify-center py-10">
+            <div class="relative flex h-32 w-32 items-center justify-center mb-4">
+                <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
+                <div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div>
+                <span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span>
+            </div>
+            <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p>
+        </div>`; 
+    return; 
+}
         document.getElementById('notification-sound')?.play().catch(()=>{}); if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
         snap.forEach(d => {
             const pedido = d.data(); const taxa = pedido.offer_value * TAXA_PLATAFORMA; const liquido = pedido.offer_value - taxa;
