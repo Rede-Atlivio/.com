@@ -1,7 +1,7 @@
-import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
-// 1. INICIALIZAÇÃO
+// 1. INICIALIZAÇÃO DA INTERFACE (CONFIGURAÇÕES E AUDITORIA)
 // ============================================================================
 export async function init() {
     const container = document.getElementById('view-settings');
@@ -11,61 +11,64 @@ export async function init() {
             
             <div class="glass-panel p-6 border border-blue-500/30">
                 <h2 class="text-xl font-bold text-white mb-2">📢 Comunicação Global</h2>
-                <p class="text-xs text-gray-400 mb-6">Esta mensagem aparecerá no topo do aplicativo para todos os usuários.</p>
-                
+                <p class="text-xs text-gray-400 mb-6">Aviso no topo do app para todos os usuários.</p>
                 <label class="inp-label">MENSAGEM DE AVISO</label>
-                <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-2" placeholder="Ex: Manutenção programada para Domingo...">
-                
+                <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-2" placeholder="Ex: Manutenção programada...">
                 <div class="flex items-center gap-2 mb-6">
                     <input type="checkbox" id="conf-msg-active" class="chk-custom">
                     <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Mostrar Aviso?</label>
                 </div>
-
                 <button onclick="window.saveAppSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
-                    💾 SALVAR CONFIGURAÇÃO
+                    💾 SALVAR AVISO
+                </button>
+            </div>
+
+            <div class="glass-panel p-6 border border-purple-500/30">
+                <h2 class="text-xl font-bold text-white mb-2">🎁 Regras de Bônus (R$ 20)</h2>
+                <p class="text-xs text-gray-400 mb-6">Controle o bônus de boas-vindas e a taxa Atlivio.</p>
+                
+                <label class="inp-label">VALOR DO BÔNUS INICIAL (R$)</label>
+                <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white mb-2" placeholder="20.00">
+                
+                <div class="flex items-center gap-2 mb-4">
+                    <input type="checkbox" id="conf-bonus-active" class="chk-custom">
+                    <label for="conf-bonus-active" class="text-xs text-gray-300 cursor-pointer">Ativar Campanha de Bônus?</label>
+                </div>
+
+                <label class="inp-label">TAXA DE INTERMEDIAÇÃO (R$)</label>
+                <input type="number" id="conf-taxa-valor" class="inp-editor h-10 text-white mb-6" placeholder="5.00">
+
+                <button onclick="window.saveBusinessRules()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
+                    💾 SALVAR REGRAS FINANCEIRAS
+                </button>
+            </div>
+
+            <div class="glass-panel p-6 border border-amber-500/30">
+                <h2 class="text-xl font-bold text-white mb-2">🔍 Auditoria de Dados</h2>
+                <p class="text-xs text-gray-400 mb-6">Detectar usuários duplicados ou coleções fantasmas.</p>
+                <div id="audit-results" class="bg-black/20 p-3 rounded-lg text-[10px] text-gray-400 font-mono mb-4 min-h-[60px] whitespace-pre-wrap">
+                    Aguardando varredura...
+                </div>
+                <button onclick="window.runDataAudit()" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-2 rounded font-bold text-xs uppercase transition">
+                    🚀 INICIAR VARREDURA PROFUNDA
                 </button>
             </div>
 
             <div class="glass-panel p-6 border border-emerald-500/30">
                 <h2 class="text-xl font-bold text-white mb-2">📑 Relatórios Gerenciais</h2>
-                <p class="text-xs text-gray-400 mb-6">Exporte os dados da plataforma para análise.</p>
-                
-                <div class="space-y-4">
-                    <div class="p-4 bg-slate-800 rounded-xl border border-slate-700">
-                        <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">RELATÓRIO EXECUTIVO</p>
-                        <p class="text-xs text-white mb-3">Resumo completo de usuários, finanças e métricas operacionais.</p>
-                        <button onclick="window.generatePDFReport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded font-bold text-xs uppercase flex items-center justify-center gap-2">
-                            <i data-lucide="file-text" size="14"></i> GERAR PDF / IMPRIMIR
-                        </button>
-                    </div>
-                </div>
+                <p class="text-xs text-gray-400 mb-6">Exporte dados para PDF.</p>
+                <button onclick="window.generatePDFReport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold text-xs uppercase flex items-center justify-center gap-2 transition">
+                    📄 GERAR PDF EXECUTIVO
+                </button>
             </div>
 
-            <div class="col-span-1 md:col-span-2 glass-panel p-8 border border-red-900/50 bg-red-900/5 mt-4">
-                <div class="flex items-start gap-4">
-                    <div class="bg-red-900/20 p-3 rounded-full text-red-500">
-                        <i data-lucide="alert-triangle" size="24"></i>
-                    </div>
-                    <div>
-                        <h2 class="text-xl font-black text-red-500 uppercase tracking-wide">ZONA DE PERIGO</h2>
-                        <p class="text-sm text-gray-400 mt-1">
-                            Ações aqui são irreversíveis. Tenha cuidado absoluto.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="mt-6 p-6 bg-black/40 rounded-xl border border-red-900/30">
-                    <h3 class="text-white font-bold mb-2">🔥 LIMPEZA DE DADOS DEMONSTRATIVOS</h3>
-                    <p class="text-xs text-gray-500 mb-4">
-                        Isso irá apagar <b>TODOS</b> os registros (Vagas, Usuários, Tarefas) marcados como <code>is_demo = true</code>.
-                        Use isso para limpar o sistema após testes em massa.
-                    </p>
-                    <button onclick="window.clearDatabase()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-black text-xs uppercase shadow-lg shadow-red-900/20 transition">
-                        🗑️ EXECUTAR LIMPEZA GERAL
-                    </button>
-                </div>
+            <div class="col-span-1 md:col-span-2 glass-panel p-6 border border-red-900/50 bg-red-900/5 mt-4">
+                <h2 class="text-xl font-black text-red-500 uppercase">ZONA DE PERIGO</h2>
+                <p class="text-xs text-gray-500 mb-4">Limpeza irreversível de dados demonstrativos (is_demo = true).</p>
+                <button onclick="window.clearDatabase()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-black text-xs uppercase transition">
+                    🗑️ EXECUTAR LIMPEZA GERAL
+                </button>
             </div>
-
         </div>
     `;
     
@@ -75,16 +78,18 @@ export async function init() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE CONFIGURAÇÃO (AVISO GLOBAL)
+// 2. CARREGAMENTO E SALVAMENTO (REGRAS E AVISOS)
 // ============================================================================
 async function loadSettings() {
     try {
-        const db = window.db;
-        const d = await getDoc(doc(db, "settings", "global"));
+        const d = await getDoc(doc(window.db, "settings", "global"));
         if(d.exists()) {
             const data = d.data();
             document.getElementById('conf-global-msg').value = data.top_message || "";
             document.getElementById('conf-msg-active').checked = data.is_active || false;
+            document.getElementById('conf-bonus-valor').value = data.valor_bonus_promocional || 20.00;
+            document.getElementById('conf-bonus-active').checked = data.bonus_boas_vindas_ativo || false;
+            document.getElementById('conf-taxa-valor').value = data.taxa_intermediacao || 5.00;
         }
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
@@ -92,46 +97,86 @@ async function loadSettings() {
 window.saveAppSettings = async () => {
     const msg = document.getElementById('conf-global-msg').value;
     const active = document.getElementById('conf-msg-active').checked;
-    
     try {
-        const db = window.db;
-        await setDoc(doc(db, "settings", "global"), { 
+        await setDoc(doc(window.db, "settings", "global"), { 
             top_message: msg,
             is_active: active,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ Configuração salva com sucesso!");
+        alert("✅ Aviso Global atualizado!");
+    } catch(e) { alert(e.message); }
+};
+
+window.saveBusinessRules = async () => {
+    const valorBonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 0;
+    const bonusAtivo = document.getElementById('conf-bonus-active').checked;
+    const taxa = parseFloat(document.getElementById('conf-taxa-valor').value) || 0;
+
+    try {
+        await setDoc(doc(window.db, "settings", "global"), { 
+            valor_bonus_promocional: valorBonus,
+            bonus_boas_vindas_ativo: bonusAtivo,
+            taxa_intermediacao: taxa,
+            updated_at: new Date()
+        }, {merge:true});
+        alert("✅ Regras Financeiras salvas! O sistema de bônus agora segue estes valores.");
     } catch(e) { alert(e.message); }
 };
 
 // ============================================================================
-// 3. LIMPEZA DE DADOS (ZONA DE PERIGO)
+// 3. AUDITORIA DE DADOS (IDENTIFICAÇÃO DE ERROS)
+// ============================================================================
+window.runDataAudit = async () => {
+    const logArea = document.getElementById('audit-results');
+    logArea.innerHTML = "🔍 Iniciando varredura profunda...";
+    
+    try {
+        // Teste de Coleções Duplicadas
+        const colProd = await getDocs(query(collection(window.db, "produtos"), limit(1)));
+        let report = `• Coleção 'produtos' (PT): ${!colProd.empty ? '⚠️ POSSUI LIXO' : '✅ LIMPA'}\n`;
+        
+        // Busca Usuários Duplicados (Mesmo Telefone)
+        const usersSnap = await getDocs(collection(window.db, "usuarios"));
+        let phones = {};
+        let duplicados = 0;
+        usersSnap.forEach(u => {
+            const p = u.data().phone;
+            if(p) {
+                if(phones[p]) duplicados++;
+                else phones[p] = true;
+            }
+        });
+        report += `• Telefones Duplicados: ${duplicados > 0 ? '⚠️ ' + duplicados : '✅ 0'}\n`;
+
+        // Verifica Documentos de Configuração
+        const globalRef = await getDoc(doc(window.db, "settings", "global"));
+        report += `• Configurações Globais: ${globalRef.exists() ? '✅ OK' : '❌ AUSENTE'}\n`;
+
+        logArea.innerHTML = report;
+    } catch(e) {
+        logArea.innerHTML = "❌ Erro na varredura: " + e.message;
+    }
+};
+
+// ============================================================================
+// 4. LIMPEZA DE DADOS (ZONA DE PERIGO)
 // ============================================================================
 window.clearDatabase = async () => {
     const confirmacao = prompt("⚠️ PERIGO: ISSO APAGARÁ TODOS OS DADOS DE TESTE.\n\nPara confirmar, digite a palavra: DELETAR");
-    
-    if (confirmacao !== "DELETAR") {
-        return alert("❌ Ação cancelada. A palavra de segurança estava incorreta.");
-    }
+    if (confirmacao !== "DELETAR") return alert("❌ Ação cancelada.");
 
     const btn = document.querySelector('button[onclick="window.clearDatabase()"]');
-    const txtOriginal = btn.innerText;
-    btn.innerText = "⏳ LIMPANDO BANCO DE DADOS...";
+    btn.innerText = "⏳ LIMPANDO...";
     btn.disabled = true;
 
     try {
-        const db = window.db;
-        const batch = writeBatch(db);
+        const batch = writeBatch(window.db);
         let totalDeleted = 0;
-
-        // Coleções para limpar
         const collections = ["jobs", "active_providers", "missoes", "oportunidades", "usuarios"];
 
         for (const colName of collections) {
-            // Busca apenas demos
-            const q = query(collection(db, colName), where("is_demo", "==", true));
+            const q = query(collection(window.db, colName), where("is_demo", "==", true));
             const snapshot = await getDocs(q);
-            
             snapshot.forEach(doc => {
                 batch.delete(doc.ref);
                 totalDeleted++;
@@ -140,49 +185,74 @@ window.clearDatabase = async () => {
 
         if (totalDeleted > 0) {
             await batch.commit();
-            alert(`✅ SUCESSO: ${totalDeleted} registros de teste foram apagados.`);
+            alert(`✅ SUCESSO: ${totalDeleted} registros apagados.`);
         } else {
-            alert("ℹ️ Nenhum dado de teste encontrado para apagar.");
+            alert("ℹ️ Nenhum dado de teste encontrado.");
         }
-
-        // Atualiza a tela se necessário
-        if(window.forceRefresh) window.forceRefresh();
-
     } catch (e) {
-        console.error(e);
-        alert("Erro crítico ao limpar: " + e.message);
+        alert("Erro: " + e.message);
     } finally {
-        btn.innerText = txtOriginal;
+        btn.innerText = "🗑️ EXECUTAR LIMPEZA GERAL";
         btn.disabled = false;
     }
 };
 
 // ============================================================================
-// 4. RELATÓRIO PDF (GERA HTML PARA IMPRESSÃO)
+// 5. RELATÓRIO PDF (IMPRESSÃO)
 // ============================================================================
 window.generatePDFReport = async () => {
     const btn = document.querySelector('button[onclick="window.generatePDFReport()"]');
-    btn.innerText = "⏳ COLETANDO DADOS...";
+    btn.innerText = "⏳ COLETANDO...";
     
     try {
-        const db = window.db;
-        
-        // 1. Coleta Estatísticas
-        const usersSnap = await getCountFromServer(collection(db, "usuarios"));
-        const jobsSnap = await getCountFromServer(collection(db, "jobs"));
-        const provSnap = await getCountFromServer(collection(db, "active_providers"));
-        const oppsSnap = await getCountFromServer(collection(db, "oportunidades"));
+        const usersSnap = await getCountFromServer(collection(window.db, "usuarios"));
+        const jobsSnap = await getCountFromServer(collection(window.db, "jobs"));
+        const provSnap = await getCountFromServer(collection(window.db, "active_providers"));
+        const oppsSnap = await getCountFromServer(collection(window.db, "oportunidades"));
 
-        // Finanças (Rápida varredura)
         let totalCustodia = 0;
-        const uSnap = await getDocs(collection(db, "usuarios"));
+        const uSnap = await getDocs(collection(window.db, "usuarios"));
         uSnap.forEach(d => {
-            const s = parseFloat(d.data().saldo || 0);
+            const s = parseFloat(d.data().wallet_balance || d.data().saldo || 0);
             if(s > 0) totalCustodia += s;
         });
 
-        // 2. Monta o HTML do Relatório
         const reportContent = `
+            <html>
+            <head>
+                <title>Relatório Executivo - Atlivio</title>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; color: #333; }
+                    h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
+                    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 40px 0; }
+                    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f8fafc; }
+                    .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #94a3b8; }
+                </style>
+            </head>
+            <body>
+                <h1>ATLIVIO .OS - RELATÓRIO EXECUTIVO</h1>
+                <p>Data: ${new Date().toLocaleDateString()} | Emissor: Admin</p>
+                <div class="card-grid">
+                    <div class="card"><h3>Usuários</h3><p>${usersSnap.data().count}</p></div>
+                    <div class="card"><h3>Prestadores</h3><p>${provSnap.data().count}</p></div>
+                    <div class="card"><h3>Vagas</h3><p>${jobsSnap.data().count}</p></div>
+                    <div class="card"><h3>Saldo em Custódia</h3><p>R$ ${totalCustodia.toFixed(2)}</p></div>
+                </div>
+                <div class="footer">Confidencial - Sistema Atlivio Admin v3.0</div>
+                <script>window.print();</script>
+            </body>
+            </html>
+        `;
+
+        const win = window.open('', '_blank');
+        win.document.write(reportContent);
+        win.document.close();
+    } catch (e) {
+        alert("Erro: " + e.message);
+    } finally {
+        btn.innerText = "📄 GERAR PDF EXECUTIVO";
+    }
+};
             <html>
             <head>
                 <title>Relatório Executivo - Atlivio</title>
