@@ -205,6 +205,27 @@ export async function sugerirDetalhe(orderId, tipo) {
 // ============================================================================
 // 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO OTIMIZADA ANTI-TRAVAMENTO)
 // ============================================================================
+// 🤖 ESPIÃO DE SALDO INTERNO (Cole no início da func confirmarAcordo)
+const _debugRef = doc(db, "orders", orderId);
+getDoc(_debugRef).then(async (snap) => {
+    const p = snap.data();
+    console.group("🕵️ AUDITORIA DE SALDO NA TRANSAÇÃO");
+    console.log("🆔 Pedido:", orderId);
+    console.log("👤 Quem Clicou (UID):", auth.currentUser.uid);
+    console.log("💳 ID do Cliente no Pedido:", p.client_id);
+    
+    // Busca saldo do cliente do pedido
+    const uSnap = await getDoc(doc(db, "usuarios", p.client_id));
+    const uData = uSnap.data();
+    console.log("💰 WALLET_BALANCE (O que vale):", uData.wallet_balance);
+    console.log("⚠️ SALDO (Legado):", uData.saldo);
+    
+    if(auth.currentUser.uid !== p.client_id && auth.currentUser.uid !== p.provider_id){
+        console.error("🚨 PERIGO: Você não é nem o cliente nem o prestador deste pedido!");
+    }
+    console.groupEnd();
+});
+// FIM DO ESPIÃO
 export async function confirmarAcordo(orderId, aceitar) {
     if(!aceitar) return alert("Negociação continua.");
     
