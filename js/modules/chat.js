@@ -211,19 +211,21 @@ export async function enviarMensagemChat(orderId, step) {
     if(!texto) return;
 
     if (step < 3) {
-        const textoNormalizado = texto.toLowerCase().replace(/[.\-_ @310]/g, (char) => {
-            return {'.':'','-':'','_':'',' ':'','@':'a','3':'e','1':'i','0':'o'}[char] || '';
-        });
+        // 🧱 CAMADA 1: BLACKLIST DE ABUSOS (Inspirada no Facebook)
+        const blacklistOfensiva = ["porra", "caralho", "fdp", "puta", "viado", "gay", "lixo", "merda", "otario", "golpe", "ladrão"];
+        const encontrouAbuso = blacklistOfensiva.some(p => texto.toLowerCase().includes(p));
 
-        const proibidas = ["whatsapp","whats","wpp","zap","telefone","contato","celular","instagram","insta","meuchama","porfora","diretocomigo","seunumber"];
-        const encontrouPalavra = proibidas.some(p => textoNormalizado.includes(p));
+        // 🔢 CAMADA 2: BLOQUEIO TOTAL DE NÚMEROS (Regex Radical)
+        // Detecta qualquer sequência numérica ou número isolado no meio do texto
+        const temNumero = /\d/.test(texto); 
 
-        const regexTelefone = /(?:\d[\s.\-_()]*){8,}/g;
-        const regexExtenso = /(zero|um|dois|tres|três|quatro|cinco|seis|sete|oito|nove)/gi;
-        const contagemExtenso = (texto.match(regexExtenso) || []).length;
+        // 🧠 CAMADA 3: NORMALIZAÇÃO ANTI-EVASÃO
+        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @310]/g, "");
+        const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora"];
+        const encontrouEvasao = proibidas.some(p => textoLimpo.includes(p));
 
-        if (encontrouPalavra || regexTelefone.test(texto) || contagemExtenso >= 3) {
-            alert("🚫 Por segurança, troca de contatos é bloqueada nesta etapa.\n\nConfirme o acordo para liberar os dados oficiais.");
+        if (encontrouAbuso || temNumero || encontrouEvasao) {
+            alert("🚫 ATLIVIO: Por segurança e ética, mensagens com números, contatos ou termos ofensivos são bloqueadas antes do acordo.\n\nUse os botões de 'Ação Rápida' para combinar detalhes técnicos.");
             input.value = ""; 
             return;
         }
@@ -231,12 +233,20 @@ export async function enviarMensagemChat(orderId, step) {
 
     input.value = "";
     await addDoc(collection(db, `chats/${orderId}/messages`), { 
-        text: texto, 
-        sender_id: auth.currentUser.uid, 
-        timestamp: serverTimestamp() 
+        text: texto, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
     });
 }
 
+// 🛠️ NOVO: BOTÕES DE NEGOCIAÇÃO ESTRUTURADA
+window.sugerirDetalhe = async (orderId, tipo) => {
+    let valor = prompt(`Informe a ${tipo}:`);
+    if(!valor) return;
+    
+    const msgFinal = `🔹 [DETALHE DO ACORDO] ${tipo.toUpperCase()}: ${valor}`;
+    await addDoc(collection(db, `chats/${orderId}/messages`), { 
+        text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
+    });
+};
 function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
