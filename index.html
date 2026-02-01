@@ -353,13 +353,46 @@
             </section>
             
             <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
-                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
-                <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative">
-                    <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
-                    <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo Total</p>
-                    <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-                </div>
-            </section>
+    <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
+    
+    <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
+        <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
+        <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo em Carteira</p>
+        <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
+        <p class="text-[9px] text-green-300 mt-2 opacity-80">Limite de débito: R$ 60,00</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-3">
+        <h3 class="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest">Recarregar p/ Trabalhar</h3>
+        
+        <button onclick="window.abrirCheckoutPix(20)" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center active:scale-95 transition group">
+            <div class="text-left">
+                <p class="text-gray-900 font-black text-sm uppercase">Recarga Padrão</p>
+                <p class="text-blue-600 text-[10px] font-bold">Adicionar R$ 20,00</p>
+            </div>
+            <div class="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black group-hover:bg-blue-600 group-hover:text-white transition">
+                PIX
+            </div>
+        </button>
+
+        <button onclick="window.abrirCheckoutPix(50)" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center active:scale-95 transition group">
+            <div class="text-left">
+                <p class="text-gray-900 font-black text-sm uppercase">Recarga Prime</p>
+                <p class="text-green-600 text-[10px] font-bold">Adicionar R$ 50,00</p>
+            </div>
+            <div class="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-black group-hover:bg-green-600 group-hover:text-white transition">
+                PIX
+            </div>
+        </button>
+    </div>
+
+    <div class="mt-6">
+        <p class="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest mb-3">Últimas Transações</p>
+        <div id="lista-transacoes-carteira" class="space-y-2">
+            <p class="text-center text-[10px] text-gray-400 py-4 italic">Nenhuma movimentação recente.</p>
+        </div>
+    </div>
+</section>
         </main>
     </div>
 
