@@ -231,8 +231,14 @@ export async function confirmarAcordo(orderId, aceitar) {
             const clientSnap = await transaction.get(clientRef);
 
             if (!clientSnap.exists()) {
-                throw "A carteira do cliente (" + pedido.client_id + ") não foi encontrada.";
-            }
+    console.warn("Carteira não encontrada, criando documento básico para o cliente...");
+    transaction.set(clientRef, { 
+        wallet_balance: 0, 
+        wallet_reserved: 0, 
+        uid: pedido.client_id 
+    });
+    throw "O Cliente ainda não possui saldo (R$ 0,00). Adicione saldo no Painel Admin para continuar.";
+}
 
             // --- 2. DEFINIÇÃO DE LÓGICA ---
             const isProvider = uid === pedido.provider_id;
