@@ -78,6 +78,11 @@ window.confirmarCodigoLogin = async function() {
                 is_provider: false,
                 perfil_completo: false
             });
+            
+            // 🔥 Gatilho de automação para bônus inicial via Admin
+            if (typeof window.concederBonusSeAtivo === 'function') {
+                await window.concederBonusSeAtivo(result.user.uid);
+            }
         }
         
         // O app.js vai detectar o login e redirecionar
