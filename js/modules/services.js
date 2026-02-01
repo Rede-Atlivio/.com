@@ -568,6 +568,7 @@ try {
         console.error("Erro fatal no salvamento:", e);
         alert("Erro ao salvar: " + e.message); 
     }
+}
 
 // EXPORTAÇÕES GLOBAIS
 window.carregarServicos = carregarServicos;
