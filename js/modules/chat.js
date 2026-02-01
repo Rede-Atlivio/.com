@@ -293,3 +293,70 @@ function escutarMensagens(orderId) {
         if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
     });
 }
+// ============================================================================
+// 🏁 FASE 5: FINALIZAÇÃO E REPASSE (FECHAMENTO DO CICLO)
+// ============================================================================
+window.finalizarServicoPassoFinal = async (orderId) => {
+    if(!confirm("Confirma que o serviço foi entregue? Isso liberará o pagamento ao prestador.")) return;
+
+    const orderRef = doc(db, "orders", orderId);
+    
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderSnap = await transaction.get(orderRef);
+            const pedido = orderSnap.data();
+            
+            if(pedido.status === 'completed') throw "Este serviço já foi finalizado.";
+            
+            const valorReserva = pedido.value_reserved || 20.00;
+            const taxaPlataforma = 5.00; // Exemplo: ATLIVIO fica com R$ 5 e repassa R$ 15
+            const valorRepasse = valorReserva - taxaPlataforma;
+
+            const clientRef = doc(db, "usuarios", pedido.client_id);
+            const provRef = doc(db, "usuarios", pedido.provider_id);
+            const clientSnap = await transaction.get(clientRef);
+            const provSnap = await transaction.get(provRef);
+
+            // 1. Tira da Reserva do Cliente
+            transaction.update(clientRef, {
+                wallet_reserved: (clientSnap.data().wallet_reserved || 0) - valorReserva
+            });
+
+            // 2. Coloca no Saldo Disponível do Prestador
+            transaction.update(provRef, {
+                wallet_balance: (provSnap.data().wallet_balance || 0) + valorRepasse,
+                saldo: (provSnap.data().saldo || 0) + valorRepasse
+            });
+
+            // 3. Finaliza o Pedido
+            transaction.update(orderRef, { 
+                status: 'completed',
+                completed_at: serverTimestamp(),
+                net_value_provider: valorRepasse
+            });
+
+            // 4. Mensagem de Sucesso
+            const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+            transaction.set(msgRef, {
+                text: `⭐️ SERVIÇO CONCLUÍDO: R$ ${valorRepasse.toFixed(2)} creditados ao prestador. Avalie a experiência!`,
+                sender_id: "system",
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert("✅ Pagamento liberado ao prestador com sucesso!");
+    } catch(e) { alert("Erro ao finalizar: " + e); }
+};
+
+window.reportarProblema = async (orderId) => {
+    const motivo = prompt("Descreva o problema (Ex: Prestador não apareceu / Cliente não pagou o restante):");
+    if(!motivo) return;
+
+    await updateDoc(doc(db, "orders", orderId), {
+        status: 'dispute',
+        dispute_reason: motivo,
+        dispute_at: serverTimestamp()
+    });
+
+    alert("🚨 Suporte acionado. A reserva de R$ 20,00 foi congelada para análise da ATLIVIO.");
+};
