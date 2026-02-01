@@ -5,37 +5,41 @@ import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, get
 // ============================================================================
 export async function init() {
     const container = document.getElementById('view-settings');
+    if (!container) return;
     
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade">
             
             <div class="glass-panel p-6 border border-blue-500/30">
                 <h2 class="text-xl font-bold text-white mb-2">📢 Comunicação Global</h2>
-                <p class="text-xs text-gray-400 mb-6">Aviso no topo do app para todos os usuários.</p>
+                <p class="text-xs text-gray-400 mb-6">Esta mensagem aparecerá no topo do aplicativo para todos os usuários.</p>
+                
                 <label class="inp-label">MENSAGEM DE AVISO</label>
                 <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-2" placeholder="Ex: Manutenção programada...">
+                
                 <div class="flex items-center gap-2 mb-6">
                     <input type="checkbox" id="conf-msg-active" class="chk-custom">
                     <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Mostrar Aviso?</label>
                 </div>
+
                 <button onclick="window.saveAppSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
-                    💾 SALVAR AVISO
+                    💾 SALVAR CONFIGURAÇÃO
                 </button>
             </div>
 
             <div class="glass-panel p-6 border border-purple-500/30">
-                <h2 class="text-xl font-bold text-white mb-2">🎁 Regras de Bônus (R$ 20)</h2>
-                <p class="text-xs text-gray-400 mb-6">Controle o bônus de boas-vindas e a taxa Atlivio.</p>
+                <h2 class="text-xl font-bold text-white mb-2">🎁 Regras de Bônus</h2>
+                <p class="text-xs text-gray-400 mb-6">Controle as campanhas de boas-vindas e taxas de intermediação.</p>
                 
                 <label class="inp-label">VALOR DO BÔNUS INICIAL (R$)</label>
                 <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white mb-2" placeholder="20.00">
                 
                 <div class="flex items-center gap-2 mb-4">
                     <input type="checkbox" id="conf-bonus-active" class="chk-custom">
-                    <label for="conf-bonus-active" class="text-xs text-gray-300 cursor-pointer">Ativar Campanha de Bônus?</label>
+                    <label for="conf-bonus-active" class="text-xs text-gray-300 cursor-pointer">Ativar Bônus de Boas-Vindas?</label>
                 </div>
 
-                <label class="inp-label">TAXA DE INTERMEDIAÇÃO (R$)</label>
+                <label class="inp-label">TAXA DE INTERMEDIAÇÃO FIXA (R$)</label>
                 <input type="number" id="conf-taxa-valor" class="inp-editor h-10 text-white mb-6" placeholder="5.00">
 
                 <button onclick="window.saveBusinessRules()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
@@ -45,40 +49,55 @@ export async function init() {
 
             <div class="glass-panel p-6 border border-amber-500/30">
                 <h2 class="text-xl font-bold text-white mb-2">🔍 Auditoria de Dados</h2>
-                <p class="text-xs text-gray-400 mb-6">Detectar usuários duplicados ou coleções fantasmas.</p>
-                <div id="audit-results" class="bg-black/20 p-3 rounded-lg text-[10px] text-gray-400 font-mono mb-4 min-h-[60px] whitespace-pre-wrap">
-                    Aguardando varredura...
-                </div>
-                <button onclick="window.runDataAudit()" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-2 rounded font-bold text-xs uppercase transition">
-                    🚀 INICIAR VARREDURA PROFUNDA
+                <p class="text-xs text-gray-400 mb-6">Varredura automática por lixo eletrônico ou duplicados.</p>
+                
+                <div id="audit-results" class="bg-black/40 p-4 rounded-xl text-[10px] text-gray-300 font-mono mb-4 min-h-[80px] border border-white/5 whitespace-pre-wrap">Aguardando varredura profunda...</div>
+                
+                <button onclick="window.runDataAudit()" class="w-full bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold text-xs uppercase transition shadow-lg">
+                    🚀 INICIAR VARREDURA AGORA
                 </button>
             </div>
 
             <div class="glass-panel p-6 border border-emerald-500/30">
                 <h2 class="text-xl font-bold text-white mb-2">📑 Relatórios Gerenciais</h2>
-                <p class="text-xs text-gray-400 mb-6">Exporte dados para PDF.</p>
-                <button onclick="window.generatePDFReport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded font-bold text-xs uppercase flex items-center justify-center gap-2 transition">
-                    📄 GERAR PDF EXECUTIVO
-                </button>
+                <p class="text-xs text-gray-400 mb-6">Exporte os dados da plataforma para análise.</p>
+                
+                <div class="p-4 bg-slate-800 rounded-xl border border-slate-700">
+                    <p class="text-[10px] uppercase font-bold text-gray-500 mb-1">RELATÓRIO EXECUTIVO</p>
+                    <p class="text-xs text-white mb-3">Resumo completo de usuários, finanças e métricas.</p>
+                    <button onclick="window.generatePDFReport()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded font-bold text-xs uppercase flex items-center justify-center gap-2">
+                        📄 GERAR PDF / IMPRIMIR
+                    </button>
+                </div>
             </div>
 
-            <div class="col-span-1 md:col-span-2 glass-panel p-6 border border-red-900/50 bg-red-900/5 mt-4">
-                <h2 class="text-xl font-black text-red-500 uppercase">ZONA DE PERIGO</h2>
-                <p class="text-xs text-gray-500 mb-4">Limpeza irreversível de dados demonstrativos (is_demo = true).</p>
-                <button onclick="window.clearDatabase()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-black text-xs uppercase transition">
-                    🗑️ EXECUTAR LIMPEZA GERAL
-                </button>
+            <div class="col-span-1 md:col-span-2 glass-panel p-8 border border-red-900/50 bg-red-900/5 mt-4">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="bg-red-900/20 p-3 rounded-full text-red-500 text-xl">⚠️</div>
+                    <div>
+                        <h2 class="text-xl font-black text-red-500 uppercase tracking-wide">ZONA DE PERIGO</h2>
+                        <p class="text-sm text-gray-400 mt-1">Ações irreversíveis. Tenha cuidado absoluto.</p>
+                    </div>
+                </div>
+
+                <div class="p-6 bg-black/40 rounded-xl border border-red-900/30">
+                    <h3 class="text-white font-bold mb-2">🔥 LIMPEZA DE DADOS DEMONSTRATIVOS</h3>
+                    <p class="text-xs text-gray-500 mb-4">Apaga registros marcados como <code>is_demo = true</code> em Jobs, Providers, Missoes e Usuarios.</p>
+                    <button onclick="window.clearDatabase()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-black text-xs uppercase shadow-lg transition">
+                        🗑️ EXECUTAR LIMPEZA GERAL
+                    </button>
+                </div>
             </div>
+
         </div>
     `;
     
     lucide.createIcons();
     await loadSettings();
-    console.log("✅ Módulo Settings Carregado.");
 }
 
 // ============================================================================
-// 2. CARREGAMENTO E SALVAMENTO (REGRAS E AVISOS)
+// 2. LÓGICA DE CARREGAMENTO E SALVAMENTO
 // ============================================================================
 async function loadSettings() {
     try {
@@ -103,8 +122,8 @@ window.saveAppSettings = async () => {
             is_active: active,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ Aviso Global atualizado!");
-    } catch(e) { alert(e.message); }
+        alert("✅ Aviso de comunicação atualizado!");
+    } catch(e) { alert("Erro: " + e.message); }
 };
 
 window.saveBusinessRules = async () => {
@@ -119,8 +138,8 @@ window.saveBusinessRules = async () => {
             taxa_intermediacao: taxa,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ Regras Financeiras salvas! O sistema de bônus agora segue estes valores.");
-    } catch(e) { alert(e.message); }
+        alert("✅ Governança financeira salva com sucesso!");
+    } catch(e) { alert("Erro financeiro: " + e.message); }
 };
 
 // ============================================================================
@@ -128,14 +147,14 @@ window.saveBusinessRules = async () => {
 // ============================================================================
 window.runDataAudit = async () => {
     const logArea = document.getElementById('audit-results');
-    logArea.innerHTML = "🔍 Iniciando varredura profunda...";
+    logArea.innerHTML = "🔍 Iniciando varredura profunda no banco...";
     
     try {
-        // Teste de Coleções Duplicadas
+        // 1. Checa Coleção 'produtos' (PT) que deve ser deletada
         const colProd = await getDocs(query(collection(window.db, "produtos"), limit(1)));
-        let report = `• Coleção 'produtos' (PT): ${!colProd.empty ? '⚠️ POSSUI LIXO' : '✅ LIMPA'}\n`;
+        let report = `• Coleção 'produtos' (Lixo PT): ${!colProd.empty ? '⚠️ POSSUI DADOS' : '✅ LIMPA'}\n`;
         
-        // Busca Usuários Duplicados (Mesmo Telefone)
+        // 2. Busca Telefones Duplicados em Usuarios
         const usersSnap = await getDocs(collection(window.db, "usuarios"));
         let phones = {};
         let duplicados = 0;
@@ -148,22 +167,20 @@ window.runDataAudit = async () => {
         });
         report += `• Telefones Duplicados: ${duplicados > 0 ? '⚠️ ' + duplicados : '✅ 0'}\n`;
 
-        // Verifica Documentos de Configuração
+        // 3. Verifica existência do documento Global
         const globalRef = await getDoc(doc(window.db, "settings", "global"));
-        report += `• Configurações Globais: ${globalRef.exists() ? '✅ OK' : '❌ AUSENTE'}\n`;
+        report += `• Documento settings/global: ${globalRef.exists() ? '✅ OK' : '❌ AUSENTE'}\n`;
 
         logArea.innerHTML = report;
-    } catch(e) {
-        logArea.innerHTML = "❌ Erro na varredura: " + e.message;
-    }
+    } catch(e) { logArea.innerHTML = "❌ Erro na varredura: " + e.message; }
 };
 
 // ============================================================================
-// 4. LIMPEZA DE DADOS (ZONA DE PERIGO)
+// 4. LIMPEZA E RELATÓRIO
 // ============================================================================
 window.clearDatabase = async () => {
-    const confirmacao = prompt("⚠️ PERIGO: ISSO APAGARÁ TODOS OS DADOS DE TESTE.\n\nPara confirmar, digite a palavra: DELETAR");
-    if (confirmacao !== "DELETAR") return alert("❌ Ação cancelada.");
+    const confirmacao = prompt("⚠️ PERIGO: ISSO APAGARÁ DADOS DE TESTE.\n\nPara confirmar, digite: DELETAR");
+    if (confirmacao !== "DELETAR") return alert("Ação cancelada.");
 
     const btn = document.querySelector('button[onclick="window.clearDatabase()"]');
     btn.innerText = "⏳ LIMPANDO...";
@@ -177,39 +194,25 @@ window.clearDatabase = async () => {
         for (const colName of collections) {
             const q = query(collection(window.db, colName), where("is_demo", "==", true));
             const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                batch.delete(doc.ref);
-                totalDeleted++;
-            });
+            snapshot.forEach(doc => { batch.delete(doc.ref); totalDeleted++; });
         }
 
         if (totalDeleted > 0) {
             await batch.commit();
             alert(`✅ SUCESSO: ${totalDeleted} registros apagados.`);
         } else {
-            alert("ℹ️ Nenhum dado de teste encontrado.");
+            alert("Nenhum dado is_demo encontrado.");
         }
-    } catch (e) {
-        alert("Erro: " + e.message);
-    } finally {
-        btn.innerText = "🗑️ EXECUTAR LIMPEZA GERAL";
-        btn.disabled = false;
-    }
+    } catch (e) { alert("Erro: " + e.message); }
+    finally { btn.innerText = "🗑️ EXECUTAR LIMPEZA GERAL"; btn.disabled = false; }
 };
 
-// ============================================================================
-// 5. RELATÓRIO PDF (IMPRESSÃO)
-// ============================================================================
 window.generatePDFReport = async () => {
-    const btn = document.querySelector('button[onclick="window.generatePDFReport()"]');
-    btn.innerText = "⏳ COLETANDO...";
-    
     try {
         const usersSnap = await getCountFromServer(collection(window.db, "usuarios"));
-        const jobsSnap = await getCountFromServer(collection(window.db, "jobs"));
         const provSnap = await getCountFromServer(collection(window.db, "active_providers"));
-        const oppsSnap = await getCountFromServer(collection(window.db, "oportunidades"));
-
+        const jobsSnap = await getCountFromServer(collection(window.db, "jobs"));
+        
         let totalCustodia = 0;
         const uSnap = await getDocs(collection(window.db, "usuarios"));
         uSnap.forEach(d => {
@@ -219,116 +222,20 @@ window.generatePDFReport = async () => {
 
         const reportContent = `
             <html>
-            <head>
-                <title>Relatório Executivo - Atlivio</title>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; color: #333; }
-                    h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
-                    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 40px 0; }
-                    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f8fafc; }
-                    .footer { margin-top: 50px; font-size: 12px; text-align: center; color: #94a3b8; }
-                </style>
-            </head>
+            <head><title>Relatório Atlivio</title><style>body{font-family:sans-serif;padding:40px;color:#333;}h1{color:#2563eb;border-bottom:2px solid #2563eb;} .card{border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:8px;background:#f8fafc;}</style></head>
             <body>
                 <h1>ATLIVIO .OS - RELATÓRIO EXECUTIVO</h1>
-                <p>Data: ${new Date().toLocaleDateString()} | Emissor: Admin</p>
-                <div class="card-grid">
-                    <div class="card"><h3>Usuários</h3><p>${usersSnap.data().count}</p></div>
-                    <div class="card"><h3>Prestadores</h3><p>${provSnap.data().count}</p></div>
-                    <div class="card"><h3>Vagas</h3><p>${jobsSnap.data().count}</p></div>
-                    <div class="card"><h3>Saldo em Custódia</h3><p>R$ ${totalCustodia.toFixed(2)}</p></div>
-                </div>
-                <div class="footer">Confidencial - Sistema Atlivio Admin v3.0</div>
+                <p>Gerado em: ${new Date().toLocaleString()}</p>
+                <div class="card"><strong>Usuários Totais:</strong> ${usersSnap.data().count}</div>
+                <div class="card"><strong>Prestadores Ativos:</strong> ${provSnap.data().count}</div>
+                <div class="card"><strong>Vagas Públicas:</strong> ${jobsSnap.data().count}</div>
+                <div class="card"><strong>Total em Custódia:</strong> R$ ${totalCustodia.toFixed(2)}</div>
                 <script>window.print();</script>
             </body>
             </html>
         `;
-
         const win = window.open('', '_blank');
         win.document.write(reportContent);
         win.document.close();
-    } catch (e) {
-        alert("Erro: " + e.message);
-    } finally {
-        btn.innerText = "📄 GERAR PDF EXECUTIVO";
-    }
-};
-            <html>
-            <head>
-                <title>Relatório Executivo - Atlivio</title>
-                <style>
-                    body { font-family: sans-serif; padding: 40px; color: #333; }
-                    h1 { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 10px; }
-                    .header { display: flex; justify-content: space-between; margin-bottom: 40px; }
-                    .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
-                    .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; background: #f8fafc; }
-                    .card h3 { margin: 0; font-size: 14px; color: #64748b; text-transform: uppercase; }
-                    .card p { margin: 5px 0 0; font-size: 24px; font-weight: bold; color: #0f172a; }
-                    .footer { margin-top: 50px; font-size: 12px; color: #94a3b8; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-                    @media print { body { padding: 0; } .no-print { display: none; } }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div>
-                        <h1>ATLIVIO .OS</h1>
-                        <p>Relatório Operacional e Financeiro</p>
-                    </div>
-                    <div style="text-align: right;">
-                        <p><strong>Data:</strong> ${new Date().toLocaleDateString()}</p>
-                        <p><strong>Emissor:</strong> Admin (Automático)</p>
-                    </div>
-                </div>
-
-                <h2>Resumo Operacional</h2>
-                <div class="card-grid">
-                    <div class="card">
-                        <h3>Usuários Totais</h3>
-                        <p>${usersSnap.data().count}</p>
-                    </div>
-                    <div class="card">
-                        <h3>Prestadores Ativos</h3>
-                        <p>${provSnap.data().count}</p>
-                    </div>
-                    <div class="card">
-                        <h3>Vagas Publicadas</h3>
-                        <p>${jobsSnap.data().count}</p>
-                    </div>
-                    <div class="card">
-                        <h3>Oportunidades</h3>
-                        <p>${oppsSnap.data().count}</p>
-                    </div>
-                </div>
-
-                <h2>Resumo Financeiro</h2>
-                <div class="card-grid">
-                    <div class="card" style="border-left: 5px solid #10b981;">
-                        <h3>Saldo em Custódia (Passivo)</h3>
-                        <p>R$ ${totalCustodia.toFixed(2)}</p>
-                    </div>
-                    <div class="card">
-                        <h3>Ticket Médio (Est.)</h3>
-                        <p>R$ --</p>
-                    </div>
-                </div>
-
-                <div class="footer">
-                    <p>Este documento é confidencial e gerado automaticamente pelo sistema Atlivio Admin v3.0.</p>
-                </div>
-
-                <script>window.print();</script>
-            </body>
-            </html>
-        `;
-
-        // 3. Abre Janela de Impressão
-        const win = window.open('', '_blank');
-        win.document.write(reportContent);
-        win.document.close();
-
-    } catch (e) {
-        alert("Erro ao gerar relatório: " + e.message);
-    } finally {
-        btn.innerText = "GERAR PDF / IMPRIMIR";
-    }
+    } catch (e) { alert("Erro PDF: " + e.message); }
 };
