@@ -134,7 +134,7 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     <button onclick="window.sugerirDetalhe('${orderId}', 'Horário')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">⏰ Definir Hora</button>
                     <button onclick="window.sugerirDetalhe('${orderId}', 'Quantidade')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">🔢 Quantidade</button>
                     <button onclick="window.sugerirDetalhe('${orderId}', 'Valor Final')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">💰 Valor Total</button>
-                    <button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-sm uppercase">🏁 Concluir e Pagar</button>
+                    ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-sm uppercase">🏁 Concluir e Pagar</button>` : ''}
                     <button onclick="window.reportarProblema('${orderId}')" class="bg-red-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-sm uppercase">⚠️ Reportar</button>
                 </div>
                 <div class="p-3 flex gap-2 items-center">
