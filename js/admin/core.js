@@ -164,3 +164,22 @@ window.switchView = async function(viewName) {
         }
     }
 };
+// --- CONTROLE DA BARRA DE AÇÕES EM MASSA ---
+window.updateBulkBar = () => { 
+    const checked = document.querySelectorAll('.row-checkbox:checked'); 
+    const count = checked.length; 
+    const bar = document.getElementById('bulk-actions'); 
+    const countEl = document.getElementById('bulk-count');
+
+    if(countEl) countEl.innerText = count; 
+
+    if(count > 0) {
+        bar.classList.add('visible');
+        bar.classList.remove('invisible');
+        bar.style.transform = "translate(-50%, 0)"; // Faz subir
+    } else {
+        bar.classList.remove('visible');
+        bar.classList.add('invisible');
+        bar.style.transform = "translate(-50%, 200%)"; // Faz sumir
+    }
+};
