@@ -122,3 +122,29 @@ window.confirmarAvaliacao = async (oid, tid) => {
 // EXPORTAÇÕES GLOBAIS
 window.abrirModalAvaliacao = abrirModalAvaliacao;
 window.enviarAvaliacao = enviarAvaliacao;
+// ============================================================================
+// 🚨 REGRA DE PENALTY ATLIVIO (ANTI-GOLPE)
+// ============================================================================
+window.cancelarComPenalty = async (orderId) => {
+    const orderRef = doc(db, "orders", orderId);
+    const snap = await getDoc(orderRef);
+    const pedido = snap.data();
+
+    // Se o contato já foi liberado (Step 3)
+    if (pedido.system_step >= 3) {
+        const confirmar = confirm("⚠️ ATENÇÃO: O contato já foi liberado. Ao cancelar agora, os R$ 20,00 da reserva NÃO serão estornados. Eles serão retidos como taxa de segurança. Deseja prosseguir?");
+        if(!confirmar) return;
+
+        await updateDoc(orderRef, { 
+            status: 'cancelled_penalty', 
+            penalty_applied: true,
+            cancelled_at: serverTimestamp() 
+        });
+        alert("Cancelamento efetuado. Reserva retida por violação de fluxo.");
+    } else {
+        if(confirm("Deseja cancelar esta solicitação?")) {
+            await updateDoc(orderRef, { status: 'cancelled', cancelled_at: serverTimestamp() });
+        }
+    }
+    window.voltarParaListaPedidos();
+};
