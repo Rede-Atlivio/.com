@@ -122,6 +122,7 @@ onAuthStateChanged(auth, async (user) => {
                     };
                     userProfile = novoPerfil; window.userProfile = novoPerfil;
                     await setDoc(userRef, novoPerfil);
+                    await concederBonusSeAtivo(user.uid);
                 } else {
                     const data = docSnap.data();
                     
