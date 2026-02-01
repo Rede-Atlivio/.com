@@ -190,72 +190,92 @@ window.abrirMenuAcoesMassa = () => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     
-    if (!modal || !content) return console.error("Modal não encontrado!");
+    if (!modal || !content) return;
 
     modal.classList.remove('hidden');
     document.getElementById('modal-title').innerText = `CONTROLE EM MASSA (${count})`;
 
+    // FINANCEIRO REMOVIDO DAQUI PARA EVITAR PONTAS SOLTAS
     content.innerHTML = `
-        <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 mb-6">
-            <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-widest">Ações Destrutivas / Status</p>
-            <div class="grid grid-cols-1 gap-2">
-                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">✅ Aprovar Todos</button>
-                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">🚫 Banir Todos</button>
-                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase transition">🗑️ Excluir Definitivamente</button>
+        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
+            <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-widest text-center">Gestão de Status e Banco</p>
+            <div class="grid grid-cols-1 gap-3">
+                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">✅ Aprovar Todos</button>
+                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">🚫 Banir / Suspender</button>
+                <div class="h-px bg-slate-700 my-2"></div>
+                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">🗑️ EXCLUIR DEFINITIVAMENTE (DUPLO)</button>
             </div>
-        </div>
-        <div class="p-4 bg-slate-950 rounded-xl border border-white/5">
-            <p class="text-[10px] text-gray-500 font-bold mb-3 uppercase tracking-widest">Financeiro (Opcional)</p>
-            <div class="flex gap-2">
-                <input type="number" id="bulk-credit-val" placeholder="R$ 0,00" class="flex-1 p-3 rounded-lg bg-slate-900 text-white border border-slate-800 text-sm focus:border-blue-500 outline-none">
-                <button onclick="window.executarAcaoMassa('credito')" class="bg-blue-600 text-white px-4 rounded-lg font-black text-[10px] uppercase">Enviar</button>
-            </div>
+            <p class="text-[9px] text-gray-500 mt-4 text-center">A exclusão removerá dados de 'usuarios' e 'active_providers' simultaneamente.</p>
         </div>
     `;
 };
-// --- EXECUTOR REAL DAS AÇÕES (APROVAR, BANIR, EXCLUIR, CRÉDITO) ---
+
+// --- LOGICA PARA O BOTÃO "+ NOVO" ---
+window.abrirModalCriarNovo = () => {
+    const view = window.activeView;
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    modal.classList.remove('hidden');
+    document.getElementById('modal-title').innerText = `CRIAR NOVO: ${view.toUpperCase()}`;
+
+    if (view === 'services') {
+        content.innerHTML = `
+            <div class="space-y-4">
+                <input type="text" id="new-prov-uid" placeholder="Cole o UID do Usuário" class="inp-editor">
+                <input type="text" id="new-prov-nome" placeholder="Nome Profissional" class="inp-editor">
+                <input type="text" id="new-prov-cat" placeholder="Categoria (Ex: Encanador)" class="inp-editor">
+                <button onclick="window.salvarNovoPrestador()" class="w-full bg-blue-600 py-3 rounded-xl font-bold uppercase text-xs">Criar Prestador</button>
+            </div>`;
+    } else {
+        content.innerHTML = `<p class="text-center text-gray-400 py-10">Use o Painel do Robô ou Gerador para criar ${view}.</p>`;
+    }
+};
+
+window.salvarNovoPrestador = async () => {
+    const uid = document.getElementById('new-prov-uid').value.trim();
+    const nome = document.getElementById('new-prov-nome').value.trim();
+    const cat = document.getElementById('new-prov-cat').value.trim();
+    
+    if(!uid || !nome) return alert("UID e Nome são obrigatórios.");
+
+    const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    
+    try {
+        await setDoc(doc(window.db, "active_providers", uid), {
+            uid: uid,
+            nome_profissional: nome,
+            category: cat,
+            status: 'aprovado',
+            is_online: true,
+            created_at: serverTimestamp()
+        });
+        alert("✅ Prestador criado!");
+        window.fecharModalUniversal();
+        window.switchView('services');
+    } catch(e) { alert("Erro: " + e.message); }
+};
+
+// --- EXECUTOR REAL DAS AÇÕES ---
 window.executarAcaoMassa = async (acao) => {
     const selecionados = document.querySelectorAll('.row-checkbox:checked');
     if (selecionados.length === 0) return;
+    if (!confirm(`Confirmar [${acao.toUpperCase()}] em ${selecionados.length} registros?`)) return;
 
-    if (!confirm(`Deseja aplicar a ação [${acao.toUpperCase()}] em ${selecionados.length} registros?`)) return;
-
-    // Importação dinâmica dos comandos necessários do Firebase
     const { writeBatch, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const batch = writeBatch(window.db);
-    
-    // Identifica se estamos na aba de Usuários ou Prestadores para saber a coleção
     const colecaoPrincipal = window.activeView === 'users' ? 'usuarios' : 'active_providers';
 
     selecionados.forEach(cb => {
         const uid = cb.value;
-        const refPrincipal = doc(window.db, colecaoPrincipal, uid);
-
         if (acao === 'excluir') {
-            // PRUDÊNCIA: Deleta de ambas as coleções para não deixar rastro
             batch.delete(doc(window.db, "usuarios", uid));
             batch.delete(doc(window.db, "active_providers", uid));
-        } else if (acao === 'banir') {
-            batch.update(refPrincipal, { status: 'banido' });
-        } else if (acao === 'aprovar') {
-            batch.update(refPrincipal, { status: 'aprovado' });
-        } else if (acao === 'credito') {
-            const valor = parseFloat(document.getElementById('bulk-credit-val').value) || 0;
-            if (valor > 0) {
-                batch.update(doc(window.db, "usuarios", uid), { 
-                    wallet_balance: (window.db.FieldValue?.increment(valor) || valor) 
-                });
-            }
+        } else {
+            batch.update(doc(window.db, colecaoPrincipal, uid), { status: acao === 'aprovar' ? 'aprovado' : 'banido' });
         }
     });
 
-    try {
-        await batch.commit();
-        alert("✅ Ação concluída com sucesso em massa!");
-        window.fecharModalUniversal();
-        window.switchView(window.activeView); // Recarrega a aba atual
-    } catch (e) {
-        console.error("Erro na execução em massa:", e);
-        alert("❌ Falha na operação: " + e.message);
-    }
+    await batch.commit();
+    window.fecharModalUniversal();
+    window.switchView(window.activeView);
 };
