@@ -450,7 +450,7 @@ window.salvarCapaPrestador = async (input) => {
         const url = await getDownloadURL(storageRef);
 
         // Atualiza
-        await updateDoc(doc(db, "active_providers", user.uid), { cover_image: url });
+        await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
         alert("✅ Capa atualizada com sucesso!");
     } catch (e) {
         console.error(e);
@@ -500,7 +500,7 @@ window.removerServico = async (cat, price, title) => {
                 if (title && s.title) return s.title !== title;
                 return !(s.category === cat && parseFloat(s.price) === parseFloat(price));
             });
-            await updateDoc(ref, { services: newServices });
+            await setDoc(ref, { services: newServices }, { merge: true });
             abrirConfiguracaoServicos(); 
         }
     } catch(e) { alert("Erro ao remover: " + e.message); }
