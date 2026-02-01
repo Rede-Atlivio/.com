@@ -8,16 +8,15 @@ const LIMITE_DIVIDA = -60.00;
 let unsubscribeWallet = null;
 
 // ============================================================================
-// 1. MONITORAMENTO REAL-TIME
+// 1. MONITORAMENTO REAL-TIME (SINCRONIZADO COM ADMIN/AUTH)
 // ============================================================================
 export function iniciarMonitoramentoCarteira() {
-    // Verificação de segurança: Se auth ainda não existe, aborta sem erro
     if (!auth || !auth.currentUser) return; 
     
     const uid = auth.currentUser.uid;
-
     if (unsubscribeWallet) unsubscribeWallet();
 
+    // Monitora o documento do prestador para atualizações imediatas de saldo
     const ref = doc(db, "active_providers", uid);
 
     console.log("📡 Carteira: Iniciando conexão Real-Time...");
@@ -25,7 +24,9 @@ export function iniciarMonitoramentoCarteira() {
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            const saldo = parseFloat(data.balance || 0);
+            
+            // 🔥 Lógica de fallback: Aceita qualquer um dos 3 nomes de campo usados no sistema
+            const saldo = parseFloat(data.balance || data.saldo || data.wallet_balance || 0);
 
             if (!window.userProfile) window.userProfile = {};
             window.userProfile.balance = saldo;
@@ -41,6 +42,7 @@ function atualizarInterfaceCarteira(saldo) {
     if (el) {
         el.innerText = saldo.toFixed(2).replace('.', ',');
         el.classList.remove('text-white', 'text-green-400', 'text-red-400');
+        
         if (saldo < 0) {
             el.classList.add('text-red-400');
         } else {
@@ -70,7 +72,7 @@ export async function carregarCarteira() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE TRAVA
+// 2. LÓGICA DE TRAVA (ANTI-CALOTE)
 // ============================================================================
 export function podeTrabalhar() {
     const user = window.userProfile;
@@ -87,7 +89,7 @@ export function podeTrabalhar() {
 }
 
 // ============================================================================
-// 3. O COBRADOR
+// 3. O COBRADOR (TRANSAÇÃO FINANCEIRA)
 // ============================================================================
 export async function processarCobrancaTaxa(orderId, valorServico) {
     if (!auth.currentUser) return;
@@ -103,11 +105,12 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
             const provDoc = await transaction.get(providerRef);
             if (!provDoc.exists()) throw "Prestador offline!";
             
-            const saldoAtual = provDoc.data().balance || 0;
+            const saldoAtual = provDoc.data().balance || provDoc.data().saldo || provDoc.data().wallet_balance || 0;
             const novoSaldo = saldoAtual - valorTaxa;
 
+            // Atualiza em ambos os documentos para manter sincronia total
             transaction.update(providerRef, { balance: novoSaldo });
-            transaction.update(userRef, { wallet_balance: novoSaldo }); 
+            transaction.update(userRef, { wallet_balance: novoSaldo, saldo: novoSaldo }); 
 
             const newHistRef = doc(collection(db, "transactions")); 
             transaction.set(newHistRef, {
@@ -135,5 +138,3 @@ window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
-
-// 🚨 REMOVIDO O auth.onAuthStateChanged() DAQUI PARA EVITAR O ERRO
