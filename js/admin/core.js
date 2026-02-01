@@ -279,3 +279,36 @@ window.executarAcaoMassa = async (acao) => {
     window.fecharModalUniversal();
     window.switchView(window.activeView);
 };
+// --- SALVAMENTO AVANÇADO (COM TRATAMENTO NUMÉRICO PARA SALDO) ---
+window.saveModalData = async () => { 
+    try { 
+        const { updateDoc, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        const id = window.currentEditId;
+        const col = window.currentEditColl;
+        const updates = { updated_at: serverTimestamp() };
+
+        // Pega todos os inputs que o editor criou dinamicamente
+        const inputs = document.querySelectorAll('#modal-content input');
+        
+        inputs.forEach(input => {
+            const key = input.id.replace('field-', '');
+            let val = input.value;
+
+            // 💎 REGRA DE OURO: Se o campo for de saldo ou reserva, salva como NÚMERO
+            if (key === 'wallet_balance' || key === 'wallet_reserved' || key === 'saldo') {
+                updates[key] = parseFloat(val) || 0;
+            } else {
+                updates[key] = val;
+            }
+        });
+
+        await updateDoc(doc(window.db, col, id), updates);
+        
+        alert("✅ Dados e Saldo atualizados com sucesso!");
+        window.fecharModalUniversal();
+        window.switchView(window.activeView); 
+    } catch(e) {
+        alert("❌ Erro ao salvar: " + e.message);
+    } 
+};
