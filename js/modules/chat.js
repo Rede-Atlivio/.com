@@ -203,50 +203,50 @@ export async function sugerirDetalhe(orderId, tipo) {
     await addDoc(collection(db, `chats/${orderId}/messages`), { text: msgFinal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() });
 }
 // ============================================================================
-// 🚨 FASE 4: ACORDO MÚTUO COM RESERVA DE SALDO REAL (ESTILO MERCADO PAGO)
+// 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO OTIMIZADA ANTI-TRAVAMENTO)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
-    if(!aceitar) return alert("Negociação continua. Utilize os botões de detalhes para ajustar os termos.");
+    if(!aceitar) return alert("Negociação continua.");
     
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
     
     try {
-        // runTransaction garante que o dinheiro só sai se o acordo for gravado com sucesso
         await runTransaction(db, async (transaction) => {
+            // --- 1. LEITURAS (READS FIRST) ---
             const orderSnap = await transaction.get(orderRef);
             if (!orderSnap.exists()) throw "Pedido não encontrado!";
             const pedido = orderSnap.data();
 
-            // 1. Registra quem clicou no aceite
+            const clientRef = doc(db, "usuarios", pedido.client_id);
+            const clientSnap = await transaction.get(clientRef);
+            if (!clientSnap.exists()) throw "Erro ao localizar carteira do cliente.";
+
+            // --- 2. DEFINIÇÃO DE LÓGICA (NO DATABASE HITS HERE) ---
             const isProvider = uid === pedido.provider_id;
             const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
-            transaction.update(orderRef, campoUpdate);
-
-            // 2. Verifica se este clique é o segundo (que fecha o ciclo)
+            
+            // Verifica se este clique vai completar o aceite duplo
             const vaiFecharAgora = (isProvider && pedido.client_confirmed) || (!isProvider && pedido.provider_confirmed);
 
-            if (vaiFecharAgora) {
-                const clientRef = doc(db, "usuarios", pedido.client_id);
-                const clientSnap = await transaction.get(clientRef);
-                
-                if (!clientSnap.exists()) throw "Erro ao localizar carteira do cliente.";
-                
-                const saldoAtual = clientSnap.data().wallet_balance || 0;
-                const valorReserva = 20.00; // Regra ATLIVIO: Taxa de reserva garantida
+            // --- 3. ESCRITAS (WRITES LAST) ---
+            transaction.update(orderRef, campoUpdate);
 
-                // 🛑 TRAVA FINANCEIRA: Se o cliente não tiver saldo, o acordo não fecha
+            if (vaiFecharAgora) {
+                const saldoAtual = clientSnap.data().wallet_balance || 0;
+                const valorReserva = 20.00;
+
                 if (saldoAtual < valorReserva) {
-                    throw "O Cliente não possui saldo suficiente (R$ 20,00) para garantir este acordo. Solicite que ele recarregue a carteira.";
+                    throw "O Cliente não possui saldo suficiente (R$ 20,00) para garantir este acordo.";
                 }
 
-                // 💸 MOVIMENTAÇÃO FINANCEIRA (CONGELAMENTO DE SALDO)
+                // Desconto e Reserva
                 transaction.update(clientRef, {
                     wallet_balance: saldoAtual - valorReserva,
                     wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
                 });
 
-                // 🔓 LIBERAÇÃO GERAL DO PEDIDO
+                // Liberação de Dados e Step 3
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     address_visible: true, 
@@ -256,20 +256,20 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp()
                 });
 
-                // 📝 REGISTRO NO CHAT (PARA PROVA JUDICIAL/AUDITORIA)
+                // Mensagem de Sistema no Chat
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 GARANTIA ATLIVIO: R$ ${valorReserva.toFixed(2)} reservados com sucesso. O contato foi liberado. Boa parceria!`,
+                    text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado. Use o botão no topo.",
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
             }
         });
 
-        console.log("✅ Acordo e Reserva Financeira processados.");
+        console.log("✅ Transação de Acordo concluída sem erros.");
 
     } catch(e) { 
-        console.error("Erro no Acordo:", e);
+        console.error("Erro na Transação:", e);
         alert("⚠️ " + e); 
     }
 }
