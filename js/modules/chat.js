@@ -300,7 +300,8 @@ window.finalizarServicoPassoFinal = async (orderId) => {
     if(!confirm("Confirma que o serviço foi entregue? Isso liberará o pagamento ao prestador.")) return;
 
     const orderRef = doc(db, "orders", orderId);
-    
+    const orderSnap = await getDoc(orderRef); // Adicione esta linha
+    const pedido = orderSnap.data(); // E esta linha
     try {
         await runTransaction(db, async (transaction) => {
             const orderSnap = await transaction.get(orderRef);
