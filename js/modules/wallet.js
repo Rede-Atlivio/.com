@@ -10,33 +10,59 @@ let unsubscribeWallet = null;
 // ============================================================================
 // 1. MONITORAMENTO REAL-TIME (SINCRONIZADO COM ADMIN/AUTH)
 // ============================================================================
+// ... (mantenha os imports e configurações do topo)
+
 export function iniciarMonitoramentoCarteira() {
     if (!auth || !auth.currentUser) return; 
     
     const uid = auth.currentUser.uid;
     if (unsubscribeWallet) unsubscribeWallet();
 
-    // Monitora o documento do prestador para atualizações imediatas de saldo
     const ref = doc(db, "active_providers", uid);
-
-    console.log("📡 Carteira: Iniciando conexão Real-Time...");
 
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
-            // 🔥 Lógica de fallback: Aceita qualquer um dos 3 nomes de campo usados no sistema
             const saldo = parseFloat(data.balance || data.saldo || data.wallet_balance || 0);
 
             if (!window.userProfile) window.userProfile = {};
             window.userProfile.balance = saldo;
 
+            // ✅ Chamadas Corretas
             atualizarInterfaceCarteira(saldo);
             atualizarInterfaceHeader(saldo);
+            atualizarInterfaceGanhar(saldo);
+            carregarHistoricoCarteira(uid); // Passando o uid que pegamos na linha 11
         }
     });
 }
 
+function atualizarInterfaceCarteira(saldo) {
+    const el = document.getElementById('user-balance');
+    if (el) {
+        el.innerText = saldo.toFixed(2).replace('.', ',');
+        el.classList.remove('text-green-400', 'text-red-400');
+        el.classList.add(saldo < 0 ? 'text-red-400' : 'text-green-400');
+    }
+}
+
+function atualizarInterfaceHeader(saldo) {
+    const headerName = document.getElementById('provider-header-name');
+    if (headerName) {
+        let badge = document.getElementById('header-balance-badge');
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.id = 'header-balance-badge';
+            headerName.appendChild(badge);
+        }
+        badge.innerText = ` R$ ${saldo.toFixed(2)}`;
+        badge.className = saldo < 0 
+            ? "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-600 font-bold"
+            : "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600 font-bold";
+    }
+}
+
+// ... (Restante das funções: podeTrabalhar, processarCobrancaTaxa, abrirCheckoutPix, carregarHistoricoCarteira)
 function atualizarInterfaceCarteira(saldo) {
     const el = document.getElementById('user-balance');
     if (el) {
