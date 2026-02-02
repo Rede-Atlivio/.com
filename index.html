@@ -998,5 +998,13 @@
         </div>
     </div>
 </div>
+    <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        <div id="provider-setup-content">
+            <p class="text-center text-gray-400">Carregando editor...</p>
+        </div>
+    </div>
+</div>
 </body>
 </html>
