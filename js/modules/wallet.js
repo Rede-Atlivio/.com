@@ -28,7 +28,8 @@ export function iniciarMonitoramentoCarteira() {
             if (!window.userProfile) window.userProfile = {};
             window.userProfile.balance = saldo;
 
-            // ✅ Atualização unificada das interfaces
+            / ✅ Atualização unificada das interfaces
+            verificarFaixaBonus(saldo);
             atualizarInterfaceCarteira(saldo);
             atualizarInterfaceHeader(saldo);
             atualizarInterfaceGanhar(saldo);
@@ -201,3 +202,37 @@ window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
+// 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS-VINDAS
+function verificarFaixaBonus(saldo) {
+    // Só mostra se o saldo for exatamente o bônus (20) e se ele ainda não fechou hoje
+    const jaFechou = sessionStorage.getItem('atlivio_bonus_visto');
+    
+    if (saldo === 20 && !jaFechou) {
+        let banner = document.getElementById('bonus-banner');
+        
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'bonus-banner';
+            banner.className = "fixed top-0 left-0 w-full bg-gradient-to-r from-green-600 to-green-500 text-white py-3 px-4 z-[9999] shadow-lg flex justify-between items-center animate-bounce-subtle";
+            banner.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🎁</span>
+                    <p class="text-xs font-bold uppercase tracking-wider">Você ganhou R$ 20,00 de bônus de boas-vindas!</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="window.switchTab('ganhar')" class="bg-white text-green-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">Usar Agora</button>
+                    <button id="close-bonus" class="text-white opacity-70 hover:opacity-100 text-lg">✕</button>
+                </div>
+            `;
+            document.body.prepend(banner);
+
+            document.getElementById('close-bonus').onclick = () => {
+                banner.remove();
+                sessionStorage.setItem('atlivio_bonus_visto', 'true');
+            };
+        }
+    } else {
+        const banner = document.getElementById('bonus-banner');
+        if (banner) banner.remove();
+    }
+}
