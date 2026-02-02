@@ -167,35 +167,74 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
 }
 
 // ============================================================================
-// 3. LOGICA DE FILTRO E MENSAGENS (CAMADA TITAN)
+// 3. LOGICA DE FILTRO E MENSAGENS (CAMADA TITAN - COM RISK SCORE)
 // ============================================================================
 export async function enviarMensagemChat(orderId, step) {
     const input = document.getElementById('chat-input-msg');
     let texto = input.value.trim();
     if(!texto) return;
 
+    // --- 🛡️ MODERAÇÃO ATIVA (Nível 1) ---
+    // Só aplica filtro se ainda não fechou acordo (Step < 3)
     if (step < 3) {
-        const blacklist = ["porra", "caralho", "fdp", "puta", "viado", "lixo", "merda", "golpe", "ladrão"];
-        const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora", "diretocomigo"];
+        const blacklist = ["porra", "caralho", "fdp", "puta", "viado", "lixo", "merda", "golpe", "ladrão", "idiota"];
+        const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora", "diretocomigo", "pix", "pagar por fora", "99", "98", "97"];
         
-        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @310]/g, "");
-        const temNumero = /\d/.test(texto); 
-        const encontrouAbuso = blacklist.some(p => texto.toLowerCase().includes(p));
+        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @]/g, ""); // Remove sujeira para checar camuflagem
+        const temNumeroSuspeito = /\d{4,}/.test(textoLimpo); // Detecta sequências de 4+ números (ex: telefone)
+        
+        const encontrouOfensa = blacklist.some(p => texto.toLowerCase().includes(p));
         const encontrouEvasao = proibidas.some(p => textoLimpo.includes(p));
 
-        if (encontrouAbuso || temNumero || encontrouEvasao) {
-            alert("🚫 Por segurança e ética, a ATLIVIO bloqueia números, contatos ou termos ofensivos antes do acordo.\n\nUse os botões de 'Ação Rápida' acima para combinar detalhes.");
+        if (encontrouOfensa || (temNumeroSuspeito && encontrouEvasao) || encontrouEvasao) {
+            
+            // 🚨 GRAVA A INFRAÇÃO NO BANCO (RISK SCORE)
+            // O usuário não vê isso, mas o sistema marca ele.
+            console.log("🛡️ Moderação: Infração detectada. Registrando risco...");
+            await registrarRisco(auth.currentUser.uid, encontrouOfensa ? 'ofensa' : 'tentativa_evasao');
+
+            alert("🚫 MENSAGEM BLOQUEADA PELO SISTEMA DE SEGURANÇA.\n\nDetectamos tentativa de contato externo ou linguagem inadequada.\n\n⚠️ Evite repetir esse comportamento para não sofrer restrições na sua conta.");
             input.value = ""; 
-            return;
+            return; // Bloqueia o envio
         }
     }
 
+    // Se passou pelo filtro, envia normal
     input.value = "";
-    await addDoc(collection(db, `chats/${orderId}/messages`), { 
-        text: texto, 
-        sender_id: auth.currentUser.uid, 
-        timestamp: serverTimestamp() 
-    });
+    try {
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: texto, 
+            sender_id: auth.currentUser.uid, 
+            timestamp: serverTimestamp() 
+        });
+    } catch (e) {
+        console.error("Erro ao enviar msg:", e);
+        alert("Erro de conexão ao enviar mensagem.");
+    }
+}
+
+// 🛡️ FUNÇÃO AUXILIAR: REGISTRO DE RISCO (NOVA)
+async function registrarRisco(uid, tipo) {
+    try {
+        const userRef = doc(db, "usuarios", uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+            const atualScore = userSnap.data().risk_score || 0;
+            const novoScore = atualScore + (tipo === 'ofensa' ? 20 : 10); // Ofensa pesa mais
+            
+            // Atualiza o risco e data da última infração
+            await updateDoc(userRef, {
+                risk_score: novoScore,
+                last_infraction: serverTimestamp()
+            });
+            
+            // Se passar de 50 pontos, poderia disparar um bloqueio automático aqui no futuro (Pilar 3)
+            if(novoScore >= 50) console.warn("⚠️ ALERTA DE RISCO ALTO PARA O USUÁRIO:", uid);
+        }
+    } catch (e) {
+        console.error("Falha ao registrar risco (silencioso):", e);
+    }
 }
 
 export async function sugerirDetalhe(orderId, tipo) {
