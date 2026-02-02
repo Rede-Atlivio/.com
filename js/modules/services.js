@@ -120,6 +120,7 @@ function renderizarCards(servicos, container) {
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
 
+            // --- LÓGICA DE STATUS (BOLINHA ONLINE/OFFLINE) ---
             let statusClass = isOnline ? "" : "grayscale opacity-75";
             let statusText = isOnline ? "ONLINE" : "OFFLINE";
             let statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
@@ -130,9 +131,23 @@ function renderizarCards(servicos, container) {
                 statusClass += " border-orange-200";
             }
 
+            // --- 🔥 NOVO: LÓGICA DE NÍVEIS E SELOS ---
+            let seloNivel = "";
+            let bordaCard = "border-gray-100"; // Borda padrão
+            
+            if (user.service_level === 'premium') {
+                seloNivel = `<span class="bg-black text-yellow-400 text-[8px] font-black px-2 py-0.5 rounded border border-yellow-500 uppercase shadow-sm">💎 PREMIUM</span>`;
+                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100"; // Destaque Dourado
+            } else if (user.service_level === 'pro') {
+                seloNivel = `<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase shadow-sm">⚡ PRO</span>`;
+                bordaCard = "border-blue-200 shadow-sm"; // Destaque Azul
+            }
+
+            // --- IMAGENS ---
             const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
             const avatarImg = user.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeProf)}&background=random`;
 
+            // --- AÇÕES DE CLIQUE ---
             const clickActionPerfil = isDemo 
                 ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
                 : `window.verPerfilCompleto('${user.id}')`;
@@ -141,29 +156,48 @@ function renderizarCards(servicos, container) {
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
                 : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
 
+            // --- HTML DO CARD ---
             container.innerHTML += `
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative ${statusClass} transition hover:shadow-md flex flex-col h-full animate-fadeIn">
-                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer">
-                        <img src="${coverImg}" class="w-full h-full object-cover">
-                        <div class="absolute bottom-2 left-3 flex items-center gap-2">
+                <div class="bg-white rounded-2xl shadow-sm border ${bordaCard} overflow-hidden relative ${statusClass} transition hover:shadow-lg flex flex-col h-full animate-fadeIn group">
+                    
+                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer overflow-hidden">
+                        <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                        
+                        <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
+                            ${seloNivel}
+                            ${user.is_verified ? '<span class="bg-green-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">✓ VERIFICADO</span>' : ''}
+                        </div>
+                        
+                        <div class="absolute bottom-[-16px] left-3 flex items-end">
                             <img src="${avatarImg}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
-                            <div>
-                                <h3 class="text-white font-bold text-xs text-shadow line-clamp-1">${nomeProf}</h3>
-                                <div class="text-[8px] text-yellow-300">⭐ ${user.rating_avg || 5.0}</div>
-                            </div>
                         </div>
                     </div>
-                    <div class="p-3 flex-1 flex flex-col justify-between">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="pr-1 flex-1">
-                                <p class="text-[10px] font-bold text-gray-800 uppercase truncate max-w-[140px]">${tituloServico}</p>
-                                <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível.'}</p>
+
+                    <div class="p-3 pt-5 flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="pr-1">
+                                <h3 class="text-gray-800 font-bold text-xs truncate max-w-[120px] leading-tight">${nomeProf}</h3>
+                                <div class="flex items-center gap-1 text-[9px] text-yellow-500">
+                                    <span>⭐ ${user.rating_avg || 5.0}</span>
+                                    <span class="text-gray-300">(${user.services_count || 0} jobs)</span>
+                                </div>
                             </div>
-                            <span class="font-black text-green-600 text-xs whitespace-nowrap">${precoDisplay}</span>
+                            <span class="font-black text-green-600 text-xs whitespace-nowrap bg-green-50 px-2 py-0.5 rounded">${precoDisplay}</span>
                         </div>
+                        
+                        <div class="mb-3">
+                             <p class="text-[10px] font-bold text-blue-900 uppercase truncate">${tituloServico}</p>
+                             <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível para serviços.'}</p>
+                        </div>
+
                         <div class="flex items-center gap-2 pt-2 border-t border-gray-50 mt-auto">
-                            <div class="flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span><span class="text-[8px] font-bold text-gray-400">${statusText}</span></div>
-                            <button onclick="${clickActionSolicitar}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow hover:bg-slate-800 flex-1">SOLICITAR</button>
+                            <div class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                                <span class="text-[8px] font-bold text-gray-400 uppercase">${statusText}</span>
+                            </div>
+                            <button onclick="${clickActionSolicitar}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow hover:bg-slate-800 flex-1 transition transform active:scale-95">
+                                SOLICITAR
+                            </button>
                         </div>
                     </div>
                 </div>
