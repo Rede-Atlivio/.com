@@ -52,6 +52,8 @@ function atualizarInterfaceCarteira(saldo) {
 }
 
 function atualizarInterfaceHeader(saldo) {
+         atualizarInterfaceGanhar(saldo); // <--- VAMOS CRIAR ESSA FUNÇÃO
+         carregarHistoricoCarteira(uid);  // <--- VAMOS CRIAR ESSA FUNÇÃO
     const headerName = document.getElementById('provider-header-name');
     if (headerName) {
         let badge = document.getElementById('header-balance-badge');
@@ -138,3 +140,68 @@ window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
+// ============================================================================
+// 4. FUNÇÕES DE INTERFACE DA ABA GANHAR
+// ============================================================================
+
+function atualizarInterfaceGanhar(saldo) {
+    const el = document.getElementById('user-balance'); 
+    if (el) {
+        el.innerText = saldo.toFixed(2).replace('.', ',');
+        el.className = saldo < 0 ? "text-4xl font-black italic text-red-400" : "text-4xl font-black italic text-green-400";
+    }
+}
+
+// 🔥 FUNÇÃO QUE GERA O LINK INFINITEPAY (VERSÃO SIMPLES PARA TESTE)
+window.abrirCheckoutPix = (valor) => {
+    // Sua tag real confirmada
+    const seuUsuarioInfinite = "atlivio-servicos"; 
+    const link = `https://pay.infinitepay.io/${seuUsuarioInfinite}/${valor}`;
+    
+    console.log(`🚀 Abrindo Checkout de R$ ${valor} via InfinitePay`);
+    window.open(link, '_blank');
+};
+
+// ============================================================================
+// 5. HISTÓRICO DE TRANSAÇÕES (VISUAL)
+// ============================================================================
+async function carregarHistoricoCarteira(uid) {
+    const container = document.getElementById('lista-transacoes-carteira');
+    if (!container) return;
+
+    try {
+        const { collection, query, where, orderBy, limit, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        const q = query(
+            collection(db, "transactions"),
+            where("provider_id", "==", uid),
+            orderBy("created_at", "desc"),
+            limit(10)
+        );
+
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            container.innerHTML = `<p class="text-center text-[10px] text-gray-500 py-4 italic">Nenhuma movimentação ainda.</p>`;
+            return;
+        }
+
+        container.innerHTML = "";
+        snap.forEach(doc => {
+            const t = doc.data();
+            const isPositivo = t.amount > 0;
+            container.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm animate-fadeIn mb-2">
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-gray-800">${t.description || 'Transação'}</p>
+                        <p class="text-[8px] text-gray-400">${t.created_at?.toDate().toLocaleDateString() || 'Recentemente'}</p>
+                    </div>
+                    <span class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-red-500'}">
+                        ${isPositivo ? '+' : ''} R$ ${Math.abs(t.amount).toFixed(2)}
+                    </span>
+                </div>
+            `;
+        });
+    } catch (e) {
+        console.warn("Erro ao carregar histórico:", e);
+    }
+}
