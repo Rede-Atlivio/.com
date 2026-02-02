@@ -134,10 +134,31 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
 // ============================================================================
 // 4. INFINITEPAY & HISTÓRICO
 // ============================================================================
-window.abrirCheckoutPix = (valor) => {
-    const seuUsuarioInfinite = "atlivio-servicos"; 
-    const link = `https://pay.infinitepay.io/${seuUsuarioInfinite}/${valor}`;
-    window.open(link, '_blank');
+window.abrirCheckoutPix = async (valor) => {
+    const user = auth.currentUser;
+    if (!user) return alert("Por favor, faça login para recarregar.");
+
+    console.log(`🚀 Iniciando automação de recarga: R$ ${valor}`);
+
+    // Configuração baseada na documentação que você localizou
+    const payload = {
+        "handle": "atlivio-servicos", 
+        "order_nsu": user.uid, // O segredo da automação: rastreia o usuário
+        "itens": [
+            {
+                "quantity": 1,
+                "price": valor * 100, // InfinitePay usa centavos (Ex: 2000 = R$ 20)
+                "description": `Recarga de Saldo - Atlivio`
+            }
+        ]
+    };
+
+    // No Estágio 02 real, faremos um fetch para o seu Firebase Function aqui.
+    // Para resolver seu erro 404 AGORA e manter a automação:
+    const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}`;
+    
+    console.log("🔗 Link Automático Gerado:", linkDinamico);
+    window.open(linkDinamico, '_blank');
 };
 
 async function carregarHistoricoCarteira(uid) {
