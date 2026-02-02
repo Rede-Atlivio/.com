@@ -1,19 +1,28 @@
-import { auth, db, provider } from './app.js';
-import { signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// 1. AJUSTE NOS IMPORTS (Importe 'app' e 'getAuth')
+import { app, db, provider } from './app.js'; // ❌ Não importe 'auth' daqui
+import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-// FUNÇÃO DE AUTOMAÇÃO (Insira após os imports)
+
+// 2. INICIALIZAÇÃO BLINDADA (Isso mata o erro vermelho)
+export const auth = getAuth(app); // ✅ Criamos o auth aqui mesmo!
+
+// 3. FUNÇÃO DE AUTOMAÇÃO
 async function concederBonusSeAtivo(userUid) {
     try {
         const configSnap = await getDoc(doc(db, "settings", "global"));
         const config = configSnap.data();
 
         if (config?.bonus_boas_vindas_ativo) {
-            await updateDoc(doc(db, "usuarios", userUid), {
+            // Usa updateDoc, mas se falhar (doc não existe), usa setDoc
+            const userRef = doc(db, "usuarios", userUid);
+            await setDoc(userRef, {
                 wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
+                saldo: parseFloat(config.valor_bonus_promocional) || 20.00, // Garante que o saldo visual apareça
                 bonus_inicial_ok: true
-            });
-            console.log("🎁 Bônus de R$ 20 concedido via Painel!");
+            }, { merge: true });
+            
+            console.log("🎁 Bônus de R$ 20 concedido automaticamente!");
         }
     } catch(e) { console.error("Erro ao dar bônus:", e); }
 }
