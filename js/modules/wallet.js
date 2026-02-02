@@ -135,7 +135,7 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
 // 4. INFINITEPAY & HISTÓRICO
 // ============================================================================
 window.abrirCheckoutPix = (valor) => {
-    const seuUsuarioInfinite = "atlivio-servicos"; 
+    const seuUsuarioInfinite = "ATLIVIO-SERVICOS"; 
     const link = `https://pay.infinitepay.io/${seuUsuarioInfinite}/${valor}`;
     window.open(link, '_blank');
 };
