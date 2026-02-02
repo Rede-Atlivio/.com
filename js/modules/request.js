@@ -7,7 +7,7 @@ let mem_ProviderId = null;
 let mem_ProviderName = null;
 let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
-let mem_SelectedServiceTitle = ""; // Novo: Guarda o nome do serviço escolhido
+let mem_SelectedServiceTitle = ""; 
 
 // --- GATILHOS ---
 auth.onAuthStateChanged(user => {
@@ -17,7 +17,7 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================================
-// 1. ABRIR O MODAL E CARREGAR LISTA DE SERVIÇOS
+// 1. ABRIR O MODAL E CARREGAR LISTA DE SERVIÇOS (CLIENTE)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
@@ -30,7 +30,7 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         modal.classList.remove('hidden');
         
         // Elementos visuais
-        const elTitle = modal.querySelector('h3') || modal.querySelector('.font-bold'); // Tenta achar o título
+        const elTitle = modal.querySelector('h3') || modal.querySelector('.font-bold'); 
         if(elTitle) elTitle.innerText = `Contratar ${providerName}`;
 
         const containerServicos = document.getElementById('service-selection-container');
@@ -179,7 +179,8 @@ export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     if (!user) return alert("Sessão expirada.");
 
-    if (!podeTrabalhar()) return; 
+    // CLIENTE NÃO PRECISA DE TRAVA DE TRABALHO, SÓ PAGAMENTO (FUTURO)
+    // if (!podeTrabalhar()) return; 
 
     const min = mem_BasePrice * 0.80;
     const max = mem_BasePrice * 1.30;
@@ -237,7 +238,9 @@ export async function enviarPropostaAgora() {
     }
 }
 
-// RADAR DO PRESTADOR (Mantido igual)
+// ============================================================================
+// 2. RADAR DO PRESTADOR (COM A TRAVA PROATIVA)
+// ============================================================================
 export function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
@@ -292,11 +295,47 @@ function fecharModalRadar() {
     if (el) el.classList.add('hidden');
 }
 
+// 🔥 AQUI ESTÁ A CORREÇÃO: ACEITAR COM TRAVA PROATIVA 🔥
 export async function aceitarPedidoRadar(orderId) {
     fecharModalRadar();
-    if (!podeTrabalhar()) return;
-
+    
+    // Não usamos mais só o podeTrabalhar(), usamos a lógica completa abaixo
+    
     try {
+        const uid = auth.currentUser.uid;
+
+        // 1. Busca dados do Pedido para saber o Valor
+        const orderSnap = await getDoc(doc(db, "orders", orderId));
+        if (!orderSnap.exists()) return alert("Pedido expirou ou foi cancelado.");
+        
+        const orderData = orderSnap.data();
+        const valorServico = parseFloat(orderData.offer_value || 0);
+        const taxa = valorServico * 0.20; // 20% de Taxa
+
+        // 2. Busca o Saldo Atual do Prestador (Tenta 'users' ou 'usuarios')
+        let saldoAtual = 0;
+        let userSnap = await getDoc(doc(db, "users", uid));
+        if (!userSnap.exists()) userSnap = await getDoc(doc(db, "usuarios", uid)); // Fallback
+        
+        if (userSnap.exists()) {
+            saldoAtual = parseFloat(userSnap.data().saldo || 0);
+        }
+
+        // 3. A TRAVA PROATIVA (Cálculo do Futuro) 🛡️
+        const LIMITE_DEBITO = -60.00; // Limite de R$ 60,00 negativo
+        const saldoFuturo = saldoAtual - taxa;
+
+        // Se o saldo após a taxa for menor que -60, BLOQUEIA.
+        if (saldoFuturo < LIMITE_DEBITO) {
+             alert(`⛔ AÇÃO BLOQUEADA\n\nAceitar este serviço de R$ ${valorServico} geraria uma taxa de R$ ${taxa.toFixed(2)}.\n\nSeu saldo iria para R$ ${saldoFuturo.toFixed(2)}, o que ultrapassa o limite permitido (R$ ${LIMITE_DEBITO}).\n\nPor favor, faça uma recarga para liberar este serviço.`);
+             
+             // Redireciona para a carteira
+             const tabGanhar = document.getElementById('tab-ganhar');
+             if(tabGanhar) tabGanhar.click();
+             return; // PARA TUDO AQUI
+        }
+
+        // 4. Se passou na trava, executa o aceite normalmente
         await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
         await setDoc(doc(db, "chats", orderId), { status: 'active' }, { merge: true });
 
@@ -313,7 +352,7 @@ export async function aceitarPedidoRadar(orderId) {
 
 export async function recusarPedidoReq(orderId) {
     fecharModalRadar();
-    if(!confirm("Recusar?")) return;
+    if(!confirm("Recusar serviço?")) return;
     await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
 }
 
