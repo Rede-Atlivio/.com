@@ -188,8 +188,7 @@ export async function enviarMensagemChat(orderId, step) {
 
         if (encontrouOfensa || (temNumeroSuspeito && encontrouEvasao) || encontrouEvasao) {
             
-            // 🚨 GRAVA A INFRAÇÃO NO BANCO (RISK SCORE)
-            // O usuário não vê isso, mas o sistema marca ele.
+            // 🚨 GRAVA A INFRAÇÃO NO BANCO (AQUI ESTÁ A MÁGICA QUE FALTAVA) 👇
             console.log("🛡️ Moderação: Infração detectada. Registrando risco...");
             await registrarRisco(auth.currentUser.uid, encontrouOfensa ? 'ofensa' : 'tentativa_evasao');
 
