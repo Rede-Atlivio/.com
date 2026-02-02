@@ -204,8 +204,8 @@ window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
 // 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS-VINDAS
 function verificarFaixaBonus(saldo) {
-    // Só mostra se o saldo for exatamente o bônus (20) e se ele ainda não fechou hoje
-    const jaFechou = sessionStorage.getItem('atlivio_bonus_visto');
+    // ✅ CORREÇÃO: Usar localStorage para lembrar "para sempre" (ou até limpar cache)
+    const jaFechou = localStorage.getItem('atlivio_bonus_visto'); 
     
     if (saldo === 20 && !jaFechou) {
         let banner = document.getElementById('bonus-banner');
@@ -228,7 +228,8 @@ function verificarFaixaBonus(saldo) {
 
             document.getElementById('close-bonus').onclick = () => {
                 banner.remove();
-                sessionStorage.setItem('atlivio_bonus_visto', 'true');
+                // ✅ GRAVA NA MEMÓRIA PERMANENTE DO NAVEGADOR
+                localStorage.setItem('atlivio_bonus_visto', 'true'); 
             };
         }
     } else {
