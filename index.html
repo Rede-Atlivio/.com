@@ -56,6 +56,14 @@
             -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
             -webkit-text-fill-color: white !important;
         }
+        /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 2s infinite;
+        }
     </style>
 
     <script>
