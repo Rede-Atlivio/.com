@@ -56,19 +56,18 @@ export async function carregarServicos(filtroCategoria = null) {
     let q = query(collection(db, "active_providers"), where("status", "==", "aprovado"));
     if (servicesUnsubscribe) servicesUnsubscribe();
 
-    servicesUnsubscribe = onSnapshot(q, (snapshot) => {
+servicesUnsubscribe = onSnapshot(q, (snapshot) => {
         let servicos = [];
         snapshot.forEach((doc) => {
             let data = doc.data();
             data.id = doc.id;
+            // 🔥 NOVO: Calcula a Pontuação de Relevância (Algoritmo do Feed)
+            data.score = calcularRelevancia(data); 
             servicos.push(data);
         });
 
-        servicos.sort((a, b) => {
-            if (!!a.is_demo !== !!b.is_demo) return a.is_demo ? 1 : -1;
-            if (a.is_online !== b.is_online) return a.is_online ? -1 : 1;
-            return (b.rating_avg || 0) - (a.rating_avg || 0);
-        });
+        // 🔥 NOVO: Ordenação por Score (Quem tem mais pontos aparece primeiro)
+        servicos.sort((a, b) => b.score - a.score);
 
         if (filtroCategoria && filtroCategoria !== 'todos') {
             servicos = servicos.filter(s => 
@@ -77,6 +76,29 @@ export async function carregarServicos(filtroCategoria = null) {
         }
         renderizarCards(servicos, container);
     });
+}
+
+// 🧠 NOVO: ALGORITMO DE RELEVÂNCIA (Calcula os pontos para o ranking)
+function calcularRelevancia(user) {
+    let score = 0;
+
+    // 1. Simulados vão para o final da fila
+    if (user.is_demo) return -100;
+
+    // 2. Online ganha destaque máximo (prioridade)
+    if (user.is_online) score += 500;
+
+    // 3. Avaliação (Estrelas * 20 pontos)
+    score += (user.rating_avg || 5.0) * 20;
+
+    // 4. Nível de Serviço (Premium > Pro > Basic)
+    if (user.service_level === 'premium') score += 100;
+    else if (user.service_level === 'pro') score += 50;
+
+    // 5. Verificado ganha bônus
+    if (user.is_verified) score += 30;
+
+    return score;
 }
 
 function renderizarCards(servicos, container) {
