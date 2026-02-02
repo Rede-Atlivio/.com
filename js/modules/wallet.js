@@ -28,7 +28,7 @@ export function iniciarMonitoramentoCarteira() {
             if (!window.userProfile) window.userProfile = {};
             window.userProfile.balance = saldo;
 
-            / ✅ Atualização unificada das interfaces
+            // ✅ Atualização unificada das interfaces
             verificarFaixaBonus(saldo);
             atualizarInterfaceCarteira(saldo);
             atualizarInterfaceHeader(saldo);
