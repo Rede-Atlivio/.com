@@ -378,10 +378,6 @@ export async function confirmarAcordo(orderId, aceitar) {
         console.error("Erro na trava de segurança:", err);
     }
     // --- FIM DA TRAVA PRIORITÁRIA ---
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            // ... restante do código (A transação agora só roda se o usuário tiver saldo)
     
     try {
         await runTransaction(db, async (transaction) => {
