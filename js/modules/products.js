@@ -1,4 +1,4 @@
-import { db } from '../app.js';
+import { db, auth } from '../config.js';
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function carregarProdutos() {
