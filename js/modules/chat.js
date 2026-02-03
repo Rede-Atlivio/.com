@@ -369,7 +369,7 @@ export async function confirmarAcordo(orderId, aceitar) {
 
         if (meuSaldo < reservaNecessaria) {
             // Mensagem Prioritária: Só ele vê que ELE está sem saldo
-            if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nSenhor, é necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
+            if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
                 window.switchTab('ganhar');
             }
             return; // Encerra aqui. Não executa a transação e não avisa sobre o outro.
