@@ -26,11 +26,20 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
     // --- 1. BUSCA REGRAS DO ADMIN PARA CÁLCULO DINÂMICO ---
-    let configAdmin = { reserva_minima: 20, porcentagem_reserva: 10, reserva_maxima: 200 }; // Fallback de segurança
-    try {
-        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
-        if (configSnap.exists()) configAdmin = configSnap.data();
-    } catch (e) { console.error("Erro ao ler config admin:", e); }
+    let configAdmin = { valor_minimo: 20, valor_maximo: 500, porcentagem_reserva: 10 }; 
+try {
+    const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+    if (configSnap.exists()) {
+        const d = configSnap.data();
+        configAdmin = {
+            valor_minimo: d.valor_minimo || 20,
+            valor_maximo: d.valor_maximo || 500,
+            porcentagem_reserva: d.porcentagem_reserva || 10,
+            reserva_minima: d.reserva_minima || 20, // Mantém suporte a reserva se usar
+            reserva_maxima: d.reserva_maxima || 200
+        };
+    }
+} catch (e) { console.error("Erro ao sincronizar regras financeiras:", e); }
     
     // Armazena na janela para as outras funções de cálculo usarem
     window.configFinanceiroAtiva = configAdmin; 
