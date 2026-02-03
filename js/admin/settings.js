@@ -27,9 +27,31 @@ export async function init() {
                 </button>
             </div>
 
-            <div class="glass-panel p-6 border border-purple-500/30">
-                <h2 class="text-xl font-bold text-white mb-2">🎁 Regras de Bônus</h2>
-                <p class="text-xs text-gray-400 mb-6">Controle as campanhas de boas-vindas e taxas de intermediação.</p>
+            <div class="glass-panel p-6 border border-blue-500/30">
+    <h2 class="text-xl font-bold text-white mb-2">💰 Regras Financeiras Master</h2>
+    <p class="text-xs text-gray-400 mb-6">Controle os limites de valores e taxas globais do sistema.</p>
+    
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Min (R$)</label>
+            <input type="number" id="conf-val-min" class="inp-editor h-10 text-white" placeholder="20.00">
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-gray-500 uppercase">Max (R$)</label>
+            <input type="number" id="conf-val-max" class="inp-editor h-10 text-white" placeholder="500.00">
+        </div>
+    </div>
+
+    <label class="inp-label">TAXA DE RESERVA (%)</label>
+    <input type="number" id="conf-taxa-reserva" class="inp-editor h-10 text-white mb-4" placeholder="10">
+
+    <label class="inp-label">BÔNUS INICIAL (R$)</label>
+    <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white mb-6" placeholder="20.00">
+
+    <button onclick="window.saveBusinessRules()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
+        💾 ATUALIZAR REGRAS GLOBAIS
+    </button>
+</div>
                 
                 <label class="inp-label">VALOR DO BÔNUS INICIAL (R$)</label>
                 <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white mb-2" placeholder="20.00">
