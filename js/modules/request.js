@@ -266,14 +266,29 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (COM A TRAVA PROATIVA)
+// 2. RADAR DO PRESTADOR (SINCRONIA ADMIN & TRAVA PROATIVA)
 // ============================================================================
-export function iniciarRadarPrestador(uid) {
+export async function iniciarRadarPrestador(uid) {
+    // --- 1. SINCRONIA DE TAXA COM PAINEL ADMIN ---
+    try {
+        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        if (configSnap.exists()) {
+            window.configFinanceiroAtiva = configSnap.data();
+        }
+    } catch (e) { 
+        console.error("Erro ao sincronizar taxas do radar:", e); 
+    }
+
+    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") fecharModalRadar();
+            if (change.type === "added") {
+                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
+            }
+            if (change.type === "removed") {
+                fecharModalRadar();
+            }
         });
     });
 }
