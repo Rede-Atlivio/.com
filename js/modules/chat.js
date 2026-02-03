@@ -1,6 +1,11 @@
-import { db, auth } from '../app.js';
+// CORREÇÃO DE IMPORTAÇÃO (EVITA O CICLO DA MORTE)
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { processarCobrancaTaxa } from './wallet.js';
-import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// Inicializa as variáveis locais direto da fonte
+const auth = getAuth();
+const db = getFirestore();
 // --- GATILHOS E NAVEGAÇÃO ---
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
