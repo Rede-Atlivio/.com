@@ -4,16 +4,16 @@ import { db, auth } from '../config.js';
 
 import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-export function iniciarSistemaNotificacoes() {
+    window.iniciarSistemaNotificacoes = () => {
     auth.onAuthStateChanged(user => {
         if (user) {
             console.log("🔔 Iniciando escuta de notificações pessoais...");
-            escutarNotificacoes(user.uid);
+            window.escutarNotificacoes(user.uid);
         }
     });
-}
+};
 
-function escutarNotificacoes(uid) {
+    window.escutarNotificacoes = (uid) => {
     // Busca notificações NÃO LIDAS (read == false)
     const q = query(
         collection(db, "user_notifications"), 
@@ -49,13 +49,11 @@ function escutarNotificacoes(uid) {
         // Se não houver nada novo, encerra aqui
         if (snap.empty) return;
 
-        // Pega a notificação mais recente para exibir o Banner
+        // Pega a mais recente e mostra a barra
         const notif = snap.docs[0];
-        const data = notif.data();
-        
-        mostrarBarraNotificacao(notif.id, data);
-    });
-}
+        mostrarBarraNotificacao(notif.id, notif.data());
+    }); // <--- ISSO FECHA O ONSNAPSHOT
+} // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
 function mostrarBarraNotificacao(id, data) {
     // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
