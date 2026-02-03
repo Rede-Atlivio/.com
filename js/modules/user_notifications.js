@@ -38,12 +38,23 @@ function escutarNotificacoes(uid) {
 }
 
 function mostrarBarraNotificacao(id, data) {
-    // Cores baseadas no tipo
-    const isGift = data.type === 'gift';
-    const bgColor = isGift ? 'bg-green-600' : 'bg-blue-600';
-    const icon = isGift ? '🎁' : 'ℹ️';
-    const btnText = gerarTextoBotao(data.action);
+    // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
+    const bgColorMap = {
+        'gift': 'bg-green-600',
+        'order': 'bg-blue-700',
+        'chat': 'bg-indigo-600',
+        'wallet': 'bg-emerald-600'
+    };
+    const iconMap = {
+        'gift': '🎁',
+        'order': '🛠️',
+        'chat': '💬',
+        'wallet': '💰'
+    };
 
+    const bgColor = bgColorMap[data.type] || 'bg-slate-800';
+    const icon = iconMap[data.type] || '🔔';
+    const btnText = gerarTextoBotao(data.action);
     const div = document.createElement('div');
     div.id = 'user-alert-bar';
     div.className = `${bgColor} text-white px-4 py-3 shadow-lg flex items-center justify-between fixed top-0 w-full z-[100] animate-fadeIn`;
