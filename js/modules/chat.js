@@ -1,12 +1,14 @@
-// CORREÇÃO DE IMPORTAÇÃO (EVITA O CICLO DA MORTE)
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { processarCobrancaTaxa } from './wallet.js';
+// ============================================================================
+// js/modules/chat.js - ATUALIZAÇÃO 1: CONEXÃO CENTRALIZADA
+// ============================================================================
 
-// Inicializa as variáveis locais direto da fonte
-const auth = getAuth();
-const db = getFirestore();
-// --- GATILHOS E NAVEGAÇÃO ---
+// 1. IMPORTAÇÃO DO MOTOR CENTRAL (Aqui você usa a conexão oficial do Atlivio)
+import { db, auth } from '../config.js'; 
+
+// 2. FERRAMENTAS DO FIREBASE
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// --- GATILHOS E NAVEGAÇÃO GLOBAL ---
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
@@ -14,20 +16,25 @@ window.irParaChat = () => {
     window.scrollTo(0,0);
 };
 
+// Conecta as funções com os botões do HTML (Mata o erro "not defined")
 window.carregarChat = carregarPedidosAtivos;
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
-window.sugerirDetalhe = sugerirDetalhe; // Nova função global
+window.finalizarServicoPassoFinal = (id) => window.finalizarServicoPassoFinalAction(id);
 window.voltarParaListaPedidos = () => {
     document.getElementById('painel-chat-individual')?.classList.add('hidden');
     const painelLista = document.getElementById('painel-pedidos');
     if(painelLista) painelLista.classList.remove('hidden');
 };
 
-// ============================================================================
-// 1. LISTA DE PEDIDOS ATIVOS
-// ============================================================================
+// Função que o botão ⏰ Horário chama:
+window.sugerirDetalhe = (orderId, campo) => {
+    const input = document.getElementById('chat-input-msg');
+    if(!input) return;
+    input.value = campo === 'Horário' ? "Qual o melhor horário para você?" : "Pode confirmar o local?";
+    input.focus();
+};
 export async function carregarPedidosAtivos() {
     const container = document.getElementById('sec-chat');
     if (!container || !auth.currentUser) return;
