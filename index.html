@@ -775,27 +775,19 @@
         } catch (e) { console.log("Erro config:", e); }
     }
 
-    //Executa a carga do alerta
-    loadGlobalAlert();
+// 1. RASTREADOR UNIVERSAL (Item 39)
+// Captura quem indicou o link e salva para o bônus de afiliado
+const p = new URLSearchParams(window.location.search);
+const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
 
-    // 2. RASTREADOR UNIVERSAL (Item 39)
-    const p = new URLSearchParams(window.location.search);
-    const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
-    if(origem) {
-        console.log("🔗 RASTREADO:", origem);
-        localStorage.setItem("traffic_source", origem);
-    }
+if(origem) {
+    console.log("🔗 ORIGEM RASTREADA:", origem);
+    localStorage.setItem("traffic_source", origem);
+}
+
+// 2. EXECUÇÃO DAS CARGAS INICIAIS
+loadGlobalAlert();
 </script>
-        // 2. RASTREADOR UNIVERSAL (Item 39)
-        const p = new URLSearchParams(window.location.search);
-        const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
-        if(origem) {
-            console.log("🔗 RASTREADO:", origem);
-            localStorage.setItem("traffic_source", origem);
-        }
-
-        loadGlobalAlert();
-    </script>
     
     <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
         <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
