@@ -851,51 +851,61 @@
         </div>
     </div>
 
-    <script>
-        // TEXTOS JURÍDICOS ATUALIZADOS (V2)
-        const TEXTO_TERMOS = `
-            1. ACEITAÇÃO: Ao usar a Atlivio, você concorda com estes termos.
-            2. SERVIÇO: Somos uma plataforma intermediadora. Não temos vínculo empregatício com prestadores.
-            3. PAGAMENTOS: Os valores exibidos na carteira representam créditos referentes aos serviços realizados e se tornam disponíveis para saque conforme as regras da plataforma.
-            4. RESPONSABILIDADE: A Atlivio atua como plataforma intermediadora, conectando Clientes e Prestadores, não se responsabilizando diretamente pela execução dos serviços, mas podendo intervir em casos de descumprimento das regras da plataforma.
-            5. CONDUTA: Usuários ofensivos ou fraudulentos serão banidos sem aviso prévio.
-            6. DADOS: Seus dados são usados apenas para funcionamento da plataforma.
-        `;
+    <script type="module">
+    import { db, auth } from './js/config.js';
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const TEXTO_PRIVACIDADE = `
-            1. COLETA: Coletamos Nome e WhatsApp para identificar e operar seu perfil na plataforma.
-            2. USO: Seus dados servem para conectar Clientes e Prestadores.
-            3. SEGURANÇA: Utilizamos criptografia SSL e banco de dados Google Firebase.
-            4. COMPARTILHAMENTO: Não vendemos seus dados para terceiros.
-        `;
+    // 1. TEXTOS JURÍDICOS COMPLETOS (V3)
+    const TEXTOS = {
+        termos: `📜 TERMOS DE USO — ATLIVIO\n1. ACEITAÇÃO: Uso implica em acordo total.\n2. NATUREZA: Intermediação híbrida.\n3. CARTEIRA: Créditos para serviços internos.`,
+        privacidade: `🔐 PRIVACIDADE — ATLIVIO\n1. COLETA: Nome e WhatsApp (Item 39).\n2. SEGURANÇA: Google Firebase.`
+    };
 
-        // Função para abrir o modal correto
-        function openTerms(type) {
-            const modal = document.getElementById('modal-terms');
-            const title = document.getElementById('term-title');
-            const content = document.getElementById('term-content');
-            
+    // 2. FUNÇÃO PARA ABRIR TERMOS (Exposta para o navegador)
+    window.openTerms = (type) => {
+        const modal = document.getElementById('modal-terms');
+        const content = document.getElementById('term-content');
+        if(modal && content) {
+            content.innerText = TEXTOS[type];
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
-            if(type === 'termos') {
-                title.innerText = "Termos de Uso da Plataforma";
-                content.innerText = TEXTO_TERMOS;
-            } else {
-                title.innerText = "Política de Privacidade";
-                content.innerText = TEXTO_PRIVACIDADE;
-            }
         }
+    };
 
-        // Ligar os cliques dos links
-        document.addEventListener("DOMContentLoaded", () => {
-            const links = document.querySelectorAll('#form-onboarding a');
-            if(links.length >= 2) {
-                links[0].href = "javascript:openTerms('termos')";
-                links[1].href = "javascript:openTerms('privacidade')";
-            }
-        });
-    </script>
+    // 3. SALVAR CADASTRO E DAR BÔNUS DE R$ 20,00
+    document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-onboard-submit');
+        const nome = document.getElementById('inp-onboard-name').value;
+        const fone = document.getElementById('inp-onboard-phone').value;
+        const uid = auth.currentUser?.uid;
+
+        if (!uid) return alert("Erro: Faça login primeiro!");
+        btn.disabled = true;
+
+        try {
+            const userRef = doc(db, "usuarios", uid);
+            const origem = localStorage.getItem("traffic_source") || "direto"; // Item 39
+
+            await setDoc(userRef, {
+                nome: nome,
+                telefone: fone,
+                wallet_balance: 20.00, // 💰 BÔNUS ATIVADO
+                traffic_source: origem, // 🔗 RASTREADO
+                onboarding_completed: true,
+                created_at: serverTimestamp()
+            }, { merge: true });
+
+            alert(`Parabéns ${nome}! Você ganhou R$ 20,00 de bônus!`);
+            document.getElementById('modal-onboarding').classList.add('hidden');
+        } catch (e) { alert("Erro ao salvar."); btn.disabled = false; }
+    });
+
+    // 4. ATIVAR RASTREADOR (Item 39)
+    const p = new URLSearchParams(window.location.search);
+    const ref = p.get('ref') || p.get('utm_source');
+    if(ref) localStorage.setItem("traffic_source", ref);
+</script>
 <div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
     <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         
