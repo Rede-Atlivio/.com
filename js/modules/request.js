@@ -20,11 +20,22 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================================
-// 1. ABRIR O MODAL E CARREGAR LISTA DE SERVIÇOS (CLIENTE)
+// 1. MODAL DE SOLICITAÇÃO (CONTROLE DINÂMICO ADMIN & ANTI-NaN)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
+    // --- 1. BUSCA REGRAS DO ADMIN PARA CÁLCULO DINÂMICO ---
+    let configAdmin = { reserva_minima: 20, porcentagem_reserva: 10, reserva_maxima: 200 }; // Fallback de segurança
+    try {
+        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        if (configSnap.exists()) configAdmin = configSnap.data();
+    } catch (e) { console.error("Erro ao ler config admin:", e); }
+    
+    // Armazena na janela para as outras funções de cálculo usarem
+    window.configFinanceiroAtiva = configAdmin; 
+
+    // --- 2. CONFIGURAÇÃO DOS DADOS DO PRESTADOR ---
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
     
@@ -32,13 +43,11 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
     if(modal) {
         modal.classList.remove('hidden');
         
-        // Elementos visuais
         const elTitle = modal.querySelector('h3') || modal.querySelector('.font-bold'); 
         if(elTitle) elTitle.innerText = `Contratar ${providerName}`;
 
         const containerServicos = document.getElementById('service-selection-container');
         
-        // 1. BUSCA OS SERVIÇOS DO PRESTADOR PARA O DROPDOWN
         try {
             if(containerServicos) containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
             
@@ -50,7 +59,6 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
                 servicos = docSnap.data().services;
             }
 
-            // Se tiver serviços cadastrados, cria o dropdown
             if (servicos.length > 0) {
                 htmlSelect = `
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Escolha o Serviço:</label>
@@ -62,11 +70,9 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
                         `).join('')}
                     </select>
                 `;
-                // Define o preço inicial como o do primeiro item da lista
                 mem_BasePrice = parseFloat(servicos[0].price);
                 mem_SelectedServiceTitle = servicos[0].title || servicos[0].category;
             } else {
-                // Fallback se não tiver lista (usa o preço do card)
                 htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2">Serviço Geral</p>`;
                 mem_BasePrice = parseFloat(initialPrice);
                 mem_SelectedServiceTitle = "Serviço Geral";
@@ -79,7 +85,6 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
             mem_BasePrice = parseFloat(initialPrice);
         }
 
-        // Configuração Inicial de Valores
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
         injetarBotoesOferta(modal);
@@ -92,8 +97,6 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         } 
     }
 }
-
-// Função chamada quando o cliente muda o <select>
 window.mudarServicoSelecionado = (select) => {
     const price = parseFloat(select.value);
     const title = select.options[select.selectedIndex].getAttribute('data-title');
