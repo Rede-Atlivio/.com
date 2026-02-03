@@ -680,104 +680,85 @@
         const audio = document.getElementById('online-sound');
         if(audio) audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
     });
+<script type="module" src="./js/app.js?v=15.4"></script>
+<script type="module" src="./js/auth.js?v=15.4"></script>
+<script type="module" src="./js/modules/missions.js?v=15.4"></script>
+<script type="module" src="./js/modules/opportunities.js?v=15.4"></script>
+<script type="module" src="./js/modules/services.js?v=15.4"></script>
+<script type="module" src="./js/modules/products.js?v=15.4"></script>
+<script type="module" src="./js/modules/request.js?v=15.4"></script>
+<script type="module" src="./js/modules/jobs.js?v=15.4"></script>
+<script type="module" src="./js/modules/chat.js?v=15.4"></script>
+<script type="module" src="./js/modules/wallet.js?v=15.4"></script>
+<script type="module" src="./js/modules/reviews.js?v=15.4"></script>
+
+<script type="module">
+    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { app } from './js/config.js'; // ✅ Puxa a conexão oficial
+
+    const auth = getAuth(app);
+    auth.languageCode = 'pt-br';
+
+    // 🎨 MÁSCARA AUTOMÁTICA
+    window.mascaraTelefone = (input) => {
+        let v = input.value.replace(/\D/g,'');
+        v = v.substring(0, 11);
+        if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+        if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
+        input.value = v;
+    };
+
+    // SETUP RECAPTCHA
+    const setupRecaptcha = () => {
+        if(!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible'
+            });
+        }
+    };
+
+    // ENVIAR SMS
+    window.enviarSMSLogin = async () => {
+        let rawPhone = document.getElementById('login-phone').value;
+        let cleanPhone = rawPhone.replace(/\D/g, ''); 
+        if(cleanPhone.length < 10) return alert("Digite o número completo com DDD!");
+
+        const finalPhone = '+55' + cleanPhone;
+        const btn = document.getElementById('btn-login-send');
+        btn.disabled = true;
+        btn.innerText = "ENVIANDO...";
+
+        setupRecaptcha();
+        try {
+            const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, window.recaptchaVerifier);
+            window.confirmationResult = confirmationResult;
+            document.getElementById('lbl-login-phone').innerText = finalPhone;
+            document.getElementById('login-step-phone').classList.add('hidden');
+            document.getElementById('login-step-code').classList.remove('hidden');
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao enviar: " + error.message);
+            btn.disabled = false;
+            btn.innerText = "ENTRAR AGORA 🚀";
+        }
+    };
+
+    // CONFIRMAR CÓDIGO
+    window.confirmarCodigoLogin = async () => {
+        const code = document.getElementById('login-code').value;
+        if(code.length < 6) return alert("O código deve ter 6 números.");
+        const btn = document.getElementById('btn-login-verify');
+        btn.disabled = true;
+        try {
+            await window.confirmationResult.confirm(code);
+            console.log("Login Sucesso!");
+            // O auth.onAuthStateChanged no app.js cuidará do resto
+        } catch (error) {
+            alert("Código incorreto!");
+            btn.disabled = false;
+        }
+    };
 </script>
-
-    <script type="module" src="./js/app.js?v=15.4"></script>
-    <script type="module" src="./js/auth.js?v=15.4"></script>
-    <script type="module" src="./js/modules/missions.js?v=15.4"></script>
-    <script type="module" src="./js/modules/opportunities.js?v=15.4"></script>
-    <script type="module" src="./js/modules/services.js?v=15.4"></script>
-    <script type="module" src="./js/modules/products.js?v=15.4"></script>
-    
-    <script type="module" src="./js/modules/request.js?v=15.4"></script>
-    <script type="module" src="./js/modules/jobs.js?v=15.4"></script>
-    <script type="module" src="./js/modules/chat.js?v=15.4"></script>
-    <script type="module" src="./js/modules/wallet.js?v=15.4"></script>
-    
-    <script type="module" src="./js/modules/reviews.js?v=15.4"></script>
-    
-    <script type="module">
-        import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { app } from './js/config.js';
-        const auth = getAuth(app);
-        auth.languageCode = 'pt-br';
-
-        // 🎨 MÁSCARA AUTOMÁTICA
-        window.mascaraTelefone = (input) => {
-            let v = input.value.replace(/\D/g,'');
-            v = v.substring(0, 11);
-            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
-            input.value = v;
-        };
-
-        // SETUP RECAPTCHA
-        const setupRecaptcha = () => {
-            if(!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    'size': 'invisible'
-                });
-            }
-        };
-
-        // ENVIAR SMS
-        window.enviarSMSLogin = async () => {
-            let rawPhone = document.getElementById('login-phone').value;
-            let cleanPhone = rawPhone.replace(/\D/g, ''); 
-
-            if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 759...)");
-
-            // Adiciona +55
-            const finalPhone = '+55' + cleanPhone;
-
-            const btn = document.getElementById('btn-login-send');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerText = "ENVIANDO...";
-
-            setupRecaptcha();
-            const appVerifier = window.recaptchaVerifier;
-
-            try {
-                const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
-                window.confirmationResult = confirmationResult;
-                
-                document.getElementById('lbl-login-phone').innerText = finalPhone;
-                document.getElementById('login-step-phone').classList.add('hidden');
-                document.getElementById('login-step-code').classList.remove('hidden');
-
-            } catch (error) {
-                console.error(error);
-                if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = null;
-                btn.disabled = false;
-                btn.innerText = originalText;
-                
-                if(error.code === 'auth/invalid-phone-number') alert("Número inválido. Verifique o DDD.");
-                else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Espere um pouco.");
-                else alert("Erro ao enviar SMS: " + error.message);
-            }
-        };
-
-        // CONFIRMAR CÓDIGO
-        window.confirmarCodigoLogin = async () => {
-            const code = document.getElementById('login-code').value;
-            if(code.length < 6) return alert("O código deve ter 6 números.");
-
-            const btn = document.getElementById('btn-login-verify');
-            btn.disabled = true;
-            btn.innerText = "VALIDANDO...";
-
-            try {
-                const result = await window.confirmationResult.confirm(code);
-                console.log("Login SMS Sucesso:", result.user.uid);
-            } catch (error) {
-                btn.disabled = false;
-                btn.innerText = "ENTRAR AGORA 🚀";
-                alert("Código incorreto ou expirado.");
-            }
-        };
-    </script>
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
