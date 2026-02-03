@@ -51,7 +51,7 @@ function escutarNotificacoes(uid) {
         const data = notif.data();
         mostrarBarraNotificacao(notif.id, data);
     });
-
+}
 function mostrarBarraNotificacao(id, data) {
     // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
     const bgColorMap = {
