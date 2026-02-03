@@ -360,6 +360,28 @@ export async function confirmarAcordo(orderId, aceitar) {
     
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
+
+    // --- 🛡️ TRAVA DE PRIORIDADE 1: MEU SALDO (NOVA) ---
+    try {
+        const meuPerfilSnap = await getDoc(doc(db, "usuarios", uid));
+        const meuSaldo = meuPerfilSnap.data()?.wallet_balance || 0;
+        const reservaNecessaria = 20.00;
+
+        if (meuSaldo < reservaNecessaria) {
+            // Mensagem Prioritária: Só ele vê que ELE está sem saldo
+            if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nSenhor, é necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
+                window.switchTab('ganhar');
+            }
+            return; // Encerra aqui. Não executa a transação e não avisa sobre o outro.
+        }
+    } catch (err) {
+        console.error("Erro na trava de segurança:", err);
+    }
+    // --- FIM DA TRAVA PRIORITÁRIA ---
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            // ... restante do código (A transação agora só roda se o usuário tiver saldo)
     
     try {
         await runTransaction(db, async (transaction) => {
