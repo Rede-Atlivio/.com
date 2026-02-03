@@ -671,11 +671,12 @@
                     deferredPrompt = null;
                     btn.classList.add('hidden'); // Esconde se instalou
                 }
-            };
+            }; // <--- ESSA CHAVE AQUI FALTAVA PARA FECHAR O ONCLICK!
         }
-    });
-
-    <script>
+    }); 
+</script>
+    
+<script>   
     // 🔊 CORREÇÃO DE SOM E CARGA INICIAL
     document.addEventListener("DOMContentLoaded", () => {
         const audio = document.getElementById('online-sound');
