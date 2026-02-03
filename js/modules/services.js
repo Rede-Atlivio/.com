@@ -197,11 +197,12 @@ function renderizarCards(servicos, container) {
             const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
             const avatarImg = user.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeProf)}&background=random`;
 
-            // --- AÇÕES DE CLIQUE ---
+            // --- AÇÕES DE CLIQUE (SINCRONIZADAS COM A INTELIGÊNCIA DE PREÇO) ---
             const clickActionPerfil = isDemo 
                 ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
                 : `window.verPerfilCompleto('${user.id}')`;
 
+            // Garante que o precoReal calculado acima seja o mesmo enviado para a solicitação
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
                 : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${precoReal}')`;
