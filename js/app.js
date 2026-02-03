@@ -1,3 +1,4 @@
+import { app, auth, db, storage, provider } from './config.js';
 // ============================================================================
 // 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
 // ============================================================================
