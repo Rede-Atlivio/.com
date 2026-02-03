@@ -1,5 +1,5 @@
 // 1. AJUSTE NOS IMPORTS (Importe 'app' e 'getAuth')
-import { app, db, provider } from './app.js'; // ❌ Não importe 'auth' daqui
+import { app, auth, db, provider } from './config.js';
 import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
