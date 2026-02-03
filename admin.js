@@ -420,18 +420,43 @@ window.saveModalData = async () => {
 window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
 
 window.saveSettings = async () => { 
-    const msg = document.getElementById('conf-global-msg').value; 
-    await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); 
-    alert("Salvo!"); 
+    const msg = document.getElementById('conf-global-msg').value;
+    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
+    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
+    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
+
+    try {
+        // 1. Salva a mensagem global (coleção antiga)
+        await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); 
+        
+        // 2. Salva as Regras Financeiras (Nova coleção que o APP agora lê)
+        await setDoc(doc(db, "configuracoes", "financeiro"), { 
+            valor_minimo: min, 
+            valor_maximo: max, 
+            porcentagem_reserva: taxa,
+            atualizado_em: serverTimestamp()
+        }, {merge:true}); 
+
+        alert("✅ REGRAS GLOBAIS SALVAS!"); 
+    } catch (e) { alert("Erro: " + e.message); }
 };
 
 window.loadSettings = async () => { 
     try { 
-        const d = await getDoc(doc(db, "settings", "global")); 
-        if(d.exists()) document.getElementById('conf-global-msg').value = d.data().top_message||""; 
-    } catch(e){} 
+        // Carrega mensagem
+        const dGlobal = await getDoc(doc(db, "settings", "global")); 
+        if(dGlobal.exists()) document.getElementById('conf-global-msg').value = dGlobal.data().top_message || ""; 
+        
+        // Carrega regras financeiras
+        const dFin = await getDoc(doc(db, "configuracoes", "financeiro"));
+        if(dFin.exists()) {
+            const data = dFin.data();
+            if(document.getElementById('conf-val-min')) document.getElementById('conf-val-min').value = data.valor_minimo || 20;
+            if(document.getElementById('conf-val-max')) document.getElementById('conf-val-max').value = data.valor_maximo || 500;
+            if(document.getElementById('conf-taxa-reserva')) document.getElementById('conf-taxa-reserva').value = data.porcentagem_reserva || 10;
+        }
+    } catch(e){ console.error("Erro ao carregar:", e); } 
 };
-
 window.clearDatabase = async () => { 
     if(confirm("Apagar TUDO do modo DEMO?")) { 
         const batch = writeBatch(db); 
