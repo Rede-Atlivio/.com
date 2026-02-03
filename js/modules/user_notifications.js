@@ -55,7 +55,7 @@ import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "h
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
-function mostrarBarraNotificacao(id, data) {
+window.mostrarBarraNotificacao = (id, data) => {
     // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
     const bgColorMap = {
         'gift': 'bg-green-600',
