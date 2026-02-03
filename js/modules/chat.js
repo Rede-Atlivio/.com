@@ -509,10 +509,14 @@ window.reportarProblema = async (orderId) => {
     alert("🚨 Suporte acionado.");
 };
 
-window.novoDescreverServico = (id) => { const t = prompt("O que será feito?"); if(t) enviarMensagemChat(id, 1); };
-window.novoEnviarProposta = (id) => { const v = prompt("Qual o valor final?"); if(v) enviarMensagemChat(id, 1); };
-
+// Removemos as declarações simplistas e conectamos aos motores reais que você já tem no arquivo
 window.voltarParaListaPedidos = () => {
-    document.getElementById('painel-chat-individual')?.classList.add('hidden');
-    document.getElementById('painel-pedidos')?.classList.remove('hidden');
+    const chatIndiv = document.getElementById('painel-chat-individual');
+    const listaPed = document.getElementById('painel-pedidos');
+    if(chatIndiv) chatIndiv.classList.add('hidden');
+    if(listaPed) listaPed.classList.remove('hidden');
 };
+
+// Conecta os gatilhos globais às versões robustas (async) que já estão no topo/meio do arquivo
+window.executarDescricao = (id) => window.novoDescreverServico(id);
+window.executarProposta = (id) => window.novoEnviarProposta(id);
