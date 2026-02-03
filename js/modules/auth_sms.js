@@ -1,5 +1,5 @@
 // js/modules/auth_sms.js
-import { auth } from '../app.js';
+import { auth, db } from '../config.js';
 import { RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from '../app.js';
