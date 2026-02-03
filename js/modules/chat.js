@@ -110,44 +110,89 @@ export async function abrirChatPedido(orderId) {
 function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const outroNome = isProvider ? pedido.client_name : pedido.provider_name;
     const contatoLiberado = step >= 3;
+    
+    // Barras de Progresso
+    const stepsHTML = `
+        <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
+            <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
+            <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
+            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Contato</span>
+        </div>
+        <div class="h-1 w-full bg-gray-100">
+            <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
+        </div>
+    `;
 
     container.innerHTML = `
         <div class="flex flex-col h-full bg-slate-50">
-            <div class="bg-white p-3 shadow-sm flex items-center gap-3 z-30 border-b">
-                <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2">⬅</button>
-                <div class="flex-1">
-                    <h3 class="font-bold text-gray-800 text-xs">${outroNome}</h3>
-                    <p class="text-[9px] font-black text-blue-600">ACORDO: R$ ${pedido.offer_value}</p>
+            <div class="bg-white shadow-sm z-30">
+                <div class="p-3 flex items-center gap-3 border-b">
+                    <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full">⬅</button>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-800 text-xs uppercase">${outroNome}</h3>
+                        <p class="text-[9px] font-black text-blue-600">OFERTA INICIAL: R$ ${pedido.offer_value}</p>
+                    </div>
+                    ${contatoLiberado ? 
+                        `<a href="tel:${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-sm animate-pulse">📞 LIGAR</a>` : 
+                        `<div class="bg-gray-100 text-gray-400 px-3 py-1 rounded-full text-[8px] font-bold flex items-center gap-1">🔒 <span>DADOS OCULTOS</span></div>`
+                    }
                 </div>
-                ${contatoLiberado ? `<a href="tel:${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-500 text-white p-2 rounded-full text-xs">📞</a>` : 
-                `<div class="bg-gray-100 text-gray-400 p-2 rounded-full text-[8px] font-bold">🔒 PRIVADO</div>`}
+                ${stepsHTML}
             </div>
 
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-40">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-48 custom-scrollbar">
+                
+                ${step < 3 ? `
+                <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-4 text-center mx-auto max-w-xs">
+                    <p class="text-[10px] text-blue-800 leading-relaxed">
+                        💡 <strong>Dica:</strong> Use os botões abaixo para definir <strong>Valor</strong> e <strong>Detalhes</strong>. 
+                        Negociações organizadas fecham 3x mais rápido.
+                    </p>
+                </div>` : ''}
+
                 ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                 <div id="bubbles-area"></div>
             </div>
 
             ${pedido.status !== 'completed' ? `
-            <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40">
-                <div class="flex gap-2 p-2 bg-gray-50 border-b overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    <button onclick="window.sugerirDetalhe('${orderId}', 'Horário')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">⏰ Definir Hora</button>
-                    <button onclick="window.sugerirDetalhe('${orderId}', 'Quantidade')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">🔢 Quantidade</button>
-                    <button onclick="window.sugerirDetalhe('${orderId}', 'Valor Final')" class="bg-white px-3 py-1.5 rounded-full text-[10px] border border-gray-200 font-bold shadow-sm">💰 Valor Total</button>
-                    ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-sm uppercase">🏁 Concluir e Pagar</button>` : ''}
-                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-600 text-white px-3 py-1.5 rounded-full text-[10px] font-black shadow-sm uppercase">⚠️ Reportar</button>
+            <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                
+                <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide bg-gray-50/50">
+                    ${step < 3 ? `
+                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm flex items-center gap-1 hover:bg-blue-50 transition">
+                            📦 Descrever
+                        </button>
+                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-blue-600 px-4 py-2 rounded-xl text-[10px] text-white font-black shadow-md flex items-center gap-1 hover:bg-blue-700 transition transform active:scale-95">
+                            🎯 PROPOSTA FINAL
+                        </button>
+                        <button onclick="window.sugerirDetalhe('${orderId}', 'Horário')" class="bg-white px-3 py-2 rounded-xl text-[10px] border border-gray-200 font-bold text-gray-600 shadow-sm">
+                            ⏰ Horário
+                        </button>
+                    ` : ''}
+                    
+                    ${step >= 3 && !isProvider ? 
+                        `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-wide w-full">
+                            🏁 CONFIRMAR ENTREGA & PAGAR
+                        </button>` : ''
+                    }
+                    
+                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100 hover:bg-red-100">
+                        ⚠️ Ajuda
+                    </button>
                 </div>
-                <div class="p-3 flex gap-2 items-center">
-                    <input type="text" id="chat-input-msg" placeholder="${step < 3 ? '🔒 Combine detalhes aqui...' : 'Digite sua mensagem...'}" 
-                        class="flex-1 bg-gray-100 rounded-full px-5 py-3 text-sm outline-none">
-                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg">➤</button>
+
+                <div class="px-3 pb-3 pt-1 flex gap-2 items-center">
+                    <input type="text" id="chat-input-msg" placeholder="${step < 3 ? 'Use os botões para agilizar...' : 'Digite sua mensagem...'}" 
+                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition border border-transparent focus:border-blue-200">
+                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">
+                        ➤
+                    </button>
                 </div>
             </div>` : ''}
         </div>
     `;
     escutarMensagens(orderId);
 }
-
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     if (step < 3) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
