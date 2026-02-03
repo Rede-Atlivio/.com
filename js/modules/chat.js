@@ -411,31 +411,6 @@ export async function confirmarAcordo(orderId, aceitar) {
     } catch(e) { alert("⚠️ " + e); }
 }
 
-// ============================================================================
-// 3. LOGICA DE MENSAGENS E SEGURANÇA
-// ============================================================================
-export async function enviarMensagemChat(orderId, step) {
-    const input = document.getElementById('chat-input-msg');
-    let texto = input.value.trim();
-    if(!texto) return;
-
-    if (step < 3) {
-        const proibidas = ["whatsapp", "zap", "fone", "pix", "contato"];
-        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @]/g, "");
-        if (proibidas.some(p => textoLimpo.includes(p))) {
-            alert("🚫 BLOQUEADO: Use o botão 'ACEITAR' para liberar o contato.");
-            input.value = ""; return;
-        }
-    }
-
-    input.value = "";
-    try {
-        await addDoc(collection(db, `chats/${orderId}/messages`), { 
-            text: texto, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
-        });
-    } catch (e) { console.error(e); }
-}
-
 export function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
