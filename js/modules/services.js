@@ -149,11 +149,15 @@ function renderizarCards(servicos, container) {
     servicos.forEach(user => {
         try {
             const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
-            const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
+            const dbService = temServicos ? user.services[0] : { category: 'Geral', price: 20, title: 'Serviço' };
+            
+            // 🔥 BUSCA O PREÇO REAL NA TABELA DE INTELIGÊNCIA
+            const infoReal = window.SERVICOS_PADRAO.find(s => s.title === dbService.title || s.title === dbService.category);
+            const precoReal = infoReal ? infoReal.price : dbService.price;
             
             const nomeProf = user.nome_profissional || user.nome || "Prestador";
-            const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
-            const tituloServico = mainService.title || mainService.category;
+            const precoDisplay = precoReal ? `R$ ${precoReal}` : 'A Combinar';
+            const tituloServico = dbService.title || dbService.category;
             
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
