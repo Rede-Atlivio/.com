@@ -1,4 +1,7 @@
-import { db, auth } from '../app.js';
+// js/modules/request.js
+// 1. IMPORTAÇÃO DO MOTOR CENTRAL (Obrigatório)
+import { db, auth } from '../config.js'; 
+
 import { podeTrabalhar } from './wallet.js'; 
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
