@@ -329,10 +329,22 @@ function mostrarModalRadar(pedido) {
             <div class="text-center py-6 bg-slate-900 relative">
                 <h1 class="text-5xl font-black text-white mb-2">R$ ${valor.toFixed(0)}</h1>
                 <p class="text-blue-300 font-bold text-sm mb-1">${pedido.service_title || 'Serviço'}</p>
+                const lucro = valor - taxa; // Define a variável que estava faltando
+
+    modalContainer.innerHTML = `
+        <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
+            <div class="bg-slate-800 p-4 text-center border-b border-slate-700">
+                <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">Nova Solicitação</span>
+            </div>
+            <div class="text-center py-6 bg-slate-900 relative">
+                <h1 class="text-5xl font-black text-white mb-2">R$ ${valor.toFixed(0)}</h1>
+                <p class="text-blue-300 font-bold text-sm mb-1">${pedido.service_title || 'Serviço'}</p>
                 <div class="flex justify-center gap-3 text-[10px] font-bold text-gray-400">
                     <span>Taxa: -R$ ${taxa.toFixed(2)}</span>
                     <span class="text-green-400">Lucro: R$ ${lucro.toFixed(2)}</span>
                 </div>
+            </div>
+            ...
             </div>
             <div class="mx-4 mb-4 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
                 <h3 class="text-white font-bold text-sm text-center">${pedido.client_name}</h3>
