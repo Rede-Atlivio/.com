@@ -335,9 +335,10 @@ export async function aceitarPedidoRadar(orderId) {
         const orderSnap = await getDoc(doc(db, "orders", orderId));
         if (!orderSnap.exists()) return alert("Pedido expirou ou foi cancelado.");
         
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
         const orderData = orderSnap.data();
         const valorServico = parseFloat(orderData.offer_value || 0);
-        const taxa = valorServico * 0.20; // 20% de Taxa
+        const taxa = valorServico * (config.porcentagem_reserva / 100);
 
         // 2. Busca o Saldo Atual do Prestador (Tenta 'users' ou 'usuarios')
         let saldoAtual = 0;
