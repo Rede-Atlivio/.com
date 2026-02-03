@@ -675,15 +675,16 @@
         }
     });
 
-    // 3. CORREÇÃO DE SOM (Link funcional)
+    <script>
+    // 🔊 CORREÇÃO DE SOM E CARGA INICIAL
     document.addEventListener("DOMContentLoaded", () => {
         const audio = document.getElementById('online-sound');
-        if(audio) audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
-    });
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const audio = document.getElementById('online-sound');
-        if(audio) audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
+        if(audio) {
+            // Define o som de "Pop" para quando o prestador fica online
+            audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
+            audio.load(); // Pré-carrega o áudio
+            console.log("🔊 Som de sistema configurado com sucesso.");
+        }
     });
 </script>
 
