@@ -288,9 +288,9 @@ function mostrarModalRadar(pedido) {
     }
     modalContainer.classList.remove('hidden');
 
+    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * 0.20;
-    const lucro = valor - taxa;
+    const taxa = valor * (config.porcentagem_reserva / 100);
 
     modalContainer.innerHTML = `
         <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
