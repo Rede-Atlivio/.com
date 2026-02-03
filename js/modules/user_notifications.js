@@ -1,4 +1,7 @@
-import { db, auth } from '../app.js';
+// js/modules/user_notifications.js
+// 1. IMPORTAÇÃO DO MOTOR CENTRAL
+import { db, auth } from '../config.js'; 
+
 import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export function iniciarSistemaNotificacoes() {
