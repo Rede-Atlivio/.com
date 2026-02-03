@@ -54,6 +54,9 @@ export const CATEGORIAS_ATIVAS = [
         return window.configFinanceiroAtiva?.valor_minimo || 20; 
     }
 }));
+
+// 🔥 VÍNCULO GLOBAL IMEDIATO PARA MATAR O ERRO NO REQUEST.JS
+window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
 let servicesUnsubscribe = null;
 
 // ============================================================================
