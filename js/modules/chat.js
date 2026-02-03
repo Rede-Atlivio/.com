@@ -353,7 +353,7 @@ async function enviarMsgSistema(orderId, texto) {
 }
 
 // ============================================================================
-// 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO OTIMIZADA ANTI-TRAVAMENTO)
+// 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO CONTROLE TOTAL ADMIN)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
     if(!aceitar) return alert("Negociação continua.");
@@ -361,36 +361,48 @@ export async function confirmarAcordo(orderId, aceitar) {
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
 
-    // --- 🛡️ TRAVA DE PRIORIDADE 1: MEU SALDO (NOVA) ---
     try {
+        // --- 1. BUSCA OBRIGATÓRIA DAS REGRAS DO SEU PAINEL ADMIN ---
+        const configRef = doc(db, "configuracoes", "financeiro");
+        const configSnap = await getDoc(configRef);
+        
+        if (!configSnap.exists()) {
+            console.error("🚨 CONFIGURAÇÃO FINANCEIRA AUSENTE NO FIRESTORE.");
+            return alert("⚠️ Erro crítico: As regras de reserva não foram configuradas no Painel Admin.");
+        }
+        
+        const config = configSnap.data();
+        
+        // --- 2. TRAVA DE PRIORIDADE 1: MEU SALDO (VALIDAÇÃO LOCAL) ---
         const meuPerfilSnap = await getDoc(doc(db, "usuarios", uid));
         const meuSaldo = meuPerfilSnap.data()?.wallet_balance || 0;
-        const reservaNecessaria = 20.00;
+        
+        const pedidoSnap = await getDoc(orderRef);
+        const pedido = pedidoSnap.data();
+        const valorTotalPedido = parseFloat(pedido.offer_value.replace(',', '.')) || 0;
 
-        if (meuSaldo < reservaNecessaria) {
-            // Mensagem Prioritária: Só ele vê que ELE está sem saldo
-            if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
+        // Cálculo dinâmico baseado estritamente no seu Painel Admin
+        let valorCalculado = valorTotalPedido * (config.porcentagem_reserva / 100);
+        let valorReserva = Math.max(config.reserva_minima, Math.min(valorCalculado, config.reserva_maxima));
+
+        if (meuSaldo < valorReserva) {
+            if (confirm(`⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ ${valorReserva.toFixed(2).replace('.', ',')} de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?`)) {
                 window.switchTab('ganhar');
             }
-            return; // Encerra aqui. Não executa a transação e não avisa sobre o outro.
+            return; // Bloqueio prioritário
         }
-    } catch (err) {
-        console.error("Erro na trava de segurança:", err);
-    }
-    // --- FIM DA TRAVA PRIORITÁRIA ---
-    
-    try {
+
+        // --- 3. EXECUÇÃO DA TRANSAÇÃO NO BANCO DE DADOS ---
         await runTransaction(db, async (transaction) => {
             const orderSnap = await transaction.get(orderRef);
             if (!orderSnap.exists()) throw "Pedido não encontrado!";
-            const pedido = orderSnap.data();
-
+            
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const clientSnap = await transaction.get(clientRef);
 
             if (!clientSnap.exists()) {
                 transaction.set(clientRef, { wallet_balance: 0, wallet_reserved: 0, uid: pedido.client_id });
-                throw "Saldo insuficiente para reserva (R$ 0,00).";
+                throw "Saldo insuficiente para reserva.";
             }
 
             const isProvider = uid === pedido.provider_id;
@@ -400,13 +412,15 @@ export async function confirmarAcordo(orderId, aceitar) {
             transaction.update(orderRef, campoUpdate);
 
             if (vaiFecharAgora) {
-                const saldoAtual = clientSnap.data().wallet_balance || 0;
-                const valorReserva = 20.00;
+                const saldoClienteAtual = clientSnap.data().wallet_balance || 0;
 
-                if (saldoAtual < valorReserva) throw "Saldo insuficiente para reserva (R$ 20,00).";
+                // Validação final de segurança do cliente dentro da transação
+                if (saldoClienteAtual < valorReserva) {
+                    throw `Saldo insuficiente para reserva (R$ ${valorReserva.toFixed(2).replace('.', ',')}).`;
+                }
 
                 transaction.update(clientRef, {
-                    wallet_balance: saldoAtual - valorReserva,
+                    wallet_balance: saldoClienteAtual - valorReserva,
                     wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
                 });
 
@@ -436,14 +450,12 @@ export async function confirmarAcordo(orderId, aceitar) {
             const souOClient = auth.currentUser.uid === pedido.client_id;
 
             if (souOClient) {
-                // Perfil que deve recarregar
-                if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
+                if (confirm(`⚠️ VOCÊ ESTÁ SEM SALDO\n\nDeseja ir para a Carteira recarregar agora?`)) {
                     window.switchTab('ganhar');
                     addDoc(collection(db, `chats/${orderId}/messages`), { text: "⚠️ Cliente tentou confirmar, mas está sem saldo para a reserva.", sender_id: "system", timestamp: serverTimestamp() });
                 }
             } else {
-                // Outra pessoa que está esperando
-                alert("⏳ AGUARDANDO RECARGA\n\nO cliente está sem saldo para confirmar esse acordo. Aguardando recarga para prosseguir.");
+                alert("⏳ AGUARDANDO RECARGA\n\nO outro usuário está sem saldo para confirmar esse acordo.");
             }
         } else {
             alert("⚠️ " + e);
