@@ -215,15 +215,20 @@ export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     if (!user) return alert("Sessão expirada.");
 
-    // CLIENTE NÃO PRECISA DE TRAVA DE TRABALHO, SÓ PAGAMENTO (FUTURO)
-    // if (!podeTrabalhar()) return; 
-
-    const min = mem_BasePrice * 0.80;
-    const max = mem_BasePrice * 1.30;
-    if (mem_CurrentOffer < min || mem_CurrentOffer > max) {
-        return alert(`Valor inválido! Mínimo R$ ${min.toFixed(2)}`);
+    // Busca limites do Admin ou usa Fallback
+    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
+    
+    // Trava 1: Limites Absolutos do Sistema
+    if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
+        return alert(`⛔ AÇÃO BLOQUEADA\n\nO sistema permite apenas valores entre R$ ${config.valor_minimo},00 e R$ ${config.valor_maximo},00.`);
     }
 
+    // Trava 2: Margem de Negociação do Serviço (80% a 130%)
+    const minMargem = mem_BasePrice * 0.80;
+    const maxMargem = mem_BasePrice * 1.30;
+    if (mem_CurrentOffer < minMargem || mem_CurrentOffer > maxMargem) {
+        return alert(`⚠️ VALOR FORA DA MARGEM\n\nSua oferta deve estar entre R$ ${minMargem.toFixed(2)} e R$ ${maxMargem.toFixed(2)} para este serviço.`);
+    }
     const btn = document.getElementById('btn-confirm-req'); 
     if(btn) { btn.innerText = "⏳ ENVIANDO..."; btn.disabled = true; }
 
