@@ -148,10 +148,11 @@ function renderizarCards(servicos, container) {
 
     servicos.forEach(user => {
         try {
+            // 1. Extração e Cruzamento de Inteligência
             const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
-            const dbService = temServicos ? user.services[0] : { category: 'Geral', price: 20, title: 'Serviço' };
+            const dbService = temServicos ? user.services[0] : { category: 'Geral', price: 20, title: 'Serviço', description: '' };
             
-            // 🔥 BUSCA O PREÇO REAL NA TABELA DE INTELIGÊNCIA
+            // 🔥 BUSCA O PREÇO REAL NA TABELA DE INTELIGÊNCIA (Crucial para o seu marketplace)
             const infoReal = window.SERVICOS_PADRAO.find(s => s.title === dbService.title || s.title === dbService.category);
             const precoReal = infoReal ? infoReal.price : dbService.price;
             
@@ -162,7 +163,7 @@ function renderizarCards(servicos, container) {
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
 
-            // --- LÓGICA DE STATUS (BOLINHA ONLINE/OFFLINE) ---
+            // --- LÓGICA DE STATUS ---
             let statusClass = isOnline ? "" : "grayscale opacity-75";
             let statusText = isOnline ? "ONLINE" : "OFFLINE";
             let statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
@@ -173,16 +174,16 @@ function renderizarCards(servicos, container) {
                 statusClass += " border-orange-200";
             }
 
-            // --- 🔥 NOVO: LÓGICA DE NÍVEIS E SELOS ---
+            // --- LÓGICA DE NÍVEIS E SELOS ---
             let seloNivel = "";
-            let bordaCard = "border-gray-100"; // Borda padrão
+            let bordaCard = "border-gray-100";
             
             if (user.service_level === 'premium') {
                 seloNivel = `<span class="bg-black text-yellow-400 text-[8px] font-black px-2 py-0.5 rounded border border-yellow-500 uppercase shadow-sm">💎 PREMIUM</span>`;
-                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100"; // Destaque Dourado
+                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100";
             } else if (user.service_level === 'pro') {
                 seloNivel = `<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase shadow-sm">⚡ PRO</span>`;
-                bordaCard = "border-blue-200 shadow-sm"; // Destaque Azul
+                bordaCard = "border-blue-200 shadow-sm";
             }
 
             // --- IMAGENS ---
@@ -196,7 +197,7 @@ function renderizarCards(servicos, container) {
 
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
-                : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
+                : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${precoReal}')`;
 
             // --- HTML DO CARD ---
             container.innerHTML += `
@@ -229,7 +230,7 @@ function renderizarCards(servicos, container) {
                         
                         <div class="mb-3">
                              <p class="text-[10px] font-bold text-blue-900 uppercase truncate">${tituloServico}</p>
-                             <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível para serviços.'}</p>
+                             <p class="text-[9px] text-gray-400 line-clamp-1">${dbService.description || user.bio || 'Disponível para serviços.'}</p>
                         </div>
 
                         <div class="flex items-center gap-2 pt-2 border-t border-gray-50 mt-auto">
