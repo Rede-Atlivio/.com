@@ -174,31 +174,39 @@ export async function enviarMensagemChat(orderId, step) {
     let texto = input.value.trim();
     if(!texto) return;
 
-    // --- 🛡️ MODERAÇÃO ATIVA (Nível 1) ---
-    // Só aplica filtro se ainda não fechou acordo (Step < 3)
+    // 🔒 TRAVA BLINDADA 1: Verifica antecedentes criminais antes de enviar
+    // Se o risco for alto (>= 50), nem processa a mensagem.
+    try {
+        const userRef = doc(db, "usuarios", auth.currentUser.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && (userSnap.data().risk_score || 0) >= 50) {
+            alert("🚫 CONTA RESTRITA: Seu nível de risco está alto devido a infrações anteriores.\n\nO chat está temporariamente bloqueado para análise.");
+            input.value = "";
+            return;
+        }
+    } catch (e) { console.log("Erro verificação risco:", e); }
+
+    // --- 🛡️ MODERAÇÃO ATIVA (Nível 1 - Palavras) ---
     if (step < 3) {
         const blacklist = ["porra", "caralho", "fdp", "puta", "viado", "lixo", "merda", "golpe", "ladrão", "idiota"];
         const proibidas = ["whatsapp", "zap", "fone", "contato", "meuchama", "porfora", "diretocomigo", "pix", "pagar por fora", "99", "98", "97"];
         
-        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @]/g, ""); // Remove sujeira para checar camuflagem
-        const temNumeroSuspeito = /\d{4,}/.test(textoLimpo); // Detecta sequências de 4+ números (ex: telefone)
+        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @]/g, "");
+        const temNumeroSuspeito = /\d{4,}/.test(textoLimpo);
         
         const encontrouOfensa = blacklist.some(p => texto.toLowerCase().includes(p));
         const encontrouEvasao = proibidas.some(p => textoLimpo.includes(p));
 
         if (encontrouOfensa || (temNumeroSuspeito && encontrouEvasao) || encontrouEvasao) {
-            
-            // 🚨 GRAVA A INFRAÇÃO NO BANCO (AQUI ESTÁ A MÁGICA QUE FALTAVA) 👇
             console.log("🛡️ Moderação: Infração detectada. Registrando risco...");
             await registrarRisco(auth.currentUser.uid, encontrouOfensa ? 'ofensa' : 'tentativa_evasao');
-
-            alert("🚫 MENSAGEM BLOQUEADA PELO SISTEMA DE SEGURANÇA.\n\nDetectamos tentativa de contato externo ou linguagem inadequada.\n\n⚠️ Evite repetir esse comportamento para não sofrer restrições na sua conta.");
+            alert("🚫 MENSAGEM BLOQUEADA PELO SISTEMA DE SEGURANÇA.\n\nDetectamos tentativa de contato externo ou linguagem inadequada.");
             input.value = ""; 
-            return; // Bloqueia o envio
+            return;
         }
     }
 
-    // Se passou pelo filtro, envia normal
+    // Envio normal
     input.value = "";
     try {
         await addDoc(collection(db, `chats/${orderId}/messages`), { 
@@ -207,11 +215,10 @@ export async function enviarMensagemChat(orderId, step) {
             timestamp: serverTimestamp() 
         });
     } catch (e) {
-        console.error("Erro ao enviar msg:", e);
-        alert("Erro de conexão ao enviar mensagem.");
+        console.error("Erro msg:", e);
+        alert("Erro de conexão.");
     }
 }
-
 // 🛡️ FUNÇÃO AUXILIAR: REGISTRO DE RISCO (NOVA)
 async function registrarRisco(uid, tipo) {
     try {
