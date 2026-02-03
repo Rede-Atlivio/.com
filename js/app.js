@@ -24,17 +24,24 @@ console.log("✅ App Carregado: Sistema Híbrido Online.");
 // Inicia CRM
 if(iniciarSistemaNotificacoes) iniciarSistemaNotificacoes(); 
 
-// 5. MONITORAMENTO DE LOGIN (O CÉREBRO)
-auth.onAuthStateChanged((user) => {
+// 5. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO)
+auth.onAuthStateChanged(async (user) => {
     if (user) {
+        // 🛡️ TRAVA DE SEGURANÇA: Verifica banimento antes de mostrar o app
+        if (window.verificarSentenca) {
+            const banido = await window.verificarSentenca(user.uid);
+            if (banido) return; // Para tudo aqui se estiver banido
+        }
+
         console.log("👤 Usuário online:", user.uid);
         
         // Inicia sistemas dependentes de usuário
         checkOnboarding(user); 
         
-        // ✅ AQUI é o lugar certo para iniciar a carteira
+        // Inicia monitoramento da carteira
         if(iniciarMonitoramentoCarteira) iniciarMonitoramentoCarteira();
         
+        // Alterna telas
         const loginScreen = document.getElementById('auth-container');
         if(loginScreen) loginScreen.classList.add('hidden');
         
