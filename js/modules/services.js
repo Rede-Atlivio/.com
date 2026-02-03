@@ -5,20 +5,24 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstati
 
 // CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
-    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
-    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
-    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹', minPrice: 130 },
-    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗', minPrice: 60 },
-    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵', minPrice: 250 },
-    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸', minPrice: 300 },
-    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻', minPrice: 150 },
-    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫', minPrice: 80 },
-    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆', minPrice: 100 },
-    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶', minPrice: 50 },
-    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 },
-    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 }
-];
-
+    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
+    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
+    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹' },
+    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗' },
+    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵' },
+    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸' },
+    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻' },
+    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫' },
+    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆' },
+    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶' },
+    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗' },
+    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝' }
+].map(cat => ({
+    ...cat,
+    get minPrice() { 
+        return window.configFinanceiroAtiva?.valor_minimo || 20; 
+    }
+}));
 let servicesUnsubscribe = null;
 
 // ============================================================================
