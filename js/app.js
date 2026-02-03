@@ -15,7 +15,7 @@ import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
 
 import { checkOnboarding } from './modules/onboarding.js';
 import { abrirConfiguracoes } from './modules/profile.js';
-import { iniciarSistemaNotificacoes } from './modules/user_notifications.js';
+import './modules/user_notifications.js';
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
