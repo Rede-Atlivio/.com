@@ -1,6 +1,9 @@
-import { db, auth } from '../app.js';
+// js/modules/onboarding.js
+// 1. IMPORTAÇÃO DO NOVO CHAVEIRO (ESSENCIAL)
+import { db, auth } from '../config.js'; 
+
 import { doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"; 
+import { updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 export async function checkOnboarding(user) {
     if (!user) return;
