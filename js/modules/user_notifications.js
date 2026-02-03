@@ -23,19 +23,34 @@ function escutarNotificacoes(uid) {
     );
 
     onSnapshot(q, (snap) => {
-        // Remove alertas antigos
+        // --- 🛡️ INJEÇÃO DO CONTADOR (BADGE) ---
+        let badge = document.getElementById('notif-badge');
+        const total = snap.size;
+
+        if (total > 0) {
+            if (!badge) {
+                // Se não existir, cria um círculo vermelho flutuante no canto
+                badge = document.createElement('span');
+                badge.id = 'notif-badge';
+                badge.className = "fixed top-2 right-4 bg-red-600 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-lg z-[101] animate-pulse";
+                document.body.appendChild(badge);
+            }
+            badge.innerText = total;
+            badge.classList.remove('hidden');
+        } else if (badge) {
+            badge.classList.add('hidden');
+        }
+        // -------------------------------------
+
         const existingAlert = document.getElementById('user-alert-bar');
         if(existingAlert) existingAlert.remove();
 
         if (snap.empty) return;
 
-        // Pega a mais recente
         const notif = snap.docs[0];
         const data = notif.data();
-        
         mostrarBarraNotificacao(notif.id, data);
     });
-}
 
 function mostrarBarraNotificacao(id, data) {
     // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
