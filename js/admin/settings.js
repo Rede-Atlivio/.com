@@ -148,18 +148,47 @@ window.saveAppSettings = async () => {
     } catch(e) { alert("Erro: " + e.message); }
 };
 
+// 1. CARREGAR DADOS DE DOIS LUGARES DIFERENTES
+async function loadSettings() {
+    try {
+        // Busca aviso global
+        const dGlobal = await getDoc(doc(window.db, "settings", "global"));
+        if(dGlobal.exists()) {
+            const data = dGlobal.data();
+            document.getElementById('conf-global-msg').value = data.top_message || "";
+            document.getElementById('conf-msg-active').checked = data.is_active || false;
+        }
+
+        // Busca regras financeiras (A coleção que blinda o app)
+        const dFin = await getDoc(doc(window.db, "configuracoes", "financeiro"));
+        if(dFin.exists()) {
+            const data = dFin.data();
+            document.getElementById('conf-val-min').value = data.valor_minimo || 20;
+            document.getElementById('conf-val-max').value = data.valor_maximo || 500;
+            document.getElementById('conf-taxa-reserva').value = data.porcentagem_reserva || 10;
+            document.getElementById('conf-bonus-valor').value = data.valor_bonus_entrada || 20;
+        }
+    } catch(e) { console.error("Erro ao carregar settings", e); }
+}
+
+// 2. SALVAR REGRAS FINANCEIRAS NO LUGAR CERTO
 window.saveBusinessRules = async () => {
-    const valorBonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 0;
-    const bonusAtivo = document.getElementById('conf-bonus-active').checked;
-    const taxa = parseFloat(document.getElementById('conf-taxa-valor').value) || 0;
+    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
+    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
+    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
+    const bonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 20;
 
     try {
-        await setDoc(doc(window.db, "settings", "global"), { 
-            valor_bonus_promocional: valorBonus,
-            bonus_boas_vindas_ativo: bonusAtivo,
-            taxa_intermediacao: taxa,
+        await setDoc(doc(window.db, "configuracoes", "financeiro"), { 
+            valor_minimo: min,
+            valor_maximo: max,
+            porcentagem_reserva: taxa,
+            valor_bonus_entrada: bonus,
             updated_at: new Date()
         }, {merge:true});
+        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS!");
+    } catch(e) { alert("Erro: " + e.message); }
+};
         alert("✅ Governança financeira salva com sucesso!");
     } catch(e) { alert("Erro financeiro: " + e.message); }
 };
