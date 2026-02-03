@@ -21,9 +21,6 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
-// Inicia CRM
-window.iniciarSistemaNotificacoes();
-
 // 5. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO)
 auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -34,7 +31,9 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         console.log("👤 Usuário online:", user.uid);
-        
+        // --- ADICIONE AQUI DENTRO ---
+        window.iniciarSistemaNotificacoes(); 
+        // ----------------------------
         // Inicia sistemas dependentes de usuário
         checkOnboarding(user); 
         
