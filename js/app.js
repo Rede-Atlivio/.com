@@ -31,9 +31,17 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         console.log("👤 Usuário online:", user.uid);
-        // --- ADICIONE AQUI DENTRO ---
-        window.iniciarSistemaNotificacoes(); 
-        // ----------------------------
+
+        // --- 🔔 ATIVAÇÃO DO CRM DE NOTIFICAÇÕES ---
+        if (typeof window.iniciarSistemaNotificacoes === 'function') {
+            try {
+                window.iniciarSistemaNotificacoes();
+            } catch (err) {
+                console.error("Erro ao iniciar notificações:", err);
+            }
+        }
+        // ------------------------------------------
+
         // Inicia sistemas dependentes de usuário
         checkOnboarding(user); 
         
