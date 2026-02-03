@@ -365,11 +365,9 @@ export function escutarMensagens(orderId) {
 // 🏁 FASE 5: FINALIZAÇÃO E REPASSE (FECHAMENTO DO CICLO)
 // ============================================================================
 window.finalizarServicoPassoFinal = async (orderId) => {
-    if(!confirm("Confirma que o serviço foi entregue? Isso liberará o pagamento ao prestador.")) return;
+    if(!confirm("Confirma a entrega? O valor será liberado ao prestador.")) return;
 
     const orderRef = doc(db, "orders", orderId);
-    const orderSnap = await getDoc(orderRef); // Adicione esta linha
-    const pedido = orderSnap.data(); // E esta linha
     try {
         await runTransaction(db, async (transaction) => {
             const orderSnap = await transaction.get(orderRef);
@@ -377,45 +375,52 @@ window.finalizarServicoPassoFinal = async (orderId) => {
             
             if(pedido.status === 'completed') throw "Este serviço já foi finalizado.";
             
-            const valorReserva = pedido.value_reserved || 20.00;
-            const taxaPlataforma = 5.00; // Exemplo: ATLIVIO fica com R$ 5 e repassa R$ 15
+            // 🔒 TRAVA BLINDADA 3: Validação de Segurança Financeira
+            const valorReserva = pedido.value_reserved || 0;
+            if (valorReserva <= 0) {
+                throw "ERRO DE SEGURANÇA: Nenhuma reserva financeira encontrada para este pedido. Contate o suporte.";
+            }
+
+            // Lógica de Taxa (Ex: Atlivio fica com 20% da reserva ou fixo R$ 5)
+            // Aqui mantive seu fixo de 5, mas pode mudar para porcentagem se quiser.
+            const taxaPlataforma = 5.00; 
             const valorRepasse = valorReserva - taxaPlataforma;
+
+            if (valorRepasse < 0) throw "Erro matemático: Taxa maior que reserva.";
 
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const provRef = doc(db, "usuarios", pedido.provider_id);
             const clientSnap = await transaction.get(clientRef);
             const provSnap = await transaction.get(provRef);
 
-            // 1. Tira da Reserva do Cliente
+            // Tira da Reserva do Cliente
             transaction.update(clientRef, {
                 wallet_reserved: (clientSnap.data().wallet_reserved || 0) - valorReserva
             });
 
-            // 2. Coloca no Saldo Disponível do Prestador
+            // Paga o Prestador
             transaction.update(provRef, {
                 wallet_balance: (provSnap.data().wallet_balance || 0) + valorRepasse,
                 saldo: (provSnap.data().saldo || 0) + valorRepasse
             });
 
-            // 3. Finaliza o Pedido
             transaction.update(orderRef, { 
                 status: 'completed',
                 completed_at: serverTimestamp(),
                 net_value_provider: valorRepasse
             });
 
-            // 4. Mensagem de Sucesso
             const msgRef = doc(collection(db, `chats/${orderId}/messages`));
             transaction.set(msgRef, {
-                text: `⭐️ SERVIÇO CONCLUÍDO: R$ ${valorRepasse.toFixed(2)} creditados ao prestador. Avalie a experiência!`,
+                text: `⭐️ SERVIÇO CONCLUÍDO: R$ ${valorRepasse.toFixed(2)} liberados.`,
                 sender_id: "system",
                 timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ Pagamento liberado ao prestador com sucesso!");
-        window.abrirModalAvaliacao(pedido.provider_id, orderId, outroNome);
-    } catch(e) { alert("Erro ao finalizar: " + e); }
+        alert("✅ Pagamento liberado com sucesso!");
+        window.abrirModalAvaliacao(orderId); // Ajustei aqui, geralmente passa só ID ou obj
+    } catch(e) { alert("Erro: " + e); }
 };
 
 window.reportarProblema = async (orderId) => {
