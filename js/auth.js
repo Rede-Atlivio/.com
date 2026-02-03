@@ -4,9 +4,6 @@ import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateCha
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 2. INICIALIZAÇÃO BLINDADA (Isso mata o erro vermelho)
-export const auth = getAuth(app); // ✅ Criamos o auth aqui mesmo!
-
 // 3. FUNÇÃO DE AUTOMAÇÃO
 async function concederBonusSeAtivo(userUid) {
     try {
