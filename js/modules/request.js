@@ -168,17 +168,38 @@ export function validarOferta(val) {
 
 function atualizarVisualModal() {
     const inputValor = document.getElementById('req-value');
+    // Busca a config do Admin salva na abertura do modal ou usa o padrão de segurança
+    const config = window.configFinanceiroAtiva || { reserva_minima: 20, porcentagem_reserva: 10, reserva_maxima: 200 };
+
+    // 🛡️ TRATAMENTO ANTI-NaN: Garante que oferta seja número puro
+    const ofertaSegura = parseFloat(mem_CurrentOffer) || 0;
+
     if(inputValor) {
-        inputValor.value = mem_CurrentOffer.toFixed(2);
+        // Exibe com vírgula para o usuário, mas mantém ponto internamente
+        inputValor.value = ofertaSegura.toFixed(2).replace('.', ','); 
         inputValor.style.color = "black";
-        inputValor.disabled = true; // Trava de novo após selecionar botão
+        inputValor.disabled = true; 
     }
     
+    // CÁLCULO DINÂMICO DA RESERVA (Regra do seu Admin)
+    const valorCalculado = ofertaSegura * (config.porcentagem_reserva / 100);
+    const valorReserva = Math.max(config.reserva_minima, Math.min(valorCalculado, config.reserva_maxima));
+
     const elTotal = document.getElementById('calc-total-reserva');
-    if(elTotal) { elTotal.innerText = `R$ ${mem_CurrentOffer.toFixed(2)}`; }
+    if(elTotal) { 
+        // HTML limpo e direto para o usuário final
+        elTotal.innerHTML = `
+            <div class="flex flex-col items-center">
+                <span class="text-lg font-black text-gray-800">R$ ${ofertaSegura.toFixed(2).replace('.', ',')}</span>
+                <span class="text-[9px] text-blue-600 font-bold uppercase tracking-tighter">
+                    Garantia Atlivio: R$ ${valorReserva.toFixed(2).replace('.', ',')}
+                </span>
+            </div>
+        `; 
+    }
     
-    // Chama validação para garantir cores corretas
-    validarOferta(mem_CurrentOffer);
+    // Valida se o valor está dentro dos limites de 80% a 130% do preço base
+    validarOferta(ofertaSegura);
 }
 
 export async function enviarPropostaAgora() {
