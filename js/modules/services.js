@@ -148,17 +148,24 @@ function renderizarCards(servicos, container) {
 
     servicos.forEach(user => {
         try {
-            // 1. Extração e Cruzamento de Inteligência
-            const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
-            const dbService = temServicos ? user.services[0] : { category: 'Geral', price: 20, title: 'Serviço', description: '' };
+            // 1. Extração Blindada (Garante que sempre teremos um objeto, mesmo que vazio)
+            const dbService = (user.services && user.services[0]) ? user.services[0] : {};
             
-            // 🔥 BUSCA O PREÇO REAL NA TABELA DE INTELIGÊNCIA (Crucial para o seu marketplace)
-            const infoReal = window.SERVICOS_PADRAO.find(s => s.title === dbService.title || s.title === dbService.category);
-            const precoReal = infoReal ? infoReal.price : dbService.price;
+            // 2. Inteligência de Título e Categoria (Evita o 'undefined' no HTML)
+            const tituloServico = dbService.title || dbService.category || user.categoria || 'Serviço Geral';
+            const categoriaBusca = dbService.category || user.categoria || '';
+
+            // 3. Cruzamento de Preço (Tabela Real > Preço do DB > Config Mínima)
+            const infoReal = window.SERVICOS_PADRAO.find(s => 
+                (tituloServico && s.title.toLowerCase() === tituloServico.toLowerCase()) || 
+                (categoriaBusca && s.category.toLowerCase() === categoriaBusca.toLowerCase())
+            );
+
+            const precoReal = infoReal ? infoReal.price : (dbService.price || window.configFinanceiroAtiva?.valor_minimo || 20);
             
+            // 4. Formatação de Display
             const nomeProf = user.nome_profissional || user.nome || "Prestador";
-            const precoDisplay = precoReal ? `R$ ${precoReal}` : 'A Combinar';
-            const tituloServico = dbService.title || dbService.category;
+            const precoDisplay = isNaN(precoReal) ? 'A Combinar' : `R$ ${precoReal}`;
             
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
