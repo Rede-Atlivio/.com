@@ -196,18 +196,26 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     if (step < 3) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
-        if (jaConfirmei) return `<div class="bg-blue-600 p-4 rounded-2xl text-white text-center animate-pulse mb-4"><p class="text-xs font-bold">Aguardando a outra parte confirmar...</p></div>`;
+        if (jaConfirmei) return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
         
-        return `<div class="bg-slate-900 p-5 rounded-2xl text-white shadow-2xl mb-4 border-b-4 border-blue-600">
-            <p class="text-xs font-bold mb-3 text-center">🤝 Confirmar este acordo?</p>
-            <div class="flex gap-2">
-                <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 py-3 rounded-xl text-[10px] font-black uppercase">✅ ACEITAR</button>
-                <button onclick="window.confirmarAcordo('${orderId}', false)" class="bg-slate-700 px-4 rounded-xl text-[10px]">❌</button>
+        return `<div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
+            <p class="text-sm font-black text-gray-800 mb-1">🤝 Fechar Acordo?</p>
+            <p class="text-xs text-gray-500 mb-4">Confirme se o valor e os detalhes estão certos.</p>
+            
+            <div class="flex gap-3 mb-4">
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wide shadow-md hover:bg-blue-700 transition">✅ ACEITAR E FECHAR</button>
             </div>
-            <p class="text-[8px] text-gray-400 mt-3 text-center uppercase tracking-tighter">R$ 20,00 de crédito promocional serão reservados como garantia.</p>
+            
+            <div class="bg-amber-50 border border-amber-100 p-2 rounded-lg flex gap-2 items-start">
+                <span class="text-amber-500 text-xs mt-0.5">🔒</span>
+                <p class="text-[9px] text-amber-800 font-medium leading-tight">
+                    <strong>SEGURANÇA:</strong> Ao confirmar, o sistema reserva <strong>R$ 20,00 (ou 10%)</strong> como garantia. Isso evita "bolos" e protege seu tempo.
+                </p>
+            </div>
         </div>`;
     }
-    if (step === 3) return `<div class="bg-green-600 p-4 rounded-2xl text-white text-center mb-4 shadow-lg"><p class="text-xs font-black italic">✨ ACORDO FECHADO! ✨</p><p class="text-[9px] mt-1">Contato liberado no ícone acima.</p></div>`;
+    if (step === 3) return `<div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center mb-4 mx-4 shadow-sm"><p class="text-sm font-black text-emerald-800 uppercase">✨ Acordo Confirmado!</p><p class="text-[10px] text-emerald-600 mt-1">Contato liberado no topo da tela.</p></div>`;
     return "";
 }
 
