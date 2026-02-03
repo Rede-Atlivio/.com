@@ -1,4 +1,7 @@
-import { db, auth, storage } from '../app.js';
+// js/modules/profile.js
+// 1. IMPORTAÇÃO DO CHAVEIRO MESTRE
+import { db, auth, storage } from '../config.js'; 
+
 import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
