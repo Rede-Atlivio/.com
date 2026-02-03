@@ -442,3 +442,5 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 window.carregarPedidosEmAndamento = carregarPedidosEmAndamento;
+window.SERVICOS_PADRAO = SERVICOS_PADRAO;
+window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
