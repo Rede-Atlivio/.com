@@ -363,81 +363,79 @@ export async function confirmarAcordo(orderId, aceitar) {
     
     try {
         await runTransaction(db, async (transaction) => {
-            // --- 1. LEITURAS (READS FIRST) ---
             const orderSnap = await transaction.get(orderRef);
             if (!orderSnap.exists()) throw "Pedido não encontrado!";
             const pedido = orderSnap.data();
-
-            console.log("DEBUG: O Pedido pertence ao Cliente ID:", pedido.client_id);
 
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const clientSnap = await transaction.get(clientRef);
 
             if (!clientSnap.exists()) {
-    console.warn("Carteira não encontrada, criando documento básico para o cliente...");
-    transaction.set(clientRef, { 
-        wallet_balance: 0, 
-        wallet_reserved: 0, 
-        uid: pedido.client_id 
-    });
-    throw "O Cliente ainda não possui saldo (R$ 0,00). Adicione saldo no Painel Admin para continuar.";
-}
+                transaction.set(clientRef, { wallet_balance: 0, wallet_reserved: 0, uid: pedido.client_id });
+                throw "O Cliente ainda não possui saldo (R$ 0,00).";
+            }
 
-            // --- 2. DEFINIÇÃO DE LÓGICA ---
             const isProvider = uid === pedido.provider_id;
             const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
             const vaiFecharAgora = (isProvider && pedido.client_confirmed) || (!isProvider && pedido.provider_confirmed);
 
-            // --- 3. ESCRITAS (WRITES LAST) ---
             transaction.update(orderRef, campoUpdate);
 
             if (vaiFecharAgora) {
                 const saldoAtual = clientSnap.data().wallet_balance || 0;
                 const valorReserva = 20.00;
 
-                console.log("DEBUG: Saldo do Cliente no Banco:", saldoAtual);
+                if (saldoAtual < valorReserva) throw "O Cliente não possui saldo suficiente (R$ 20,00).";
 
-                if (saldoAtual < valorReserva) {
-                    throw "O Cliente não possui saldo suficiente (R$ 20,00) para garantir este acordo.";
-                }
-
-                // Desconto e Reserva
                 transaction.update(clientRef, {
                     wallet_balance: saldoAtual - valorReserva,
                     wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva
                 });
 
-                // Liberação de Dados e Step 3
                 transaction.update(orderRef, { 
                     system_step: 3, 
-                    address_visible: true, 
-                    contact_visible: true,
                     status: 'confirmed_hold',
                     value_reserved: valorReserva,
                     confirmed_at: serverTimestamp()
                 });
 
-                // Mensagem de Sistema no Chat
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado. Use o botão no topo.",
+                    text: "🔒 RESERVA CONFIRMADA: O contato direto foi liberado.",
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
             }
         });
-
-        console.log("✅ Transação de Acordo concluída sem erros.");
-
-    } catch(e) { 
-        console.error("Erro na Transação:", e);
-        alert("⚠️ " + e); 
-    }
+        alert("✅ Acordo processado!");
+    } catch(e) { alert("⚠️ " + e); }
 }
 
 // ============================================================================
-// 👁️ ESCUTA DE MENSAGENS (REAL-TIME)
+// 3. LOGICA DE MENSAGENS E SEGURANÇA
 // ============================================================================
+export async function enviarMensagemChat(orderId, step) {
+    const input = document.getElementById('chat-input-msg');
+    let texto = input.value.trim();
+    if(!texto) return;
+
+    if (step < 3) {
+        const proibidas = ["whatsapp", "zap", "fone", "pix", "contato"];
+        const textoLimpo = texto.toLowerCase().replace(/[.\-_ @]/g, "");
+        if (proibidas.some(p => textoLimpo.includes(p))) {
+            alert("🚫 BLOQUEADO: Use o botão 'ACEITAR' para liberar o contato.");
+            input.value = ""; return;
+        }
+    }
+
+    input.value = "";
+    try {
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: texto, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
+        });
+    } catch (e) { console.error(e); }
+}
+
 export function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
@@ -448,88 +446,40 @@ export function escutarMensagens(orderId) {
             const m = d.data();
             const souEu = m.sender_id === auth.currentUser.uid;
             const isSystem = m.sender_id === 'system';
-            
             if(isSystem) {
-                area.innerHTML += `<div class="flex justify-center my-2"><span class="text-[8px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full border border-blue-100 font-bold">${m.text}</span></div>`;
+                area.innerHTML += `<div class="flex justify-center my-2"><span class="text-[8px] bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-bold">${m.text}</span></div>`;
             } else {
-                area.innerHTML += `<div class="flex ${souEu ? 'justify-end' : 'justify-start'} animate-fadeIn"><div class="${souEu ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'} px-4 py-2 rounded-2xl max-w-[85%] text-xs shadow-sm"><p>${m.text}</p></div></div>`;
+                area.innerHTML += `<div class="flex ${souEu ? 'justify-end' : 'justify-start'} animate-fadeIn"><div class="${souEu ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border rounded-bl-none'} px-4 py-2 rounded-2xl max-w-[85%] text-xs shadow-sm"><p>${m.text}</p></div></div>`;
             }
         });
         const divMsgs = document.getElementById('chat-messages');
         if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
     });
 }
-// ============================================================================
-// 🏁 FASE 5: FINALIZAÇÃO E REPASSE (FECHAMENTO DO CICLO)
-// ============================================================================
-window.finalizarServicoPassoFinal = async (orderId) => {
-    if(!confirm("Confirma a entrega? O valor será liberado ao prestador.")) return;
 
-    const orderRef = doc(db, "orders", orderId);
+// ============================================================================
+// 4. AÇÕES FINAIS E EXPOSIÇÃO GLOBAL
+// ============================================================================
+window.finalizarServicoPassoFinalAction = async (orderId) => {
+    if(!confirm("Confirma a entrega? O valor será liberado.")) return;
     try {
-        await runTransaction(db, async (transaction) => {
-            const orderSnap = await transaction.get(orderRef);
-            const pedido = orderSnap.data();
-            
-            if(pedido.status === 'completed') throw "Este serviço já foi finalizado.";
-            
-            // 🔒 TRAVA BLINDADA 3: Validação de Segurança Financeira
-            const valorReserva = pedido.value_reserved || 0;
-            if (valorReserva <= 0) {
-                throw "ERRO DE SEGURANÇA: Nenhuma reserva financeira encontrada para este pedido. Contate o suporte.";
-            }
-
-            // Lógica de Taxa (Ex: Atlivio fica com 20% da reserva ou fixo R$ 5)
-            // Aqui mantive seu fixo de 5, mas pode mudar para porcentagem se quiser.
-            const taxaPlataforma = 5.00; 
-            const valorRepasse = valorReserva - taxaPlataforma;
-
-            if (valorRepasse < 0) throw "Erro matemático: Taxa maior que reserva.";
-
-            const clientRef = doc(db, "usuarios", pedido.client_id);
-            const provRef = doc(db, "usuarios", pedido.provider_id);
-            const clientSnap = await transaction.get(clientRef);
-            const provSnap = await transaction.get(provRef);
-
-            // Tira da Reserva do Cliente
-            transaction.update(clientRef, {
-                wallet_reserved: (clientSnap.data().wallet_reserved || 0) - valorReserva
-            });
-
-            // Paga o Prestador
-            transaction.update(provRef, {
-                wallet_balance: (provSnap.data().wallet_balance || 0) + valorRepasse,
-                saldo: (provSnap.data().saldo || 0) + valorRepasse
-            });
-
-            transaction.update(orderRef, { 
-                status: 'completed',
-                completed_at: serverTimestamp(),
-                net_value_provider: valorRepasse
-            });
-
-            const msgRef = doc(collection(db, `chats/${orderId}/messages`));
-            transaction.set(msgRef, {
-                text: `⭐️ SERVIÇO CONCLUÍDO: R$ ${valorRepasse.toFixed(2)} liberados.`,
-                sender_id: "system",
-                timestamp: serverTimestamp()
-            });
-        });
-
-        alert("✅ Pagamento liberado com sucesso!");
-        window.abrirModalAvaliacao(orderId); // Ajustei aqui, geralmente passa só ID ou obj
-    } catch(e) { alert("Erro: " + e); }
+        await updateDoc(doc(db, "orders", orderId), { status: 'completed', completed_at: serverTimestamp() });
+        alert("✅ Pagamento liberado!");
+        window.voltarParaListaPedidos();
+    } catch(e) { alert("Erro: " + e.message); }
 };
 
 window.reportarProblema = async (orderId) => {
-    const motivo = prompt("Descreva o problema (Ex: Prestador não apareceu / Cliente não pagou o restante):");
+    const motivo = prompt("Descreva o problema:");
     if(!motivo) return;
+    await updateDoc(doc(db, "orders", orderId), { status: 'dispute', dispute_reason: motivo, dispute_at: serverTimestamp() });
+    alert("🚨 Suporte acionado.");
+};
 
-    await updateDoc(doc(db, "orders", orderId), {
-        status: 'dispute',
-        dispute_reason: motivo,
-        dispute_at: serverTimestamp()
-    });
+window.novoDescreverServico = (id) => { const t = prompt("O que será feito?"); if(t) enviarMensagemChat(id, 1); };
+window.novoEnviarProposta = (id) => { const v = prompt("Qual o valor final?"); if(v) enviarMensagemChat(id, 1); };
 
-    alert("🚨 Suporte acionado. A reserva de R$ 20,00 foi congelada para análise da ATLIVIO.");
+window.voltarParaListaPedidos = () => {
+    document.getElementById('painel-chat-individual')?.classList.add('hidden');
+    document.getElementById('painel-pedidos')?.classList.remove('hidden');
 };
