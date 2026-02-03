@@ -29,7 +29,7 @@ function escutarNotificacoes(uid) {
 
         if (total > 0) {
             if (!badge) {
-                // Se não existir, cria um círculo vermelho flutuante no canto
+                // Se não existir, cria um círculo vermelho flutuante no topo
                 badge = document.createElement('span');
                 badge.id = 'notif-badge';
                 badge.className = "fixed top-2 right-4 bg-red-600 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-lg z-[101] animate-pulse";
@@ -42,16 +42,21 @@ function escutarNotificacoes(uid) {
         }
         // -------------------------------------
 
+        // Remove alertas antigos para não acumular na tela
         const existingAlert = document.getElementById('user-alert-bar');
         if(existingAlert) existingAlert.remove();
 
+        // Se não houver nada novo, encerra aqui
         if (snap.empty) return;
 
+        // Pega a notificação mais recente para exibir o Banner
         const notif = snap.docs[0];
         const data = notif.data();
+        
         mostrarBarraNotificacao(notif.id, data);
     });
 }
+
 function mostrarBarraNotificacao(id, data) {
     // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
     const bgColorMap = {
