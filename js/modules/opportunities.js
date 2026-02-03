@@ -1,4 +1,4 @@
-import { db } from '../app.js';
+import { db } from '../config.js';
 import { collection, query, orderBy, getDocs, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function carregarOportunidades() {
