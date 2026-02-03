@@ -4,11 +4,42 @@ import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, up
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // CATEGORIAS E VALORES MÍNIMOS
+// 1. TABELA DE INTELIGÊNCIA DE MERCADO (Preços Reais)
+export const SERVICOS_PADRAO = [
+    { category: 'eventos', title: 'Garçom', price: 120 },
+    { category: 'eventos', title: 'Barman', price: 150 },
+    { category: 'eventos', title: 'Copeira', price: 110 },
+    { category: 'eventos', title: 'Churrasqueiro', price: 200 },
+    { category: 'eventos', title: 'Recepcionista / Hostess', price: 130 },
+    { category: 'eventos', title: 'Segurança de evento', price: 180 },
+    { category: 'musica', title: 'Músico solo', price: 250 },
+    { category: 'musica', title: 'Banda pequena / dupla', price: 600 },
+    { category: 'musica', title: 'DJ profissional', price: 400 },
+    { category: 'musica', title: 'Animador infantil', price: 300 },
+    { category: 'audiovisual', title: 'Fotógrafo', price: 350 },
+    { category: 'audiovisual', title: 'Videomaker', price: 450 },
+    { category: 'limpeza', title: 'Diarista', price: 130 },
+    { category: 'limpeza', title: 'Faxineira pós-obra', price: 180 },
+    { category: 'residenciais', title: 'Eletricista', price: 150 },
+    { category: 'residenciais', title: 'Encanador', price: 150 },
+    { category: 'residenciais', title: 'Pedreiro (diária)', price: 200 },
+    { category: 'residenciais', title: 'Pintor (diária)', price: 180 },
+    { category: 'residenciais', title: 'Montador de móveis', price: 150 },
+    { category: 'transporte', title: 'Motorista particular', price: 200 },
+    { category: 'transporte', title: 'Frete pequeno', price: 180 },
+    { category: 'transporte', title: 'Motoboy', price: 60 },
+    { category: 'aluguel', title: 'Aluguel de som', price: 250 },
+    { category: 'tecnologia', title: 'Desenvolvedor', price: 300 },
+    { category: 'tecnologia', title: 'Criação de site simples', price: 800 }
+];
+
+window.SERVICOS_PADRAO = SERVICOS_PADRAO; // Expõe para o scanner
+
 export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
     { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
     { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹' },
-    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗' },
+    { id: 'transporte', label: '🚗 Transporte', icon: '🚗' },
     { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵' },
     { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸' },
     { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻' },
