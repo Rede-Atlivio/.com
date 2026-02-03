@@ -421,6 +421,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                 // Perfil que deve recarregar
                 if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
                     window.switchTab('ganhar');
+                    addDoc(collection(db, `chats/${orderId}/messages`), { text: "⚠️ Cliente tentou confirmar, mas está sem saldo para a reserva.", sender_id: "system", timestamp: serverTimestamp() });
                 }
             } else {
                 // Outra pessoa que está esperando
