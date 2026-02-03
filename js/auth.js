@@ -507,6 +507,9 @@ window.addEventListener('click', (e) => {
         logSystemEvent("Clique", `Botão: ${identificador}`);
     }
 });
+// EXPOSIÇÃO GLOBAL PARA O APP.JS
+window.verificarSentenca = verificarSentenca;
+
 async function verificarSentenca(uid) {
     const userDoc = await getDoc(doc(db, "usuarios", uid));
     if (userDoc.exists()) {
@@ -515,8 +518,8 @@ async function verificarSentenca(uid) {
             alert("🚫 CONTA SUSPENSA: Detectamos atividades irregulares.");
             await auth.signOut();
             window.location.reload();
-            return true; // Está banido
+            return true; 
         }
     }
-    return false; // Está limpo
+    return false;
 }
