@@ -588,12 +588,15 @@ export async function salvarServicoPrestador() {
     const price = parseFloat(priceInput.value);
     const title = titleInput.value.trim();
     const description = descInput.value.trim();
-    const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
+    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
+    const minAllowed = config.valor_minimo;
+    const maxAllowed = config.valor_maximo;
 
     if(!title) return alert("❌ Digite um título para o serviço.");
-    if(isNaN(price) || price < minPrice) {
-        return alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
-    }
+
+    if(isNaN(price) || price < minAllowed || price > maxAllowed) {
+    return alert(`⛔ VALOR FORA DO LIMITE!\n\nO sistema aceita apenas valores entre R$ ${minAllowed},00 e R$ ${maxAllowed},00.\n\nPor favor, ajuste o valor para prosseguir.`);
+}
 
     const newService = { 
         title: title,
