@@ -1,4 +1,4 @@
-import { db, auth } from '../app.js';
+import { db, auth } from '../config.js';
 import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 // ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
