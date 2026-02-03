@@ -22,7 +22,7 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
 // Inicia CRM
-if(iniciarSistemaNotificacoes) iniciarSistemaNotificacoes(); 
+window.iniciarSistemaNotificacoes();
 
 // 5. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO)
 auth.onAuthStateChanged(async (user) => {
