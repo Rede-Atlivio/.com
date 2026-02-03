@@ -288,15 +288,48 @@ async function registrarRisco(uid, tipo) {
     }
 }
 
-export async function sugerirDetalhe(orderId, tipo) {
-    let valor = prompt(`Informe o(a) ${tipo}:`);
-    if(!valor) return;
-    const msgFinal = `🔹 [DETALHE] ${tipo.toUpperCase()}: ${valor}`;
-    await addDoc(collection(db, `chats/${orderId}/messages`), { 
-        text: msgFinal, 
-        sender_id: auth.currentUser.uid, 
-        timestamp: serverTimestamp() 
-    });
+// --- NOVAS FUNÇÕES DE GUIAR O USUÁRIO ---
+
+window.novoDescreverServico = async (orderId) => {
+    const oQue = prompt("1. O que precisa ser feito? (Seja breve)");
+    if(!oQue) return;
+    
+    const onde = prompt("2. Local exato ou Bairro:");
+    if(!onde) return;
+
+    const duracao = prompt("3. Duração estimada (Ex: 2 horas):");
+    
+    const msgFinal = `📦 SERVIÇO DETALHADO:\n• O que: ${oQue}\n• Local: ${onde}\n• Tempo: ${duracao || 'A combinar'}`;
+    
+    await enviarMsgSistema(orderId, msgFinal);
+};
+
+window.novoEnviarProposta = async (orderId) => {
+    const valorStr = prompt("💰 Qual o VALOR FINAL do serviço? (Apenas números)");
+    if(!valorStr) return;
+    
+    const incluso = prompt("🛠️ O que está incluso nesse valor?");
+    if(!incluso) return;
+
+    const obs = prompt("📝 Alguma observação? (Opcional)");
+
+    const msgFinal = `🎯 PROPOSTA OFICIAL:\n• Valor Total: R$ ${valorStr}\n• Incluso: ${incluso}\n${obs ? `• Obs: ${obs}` : ''}\n\n👉 Se concordar, confirme no botão acima.`;
+    
+    await enviarMsgSistema(orderId, msgFinal);
+};
+
+// Função auxiliar para enviar sem passar pelo filtro de bloqueio (pois é gerado pelo sistema)
+async function enviarMsgSistema(orderId, texto) {
+    try {
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: texto, 
+            sender_id: auth.currentUser.uid, 
+            timestamp: serverTimestamp(),
+            is_structured: true // Flag para identificar msg bonitinha
+        });
+    } catch (e) {
+        alert("Erro ao enviar.");
+    }
 }
 
 // ============================================================================
