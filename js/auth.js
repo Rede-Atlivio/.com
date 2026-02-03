@@ -507,3 +507,16 @@ window.addEventListener('click', (e) => {
         logSystemEvent("Clique", `Botão: ${identificador}`);
     }
 });
+async function verificarSentenca(uid) {
+    const userDoc = await getDoc(doc(db, "usuarios", uid));
+    if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.account_status === 'banned' || (data.risk_score || 0) >= 100) {
+            alert("🚫 CONTA SUSPENSA: Detectamos atividades irregulares.");
+            await auth.signOut();
+            window.location.reload();
+            return true; // Está banido
+        }
+    }
+    return false; // Está limpo
+}
