@@ -700,13 +700,15 @@
 <script type="module" src="./js/modules/reviews.js?v=15.4"></script>
 
 <script type="module">
+    // 1. IMPORTAÇÕES (TUDO JUNTO)
     import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { app } from './js/config.js'; 
+    import { db, app } from './js/config.js'; 
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const auth = getAuth(app);
     auth.languageCode = 'pt-br';
 
-    // 🎨 MÁSCARA AUTOMÁTICA
+    // 2. MÁSCARA DO TELEFONE
     window.mascaraTelefone = (input) => {
         let v = input.value.replace(/\D/g,'');
         v = v.substring(0, 11);
@@ -715,7 +717,7 @@
         input.value = v;
     };
 
-    // SETUP RECAPTCHA E SMS
+    // 3. LÓGICA DE LOGIN (SMS)
     const setupRecaptcha = () => {
         if(!window.recaptchaVerifier) {
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {'size': 'invisible'});
@@ -741,6 +743,7 @@
         } catch (error) {
             alert("Erro: " + error.message);
             btn.disabled = false;
+            btn.innerText = "RECEBER CÓDIGO SMS 📲";
         }
     };
 
@@ -748,20 +751,15 @@
         const code = document.getElementById('login-code').value;
         try {
             await window.confirmationResult.confirm(code);
-            console.log("Sucesso!");
+            console.log("Sucesso no login!");
         } catch (error) {
             alert("Código inválido!");
         }
     };
-</script>
-    
-<script type="module">
-    // PUXA O DB JÁ CONFIGURADO DO SEU ARQUIVO CENTRAL
-    import { db } from './js/config.js'; 
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 1. Ler Mensagem Global
-    async function loadGlobalAlert() {
+    // 4. ALERTA GLOBAL E RASTREADOR (ITEM 39)
+    async function carregarConfiguracoesIniciais() {
+        // Alerta do Admin
         try {
             const docSnap = await getDoc(doc(db, "settings", "global"));
             if (docSnap.exists() && docSnap.data().top_message) {
@@ -772,21 +770,19 @@
                     msgDiv.classList.remove('hidden');
                 }
             }
-        } catch (e) { console.log("Erro config:", e); }
+        } catch (e) { console.log("Erro ao carregar alerta:", e); }
+
+        // Rastreador Universal de Bônus
+        const p = new URLSearchParams(window.location.search);
+        const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
+        if(origem) {
+            console.log("🔗 ORIGEM RASTREADA:", origem);
+            localStorage.setItem("traffic_source", origem);
+        }
     }
 
-// 1. RASTREADOR UNIVERSAL (Item 39)
-// Captura quem indicou o link e salva para o bônus de afiliado
-const p = new URLSearchParams(window.location.search);
-const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
-
-if(origem) {
-    console.log("🔗 ORIGEM RASTREADA:", origem);
-    localStorage.setItem("traffic_source", origem);
-}
-
-// 2. EXECUÇÃO DAS CARGAS INICIAIS
-loadGlobalAlert();
+    // DISPARA TUDO
+    carregarConfiguracoesIniciais();
 </script>
     
     <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
