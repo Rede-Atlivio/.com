@@ -374,22 +374,28 @@ export async function confirmarAcordo(orderId, aceitar) {
         const config = configSnap.data();
         
         // --- 2. TRAVA DE PRIORIDADE 1: MEU SALDO (VALIDAÇÃO LOCAL) ---
-        const meuPerfilSnap = await getDoc(doc(db, "usuarios", uid));
-        const meuSaldo = meuPerfilSnap.data()?.wallet_balance || 0;
-        
+        // 1. Coleta dados para o cálculo
         const pedidoSnap = await getDoc(orderRef);
         const pedido = pedidoSnap.data();
-        const valorTotalPedido = parseFloat(pedido.offer_value.replace(',', '.')) || 0;
+        const valorTotalPedido = parseFloat(String(pedido.offer_value).replace(',', '.')) || 0;
+        
+        const isMeProvider = uid === pedido.provider_id;
 
-        // Cálculo dinâmico baseado estritamente no seu Painel Admin
-        let valorCalculado = valorTotalPedido * (config.porcentagem_reserva / 100);
-        let valorReserva = Math.max(config.reserva_minima, Math.min(valorCalculado, config.reserva_maxima));
+        // 2. Cálculo da Taxa ATLIVIO baseada no seu Painel Admin
+        const valorCalculado = valorTotalPedido * (config.porcentagem_reserva / 100);
+        const taxaGarantia = Math.max(config.reserva_minima || 20, Math.min(valorCalculado, config.reserva_maxima || 200));
 
-        if (meuSaldo < valorReserva) {
-            if (confirm(`⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ ${valorReserva.toFixed(2).replace('.', ',')} de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?`)) {
+        // 3. 🛡️ A TRAVA DO PRESTADOR: Se for ele fechando, checa o "Cheque Especial"
+        if (isMeProvider) {
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+            const LIMITE_DEBITO = -60.00; // Seu limite de segurança
+            
+            if ((saldoAtual - taxaGarantia) < LIMITE_DEBITO) {
+                alert(`⛔ ACORDO BLOQUEADO\n\nPara fechar este serviço, o sistema cobrará uma taxa de R$ ${taxaGarantia.toFixed(2)}.\n\nSeu saldo ficaria abaixo do limite permitido (R$ ${LIMITE_DEBITO}).\n\nPor favor, faça uma recarga para liberar o fechamento.`);
                 window.switchTab('ganhar');
+                return;
             }
-            return; // Bloqueio prioritário
         }
 
         // --- 3. EXECUÇÃO DA TRANSAÇÃO NO BANCO DE DADOS ---
