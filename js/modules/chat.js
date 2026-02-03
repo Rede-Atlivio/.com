@@ -372,7 +372,7 @@ export async function confirmarAcordo(orderId, aceitar) {
 
             if (!clientSnap.exists()) {
                 transaction.set(clientRef, { wallet_balance: 0, wallet_reserved: 0, uid: pedido.client_id });
-                throw "O Cliente ainda não possui saldo (R$ 0,00).";
+                throw "Saldo insuficiente para reserva (R$ 0,00).";
             }
 
             const isProvider = uid === pedido.provider_id;
@@ -385,7 +385,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                 const saldoAtual = clientSnap.data().wallet_balance || 0;
                 const valorReserva = 20.00;
 
-                if (saldoAtual < valorReserva) throw "O Cliente não possui saldo suficiente (R$ 20,00).";
+                if (saldoAtual < valorReserva) throw "Saldo insuficiente para reserva (R$ 20,00).";
 
                 transaction.update(clientRef, {
                     wallet_balance: saldoAtual - valorReserva,
@@ -408,7 +408,28 @@ export async function confirmarAcordo(orderId, aceitar) {
             }
         });
         alert("✅ Acordo processado!");
-    } catch(e) { alert("⚠️ " + e); }
+    } catch(e) { 
+        console.error("Erro no acordo:", e);
+        const erroTexto = String(e);
+
+        if (erroTexto.includes("Saldo insuficiente")) {
+            const pedidoSnap = await getDoc(doc(db, "orders", orderId));
+            const pedido = pedidoSnap.data();
+            const souOClient = auth.currentUser.uid === pedido.client_id;
+
+            if (souOClient) {
+                // Perfil que deve recarregar
+                if (confirm("⚠️ VOCÊ ESTÁ SEM SALDO\n\nÉ necessário R$ 20,00 de reserva para fechar este acordo.\n\nDeseja ir para a Carteira recarregar agora?")) {
+                    window.switchTab('ganhar');
+                }
+            } else {
+                // Outra pessoa que está esperando
+                alert("⏳ AGUARDANDO RECARGA\n\nO cliente está sem saldo para confirmar esse acordo. Aguardando recarga para prosseguir.");
+            }
+        } else {
+            alert("⚠️ " + e);
+        }
+    }
 }
 
 export function escutarMensagens(orderId) {
