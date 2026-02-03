@@ -4,59 +4,21 @@ import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, up
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // CATEGORIAS E VALORES MÍNIMOS
-// 1. TABELA DE INTELIGÊNCIA DE MERCADO (Preços Reais)
-export const SERVICOS_PADRAO = [
-    { category: 'eventos', title: 'Garçom', price: 120 },
-    { category: 'eventos', title: 'Barman', price: 150 },
-    { category: 'eventos', title: 'Copeira', price: 110 },
-    { category: 'eventos', title: 'Churrasqueiro', price: 200 },
-    { category: 'eventos', title: 'Recepcionista / Hostess', price: 130 },
-    { category: 'eventos', title: 'Segurança de evento', price: 180 },
-    { category: 'musica', title: 'Músico solo', price: 250 },
-    { category: 'musica', title: 'Banda pequena / dupla', price: 600 },
-    { category: 'musica', title: 'DJ profissional', price: 400 },
-    { category: 'musica', title: 'Animador infantil', price: 300 },
-    { category: 'audiovisual', title: 'Fotógrafo', price: 350 },
-    { category: 'audiovisual', title: 'Videomaker', price: 450 },
-    { category: 'limpeza', title: 'Diarista', price: 130 },
-    { category: 'limpeza', title: 'Faxineira pós-obra', price: 180 },
-    { category: 'residenciais', title: 'Eletricista', price: 150 },
-    { category: 'residenciais', title: 'Encanador', price: 150 },
-    { category: 'residenciais', title: 'Pedreiro (diária)', price: 200 },
-    { category: 'residenciais', title: 'Pintor (diária)', price: 180 },
-    { category: 'residenciais', title: 'Montador de móveis', price: 150 },
-    { category: 'transporte', title: 'Motorista particular', price: 200 },
-    { category: 'transporte', title: 'Frete pequeno', price: 180 },
-    { category: 'transporte', title: 'Motoboy', price: 60 },
-    { category: 'aluguel', title: 'Aluguel de som', price: 250 },
-    { category: 'tecnologia', title: 'Desenvolvedor', price: 300 },
-    { category: 'tecnologia', title: 'Criação de site simples', price: 800 }
+export const CATEGORIAS_ATIVAS = [
+    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
+    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
+    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹', minPrice: 130 },
+    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗', minPrice: 60 },
+    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵', minPrice: 250 },
+    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸', minPrice: 300 },
+    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻', minPrice: 150 },
+    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫', minPrice: 80 },
+    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆', minPrice: 100 },
+    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶', minPrice: 50 },
+    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 },
+    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 }
 ];
 
-window.SERVICOS_PADRAO = SERVICOS_PADRAO; // Expõe para o scanner
-
-export const CATEGORIAS_ATIVAS = [
-    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸' },
-    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠' },
-    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹' },
-    { id: 'transporte', label: '🚗 Transporte', icon: '🚗' },
-    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵' },
-    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸' },
-    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻' },
-    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫' },
-    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆' },
-    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶' },
-    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗' },
-    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝' }
-].map(cat => ({
-    ...cat,
-    get minPrice() { 
-        return window.configFinanceiroAtiva?.valor_minimo || 20; 
-    }
-}));
-
-// 🔥 VÍNCULO GLOBAL IMEDIATO PARA MATAR O ERRO NO REQUEST.JS
-window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
 let servicesUnsubscribe = null;
 
 // ============================================================================
@@ -148,29 +110,17 @@ function renderizarCards(servicos, container) {
 
     servicos.forEach(user => {
         try {
-            // 1. Extração Blindada (Garante que sempre teremos um objeto, mesmo que vazio)
-            const dbService = (user.services && user.services[0]) ? user.services[0] : {};
+            const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
+            const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
             
-            // 2. Inteligência de Título e Categoria (Evita o 'undefined' no HTML)
-            const tituloServico = dbService.title || dbService.category || user.categoria || 'Serviço Geral';
-            const categoriaBusca = dbService.category || user.categoria || '';
-
-            // 3. Cruzamento de Preço (Tabela Real > Preço do DB > Config Mínima)
-            const infoReal = window.SERVICOS_PADRAO.find(s => 
-                (tituloServico && s.title.toLowerCase() === tituloServico.toLowerCase()) || 
-                (categoriaBusca && s.category.toLowerCase() === categoriaBusca.toLowerCase())
-            );
-
-            const precoReal = infoReal ? infoReal.price : (dbService.price || window.configFinanceiroAtiva?.valor_minimo || 20);
-            
-            // 4. Formatação de Display
             const nomeProf = user.nome_profissional || user.nome || "Prestador";
-            const precoDisplay = isNaN(precoReal) ? 'A Combinar' : `R$ ${precoReal}`;
+            const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
+            const tituloServico = mainService.title || mainService.category;
             
             const isOnline = user.is_online === true;
             const isDemo = user.is_demo === true;
 
-            // --- LÓGICA DE STATUS ---
+            // --- LÓGICA DE STATUS (BOLINHA ONLINE/OFFLINE) ---
             let statusClass = isOnline ? "" : "grayscale opacity-75";
             let statusText = isOnline ? "ONLINE" : "OFFLINE";
             let statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
@@ -181,31 +131,30 @@ function renderizarCards(servicos, container) {
                 statusClass += " border-orange-200";
             }
 
-            // --- LÓGICA DE NÍVEIS E SELOS ---
+            // --- 🔥 NOVO: LÓGICA DE NÍVEIS E SELOS ---
             let seloNivel = "";
-            let bordaCard = "border-gray-100";
+            let bordaCard = "border-gray-100"; // Borda padrão
             
             if (user.service_level === 'premium') {
                 seloNivel = `<span class="bg-black text-yellow-400 text-[8px] font-black px-2 py-0.5 rounded border border-yellow-500 uppercase shadow-sm">💎 PREMIUM</span>`;
-                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100";
+                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100"; // Destaque Dourado
             } else if (user.service_level === 'pro') {
                 seloNivel = `<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase shadow-sm">⚡ PRO</span>`;
-                bordaCard = "border-blue-200 shadow-sm";
+                bordaCard = "border-blue-200 shadow-sm"; // Destaque Azul
             }
 
             // --- IMAGENS ---
             const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
             const avatarImg = user.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeProf)}&background=random`;
 
-            // --- AÇÕES DE CLIQUE (SINCRONIZADAS COM A INTELIGÊNCIA DE PREÇO) ---
+            // --- AÇÕES DE CLIQUE ---
             const clickActionPerfil = isDemo 
                 ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
                 : `window.verPerfilCompleto('${user.id}')`;
 
-            // Garante que o precoReal calculado acima seja o mesmo enviado para a solicitação
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
-                : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${precoReal}')`;
+                : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
 
             // --- HTML DO CARD ---
             container.innerHTML += `
@@ -238,7 +187,7 @@ function renderizarCards(servicos, container) {
                         
                         <div class="mb-3">
                              <p class="text-[10px] font-bold text-blue-900 uppercase truncate">${tituloServico}</p>
-                             <p class="text-[9px] text-gray-400 line-clamp-1">${dbService.description || user.bio || 'Disponível para serviços.'}</p>
+                             <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível para serviços.'}</p>
                         </div>
 
                         <div class="flex items-center gap-2 pt-2 border-t border-gray-50 mt-auto">
@@ -635,15 +584,12 @@ export async function salvarServicoPrestador() {
     const price = parseFloat(priceInput.value);
     const title = titleInput.value.trim();
     const description = descInput.value.trim();
-    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
-    const minAllowed = config.valor_minimo;
-    const maxAllowed = config.valor_maximo;
+    const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
 
     if(!title) return alert("❌ Digite um título para o serviço.");
-
-    if(isNaN(price) || price < minAllowed || price > maxAllowed) {
-    return alert(`⛔ VALOR FORA DO LIMITE!\n\nO sistema aceita apenas valores entre R$ ${minAllowed},00 e R$ ${maxAllowed},00.\n\nPor favor, ajuste o valor para prosseguir.`);
-}
+    if(isNaN(price) || price < minPrice) {
+        return alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
+    }
 
     const newService = { 
         title: title,
