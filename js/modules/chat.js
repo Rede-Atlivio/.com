@@ -389,16 +389,49 @@ export async function confirmarAcordo(orderId, aceitar) {
         const configDefault = { porcentagem_reserva: 10, limite_divida: -60.00 };
         const config = configSnap.exists() ? configSnap.data() : configDefault;
         
-        // --- 2. TRAVA DE PRIORIDADE 1: MEU SALDO (VALIDAÇÃO LOCAL) ---
+        // --- 2. TRAVA DE PRIORIDADE: VALIDAÇÃO DINÂMICA POR PERFIL (V11.0) ---
         const pedidoSnap = await getDoc(orderRef);
         const pedido = pedidoSnap.data();
         const valorTotalPedido = parseFloat(String(pedido.offer_value).replace(',', '.')) || 0;
         
         const isMeProvider = uid === pedido.provider_id;
+        const isMeClient = uid === pedido.client_id;
 
-        // CÁLCULO DA RESERVA
-        const pctReserva = config.porcentagem_reserva !== undefined ? config.porcentagem_reserva : 10;
-        const valorReserva = valorTotalPedido * (pctReserva / 100);
+        // 🛡️ REGRAS DO ADMIN (Carregadas da Memória Unificada)
+        const cfgMaster = window.configFinanceiroAtiva || config; 
+        
+        let valorNecessarioParaConfirmar = 0;
+        let pctAplicada = 0;
+
+        if (isMeProvider) {
+            // Prestador usa a % de reserva do prestador e respeita o limite de -60
+            pctAplicada = cfgMaster.porcentagem_reserva || 20;
+            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
+            
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+            const limiteCredito = parseFloat(cfgMaster.limite_divida || -60);
+
+            if ((saldoAtual - valorNecessarioParaConfirmar) < limiteCredito) {
+                alert(`⛔ SALDO INSUFICIENTE (PRESTADOR)\n\nEste serviço exige R$ ${valorNecessarioParaConfirmar.toFixed(2)} de reserva.\nSeu limite de crédito não cobre este valor.`);
+                if(window.switchTab) window.switchTab('ganhar');
+                return;
+            }
+        } 
+        else if (isMeClient) {
+            // Cliente usa a % de reserva do cliente e PRECISA ter saldo real (não tem limite negativo)
+            pctAplicada = cfgMaster.porcentagem_reserva_cliente || 10;
+            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
+
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+
+            if (saldoAtual < valorNecessarioParaConfirmar) {
+                alert(`⛔ SALDO INSUFICIENTE (CLIENTE)\n\nPara fechar este acordo, você precisa de R$ ${valorNecessarioParaConfirmar.toFixed(2)} em saldo (Garantia de ${pctAplicada}%).\n\nPor favor, recarregue sua carteira.`);
+                if(window.switchTab) window.switchTab('ganhar');
+                return;
+            }
+        }
 
         // 🛡️ TRAVA PRESTADOR (Cheque Especial)
         if (isMeProvider) {
