@@ -379,19 +379,19 @@ export async function aceitarPedidoRadar(orderId) {
             saldoAtual = parseFloat(userSnap.data().saldo || 0);
         }
 
-        // 3. A TRAVA PROATIVA (Cálculo do Futuro) 🛡️
-        const LIMITE_DEBITO = -60.00; // Limite de R$ 60,00 negativo
-        const saldoFuturo = saldoAtual - taxa;
+        // 🔥 TRAVA DINÂMICA ATLIVIO 2.0
+const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, taxa_prestador: 20 };
+// Calcula quanto o prestador deve ter (20% do serviço conforme sua regra master)
+const margemSegurancaPrestador = valorServico * (config.taxa_prestador / 100 || 0.20); 
 
-        // Se o saldo após a taxa for menor que -60, BLOQUEIA.
-        if (saldoFuturo < LIMITE_DEBITO) {
-             alert(`⛔ AÇÃO BLOQUEADA\n\nAceitar este serviço de R$ ${valorServico} geraria uma taxa de R$ ${taxa.toFixed(2)}.\n\nSeu saldo iria para R$ ${saldoFuturo.toFixed(2)}, o que ultrapassa o limite permitido (R$ ${LIMITE_DEBITO}).\n\nPor favor, faça uma recarga para liberar este serviço.`);
-             
-             // Redireciona para a carteira
-             const tabGanhar = document.getElementById('tab-ganhar');
-             if(tabGanhar) tabGanhar.click();
-             return; // PARA TUDO AQUI
-        }
+// O saldo não pode ficar abaixo de ZERO após descontar a margem de segurança do serviço
+if (saldoAtual < margemSegurancaPrestador) {
+     alert(`⛔ SALDO INSUFICIENTE\n\nPara aceitar este serviço de R$ ${valorServico.toFixed(2)}, você precisa de no mínimo R$ ${margemSegurancaPrestador.toFixed(2)} em conta.\n\nSeu saldo atual: R$ ${saldoAtual.toFixed(2)}.`);
+     
+     const tabGanhar = document.getElementById('tab-ganhar');
+     if(tabGanhar) tabGanhar.click();
+     return; 
+}
 
         // 4. Se passou na trava, executa o aceite normalmente
         await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
