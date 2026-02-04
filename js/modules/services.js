@@ -34,7 +34,7 @@ export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
     { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
     { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹', minPrice: 130 },
-    { id: 'transporte', label: '🚗 Transporte (Uber/99/Frete)', icon: '🚗', minPrice: 60 },
+    { id: 'transporte', label: '🚗 Transporte (Viagens/Frete)', icon: '🚗', minPrice: 60 },
     { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵', minPrice: 250 },
     { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸', minPrice: 300 },
     { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻', minPrice: 150 },
