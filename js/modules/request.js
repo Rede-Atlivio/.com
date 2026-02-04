@@ -283,22 +283,35 @@ export async function enviarPropostaAgora() {
 // 2. RADAR DO PRESTADOR (SINCRONIA ADMIN & TRAVA PROATIVA)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
-    // --- 1. SINCRONIA DE TAXA COM PAINEL ADMIN (V10.0 UNIFICADA) ---
-    try {
-        // Busca nos dois locais revelados pela perícia
-        const snapNovo = await getDoc(doc(db, "settings", "financeiro"));
-        const snapLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
-        
-        const dadosNovos = snapNovo.exists() ? snapNovo.data() : {};
-        const dadosLegados = snapLegado.exists() ? snapLegado.data() : {};
+    // --- 1. SINCRONIA V11.0 (ESCUTA REAL-TIME DO ADMIN) ---
+    // Trocamos o 'getDoc' por 'onSnapshot' para o controle ser INSTANTÂNEO
+    const configRef = doc(db, "settings", "financeiro");
+    
+    onSnapshot(configRef, (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            window.configFinanceiroAtiva = {
+                porcentagem_reserva: data.porcentagem_reserva ?? 0,
+                porcentagem_reserva_cliente: data.porcentagem_reserva_cliente ?? 0,
+                limite_divida: data.limite_divida ?? -60.00,
+                taxa_plataforma: data.taxa_plataforma ?? 0.20
+            };
+            
+            console.log("%c 🧠 MEMÓRIA ATUALIZADA PELO ADMIN: ", "background: #10b981; color: white;", window.configFinanceiroAtiva);
+            
+            // 🔥 GATILHO CRÍTICO: Força o Radar a se redesenhar com os novos valores
+            if (typeof window.atualizarRadar === 'function') {
+                window.atualizarRadar();
+            }
+        }
+    }, (error) => {
+        console.error("❌ Erro na escuta de regras financeiras:", error);
+    });
 
-        // 🔥 SINCRONIA V11.0: Carrega regras para Prestador e Cliente simultaneamente
-        window.configFinanceiroAtiva = {
-            porcentagem_reserva: dadosNovos.porcentagem_reserva || dadosLegados.porcentagem_reserva || 20,
-            porcentagem_reserva_cliente: dadosNovos.porcentagem_reserva_cliente || 10, // Nova Trava do Cliente
-            limite_divida: dadosNovos.limite_divida !== undefined ? dadosNovos.limite_divida : (dadosLegados.limite_divida || -60.00),
-            taxa_plataforma: dadosNovos.taxa_plataforma || 0.20
-        };
+    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
+    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
+    // ... restante do código
         
         console.log("🎯 Memória Global Atualizada (Prestador & Cliente):", window.configFinanceiroAtiva);
         
