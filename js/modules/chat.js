@@ -65,15 +65,19 @@ export async function carregarPedidosAtivos() {
         let pendentesHTML = "";
         let ativosHTML = "";
 
-        // Ordena por data (mais recente primeiro)
-        const listaOrdenada = Array.from(pedidosMap.values()).sort((a, b) => b.created_at - a.created_at);
+        // Ordena por data (mais recente primeiro) para garantir ordem correta
+        const listaOrdenada = Array.from(pedidosMap.values()).sort((a, b) => {
+            const dateA = a.created_at ? a.created_at.seconds : 0;
+            const dateB = b.created_at ? b.created_at.seconds : 0;
+            return dateB - dateA;
+        });
 
         listaOrdenada.forEach((pedido) => {
             const isMeProvider = pedido.provider_id === uid;
             const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
             const step = pedido.system_step || 1;
             
-            // SEPARAÇÃO: Se sou prestador e o status é 'pending', vai para a lista de espera
+            // LÓGICA DO ESTACIONAMENTO: Se sou prestador e status é 'pending', mostra botão vermelho de resgate
             if (isMeProvider && pedido.status === 'pending') {
                 pendentesHTML += `
                     <div onclick="if(window.recuperarPedidoRadar) window.recuperarPedidoRadar('${pedido.id}'); else alert('Recarregue a página para ver o radar.');" class="bg-red-50 p-3 rounded-xl border border-red-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-red-100 relative overflow-hidden group">
@@ -90,7 +94,7 @@ export async function carregarPedidosAtivos() {
                     </div>
                 `;
             } else {
-                // CHAT NORMAL
+                // LÓGICA PADRÃO: Mostra cartão de chat normal
                 let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa ${step}: Acordo</span>`;
                 if(step >= 3) statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa 3: Confirmado</span>`;
                 if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Finalizado</span>`;
@@ -109,10 +113,11 @@ export async function carregarPedidosAtivos() {
             }
         });
 
-        // Renderiza organizado
+        // Renderiza Separado: Pendentes no Topo, Ativos Embaixo
         if (pendentesHTML) {
             listaRender.innerHTML += `<p class="text-[9px] font-black text-red-400 uppercase tracking-widest mb-2 mt-1 pl-1">⚠️ Ação Necessária</p>${pendentesHTML}`;
         }
+        
         if (ativosHTML) {
             listaRender.innerHTML += `<p class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 mt-4 pl-1">💬 Em Andamento</p>${ativosHTML}`;
         } else if (!pendentesHTML) {
@@ -121,7 +126,7 @@ export async function carregarPedidosAtivos() {
     };
 
     const pedidosRef = collection(db, "orders");
-    // Removendo o filtro 'limit(10)' para garantir que tudo apareça nos testes
+    // Removendo o filtro 'limit(10)' para garantir que os pendentes antigos apareçam
     const qProvider = query(pedidosRef, where("provider_id", "==", uid), orderBy("created_at", "desc"));
     const qClient = query(pedidosRef, where("client_id", "==", uid), orderBy("created_at", "desc"));
 
