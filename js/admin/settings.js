@@ -155,46 +155,61 @@ window.saveAppSettings = async () => {
     finally { btn.innerText = txtOriginal; btn.disabled = false; }
 };
 
-// 💾 SALVAR REGRAS FINANCEIRAS (MASTER V11.0)
+// 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
 window.saveBusinessRules = async () => {
-    const novaTaxa = parseFloat(document.getElementById('conf-taxa-plataforma').value);
-    const novoLimite = parseFloat(document.getElementById('conf-limite-divida').value);
-    const pctPrestador = parseInt(document.getElementById('conf-pct-reserva-prestador').value);
-    const pctCliente = parseInt(document.getElementById('conf-pct-reserva-cliente').value);
+    console.log("🛠️ Iniciando salvamento blindado...");
+    
+    // Captura os valores e já limpa possíveis vírgulas que quebram o Firebase
+    const rawTaxa = document.getElementById('conf-taxa-plataforma')?.value || "0.20";
+    const rawLimite = document.getElementById('conf-limite-divida')?.value || "-60";
+    const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
+    const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
 
-    // Validação de segurança
+    // Converte para Número puro, aceitando ponto ou vírgula no input
+    const novaTaxa = parseFloat(String(rawTaxa).replace(',', '.'));
+    const novoLimite = parseFloat(String(rawLimite).replace(',', '.'));
+    const pctPrestador = parseInt(rawPctPres);
+    const pctCliente = parseInt(rawPctCli);
+
+    // Validação rígida antes de enviar para evitar Bad Request
     if (isNaN(novaTaxa) || isNaN(novoLimite) || isNaN(pctPrestador) || isNaN(pctCliente)) {
-        return alert("❌ Erro: Todos os campos financeiros devem ser preenchidos com números.");
+        return alert("❌ ERRO: Verifique se digitou apenas números. Não use letras ou símbolos nos campos financeiros.");
     }
 
     const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
-    if(btn) { btn.innerText = "⏳ GRAVANDO REGRAS..."; btn.disabled = true; }
+    if(btn) { btn.innerText = "⏳ GRAVANDO NO BANCO..."; btn.disabled = true; }
 
     try {
         const db = window.db;
         const agora = new Date();
 
-        // 1. SALVAMENTO CENTRALIZADO (settings/financeiro)
-        await setDoc(doc(db, "settings", "financeiro"), { 
-            taxa_plataforma: novaTaxa,
-            limite_divida: novoLimite,
-            porcentagem_reserva: pctPrestador, // Controle do Prestador
-            porcentagem_reserva_cliente: pctCliente, // Controle do Cliente
+        // 🛡️ OBJETO SANITIZADO: Garante que o Firebase receba 'Number' e não 'String'
+        const payloadMaster = { 
+            taxa_plataforma: Number(novaTaxa),
+            limite_divida: Number(novoLimite),
+            porcentagem_reserva: Number(pctPrestador),
+            porcentagem_reserva_cliente: Number(pctCliente),
             updated_at: agora,
             modificado_por: "admin"
-        }, {merge:true});
+        };
+
+        console.log("📤 Payload para settings/financeiro:", payloadMaster);
+
+        // 1. Gravação na Coleção Master
+        await setDoc(doc(db, "settings", "financeiro"), payloadMaster, { merge: true });
         
-        // 2. SINCRONIA LEGADA (configuracoes/financeiro) - Garante que o app não quebre
+        // 2. Sincronia na Coleção Legada (Segurança para o Radar)
         await setDoc(doc(db, "configuracoes", "financeiro"), {
-            porcentagem_reserva: pctPrestador,
-            taxa_prestador: novaTaxa * 100,
+            porcentagem_reserva: Number(pctPrestador),
+            taxa_prestador: Number(novaTaxa * 100),
             updated_at: agora
-        }, {merge:true});
+        }, { merge: true });
         
-        alert(`✅ REGRAS MASTER ATUALIZADAS!\n\n• Taxa Plataforma: ${(novaTaxa*100).toFixed(0)}%\n• Limite Débito: R$ ${novoLimite.toFixed(2)}\n• % Aceite (Prestador): ${pctPrestador}%\n• % Acordo (Cliente): ${pctCliente}%`);
+        alert(`✅ SUCESSO!\n\nAs novas taxas foram aplicadas em todo o sistema.\nOs perfis (Cliente/Prestador) já estão operando com estes valores.`);
         
     } catch(e) { 
-        alert("❌ Erro fatal no Firebase: " + e.message); 
+        console.error("❌ ERRO CRÍTICO NO FIREBASE:", e);
+        alert("Falha de Comunicação (Erro 400). Recarregue a página e tente novamente."); 
     } finally {
         if(btn) { btn.innerText = "💾 SALVAR NOVAS REGRAS"; btn.disabled = false; }
     }
