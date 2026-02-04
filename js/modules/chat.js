@@ -184,7 +184,7 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     
                     ${step >= 3 && !isProvider ? 
                         `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-wide w-full">
-                            🏁 CONFIRMAR ENTREGA & PAGAR
+                            🏁 CONFIRMAR & PAGAR
                         </button>` : ''
                     }
                     
