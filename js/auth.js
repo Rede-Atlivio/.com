@@ -200,53 +200,7 @@ onAuthStateChanged(auth, async (user) => {
         if (transitionOverlay) transitionOverlay.classList.add('hidden');
         removerBloqueiosVisuais();
     }
-});
-        
-        onSnapshot(userRef, async (docSnap) => {
-            try {
-                if(!docSnap.exists()) {
-                    // Fallback de segurança (Cria se não existir)
-                    const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    const novoPerfil = { 
-                        email: user.email, phone: user.phoneNumber, displayName: user.displayName || "Usuário", 
-                        photoURL: user.photoURL, tenant_id: DEFAULT_TENANT, perfil_completo: false, 
-                        role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
-                        wallet_balance: 0.00, saldo: 0.00, is_provider: false, created_at: serverTimestamp(), status: 'ativo',
-                        traffic_source: trafficSource 
-                    };
-                    userProfile = novoPerfil; window.userProfile = novoPerfil;
-                    await setDoc(userRef, novoPerfil);
-                    await concederBonusSeAtivo(user.uid);
-                } else {
-                    const data = docSnap.data();
-                    
-                    if (data.status === 'banido') console.warn("🚫 BANIDO.");
-                    if (data.status === 'suspenso' && data.is_online) updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
-                    
-                    data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
-                    userProfile = data; window.userProfile = data;
-                    
-                    aplicarRestricoesDeStatus(data.status);
-                    renderizarBotaoSuporte(); 
-
-                    if(data.status !== 'banido') {
-                        atualizarInterfaceUsuario(userProfile);
-                        iniciarAppLogado(user); 
-                        if (userProfile.is_provider) {
-                            verificarStatusERadar(user.uid);
-                            if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
-                        }
-                    }
-                }
-            } catch (err) { console.error("Erro perfil:", err); iniciarAppLogado(user); }
-        });
-    } else {
-        document.getElementById('auth-container').classList.remove('hidden');
-        document.getElementById('role-selection').classList.add('hidden');
-        document.getElementById('app-container').classList.add('hidden');
-        removerBloqueiosVisuais();
-    }
-});
+});        
 
 // ============================================================================
 // 3. SISTEMA DE SUPORTE
