@@ -239,6 +239,26 @@ export async function enviarMensagemChat(orderId, step) {
     let texto = input.value.trim();
     if(!texto) return;
 
+    // 🔒 TRAVA ZERO: O PRESTADOR SÓ FALA SE TIVER ACEITO O PEDIDO
+    // (Impede o furo de conversar sem ter saldo para aceitar)
+    try {
+        const orderRef = doc(db, "orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+        if (orderSnap.exists()) {
+            const pedido = orderSnap.data();
+            const souPrestador = auth.currentUser.uid === pedido.provider_id;
+            
+            // Se sou prestador e o status ainda é 'pending' (não aceitei/paguei), BLOQUEIA.
+            if (souPrestador && pedido.status === 'pending') {
+                alert("⛔ AÇÃO BLOQUEADA\n\nVocê precisa ACEITAR a solicitação (e ter saldo) antes de enviar mensagens.");
+                input.value = "";
+                // Tenta reabrir o Radar se a função estiver disponível
+                if(window.recuperarPedidoRadar) window.recuperarPedidoRadar(orderId);
+                return;
+            }
+        }
+    } catch(e) { console.error("Erro verificação status chat:", e); }
+
     // 🔒 TRAVA BLINDADA 1: Verifica antecedentes criminais antes de enviar
     // Se o risco for alto (>= 50), nem processa a mensagem.
     try {
