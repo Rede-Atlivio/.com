@@ -112,12 +112,16 @@ window.alternarPerfil = async () => {
     if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
 
     try { 
+        // 🔒 SET FLAG: Avisa o sistema que é uma troca de perfil, não um logout
+        sessionStorage.setItem('is_toggling_profile', 'true');
+
         await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
             is_provider: !userProfile.is_provider 
         }); 
         // O reload agora acontece "por trás" da tela azul de transição
         setTimeout(() => location.reload(), 300); 
     } catch (e) { 
+        sessionStorage.removeItem('is_toggling_profile'); // Limpa flag se der erro
         if(overlay) overlay.classList.add('hidden');
         alert("Erro: " + e.message); 
     }
