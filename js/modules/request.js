@@ -292,12 +292,15 @@ export async function iniciarRadarPrestador(uid) {
         const dadosNovos = snapNovo.exists() ? snapNovo.data() : {};
         const dadosLegados = snapLegado.exists() ? snapLegado.data() : {};
 
-        // Mescla os dados: Prioriza o limite do novo e a porcentagem que existir
+        // 🔥 SINCRONIA V11.0: Carrega regras para Prestador e Cliente simultaneamente
         window.configFinanceiroAtiva = {
-            porcentagem_reserva: dadosNovos.porcentagem_reserva || dadosLegados.porcentagem_reserva || 10,
+            porcentagem_reserva: dadosNovos.porcentagem_reserva || dadosLegados.porcentagem_reserva || 20,
+            porcentagem_reserva_cliente: dadosNovos.porcentagem_reserva_cliente || 10, // Nova Trava do Cliente
             limite_divida: dadosNovos.limite_divida !== undefined ? dadosNovos.limite_divida : (dadosLegados.limite_divida || -60.00),
             taxa_plataforma: dadosNovos.taxa_plataforma || 0.20
         };
+        
+        console.log("🎯 Memória Global Atualizada (Prestador & Cliente):", window.configFinanceiroAtiva);
         
         console.log("🎯 Radar Sincronizado com Admin:", window.configFinanceiroAtiva);
 
