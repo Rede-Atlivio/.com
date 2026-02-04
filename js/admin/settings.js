@@ -93,7 +93,7 @@ export async function init() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE CARREGAMENTO (LOAD)
+// 2. LÓGICA DE CARREGAMENTO (LOAD) - V11.0 UNIFICADA
 // ============================================================================
 async function loadSettings() {
     try {
@@ -107,31 +107,32 @@ async function loadSettings() {
             document.getElementById('conf-msg-active').checked = data.show_msg || false;
         }
 
-        // 2. 🔥 Carrega Regras Financeiras (Novo Sistema)
+        // 2. 🔥 Carrega Cérebro Financeiro (Lê o Novo e busca fallback no Legado)
         const dFin = await getDoc(doc(db, "settings", "financeiro"));
-        if(dFin.exists()) {
-            const data = dFin.data();
-            document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma !== undefined ? data.taxa_plataforma : 0.20;
-            document.getElementById('conf-limite-divida').value = data.limite_divida !== undefined ? data.limite_divida : -60.00;
-        } else {
-            // Padrão visual
-            document.getElementById('conf-taxa-plataforma').value = 0.20;
-            document.getElementById('conf-limite-divida').value = -60.00;
-        }
-
-        // 3. Carrega Legado (Apenas visual)
         const dLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
+        
+        const data = dFin.exists() ? dFin.data() : {};
+        const legado = dLegado.exists() ? dLegado.data() : {};
+
+        // Sincroniza a Interface com os dados REAIS do Banco
+        document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma ?? 0.20;
+        document.getElementById('conf-limite-divida').value = data.limite_divida ?? -60.00;
+        
+        // Ponto 3 e 4: Mapeia as porcentagens específicas
+        document.getElementById('conf-pct-reserva-prestador').value = data.porcentagem_reserva ?? legado.porcentagem_reserva ?? 20;
+        document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
+
+        // 3. Parâmetros Legados (Apenas Visual/Histórico)
         if(dLegado.exists()) {
-            const l = dLegado.data();
-            document.getElementById('conf-val-min').value = l.valor_minimo || 20;
-            document.getElementById('conf-val-max').value = l.valor_maximo || 500;
+            document.getElementById('conf-val-min').value = legado.valor_minimo || 20;
+            document.getElementById('conf-val-max').value = legado.valor_maximo || 500;
         }
 
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
 // ============================================================================
-// 3. FUNÇÕES DOS BOTÕES (RESTAURADAS)
+// 3. FUNÇÕES DOS BOTÕES (RESTAURADAS E BLINDADAS)
 // ============================================================================
 
 // 💾 SALVAR AVISO GLOBAL
@@ -141,7 +142,7 @@ window.saveAppSettings = async () => {
     
     const btn = document.querySelector('button[onclick="window.saveAppSettings()"]');
     const txtOriginal = btn.innerText;
-    btn.innerText = "SALVANDO..."; btn.disabled = true;
+    btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
 
     try {
         await setDoc(doc(window.db, "configuracoes", "global"), {
@@ -149,40 +150,51 @@ window.saveAppSettings = async () => {
             show_msg: active,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ Aviso Global atualizado!");
-    } catch(e) { alert("Erro: " + e.message); }
+        alert("✅ Aviso Global atualizado com sucesso!");
+    } catch(e) { alert("❌ Erro ao salvar aviso: " + e.message); }
     finally { btn.innerText = txtOriginal; btn.disabled = false; }
 };
 
-// 💾 SALVAR REGRAS FINANCEIRAS (MASTER)
+// 💾 SALVAR REGRAS FINANCEIRAS (MASTER V11.0)
 window.saveBusinessRules = async () => {
     const novaTaxa = parseFloat(document.getElementById('conf-taxa-plataforma').value);
     const novoLimite = parseFloat(document.getElementById('conf-limite-divida').value);
+    const pctPrestador = parseInt(document.getElementById('conf-pct-reserva-prestador').value);
+    const pctCliente = parseInt(document.getElementById('conf-pct-reserva-cliente').value);
 
-    if (isNaN(novaTaxa) || isNaN(novoLimite)) return alert("Preencha corretamente.");
+    // Validação de segurança
+    if (isNaN(novaTaxa) || isNaN(novoLimite) || isNaN(pctPrestador) || isNaN(pctCliente)) {
+        return alert("❌ Erro: Todos os campos financeiros devem ser preenchidos com números.");
+    }
 
     const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
-    if(btn) { btn.innerText = "SALVANDO..."; btn.disabled = true; }
+    if(btn) { btn.innerText = "⏳ GRAVANDO REGRAS..."; btn.disabled = true; }
 
     try {
         const db = window.db;
-        // Salva no NOVO sistema (settings/financeiro)
+        const agora = new Date();
+
+        // 1. SALVAMENTO CENTRALIZADO (settings/financeiro)
         await setDoc(doc(db, "settings", "financeiro"), { 
             taxa_plataforma: novaTaxa,
             limite_divida: novoLimite,
-            updated_at: new Date(),
+            porcentagem_reserva: pctPrestador, // Controle do Prestador
+            porcentagem_reserva_cliente: pctCliente, // Controle do Cliente
+            updated_at: agora,
             modificado_por: "admin"
         }, {merge:true});
         
-        // Sincroniza legado (opcional)
+        // 2. SINCRONIA LEGADA (configuracoes/financeiro) - Garante que o app não quebre
         await setDoc(doc(db, "configuracoes", "financeiro"), {
+            porcentagem_reserva: pctPrestador,
             taxa_prestador: novaTaxa * 100,
-            updated_at: new Date()
+            updated_at: agora
         }, {merge:true});
         
-        alert(`✅ REGRAS SALVAS!\nTaxa: ${(novaTaxa*100).toFixed(0)}%\nLimite: R$ ${novoLimite.toFixed(2)}`);
+        alert(`✅ REGRAS MASTER ATUALIZADAS!\n\n• Taxa Plataforma: ${(novaTaxa*100).toFixed(0)}%\n• Limite Débito: R$ ${novoLimite.toFixed(2)}\n• % Aceite (Prestador): ${pctPrestador}%\n• % Acordo (Cliente): ${pctCliente}%`);
+        
     } catch(e) { 
-        alert("Erro: " + e.message); 
+        alert("❌ Erro fatal no Firebase: " + e.message); 
     } finally {
         if(btn) { btn.innerText = "💾 SALVAR NOVAS REGRAS"; btn.disabled = false; }
     }
