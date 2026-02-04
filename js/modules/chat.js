@@ -353,7 +353,7 @@ async function enviarMsgSistema(orderId, texto) {
 }
 
 // ============================================================================
-// 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO COFRE/ESCROW V2)
+// 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO COFRE/ESCROW V2 - CORRIGIDA)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
     if(!aceitar) return alert("Negociação continua.");
@@ -363,7 +363,6 @@ export async function confirmarAcordo(orderId, aceitar) {
 
     try {
         // --- 1. BUSCA OBRIGATÓRIA DAS REGRAS DO SEU PAINEL ADMIN ---
-        // (Tenta 'settings/financeiro' primeiro, fallback para 'configuracoes/financeiro')
         let configSnap = await getDoc(doc(db, "settings", "financeiro"));
         if(!configSnap.exists()) configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
         
@@ -378,8 +377,7 @@ export async function confirmarAcordo(orderId, aceitar) {
         
         const isMeProvider = uid === pedido.provider_id;
 
-        // CÁLCULO DA RESERVA (O valor que vai pro cofre)
-        // Se porcentagem não existir, usa 10% padrão
+        // CÁLCULO DA RESERVA
         const pctReserva = config.porcentagem_reserva !== undefined ? config.porcentagem_reserva : 10;
         const valorReserva = valorTotalPedido * (pctReserva / 100);
 
@@ -389,8 +387,6 @@ export async function confirmarAcordo(orderId, aceitar) {
             const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || userSnap.data()?.saldo || 0);
             const LIMITE_DEBITO = parseFloat(config.limite_divida || -60.00); 
             
-            // Prestador não paga a reserva agora, mas precisa ter "limite" para a taxa futura
-            // Aqui usamos uma estimativa de taxa (20%) apenas para travar se ele estiver muito negativo
             const estimativaTaxa = valorTotalPedido * 0.20;
             
             if ((saldoAtual - estimativaTaxa) < LIMITE_DEBITO) {
@@ -399,6 +395,9 @@ export async function confirmarAcordo(orderId, aceitar) {
                 return;
             }
         }
+
+        // ⚡ VARIÁVEL DE CONTROLE EXTERNA (CORREÇÃO DO ERRO)
+        let vaiFecharAgora = false;
 
         // --- 3. EXECUÇÃO DA TRANSAÇÃO (O COFRE) ---
         await runTransaction(db, async (transaction) => {
@@ -414,7 +413,7 @@ export async function confirmarAcordo(orderId, aceitar) {
             
             // Verifica se este clique fecha o acordo (se o outro já confirmou)
             const oOutroJaConfirmou = isProvider ? orderSnap.data().client_confirmed : orderSnap.data().provider_confirmed;
-            const vaiFecharAgora = oOutroJaConfirmou;
+            vaiFecharAgora = oOutroJaConfirmou; // Atualiza a variável externa
 
             transaction.update(orderRef, campoUpdate);
 
@@ -451,6 +450,8 @@ export async function confirmarAcordo(orderId, aceitar) {
                 });
             }
         });
+        
+        // Agora a variável existe aqui fora!
         alert(vaiFecharAgora ? "✅ Acordo Fechado! O valor foi reservado." : "✅ Confirmado! Aguardando a outra parte.");
     
     } catch(e) { 
@@ -458,7 +459,6 @@ export async function confirmarAcordo(orderId, aceitar) {
         const erroTexto = String(e);
 
         if (erroTexto.includes("Saldo insuficiente")) {
-            // Se eu sou o cliente e estou sem saldo
             const pedidoSnap = await getDoc(orderRef);
             const pedido = pedidoSnap.data();
             if (auth.currentUser.uid === pedido.client_id) {
