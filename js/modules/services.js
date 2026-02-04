@@ -3,6 +3,32 @@ import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, up
 // ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
+// 🔥 1. TABELA DE INTELIGÊNCIA DE MERCADO (Âncoras Premium Inclusas)
+export const SERVICOS_PADRAO = [
+    { category: 'eventos', title: 'Garçom', price: 120 },
+    { category: 'eventos', title: 'Barman', price: 150 },
+    { category: 'eventos', title: 'Copeira', price: 110 },
+    { category: 'eventos', title: 'Churrasqueiro', price: 200 },
+    { category: 'eventos', title: 'Segurança de evento', price: 180 },
+    { category: 'eventos', title: 'Pacote Completo (Bar + Garçons + Limpeza)', price: 3000, level: 'premium' },
+    { category: 'eventos', title: 'Produção e Organização de Evento', price: 4000, level: 'premium' },
+    { category: 'musica', title: 'Músico solo', price: 250 },
+    { category: 'musica', title: 'DJ Profissional com Estrutura', price: 2500, level: 'premium' },
+    { category: 'musica', title: 'Banda para Casamento / Evento', price: 5000, level: 'premium' },
+    { category: 'audiovisual', title: 'Fotógrafo', price: 350 },
+    { category: 'audiovisual', title: 'Filmagem e Aftermovie Corporativo', price: 3000, level: 'premium' },
+    { category: 'audiovisual', title: 'Gestão de Tráfego Mensal', price: 2000, level: 'premium' },
+    { category: 'limpeza', title: 'Diarista', price: 130 },
+    { category: 'residenciais', title: 'Reforma Pequena (Pacote)', price: 2500, level: 'premium' },
+    { category: 'transporte', title: 'Transfer para Eventos (Van/Executivo)', price: 2000, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Som e Iluminação Profissional', price: 2000, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Palco e Tendas', price: 3500, level: 'premium' },
+    { category: 'tecnologia', title: 'Desenvolvimento de Site / Landing Page', price: 3000, level: 'premium' }
+];
+
+// ⚡ INJEÇÃO GLOBAL IMEDIATA PARA MATAR ERROS DE REFERÊNCIA NO REQUEST.JS
+window.SERVICOS_PADRAO = SERVICOS_PADRAO;
+
 // CATEGORIAS E VALORES MÍNIMOS
 export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
@@ -18,7 +44,6 @@ export const CATEGORIAS_ATIVAS = [
     { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 },
     { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 }
 ];
-
 let servicesUnsubscribe = null;
 
 // ============================================================================
