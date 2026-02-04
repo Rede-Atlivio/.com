@@ -21,7 +21,29 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
-// 5. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO)
+// 5. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO V10.0)
+
+// Função Global para organizar o carregamento de dados (Mata o erro de undefined)
+window.carregarInterface = async (user) => {
+    // Alterna telas
+    const loginScreen = document.getElementById('auth-container');
+    if(loginScreen) loginScreen.classList.add('hidden');
+    
+    const appContainer = document.getElementById('app-container');
+    if(appContainer) appContainer.classList.remove('hidden');
+
+    // 🚀 Carregamento de Módulos de Dados
+    // Carrega chats e pedidos ativos para o Prestador/Cliente
+    if (typeof window.carregarChat === 'function') {
+        window.carregarChat();
+    }
+
+    // Carrega o Radar de Pedidos Pendentes
+    if (typeof window.atualizarRadar === 'function') {
+        window.atualizarRadar();
+    }
+};
+
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         // 🛡️ TRAVA DE SEGURANÇA: Verifica banimento antes de mostrar o app
@@ -48,11 +70,11 @@ auth.onAuthStateChanged(async (user) => {
         // Inicia monitoramento da carteira
         if(iniciarMonitoramentoCarteira) iniciarMonitoramentoCarteira();
         
-        // Alterna telas
-        const loginScreen = document.getElementById('auth-container');
-        if(loginScreen) loginScreen.classList.add('hidden');
-        
-        const appContainer = document.getElementById('app-container');
-        if(appContainer) appContainer.classList.remove('hidden');
+        // Chama a interface unificada (Ação que resolve o seu problema)
+        window.carregarInterface(user);
+    } else {
+        // Garantia de reset caso deslogue
+        document.getElementById('auth-container')?.classList.remove('hidden');
+        document.getElementById('app-container')?.classList.add('hidden');
     }
 });
