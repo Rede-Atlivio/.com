@@ -50,10 +50,37 @@ let servicesUnsubscribe = null;
 // 1. VITRINE (CLIENTE)
 // ============================================================================
 export async function carregarServicos(filtroCategoria = null) {
-    const container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
-    const containerFiltros = document.getElementById('category-filters');
+    // 🔍 1. TENTA ACHAR O LOCAL
+    let container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
+    let containerFiltros = document.getElementById('category-filters');
     
-    if (!container) return;
+    // 🚑 2. AUTO-FIX: SE NÃO ACHAR, CRIA O HTML NA HORA
+    if (!container) {
+        console.warn("⚠️ Container de serviços ausente. Gerando estrutura visual...");
+        
+        // Tenta achar a aba pai onde os serviços devem ficar
+        const areaAlvo = document.getElementById('view-contratar') || document.getElementById('servicos-cliente');
+        
+        if (areaAlvo) {
+            // Cria a barra de filtros se não existir
+            if (!containerFiltros) {
+                containerFiltros = document.createElement('div');
+                containerFiltros.id = 'category-filters';
+                containerFiltros.className = "mb-4 hidden animate-fade"; // CSS padrão
+                areaAlvo.prepend(containerFiltros);
+            }
+
+            // Cria o Container (Grid) dos Cards
+            container = document.createElement('div');
+            container.id = 'lista-servicos';
+            container.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-24 animate-fade";
+            areaAlvo.appendChild(container);
+        } else {
+            // Se nem a aba existir, aí é erro fatal
+            console.error("❌ ERRO CRÍTICO: Não encontrei a aba 'view-contratar' para desenhar.");
+            return;
+        }
+    }
 
     const isVitrineVisible = container.offsetParent !== null;
     if(containerFiltros) {
