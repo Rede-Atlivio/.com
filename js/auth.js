@@ -177,6 +177,16 @@ onAuthStateChanged(auth, async (user) => {
                     }
                     
                     data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
+                    
+                    // 🩹 CORREÇÃO AUTOMÁTICA DE SALDO (SYNC-FIX)
+                    if (data.saldo !== undefined && data.wallet_balance !== data.saldo) {
+                        console.log(`🔧 Sincronizando: Wallet(${data.wallet_balance}) -> Saldo(${data.saldo})`);
+                        // Atualiza o objeto local para não precisar recarregar
+                        data.wallet_balance = data.saldo; 
+                        // Salva no banco silenciosamente
+                        updateDoc(userRef, { wallet_balance: data.saldo }).catch(e => console.warn("Erro Sync:", e));
+                    }
+
                     userProfile = data; 
                     window.userProfile = data;
                     
