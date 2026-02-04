@@ -489,7 +489,36 @@ export async function abrirConfiguracaoServicos() {
         }
     }
 
-    const options = CATEGORIAS_ATIVAS.map(c => `<option value="${c.label}" data-min="${c.minPrice}">${c.label} (Min: R$ ${c.minPrice})</option>`).join('');
+    // 🆕 GERAÇÃO INTELIGENTE DO MENU (AGRUPA POR CATEGORIA E INCLUI PREMIUM)
+    let options = '<option value="" disabled selected>Selecione o serviço...</option>';
+    const grupos = {};
+    
+    // 1. Agrupa os serviços da memória (Seus R$ 3000+)
+    if (window.SERVICOS_PADRAO) {
+        window.SERVICOS_PADRAO.forEach(s => {
+            if(!grupos[s.category]) grupos[s.category] = [];
+            grupos[s.category].push(s);
+        });
+    }
+
+    // 2. Monta o HTML com Optgroups
+    for (const [catId, itens] of Object.entries(grupos)) {
+        const catInfo = CATEGORIAS_ATIVAS.find(c => c.id === catId);
+        const labelCat = catInfo ? catInfo.label : catId.toUpperCase();
+        
+        options += `<optgroup label="${labelCat}">`;
+        itens.forEach(item => {
+            const isPremium = item.level === 'premium';
+            const emoji = isPremium ? '💎' : '🔹';
+            // Monta a opção com os dados corretos para o Auto-Preenchimento
+            options += `<option value="${catInfo ? catInfo.label : item.category}" 
+                                data-min="${item.price}" 
+                                data-prefill="${item.title}">
+                            ${emoji} ${item.title} (Sugerido: R$ ${item.price})
+                        </option>`;
+        });
+        options += `</optgroup>`;
+    }
 
     content.innerHTML = `
         <h3 class="text-lg font-black text-blue-900 uppercase mb-2 text-center">Gerenciar Serviços</h3>
