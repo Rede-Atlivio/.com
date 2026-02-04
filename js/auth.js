@@ -125,11 +125,19 @@ window.alternarPerfil = async () => {
 
 // --- ENFORCER & MONITOR ---
 onAuthStateChanged(auth, async (user) => {
-    const transitionOverlay = document.getElementById('transition-overlay');
-
     if (user) {
-        // 🔥 PROTEÇÃO ANTI-FLICKER: Mantém o overlay visível se o usuário estiver logado
-        if (transitionOverlay) transitionOverlay.classList.remove('hidden');
+        document.getElementById('auth-container').classList.add('hidden');
+        // ... sua lógica de snapshot ...
+    } else {
+        document.getElementById('auth-container').classList.remove('hidden');
+        document.getElementById('role-selection').classList.add('hidden');
+        document.getElementById('app-container').classList.add('hidden');
+        
+        // 🔥 Garante que o overlay nunca fique preso na tela de login
+        document.getElementById('transition-overlay')?.classList.add('hidden');
+        removerBloqueiosVisuais();
+    }
+});
         
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
