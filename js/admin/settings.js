@@ -42,15 +42,20 @@ export async function init() {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Taxa Reserva (%)</label>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Taxa Reserva Cliente (%)</label>
                         <input type="number" id="conf-taxa-reserva" class="inp-editor h-10 text-white" placeholder="10">
                     </div>
                     <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Bônus Entrada (R$)</label>
-                        <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white" placeholder="20.00">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Taxa Aceite Prestador (%)</label>
+                        <input type="number" id="conf-taxa-prestador" class="inp-editor h-10 text-white" placeholder="20">
                     </div>
+                </div>
+
+                <div class="mb-6">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Bônus Entrada (R$)</label>
+                    <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white" placeholder="20.00">
                 </div>
 
                 <button onclick="window.saveBusinessRules()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
