@@ -125,7 +125,12 @@ window.alternarPerfil = async () => {
 
 // --- ENFORCER & MONITOR ---
 onAuthStateChanged(auth, async (user) => {
+    const transitionOverlay = document.getElementById('transition-overlay');
+
     if (user) {
+        // 🔥 PROTEÇÃO ANTI-FLICKER: Mantém o overlay visível se o usuário estiver logado
+        if (transitionOverlay) transitionOverlay.classList.remove('hidden');
+        
         document.getElementById('auth-container').classList.add('hidden');
         const userRef = doc(db, "usuarios", user.uid);
         
