@@ -28,38 +28,34 @@ export async function init() {
             </div>
 
             <div class="glass-panel p-6 border border-emerald-500/30">
-                <h2 class="text-xl font-bold text-white mb-2">💰 Regras Financeiras Master</h2>
-                <p class="text-xs text-gray-400 mb-6">Controle os limites de valores e taxas globais do sistema.</p>
+                <h2 class="text-xl font-bold text-white mb-2">💰 Cérebro Financeiro (Master)</h2>
+                <p class="text-xs text-gray-400 mb-6">Controle as regras de bloqueio e taxas do aplicativo em tempo real.</p>
                 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Min (R$)</label>
-                        <input type="number" id="conf-val-min" class="inp-editor h-10 text-white" placeholder="20.00">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Max (R$)</label>
-                        <input type="number" id="conf-val-max" class="inp-editor h-10 text-white" placeholder="500.00">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Taxa Reserva Cliente (%)</label>
-                        <input type="number" id="conf-taxa-reserva" class="inp-editor h-10 text-white" placeholder="10">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-gray-500 uppercase">Taxa Aceite Prestador (%)</label>
-                        <input type="number" id="conf-taxa-prestador" class="inp-editor h-10 text-white" placeholder="20">
+                <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-600 mb-4">
+                    <p class="text-[10px] font-black text-emerald-400 uppercase mb-3 tracking-widest">⚡ CONTROLE DINÂMICO (NOVO)</p>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-400 uppercase">Taxa Plataforma (0.20 = 20%)</label>
+                            <input type="number" step="0.01" id="conf-taxa-plataforma" class="inp-editor h-10 text-white font-mono" placeholder="0.20">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-red-400 uppercase">Limite Dívida (Ex: -60)</label>
+                            <input type="number" id="conf-limite-divida" class="inp-editor h-10 text-white font-mono" placeholder="-60.00">
+                        </div>
                     </div>
                 </div>
 
-                <div class="mb-6">
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Bônus Entrada (R$)</label>
-                    <input type="number" id="conf-bonus-valor" class="inp-editor h-10 text-white" placeholder="20.00">
+                <div class="opacity-50 pointer-events-none grayscale">
+                    <p class="text-[9px] text-gray-500 mb-2">Parâmetros Legados (Min/Max)</p>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><input type="number" id="conf-val-min" class="inp-editor h-8 text-gray-500" placeholder="20.00"></div>
+                        <div><input type="number" id="conf-val-max" class="inp-editor h-8 text-gray-500" placeholder="500.00"></div>
+                    </div>
                 </div>
 
                 <button onclick="window.saveBusinessRules()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
-                    💾 ATUALIZAR REGRAS FINANCEIRAS
+                    💾 SALVAR NOVAS REGRAS
                 </button>
             </div>
 
@@ -82,67 +78,83 @@ export async function init() {
         </div>
     `;
     
-    lucide.createIcons();
+    if(window.lucide) lucide.createIcons();
     await loadSettings();
 }
 
 // ============================================================================
-// 2. LÓGICA DE CARREGAMENTO E SALVAMENTO
+// 2. LÓGICA DE CARREGAMENTO E SALVAMENTO (CONECTADO AO NOVO SISTEMA)
 // ============================================================================
 async function loadSettings() {
     try {
-        // ... (parte do dGlobal continua igual) ...
+        const db = window.db;
 
-        // 2. Carrega Regras Financeiras Master
-        const dFin = await getDoc(doc(window.db, "configuracoes", "financeiro"));
+        // 1. Carrega Aviso Global (Mantido)
+        const dGlobal = await getDoc(doc(db, "configuracoes", "global"));
+        if(dGlobal.exists()) {
+            // Lógica do aviso global (se existir no seu admin.js, ok)
+        }
+
+        // 2. 🔥 CARREGA REGRAS DO NOVO SISTEMA (settings/financeiro)
+        const dFin = await getDoc(doc(db, "settings", "financeiro"));
+        
         if(dFin.exists()) {
             const data = dFin.data();
-            document.getElementById('conf-val-min').value = data.valor_minimo || 20;
-            document.getElementById('conf-val-max').value = data.valor_maximo || 500;
-            document.getElementById('conf-taxa-reserva').value = data.porcentagem_reserva || 10;
-            document.getElementById('conf-taxa-prestador').value = data.taxa_prestador || 20; // 🔥 BUSCA DO BANCO
-            document.getElementById('conf-bonus-valor').value = data.valor_bonus_entrada || 20;
+            console.log("Admin carregou:", data);
+            
+            // Novos campos
+            document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma !== undefined ? data.taxa_plataforma : 0.20;
+            document.getElementById('conf-limite-divida').value = data.limite_divida !== undefined ? data.limite_divida : -60.00;
+        } else {
+            // Se não existir, cria o padrão visual
+            document.getElementById('conf-taxa-plataforma').value = 0.20;
+            document.getElementById('conf-limite-divida').value = -60.00;
         }
+
+        // Carrega legado apenas para preencher visualmente
+        const dLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
+        if(dLegado.exists()) {
+            const l = dLegado.data();
+            document.getElementById('conf-val-min').value = l.valor_minimo || 20;
+            document.getElementById('conf-val-max').value = l.valor_maximo || 500;
+        }
+
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
 window.saveBusinessRules = async () => {
-    // 1. Coleta de dados com fallbacks de segurança
-    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
-    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
-    const taxaReserva = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
-    const taxaAceite = parseFloat(document.getElementById('conf-taxa-prestador').value) || 20;
-    const bonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 20;
+    // 1. Coleta os dados novos
+    const novaTaxa = parseFloat(document.getElementById('conf-taxa-plataforma').value);
+    const novoLimite = parseFloat(document.getElementById('conf-limite-divida').value);
+
+    // Validação básica
+    if (isNaN(novaTaxa) || isNaN(novoLimite)) return alert("Preencha a Taxa e o Limite corretamente.");
 
     const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
-    if(btn) btn.disabled = true;
+    if(btn) { btn.innerText = "SALVANDO..."; btn.disabled = true; }
 
     try {
-        // 2. Gravação Única no Firestore
-        await setDoc(doc(window.db, "configuracoes", "financeiro"), { 
-            valor_minimo: min, 
-            valor_maximo: max, 
-            porcentagem_reserva: taxaReserva,
-            taxa_prestador: taxaAceite,
-            valor_bonus_entrada: bonus,
+        const db = window.db;
+
+        // 2. 🔥 SALVA NO NOVO LOCAL (ONDE O APP ESCUTA)
+        await setDoc(doc(db, "settings", "financeiro"), { 
+            taxa_plataforma: novaTaxa,
+            limite_divida: novoLimite,
+            updated_at: new Date(), // Timestamp JS normal para admin
+            modificado_por: "admin"
+        }, {merge:true});
+        
+        // (Opcional) Mantém o legado sincronizado para não quebrar códigos antigos
+        await setDoc(doc(db, "configuracoes", "financeiro"), {
+            taxa_prestador: novaTaxa * 100, // Converte 0.20 para 20 se o legado usa % inteira
             updated_at: new Date()
         }, {merge:true});
         
-        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS COM SUCESSO!");
+        alert(`✅ REGRAS SALVAS!\n\nTaxa: ${(novaTaxa*100).toFixed(0)}%\nLimite: R$ ${novoLimite.toFixed(2)}\n\nTodos os apps serão atualizados instantaneamente.`);
         
-        // 3. Sincroniza a memória global para as travas funcionarem sem recarregar
-        window.configFinanceiroAtiva = {
-            valor_minimo: min, 
-            valor_maximo: max, 
-            porcentagem_reserva: taxaReserva,
-            taxa_prestador: taxaAceite,
-            valor_bonus_entrada: bonus
-        };
-
-        if(typeof loadSettings === 'function') loadSettings();
     } catch(e) { 
         alert("Erro ao salvar regras: " + e.message); 
     } finally {
-        if(btn) btn.disabled = false;
+        if(btn) { btn.innerText = "💾 SALVAR NOVAS REGRAS"; btn.disabled = false; }
     }
 };
