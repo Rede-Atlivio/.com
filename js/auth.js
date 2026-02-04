@@ -661,3 +661,49 @@ async function verificarSentenca(uid) {
     }
     return false;
 }
+// ============================================================================
+// 📢 SISTEMA DE AVISO GLOBAL (CLIENTE - ESCUTA EM TEMPO REAL)
+// ============================================================================
+(function IniciarAvisoGlobal() {
+    // Garante que o DB está carregado antes de tentar ouvir
+    if (typeof db === 'undefined') return console.warn("Aviso Global: DB não pronto.");
+
+    const ref = doc(db, "configuracoes", "global");
+    
+    // Ouve alterações no documento 'configuracoes/global'
+    onSnapshot(ref, (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            const msg = data.top_message || "";
+            const ativo = data.show_msg === true; // Garante que é booleano
+
+            let banner = document.getElementById('global-warning-banner');
+
+            // SE TIVER AVISO ATIVO E MENSAGEM:
+            if (ativo && msg.length > 0) {
+                // Cria o banner se ele não existir
+                if (!banner) {
+                    banner = document.createElement('div');
+                    banner.id = 'global-warning-banner';
+                    // Estilo: Amarelo chamativo, fixo no topo, acima de tudo (z-index alto)
+                    banner.className = "fixed top-0 left-0 w-full bg-amber-400 text-black font-black text-center text-[10px] uppercase tracking-widest py-2 px-4 z-[99999] shadow-lg animate-slideDown border-b-2 border-amber-600";
+                    document.body.prepend(banner);
+                    
+                    // Empurra o conteúdo do site para baixo para não esconder o header
+                    document.body.style.marginTop = "32px"; 
+                }
+                // Atualiza o texto (caso você mude no Admin sem recarregar)
+                banner.innerHTML = `⚠️ ${msg}`;
+            
+            // SE O AVISO FOR DESATIVADO:
+            } else {
+                if (banner) {
+                    banner.remove();
+                    document.body.style.marginTop = "0px"; // Volta o site pro lugar
+                }
+            }
+        }
+    }, (error) => {
+        console.warn("Silenciando aviso global (sem permissão ou erro de rede).");
+    });
+})();
