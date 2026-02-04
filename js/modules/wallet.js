@@ -95,6 +95,7 @@ function atualizarInterfaceGanhar(saldo) {
 }
 
 export async function carregarCarteira() {
+    iniciarRegrasFinanceiras(); // 🚀 Inicia o robô de regras
     iniciarMonitoramentoCarteira();
 }
 
