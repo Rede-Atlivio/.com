@@ -122,7 +122,8 @@ export function podeTrabalhar() {
 export async function processarCobrancaTaxa(orderId, valorServico) {
     if (!auth.currentUser) return;
     const uid = auth.currentUser.uid;
-    const valorTaxa = valorServico * TAXA_PLATAFORMA;
+    // 🆕 Usa a taxa dinâmica do Admin
+    const valorTaxa = valorServico * CONFIG_FINANCEIRA.taxa;
 
     try {
         await runTransaction(db, async (transaction) => {
