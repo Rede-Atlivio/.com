@@ -648,7 +648,6 @@ window.addEventListener('click', (e) => {
 });
 // EXPOSIÇÃO GLOBAL PARA O APP.JS
 window.verificarSentenca = verificarSentenca;
-
 async function verificarSentenca(uid) {
     const userDoc = await getDoc(doc(db, "usuarios", uid));
     if (userDoc.exists()) {
@@ -662,3 +661,27 @@ async function verificarSentenca(uid) {
     }
     return false;
 }
+
+// ============================================================================
+// 🚑 AUTO-SETUP: CRIAÇÃO DO CONTROLE FINANCEIRO (RODA UMA VEZ E PARA)
+// ============================================================================
+(async function AutoSetupFinanceiro() {
+    try {
+        const ref = doc(db, "settings", "financeiro");
+        const snap = await getDoc(ref);
+        
+        if (!snap.exists()) {
+            console.log("🛠️ CRIANDO CONFIGURAÇÃO FINANCEIRA NO BANCO...");
+            await setDoc(ref, {
+                taxa_plataforma: 0.20,      // 20%
+                limite_divida: -60.00,      // R$ 60,00 negativo
+                criado_em: serverTimestamp()
+            });
+            console.log("✅ PAINEL FINANCEIRO CRIADO COM SUCESSO! (Agora o Admin manda)");
+        } else {
+            console.log("👍 Painel Financeiro já existe. Tudo pronto.");
+        }
+    } catch (e) {
+        console.warn("⚠️ O Auto-Setup tentou rodar, mas o Firebase ainda não iniciou. Tente recarregar.");
+    }
+})();
