@@ -107,42 +107,42 @@ async function loadSettings() {
 }
 
 window.saveBusinessRules = async () => {
+    // 1. Coleta de dados com fallbacks de segurança
     const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
     const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
-    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
-    const taxaPres = parseFloat(document.getElementById('conf-taxa-prestador').value) || 20; // 🔥 COLETA DO INPUT
+    const taxaReserva = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
+    const taxaAceite = parseFloat(document.getElementById('conf-taxa-prestador').value) || 20;
     const bonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 20;
 
+    const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
+    if(btn) btn.disabled = true;
+
     try {
+        // 2. Gravação Única no Firestore
         await setDoc(doc(window.db, "configuracoes", "financeiro"), { 
             valor_minimo: min, 
             valor_maximo: max, 
-            porcentagem_reserva: taxa,
-            taxa_prestador: taxaPres, // 🔥 SALVA NO BANCO
+            porcentagem_reserva: taxaReserva,
+            taxa_prestador: taxaAceite,
             valor_bonus_entrada: bonus,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS!");
-        loadSettings(); // Recarrega para confirmar
-    } catch(e) { alert("Erro: " + e.message); }
-};
-
-window.saveBusinessRules = async () => {
-    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
-    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
-    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
-    const bonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 20;
-
-    try {
-        await setDoc(doc(window.db, "configuracoes", "financeiro"), { 
+        
+        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS COM SUCESSO!");
+        
+        // 3. Sincroniza a memória global para as travas funcionarem sem recarregar
+        window.configFinanceiroAtiva = {
             valor_minimo: min, 
             valor_maximo: max, 
-            porcentagem_reserva: taxa,
-            valor_bonus_entrada: bonus,
-            updated_at: new Date()
-        }, {merge:true});
-        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS!");
-    } catch(e) { alert("Erro: " + e.message); }
-};
+            porcentagem_reserva: taxaReserva,
+            taxa_prestador: taxaAceite,
+            valor_bonus_entrada: bonus
+        };
 
-// ... (Manter funções de Auditoria, Limpeza e PDF iguais abaixo)
+        if(typeof loadSettings === 'function') loadSettings();
+    } catch(e) { 
+        alert("Erro ao salvar regras: " + e.message); 
+    } finally {
+        if(btn) btn.disabled = false;
+    }
+};
