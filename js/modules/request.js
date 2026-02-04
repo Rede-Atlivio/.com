@@ -404,6 +404,50 @@ export async function carregarPedidosEmAndamento() {
     }
 }
 
+// 🔥 NOVA FUNÇÃO: REABRIR RADAR MANUALMENTE (Para pedidos pendentes na lista)
+export async function recuperarPedidoRadar(orderId) {
+    try {
+        // Mostra loading visual rápido
+        const loader = document.createElement('div');
+        loader.id = 'temp-loader';
+        loader.className = "fixed inset-0 z-[101] bg-black/50 flex items-center justify-center";
+        loader.innerHTML = `<div class="loader border-white"></div>`;
+        document.body.appendChild(loader);
+
+        const docRef = doc(db, "orders", orderId);
+        const snap = await getDoc(docRef);
+        
+        const elLoader = document.getElementById('temp-loader');
+        if(elLoader) elLoader.remove();
+
+        if (snap.exists()) {
+            const pedido = { id: snap.id, ...snap.data() };
+            if(pedido.status === 'pending') {
+                // Sincroniza taxa antes de abrir
+                try {
+                   const configSnap = await getDoc(doc(db, "settings", "financeiro")); 
+                   if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
+                   else { 
+                       const configLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
+                       if(configLegado.exists()) window.configFinanceiroAtiva = configLegado.data();
+                   }
+                } catch(e) {}
+                
+                mostrarModalRadar(pedido); // Reutiliza sua função existente
+            } else {
+                alert("Este pedido não está mais pendente.");
+                if(window.carregarPedidosEmAndamento) window.carregarPedidosEmAndamento();
+            }
+        } else {
+            alert("Pedido não encontrado.");
+        }
+    } catch (e) {
+        console.error(e);
+        const elLoader = document.getElementById('temp-loader');
+        if(elLoader) elLoader.remove();
+    }
+}
+
 // EXPORTAÇÃO GLOBAL
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
@@ -414,5 +458,6 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 window.carregarPedidosEmAndamento = carregarPedidosEmAndamento;
+window.recuperarPedidoRadar = recuperarPedidoRadar; // ✅ NOVA EXPORTAÇÃO
 window.SERVICOS_PADRAO = SERVICOS_PADRAO;
 window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
