@@ -123,7 +123,7 @@ window.alternarPerfil = async () => {
     }
 };
 
-// --- ENFORCER & MONITOR (VERSÃO FINAL BLINDADA V10) ---
+// --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
 onAuthStateChanged(auth, async (user) => {
     const transitionOverlay = document.getElementById('transition-overlay');
 
