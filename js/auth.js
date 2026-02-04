@@ -123,18 +123,22 @@ window.alternarPerfil = async () => {
     }
 };
 
-// --- ENFORCER & MONITOR (REVISADO V10) ---
+// --- ENFORCER & MONITOR (VERSÃO FINAL BLINDADA V10) ---
 onAuthStateChanged(auth, async (user) => {
+    const transitionOverlay = document.getElementById('transition-overlay');
+
     if (user) {
-        // 1. Limpeza visual imediata
+        // 1. Limpeza Visual Imediata (Esconde Login)
         document.getElementById('auth-container')?.classList.add('hidden');
-        
+        if (transitionOverlay) transitionOverlay.classList.remove('hidden');
+
         const userRef = doc(db, "usuarios", user.uid);
         
         // 2. Monitoramento Real-time do Perfil
         onSnapshot(userRef, async (docSnap) => {
             try {
-                if(!docSnap.exists()) {
+                if (!docSnap.exists()) {
+                    // CRIAÇÃO DE NOVO PERFIL
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
                     const novoPerfil = { 
                         email: user.email, 
@@ -156,6 +160,7 @@ onAuthStateChanged(auth, async (user) => {
                     await setDoc(userRef, novoPerfil);
                     await concederBonusSeAtivo(user.uid);
                 } else {
+                    // CARREGAMENTO DE PERFIL EXISTENTE
                     const data = docSnap.data();
                     
                     if (data.status === 'banido') console.warn("🚫 Usuário Banido.");
@@ -170,9 +175,10 @@ onAuthStateChanged(auth, async (user) => {
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
 
-                    if(data.status !== 'banido') {
+                    if (data.status !== 'banido') {
                         atualizarInterfaceUsuario(userProfile);
                         iniciarAppLogado(user); 
+                        
                         if (userProfile.is_provider) {
                             verificarStatusERadar(user.uid);
                             if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
@@ -190,8 +196,8 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('role-selection')?.classList.add('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
         
-        // Garante que o overlay azul suma no login
-        document.getElementById('transition-overlay')?.classList.add('hidden');
+        // Garante que o overlay suma no login
+        if (transitionOverlay) transitionOverlay.classList.add('hidden');
         removerBloqueiosVisuais();
     }
 });
