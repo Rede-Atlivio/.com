@@ -1,7 +1,7 @@
-import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ============================================================================
-// 1. INICIALIZAÇÃO DA INTERFACE (CONFIGURAÇÕES E AUDITORIA)
+// 1. INICIALIZAÇÃO DA INTERFACE
 // ============================================================================
 export async function init() {
     const container = document.getElementById('view-settings');
@@ -83,35 +83,33 @@ export async function init() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE CARREGAMENTO E SALVAMENTO (CONECTADO AO NOVO SISTEMA)
+// 2. LÓGICA DE CARREGAMENTO (LOAD)
 // ============================================================================
 async function loadSettings() {
     try {
         const db = window.db;
 
-        // 1. Carrega Aviso Global (Mantido)
+        // 1. Carrega Aviso Global
         const dGlobal = await getDoc(doc(db, "configuracoes", "global"));
         if(dGlobal.exists()) {
-            // Lógica do aviso global (se existir no seu admin.js, ok)
+            const data = dGlobal.data();
+            document.getElementById('conf-global-msg').value = data.top_message || "";
+            document.getElementById('conf-msg-active').checked = data.show_msg || false;
         }
 
-        // 2. 🔥 CARREGA REGRAS DO NOVO SISTEMA (settings/financeiro)
+        // 2. 🔥 Carrega Regras Financeiras (Novo Sistema)
         const dFin = await getDoc(doc(db, "settings", "financeiro"));
-        
         if(dFin.exists()) {
             const data = dFin.data();
-            console.log("Admin carregou:", data);
-            
-            // Novos campos
             document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma !== undefined ? data.taxa_plataforma : 0.20;
             document.getElementById('conf-limite-divida').value = data.limite_divida !== undefined ? data.limite_divida : -60.00;
         } else {
-            // Se não existir, cria o padrão visual
+            // Padrão visual
             document.getElementById('conf-taxa-plataforma').value = 0.20;
             document.getElementById('conf-limite-divida').value = -60.00;
         }
 
-        // Carrega legado apenas para preencher visualmente
+        // 3. Carrega Legado (Apenas visual)
         const dLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
         if(dLegado.exists()) {
             const l = dLegado.data();
@@ -122,39 +120,97 @@ async function loadSettings() {
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
+// ============================================================================
+// 3. FUNÇÕES DOS BOTÕES (RESTAURADAS)
+// ============================================================================
+
+// 💾 SALVAR AVISO GLOBAL
+window.saveAppSettings = async () => {
+    const msg = document.getElementById('conf-global-msg').value;
+    const active = document.getElementById('conf-msg-active').checked;
+    
+    const btn = document.querySelector('button[onclick="window.saveAppSettings()"]');
+    const txtOriginal = btn.innerText;
+    btn.innerText = "SALVANDO..."; btn.disabled = true;
+
+    try {
+        await setDoc(doc(window.db, "configuracoes", "global"), {
+            top_message: msg,
+            show_msg: active,
+            updated_at: new Date()
+        }, {merge:true});
+        alert("✅ Aviso Global atualizado!");
+    } catch(e) { alert("Erro: " + e.message); }
+    finally { btn.innerText = txtOriginal; btn.disabled = false; }
+};
+
+// 💾 SALVAR REGRAS FINANCEIRAS (MASTER)
 window.saveBusinessRules = async () => {
-    // 1. Coleta os dados novos
     const novaTaxa = parseFloat(document.getElementById('conf-taxa-plataforma').value);
     const novoLimite = parseFloat(document.getElementById('conf-limite-divida').value);
 
-    // Validação básica
-    if (isNaN(novaTaxa) || isNaN(novoLimite)) return alert("Preencha a Taxa e o Limite corretamente.");
+    if (isNaN(novaTaxa) || isNaN(novoLimite)) return alert("Preencha corretamente.");
 
     const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
     if(btn) { btn.innerText = "SALVANDO..."; btn.disabled = true; }
 
     try {
         const db = window.db;
-
-        // 2. 🔥 SALVA NO NOVO LOCAL (ONDE O APP ESCUTA)
+        // Salva no NOVO sistema (settings/financeiro)
         await setDoc(doc(db, "settings", "financeiro"), { 
             taxa_plataforma: novaTaxa,
             limite_divida: novoLimite,
-            updated_at: new Date(), // Timestamp JS normal para admin
+            updated_at: new Date(),
             modificado_por: "admin"
         }, {merge:true});
         
-        // (Opcional) Mantém o legado sincronizado para não quebrar códigos antigos
+        // Sincroniza legado (opcional)
         await setDoc(doc(db, "configuracoes", "financeiro"), {
-            taxa_prestador: novaTaxa * 100, // Converte 0.20 para 20 se o legado usa % inteira
+            taxa_prestador: novaTaxa * 100,
             updated_at: new Date()
         }, {merge:true});
         
-        alert(`✅ REGRAS SALVAS!\n\nTaxa: ${(novaTaxa*100).toFixed(0)}%\nLimite: R$ ${novoLimite.toFixed(2)}\n\nTodos os apps serão atualizados instantaneamente.`);
-        
+        alert(`✅ REGRAS SALVAS!\nTaxa: ${(novaTaxa*100).toFixed(0)}%\nLimite: R$ ${novoLimite.toFixed(2)}`);
     } catch(e) { 
-        alert("Erro ao salvar regras: " + e.message); 
+        alert("Erro: " + e.message); 
     } finally {
         if(btn) { btn.innerText = "💾 SALVAR NOVAS REGRAS"; btn.disabled = false; }
     }
+};
+
+// 🚀 AUDITORIA DE DADOS
+window.runDataAudit = async () => {
+    const res = document.getElementById('audit-results');
+    res.innerHTML = "⏳ Varrendo coleções... Aguarde.";
+    
+    try {
+        const db = window.db;
+        const colUsers = collection(db, "usuarios");
+        const colOrders = collection(db, "orders");
+        
+        const snapUsers = await getCountFromServer(colUsers);
+        const snapOrders = await getCountFromServer(colOrders);
+        
+        res.innerHTML = `✅ VARREDURA COMPLETA\n\n`;
+        res.innerHTML += `👤 Usuários Totais: ${snapUsers.data().count}\n`;
+        res.innerHTML += `📦 Pedidos Totais: ${snapOrders.data().count}\n`;
+        res.innerHTML += `📅 Data: ${new Date().toLocaleString()}`;
+        
+    } catch(e) {
+        res.innerHTML = "❌ Erro na varredura: " + e.message;
+    }
+};
+
+// 📄 GERAR RELATÓRIO (Stub Simples)
+window.generatePDFReport = () => {
+    // Como não temos biblioteca de PDF pesada, usamos o Print do navegador
+    // que permite salvar como PDF. É mais rápido e leve.
+    window.print(); 
+};
+
+// 🗑️ LIMPAR DADOS (DANGER)
+window.clearDatabase = async () => {
+    if(!confirm("⚠️ PERIGO EXTREMO!\n\nIsso apagará pedidos de teste e logs.\nDeseja continuar?")) return;
+    
+    alert("Função de limpeza profunda desativada por segurança neste momento.\nUse a lixeira individual.");
 };
