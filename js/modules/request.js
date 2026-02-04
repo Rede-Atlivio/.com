@@ -353,58 +353,41 @@ function fecharModalRadar() {
 }
 
 // 🔥 AQUI ESTÁ A CORREÇÃO: ACEITAR COM TRAVA PROATIVA 🔥
+// --- SUBSTITUA O BLOCO DE ACEITAR POR ESTE ---
 export async function aceitarPedidoRadar(orderId) {
     fecharModalRadar();
     
-    // Não usamos mais só o podeTrabalhar(), usamos a lógica completa abaixo
-    
     try {
         const uid = auth.currentUser.uid;
-
-        // 1. Busca dados do Pedido para saber o Valor
         const orderSnap = await getDoc(doc(db, "orders", orderId));
-        if (!orderSnap.exists()) return alert("Pedido expirou ou foi cancelado.");
+        if (!orderSnap.exists()) return alert("Pedido expirou.");
         
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+        // 🛡️ DECLARAÇÃO ÚNICA: Pega as regras do Admin (Reserva do Cliente e Aceite do Prestador)
+        const cfgMaster = window.configFinanceiroAtiva || { porcentagem_reserva: 10, taxa_prestador: 20 };
         const orderData = orderSnap.data();
         const valorServico = parseFloat(orderData.offer_value || 0);
-        const taxa = valorServico * (config.porcentagem_reserva / 100);
-
-        // 2. Busca o Saldo Atual do Prestador (Tenta 'users' ou 'usuarios')
-        let saldoAtual = 0;
-        let userSnap = await getDoc(doc(db, "users", uid));
-        if (!userSnap.exists()) userSnap = await getDoc(doc(db, "usuarios", uid)); // Fallback
         
+        // Regra Master: 20% (ou o que você definir no Admin)
+        const taxaAceiteRequerida = valorServico * (cfgMaster.taxa_prestador / 100 || 0.20);
+
+        let saldoAtual = 0;
+        const userSnap = await getDoc(doc(db, "usuarios", uid));
         if (userSnap.exists()) {
-            saldoAtual = parseFloat(userSnap.data().saldo || 0);
+            saldoAtual = parseFloat(userSnap.data().wallet_balance || userSnap.data().saldo || 0);
         }
 
-        // 🔥 TRAVA DINÂMICA ATLIVIO 2.0
-const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, taxa_prestador: 20 };
-// Calcula quanto o prestador deve ter (20% do serviço conforme sua regra master)
-const margemSegurancaPrestador = valorServico * (config.taxa_prestador / 100 || 0.20); 
+        // TRAVA DINÂMICA
+        if (saldoAtual < taxaAceiteRequerida) {
+             alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceiteRequerida.toFixed(2)} de margem.\nSeu saldo: R$ ${saldoAtual.toFixed(2)}.`);
+             if(window.switchTab) window.switchTab('ganhar');
+             return; 
+        }
 
-// O saldo não pode ficar abaixo de ZERO após descontar a margem de segurança do serviço
-if (saldoAtual < margemSegurancaPrestador) {
-     alert(`⛔ SALDO INSUFICIENTE\n\nPara aceitar este serviço de R$ ${valorServico.toFixed(2)}, você precisa de no mínimo R$ ${margemSegurancaPrestador.toFixed(2)} em conta.\n\nSeu saldo atual: R$ ${saldoAtual.toFixed(2)}.`);
-     
-     const tabGanhar = document.getElementById('tab-ganhar');
-     if(tabGanhar) tabGanhar.click();
-     return; 
-}
-
-        // 4. Se passou na trava, executa o aceite normalmente
         await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
         await setDoc(doc(db, "chats", orderId), { status: 'active' }, { merge: true });
 
         const tabServicos = document.getElementById('tab-servicos');
         if(tabServicos) tabServicos.click();
-        
-        setTimeout(() => {
-            if(window.switchProviderSubTab) window.switchProviderSubTab('ativos');
-            if(window.iniciarMonitoramentoPedidos) window.iniciarMonitoramentoPedidos();
-        }, 300);
-
     } catch (e) { alert("Erro: " + e.message); }
 }
 
