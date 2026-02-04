@@ -1,9 +1,27 @@
 import { db, auth } from '../config.js';
 import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 💰 CONFIGURAÇÕES
-const TAXA_PLATAFORMA = 0.20; 
-const LIMITE_DIVIDA = -60.00; 
+// 💰 CONFIGURAÇÕES DINÂMICAS (Vem do Admin)
+export let CONFIG_FINANCEIRA = {
+    taxa: 0.20,         // Fallback de segurança
+    limite: -60.00      // Fallback de segurança
+};
+
+// Monitora alterações nas regras financeiras em Tempo Real
+function iniciarRegrasFinanceiras() {
+    const ref = doc(db, "settings", "financeiro");
+    onSnapshot(ref, (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            // Atualiza as variáveis globais
+            CONFIG_FINANCEIRA.taxa = data.taxa_plataforma !== undefined ? parseFloat(data.taxa_plataforma) : 0.20;
+            CONFIG_FINANCEIRA.limite = data.limite_divida !== undefined ? parseFloat(data.limite_divida) : -60.00;
+            console.log("💰 Regras Atualizadas:", CONFIG_FINANCEIRA);
+        } else {
+            console.warn("⚠️ Configuração 'settings/financeiro' não criada. Usando padrão.");
+        }
+    });
+}
 
 let unsubscribeWallet = null;
 
