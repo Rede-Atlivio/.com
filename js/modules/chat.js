@@ -550,11 +550,16 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const valorTotal = parseFloat(pedido.offer_value || 0); // Valor do serviço (Ex: R$ 200,00)
             const valorTaxa = valorTotal * taxaPercent; // Taxa do Atlivio (Ex: R$ 40,00)
             
-            // CÁLCULO FINAL DA TRANSFERÊNCIA
-            // O Prestador recebe a Reserva (-) a Taxa.
-            // Ex: Recebe 20 (Reserva) - 40 (Taxa) = -20 (Sai do saldo dele)
-            // Ex: Recebe 200 (Reserva 100%) - 40 (Taxa) = +160 (Entra no saldo)
-            const valorLiquidoParaPrestador = valorReservado - valorTaxa;
+            // CÁLCULO FINAL DA TRANSFERÊNCIA (V10.0 CORRIGIDA)
+            // O Cliente já pagou a Reserva (ex: R$ 20). 
+            // Agora, o Prestador deve receber o valor TOTAL do serviço (ex: R$ 200) 
+            // MENOS a taxa da plataforma (ex: 20% de 200 = R$ 40).
+            // No final, o prestador recebe R$ 160 de lucro real.
+            
+            const valorLiquidoParaPrestador = valorTotal - valorTaxa;
+
+            // Log de auditoria para o console (ajuda a debugar se a matemática bater)
+            console.log(`💰 Cálculo: Total(${valorTotal}) - Taxa(${valorTaxa}) = Líquido(${valorLiquidoParaPrestador})`);
 
             // 1. ATUALIZA CLIENTE: Esvazia a reserva deste pedido
             if (clientSnap.exists()) {
