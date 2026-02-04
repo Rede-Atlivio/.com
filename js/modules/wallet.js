@@ -23,16 +23,21 @@ export function iniciarMonitoramentoCarteira() {
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
-            const saldo = parseFloat(data.balance || data.saldo || data.wallet_balance || 0);
+            
+            // 🔥 UNIFICAÇÃO DE NOMENCLATURA: Prioridade total ao wallet_balance
+            const saldoUnificado = parseFloat(data.wallet_balance || data.saldo || data.balance || 0);
 
             if (!window.userProfile) window.userProfile = {};
-            window.userProfile.balance = saldo;
+            
+            // Alimenta a variável global que as travas de 20% e 10% vão consultar
+            window.userProfile.balance = saldoUnificado;
+            window.userProfile.wallet_balance = saldoUnificado;
 
-            // ✅ Atualização unificada das interfaces
-            verificarFaixaBonus(saldo);
-            atualizarInterfaceCarteira(saldo);
-            atualizarInterfaceHeader(saldo);
-            atualizarInterfaceGanhar(saldo);
+            // ✅ Atualização unificada das interfaces sem remover funções
+            verificarFaixaBonus(saldoUnificado);
+            atualizarInterfaceCarteira(saldoUnificado);
+            atualizarInterfaceHeader(saldoUnificado);
+            atualizarInterfaceGanhar(saldoUnificado);
             carregarHistoricoCarteira(uid); 
         }
     });
