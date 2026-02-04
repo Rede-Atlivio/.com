@@ -644,10 +644,20 @@ window.removerServico = async (cat, price, title) => {
 };
 
 window.atualizarMinimo = (select) => {
-    const min = select.options[select.selectedIndex].dataset.min;
+    const option = select.options[select.selectedIndex];
+    const min = option.dataset.min;
+    const prefillTitle = option.dataset.prefill; // Novo dado que injetamos
+    
+    // ⚡ AUTO-PREENCHIMENTO INTELIGENTE
+    // Se escolheu um serviço específico, já preenche o nome e o preço
+    if(prefillTitle) {
+        document.getElementById('prov-title').value = prefillTitle;
+        document.getElementById('prov-price').value = min; 
+    }
+
     const msg = document.getElementById('msg-min-price');
     document.getElementById('prov-price').placeholder = `Mínimo: R$ ${min}`;
-    msg.innerText = `⚠️ Mínimo sugerido: R$ ${min},00`;
+    msg.innerText = `⚠️ Valor Base: R$ ${min},00`;
     msg.classList.remove('hidden');
 };
 
