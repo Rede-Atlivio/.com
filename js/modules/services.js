@@ -10,20 +10,20 @@ export const SERVICOS_PADRAO = [
     { category: 'eventos', title: 'Copeira', price: 110 },
     { category: 'eventos', title: 'Churrasqueiro', price: 200 },
     { category: 'eventos', title: 'Segurança de evento', price: 180 },
-    { category: 'eventos', title: 'Pacote Completo (Bar + Garçons + Limpeza)', price: 3000, level: 'premium' },
-    { category: 'eventos', title: 'Produção e Organização de Evento', price: 4000, level: 'premium' },
+    { category: 'eventos', title: 'Pacote Completo (Bar + Garçons + Limpeza)', price: 1000, level: 'premium' },
+    { category: 'eventos', title: 'Produção e Organização de Evento', price: 1000, level: 'premium' },
     { category: 'musica', title: 'Músico solo', price: 250 },
-    { category: 'musica', title: 'DJ Profissional com Estrutura', price: 2500, level: 'premium' },
-    { category: 'musica', title: 'Banda para Casamento / Evento', price: 5000, level: 'premium' },
-    { category: 'audiovisual', title: 'Fotógrafo', price: 350 },
-    { category: 'audiovisual', title: 'Filmagem e Aftermovie Corporativo', price: 3000, level: 'premium' },
-    { category: 'audiovisual', title: 'Gestão de Tráfego Mensal', price: 2000, level: 'premium' },
+    { category: 'musica', title: 'DJ Profissional com Estrutura', price: 500, level: 'premium' },
+    { category: 'musica', title: 'Banda para Casamento / Evento', price: 500, level: 'premium' },
+    { category: 'audiovisual', title: 'Fotógrafo', price: 250 },
+    { category: 'audiovisual', title: 'Filmagem e Aftermovie Corporativo', price: 1000, level: 'premium' },
+    { category: 'audiovisual', title: 'Gestão de Tráfego Mensal', price: 500, level: 'premium' },
     { category: 'limpeza', title: 'Diarista', price: 130 },
-    { category: 'residenciais', title: 'Reforma Pequena (Pacote)', price: 2500, level: 'premium' },
-    { category: 'transporte', title: 'Transfer para Eventos (Van/Executivo)', price: 2000, level: 'premium' },
-    { category: 'aluguel', title: 'Aluguel de Som e Iluminação Profissional', price: 2000, level: 'premium' },
-    { category: 'aluguel', title: 'Aluguel de Palco e Tendas', price: 3500, level: 'premium' },
-    { category: 'tecnologia', title: 'Desenvolvimento de Site / Landing Page', price: 3000, level: 'premium' }
+    { category: 'residenciais', title: 'Reforma Pequena (Pacote)', price: 1000, level: 'premium' },
+    { category: 'transporte', title: 'Transporte para Eventos (Van/Executivo)', price: 700, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Som e Iluminação Profissional', price: 1000, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Palco e Tendas', price: 1000, level: 'premium' },
+    { category: 'tecnologia', title: 'Desenvolvimento de Site / Landing Page', price: 500, level: 'premium' }
 ];
 
 // ⚡ INJEÇÃO GLOBAL IMEDIATA PARA MATAR ERROS DE REFERÊNCIA NO REQUEST.JS
