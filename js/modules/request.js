@@ -283,28 +283,40 @@ export async function enviarPropostaAgora() {
 // 2. RADAR DO PRESTADOR (SINCRONIA ADMIN & TRAVA PROATIVA)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
-    // --- 1. SINCRONIA DE TAXA COM PAINEL ADMIN ---
-    try {
-        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
-        if (configSnap.exists()) {
-            window.configFinanceiroAtiva = configSnap.data();
-        }
-    } catch (e) { 
-        console.error("Erro ao sincronizar taxas do radar:", e); 
-    }
+    // --- 1. SINCRONIA DE TAXA COM PAINEL ADMIN (V10.0 UNIFICADA) ---
+    try {
+        // Busca nos dois locais revelados pela perícia
+        const snapNovo = await getDoc(doc(db, "settings", "financeiro"));
+        const snapLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
+        
+        const dadosNovos = snapNovo.exists() ? snapNovo.data() : {};
+        const dadosLegados = snapLegado.exists() ? snapLegado.data() : {};
 
-    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
-    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
-            }
-            if (change.type === "removed") {
-                fecharModalRadar();
-            }
-        });
-    });
+        // Mescla os dados: Prioriza o limite do novo e a porcentagem que existir
+        window.configFinanceiroAtiva = {
+            porcentagem_reserva: dadosNovos.porcentagem_reserva || dadosLegados.porcentagem_reserva || 10,
+            limite_divida: dadosNovos.limite_divida !== undefined ? dadosNovos.limite_divida : (dadosLegados.limite_divida || -60.00),
+            taxa_plataforma: dadosNovos.taxa_plataforma || 0.20
+        };
+        
+        console.log("🎯 Radar Sincronizado com Admin:", window.configFinanceiroAtiva);
+
+    } catch (e) { 
+        console.error("Erro ao sincronizar taxas do radar:", e); 
+    }
+
+    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
+    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
+            }
+            if (change.type === "removed") {
+                fecharModalRadar();
+            }
+        });
+    });
 }
 
 function mostrarModalRadar(pedido) {
