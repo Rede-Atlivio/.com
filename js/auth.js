@@ -103,9 +103,24 @@ window.definirPerfil = async (tipo) => {
 
 window.alternarPerfil = async () => {
     if(!userProfile) return;
+    
+    // 🔥 ATIVA O OVERLAY DE TRANSIÇÃO IMEDIATAMENTE
+    const overlay = document.getElementById('transition-overlay');
+    if(overlay) overlay.classList.remove('hidden');
+
     const btn = document.getElementById('btn-trocar-perfil');
     if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
-    try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: !userProfile.is_provider }); setTimeout(() => location.reload(), 500); } catch (e) { alert("Erro: " + e.message); if(btn) btn.disabled = false; }
+
+    try { 
+        await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { 
+            is_provider: !userProfile.is_provider 
+        }); 
+        // O reload agora acontece "por trás" da tela azul de transição
+        setTimeout(() => location.reload(), 300); 
+    } catch (e) { 
+        if(overlay) overlay.classList.add('hidden');
+        alert("Erro: " + e.message); 
+    }
 };
 
 // --- ENFORCER & MONITOR ---
