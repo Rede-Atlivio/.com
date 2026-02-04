@@ -315,9 +315,48 @@ function atualizarInterfaceUsuario(dados) {
 }
 
 function iniciarAppLogado(user) {
-    if(!userProfile || !userProfile.perfil_completo) { document.getElementById('app-container').classList.add('hidden'); document.getElementById('role-selection').classList.remove('hidden'); return; }
-    document.getElementById('role-selection').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden');
-    // ... restante do código com erro de fechamento ...
+    // 1. Verificação de Perfil Completo
+    if(!userProfile || !userProfile.perfil_completo) { 
+        document.getElementById('app-container').classList.add('hidden'); 
+        document.getElementById('role-selection').classList.remove('hidden'); 
+        // 🔥 Garante que o overlay suma se for para a seleção de perfil
+        document.getElementById('transition-overlay')?.classList.add('hidden');
+        return; 
+    }
+
+    // 2. Revela o App e limpa o Overlay de Transição
+    document.getElementById('role-selection').classList.add('hidden'); 
+    document.getElementById('app-container').classList.remove('hidden');
+
+    // Remove a tela azul após um pequeno delay para suavizar a entrada
+    setTimeout(() => {
+        document.getElementById('transition-overlay')?.classList.add('hidden');
+    }, 600);
+
+    // 3. Lógica de Admin e Interface
+    const btnPerfil = document.getElementById('btn-trocar-perfil');
+    const userEmail = user.email ? user.email.toLowerCase().trim() : "";
+    const isAdmin = userEmail && ADMIN_EMAILS.some(adm => adm.toLowerCase() === userEmail);
+    if(isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
+
+    if (userProfile.is_provider) {
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
+        document.getElementById('tab-servicos').innerText = "Serviços 🛠️";
+        ['tab-servicos', 'tab-missoes', 'tab-oportunidades', 'tab-ganhar', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, true));
+        toggleDisplay('servicos-cliente', false);
+        setTimeout(() => { document.getElementById('tab-servicos')?.click(); }, 1000);
+    } else {
+        if(btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
+        document.getElementById('tab-servicos').innerText = "Contratar 🛠️";
+        ['tab-servicos', 'tab-oportunidades', 'tab-loja', 'tab-ganhar', 'servicos-cliente'].forEach(id => toggleDisplay(id, true));
+        ['tab-missoes', 'status-toggle-container', 'servicos-prestador'].forEach(id => toggleDisplay(id, false));
+        setTimeout(() => { 
+            const tab = document.getElementById('tab-servicos'); 
+            if(tab) tab.click(); else if(window.carregarServicos) window.carregarServicos();
+            if(window.carregarVagas) window.carregarVagas(); 
+            if(window.carregarOportunidades) window.carregarOportunidades();
+        }, 1000); 
+    }
 }
 
 async function verificarStatusERadar(uid) {
