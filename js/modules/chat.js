@@ -383,155 +383,155 @@ async function enviarMsgSistema(orderId, texto) {
 // 🚨 FASE 6: ACORDO MÚTUO E RESERVA (VERSÃO COFRE/ESCROW V2 - CORRIGIDA)
 // ============================================================================
 export async function confirmarAcordo(orderId, aceitar) {
-    if(!aceitar) return alert("Negociação continua.");
-    
-    const uid = auth.currentUser.uid;
-    const orderRef = doc(db, "orders", orderId);
+    if(!aceitar) return alert("Negociação continua.");
+    
+    const uid = auth.currentUser.uid;
+    const orderRef = doc(db, "orders", orderId);
 
-    try {
-        // --- 1. BUSCA OBRIGATÓRIA DAS REGRAS DO SEU PAINEL ADMIN ---
-        let configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        if(!configSnap.exists()) configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
-        
-        // Configuração padrão de segurança
-        const configDefault = { porcentagem_reserva: 10, limite_divida: -60.00 };
-        const config = configSnap.exists() ? configSnap.data() : configDefault;
-        
-        // --- 2. TRAVA DE PRIORIDADE: VALIDAÇÃO DINÂMICA POR PERFIL (V11.0) ---
-        const pedidoSnap = await getDoc(orderRef);
-        const pedido = pedidoSnap.data();
-        const valorTotalPedido = parseFloat(String(pedido.offer_value).replace(',', '.')) || 0;
-        
-        const isMeProvider = uid === pedido.provider_id;
-        const isMeClient = uid === pedido.client_id;
+    try {
+        // --- 1. BUSCA OBRIGATÓRIA DAS REGRAS DO SEU PAINEL ADMIN ---
+        let configSnap = await getDoc(doc(db, "settings", "financeiro"));
+        if(!configSnap.exists()) configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        
+        // Configuração padrão de segurança
+        const configDefault = { porcentagem_reserva: 10, limite_divida: -60.00 };
+        const config = configSnap.exists() ? configSnap.data() : configDefault;
+        
+        // --- 2. TRAVA DE PRIORIDADE: VALIDAÇÃO DINÂMICA POR PERFIL (V11.0) ---
+        const pedidoSnap = await getDoc(orderRef);
+        const pedido = pedidoSnap.data();
+        const valorTotalPedido = parseFloat(String(pedido.offer_value).replace(',', '.')) || 0;
+        
+        const isMeProvider = uid === pedido.provider_id;
+        const isMeClient = uid === pedido.client_id;
 
-        // 🛡️ REGRAS DO ADMIN (Carregadas da Memória Unificada)
-        const cfgMaster = window.configFinanceiroAtiva || config; 
-        
-        let valorNecessarioParaConfirmar = 0;
-        let pctAplicada = 0;
+        // 🛡️ REGRAS DO ADMIN (Carregadas da Memória Unificada)
+        const cfgMaster = window.configFinanceiroAtiva || config; 
+        
+        let valorNecessarioParaConfirmar = 0;
+        let pctAplicada = 0;
 
-        if (isMeProvider) {
-            // Prestador usa a % de reserva do prestador e respeita o limite de -60
-            pctAplicada = cfgMaster.porcentagem_reserva || 20;
-            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
-            
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
-            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
-            const limiteCredito = parseFloat(cfgMaster.limite_divida || -60);
+        if (isMeProvider) {
+            // Prestador usa a % de reserva do prestador e respeita o limite de -60
+            pctAplicada = cfgMaster.porcentagem_reserva || 20;
+            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
+            
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+            const limiteCredito = parseFloat(cfgMaster.limite_divida || -60);
 
-            if ((saldoAtual - valorNecessarioParaConfirmar) < limiteCredito) {
-                alert(`⛔ SALDO INSUFICIENTE (PRESTADOR)\n\nEste serviço exige R$ ${valorNecessarioParaConfirmar.toFixed(2)} de reserva.\nSeu limite de crédito não cobre este valor.`);
-                if(window.switchTab) window.switchTab('ganhar');
-                return;
-            }
-        } 
-        else if (isMeClient) {
-            // Cliente usa a % de reserva do cliente e PRECISA ter saldo real (não tem limite negativo)
-            pctAplicada = cfgMaster.porcentagem_reserva_cliente || 10;
-            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
+            if ((saldoAtual - valorNecessarioParaConfirmar) < limiteCredito) {
+                alert(`⛔ SALDO INSUFICIENTE (PRESTADOR)\n\nEste serviço exige R$ ${valorNecessarioParaConfirmar.toFixed(2)} de reserva.\nSeu limite de crédito não cobre este valor.`);
+                if(window.switchTab) window.switchTab('ganhar');
+                return;
+            }
+        } 
+        else if (isMeClient) {
+            // Cliente usa a % de reserva do cliente e PRECISA ter saldo real (não tem limite negativo)
+            pctAplicada = cfgMaster.porcentagem_reserva_cliente || 10;
+            valorNecessarioParaConfirmar = valorTotalPedido * (pctAplicada / 100);
 
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
-            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
 
-            if (saldoAtual < valorNecessarioParaConfirmar) {
-                alert(`⛔ SALDO INSUFICIENTE (CLIENTE)\n\nPara fechar este acordo, você precisa de R$ ${valorNecessarioParaConfirmar.toFixed(2)} em saldo (Garantia de ${pctAplicada}%).\n\nPor favor, recarregue sua carteira.`);
-                if(window.switchTab) window.switchTab('ganhar');
-                return;
-            }
-        }
+            if (saldoAtual < valorNecessarioParaConfirmar) {
+                alert(`⛔ SALDO INSUFICIENTE (CLIENTE)\n\nPara fechar este acordo, você precisa de R$ ${valorNecessarioParaConfirmar.toFixed(2)} em saldo (Garantia de ${pctAplicada}%).\n\nPor favor, recarregue sua carteira.`);
+                if(window.switchTab) window.switchTab('ganhar');
+                return;
+            }
+        }
 
-        // 🛡️ TRAVA PRESTADOR (Cheque Especial)
-        if (isMeProvider) {
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
-            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || userSnap.data()?.saldo || 0);
-            const LIMITE_DEBITO = parseFloat(config.limite_divida || -60.00); 
-            
-            const estimativaTaxa = valorTotalPedido * 0.20;
-            
-            if ((saldoAtual - estimativaTaxa) < LIMITE_DEBITO) {
-                alert(`⛔ LIMITE DE CRÉDITO EXCEDIDO\n\nPara aceitar este serviço, você precisa de saldo.\nLimite: R$ ${LIMITE_DEBITO.toFixed(2)}.\n\nPor favor, recarregue sua carteira.`);
-                if(window.switchTab) window.switchTab('ganhar');
-                return;
-            }
-        }
+        // 🛡️ TRAVA PRESTADOR (Cheque Especial)
+        if (isMeProvider) {
+            const userSnap = await getDoc(doc(db, "usuarios", uid));
+            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || userSnap.data()?.saldo || 0);
+            const LIMITE_DEBITO = parseFloat(config.limite_divida || -60.00); 
+            
+            const estimativaTaxa = valorTotalPedido * 0.20;
+            
+            if ((saldoAtual - estimativaTaxa) < LIMITE_DEBITO) {
+                alert(`⛔ LIMITE DE CRÉDITO EXCEDIDO\n\nPara aceitar este serviço, você precisa de saldo.\nLimite: R$ ${LIMITE_DEBITO.toFixed(2)}.\n\nPor favor, recarregue sua carteira.`);
+                if(window.switchTab) window.switchTab('ganhar');
+                return;
+            }
+        }
 
-        // ⚡ VARIÁVEL DE CONTROLE EXTERNA (CORREÇÃO DO ERRO)
-        let vaiFecharAgora = false;
+        // ⚡ VARIÁVEL DE CONTROLE EXTERNA (CORREÇÃO DO ERRO)
+        let vaiFecharAgora = false;
 
-        // --- 3. EXECUÇÃO DA TRANSAÇÃO (O COFRE) ---
-        await runTransaction(db, async (transaction) => {
-            const orderSnap = await transaction.get(orderRef);
-            if (!orderSnap.exists()) throw "Pedido não encontrado!";
-            
-            const clientRef = doc(db, "usuarios", pedido.client_id);
-            const clientSnap = await transaction.get(clientRef);
+        // --- 3. EXECUÇÃO DA TRANSAÇÃO (O COFRE) ---
+        await runTransaction(db, async (transaction) => {
+            const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Pedido não encontrado!";
+            
+            const clientRef = doc(db, "usuarios", pedido.client_id);
+            const clientSnap = await transaction.get(clientRef);
 
-            // Verifica quem está clicando
-            const isProvider = uid === pedido.provider_id;
-            const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
-            
-            // Verifica se este clique fecha o acordo (se o outro já confirmou)
-            const oOutroJaConfirmou = isProvider ? orderSnap.data().client_confirmed : orderSnap.data().provider_confirmed;
-            vaiFecharAgora = oOutroJaConfirmou; // Atualiza a variável externa
+            // Verifica quem está clicando
+            const isProvider = uid === pedido.provider_id;
+            const campoUpdate = isProvider ? { provider_confirmed: true } : { client_confirmed: true };
+            
+            // Verifica se este clique fecha o acordo (se o outro já confirmou)
+            const oOutroJaConfirmou = isProvider ? orderSnap.data().client_confirmed : orderSnap.data().provider_confirmed;
+            vaiFecharAgora = oOutroJaConfirmou; // Atualiza a variável externa
 
-            transaction.update(orderRef, campoUpdate);
+            transaction.update(orderRef, campoUpdate);
 
-            if (vaiFecharAgora) {
-                // SE O ACORDO FECHOU, O CLIENTE PAGA A RESERVA AGORA
-                if (!clientSnap.exists()) throw "Cliente não encontrado para cobrança.";
-                
-                const saldoClienteAtual = parseFloat(clientSnap.data().wallet_balance || clientSnap.data().saldo || 0);
+            if (vaiFecharAgora) {
+                // SE O ACORDO FECHOU, O CLIENTE PAGA A RESERVA AGORA
+                if (!clientSnap.exists()) throw "Cliente não encontrado para cobrança.";
+                
+                const saldoClienteAtual = parseFloat(clientSnap.data().wallet_balance || clientSnap.data().saldo || 0);
 
-                // Validação final de segurança do cliente
-                if (saldoClienteAtual < valorReserva) {
-                    throw `Saldo insuficiente do Cliente para a reserva (R$ ${valorReserva.toFixed(2)}).`;
-                }
+                // Validação final de segurança do cliente
+                if (saldoClienteAtual < valorReserva) {
+                    throw `Saldo insuficiente do Cliente para a reserva (R$ ${valorReserva.toFixed(2)}).`;
+                }
 
-                // 🏦 MOVIMENTO FINANCEIRO: CARTEIRA -> COFRE (Held)
-                transaction.update(clientRef, {
-                    wallet_balance: saldoClienteAtual - valorReserva,
-                    wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva,
-                    saldo: saldoClienteAtual - valorReserva // Mantém sincronia legado
-                });
+                // 🏦 MOVIMENTO FINANCEIRO: CARTEIRA -> COFRE (Held)
+                transaction.update(clientRef, {
+                    wallet_balance: saldoClienteAtual - valorReserva,
+                    wallet_reserved: (clientSnap.data().wallet_reserved || 0) + valorReserva,
+                    saldo: saldoClienteAtual - valorReserva // Mantém sincronia legado
+                });
 
-                transaction.update(orderRef, { 
-                    system_step: 3, 
-                    status: 'confirmed_hold',
-                    value_reserved: valorReserva,
-                    confirmed_at: serverTimestamp()
-                });
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    status: 'confirmed_hold',
+                    value_reserved: valorReserva,
+                    confirmed_at: serverTimestamp()
+                });
 
-                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
-                transaction.set(msgRef, {
-                    text: `🔒 RESERVA CONFIRMADA: R$ ${valorReserva.toFixed(2)} foram para a custódia. Contato liberado!`,
-                    sender_id: "system",
-                    timestamp: serverTimestamp()
-                });
-            }
-        });
-        
-        // Agora a variável existe aqui fora!
-        alert(vaiFecharAgora ? "✅ Acordo Fechado! O valor foi reservado." : "✅ Confirmado! Aguardando a outra parte.");
-    
-    } catch(e) { 
-        console.error("Erro no acordo:", e);
-        const erroTexto = String(e);
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: `🔒 RESERVA CONFIRMADA: R$ ${valorReserva.toFixed(2)} foram para a custódia. Contato liberado!`,
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
+        });
+        
+        // Agora a variável existe aqui fora!
+        alert(vaiFecharAgora ? "✅ Acordo Fechado! O valor foi reservado." : "✅ Confirmado! Aguardando a outra parte.");
+    
+    } catch(e) { 
+        console.error("Erro no acordo:", e);
+        const erroTexto = String(e);
 
-        if (erroTexto.includes("Saldo insuficiente")) {
-            const pedidoSnap = await getDoc(orderRef);
-            const pedido = pedidoSnap.data();
-            if (auth.currentUser.uid === pedido.client_id) {
-                if (confirm(`⚠️ VOCÊ ESTÁ SEM SALDO\n\nA reserva é de R$ ${valorReserva.toFixed(2)}.\nDeseja recarregar agora?`)) {
-                    if(window.switchTab) window.switchTab('ganhar');
-                }
-            } else {
-                alert("⏳ O Cliente precisa recarregar para cobrir a reserva.");
-            }
-        } else {
-            alert("⚠️ " + e);
-        }
-    }
+        if (erroTexto.includes("Saldo insuficiente")) {
+            const pedidoSnap = await getDoc(orderRef);
+            const pedido = pedidoSnap.data();
+            if (auth.currentUser.uid === pedido.client_id) {
+                if (confirm(`⚠️ VOCÊ ESTÁ SEM SALDO\n\nA reserva é de R$ ${valorReserva.toFixed(2)}.\nDeseja recarregar agora?`)) {
+                    if(window.switchTab) window.switchTab('ganhar');
+                }
+            } else {
+                alert("⏳ O Cliente precisa recarregar para cobrir a reserva.");
+            }
+        } else {
+            alert("⚠️ " + e);
+        }
+    }
 }
 
 export function escutarMensagens(orderId) {
