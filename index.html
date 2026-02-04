@@ -145,29 +145,27 @@
                            id="login-phone" 
                            oninput="window.mascaraTelefone(this)" 
                            placeholder="(00) 00000-0000" 
-                           class="w-full p-4 rounded-xl bg-gray-100 border-none text-lg font-bold">
+                           class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 pl-20 text-gray-900 text-lg font-bold focus:border-blue-500 outline-none transition">
                 </div>
+                
                 <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
                     RECEBER CÓDIGO SMS 📲
                 </button>
-                <p class="text-[10px] text-gray-400 mt-2">Segurança garantida. Sem senhas.</p>
-            </div>
 
-            <script>
-                window.mascaraTelefone = (i) => {
-                    let v = i.value;
-                    if (!v) return;
-                    v = v.replace(/\D/g, "");
-                    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-                    v = v.replace(/(\d{5})(\d)/, "$1-$2");
-                    i.value = v.substring(0, 15);
-                };
-            </script>
+                <div class="relative py-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
+                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-white px-2 text-gray-400 font-bold tracking-tighter">Acesso Seguro via Google</span></div>
                 </div>
-                <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
-                    RECEBER CÓDIGO SMS 📲
+
+                <button onclick="alert('🚀 SEGURANÇA MÁXIMA\n\nEstamos homologando o Login Google para garantir total proteção à sua carteira.\n\nPor enquanto, use o Login via SMS: é rápido, seguro e dispensa senhas!')" 
+                        class="w-full bg-white border-2 border-gray-100 text-gray-600 font-bold py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 transition shadow-sm">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5">
+                    Entrar com Google
                 </button>
-                <p class="text-[10px] text-gray-400 mt-2">Segurança garantida. Sem senhas.</p>
+
+                <p class="text-[10px] text-gray-400 mt-4 leading-tight">
+                    🔒 **Login Blindado:** Sua segurança é prioridade. O acesso por SMS é a forma mais direta de proteger seus dados.
+                </p>
             </div>
 
             <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
@@ -185,6 +183,16 @@
             <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
         </div>
     </div>
+
+    <script>
+        // MÁSCARA GLOBAL PARA O LOGIN
+        window.mascaraTelefone = (i) => {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d{5})(\d)/, "$1-$2");
+            i.value = v.substring(0, 15);
+        };
+    </script>
 
     <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
