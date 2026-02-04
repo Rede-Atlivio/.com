@@ -766,30 +766,55 @@ window.atualizarRadar = () => {
         snapshot.forEach((docSnap) => {
             const pedido = docSnap.data();
             
+            // 🛡️ LÓGICA DE TRAVA RÍGIDA (Ação de Bloqueio Real)
+            const saldoAtual = parseFloat(window.userProfile?.wallet_balance || 0);
+            const valorJob = parseFloat(pedido.offer_value || 0);
+            
+            // Usa a porcentagem configurada no Admin (Fallback 10%)
+            const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+            const pctReserva = parseFloat(config.porcentagem_reserva) || 10;
+            const valorNecessario = valorJob * (pctReserva / 100);
+
+            // REGRA: Se o saldo atual for menor que o custo do job, BLOQUEIA O ACESSO AO CHAT.
+            const temSaldo = saldoAtual >= valorNecessario;
+
+            const botaoHTML = temSaldo 
+                ? `<button onclick="window.abrirChatPedido('${docSnap.id}')" class="w-full bg-slate-900 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition">
+                        VER E ACEITAR 💬
+                   </button>`
+                : `<button onclick="window.switchTab('ganhar'); alert('⛔ SALDO INSUFICIENTE\\n\\nPara abrir este chat de R$ ${valorJob.toFixed(2)}, você precisa de uma reserva de R$ ${valorNecessario.toFixed(2)}.\\n\\nSeu saldo atual: R$ ${saldoAtual.toFixed(2)}.\\nRecarregue para liberar.')" 
+                           class="w-full bg-red-600 text-white font-black py-3 rounded-xl text-[10px] uppercase shadow-none transition active:scale-95">
+                        🔒 RECARREGAR R$ ${valorNecessario.toFixed(2)}
+                   </button>`;
+
             // FILTRO: Mostra se for direcionado a este prestador
             if (pedido.provider_id === auth.currentUser.uid) {
                 container.innerHTML += `
-                    <div class="bg-white border-2 border-blue-100 p-4 rounded-2xl mb-3 shadow-sm animate-fadeIn relative overflow-hidden">
-                        <div class="absolute top-0 right-0 bg-blue-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase">NOVO PEDIDO</div>
+                    <div class="bg-white border-2 ${temSaldo ? 'border-blue-100' : 'border-red-200 bg-red-50/20'} p-4 rounded-2xl mb-3 shadow-sm animate-fadeIn relative overflow-hidden">
+                        <div class="absolute top-0 right-0 ${temSaldo ? 'bg-blue-600' : 'bg-red-600'} text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase">
+                            ${temSaldo ? 'DISPONÍVEL' : 'BLOQUEADO'}
+                        </div>
                         
                         <div class="flex items-center gap-3 mb-3">
-                            <div class="bg-blue-50 w-10 h-10 rounded-full flex items-center justify-center text-lg">👤</div>
+                            <div class="${temSaldo ? 'bg-blue-50' : 'bg-red-100'} w-10 h-10 rounded-full flex items-center justify-center text-lg">👤</div>
                             <div class="text-left">
                                 <h4 class="font-black text-blue-900 text-xs uppercase">${pedido.client_name}</h4>
                                 <p class="text-[9px] text-gray-400 font-bold">${pedido.service_title || pedido.service_category}</p>
                             </div>
                         </div>
 
-                        <div class="bg-slate-50 p-3 rounded-xl mb-3 text-left">
+                        <div class="bg-slate-50 p-3 rounded-xl mb-3 text-left border ${temSaldo ? 'border-transparent' : 'border-red-100'}">
                             <div class="flex justify-between text-[10px] mb-1">
-                                <span class="text-gray-500">Valor Ofertado:</span>
-                                <span class="font-black text-green-600">R$ ${pedido.offer_value}</span>
+                                <span class="text-gray-500 font-bold uppercase">Proposta:</span>
+                                <span class="font-black text-green-600">R$ ${valorJob.toFixed(2)}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px]">
+                                <span class="text-gray-500 font-bold uppercase">Reserva (${pctReserva}%):</span>
+                                <span class="font-bold ${temSaldo ? 'text-blue-600' : 'text-red-600'}">R$ ${valorNecessario.toFixed(2)}</span>
                             </div>
                         </div>
 
-                        <button onclick="window.abrirChatPedido('${docSnap.id}')" class="w-full bg-slate-900 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition">
-                            VER E ACEITAR 💬
-                        </button>
+                        ${botaoHTML}
                     </div>
                 `;
             }
