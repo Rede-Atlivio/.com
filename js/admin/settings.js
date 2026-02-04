@@ -91,36 +91,39 @@ export async function init() {
 // ============================================================================
 async function loadSettings() {
     try {
-        // 1. Carrega Aviso Global
-        const dGlobal = await getDoc(doc(window.db, "settings", "global"));
-        if(dGlobal.exists()) {
-            const data = dGlobal.data();
-            document.getElementById('conf-global-msg').value = data.top_message || "";
-            document.getElementById('conf-msg-active').checked = data.is_active || false;
-        }
+        // ... (parte do dGlobal continua igual) ...
 
-        // 2. Carrega Regras Financeiras
+        // 2. Carrega Regras Financeiras Master
         const dFin = await getDoc(doc(window.db, "configuracoes", "financeiro"));
         if(dFin.exists()) {
             const data = dFin.data();
             document.getElementById('conf-val-min').value = data.valor_minimo || 20;
             document.getElementById('conf-val-max').value = data.valor_maximo || 500;
             document.getElementById('conf-taxa-reserva').value = data.porcentagem_reserva || 10;
+            document.getElementById('conf-taxa-prestador').value = data.taxa_prestador || 20; // 🔥 BUSCA DO BANCO
             document.getElementById('conf-bonus-valor').value = data.valor_bonus_entrada || 20;
         }
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
-window.saveAppSettings = async () => {
-    const msg = document.getElementById('conf-global-msg').value;
-    const active = document.getElementById('conf-msg-active').checked;
+window.saveBusinessRules = async () => {
+    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
+    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
+    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
+    const taxaPres = parseFloat(document.getElementById('conf-taxa-prestador').value) || 20; // 🔥 COLETA DO INPUT
+    const bonus = parseFloat(document.getElementById('conf-bonus-valor').value) || 20;
+
     try {
-        await setDoc(doc(window.db, "settings", "global"), { 
-            top_message: msg,
-            is_active: active,
+        await setDoc(doc(window.db, "configuracoes", "financeiro"), { 
+            valor_minimo: min, 
+            valor_maximo: max, 
+            porcentagem_reserva: taxa,
+            taxa_prestador: taxaPres, // 🔥 SALVA NO BANCO
+            valor_bonus_entrada: bonus,
             updated_at: new Date()
         }, {merge:true});
-        alert("✅ Aviso global atualizado!");
+        alert("✅ REGRAS FINANCEIRAS ATUALIZADAS!");
+        loadSettings(); // Recarrega para confirmar
     } catch(e) { alert("Erro: " + e.message); }
 };
 
