@@ -499,12 +499,96 @@ export function escutarMensagens(orderId) {
 // 4. AÇÕES FINAIS E EXPOSIÇÃO GLOBAL
 // ============================================================================
 window.finalizarServicoPassoFinalAction = async (orderId) => {
-    if(!confirm("Confirma a entrega? O valor será liberado.")) return;
+    if(!confirm("Confirma a conclusão do serviço?\n\nAo confirmar, o valor reservado será liberado para o prestador (descontando as taxas) e o pedido será encerrado.")) return;
+    
     try {
-        await updateDoc(doc(db, "orders", orderId), { status: 'completed', completed_at: serverTimestamp() });
-        alert("✅ Pagamento liberado!");
+        // 1. Busca Taxa Atual do Admin
+        let configSnap = await getDoc(doc(db, "settings", "financeiro"));
+        if(!configSnap.exists()) configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        
+        // Padrão 20% se der erro
+        const taxaPercent = configSnap.exists() && configSnap.data().taxa_plataforma !== undefined 
+            ? parseFloat(configSnap.data().taxa_plataforma) 
+            : 0.20;
+
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, "orders", orderId);
+            const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Pedido não encontrado.";
+            
+            const pedido = orderSnap.data();
+            if (pedido.status !== 'confirmed_hold') throw "Este pedido não está em fase de liberação (Status incorreto).";
+
+            const clientRef = doc(db, "usuarios", pedido.client_id);
+            const providerRef = doc(db, "usuarios", pedido.provider_id);
+            const activeProvRef = doc(db, "active_providers", pedido.provider_id);
+
+            const clientSnap = await transaction.get(clientRef);
+            const providerSnap = await transaction.get(providerRef);
+
+            // VALORES
+            const valorReservado = parseFloat(pedido.value_reserved || 0); // O que está no cofre (Ex: R$ 20,00)
+            const valorTotal = parseFloat(pedido.offer_value || 0); // Valor do serviço (Ex: R$ 200,00)
+            const valorTaxa = valorTotal * taxaPercent; // Taxa do Atlivio (Ex: R$ 40,00)
+            
+            // CÁLCULO FINAL DA TRANSFERÊNCIA
+            // O Prestador recebe a Reserva (-) a Taxa.
+            // Ex: Recebe 20 (Reserva) - 40 (Taxa) = -20 (Sai do saldo dele)
+            // Ex: Recebe 200 (Reserva 100%) - 40 (Taxa) = +160 (Entra no saldo)
+            const valorLiquidoParaPrestador = valorReservado - valorTaxa;
+
+            // 1. ATUALIZA CLIENTE: Esvazia a reserva deste pedido
+            if (clientSnap.exists()) {
+                const currentReserved = parseFloat(clientSnap.data().wallet_reserved || 0);
+                // Garante que não fique negativo por erro de arredondamento
+                const novaReserva = Math.max(0, currentReserved - valorReservado);
+                transaction.update(clientRef, { wallet_reserved: novaReserva });
+            }
+
+            // 2. ATUALIZA PRESTADOR: Aplica o valor líquido na carteira
+            if (providerSnap.exists()) {
+                const currentBalance = parseFloat(providerSnap.data().wallet_balance || providerSnap.data().saldo || 0);
+                const newBalance = currentBalance + valorLiquidoParaPrestador;
+                
+                transaction.update(providerRef, { 
+                    wallet_balance: newBalance,
+                    saldo: newBalance 
+                });
+                
+                // Mantém sync com a tabela de prestadores ativos
+                transaction.update(activeProvRef, { balance: newBalance });
+            }
+
+            // 3. ATUALIZA PEDIDO: Finaliza
+            transaction.update(orderRef, {
+                status: 'completed',
+                completed_at: serverTimestamp(),
+                final_tax_paid: valorTaxa,
+                final_amount_released: valorLiquidoParaPrestador
+            });
+
+            // 4. GERA EXTRATO (Histórico)
+            const histRef = doc(collection(db, "transactions"));
+            transaction.set(histRef, {
+                order_id: orderId,
+                provider_id: pedido.provider_id,
+                client_id: pedido.client_id,
+                type: 'release_escrow',
+                amount_reserved: valorReservado,
+                platform_fee: valorTaxa,
+                net_transfer: valorLiquidoParaPrestador,
+                description: `Finalização Pedido: ${pedido.service_title || 'Serviço'}`,
+                created_at: serverTimestamp()
+            });
+        });
+
+        alert("✅ Serviço finalizado com sucesso!\nValores transferidos.");
         window.voltarParaListaPedidos();
-    } catch(e) { alert("Erro: " + e.message); }
+
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao finalizar: " + e.message);
+    }
 };
 
 window.reportarProblema = async (orderId) => {
