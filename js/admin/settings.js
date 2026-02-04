@@ -32,20 +32,30 @@ export async function init() {
                 <p class="text-xs text-gray-400 mb-6">Controle as regras de bloqueio e taxas do aplicativo em tempo real.</p>
                 
                 <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-600 mb-4">
-                    <p class="text-[10px] font-black text-emerald-400 uppercase mb-3 tracking-widest">⚡ CONTROLE DINÂMICO (NOVO)</p>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label class="text-[10px] font-bold text-gray-400 uppercase">Taxa Plataforma (0.20 = 20%)</label>
-                            <input type="number" step="0.01" id="conf-taxa-plataforma" class="inp-editor h-10 text-white font-mono" placeholder="0.20">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-bold text-red-400 uppercase">Limite Dívida (Ex: -60)</label>
-                            <input type="number" id="conf-limite-divida" class="inp-editor h-10 text-white font-mono" placeholder="-60.00">
-                        </div>
-                    </div>
-                </div>
+    <p class="text-[10px] font-black text-emerald-400 uppercase mb-3 tracking-widest">⚡ CÉREBRO FINANCEIRO (PRESTADOR VS CLIENTE)</p>
+    
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+            <label class="text-[10px] font-bold text-gray-400 uppercase">Taxa Plataforma (Ex: 0.20)</label>
+            <input type="number" step="0.01" id="conf-taxa-plataforma" class="inp-editor h-10 text-white font-mono" placeholder="0.20">
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-red-400 uppercase">Limite que pode dever (Ex: -60)</label>
+            <input type="number" id="conf-limite-divida" class="inp-editor h-10 text-white font-mono" placeholder="-60.00">
+        </div>
+    </div>
 
+    <div class="grid grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+        <div>
+            <label class="text-[10px] font-bold text-blue-400 uppercase">% Reserva Aceite (Prestador)</label>
+            <input type="number" id="conf-pct-reserva-prestador" class="inp-editor h-10 text-white font-mono" placeholder="10">
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-purple-400 uppercase">% Reserva Acordo (Cliente)</label>
+            <input type="number" id="conf-pct-reserva-cliente" class="inp-editor h-10 text-white font-mono" placeholder="10">
+        </div>
+    </div>
+</div>
                 <div class="opacity-50 pointer-events-none grayscale">
                     <p class="text-[9px] text-gray-500 mb-2">Parâmetros Legados (Min/Max)</p>
                     <div class="grid grid-cols-2 gap-4 mb-4">
