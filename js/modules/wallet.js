@@ -107,8 +107,9 @@ export function podeTrabalhar() {
     if (!user) return false;
     const saldo = parseFloat(user.balance || 0);
     
-    if (saldo <= LIMITE_DIVIDA) {
-        alert(`⛔ LIMITE DE CRÉDITO ATINGIDO!\n\nSeu saldo atual é R$ ${saldo.toFixed(2)}.\nO limite é R$ ${LIMITE_DIVIDA.toFixed(2)}.\n\nPor favor, faça uma recarga.`);
+    // 🆕 Usa a variável dinâmica
+    if (saldo <= CONFIG_FINANCEIRA.limite) {
+        alert(`⛔ LIMITE DE CRÉDITO ATINGIDO!\n\nSeu saldo atual é R$ ${saldo.toFixed(2)}.\nO limite é R$ ${CONFIG_FINANCEIRA.limite.toFixed(2)}.\n\nPor favor, faça uma recarga para continuar aceitando pedidos.`);
         if(window.switchTab) window.switchTab('ganhar');
         return false;
     }
