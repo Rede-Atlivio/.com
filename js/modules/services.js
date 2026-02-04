@@ -736,3 +736,63 @@ window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
 window.iniciarMonitoramentoPedidos = carregarPedidosPrestador;
 window.salvarCapaPrestador = window.salvarCapaPrestador;
+
+// 📡 MOTOR DO RADAR (Mata o erro do Maestro e mostra os pedidos)
+window.atualizarRadar = () => {
+    const container = document.getElementById('pview-radar');
+    if (!container || !auth.currentUser) return;
+
+    console.log("📡 Radar Ativado: Escutando novas oportunidades...");
+
+    const q = query(
+        collection(db, "orders"),
+        where("status", "==", "pending"),
+        orderBy("created_at", "desc")
+    );
+
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = "";
+        
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="py-10 text-center">
+                    <div class="text-4xl mb-2">📡</div>
+                    <p class="text-gray-400 text-[10px] font-bold uppercase">Radar Limpo</p>
+                    <p class="text-[9px] text-gray-500">Aguardando novas solicitações...</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const pedido = docSnap.data();
+            
+            // FILTRO: Mostra se for direcionado a este prestador
+            if (pedido.provider_id === auth.currentUser.uid) {
+                container.innerHTML += `
+                    <div class="bg-white border-2 border-blue-100 p-4 rounded-2xl mb-3 shadow-sm animate-fadeIn relative overflow-hidden">
+                        <div class="absolute top-0 right-0 bg-blue-600 text-white text-[8px] font-black px-3 py-1 rounded-bl-xl uppercase">NOVO PEDIDO</div>
+                        
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="bg-blue-50 w-10 h-10 rounded-full flex items-center justify-center text-lg">👤</div>
+                            <div class="text-left">
+                                <h4 class="font-black text-blue-900 text-xs uppercase">${pedido.client_name}</h4>
+                                <p class="text-[9px] text-gray-400 font-bold">${pedido.service_title || pedido.service_category}</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-3 rounded-xl mb-3 text-left">
+                            <div class="flex justify-between text-[10px] mb-1">
+                                <span class="text-gray-500">Valor Ofertado:</span>
+                                <span class="font-black text-green-600">R$ ${pedido.offer_value}</span>
+                            </div>
+                        </div>
+
+                        <button onclick="window.abrirChatPedido('${docSnap.id}')" class="w-full bg-slate-900 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest shadow-lg active:scale-95 transition">
+                            VER E ACEITAR 💬
+                        </button>
+                    </div>
+                `;
+            }
+        });
+    });
+};
