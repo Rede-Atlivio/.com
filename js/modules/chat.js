@@ -209,6 +209,12 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
         if (jaConfirmei) return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
         
+        // 🛡️ LÓGICA DINÂMICA V11.0: Pega a regra real do Admin para o banner
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0 };
+        const pct = isProvider ? config.porcentagem_reserva : config.porcentagem_reserva_cliente;
+        const valorAcordo = parseFloat(pedido.offer_value) || 0;
+        const reservaCalculada = valorAcordo * (pct / 100);
+
         return `<div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden">
             <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
             <p class="text-sm font-black text-gray-800 mb-1">🤝 Fechar Acordo?</p>
@@ -218,10 +224,12 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
                 <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-wide shadow-md hover:bg-blue-700 transition">✅ ACEITAR E FECHAR</button>
             </div>
             
-            <div class="bg-amber-50 border border-amber-100 p-2 rounded-lg flex gap-2 items-start">
-                <span class="text-amber-500 text-xs mt-0.5">🔒</span>
-                <p class="text-[9px] text-amber-800 font-medium leading-tight">
-                    <strong>SEGURANÇA:</strong> Ao confirmar, o sistema reserva <strong>R$ 20,00 (ou 10%)</strong> como garantia. Isso evita "bolos" e protege seu tempo.
+            <div class="${reservaCalculada > 0 ? 'bg-amber-50 border-amber-100' : 'bg-green-50 border-green-100'} border p-2 rounded-lg flex gap-2 items-start">
+                <span class="${reservaCalculada > 0 ? 'text-amber-500' : 'text-green-500'} text-xs mt-0.5">${reservaCalculada > 0 ? '🔒' : '✅'}</span>
+                <p class="${reservaCalculada > 0 ? 'text-amber-800' : 'text-green-800'} text-[9px] font-medium leading-tight">
+                    <strong>SISTEMA ATLIVIO:</strong> ${reservaCalculada > 0 
+                        ? `Ao confirmar, o sistema reserva <strong>R$ ${reservaCalculada.toFixed(2)} (${pct}%)</strong> como garantia.` 
+                        : `Sua taxa para este acordo está <strong>ZERADA (0%)</strong> pelo Admin.`}
                 </p>
             </div>
         </div>`;
