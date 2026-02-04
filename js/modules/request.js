@@ -280,13 +280,15 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (SINCRONIA ADMIN & TRAVA PROATIVA)
+// 2. RADAR DO PRESTADOR (SINCRONIA V11.0 & ESCUTA REAL-TIME)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
-    // --- 1. SINCRONIA V11.0 (ESCUTA REAL-TIME DO ADMIN) ---
-    // Trocamos o 'getDoc' por 'onSnapshot' para o controle ser INSTANTÂNEO
+    console.log("🚀 Radar Atlivio V11.0 Iniciado para:", uid);
+
+    // --- 1. SINCRONIA MASTER COM O PAINEL ADMIN ---
     const configRef = doc(db, "settings", "financeiro");
     
+    // Escuta em tempo real: mudou no Admin, muda aqui na hora
     onSnapshot(configRef, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
@@ -298,41 +300,28 @@ export async function iniciarRadarPrestador(uid) {
                 taxa_plataforma: data.taxa_plataforma ?? 0.20
             };
             
-            console.log("%c 🧠 MEMÓRIA ATUALIZADA PELO ADMIN: ", "background: #10b981; color: white;", window.configFinanceiroAtiva);
+            console.log("%c 🧠 CONFIG FINANCEIRA ATUALIZADA: ", "background: #10b981; color: white;", window.configFinanceiroAtiva);
             
-            // 🔥 GATILHO CRÍTICO: Força o Radar a se redesenhar com os novos valores
-            if (typeof window.atualizarRadar === 'function') {
-                window.atualizarRadar();
-            }
+            // Notifica o Radar para se redesenhar com a nova taxa (0% ou 20%)
+            if (typeof window.atualizarRadar === 'function') window.atualizarRadar();
         }
-    }, (error) => {
-        console.error("❌ Erro na escuta de regras financeiras:", error);
-    });
+    }, (error) => console.error("❌ Erro no listener do Admin:", error));
 
-    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
+    // --- 2. ESCUTA DE PEDIDOS PENDENTES (MODAL & RADAR) ---
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    // ... restante do código
-        
-        console.log("🎯 Memória Global Atualizada (Prestador & Cliente):", window.configFinanceiroAtiva);
-        
-        console.log("🎯 Radar Sincronizado com Admin:", window.configFinanceiroAtiva);
-
-    } catch (e) { 
-        console.error("Erro ao sincronizar taxas do radar:", e); 
-    }
-
-    // --- 2. ESCUTA DE NOVAS SOLICITAÇÕES EM TEMPO REAL ---
-    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
-            }
-            if (change.type === "removed") {
-                fecharModalRadar();
-            }
-        });
-    });
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
+            }
+            if (change.type === "removed") {
+                fecharModalRadar();
+            }
+        });
+        // Atualiza a lista visual do radar se a função existir
+        if (typeof window.atualizarRadar === 'function') window.atualizarRadar();
+    });
 }
 
 function mostrarModalRadar(pedido) {
@@ -345,10 +334,10 @@ function mostrarModalRadar(pedido) {
     }
     modalContainer.classList.remove('hidden');
 
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 0 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * (config.porcentagem_reserva / 100);
-    const lucro = valor - taxa; // Variável corrigida
+    const lucro = valor - taxa;
 
     modalContainer.innerHTML = `
         <div class="bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-slate-700 animate-bounce-in">
@@ -359,8 +348,7 @@ function mostrarModalRadar(pedido) {
                 <h1 class="text-5xl font-black text-white mb-2">R$ ${valor.toFixed(0)}</h1>
                 <p class="text-blue-300 font-bold text-sm mb-1">${pedido.service_title || 'Serviço'}</p>
                 <div class="flex justify-center gap-3 text-[10px] font-bold text-gray-400">
-                    <span>Taxa: -R$ ${taxa.toFixed(2)}</span>
-                    <span class="text-green-400">Lucro: R$ ${lucro.toFixed(2)}</span>
+                    <span>Taxa Aceite: R$ ${taxa.toFixed(2)} (${config.porcentagem_reserva}%)</span>
                 </div>
             </div>
             <div class="mx-4 mb-4 bg-slate-800/50 rounded-xl p-4 border border-slate-700">
@@ -368,8 +356,8 @@ function mostrarModalRadar(pedido) {
                 <p class="text-gray-400 text-xs text-center mt-1">📍 ${pedido.location || "Local a combinar"}</p>
             </div>
             <div class="grid grid-cols-2 gap-0 border-t border-slate-700">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-slate-800 text-gray-400 font-bold py-5 hover:bg-slate-700 border-r border-slate-700">RECUSAR</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-600 text-white font-black py-5 hover:bg-green-500">ACEITAR SOLICITAÇÃO</button>
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-slate-800 text-gray-400 font-bold py-5 hover:bg-slate-700 border-r border-slate-700 uppercase text-xs">Recusar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-600 text-white font-black py-5 hover:bg-green-500 uppercase text-xs">Aceitar Agora</button>
             </div>
         </div>
     `;
@@ -380,33 +368,26 @@ function fecharModalRadar() {
     if (el) el.classList.add('hidden');
 }
 
-// 🔥 AQUI ESTÁ A CORREÇÃO: ACEITAR COM TRAVA PROATIVA 🔥
-// --- SUBSTITUA O BLOCO DE ACEITAR POR ESTE ---
 export async function aceitarPedidoRadar(orderId) {
     fecharModalRadar();
-    
     try {
         const uid = auth.currentUser.uid;
         const orderSnap = await getDoc(doc(db, "orders", orderId));
         if (!orderSnap.exists()) return alert("Pedido expirou.");
         
-        // 🛡️ DECLARAÇÃO ÚNICA: Pega as regras do Admin (Reserva do Cliente e Aceite do Prestador)
-        const cfgMaster = window.configFinanceiroAtiva || { porcentagem_reserva: 10, taxa_prestador: 20 };
+        const cfgMaster = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
         const orderData = orderSnap.data();
         const valorServico = parseFloat(orderData.offer_value || 0);
         
-        // Regra Master: 20% (ou o que você definir no Admin)
-        const taxaAceiteRequerida = valorServico * (cfgMaster.taxa_prestador / 100 || 0.20);
+        // Regra de Trava Proativa: Usa a % que você definir no Admin
+        const taxaAceiteRequerida = valorServico * (cfgMaster.porcentagem_reserva / 100);
 
-        let saldoAtual = 0;
         const userSnap = await getDoc(doc(db, "usuarios", uid));
-        if (userSnap.exists()) {
-            saldoAtual = parseFloat(userSnap.data().wallet_balance || userSnap.data().saldo || 0);
-        }
+        const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
+        const limiteCredito = parseFloat(cfgMaster.limite_divida || -60);
 
-        // TRAVA DINÂMICA
-        if (saldoAtual < taxaAceiteRequerida) {
-             alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceiteRequerida.toFixed(2)} de margem.\nSeu saldo: R$ ${saldoAtual.toFixed(2)}.`);
+        if ((saldoAtual - taxaAceiteRequerida) < limiteCredito) {
+             alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceiteRequerida.toFixed(2)} de margem.\nSeu saldo atual é insuficiente.`);
              if(window.switchTab) window.switchTab('ganhar');
              return; 
         }
@@ -414,69 +395,28 @@ export async function aceitarPedidoRadar(orderId) {
         await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
         await setDoc(doc(db, "chats", orderId), { status: 'active' }, { merge: true });
 
-        const tabServicos = document.getElementById('tab-servicos');
-        if(tabServicos) tabServicos.click();
-    } catch (e) { alert("Erro: " + e.message); }
+        if(document.getElementById('tab-servicos')) document.getElementById('tab-servicos').click();
+    } catch (e) { alert("Erro ao aceitar: " + e.message); }
 }
 
 export async function recusarPedidoReq(orderId) {
     fecharModalRadar();
-    if(!confirm("Recusar serviço?")) return;
-    await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
+    if(!confirm("Deseja recusar este serviço?")) return;
+    try {
+        await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
+    } catch(e) { console.error(e); }
 }
 
-// Compatibilidade
-export async function carregarPedidosEmAndamento() {
-    if (window.iniciarMonitoramentoPedidos) {
-        window.iniciarMonitoramentoPedidos();
-    }
-}
-
-// 🔥 NOVA FUNÇÃO: REABRIR RADAR MANUALMENTE (Para pedidos pendentes na lista)
 export async function recuperarPedidoRadar(orderId) {
     try {
-        // Mostra loading visual rápido
-        const loader = document.createElement('div');
-        loader.id = 'temp-loader';
-        loader.className = "fixed inset-0 z-[101] bg-black/50 flex items-center justify-center";
-        loader.innerHTML = `<div class="loader border-white"></div>`;
-        document.body.appendChild(loader);
-
-        const docRef = doc(db, "orders", orderId);
-        const snap = await getDoc(docRef);
-        
-        const elLoader = document.getElementById('temp-loader');
-        if(elLoader) elLoader.remove();
-
-        if (snap.exists()) {
-            const pedido = { id: snap.id, ...snap.data() };
-            if(pedido.status === 'pending') {
-                // Sincroniza taxa antes de abrir
-                try {
-                   const configSnap = await getDoc(doc(db, "settings", "financeiro")); 
-                   if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
-                   else { 
-                       const configLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
-                       if(configLegado.exists()) window.configFinanceiroAtiva = configLegado.data();
-                   }
-                } catch(e) {}
-                
-                mostrarModalRadar(pedido); // Reutiliza sua função existente
-            } else {
-                alert("Este pedido não está mais pendente.");
-                if(window.carregarPedidosEmAndamento) window.carregarPedidosEmAndamento();
-            }
-        } else {
-            alert("Pedido não encontrado.");
+        const snap = await getDoc(doc(db, "orders", orderId));
+        if (snap.exists() && snap.data().status === 'pending') {
+            mostrarModalRadar({ id: snap.id, ...snap.data() });
         }
-    } catch (e) {
-        console.error(e);
-        const elLoader = document.getElementById('temp-loader');
-        if(elLoader) elLoader.remove();
-    }
+    } catch (e) { console.error(e); }
 }
 
-// EXPORTAÇÃO GLOBAL
+// EXPORTAÇÕES GLOBAIS
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
@@ -485,7 +425,6 @@ window.enviarPropostaAgora = enviarPropostaAgora;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
-window.carregarPedidosEmAndamento = carregarPedidosEmAndamento;
-window.recuperarPedidoRadar = recuperarPedidoRadar; // ✅ NOVA EXPORTAÇÃO
+window.recuperarPedidoRadar = recuperarPedidoRadar;
 window.SERVICOS_PADRAO = SERVICOS_PADRAO;
 window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
