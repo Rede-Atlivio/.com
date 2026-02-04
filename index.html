@@ -141,7 +141,22 @@
             <div id="login-step-phone" class="space-y-4">
                 <div class="relative">
                     <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
-                    <input type="tel" id="login-phone" placeholder="(75) 99999-0000" maxlength="15" oninput="mascaraTelefone(this)" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 pl-20 text-gray-900 text-lg font-bold focus:border-blue-500 outline-none transition">
+                    <input type="tel" 
+       id="login-phone" 
+       oninput="window.mascaraTelefone(this)" 
+       placeholder="(00) 00000-0000" 
+       class="w-full p-4 rounded-xl bg-gray-100 border-none text-lg font-bold">
+
+<script>
+    window.mascaraTelefone = (i) => {
+        let v = i.value;
+        if (!v) return;
+        v = v.replace(/\D/g, "");
+        v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+        v = v.replace(/(\d{5})(\d)/, "$1-$2");
+        i.value = v.substring(0, 15);
+    };
+</script>
                 </div>
                 <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
                     RECEBER CÓDIGO SMS 📲
