@@ -123,24 +123,78 @@ window.alternarPerfil = async () => {
     }
 };
 
-// --- ENFORCER & MONITOR ---
+// --- ENFORCER & MONITOR (REVISADO V10) ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        document.getElementById('auth-container').classList.add('hidden');
-        // ... sua lógica de snapshot ...
-    } else {
-        document.getElementById('auth-container').classList.remove('hidden');
-        document.getElementById('role-selection').classList.add('hidden');
-        document.getElementById('app-container').classList.add('hidden');
+        // 1. Limpeza visual imediata
+        document.getElementById('auth-container')?.classList.add('hidden');
         
-        // 🔥 Garante que o overlay nunca fique preso na tela de login
+        const userRef = doc(db, "usuarios", user.uid);
+        
+        // 2. Monitoramento Real-time do Perfil
+        onSnapshot(userRef, async (docSnap) => {
+            try {
+                if(!docSnap.exists()) {
+                    const trafficSource = localStorage.getItem("traffic_source") || "direct";
+                    const novoPerfil = { 
+                        email: user.email, 
+                        phone: user.phoneNumber, 
+                        displayName: user.displayName || "Usuário", 
+                        photoURL: user.photoURL, 
+                        tenant_id: DEFAULT_TENANT, 
+                        perfil_completo: false, 
+                        role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
+                        wallet_balance: 0.00, 
+                        saldo: 0.00, 
+                        is_provider: false, 
+                        created_at: serverTimestamp(), 
+                        status: 'ativo',
+                        traffic_source: trafficSource 
+                    };
+                    userProfile = novoPerfil; 
+                    window.userProfile = novoPerfil;
+                    await setDoc(userRef, novoPerfil);
+                    await concederBonusSeAtivo(user.uid);
+                } else {
+                    const data = docSnap.data();
+                    
+                    if (data.status === 'banido') console.warn("🚫 Usuário Banido.");
+                    if (data.status === 'suspenso' && data.is_online) {
+                        updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
+                    }
+                    
+                    data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
+                    userProfile = data; 
+                    window.userProfile = data;
+                    
+                    aplicarRestricoesDeStatus(data.status);
+                    renderizarBotaoSuporte(); 
+
+                    if(data.status !== 'banido') {
+                        atualizarInterfaceUsuario(userProfile);
+                        iniciarAppLogado(user); 
+                        if (userProfile.is_provider) {
+                            verificarStatusERadar(user.uid);
+                            if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
+                        }
+                    }
+                }
+            } catch (err) { 
+                console.error("Erro perfil:", err); 
+                iniciarAppLogado(user); 
+            }
+        });
+    } else {
+        // 3. Lógica de Logout / Usuário Deslogado
+        document.getElementById('auth-container')?.classList.remove('hidden');
+        document.getElementById('role-selection')?.classList.add('hidden');
+        document.getElementById('app-container')?.classList.add('hidden');
+        
+        // Garante que o overlay azul suma no login
         document.getElementById('transition-overlay')?.classList.add('hidden');
         removerBloqueiosVisuais();
     }
 });
-        
-        document.getElementById('auth-container').classList.add('hidden');
-        const userRef = doc(db, "usuarios", user.uid);
         
         onSnapshot(userRef, async (docSnap) => {
             try {
