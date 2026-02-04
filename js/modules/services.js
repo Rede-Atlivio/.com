@@ -489,7 +489,7 @@ export async function abrirConfiguracaoServicos() {
         }
     }
 
-    // 🆕 GERAÇÃO INTELIGENTE DO MENU (AGRUPA POR CATEGORIA E INCLUI PREMIUM)
+    // 🆕 GERAÇÃO INTELIGENTE DO MENU V2 (GARANTE TODAS AS CATEGORIAS)
     let options = '<option value="" disabled selected>Selecione o serviço...</option>';
     const grupos = {};
     
@@ -501,25 +501,33 @@ export async function abrirConfiguracaoServicos() {
         });
     }
 
-    // 2. Monta o HTML com Optgroups
-    for (const [catId, itens] of Object.entries(grupos)) {
-        const catInfo = CATEGORIAS_ATIVAS.find(c => c.id === catId);
-        const labelCat = catInfo ? catInfo.label : catId.toUpperCase();
+    // 2. Percorre a LISTA MESTRA (CATEGORIAS_ATIVAS) para garantir que NADA suma
+    CATEGORIAS_ATIVAS.forEach(cat => {
+        options += `<optgroup label="${cat.label}">`;
         
-        options += `<optgroup label="${labelCat}">`;
-        itens.forEach(item => {
-            const isPremium = item.level === 'premium';
-            const emoji = isPremium ? '💎' : '🔹';
-            // Monta a opção com os dados corretos para o Auto-Preenchimento
-            options += `<option value="${catInfo ? catInfo.label : item.category}" 
-                                data-min="${item.price}" 
-                                data-prefill="${item.title}">
-                            ${emoji} ${item.title} (Sugerido: R$ ${item.price})
-                        </option>`;
-        });
-        options += `</optgroup>`;
-    }
+        // A. Se tiver serviços específicos (Premium/Padrão) definidos no código, lista eles
+        if (grupos[cat.id]) {
+            grupos[cat.id].forEach(item => {
+                const isPremium = item.level === 'premium';
+                const emoji = isPremium ? '💎' : '🔹';
+                
+                // Value = Categoria (para salvar compatível com o banco)
+                options += `<option value="${cat.label}" 
+                                    data-min="${item.price}" 
+                                    data-prefill="${item.title}">
+                                ${emoji} ${item.title} (Sugerido: R$ ${item.price})
+                            </option>`;
+            });
+        }
 
+        // B. SEMPRE adiciona uma opção genérica no final (Salva-vidas para categorias vazias)
+        // Isso garante que Pets, Aulas, Beleza e Gerais apareçam para seleção manual
+        options += `<option value="${cat.label}" data-min="${cat.minPrice}">
+                        📂 Outro em ${cat.label.split(' ')[1]}... (Min: R$ ${cat.minPrice})
+                    </option>`;
+        
+        options += `</optgroup>`;
+    });
     content.innerHTML = `
         <h3 class="text-lg font-black text-blue-900 uppercase mb-2 text-center">Gerenciar Serviços</h3>
         
