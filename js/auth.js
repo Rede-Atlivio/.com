@@ -130,11 +130,15 @@ window.alternarPerfil = async () => {
 // --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
 onAuthStateChanged(auth, async (user) => {
     const transitionOverlay = document.getElementById('transition-overlay');
+    const isToggling = sessionStorage.getItem('is_toggling_profile'); // 🆕 LÊ A FLAG
 
     if (user) {
         // 1. Limpeza Visual Imediata (Esconde Login)
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
+
+        // 🆕 SE LOGOU COM SUCESSO, REMOVE A FLAG (Ciclo completo)
+        if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
         const userRef = doc(db, "usuarios", user.uid);
         
@@ -195,7 +199,14 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
     } else {
-        // 3. Lógica de Logout / Usuário Deslogado
+        // 🆕 SE ESTIVER NA TROCA DE PERFIL, NÃO MOSTRA TELA DE LOGIN!
+        if (isToggling) {
+            document.getElementById('auth-container')?.classList.add('hidden');
+            if (transitionOverlay) transitionOverlay.classList.remove('hidden');
+            return; // 🛑 PARA AQUI E NÃO RODA O CÓDIGO DE LOGOUT
+        }
+
+        // 3. Lógica de Logout / Usuário Deslogado (Só roda se NÃO for troca de perfil)
         document.getElementById('auth-container')?.classList.remove('hidden');
         document.getElementById('role-selection')?.classList.add('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
@@ -204,7 +215,7 @@ onAuthStateChanged(auth, async (user) => {
         if (transitionOverlay) transitionOverlay.classList.add('hidden');
         removerBloqueiosVisuais();
     }
-});        
+});
 
 // ============================================================================
 // 3. SISTEMA DE SUPORTE
