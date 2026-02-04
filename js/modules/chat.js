@@ -62,73 +62,32 @@ export async function carregarPedidosAtivos() {
             return;
         }
 
-        let pendentesHTML = "";
-        let ativosHTML = "";
-
-        // Ordena por data (mais recente primeiro) para garantir ordem correta
-        const listaOrdenada = Array.from(pedidosMap.values()).sort((a, b) => {
-            const dateA = a.created_at ? a.created_at.seconds : 0;
-            const dateB = b.created_at ? b.created_at.seconds : 0;
-            return dateB - dateA;
-        });
-
-        listaOrdenada.forEach((pedido) => {
+        pedidosMap.forEach((pedido) => {
             const isMeProvider = pedido.provider_id === uid;
             const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
             const step = pedido.system_step || 1;
             
-            // LÓGICA DO ESTACIONAMENTO: Se sou prestador e status é 'pending', mostra botão vermelho de resgate
-            if (isMeProvider && pedido.status === 'pending') {
-                pendentesHTML += `
-                    <div onclick="if(window.recuperarPedidoRadar) window.recuperarPedidoRadar('${pedido.id}'); else alert('Recarregue a página para ver o radar.');" class="bg-red-50 p-3 rounded-xl border border-red-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-red-100 relative overflow-hidden group">
-                        <div class="absolute left-0 top-0 h-full w-1 bg-red-500"></div>
-                        <div>
-                            <h3 class="font-black text-xs text-red-800 flex items-center gap-1">🔔 AGUARDANDO ACEITE</h3>
-                            <p class="text-[10px] text-gray-600 font-bold">${outroNome}</p>
-                            <p class="text-[9px] text-gray-500">Toque para ver a proposta</p>
+            let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa ${step}: Acordo</span>`;
+            if(step >= 3) statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa 3: Confirmado</span>`;
+            if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Finalizado</span>`;
+
+            listaRender.innerHTML += `
+                <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 active:scale-95 transition">
+                    <div class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center text-xl">👤</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800 text-sm">${outroNome}</h3>
+                            ${statusBadge}
                         </div>
-                        <div class="text-right">
-                            <span class="block font-black text-gray-800 text-xs">R$ ${pedido.offer_value}</span>
-                            <span class="text-[8px] px-2 py-0.5 rounded-full bg-white border border-red-200 text-red-600 uppercase font-bold">PENDENTE</span>
-                        </div>
+                        <p class="text-[10px] text-gray-500 mt-1">Serviço de ${pedido.service_category || 'Geral'}</p>
                     </div>
-                `;
-            } else {
-                // LÓGICA PADRÃO: Mostra cartão de chat normal
-                let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa ${step}: Acordo</span>`;
-                if(step >= 3) statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa 3: Confirmado</span>`;
-                if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Finalizado</span>`;
-
-                ativosHTML += `
-                    <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 active:scale-95 transition">
-                        <div class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center text-xl">👤</div>
-                        <div class="flex-1">
-                            <div class="flex justify-between items-start">
-                                <h3 class="font-bold text-gray-800 text-sm">${outroNome}</h3>
-                                ${statusBadge}
-                            </div>
-                            <p class="text-[10px] text-gray-500 mt-1">Serviço de ${pedido.service_title || pedido.service_category || 'Geral'}</p>
-                        </div>
-                    </div>`;
-            }
+                </div>`;
         });
-
-        // Renderiza Separado: Pendentes no Topo, Ativos Embaixo
-        if (pendentesHTML) {
-            listaRender.innerHTML += `<p class="text-[9px] font-black text-red-400 uppercase tracking-widest mb-2 mt-1 pl-1">⚠️ Ação Necessária</p>${pendentesHTML}`;
-        }
-        
-        if (ativosHTML) {
-            listaRender.innerHTML += `<p class="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-2 mt-4 pl-1">💬 Em Andamento</p>${ativosHTML}`;
-        } else if (!pendentesHTML) {
-            listaRender.innerHTML = `<p class="text-center text-xs text-gray-400 py-10">Nenhuma negociação ativa.</p>`;
-        }
     };
 
     const pedidosRef = collection(db, "orders");
-    // Removendo o filtro 'limit(10)' para garantir que os pendentes antigos apareçam
-    const qProvider = query(pedidosRef, where("provider_id", "==", uid), orderBy("created_at", "desc"));
-    const qClient = query(pedidosRef, where("client_id", "==", uid), orderBy("created_at", "desc"));
+    const qProvider = query(pedidosRef, where("provider_id", "==", uid), orderBy("created_at", "desc"), limit(10));
+    const qClient = query(pedidosRef, where("client_id", "==", uid), orderBy("created_at", "desc"), limit(10));
 
     onSnapshot(qProvider, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
     onSnapshot(qClient, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
