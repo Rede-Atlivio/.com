@@ -66,8 +66,12 @@ export async function carregarPedidosAtivos() {
             const isPending = pedido.status === 'pending';
             
             let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa ${step}: Acordo</span>`;
+            
+            // 🚥 STATUS DE FINALIZAÇÃO E BLOQUEIO
             if(step >= 3) statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa 3: Confirmado</span>`;
-            if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Finalizado</span>`;
+            if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">🏁 CONCLUÍDO</span>`;
+            if(pedido.status === 'cancelled') statusBadge = `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">🚫 CANCELADO</span>`;
+            if(pedido.status === 'negotiation_closed') statusBadge = `<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded text-[8px] font-black uppercase">✋ ENCERRADO</span>`;
 
             // 🛠️ LOGICA DE RECUPERAÇÃO PARA O AUDITOR
             if (isPending && isMeProvider) {
