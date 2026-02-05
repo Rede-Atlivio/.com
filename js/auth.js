@@ -344,16 +344,31 @@ function aplicarRestricoesDeStatus(status) {
 function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-overlay")?.remove(); document.getElementById("aviso-suspenso-bar")?.remove(); }
 
 function atualizarInterfaceUsuario(dados) {
+    // 1. Atualiza Fotos de Perfil
     document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => { if(dados.photoURL) img.src = dados.photoURL; });
     
-    // CORREÇÃO AÇÃO 15: Prioridade para o 'nome' (Engrenagem) -> 'nome_profissional' -> 'displayName' (Google)
+    // 2. Define o Nome Correto (Prioridade: Engrenagem > Profissional > Google)
+    const nomeFinal = dados.nome || dados.nome_profissional || dados.displayName || "Usuário";
+
+    // 3. Atualiza Header do Cliente (Se existir)
     const nameEl = document.getElementById('header-user-name'); 
-    if(nameEl) nameEl.innerText = dados.nome || dados.nome_profissional || dados.displayName || "Usuário";
-    
+    if(nameEl) nameEl.innerText = nomeFinal;
+
+    // 4. Atualiza Painel Dashboard (Elemento sem ID - Busca por classe para garantir)
+    const dashEl = document.querySelectorAll('h3.text-gray-800.font-bold.text-xs.truncate');
+    dashEl.forEach(el => {
+        // 🔒 TRAVA DE SEGURANÇA: Só altera se NÃO tiver saldo dentro (previne apagar R$)
+        if(el && !el.innerText.includes('R$')) {
+            el.innerText = nomeFinal;
+        }
+    });
+
+    // 5. Atualiza Header do Prestador (BLINDAGEM DE SALDO DO ID provider-header-name)
     const provNameEl = document.getElementById('provider-header-name');
     if(provNameEl) {
-        const saldo = dados.wallet_balance || 0; const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
-        provNameEl.innerHTML = `${dados.nome_profissional || dados.nome || dados.displayName}`;
+        const saldo = parseFloat(dados.wallet_balance || 0); 
+        // ⚠️ AQUI ESTÁ O SEGREDO: Recria o nome E o saldo juntos para não perder o dinheiro da tela
+        provNameEl.innerHTML = `${nomeFinal}<span id="header-balance-badge" class="ml-2 text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600 font-bold"> R$ ${saldo.toFixed(2)}</span>`;
     }
 }
 
