@@ -9,11 +9,15 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, 
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
-    carregarPedidosAtivos();
+    // 🔄 CORREÇÃO: Chama a função exclusiva do chat, sem conflito com services.js
+    if(window.carregarInterfaceDeChat) window.carregarInterfaceDeChat();
     window.scrollTo(0,0);
 };
 
-window.carregarChat = carregarPedidosAtivos;
+// 🔄 GARANTINDO QUE O NOME SEJA ÚNICO
+window.carregarChat = () => {
+    if(window.carregarInterfaceDeChat) window.carregarInterfaceDeChat();
+};
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
