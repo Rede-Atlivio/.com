@@ -331,17 +331,17 @@ window.minimizarPedido = (orderId) => {
 };
 
 export async function aceitarPedidoRadar(orderId) {
-    // NÃO FECHA O MODAL AINDA. O usuário precisa ver o que está acontecendo.
+    // NÃO removemos visualmente ainda. O usuário precisa ver que clicou.
+    // Dica UX: Poderíamos mudar o texto do botão para "Processando...", mas vamos manter simples.
     try {
         const uid = auth.currentUser.uid;
         
         // 1. Busca Configuração em Tempo Real
-        // Usa limite 0 como fallback de segurança caso o Admin esteja vazio
         const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, limite_divida: 0 };
         
         const orderSnap = await getDoc(doc(db, "orders", orderId));
         if (!orderSnap.exists()) {
-            fecharModalRadar();
+            removeRequestCard(orderId); // V10: Remove card específico
             return alert("Este pedido não existe mais.");
         }
         
@@ -351,17 +351,15 @@ export async function aceitarPedidoRadar(orderId) {
         const userSnap = await getDoc(doc(db, "usuarios", uid));
         const saldo = parseFloat(userSnap.data()?.wallet_balance || 0);
 
-        // 2. A GRANDE TRAVA (Onde estava a falha de redirecionamento)
+        // 2. A GRANDE TRAVA
         if ((saldo - taxaAceite) < config.limite_divida) {
              alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceite.toFixed(2)} para o aceite.\nSeu limite não permite essa operação.`);
              
-             fecharModalRadar(); // Agora sim fecha o modal
+             removeRequestCard(orderId); // V10: Remove card específico
              
              // Redirecionamento forçado para recarga
              if(window.switchTab) {
                  window.switchTab('ganhar');
-             } else {
-                 window.location.reload(); // Fallback de emergência
              }
              return; 
         }
@@ -377,21 +375,15 @@ export async function aceitarPedidoRadar(orderId) {
             updated_at: serverTimestamp()
         }, { merge: true });
 
-        fecharModalRadar(); // Fecha o modal pois deu tudo certo
+        removeRequestCard(orderId); // V10: Remove card específico (Visualmente limpa a tela)
         
-        // Redireciona para o Chat (CORREÇÃO DA AÇÃO 13)
-        // Alterado de 'tab-servicos' para 'tab-chat' para levar aos pedidos em andamento
+        // Redireciona para o Chat
         const tabDestino = document.getElementById('tab-chat');
-        
         if(tabDestino) {
             tabDestino.click();
-            // Pequeno delay para garantir que a lista carregue
             setTimeout(() => {
                  if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
             }, 500);
-        } else {
-            console.warn("Botão tab-chat não encontrado. Tentando recarregar.");
-            window.location.reload();
         }
 
     } catch (e) { 
@@ -401,7 +393,8 @@ export async function aceitarPedidoRadar(orderId) {
 }
 
 export async function recusarPedidoReq(orderId) {
-    fecharModalRadar();
+    // V10: Remove visualmente instantaneamente para dar sensação de rapidez
+    removeRequestCard(orderId);
     try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
 }
 
