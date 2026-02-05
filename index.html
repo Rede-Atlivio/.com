@@ -64,7 +64,71 @@
         .animate-bounce-subtle {
             animation: bounce-subtle 2s infinite;
         }
+
+        /* 📡 RADAR STACK V10.0 - ESTILO DOS CARDS FLUTUANTES */
+        #radar-container {
+            position: fixed;
+            top: 70px; /* Logo abaixo do Header */
+            left: 0;
+            width: 100%;
+            z-index: 9000; /* Alto, mas abaixo de Modais (9999) */
+            pointer-events: none; /* IMPORTANTE: Permite clicar no mapa "através" do container vazio */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        .request-card {
+            pointer-events: auto; /* O Card em si é clicável */
+            background: white;
+            width: 95%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid #2563eb; /* Azul Padrão */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInDown 0.4s ease-out;
+            position: relative;
+            z-index: 9001;
+            overflow: hidden; /* Para esconder conteúdo ao minimizar */
+        }
+
+        .request-card.minimized {
+            height: 48px; /* Altura da barra compacta */
+            background: #f8fafc;
+            border-left-color: #f59e0b; /* Laranja (Em Espera) */
+            transform: scale(0.98);
+            opacity: 0.95;
+            cursor: pointer;
+        }
+        
+        /* Oculta detalhes quando minimizado */
+        .request-card.minimized .card-details {
+            display: none;
+        }
+        
+        /* Mostra apenas o resumo quando minimizado */
+        .request-card .card-summary {
+            display: flex; /* Flex para alinhar ícone e texto */
+        }
+
+        .request-card.removing {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideOutRight {
+            to { transform: translateX(100%); opacity: 0; }
+        }
     </style>
+
+    <script>
 
     <script>
     window.switchTab = function(tabName) {
