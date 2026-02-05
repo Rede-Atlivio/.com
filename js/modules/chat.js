@@ -425,23 +425,62 @@ export async function confirmarAcordo(orderId, aceitar) {
             }
         }
 
-        // --- 4. EXECUÇÃO DA TRANSAÇÃO NO COFRE (ATÔMICA) ---
+       // --- 5. EXECUÇÃO DA TRANSAÇÃO NO COFRE (ORDEM CORRETA: LEITURAS -> ESCRITAS) ---
         let vaiFecharAgora = false;
 
         await runTransaction(db, async (transaction) => {
+            // 1. TODAS AS LEITURAS PRIMEIRO (Obrigatório pelo Firebase)
             const freshOrderSnap = await transaction.get(orderRef);
+            if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
-            
-            const meuCampoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
-            const parceiroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
-            
-            vaiFecharAgora = parceiroJaConfirmou;
 
-            transaction.update(orderRef, meuCampoUpdate);
+            const clientRef = doc(db, "usuarios", freshOrder.client_id);
+            const clientSnap = await transaction.get(clientRef);
+            if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
+
+            // 2. LÓGICA DE DECISÃO (Sem mexer no banco ainda)
+            const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
+            const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
+            vaiFecharAgora = oOutroJaConfirmou;
+
+            // 3. TODAS AS ESCRITAS POR ÚLTIMO
+            transaction.update(orderRef, campoUpdate);
 
             if (vaiFecharAgora) {
-                const clientRef = doc(db, "usuarios", freshOrder.client_id);
-                const clientSnap = await transaction.get(clientRef);
+                const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
+                const taxaClienteAdmin = Number(config.porcentagem_reserva_cliente) || 0;
+                const valorCofre = valorPedido * (taxaClienteAdmin / 100);
+
+                if (valorCofre > 0 && saldoClient < valorCofre) {
+                    throw `Saldo insuficiente (R$ ${saldoClient.toFixed(2)}) para reserva de R$ ${valorCofre.toFixed(2)}`;
+                }
+
+                // 🏦 Gravações Finais
+                if (valorCofre > 0) {
+                    transaction.update(clientRef, {
+                        wallet_balance: saldoClient - valorCofre,
+                        wallet_reserved: (clientSnap.data()?.wallet_reserved || 0) + valorCofre,
+                        saldo: saldoClient - valorCofre
+                    });
+                }
+
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    status: 'confirmed_hold',
+                    value_reserved: valorCofre,
+                    confirmed_at: serverTimestamp()
+                });
+
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: valorCofre > 0 
+                        ? `🔒 ACORDO FECHADO: R$ ${valorCofre.toFixed(2)} em garantia.` 
+                        : `🔒 ACORDO FECHADO: Taxa zero aplicada.`,
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
+        });
                 const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
                 
                 // Recalcula o que o cliente REALMENTE deve deixar no cofre baseado no Admin
