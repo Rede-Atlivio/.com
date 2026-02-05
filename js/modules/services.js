@@ -276,7 +276,9 @@ export async function carregarPedidosAtivos() {
         let pedidos = [];
         snap.forEach(d => {
             const p = d.data();
-            if(p.status !== 'completed' && p.status !== 'rejected') pedidos.push({id: d.id, ...p});
+            // 🛡️ CORREÇÃO: Filtro rigoroso para remover Cancelados e Encerrados da vista
+            const statusLixo = ['completed', 'rejected', 'cancelled', 'negotiation_closed'];
+            if(!statusLixo.includes(p.status)) pedidos.push({id: d.id, ...p});
         });
 
         if (pedidos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
