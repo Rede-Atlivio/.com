@@ -289,8 +289,19 @@ export async function confirmarAcordo(orderId, aceitar) {
              if(orderPreSnap.exists() && orderPreSnap.data().provider_id !== uid) {
                  const valorTotal = parseFloat(orderPreSnap.data().offer_value || 0);
                  
-                 // 🛡️ CORREÇÃO V11: Pega porcentagem_reserva_cliente OU porcentagem_reserva OU 10 fixo
-                 const taxaCli = parseFloat(config.porcentagem_reserva_cliente || config.porcentagem_reserva || 10);
+                // 🛡️ CORREÇÃO DEFINITIVA V12: Lógica que aceita ZERO como valor válido
+                 let taxaCli = config.porcentagem_reserva_cliente;
+                 
+                 // Se for indefinido ou vazio, aí sim busca o geral. Se for 0, ele MANTÉM 0.
+                 if (taxaCli === undefined || taxaCli === null || taxaCli === "") {
+                     taxaCli = config.porcentagem_reserva;
+                 }
+                 // Se ainda assim não tiver nada, usa 10
+                 if (taxaCli === undefined || taxaCli === null || taxaCli === "") {
+                     taxaCli = 10;
+                 }
+                 
+                 taxaCli = parseFloat(taxaCli);
                  
                  const precisa = valorTotal * (taxaCli / 100);
                  
