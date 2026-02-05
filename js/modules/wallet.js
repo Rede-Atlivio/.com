@@ -34,24 +34,24 @@ export function iniciarMonitoramentoCarteira() {
     const uid = auth.currentUser.uid;
     if (unsubscribeWallet) unsubscribeWallet();
 
-    const ref = doc(db, "active_providers", uid);
+    // 🛡️ CORREÇÃO V11.0: Monitoramos o documento do USUÁRIO (Fonte de Verdade)
+    const ref = doc(db, "usuarios", uid);
 
-    console.log("📡 Carteira: Iniciando conexão Real-Time...");
+    console.log("📡 Carteira: Iniciando conexão Real-Time no perfil mestre...");
 
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // 🔥 UNIFICAÇÃO DE NOMENCLATURA: Prioridade total ao wallet_balance
-            const saldoUnificado = parseFloat(data.wallet_balance || data.saldo || data.balance || 0);
+            // 🔥 UNIFICAÇÃO TOTAL: A partir de agora, o sistema só reconhece wallet_balance
+            const saldoUnificado = parseFloat(data.wallet_balance || 0);
 
             if (!window.userProfile) window.userProfile = {};
             
-            // Alimenta a variável global que as travas de 20% e 10% vão consultar
             window.userProfile.balance = saldoUnificado;
             window.userProfile.wallet_balance = saldoUnificado;
 
-            // ✅ Atualização unificada das interfaces sem remover funções
+            // ✅ Atualização de Interfaces
             verificarFaixaBonus(saldoUnificado);
             atualizarInterfaceCarteira(saldoUnificado);
             atualizarInterfaceHeader(saldoUnificado);
