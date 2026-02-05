@@ -122,39 +122,49 @@ export function podeTrabalhar() {
 export async function processarCobrancaTaxa(orderId, valorServico) {
     if (!auth.currentUser) return;
     const uid = auth.currentUser.uid;
-    // 🆕 Usa a taxa dinâmica do Admin
+    
+    // Pega a taxa dinâmica que veio do onSnapshot do Admin
     const valorTaxa = valorServico * CONFIG_FINANCEIRA.taxa;
 
     try {
         await runTransaction(db, async (transaction) => {
-            const providerRef = doc(db, "active_providers", uid);
             const userRef = doc(db, "usuarios", uid);
+            const providerRef = doc(db, "active_providers", uid);
             const ledgerRef = doc(db, "sys_finance", "stats");
             
-            const provDoc = await transaction.get(providerRef);
-            if (!provDoc.exists()) throw "Prestador offline!";
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) throw "Usuário não encontrado!";
             
-            const saldoAtual = provDoc.data().balance || provDoc.data().saldo || provDoc.data().wallet_balance || 0;
+            // 🔥 Lê apenas do campo oficial
+            const saldoAtual = parseFloat(userDoc.data().wallet_balance || 0);
             const novoSaldo = saldoAtual - valorTaxa;
 
-            transaction.update(providerRef, { balance: novoSaldo });
-            transaction.update(userRef, { wallet_balance: novoSaldo, saldo: novoSaldo }); 
+            // 🔥 Atualiza apenas o campo oficial (Limpeza de Lixo)
+            transaction.update(userRef, { 
+                wallet_balance: novoSaldo 
+            });
+
+            // Espelha no active_providers se o documento existir lá
+            const provDoc = await transaction.get(providerRef);
+            if(provDoc.exists()){
+                transaction.update(providerRef, { wallet_balance: novoSaldo });
+            }
 
             const newHistRef = doc(collection(db, "transactions")); 
             transaction.set(newHistRef, {
                 provider_id: uid,
                 type: 'fee_charge',
                 amount: -valorTaxa,
-                description: `Taxa 20% - Pedido #${orderId.slice(0,5)}`,
+                description: `Taxa Intermediação - Pedido #${orderId.slice(0,5)}`,
                 order_id: orderId,
                 created_at: serverTimestamp()
             });
 
             transaction.set(ledgerRef, { total_receivables: increment(valorTaxa) }, { merge: true });
         });
-        console.log("✅ Taxa cobrada e sincronizada!");
+        console.log("✅ Taxa processada com sucesso no campo wallet_balance!");
     } catch (e) {
-        console.error("❌ Erro financeiro:", e);
+        console.error("❌ Erro na transação financeira:", e);
     }
 }
 
