@@ -184,7 +184,7 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                 <div id="bubbles-area"></div>
             </div>
 
-            ${pedido.status !== 'completed' ? `
+            ${!['completed', 'cancelled', 'negotiation_closed'].includes(pedido.status) ? `
             <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide bg-gray-50/50">
                     ${step < 3 ? `
