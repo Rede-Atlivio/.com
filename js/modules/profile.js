@@ -161,6 +161,12 @@ export function copiarLinkAfiliado() {
     navigator.clipboard.writeText(link).then(() => alert("✅ Link copiado!")).catch(() => prompt("Copie:", link));
 }
 
+// --- BÔNUS: FUNÇÃO DE VISUALIZAÇÃO DE PERFIL PÚBLICO (CORREÇÃO DE ERRO) ---
+// Isso impede que o console dê erro vermelho ao clicar na foto do prestador
+window.verPerfilCompleto = async (providerId) => {
+    alert(`🚧 PERFIL DO PRESTADOR\n\nEsta funcionalidade completa será ativada na próxima atualização.\n\nPor enquanto, use o botão 'SOLICITAR' para ver detalhes e negociar.`);
+};
+
 // 🚨 EXPORTAÇÕES GLOBAIS OBRIGATÓRIAS
 window.uploadCapa = uploadCapa;
 window.uploadFotoPerfil = uploadFotoPerfil;
@@ -168,3 +174,4 @@ window.carregarDadosPerfil = carregarDadosPerfil;
 window.abrirConfiguracoes = abrirConfiguracoes;
 window.salvarConfiguracoes = salvarConfiguracoes;
 window.copiarLinkAfiliado = copiarLinkAfiliado;
+window.verPerfilCompleto = window.verPerfilCompleto; // Garante a exportação
