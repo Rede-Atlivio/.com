@@ -212,7 +212,7 @@ function renderizarCards(servicos, container) {
             container.innerHTML += `
                 <div class="bg-white rounded-2xl shadow-sm border ${bordaCard} overflow-hidden relative ${statusClass} transition hover:shadow-lg flex flex-col h-full animate-fadeIn group">
                     
-                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer overflow-hidden">
+                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer">
                         <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
                         
                         <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
