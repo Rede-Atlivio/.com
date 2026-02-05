@@ -28,9 +28,16 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
-// 🚨 CORREÇÃO V11: Expondo módulos para os Robôs de Diagnóstico
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-window.firebaseModules = { doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot };
+// 🚨 CORREÇÃO V12: Expondo TODOS os módulos necessários para o Cronômetro e Chat
+import { 
+    doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+window.firebaseModules = { 
+    doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction 
+};
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
 export { app, auth, db, storage, provider };
