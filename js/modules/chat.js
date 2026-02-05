@@ -189,10 +189,18 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     ` : ''}
                     
                     ${step >= 3 && !isProvider ? 
-                        `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase w-full">🏁 FINALIZAR SERVIÇO</button>` : ''
+                        `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-wide w-full">
+                            🏁 CONFIRMAR & PAGAR
+                        </button>` : ''
                     }
                     
-                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
+                    <button onclick="window.cancelarServico('${orderId}')" class="bg-gray-100 text-gray-500 px-3 py-2 rounded-xl text-[10px] font-bold border border-gray-200 hover:bg-gray-200 hover:text-red-600 transition">
+                        🚫 Cancelar
+                    </button>
+
+                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100 hover:bg-red-100">
+                        ⚠️ Ajuda
+                    </button>
                 </div>
 
                 <div class="px-3 pb-3 pt-1 flex gap-2 items-center">
