@@ -134,16 +134,20 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const outroNome = isProvider ? pedido.client_name : pedido.provider_name;
     const contatoLiberado = step >= 3;
     
+    // Barra de Progresso Visual
     const stepsHTML = `
         <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
             <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
             <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
-            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Contato</span>
+            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Execução</span>
         </div>
         <div class="h-1 w-full bg-gray-100">
             <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
         </div>
     `;
+
+    // 🕒 AÇÃO 10: O CÉREBRO DO TEMPO (Injeção do Painel)
+    const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
     container.innerHTML = `
         <div class="flex flex-col h-full bg-slate-50">
@@ -152,22 +156,23 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full">⬅</button>
                     <div class="flex-1">
                         <h3 class="font-bold text-gray-800 text-xs uppercase">${outroNome}</h3>
-                        <p class="text-[9px] font-black text-blue-600">OFERTA INICIAL: R$ ${pedido.offer_value}</p>
+                        <p class="text-[9px] font-black text-blue-600">OFERTA: R$ ${pedido.offer_value}</p>
                     </div>
                     ${contatoLiberado ? 
-                        `<a href="tel:${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold shadow-sm animate-pulse">📞 LIGAR</a>` : 
-                        `<div class="bg-gray-100 text-gray-400 px-3 py-1 rounded-full text-[8px] font-bold flex items-center gap-1">🔒 <span>DADOS OCULTOS</span></div>`
+                        `<a href="tel:${isProvider ? pedido.client_phone : pedido.provider_phone}" class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold">📞 Ligar</a>` : 
+                        `<div class="bg-gray-100 text-gray-400 px-3 py-1 rounded-full text-[8px] font-bold flex items-center gap-1">🔒 <span class="hidden sm:inline">Oculto</span></div>`
                     }
                 </div>
                 ${stepsHTML}
+                
+                ${timeHTML}
             </div>
 
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-48 custom-scrollbar">
                 ${step < 3 ? `
                 <div class="bg-blue-50 p-3 rounded-xl border border-blue-100 mb-4 text-center mx-auto max-w-xs">
                     <p class="text-[10px] text-blue-800 leading-relaxed">
-                        💡 <strong>Dica:</strong> Use os botões abaixo para definir <strong>Valor</strong> e <strong>Detalhes</strong>. 
-                        Negociações organizadas fecham 3x mais rápido.
+                        💡 <strong>Dica:</strong> Negocie valores e horários antes de aceitar.
                     </p>
                 </div>` : ''}
 
@@ -179,35 +184,30 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
             <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40 pb-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide bg-gray-50/50">
                     ${step < 3 ? `
-                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm flex items-center gap-1 hover:bg-blue-50 transition">
-                            📦 Descrever
-                        </button>
-                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-blue-600 px-4 py-2 rounded-xl text-[10px] text-white font-black shadow-md flex items-center gap-1 hover:bg-blue-700 transition transform active:scale-95">
-                            🎯 PROPOSTA FINAL
-                        </button>
+                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm hover:bg-blue-50">📦 Descrever</button>
+                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-blue-600 px-4 py-2 rounded-xl text-[10px] text-white font-black shadow-md hover:bg-blue-700">🎯 PROPOSTA</button>
                     ` : ''}
                     
                     ${step >= 3 && !isProvider ? 
-                        `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-wide w-full">
-                            🏁 CONFIRMAR & PAGAR
-                        </button>` : ''
+                        `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase w-full">🏁 FINALIZAR SERVIÇO</button>` : ''
                     }
                     
-                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100 hover:bg-red-100">
-                        ⚠️ Ajuda
-                    </button>
+                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
                 </div>
 
                 <div class="px-3 pb-3 pt-1 flex gap-2 items-center">
-                    <input type="text" id="chat-input-msg" placeholder="${step < 3 ? 'Use os botões para agilizar...' : 'Digite sua mensagem...'}" 
+                    <input type="text" id="chat-input-msg" placeholder="Digite sua mensagem..." 
                         class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
-                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">
-                        ➤
-                    </button>
+                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
                 </div>
             </div>` : ''}
         </div>
     `;
+    
+    // Inicia o "tic-tac" do relógio local
+    if(window.timerInterval) clearInterval(window.timerInterval);
+    window.timerInterval = setInterval(() => atualizarRelogioDOM(pedido), 1000);
+    
     escutarMensagens(orderId);
 }
 
