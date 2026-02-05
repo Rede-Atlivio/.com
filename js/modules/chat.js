@@ -35,11 +35,18 @@ export async function carregarPedidosAtivos() {
     const container = document.getElementById('sec-chat');
     if (!container || !auth.currentUser) return;
 
+    // 🧹 AÇÃO 13: Inserção do Filtro Visual
     container.innerHTML = `
         <div id="painel-pedidos" class="pb-24 animate-fadeIn">
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4">
-                <h2 class="text-lg font-black text-blue-900">💬 Negociações em Curso</h2>
-                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Intermediação Ativa ATLIVIO</p>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 mb-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-black text-blue-900">💬 Chats</h2>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Negociações</p>
+                </div>
+                <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm">
+                    <span class="text-[10px] font-bold text-gray-600 uppercase">Ver Histórico</span>
+                    <input type="checkbox" id="filtro-historico" class="accent-blue-600 w-4 h-4" onchange="window.carregarChatRender()">
+                </label>
             </div>
             <div id="lista-pedidos-render" class="space-y-3">
                 <div class="loader mx-auto border-blue-200 border-t-blue-600 mt-10"></div>
@@ -51,14 +58,31 @@ export async function carregarPedidosAtivos() {
     const listaRender = document.getElementById('lista-pedidos-render');
     let pedidosMap = new Map(); 
 
-    const renderizar = () => {
+    // Função exposta para o checkbox chamar
+    window.carregarChatRender = () => {
         listaRender.innerHTML = "";
         if (pedidosMap.size === 0) {
-            listaRender.innerHTML = `<p class="text-center text-xs text-gray-400 py-10">Nenhuma negociação ativa.</p>`;
+            listaRender.innerHTML = `<p class="text-center text-xs text-gray-400 py-10">Nenhuma conversa encontrada.</p>`;
             return;
         }
 
-        pedidosMap.forEach((pedido) => {
+        // Ler o estado do filtro
+        const mostrarTudo = document.getElementById('filtro-historico')?.checked;
+        let temItemVisivel = false;
+
+        // Ordenar: Mais recentes primeiro (Importante para organização)
+        const listaOrdenada = Array.from(pedidosMap.values()).sort((a, b) => {
+            const tA = a.updated_at || a.created_at || { seconds: 0 };
+            const tB = b.updated_at || b.created_at || { seconds: 0 };
+            return tB.seconds - tA.seconds;
+        });
+
+        listaOrdenada.forEach((pedido) => {
+            // LÓGICA DO FILTRO: Se não for para mostrar tudo, esconde os mortos
+            const statusMortos = ['completed', 'cancelled', 'negotiation_closed'];
+            if (!mostrarTudo && statusMortos.includes(pedido.status)) return;
+
+            temItemVisivel = true;
             const isMeProvider = pedido.provider_id === uid;
             const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
             const step = pedido.system_step || 1;
