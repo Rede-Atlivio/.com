@@ -305,7 +305,7 @@ export async function aceitarPedidoRadar(orderId) {
              return; 
         }
 
-        // 3. SUCESSO: Grava no banco e abre o chat
+       // 3. SUCESSO: Grava no banco e abre o chat
         await setDoc(doc(db, "orders", orderId), { 
             status: 'accepted', 
             accepted_at: serverTimestamp() 
@@ -318,13 +318,19 @@ export async function aceitarPedidoRadar(orderId) {
 
         fecharModalRadar(); // Fecha o modal pois deu tudo certo
         
-        // Redireciona para o Chat
-        if(document.getElementById('tab-servicos')) {
-            document.getElementById('tab-servicos').click();
+        // Redireciona para o Chat (CORREÇÃO DA AÇÃO 13)
+        // Alterado de 'tab-servicos' para 'tab-chat' para levar aos pedidos em andamento
+        const tabDestino = document.getElementById('tab-chat');
+        
+        if(tabDestino) {
+            tabDestino.click();
             // Pequeno delay para garantir que a lista carregue
             setTimeout(() => {
                  if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
             }, 500);
+        } else {
+            console.warn("Botão tab-chat não encontrado. Tentando recarregar.");
+            window.location.reload();
         }
 
     } catch (e) { 
