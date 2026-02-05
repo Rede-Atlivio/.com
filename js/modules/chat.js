@@ -35,7 +35,8 @@ window.sugerirDetalhe = (orderId, campo) => {
     input.focus();
 };
 
-export async function carregarPedidosAtivos() {
+// 🔄 RENOMEADA PARA EVITAR CONFLITO COM REQUEST.JS
+export async function carregarInterfaceDeChat() {
     const container = document.getElementById('sec-chat');
     if (!container || !auth.currentUser) return;
 
