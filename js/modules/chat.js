@@ -63,23 +63,28 @@ export async function carregarPedidosAtivos() {
             const outroNome = isMeProvider ? pedido.client_name : pedido.provider_name || "Prestador";
             const step = pedido.system_step || 1;
             
+            const isPending = pedido.status === 'pending';
+            
             let statusBadge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa ${step}: Acordo</span>`;
             if(step >= 3) statusBadge = `<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Etapa 3: Confirmado</span>`;
             if(pedido.status === 'completed') statusBadge = `<span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[8px] font-black uppercase">Finalizado</span>`;
 
+            // 🛠️ LOGICA DE RECUPERAÇÃO PARA O AUDITOR
+            if (isPending && isMeProvider) {
+                statusBadge = `<button onclick="window.recuperarPedidoRadar('${pedido.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase animate-pulse">AGUARDANDO ACEITE</button>`;
+            }
+
             listaRender.innerHTML += `
-                <div onclick="window.abrirChatPedido('${pedido.id}')" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 active:scale-95 transition">
+                <div onclick="${isPending && isMeProvider ? '' : `window.abrirChatPedido('${pedido.id}')`}" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 active:scale-95 transition">
                     <div class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center text-xl">👤</div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800 text-sm">${outroNome}</h3>
                             ${statusBadge}
                         </div>
-                        <p class="text-[10px] text-gray-500 mt-1">Serviço de ${pedido.service_category || 'Geral'}</p>
+                        <p class="text-[10px] text-gray-500 mt-1">${pedido.service_title || 'Serviço Geral'}</p>
                     </div>
                 </div>`;
-        });
-    };
 
     const pedidosRef = collection(db, "orders");
     const qProvider = query(pedidosRef, where("provider_id", "==", uid), orderBy("created_at", "desc"), limit(10));
