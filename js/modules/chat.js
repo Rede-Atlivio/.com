@@ -717,6 +717,30 @@ window.cancelarServico = async (orderId) => {
     }
 };
 
+// ✋ AÇÃO 12: ENCERRAR NEGOCIAÇÃO (Sem Punição - Apenas Arquiva)
+window.encerrarNegociacao = async (orderId) => {
+    if(!confirm("✋ ENCERRAR NEGOCIAÇÃO?\n\nO chat será fechado e ninguém poderá mais enviar mensagens.\nComo o acordo ainda não foi fechado, NÃO haverá penalidade.\n\nConfirmar?")) return;
+
+    try {
+        await updateDoc(doc(db, "orders", orderId), {
+            status: 'negotiation_closed', // Status específico para "não deu certo"
+            closed_by: auth.currentUser.uid,
+            closed_at: serverTimestamp(),
+            system_step: 0 // Zera etapas
+        });
+
+        // Avisa no chat (última mensagem)
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `✋ NEGOCIAÇÃO ENCERRADA. Este chat foi arquivado.`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+
+        alert("Negociação encerrada.");
+        window.voltarParaListaPedidos();
+
+    } catch(e) { console.error(e); }
+};
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
