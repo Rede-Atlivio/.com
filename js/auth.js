@@ -345,11 +345,15 @@ function removerBloqueiosVisuais() { document.getElementById("bloqueio-total-ove
 
 function atualizarInterfaceUsuario(dados) {
     document.querySelectorAll('img[id$="-pic"], #header-user-pic, #provider-header-pic').forEach(img => { if(dados.photoURL) img.src = dados.photoURL; });
-    const nameEl = document.getElementById('header-user-name'); if(nameEl) nameEl.innerText = dados.displayName || "Usuário";
+    
+    // CORREÇÃO AÇÃO 15: Prioridade para o 'nome' (Engrenagem) -> 'nome_profissional' -> 'displayName' (Google)
+    const nameEl = document.getElementById('header-user-name'); 
+    if(nameEl) nameEl.innerText = dados.nome || dados.nome_profissional || dados.displayName || "Usuário";
+    
     const provNameEl = document.getElementById('provider-header-name');
     if(provNameEl) {
         const saldo = dados.wallet_balance || 0; const corSaldo = saldo < 0 ? 'text-red-300' : 'text-emerald-300';
-        provNameEl.innerHTML = `${dados.nome_profissional || dados.displayName}`;
+        provNameEl.innerHTML = `${dados.nome_profissional || dados.nome || dados.displayName}`;
     }
 }
 
