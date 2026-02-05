@@ -544,7 +544,7 @@ export function escutarMensagens(orderId) {
 }
 
 // ============================================================================
-// 4. AÇÕES FINAIS E EXPOSIÇÃO GLOBAL
+// 4. AÇÕES FINAIS E EXPOSIÇÃO GLOBAL (V11.0 SANEADO)
 // ============================================================================
 window.finalizarServicoPassoFinalAction = async (orderId) => {
     if(!confirm("Confirma a conclusão do serviço?\n\nAo confirmar, o valor reservado será liberado para o prestador (descontando as taxas) e o pedido será encerrado.")) return;
@@ -554,7 +554,6 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
         let configSnap = await getDoc(doc(db, "settings", "financeiro"));
         if(!configSnap.exists()) configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
         
-        // Padrão 20% se der erro
         const taxaPercent = configSnap.exists() && configSnap.data().taxa_plataforma !== undefined 
             ? parseFloat(configSnap.data().taxa_plataforma) 
             : 0.20;
@@ -574,33 +573,24 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const clientSnap = await transaction.get(clientRef);
             const providerSnap = await transaction.get(providerRef);
 
-            // VALORES
-            const valorReservado = parseFloat(pedido.value_reserved || 0); // O que está no cofre (Ex: R$ 20,00)
-            const valorTotal = parseFloat(pedido.offer_value || 0); // Valor do serviço (Ex: R$ 200,00)
-            const valorTaxa = valorTotal * taxaPercent; // Taxa do Atlivio (Ex: R$ 40,00)
-            
-            // CÁLCULO FINAL DA TRANSFERÊNCIA (V10.0 CORRIGIDA)
-            // O Cliente já pagou a Reserva (ex: R$ 20). 
-            // Agora, o Prestador deve receber o valor TOTAL do serviço (ex: R$ 200) 
-            // MENOS a taxa da plataforma (ex: 20% de 200 = R$ 40).
-            // No final, o prestador recebe R$ 160 de lucro real.
+            const valorReservado = parseFloat(pedido.value_reserved || 0);
+            const valorTotal = parseFloat(pedido.offer_value || 0);
+            const valorTaxa = valorTotal * taxaPercent;
             
             const valorLiquidoParaPrestador = valorTotal - valorTaxa;
 
-            // Log de auditoria para o console (ajuda a debugar se a matemática bater)
-            console.log(`💰 Cálculo: Total(${valorTotal}) - Taxa(${valorTaxa}) = Líquido(${valorLiquidoParaPrestador})`);
+            console.log(`💰 Cálculo Final: Total(${valorTotal}) - Taxa(${valorTaxa}) = Líquido(${valorLiquidoParaPrestador})`);
 
             // 1. ATUALIZA CLIENTE: Esvazia a reserva deste pedido
             if (clientSnap.exists()) {
                 const currentReserved = parseFloat(clientSnap.data().wallet_reserved || 0);
-                // Garante que não fique negativo por erro de arredondamento
                 const novaReserva = Math.max(0, currentReserved - valorReservado);
                 transaction.update(clientRef, { wallet_reserved: novaReserva });
             }
 
             // 2. ATUALIZA PRESTADOR: Aplica o valor líquido na carteira
             if (providerSnap.exists()) {
-                const currentBalance = parseFloat(providerSnap.data().wallet_balance || providerSnap.data().saldo || 0);
+                const currentBalance = parseFloat(providerSnap.data().wallet_balance || 0);
                 const newBalance = currentBalance + valorLiquidoParaPrestador;
                 
                 transaction.update(providerRef, { 
@@ -608,7 +598,6 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                     saldo: newBalance 
                 });
                 
-                // Mantém sync com a tabela de prestadores ativos
                 transaction.update(activeProvRef, { balance: newBalance });
             }
 
@@ -620,7 +609,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 final_amount_released: valorLiquidoParaPrestador
             });
 
-            // 4. GERA EXTRATO (Histórico)
+            // 4. GERA EXTRATO
             const histRef = doc(collection(db, "transactions"));
             transaction.set(histRef, {
                 order_id: orderId,
@@ -639,7 +628,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
         window.voltarParaListaPedidos();
 
     } catch(e) {
-        console.error(e);
+        console.error("Erro ao finalizar:", e);
         alert("Erro ao finalizar: " + e.message);
     }
 };
@@ -647,11 +636,16 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 window.reportarProblema = async (orderId) => {
     const motivo = prompt("Descreva o problema:");
     if(!motivo) return;
-    await updateDoc(doc(db, "orders", orderId), { status: 'dispute', dispute_reason: motivo, dispute_at: serverTimestamp() });
-    alert("🚨 Suporte acionado.");
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            status: 'dispute', 
+            dispute_reason: motivo, 
+            dispute_at: serverTimestamp() 
+        });
+        alert("🚨 Suporte acionado. O dinheiro está bloqueado para análise.");
+    } catch(e) { console.error(e); }
 };
 
-// Removemos as declarações simplistas e conectamos aos motores reais que você já tem no arquivo
 window.voltarParaListaPedidos = () => {
     const chatIndiv = document.getElementById('painel-chat-individual');
     const listaPed = document.getElementById('painel-pedidos');
@@ -659,6 +653,6 @@ window.voltarParaListaPedidos = () => {
     if(listaPed) listaPed.classList.remove('hidden');
 };
 
-// Conecta os gatilhos globais às versões robustas (async) que já estão no topo/meio do arquivo
+// --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
