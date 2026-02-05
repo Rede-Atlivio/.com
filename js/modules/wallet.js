@@ -26,7 +26,7 @@ function iniciarRegrasFinanceiras() {
 let unsubscribeWallet = null;
 
 // ============================================================================
-// 1. MONITORAMENTO REAL-TIME (SINCRONIZADO COM ADMIN/AUTH)
+// 1. MONITORAMENTO REAL-TIME (V10.0 STACK COMPATIBLE)
 // ============================================================================
 export function iniciarMonitoramentoCarteira() {
     if (!auth || !auth.currentUser) return; 
@@ -34,25 +34,23 @@ export function iniciarMonitoramentoCarteira() {
     const uid = auth.currentUser.uid;
     if (unsubscribeWallet) unsubscribeWallet();
 
-    // 🛡️ CORREÇÃO V11.0: Monitoramos o documento do USUÁRIO (Fonte de Verdade)
+    // 🛡️ FONTE DE VERDADE: Documento do USUÁRIO
     const ref = doc(db, "usuarios", uid);
 
-    console.log("📡 Carteira: Iniciando conexão Real-Time no perfil mestre...");
+    console.log("📡 Carteira V10: Conectando ao Banco...");
 
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // 🔥 UNIFICAÇÃO TOTAL: A partir de agora, o sistema só reconhece wallet_balance
+            // 🔥 UNIFICAÇÃO: Apenas 'wallet_balance' importa
             const saldoUnificado = parseFloat(data.wallet_balance || 0);
 
-            if (!window.userProfile) window.userProfile = {};
-            
-            // ✅ CORREÇÃO CRÍTICA V11: Grava a Identidade (UID) na Memória para o Chat validar
+            // MEMÓRIA COMPARTILHADA (Para o request.js ler sem ir no banco)
+            window.userProfile = window.userProfile || {};
             window.userProfile.uid = uid;
-            
-            window.userProfile.balance = saldoUnificado;
-            window.userProfile.wallet_balance = saldoUnificado;
+            window.userProfile.wallet_balance = saldoUnificado; // Padrão novo
+            window.userProfile.balance = saldoUnificado; // Retrocompatibilidade
 
             // ✅ Atualização de Interfaces
             verificarFaixaBonus(saldoUnificado);
