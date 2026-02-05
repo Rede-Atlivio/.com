@@ -749,3 +749,4 @@ window.abrirAgendamento = window.abrirAgendamento;
 window.iniciarTrabalho = window.iniciarTrabalho;
 window.finalizarTrabalho = window.finalizarTrabalho;
 window.cancelarServico = window.cancelarServico;
+window.encerrarNegociacao = window.encerrarNegociacao;
