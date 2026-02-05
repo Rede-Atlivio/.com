@@ -395,6 +395,11 @@ async function carregarPedidosPrestador() {
 
     snap.forEach(d => {
         const order = d.data();
+        
+        // 🛡️ CORREÇÃO: Filtro de Segurança Manual (Garante que Encerrados sumam imediatamente)
+        const statusLixo = ['negotiation_closed', 'cancelled', 'rejected', 'completed'];
+        if (statusLixo.includes(order.status)) return; // Pula este item se for lixo
+
         let statusColor = order.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
         container.innerHTML += `
             <div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50">
@@ -410,7 +415,6 @@ async function carregarPedidosPrestador() {
         `;
     });
 }
-
 // ✅ SUBSTITUA APENAS ESTA FUNÇÃO NO FINAL DO ARQUIVO
 async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
