@@ -128,11 +128,11 @@ export async function carregarPedidosAtivos() {
 
     onSnapshot(qProvider, (snap) => { 
         snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); 
-        renderizar(); 
+        window.carregarChatRender(); 
     });
     onSnapshot(qClient, (snap) => { 
         snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); 
-        renderizar(); 
+        window.carregarChatRender(); 
     });
 }
 export async function abrirChatPedido(orderId) {
