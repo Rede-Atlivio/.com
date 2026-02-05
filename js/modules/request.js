@@ -189,8 +189,20 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA!");
+       alert("✅ SOLICITAÇÃO ENVIADA! Vamos para o chat combinar os detalhes.");
         document.getElementById('request-modal').classList.add('hidden');
+
+        // 🚀 COMANDO DE ROTA (O QUE FALTAVA)
+        // Clica na aba de chat e força o carregamento da lista
+        const tabChat = document.getElementById('tab-chat');
+        if(tabChat) {
+            tabChat.click();
+            // Pequeno delay para dar tempo da animação de troca de aba
+            setTimeout(() => {
+                if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
+            }, 500);
+        }
+
     } catch (e) { alert("Erro: " + e.message); }
 }
 
