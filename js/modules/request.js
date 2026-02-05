@@ -163,13 +163,16 @@ function atualizarVisualModal() {
 
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
+    // Fallback para evitar erro se a config não carregar
     const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
     
+    // Validação de segurança básica
     if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
 
     try {
+        // 1. CRIA O PEDIDO NO BANCO
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -182,6 +185,7 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
+        // 2. CRIA A SALA DE CHAT
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -189,21 +193,28 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-       alert("✅ SOLICITAÇÃO ENVIADA! Vamos para o chat combinar os detalhes.");
-        document.getElementById('request-modal').classList.add('hidden');
+        alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat...");
+        
+        // Fecha o modal visualmente
+        const modal = document.getElementById('request-modal');
+        if(modal) modal.classList.add('hidden');
 
-        // 🚀 COMANDO DE ROTA (O QUE FALTAVA)
-        // Clica na aba de chat e força o carregamento da lista
+        // 🚀 O COMANDO DE ROTA (AQUI ESTÁ A CORREÇÃO)
         const tabChat = document.getElementById('tab-chat');
         if(tabChat) {
-            tabChat.click();
-            // Pequeno delay para dar tempo da animação de troca de aba
+            console.log("🔄 Redirecionando para aba de Chats...");
+            tabChat.click(); // O clique que o Robô Piloto testou
+            
+            // Força a atualização da lista após a animação de troca
             setTimeout(() => {
                 if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-            }, 500);
+            }, 600);
         }
 
-    } catch (e) { alert("Erro: " + e.message); }
+    } catch (e) { 
+        console.error("Erro ao enviar:", e);
+        alert("Erro: " + e.message); 
+    }
 }
 
 // ============================================================================
