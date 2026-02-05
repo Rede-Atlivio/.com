@@ -109,18 +109,45 @@ export async function salvarConfiguracoes() {
     if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
 
     try {
+        // 1. Coleta os dados do formulário
+        const nomeNovo = document.getElementById('set-nome')?.value || user.displayName;
         const payload = {
-            nome: document.getElementById('set-nome')?.value,
+            nome: nomeNovo,
             pix_key: document.getElementById('set-pix-chave')?.value,
             pix_bank: document.getElementById('set-pix-banco')?.value,
             pix_name: document.getElementById('set-pix-nome')?.value,
             pix_cpf: document.getElementById('set-pix-cpf')?.value
         };
 
+        // 2. Salva no Perfil Pessoal (Coleção usuarios)
         await setDoc(doc(db, "usuarios", user.uid), payload, { merge: true });
-        alert("✅ Dados salvos com sucesso!");
+
+        // 3. 🛡️ ESPELHAMENTO DE SEGURANÇA (Atualiza a Vitrine Pública)
+        // Verifica se o usuário já é um prestador ativo para atualizar lá também
+        const providerRef = doc(db, "active_providers", user.uid);
+        const providerSnap = await getDoc(providerRef);
+        
+        if (providerSnap.exists()) {
+            // Se ele for prestador, atualiza o nome profissional lá também!
+            await setDoc(providerRef, {
+                nome_profissional: nomeNovo, // Força o nome novo na vitrine
+                updated_at: new Date()       // Marca a atualização
+            }, { merge: true });
+            console.log("✅ Sincronia: Nome atualizado na Vitrine Pública.");
+        }
+
+        // 4. Atualiza visualmente na hora (sem F5)
+        const headerName = document.getElementById('header-user-name');
+        if(headerName) headerName.innerText = nomeNovo;
+
+        alert("✅ Dados salvos e sincronizados com sucesso!");
         document.getElementById('modal-settings').classList.add('hidden');
+        
+        // Recarrega a vitrine se estiver nela
+        if(window.carregarServicos) window.carregarServicos();
+
     } catch(e) { 
+        console.error(e);
         alert("Erro ao salvar: " + e.message); 
     } finally { 
         if(btn) { btn.innerText = "SALVAR ALTERAÇÕES"; btn.disabled = false; } 
