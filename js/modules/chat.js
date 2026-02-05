@@ -188,15 +188,20 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                         <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-blue-600 px-4 py-2 rounded-xl text-[10px] text-white font-black shadow-md hover:bg-blue-700">🎯 PROPOSTA</button>
                     ` : ''}
                     
-                    ${step >= 3 && !isProvider ? 
+                   ${step >= 3 && !isProvider ? 
                         `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg uppercase tracking-wide w-full">
                             🏁 CONFIRMAR & PAGAR
                         </button>` : ''
                     }
                     
-                    <button onclick="window.cancelarServico('${orderId}')" class="bg-gray-100 text-gray-500 px-3 py-2 rounded-xl text-[10px] font-bold border border-gray-200 hover:bg-gray-200 hover:text-red-600 transition">
-                        🚫 Cancelar
-                    </button>
+                    ${step < 3 ? 
+                        `<button onclick="window.encerrarNegociacao('${orderId}')" class="bg-gray-50 text-gray-400 px-3 py-2 rounded-xl text-[10px] font-bold border border-gray-100 hover:bg-gray-200 hover:text-gray-600 transition">
+                            ✋ Encerrar
+                        </button>` : 
+                        `<button onclick="window.cancelarServico('${orderId}')" class="bg-red-50 text-red-500 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100 hover:bg-red-100 transition">
+                            🚫 Cancelar (Multa)
+                        </button>`
+                    }
 
                     <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100 hover:bg-red-100">
                         ⚠️ Ajuda
