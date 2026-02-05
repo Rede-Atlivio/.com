@@ -74,6 +74,11 @@ export async function carregarPedidosAtivos() {
                 statusBadge = `<button onclick="window.recuperarPedidoRadar('${pedido.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase animate-pulse">AGUARDANDO ACEITE</button>`;
             }
 
+            // 🛠️ LOGICA DE RECUPERAÇÃO E BADGE PARA O PRESTADOR (Exigência do Auditor)
+            if (isPending && isMeProvider) {
+                statusBadge = `<button onclick="window.recuperarPedidoRadar('${pedido.id}')" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[8px] font-black uppercase animate-pulse">AGUARDANDO ACEITE</button>`;
+            }
+
             listaRender.innerHTML += `
                 <div onclick="${isPending && isMeProvider ? '' : `window.abrirChatPedido('${pedido.id}')`}" class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 active:scale-95 transition">
                     <div class="bg-slate-100 h-12 w-12 rounded-full flex items-center justify-center text-xl">👤</div>
@@ -85,15 +90,23 @@ export async function carregarPedidosAtivos() {
                         <p class="text-[10px] text-gray-500 mt-1">${pedido.service_title || 'Serviço Geral'}</p>
                     </div>
                 </div>`;
+        });
+    };
 
+    // 🔗 CONEXÕES FIREBASE (Escutando ordens como Cliente e Prestador)
     const pedidosRef = collection(db, "orders");
     const qProvider = query(pedidosRef, where("provider_id", "==", uid), orderBy("created_at", "desc"), limit(10));
     const qClient = query(pedidosRef, where("client_id", "==", uid), orderBy("created_at", "desc"), limit(10));
 
-    onSnapshot(qProvider, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
-    onSnapshot(qClient, (snap) => { snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); renderizar(); });
+    onSnapshot(qProvider, (snap) => { 
+        snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); 
+        renderizar(); 
+    });
+    onSnapshot(qClient, (snap) => { 
+        snap.forEach(d => pedidosMap.set(d.id, { id: d.id, ...d.data() })); 
+        renderizar(); 
+    });
 }
-
 export async function abrirChatPedido(orderId) {
     let painelChat = document.getElementById('painel-chat-individual');
     if (!painelChat || painelChat.parentElement !== document.body) {
