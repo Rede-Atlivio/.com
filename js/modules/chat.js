@@ -783,3 +783,6 @@ window.iniciarTrabalho = window.iniciarTrabalho;
 window.finalizarTrabalho = window.finalizarTrabalho;
 window.cancelarServico = window.cancelarServico;
 window.encerrarNegociacao = window.encerrarNegociacao;
+
+// 🚨 CORREÇÃO CRÍTICA: EXPORTANDO A NOVA FUNÇÃO PRINCIPAL
+window.carregarInterfaceDeChat = carregarInterfaceDeChat;
