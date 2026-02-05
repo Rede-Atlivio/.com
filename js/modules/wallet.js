@@ -48,8 +48,8 @@ export function iniciarMonitoramentoCarteira() {
 
             if (!window.userProfile) window.userProfile = {};
             
-            // ✅ CORREÇÃO: Grava o UID para validar a identidade no Chat
-            window.userProfile.uid = uid; 
+            // ✅ CORREÇÃO CRÍTICA V11: Grava a Identidade (UID) na Memória para o Chat validar
+            window.userProfile.uid = uid;
             
             window.userProfile.balance = saldoUnificado;
             window.userProfile.wallet_balance = saldoUnificado;
