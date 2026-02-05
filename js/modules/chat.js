@@ -715,7 +715,8 @@ window.cancelarServico = async (orderId) => {
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
-// Novas funções de tempo
+// Novas funções de tempo e cancelamento
 window.abrirAgendamento = window.abrirAgendamento;
 window.iniciarTrabalho = window.iniciarTrabalho;
 window.finalizarTrabalho = window.finalizarTrabalho;
+window.cancelarServico = window.cancelarServico;
