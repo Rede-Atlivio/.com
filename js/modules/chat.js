@@ -275,60 +275,74 @@ export async function confirmarAcordo(orderId, aceitar) {
     const orderRef = doc(db, "orders", orderId);
 
     try {
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0, limite_divida: -60.00 };
-        const pedidoSnap = await getDoc(orderRef);
-        const pedido = pedidoSnap.data();
-        const valorPedido = parseFloat(String(pedido.offer_value).replace(',', '.')) || 0;
-        const isMeProvider = uid === pedido.provider_id;
+        // --- 1. CONFIGURAÇÕES FINANCEIRAS (Leitura do Cache ou Padrão) ---
+        // Isso serve apenas para as validações prévias visuais
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0, limite_divida: 0 };
         
-        const pctAplicada = isMeProvider ? (config.porcentagem_reserva ?? 0) : (config.porcentagem_reserva_cliente ?? 0);
-        const valorReservaNecessaria = valorPedido * (pctAplicada / 100);
-
-        if (valorReservaNecessaria > 0) {
-            const userSnap = await getDoc(doc(db, "usuarios", uid));
-            const saldoAtual = parseFloat(userSnap.data()?.wallet_balance || 0);
-            if (isMeProvider && (saldoAtual - valorReservaNecessaria) < (config.limite_divida || -60)) {
-                return alert("Saldo insuficiente para cobrir a taxa de reserva.");
-            }
+        // --- 2. TRAVA PRELIMINAR DE UI (CLIENTE) ---
+        // Se já sabemos que o user é cliente e está negativo, nem abrimos a transação pesada
+        const userMem = window.userProfile || {};
+        if (userMem.uid === uid && userMem.wallet_balance !== undefined) {
+             // Se não for prestador (ou seja, é cliente)
+             const orderPreSnap = await getDoc(orderRef);
+             if(orderPreSnap.exists() && orderPreSnap.data().provider_id !== uid) {
+                 const valorTotal = parseFloat(orderPreSnap.data().offer_value || 0);
+                 const taxaCli = parseFloat(config.porcentagem_reserva_cliente || 0);
+                 const precisa = valorTotal * (taxaCli / 100);
+                 
+                 if (precisa > 0 && parseFloat(userMem.wallet_balance) < precisa) {
+                     alert(`⛔ SALDO INSUFICIENTE\n\nVocê precisa de R$ ${precisa.toFixed(2)} em conta para cobrir a garantia de proteção.\nRecarregue sua carteira.`);
+                     if(window.switchTab) window.switchTab('ganhar');
+                     return;
+                 }
+             }
         }
 
+        // --- 3. OPERAÇÃO BLINDADA NO BANCO DE DADOS ---
         let vaiFecharAgora = false;
         await runTransaction(db, async (transaction) => {
             const freshOrderSnap = await transaction.get(orderRef);
+            if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
+
             const clientRef = doc(db, "usuarios", freshOrder.client_id);
             const clientSnap = await transaction.get(clientRef);
+            if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
 
+            const isMeProvider = uid === freshOrder.provider_id;
             const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
             const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
             vaiFecharAgora = oOutroJaConfirmou;
 
+            // Atualiza o "De acordo" de quem clicou
             transaction.update(orderRef, campoUpdate);
 
+            // SE OS DOIS ACEITARAM -> EXECUTA A CUSTÓDIA
             if (vaiFecharAgora) {
                 const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
                 
-                // 🛡️ BUSCA CONFIGURAÇÃO DO ADMIN PARA CUSTÓDIA REAL (settings/financeiro)
+                // Busca a regra fresca no banco para não ter erro
                 const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
                 const configData = configSnap.exists() ? configSnap.data() : config;
-                const taxaClienteAdmin = configData.porcentagem_reserva_cliente ?? 0;
+                const taxaClienteAdmin = parseFloat(configData.porcentagem_reserva_cliente || 0);
+                
+                const valorPedido = parseFloat(freshOrder.offer_value || 0);
                 const valorCofre = valorPedido * (taxaClienteAdmin / 100);
 
                 if (valorCofre > 0) {
-                    // Impede o fechamento se o cliente ficou sem saldo durante a negociação
+                    // ⛔ AQUI ESTÁ A TRAVA REAL DO BANCO ⛔
                     if (saldoClient < valorCofre) {
-                        throw "Saldo insuficiente do cliente para realizar a reserva de garantia.";
+                        throw `O Cliente não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)}.`;
                     }
 
-                    // 💸 MANOBRA FINANCEIRA DE CUSTÓDIA (ESCROW)
-                    // Remove do wallet_balance e joga no wallet_reserved (Cofre)
+                    // 💸 MOVIMENTO: Tira do Saldo -> Põe na Reserva
                     transaction.update(clientRef, {
                         wallet_balance: saldoClient - valorCofre,
-                        wallet_reserved: (clientSnap.data()?.wallet_reserved || 0) + valorCofre
+                        wallet_reserved: (parseFloat(clientSnap.data()?.wallet_reserved || 0) + valorCofre)
                     });
                 }
 
-                // Atualiza o pedido para Etapa 3 (Contato Liberado) e registra o valor em custódia
+                // Atualiza status do pedido
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     status: 'confirmed_hold',
@@ -336,7 +350,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp()
                 });
 
-                // Mensagem de sistema que o Robô Auditor exige para validar o sucesso
+                // Mensagem no chat
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
                     text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} em garantia.` : 'Taxa zero aplicada.'} Contato liberado!`,
@@ -346,11 +360,20 @@ export async function confirmarAcordo(orderId, aceitar) {
             }
         });
 
-        alert(vaiFecharAgora ? "✅ Acordo Fechado! Contato Liberado." : "✅ Confirmado! Aguardando a outra parte.");
+        if(vaiFecharAgora) {
+            alert("✅ Acordo Fechado! O valor de garantia está protegido na custódia.");
+        } else {
+            alert("✅ Confirmado! Aguardando a outra parte aceitar.");
+        }
 
     } catch(e) { 
-        console.error("Erro fatal no acordo:", e);
-        alert("⚠️ Falha: " + e);
+        console.error("Erro no acordo:", e);
+        // Tratamento de erro amigável
+        if(String(e).includes("Cliente não possui saldo") || String(e).includes("insuficiente")) {
+            alert("⛔ FALHA NO FECHAMENTO\n\n" + e + "\n\nO acordo não foi fechado.");
+        } else {
+            alert("⚠️ Falha: " + e);
+        }
     }
 }
 
