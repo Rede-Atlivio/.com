@@ -218,7 +218,7 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (SINCRONIA REAL-TIME)
+// 2. RADAR DO PRESTADOR (STACK V10.0 - UBER STYLE)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
     const configRef = doc(db, "settings", "financeiro");
@@ -229,45 +229,106 @@ export async function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") fecharModalRadar();
+            // AJUSTE CRÍTICO: Passamos o ID e Data separadamente para evitar erro de referência
+            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
+            // AJUSTE CRÍTICO: Removemos apenas o card específico, não fecha tudo
+            if (change.type === "removed") removeRequestCard(change.doc.id);
         });
     });
 }
 
-function mostrarModalRadar(pedido) {
-    let modal = document.getElementById('modal-radar-container');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'modal-radar-container';
-        modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4";
-        document.body.appendChild(modal);
+function createRequestCard(pedido) {
+    const container = document.getElementById('radar-container');
+    if (!container) return console.error("Container Radar não encontrado!");
+
+    // 1. Evita duplicidade (Se já existe, não desenha de novo)
+    if (document.getElementById(`req-${pedido.id}`)) return;
+
+    // 2. Limite de Stack (Mata o mais antigo se tiver mais de 5)
+    if (container.children.length >= 5) {
+        const oldest = container.firstElementChild;
+        if (oldest) oldest.remove();
     }
-    modal.classList.remove('hidden');
+
+    // 3. Toca o som
+    const audio = document.getElementById('notification-sound');
+    if (audio) { audio.currentTime = 0; audio.play().catch(e => console.log("Audio bloqueado")); }
 
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * (config.porcentagem_reserva / 100);
+    const distance = pedido.location || "Local não informado";
 
-    modal.innerHTML = `
-        <div class="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-700 overflow-hidden">
-            <div class="p-6 text-center">
-                <h1 class="text-4xl font-black text-white">R$ ${valor.toFixed(0)}</h1>
-                <p class="text-blue-300 text-sm">${pedido.service_title}</p>
-                <p class="text-[10px] text-gray-500 mt-2">Taxa Aceite: R$ ${taxa.toFixed(2)} (${config.porcentagem_reserva}%)</p>
+    const card = document.createElement('div');
+    card.id = `req-${pedido.id}`;
+    card.className = "request-card"; // Classe CSS definida no Passo 01
+    
+    // HTML INTERNO DO CARD (Versão Minimizável)
+    card.innerHTML = `
+        <div class="card-details p-4">
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
+                    <h3 class="text-xl font-black text-slate-800 mt-1">${pedido.service_title}</h3>
+                </div>
+                <div class="text-right">
+                    <h2 class="text-2xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
+                    <p class="text-[9px] text-gray-400 font-bold">Taxa: R$ ${taxa.toFixed(2)}</p>
+                </div>
             </div>
-            <div class="grid grid-cols-2 border-t border-slate-700">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="py-4 text-gray-400 font-bold uppercase text-xs">Recusar</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="py-4 bg-green-600 text-white font-black uppercase text-xs">Aceitar</button>
+            
+            <div class="flex items-center gap-2 text-gray-500 text-xs mb-4 bg-gray-50 p-2 rounded-lg">
+                <span>📍</span>
+                <span class="font-bold truncate">${distance}</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2">
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="col-span-1 bg-red-50 text-red-500 rounded-lg font-bold text-xs py-3 hover:bg-red-100 transition">✖</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-lg font-black text-xs uppercase py-3 shadow-lg hover:bg-blue-700 transition transform active:scale-95">ACEITAR AGORA</button>
+                <button onclick="window.minimizarPedido('${pedido.id}')" class="col-span-1 bg-gray-100 text-gray-500 rounded-lg font-bold text-xs py-3 hover:bg-gray-200 transition" title="Minimizar">_</button>
             </div>
         </div>
+
+        <div class="card-summary hidden items-center justify-between p-3 w-full h-full" onclick="window.minimizarPedido('${pedido.id}')">
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                <span class="text-xs font-bold text-slate-700 truncate w-32">${pedido.service_title}</span>
+            </div>
+            <span class="text-xs font-black text-green-600">R$ ${valor.toFixed(0)}</span>
+        </div>
     `;
+
+    // Adiciona no topo da pilha (prepend) ou fim (append). Stack geralmente é append.
+    container.appendChild(card);
 }
 
-function fecharModalRadar() {
-    const el = document.getElementById('modal-radar-container');
-    if (el) el.classList.add('hidden');
+function removeRequestCard(orderId) {
+    const card = document.getElementById(`req-${orderId}`);
+    if (card) {
+        card.classList.add('removing'); // Gatilho de animação CSS
+        setTimeout(() => card.remove(), 300); // Espera a animação acabar
+    }
 }
+
+// NOVA FUNÇÃO: Lógica de Minimizar/Maximizar
+window.minimizarPedido = (orderId) => {
+    const card = document.getElementById(`req-${orderId}`);
+    if(!card) return;
+
+    if(card.classList.contains('minimized')) {
+        // Maximizar
+        card.classList.remove('minimized');
+        card.querySelector('.card-details').style.display = 'block';
+        card.querySelector('.card-summary').classList.add('hidden');
+        card.querySelector('.card-summary').classList.remove('flex');
+    } else {
+        // Minimizar
+        card.classList.add('minimized');
+        card.querySelector('.card-details').style.display = 'none';
+        card.querySelector('.card-summary').classList.remove('hidden');
+        card.querySelector('.card-summary').classList.add('flex');
+    }
+};
 
 export async function aceitarPedidoRadar(orderId) {
     // NÃO FECHA O MODAL AINDA. O usuário precisa ver o que está acontecendo.
