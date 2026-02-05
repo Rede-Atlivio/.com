@@ -639,6 +639,79 @@ window.finalizarTrabalho = async (orderId) => {
     } catch(e) { console.error(e); }
 };
 
+// ⚖️ AÇÃO 11: LÓGICA DE CANCELAMENTO COM PENALIDADE E ESTORNO
+window.cancelarServico = async (orderId) => {
+    if(!confirm("🚫 DESEJA REALMENTE CANCELAR?\n\n⚠️ Atenção:\n1. Isso impactará sua Reputação (Risk Score).\n2. O valor reservado (se houver) será estornado para seu saldo.\n\nTem certeza?")) return;
+
+    const reason = prompt("Por favor, digite o motivo do cancelamento:");
+    if(!reason) return;
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const orderRef = doc(db, "orders", orderId);
+            const userRef = doc(db, "usuarios", auth.currentUser.uid);
+
+            const orderSnap = await transaction.get(orderRef);
+            const userSnap = await transaction.get(userRef);
+
+            if (!orderSnap.exists() || !userSnap.exists()) throw "Erro ao buscar dados.";
+
+            const order = orderSnap.data();
+            const user = userSnap.data();
+
+            // 1. CÁLCULO DE REPUTAÇÃO (Auto-Inicialização)
+            // Se o risk_score não existir, começa em 0. Penalidade: +10 pontos.
+            const currentRisk = user.risk_score || 0; 
+            const currentCancels = user.cancelation_count || 0;
+            const newRisk = currentRisk + 10; 
+
+            // 2. ESTORNO FINANCEIRO (Escrow -> Saldo)
+            const valorRetido = parseFloat(order.value_reserved || 0);
+            let updateWallet = {};
+            
+            // Se tinha dinheiro preso, devolve para o saldo livre
+            if (valorRetido > 0) {
+                const currentReserved = parseFloat(user.wallet_reserved || 0);
+                const currentBalance = parseFloat(user.wallet_balance || 0);
+                
+                updateWallet = {
+                    wallet_reserved: Math.max(0, currentReserved - valorRetido),
+                    wallet_balance: currentBalance + valorRetido
+                };
+            }
+
+            // 3. EXECUÇÃO ATÔMICA (Tudo ou Nada)
+            transaction.update(orderRef, {
+                status: 'cancelled',
+                canceled_by: auth.currentUser.uid,
+                cancel_reason: reason,
+                canceled_at: serverTimestamp()
+            });
+
+            transaction.update(userRef, {
+                risk_score: newRisk,
+                cancelation_count: currentCancels + 1,
+                ...updateWallet // Espalha as atualizações de saldo aqui
+            });
+
+            // 4. MENSAGEM NO SISTEMA
+            const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+            transaction.set(msgRef, {
+                text: `🚫 PEDIDO CANCELADO pelo usuário. Motivo: "${reason}"`,
+                sender_id: 'system',
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert("✅ Cancelamento realizado.\n\nSeu saldo foi estornado e sua reputação foi atualizada.");
+        window.voltarParaListaPedidos();
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao cancelar: " + e);
+    }
+};
+
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
