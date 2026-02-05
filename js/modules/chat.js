@@ -780,6 +780,42 @@ window.encerrarNegociacao = async (orderId) => {
 
     } catch(e) { console.error(e); }
 };
+
+// 🚑 RESTAURAÇÃO: FUNÇÃO DE DESCREVER SERVIÇO (Muda o Título)
+window.novoDescreverServico = async (orderId) => {
+    const novoTitulo = prompt("📝 Descreva o serviço ou mude o título:");
+    if (!novoTitulo) return;
+    try {
+        await updateDoc(doc(db, "orders", orderId), { service_title: novoTitulo });
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `📝 Atualizou a descrição para: "${novoTitulo}"`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+    } catch (e) { console.error(e); alert("Erro ao atualizar."); }
+};
+
+// 🚑 RESTAURAÇÃO: FUNÇÃO DE ENVIAR PROPOSTA (Muda o Valor)
+window.novoEnviarProposta = async (orderId) => {
+    const valorStr = prompt("💰 Qual o novo valor da proposta? (Apenas números)");
+    if (!valorStr) return;
+    const valor = parseFloat(valorStr.replace(',', '.'));
+    if (isNaN(valor) || valor <= 0) return alert("Valor inválido.");
+
+    try {
+        await updateDoc(doc(db, "orders", orderId), {
+            offer_value: valor,
+            provider_confirmed: false, // Reseta confirmações para forçar novo aceite
+            client_confirmed: false
+        });
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `💰 Nova Proposta: R$ ${valor.toFixed(2)}`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+    } catch (e) { console.error(e); alert("Erro ao enviar proposta."); }
+};
+
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
