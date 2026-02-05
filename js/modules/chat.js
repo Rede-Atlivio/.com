@@ -276,8 +276,9 @@ export async function confirmarAcordo(orderId, aceitar) {
 
     try {
         // --- 1. CONFIGURAÇÕES FINANCEIRAS (Leitura do Cache ou Padrão) ---
-        // Isso serve apenas para as validações prévias visuais
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0, limite_divida: 0 };
+        // 🛡️ CORREÇÃO V11: Fallback inteligente -> Se não tem regra específica, usa a geral (10%)
+        const configPadrao = { porcentagem_reserva: 10, porcentagem_reserva_cliente: 10, limite_divida: 0 };
+        const config = window.configFinanceiroAtiva || configPadrao;
         
         // --- 2. TRAVA PRELIMINAR DE UI (CLIENTE) ---
         // Se já sabemos que o user é cliente e está negativo, nem abrimos a transação pesada
@@ -287,11 +288,14 @@ export async function confirmarAcordo(orderId, aceitar) {
              const orderPreSnap = await getDoc(orderRef);
              if(orderPreSnap.exists() && orderPreSnap.data().provider_id !== uid) {
                  const valorTotal = parseFloat(orderPreSnap.data().offer_value || 0);
-                 const taxaCli = parseFloat(config.porcentagem_reserva_cliente || 0);
+                 
+                 // 🛡️ CORREÇÃO V11: Pega porcentagem_reserva_cliente OU porcentagem_reserva OU 10 fixo
+                 const taxaCli = parseFloat(config.porcentagem_reserva_cliente || config.porcentagem_reserva || 10);
+                 
                  const precisa = valorTotal * (taxaCli / 100);
                  
                  if (precisa > 0 && parseFloat(userMem.wallet_balance) < precisa) {
-                     alert(`⛔ SALDO INSUFICIENTE\n\nVocê precisa de R$ ${precisa.toFixed(2)} em conta para cobrir a garantia de proteção.\nRecarregue sua carteira.`);
+                     alert(`⛔ SALDO INSUFICIENTE\n\nVocê precisa de R$ ${precisa.toFixed(2)} em conta para cobrir a garantia de proteção (${taxaCli}%).\nRecarregue sua carteira.`);
                      if(window.switchTab) window.switchTab('ganhar');
                      return;
                  }
@@ -324,7 +328,9 @@ export async function confirmarAcordo(orderId, aceitar) {
                 // Busca a regra fresca no banco para não ter erro
                 const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
                 const configData = configSnap.exists() ? configSnap.data() : config;
-                const taxaClienteAdmin = parseFloat(configData.porcentagem_reserva_cliente || 0);
+                
+                // 🛡️ CORREÇÃO V11: Robustez no cálculo da taxa (Prioridade: Específico > Geral > 10%)
+                const taxaClienteAdmin = parseFloat(configData.porcentagem_reserva_cliente || configData.porcentagem_reserva || 10);
                 
                 const valorPedido = parseFloat(freshOrder.offer_value || 0);
                 const valorCofre = valorPedido * (taxaClienteAdmin / 100);
@@ -332,7 +338,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                 if (valorCofre > 0) {
                     // ⛔ AQUI ESTÁ A TRAVA REAL DO BANCO ⛔
                     if (saldoClient < valorCofre) {
-                        throw `O Cliente não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)}.`;
+                        throw `O Cliente não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)} (${taxaClienteAdmin}%).`;
                     }
 
                     // 💸 MOVIMENTO: Tira do Saldo -> Põe na Reserva
