@@ -465,6 +465,176 @@ window.voltarParaListaPedidos = () => {
     if(listaPed) listaPed.classList.remove('hidden');
 };
 
+// ============================================================================
+// 🕒 MÓDULO DE AGENDAMENTO E CRONÔMETRO (AÇÃO 10)
+// ============================================================================
+
+function gerarPainelTempo(pedido, isProvider, orderId) {
+    // 1. Serviço em Execução (Cronômetro Ativo)
+    if (pedido.status === 'in_progress' && pedido.real_start) {
+        return `
+        <div class="bg-green-600 text-white px-4 py-2 flex justify-between items-center shadow-inner">
+            <div class="flex items-center gap-2">
+                <span class="animate-pulse text-xs">🔴</span>
+                <span class="text-xs font-bold uppercase tracking-widest">Em Execução</span>
+            </div>
+            <div class="font-mono text-xl font-black tracking-widest" id="timer-display">00:00:00</div>
+            ${isProvider ? `<button onclick="window.finalizarTrabalho('${orderId}')" class="bg-white text-green-700 text-[9px] font-black px-2 py-1 rounded shadow hover:bg-gray-100">CONCLUIR</button>` : ''}
+        </div>`;
+    }
+
+    // 2. Serviço Agendado (Contagem Regressiva)
+    if (pedido.scheduled_at) {
+        const dataAgendada = pedido.scheduled_at.toDate ? pedido.scheduled_at.toDate() : new Date(pedido.scheduled_at);
+        const agora = new Date();
+        const diff = dataAgendada - agora;
+        const isHoje = dataAgendada.toDateString() === agora.toDateString();
+        
+        const dataFormatada = dataAgendada.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + dataAgendada.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        return `
+        <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center shadow-lg relative overflow-hidden">
+            <div class="z-10">
+                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Agendado para ${isHoje ? 'HOJE' : ''}</p>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-sm font-bold text-white">${dataFormatada}</span>
+                </div>
+            </div>
+            
+            <div class="z-10 text-right">
+                ${diff > 0 ? 
+                    `<p class="text-[9px] text-gray-400">Começa em</p><p class="font-mono text-sm font-bold text-yellow-400" id="countdown-display">--:--</p>` : 
+                    `<p class="text-[10px] font-bold text-green-400 animate-pulse">⏰ HORA DE INICIAR</p>`
+                }
+            </div>
+
+            ${isProvider && pedido.status === 'confirmed_hold' ? 
+                `<button onclick="window.iniciarTrabalho('${orderId}')" class="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500 hover:bg-green-400 text-white text-[10px] font-black px-3 py-2 rounded-lg shadow-lg z-20 flex items-center gap-1 animate-bounce-subtle">
+                    ▶ INICIAR
+                </button>` : ''
+            }
+        </div>`;
+    }
+
+    // 3. Sem Agendamento (Botão para Definir)
+    if (pedido.status === 'confirmed_hold' || pedido.status === 'accepted') {
+        return `
+        <div class="bg-amber-50 border-b border-amber-100 px-4 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-2 text-amber-800">
+                <span class="text-lg">📅</span>
+                <p class="text-[10px] font-bold uppercase">Data não definida</p>
+            </div>
+            <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded shadow hover:bg-amber-600 transition">
+                DEFINIR DATA
+            </button>
+        </div>`;
+    }
+
+    return '';
+}
+
+function atualizarRelogioDOM(pedido) {
+    const displayTimer = document.getElementById('timer-display');
+    const displayCountdown = document.getElementById('countdown-display');
+
+    // Modo Cronômetro (Em execução)
+    if (displayTimer && pedido.real_start) {
+        const inicio = pedido.real_start.toDate ? pedido.real_start.toDate() : new Date(pedido.real_start);
+        const agora = new Date();
+        const diff = Math.floor((agora - inicio) / 1000);
+        
+        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        
+        displayTimer.innerText = `${h}:${m}:${s}`;
+    }
+
+    // Modo Contagem Regressiva
+    if (displayCountdown && pedido.scheduled_at) {
+        const alvo = pedido.scheduled_at.toDate ? pedido.scheduled_at.toDate() : new Date(pedido.scheduled_at);
+        const agora = new Date();
+        const diff = Math.floor((alvo - agora) / 1000);
+
+        if (diff <= 0) {
+            displayCountdown.innerText = "00:00";
+        } else {
+            const d = Math.floor(diff / 86400);
+            const h = Math.floor((diff % 86400) / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            
+            if (d > 0) displayCountdown.innerText = `${d}d ${h}h`;
+            else displayCountdown.innerText = `${h}:${m}`;
+        }
+    }
+}
+
+// --- FUNÇÕES DE AÇÃO DO TEMPO ---
+
+window.abrirAgendamento = async (orderId) => {
+    const dataStr = prompt("📅 DATA E HORA DO SERVIÇO\n\nDigite no formato: DD/MM/AAAA HH:MM\nExemplo: 25/12/2026 14:30");
+    if (!dataStr) return;
+
+    // Parser simples de data BR
+    const [dia, mes, ano, hora, min] = dataStr.split(/[\/\s:]/);
+    const dataObj = new Date(`${ano}-${mes}-${dia}T${hora}:${min}:00`);
+
+    if (isNaN(dataObj.getTime())) {
+        alert("❌ Data inválida. Use o formato DD/MM/AAAA HH:MM");
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            scheduled_at: dataObj, // Salva como Timestamp
+            schedule_updated_by: auth.currentUser.uid 
+        });
+        
+        // Avisa no chat
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: `📅 Agendado para: ${dataStr}`, 
+            sender_id: 'system', 
+            timestamp: serverTimestamp() 
+        });
+        
+    } catch(e) { console.error(e); alert("Erro ao agendar."); }
+};
+
+window.iniciarTrabalho = async (orderId) => {
+    if(!confirm("▶ INICIAR O SERVIÇO AGORA?\n\nO cronômetro começará a rodar para o cliente ver.")) return;
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            status: 'in_progress', 
+            real_start: serverTimestamp() 
+        });
+         await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: `▶ Serviço Iniciado! Cronômetro rodando.`, 
+            sender_id: 'system', 
+            timestamp: serverTimestamp() 
+        });
+    } catch(e) { console.error(e); }
+};
+
+window.finalizarTrabalho = async (orderId) => {
+    if(!confirm("🏁 CONCLUIR O SERVIÇO?\n\nIsso encerrará o cronômetro e liberará o pagamento.")) return;
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            status: 'completed', // Vai para o estado final de liberação
+            real_end: serverTimestamp(),
+            system_step: 4
+        });
+         await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: `🏁 Serviço Finalizado pelo Prestador.`, 
+            sender_id: 'system', 
+            timestamp: serverTimestamp() 
+        });
+    } catch(e) { console.error(e); }
+};
+
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
+// Novas funções de tempo
+window.abrirAgendamento = window.abrirAgendamento;
+window.iniciarTrabalho = window.iniciarTrabalho;
+window.finalizarTrabalho = window.finalizarTrabalho;
