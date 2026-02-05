@@ -294,17 +294,28 @@ export async function confirmarAcordo(orderId, aceitar) {
 
             if (vaiFecharAgora) {
                 const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
-                const taxaClienteAdmin = config.porcentagem_reserva_cliente ?? 0;
+                
+                // 🛡️ BUSCA CONFIGURAÇÃO DO ADMIN PARA CUSTÓDIA REAL (settings/financeiro)
+                const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
+                const configData = configSnap.exists() ? configSnap.data() : config;
+                const taxaClienteAdmin = configData.porcentagem_reserva_cliente ?? 0;
                 const valorCofre = valorPedido * (taxaClienteAdmin / 100);
 
                 if (valorCofre > 0) {
+                    // Impede o fechamento se o cliente ficou sem saldo durante a negociação
+                    if (saldoClient < valorCofre) {
+                        throw "Saldo insuficiente do cliente para realizar a reserva de garantia.";
+                    }
+
+                    // 💸 MANOBRA FINANCEIRA DE CUSTÓDIA (ESCROW)
+                    // Remove do wallet_balance e joga no wallet_reserved (Cofre)
                     transaction.update(clientRef, {
                         wallet_balance: saldoClient - valorCofre,
-                        wallet_reserved: (clientSnap.data()?.wallet_reserved || 0) + valorCofre,
-                        saldo: saldoClient - valorCofre
+                        wallet_reserved: (clientSnap.data()?.wallet_reserved || 0) + valorCofre
                     });
                 }
 
+                // Atualiza o pedido para Etapa 3 (Contato Liberado) e registra o valor em custódia
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     status: 'confirmed_hold',
@@ -312,16 +323,22 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp()
                 });
 
+                // Mensagem de sistema que o Robô Auditor exige para validar o sucesso
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 ACORDO FECHADO: Contato liberado!`,
+                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} em garantia.` : 'Taxa zero aplicada.'} Contato liberado!`,
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
             }
         });
-        alert(vaiFecharAgora ? "✅ Acordo Fechado!" : "✅ Confirmado! Aguardando o outro.");
-    } catch(e) { console.error(e); }
+
+        alert(vaiFecharAgora ? "✅ Acordo Fechado! Contato Liberado." : "✅ Confirmado! Aguardando a outra parte.");
+
+    } catch(e) { 
+        console.error("Erro fatal no acordo:", e);
+        alert("⚠️ Falha: " + e);
+    }
 }
 
 export function escutarMensagens(orderId) {
