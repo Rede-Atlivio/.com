@@ -368,6 +368,7 @@ export async function confirmarAcordo(orderId, aceitar) {
         // --- 3. OPERAÇÃO BLINDADA NO BANCO DE DADOS ---
         let vaiFecharAgora = false;
         await runTransaction(db, async (transaction) => {
+            // === 1. LEITURAS (READS) - TUDO DEVE SER LIDO ANTES DE ESCREVER ===
             const freshOrderSnap = await transaction.get(orderRef);
             if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
@@ -376,21 +377,25 @@ export async function confirmarAcordo(orderId, aceitar) {
             const clientSnap = await transaction.get(clientRef);
             if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
 
+            // ⚠️ CORREÇÃO CRÍTICA: Lendo a config DENTRO da transação AGORA, antes de qualquer update
+            const configRef = doc(db, "settings", "financeiro");
+            const configSnap = await transaction.get(configRef);
+            const configData = configSnap.exists() ? configSnap.data() : config;
+
+            // === 2. LÓGICA (PROCESSAMENTO) ===
             const isMeProvider = uid === freshOrder.provider_id;
             const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
             const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
             vaiFecharAgora = oOutroJaConfirmou;
 
+            // === 3. ESCRITAS (WRITES) - AGORA SIM PODEMOS GRAVAR ===
+            
             // Atualiza o "De acordo" de quem clicou
             transaction.update(orderRef, campoUpdate);
 
             // SE OS DOIS ACEITARAM -> EXECUTA A CUSTÓDIA
             if (vaiFecharAgora) {
                 const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
-                
-                // Busca a regra fresca no banco para não ter erro
-                const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
-                const configData = configSnap.exists() ? configSnap.data() : config;
                 
                 // 🛡️ CORREÇÃO V11: Robustez no cálculo da taxa (Prioridade: Específico > Geral > 10%)
                 const taxaClienteAdmin = parseFloat(configData.porcentagem_reserva_cliente || configData.porcentagem_reserva || 10);
