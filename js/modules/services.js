@@ -231,7 +231,7 @@ function renderizarCards(servicos, container) {
                                 <h3 class="text-gray-800 font-bold text-xs truncate max-w-[120px] leading-tight">${nomeProf}</h3>
                                 <div class="flex items-center gap-1 text-[9px] text-yellow-500">
                                     <span>⭐ ${user.rating_avg || 5.0}</span>
-                                    <span class="text-gray-300">(${user.services_count || 0} jobs)</span>
+                                    <span class="text-gray-300">(${user.services_count || 0} Serviços)</span>
                                 </div>
                             </div>
                             <span class="font-black text-green-600 text-xs whitespace-nowrap bg-green-50 px-2 py-0.5 rounded">${precoDisplay}</span>
