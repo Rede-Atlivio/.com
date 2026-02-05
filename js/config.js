@@ -28,5 +28,9 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
+// 🚨 CORREÇÃO V11: Expondo módulos para os Robôs de Diagnóstico
+import { doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+window.firebaseModules = { doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot };
+
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
 export { app, auth, db, storage, provider };
