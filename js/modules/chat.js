@@ -207,7 +207,13 @@ function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
                     <p class="text-[10px] text-blue-800 leading-relaxed">
                         💡 <strong>Dica:</strong> Negocie valores e horários antes de aceitar.
                     </p>
-                </div>` : ''}
+                </div>
+                
+                <div class="flex gap-2 justify-center mb-4">
+                    <button onclick="window.sugerirDetalhe('${orderId}', 'Horário')" class="bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm hover:bg-blue-50">📅 Sugerir Horário</button>
+                    <button onclick="window.sugerirDetalhe('${orderId}', 'Local')" class="bg-white border border-blue-200 text-blue-600 px-3 py-1 rounded-full text-[10px] font-bold shadow-sm hover:bg-blue-50">📍 Confirmar Local</button>
+                </div>
+                ` : ''}
 
                 ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                 <div id="bubbles-area"></div>
