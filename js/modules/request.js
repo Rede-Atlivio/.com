@@ -247,20 +247,67 @@ function fecharModalRadar() {
 }
 
 export async function aceitarPedidoRadar(orderId) {
+    // NÃO FECHA O MODAL AINDA. O usuário precisa ver o que está acontecendo.
     try {
         const uid = auth.currentUser.uid;
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, limite_divida: -60 };
+        
+        // 1. Busca Configuração em Tempo Real
+        // Usa limite 0 como fallback de segurança caso o Admin esteja vazio
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, limite_divida: 0 };
+        
         const orderSnap = await getDoc(doc(db, "orders", orderId));
-        const taxa = parseFloat(orderSnap.data().offer_value) * (config.porcentagem_reserva / 100);
+        if (!orderSnap.exists()) {
+            fecharModalRadar();
+            return alert("Este pedido não existe mais.");
+        }
+        
+        const valorServico = parseFloat(orderSnap.data().offer_value || 0);
+        const taxaAceite = valorServico * (config.porcentagem_reserva / 100);
 
         const userSnap = await getDoc(doc(db, "usuarios", uid));
         const saldo = parseFloat(userSnap.data()?.wallet_balance || 0);
 
-        if ((saldo - taxa) < config.limite_divida) return alert("Saldo insuficiente.");
+        // 2. A GRANDE TRAVA (Onde estava a falha de redirecionamento)
+        if ((saldo - taxaAceite) < config.limite_divida) {
+             alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceite.toFixed(2)} para o aceite.\nSeu limite não permite essa operação.`);
+             
+             fecharModalRadar(); // Agora sim fecha o modal
+             
+             // Redirecionamento forçado para recarga
+             if(window.switchTab) {
+                 window.switchTab('ganhar');
+             } else {
+                 window.location.reload(); // Fallback de emergência
+             }
+             return; 
+        }
 
-        await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp() }, { merge: true });
-        fecharModalRadar();
-    } catch (e) { console.error(e); }
+        // 3. SUCESSO: Grava no banco e abre o chat
+        await setDoc(doc(db, "orders", orderId), { 
+            status: 'accepted', 
+            accepted_at: serverTimestamp() 
+        }, { merge: true });
+        
+        await setDoc(doc(db, "chats", orderId), { 
+            status: 'active',
+            updated_at: serverTimestamp()
+        }, { merge: true });
+
+        fecharModalRadar(); // Fecha o modal pois deu tudo certo
+        
+        // Redireciona para o Chat
+        if(document.getElementById('tab-servicos')) {
+            document.getElementById('tab-servicos').click();
+            // Pequeno delay para garantir que a lista carregue
+            setTimeout(() => {
+                 if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
+            }, 500);
+        }
+
+    } catch (e) { 
+        console.error("Erro no aceite:", e);
+        alert("Erro ao processar: " + e.message); 
+    }
 }
 
 export async function recusarPedidoReq(orderId) {
