@@ -393,5 +393,4 @@ window.ativarInputPersonalizado = ativarInputPersonalizado;
 window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
-window.minimizarPedido = minimizarPedido;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
