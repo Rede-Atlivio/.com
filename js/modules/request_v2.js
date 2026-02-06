@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/request.js - V10.1 (STACK + OFFLINE GUARD + TIMER)
+// js/modules/request.js - V22.0 (AUTO-CURA + SELF HEALING DOM)
 // ============================================================================
 
 import { db, auth } from '../config.js'; 
@@ -14,12 +14,38 @@ let mem_CurrentOffer = 0;
 let mem_SelectedServiceTitle = ""; 
 
 // ============================================================================
+// 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
+// ============================================================================
+function garantirContainerRadar() {
+    let container = document.getElementById('radar-container');
+    
+    // Se o container não existe, VAMOS CRIAR ELE NA MARRA
+    if (!container) {
+        console.warn("⚠️ Container Radar sumiu! Recriando estrutura...");
+        const parent = document.getElementById('pview-radar');
+        
+        if (parent) {
+            // Limpa qualquer lixo (como o texto "Procurando...")
+            parent.innerHTML = ''; 
+            
+            container = document.createElement('div');
+            container.id = 'radar-container';
+            // Força o CSS via JS para garantir que nada quebre
+            container.style.cssText = "display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; z-index: 8000; padding: 10px 0;";
+            parent.appendChild(container);
+        } else {
+            console.error("❌ ERRO FATAL: Aba 'pview-radar' não encontrada no HTML.");
+        }
+    }
+    return container;
+}
+
+// ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    // Sincroniza regras
     try {
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
@@ -65,7 +91,6 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
         
-        // Injeta botões de desconto dinâmicos
         const grids = modal.querySelectorAll('.grid');
         grids.forEach(div => { 
             if(div.innerHTML.includes('%')) {
@@ -126,7 +151,6 @@ function atualizarVisualModal() {
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const ofertaSegura = parseFloat(mem_CurrentOffer) || 0;
 
-    // CORREÇÃO: Input type="number" exige PONTO. Não use vírgula aqui.
     if(inputValor) inputValor.value = ofertaSegura.toFixed(2); 
     
     const valorReserva = ofertaSegura * (config.porcentagem_reserva / 100);
@@ -151,7 +175,6 @@ export async function enviarPropostaAgora() {
     }
 
     try {
-        // Captura valores dos inputs
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
 
@@ -164,8 +187,8 @@ export async function enviarPropostaAgora() {
             status: 'pending', 
             offer_value: mem_CurrentOffer,
             location: document.getElementById('req-local')?.value || "A combinar",
-            data: dataServico, // ✅ NOVO: Salva a data
-            hora: horaServico, // ✅ NOVO: Salva a hora
+            data: dataServico,
+            hora: horaServico,
             created_at: serverTimestamp()
         });
 
@@ -192,6 +215,7 @@ export async function enviarPropostaAgora() {
         alert("Erro: " + e.message); 
     }
 }
+
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
@@ -206,6 +230,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { if(s.exists()) window.configFinanceiroAtiva = s.data(); });
 
+    // ✅ GARANTIA: Recria o container se ele não existir
+    garantirContainerRadar();
+
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -214,6 +241,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
             window.pararRadarFisico();
             return;
         }
+
+        // ✅ GARANTIA 2: Recria de novo caso o HTML tenha limpado
+        garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
@@ -226,8 +256,10 @@ window.pararRadarFisico = () => {
     if (radarUnsubscribe) {
         radarUnsubscribe();
         radarUnsubscribe = null;
-        document.getElementById('radar-container').innerHTML = "";
     }
+    // ✅ CORREÇÃO DO ERRO 'NULL': Só limpa se existir
+    const container = document.getElementById('radar-container');
+    if (container) container.innerHTML = "";
 };
 
 auth.onAuthStateChanged(user => {
@@ -236,7 +268,7 @@ auth.onAuthStateChanged(user => {
         if(toggle && toggle.checked) iniciarRadarPrestador(user.uid);
     }
 });
-// 👇 LÓGICA DE MINIMIZAR (COLE ANTES DA FUNÇÃO createRequestCard)
+
 window.alternarMinimizacao = (id) => {
     const card = document.getElementById(`req-${id}`);
     const detalhes = document.getElementById(`detalhes-${id}`);
@@ -248,10 +280,11 @@ window.alternarMinimizacao = (id) => {
         if(btn) btn.innerHTML = agoraMinimizado ? "+" : "&minus;";
     }
 };
-function createRequestCard(pedido) {
-    const container = document.getElementById('radar-container');
-    if (!container) return;
 
+function createRequestCard(pedido) {
+    // ✅ GARANTIA 3: Usa a função segura
+    const container = garantirContainerRadar();
+    
     if (document.getElementById(`req-${pedido.id}`)) return;
 
     if (container.children.length >= 5) {
@@ -267,8 +300,14 @@ function createRequestCard(pedido) {
     const taxa = valor * ((config.porcentagem_reserva || 20) / 100);
     const lucro = valor - taxa;
 
-    // Tratamento de Data/Hora para não mostrar undefined
-    const dataDisplay = pedido.data ? pedido.data.split('-').reverse().join('/') : '--/--';
+    // Tratamento de Data/Hora
+    let dataDisplay = "--/--";
+    if (pedido.data) {
+        // Se vier como 2026-02-06, inverte. Se vier texto livre, mantém.
+        dataDisplay = pedido.data.includes('-') && pedido.data.length === 10 
+            ? pedido.data.split('-').reverse().join('/') 
+            : pedido.data;
+    }
     const horaDisplay = pedido.hora || '--:--';
 
     const card = document.createElement('div');
@@ -317,13 +356,11 @@ function createRequestCard(pedido) {
 
     container.prepend(card);
 
-    // Inicia a animação da barra
     setTimeout(() => {
         const timerBar = document.getElementById(`timer-${pedido.id}`);
         if(timerBar) timerBar.style.width = '0%';
     }, 100);
 
-    // 15 segundos: Encolhe automaticamente (Estilo Uber)
     setTimeout(() => {
         const c = document.getElementById(`req-${pedido.id}`);
         if (c && !c.classList.contains('minimized')) {
@@ -331,13 +368,13 @@ function createRequestCard(pedido) {
         }
     }, 15000);
 
-    // 30 segundos: Remove da tela localmente
     setTimeout(() => {
         if (document.getElementById(`req-${pedido.id}`)) {
             removeRequestCard(pedido.id);
         }
     }, 30000);
 }
+
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
@@ -347,8 +384,6 @@ function removeRequestCard(orderId) {
 }
 
 export async function aceitarPedidoRadar(orderId) {
-    // 1. Verifica Saldo e Limite (Anti-Calote)
-    // O podeTrabalhar agora está no wallet.js e lê do perfil global
     const orderSnap = await getDoc(doc(db, "orders", orderId));
     if (!orderSnap.exists()) {
         removeRequestCard(orderId);
@@ -359,14 +394,11 @@ export async function aceitarPedidoRadar(orderId) {
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
 
-    // A mágica: Pergunta ao wallet.js se tem dinheiro
     if (!podeTrabalhar(taxaEstimada)) {
-        // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
         removeRequestCard(orderId);
         return;
     }
 
-    // 2. Se passou, processa o aceite
     try {
         await setDoc(doc(db, "orders", orderId), { 
             status: 'accepted', 
@@ -374,8 +406,8 @@ export async function aceitarPedidoRadar(orderId) {
         }, { merge: true });
         
         await setDoc(doc(db, "chats", orderId), { 
-            status: 'active',
-            updated_at: serverTimestamp()
+            status: 'active', 
+            updated_at: serverTimestamp() 
         }, { merge: true });
 
         removeRequestCard(orderId);
@@ -409,6 +441,6 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 
-// 👇 NECESSÁRIO PARA O SISTEMA V12 (BOTÕES E TIMER) 👇
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
+window.pararRadarFisico = window.pararRadarFisico; // Fix para garantir acesso
