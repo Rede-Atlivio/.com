@@ -1,9 +1,10 @@
-const CACHE_NAME = 'atlivio-dynamic-v1';
+const CACHE_NAME = 'atlivio-dynamic-v2-fix'; // Mudei o nome para forçar atualização
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './assets/logo.png' // Adicione seus assets fixos aqui
+  // './assets/logo.png' <--- REMOVIDO (Causava o erro se não existisse)
+  // Adicione aqui apenas arquivos que você TEM CERTEZA ABSOLUTA que existem
 ];
 
 // 1. INSTALAÇÃO: Cacheia apenas o essencial (Shell)
