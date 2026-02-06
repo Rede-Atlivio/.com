@@ -95,24 +95,27 @@ console.log("✅ App Carregado: Sistema Híbrido Online.");
 
 // Função Global para organizar o carregamento de dados (Mata o erro de undefined)
 window.carregarInterface = async (user) => {
-    // Alterna telas
-    const loginScreen = document.getElementById('auth-container');
-    if(loginScreen) loginScreen.classList.add('hidden');
+    console.log("🚀 Inicializando Interface V12 para:", user.uid);
     
-    const appContainer = document.getElementById('app-container');
-    if(appContainer) appContainer.classList.remove('hidden');
+    // Alterna visibilidade das telas principais
+    document.getElementById('auth-container')?.classList.add('hidden');
+    document.getElementById('app-container')?.classList.remove('hidden');
 
-    // 🚀 Carregamento de Módulos de Dados
-    // Carrega chats e pedidos ativos para o Prestador/Cliente
+    // 1. Inicializa o Chat
     if (typeof window.carregarChat === 'function') {
         window.carregarChat();
     }
 
-    // Carrega o Radar de Pedidos Pendentes (SISTEMA NOVO V12)
-    // ✅ CORREÇÃO APLICADA: Chama a função certa do request_v2.js
-    if (typeof window.iniciarRadarPrestador === 'function') {
-        window.iniciarRadarPrestador(user.uid);
-    }
+    // 2. Inicializa o Radar V12 (O Coração do Prestador)
+    // Usamos setTimeout para garantir que o DOM do radar-container já foi montado
+    setTimeout(() => {
+        if (typeof window.iniciarRadarPrestador === 'function') {
+            const toggle = document.getElementById('online-toggle');
+            if (toggle && toggle.checked) {
+                window.iniciarRadarPrestador(user.uid);
+            }
+        }
+    }, 1000);
 };
 auth.onAuthStateChanged(async (user) => {
     if (user) {
