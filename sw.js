@@ -1,54 +1,64 @@
-const CACHE_NAME = 'atlivio-v30-RESCUE'; // Nome novo para obrigar reset
-// ⚠️ LISTA VAZIA DE PROPOSITO: Evita erro de 404 que trava o SW
+const CACHE_NAME = "atlivio-v15.4";
 const ASSETS_TO_CACHE = [
-  './index.html' 
+  "./",
+  "./index.html",
+  "./admin.html",
+  "./manifest.json",
+  "./js/app.js",
+  "./js/auth.js",
+  './js/modules/wallet.js',
+  "./js/modules/services.js",
+  "./js/modules/jobs.js",
+  "./js/modules/chat.js",
+  "./js/modules/profile.js",
+  "./js/modules/onboarding.js",
 ];
 
-// 1. INSTALAÇÃO (FORÇADA)
-self.addEventListener("install", (event) => {
-  self.skipWaiting(); // Assume controle na hora
-  event.waitUntil(
+// 1. INSTALAÇÃO (Cache Inicial)
+self.addEventListener("install", (e) => {
+  self.skipWaiting();
+  e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Se der erro, ignora e segue a vida
-      return cache.addAll(ASSETS_TO_CACHE).catch(err => console.log("Ignorando erro de cache inicial:", err));
+      return cache.addAll(ASSETS_TO_CACHE);
     })
   );
 });
 
-// 2. ATIVAÇÃO (MATADOR DE CACHE VELHO)
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
+// 2. ATIVAÇÃO (Limpeza de Caches Antigos)
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(
         keyList.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log("🧹 SW: Deletando cache zumbi:", key);
             return caches.delete(key);
           }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
+  return self.clients.claim();
 });
 
-// 3. FETCH (REDE PRIMEIRO -> ATUALIZAÇÃO EM TEMPO REAL)
-self.addEventListener("fetch", (event) => {
-  // Ignora coisas externas
-  if (!event.request.url.startsWith(self.location.origin)) return;
+// 3. INTERCEPTAÇÃO (Offline First com exceções)
+self.addEventListener("fetch", (e) => {
+  // Ignora requisições do Firestore/Google/API (Deixa passar pra rede)
+  if (e.request.url.includes('firestore') || 
+      e.request.url.includes('googleapis') || 
+      e.request.url.includes('firebase') ||
+      e.request.method !== 'GET') {
+      return; 
+  }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((networkResponse) => {
-        // Sucesso na rede? Salva versão nova no cache
-        if(networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Sem internet? Usa o cache
-        return caches.match(event.request);
-      })
+  e.respondWith(
+    caches.match(e.request).then((response) => {
+      // Se achou no cache, devolve. Se não, busca na rede.
+      return response || fetch(e.request).catch(() => {
+          // Se falhar e for navegação (ex: sem internet), tenta retornar a home
+          if (e.request.mode === 'navigate') {
+              return caches.match('./index.html');
+          }
+      });
+    })
   );
 });
