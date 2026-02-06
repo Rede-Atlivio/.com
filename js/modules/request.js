@@ -1,8 +1,9 @@
 // ============================================================================
-// js/modules/request.js - V10.1 (STACK + OFFLINE GUARD + TIMER)
+// js/modules/request.js - ATUALIZAÇÃO V11.0 MASTER
 // ============================================================================
 
 import { db, auth } from '../config.js'; 
+import { SERVICOS_PADRAO, CATEGORIAS_ATIVAS } from './services.js';
 import { podeTrabalhar } from './wallet.js'; 
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -21,17 +22,22 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================================
-// 1. MODAL DE SOLICITAÇÃO (CLIENTE)
+// 1. MODAL DE SOLICITAÇÃO (CONTROLE DINÂMICO ADMIN)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    // Sincroniza regras
+    // --- 1. BUSCA REGRAS DO ADMIN (FONTE: settings/financeiro) ---
+    let configAdmin = { valor_minimo: 20, valor_maximo: 500, porcentagem_reserva: 10 }; 
     try {
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
-    } catch (e) { console.error("Erro config:", e); }
+        if (configSnap.exists()) {
+            configAdmin = configSnap.data();
+        }
+    } catch (e) { console.error("Erro ao sincronizar regras:", e); }
     
+    window.configFinanceiroAtiva = configAdmin; 
+
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
     
@@ -43,9 +49,13 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         try {
             if(containerServicos) containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
             const docSnap = await getDoc(doc(db, "active_providers", providerId));
-            let servicos = (docSnap.exists() && docSnap.data().services) ? docSnap.data().services : [];
-
             let htmlSelect = "";
+            let servicos = [];
+
+            if (docSnap.exists() && docSnap.data().services) {
+                servicos = docSnap.data().services;
+            }
+
             if (servicos.length > 0) {
                 htmlSelect = `
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Escolha o Serviço:</label>
@@ -71,20 +81,7 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
 
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
-        
-        // Injeta botões de desconto dinâmicos
-        const grids = modal.querySelectorAll('.grid');
-        grids.forEach(div => { 
-            if(div.innerHTML.includes('%')) {
-                div.className = "grid grid-cols-4 gap-2 mb-3"; 
-                div.innerHTML = `
-                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-10%</button>
-                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-5%</button>
-                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+10%</button>
-                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+20%</button>
-                `;
-            }
-        });
+        injetarBotoesOferta(modal);
 
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
@@ -101,6 +98,22 @@ window.mudarServicoSelecionado = (select) => {
     mem_SelectedServiceTitle = select.options[select.selectedIndex].getAttribute('data-title');
     atualizarVisualModal();
 };
+
+function injetarBotoesOferta(modal) {
+    const containers = modal.querySelectorAll('.grid'); 
+    let targetContainer = null;
+    containers.forEach(div => { if(div.innerHTML.includes('%')) targetContainer = div; });
+
+    if(targetContainer) {
+        targetContainer.className = "grid grid-cols-4 gap-2 mb-3"; 
+        targetContainer.innerHTML = `
+            <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-10%</button>
+            <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-5%</button>
+            <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+10%</button>
+            <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+20%</button>
+        `;
+    }
+}
 
 window.selecionarDesconto = (percent) => {
     mem_CurrentOffer = mem_BasePrice + (mem_BasePrice * parseFloat(percent));
@@ -150,13 +163,16 @@ function atualizarVisualModal() {
 
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
+    // Fallback para evitar erro se a config não carregar
     const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
     
+    // Validação de segurança básica
     if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
 
     try {
+        // 1. CRIA O PEDIDO NO BANCO
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -169,6 +185,7 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
+        // 2. CRIA A SALA DE CHAT
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -177,11 +194,18 @@ export async function enviarPropostaAgora() {
         });
 
         alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat...");
+        
+        // Fecha o modal visualmente
         const modal = document.getElementById('request-modal');
         if(modal) modal.classList.add('hidden');
 
-        if(window.switchTab) {
-            window.switchTab('chat');
+        // 🚀 O COMANDO DE ROTA (AQUI ESTÁ A CORREÇÃO)
+        const tabChat = document.getElementById('tab-chat');
+        if(tabChat) {
+            console.log("🔄 Redirecionando para aba de Chats...");
+            tabChat.click(); // O clique que o Robô Piloto testou
+            
+            // Força a atualização da lista após a animação de troca
             setTimeout(() => {
                 if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
             }, 600);
@@ -194,7 +218,7 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (STACK + OFFLINE GUARD)
+// 2. RADAR DO PRESTADOR (SINCRONIA REAL-TIME)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
     const configRef = doc(db, "settings", "financeiro");
@@ -205,152 +229,83 @@ export async function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") removeRequestCard(change.doc.id);
+            if (change.type === "added") mostrarModalRadar({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "removed") fecharModalRadar();
         });
     });
 }
 
-function createRequestCard(pedido) {
-    const container = document.getElementById('radar-container');
-    if (!container) return;
-
-    // ⛔ OFFLINE GUARD (Resolve o Problema 2)
-    // Verifica se o botão "Online" está marcado no HTML
-    const toggleOnline = document.getElementById('online-toggle');
-    if (toggleOnline && !toggleOnline.checked) {
-        console.log("🔕 Radar ignorou pedido pois usuário está OFFLINE.");
-        return; 
+function mostrarModalRadar(pedido) {
+    let modal = document.getElementById('modal-radar-container');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'modal-radar-container';
+        modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4";
+        document.body.appendChild(modal);
     }
-
-    // 1. Evita duplicidade
-    if (document.getElementById(`req-${pedido.id}`)) return;
-
-    // 2. Limite de Stack (5)
-    if (container.children.length >= 5) {
-        const oldest = container.firstElementChild;
-        if (oldest) oldest.remove();
-    }
-
-    // 3. Som
-    const audio = document.getElementById('notification-sound');
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+    modal.classList.remove('hidden');
 
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * (config.porcentagem_reserva / 100);
-    const distance = pedido.location || "Local não informado";
 
-    const card = document.createElement('div');
-    card.id = `req-${pedido.id}`;
-    card.className = "request-card"; 
-    
-    card.innerHTML = `
-        <div class="card-details p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
-                    <h3 class="text-xl font-black text-slate-800 mt-1">${pedido.service_title}</h3>
-                </div>
-                <div class="text-right">
-                    <h2 class="text-2xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
-                    <p class="text-[9px] text-gray-400 font-bold">Taxa: R$ ${taxa.toFixed(2)}</p>
-                </div>
+    modal.innerHTML = `
+        <div class="bg-slate-900 w-full max-w-md rounded-3xl border border-slate-700 overflow-hidden">
+            <div class="p-6 text-center">
+                <h1 class="text-4xl font-black text-white">R$ ${valor.toFixed(0)}</h1>
+                <p class="text-blue-300 text-sm">${pedido.service_title}</p>
+                <p class="text-[10px] text-gray-500 mt-2">Taxa Aceite: R$ ${taxa.toFixed(2)} (${config.porcentagem_reserva}%)</p>
             </div>
-            
-            <div class="flex items-center gap-2 text-gray-500 text-xs mb-4 bg-gray-50 p-2 rounded-lg">
-                <span>📍</span>
-                <span class="font-bold truncate">${distance}</span>
+            <div class="grid grid-cols-2 border-t border-slate-700">
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="py-4 text-gray-400 font-bold uppercase text-xs">Recusar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="py-4 bg-green-600 text-white font-black uppercase text-xs">Aceitar</button>
             </div>
-
-            <div class="grid grid-cols-4 gap-2">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="col-span-1 bg-red-50 text-red-500 rounded-lg font-bold text-xs py-3 hover:bg-red-100 transition">✖</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-lg font-black text-xs uppercase py-3 shadow-lg hover:bg-blue-700 transition transform active:scale-95">ACEITAR AGORA</button>
-                <button onclick="window.minimizarPedido('${pedido.id}')" class="col-span-1 bg-gray-100 text-gray-500 rounded-lg font-bold text-xs py-3 hover:bg-gray-200 transition" title="Minimizar">_</button>
-            </div>
-            
-            <div class="h-1 w-full bg-gray-100 mt-2 rounded overflow-hidden">
-                <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
-            </div>
-        </div>
-
-        <div class="card-summary hidden items-center justify-between p-3 w-full h-full" onclick="window.minimizarPedido('${pedido.id}')">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 truncate w-32">${pedido.service_title}</span>
-            </div>
-            <span class="text-xs font-black text-green-600">R$ ${valor.toFixed(0)}</span>
         </div>
     `;
-
-    container.appendChild(card);
-
-    // ⏱️ TIMER AUTOMÁTICO (30 SEGUNDOS)
-    // Inicia a animação da barra
-    setTimeout(() => {
-        const timerBar = document.getElementById(`timer-${pedido.id}`);
-        if(timerBar) timerBar.style.width = '0%';
-    }, 100);
-
-    // Minimiza após 30s
-    setTimeout(() => {
-        const currentCard = document.getElementById(`req-${pedido.id}`);
-        // Só minimiza se ainda existir e não tiver sido interagido
-        if (currentCard && !currentCard.classList.contains('minimized')) {
-            window.minimizarPedido(pedido.id);
-        }
-    }, 30000);
 }
 
-function removeRequestCard(orderId) {
-    const card = document.getElementById(`req-${orderId}`);
-    if (card) {
-        card.classList.add('removing');
-        setTimeout(() => card.remove(), 300);
-    }
+function fecharModalRadar() {
+    const el = document.getElementById('modal-radar-container');
+    if (el) el.classList.add('hidden');
 }
-
-window.minimizarPedido = (orderId) => {
-    const card = document.getElementById(`req-${orderId}`);
-    if(!card) return;
-
-    if(card.classList.contains('minimized')) {
-        // Maximizar
-        card.classList.remove('minimized');
-        card.querySelector('.card-details').style.display = 'block';
-        card.querySelector('.card-summary').classList.add('hidden');
-        card.querySelector('.card-summary').classList.remove('flex');
-    } else {
-        // Minimizar
-        card.classList.add('minimized');
-        card.querySelector('.card-details').style.display = 'none';
-        card.querySelector('.card-summary').classList.remove('hidden');
-        card.querySelector('.card-summary').classList.add('flex');
-    }
-};
 
 export async function aceitarPedidoRadar(orderId) {
-    // 1. Verifica Saldo e Limite (Anti-Calote)
-    // O podeTrabalhar agora está no wallet.js e lê do perfil global
-    const orderSnap = await getDoc(doc(db, "orders", orderId));
-    if (!orderSnap.exists()) {
-        removeRequestCard(orderId);
-        return alert("Este pedido não existe mais.");
-    }
-
-    const valorServico = parseFloat(orderSnap.data().offer_value || 0);
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
-    const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
-
-    // A mágica: Pergunta ao wallet.js se tem dinheiro
-    if (!window.podeTrabalhar(taxaEstimada)) {
-        // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
-        removeRequestCard(orderId);
-        return;
-    }
-
-    // 2. Se passou, processa o aceite
+    // NÃO FECHA O MODAL AINDA. O usuário precisa ver o que está acontecendo.
     try {
+        const uid = auth.currentUser.uid;
+        
+        // 1. Busca Configuração em Tempo Real
+        // Usa limite 0 como fallback de segurança caso o Admin esteja vazio
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, limite_divida: 0 };
+        
+        const orderSnap = await getDoc(doc(db, "orders", orderId));
+        if (!orderSnap.exists()) {
+            fecharModalRadar();
+            return alert("Este pedido não existe mais.");
+        }
+        
+        const valorServico = parseFloat(orderSnap.data().offer_value || 0);
+        const taxaAceite = valorServico * (config.porcentagem_reserva / 100);
+
+        const userSnap = await getDoc(doc(db, "usuarios", uid));
+        const saldo = parseFloat(userSnap.data()?.wallet_balance || 0);
+
+        // 2. A GRANDE TRAVA (Onde estava a falha de redirecionamento)
+        if ((saldo - taxaAceite) < config.limite_divida) {
+             alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaAceite.toFixed(2)} para o aceite.\nSeu limite não permite essa operação.`);
+             
+             fecharModalRadar(); // Agora sim fecha o modal
+             
+             // Redirecionamento forçado para recarga
+             if(window.switchTab) {
+                 window.switchTab('ganhar');
+             } else {
+                 window.location.reload(); // Fallback de emergência
+             }
+             return; 
+        }
+
+       // 3. SUCESSO: Grava no banco e abre o chat
         await setDoc(doc(db, "orders", orderId), { 
             status: 'accepted', 
             accepted_at: serverTimestamp() 
@@ -361,32 +316,47 @@ export async function aceitarPedidoRadar(orderId) {
             updated_at: serverTimestamp()
         }, { merge: true });
 
-        removeRequestCard(orderId);
+        fecharModalRadar(); // Fecha o modal pois deu tudo certo
         
-        if(window.switchTab) {
-            window.switchTab('chat');
+        // Redireciona para o Chat (CORREÇÃO DA AÇÃO 13)
+        // Alterado de 'tab-servicos' para 'tab-chat' para levar aos pedidos em andamento
+        const tabDestino = document.getElementById('tab-chat');
+        
+        if(tabDestino) {
+            tabDestino.click();
+            // Pequeno delay para garantir que a lista carregue
             setTimeout(() => {
                  if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
             }, 500);
+        } else {
+            console.warn("Botão tab-chat não encontrado. Tentando recarregar.");
+            window.location.reload();
         }
 
     } catch (e) { 
         console.error("Erro no aceite:", e);
-        alert("Erro: " + e.message); 
+        alert("Erro ao processar: " + e.message); 
     }
 }
 
 export async function recusarPedidoReq(orderId) {
-    removeRequestCard(orderId);
+    fecharModalRadar();
     try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
 }
 
-// EXPOSIÇÃO GLOBAL
+export async function recuperarPedidoRadar(orderId) {
+    try {
+        const snap = await getDoc(doc(db, "orders", orderId));
+        if (snap.exists() && snap.data().status === 'pending') mostrarModalRadar({ id: snap.id, ...snap.data() });
+    } catch (e) { console.error(e); }
+}
+
+// EXPOSIÇÃO GLOBAL PARA O HTML
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
 window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
-window.minimizarPedido = minimizarPedido;
+window.recuperarPedidoRadar = recuperarPedidoRadar;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
