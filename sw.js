@@ -1,64 +1,85 @@
-const CACHE_NAME = "atlivio-v15.4";
+// ============================================================================
+// 🛡️ SERVICE WORKER ULTIMATE - VERSÃO: v30 (REDE PRIMEIRO)
+// ============================================================================
+
+// Mude este nome apenas se quiser forçar uma limpeza geral nos clientes
+const CACHE_NAME = 'atlivio-ultimate-v30';
+
+// ⚠️ LISTA MÍNIMA BLINDADA
+// Colocamos apenas o index.html. O resto o SW aprende sozinho navegando.
+// Isso evita o erro de "Arquivo não encontrado" que travava seu site.
 const ASSETS_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./admin.html",
-  "./manifest.json",
-  "./js/app.js",
-  "./js/auth.js",
-  './js/modules/wallet.js',
-  "./js/modules/services.js",
-  "./js/modules/jobs.js",
-  "./js/modules/chat.js",
-  "./js/modules/profile.js",
-  "./js/modules/onboarding.js",
+  './',
+  './index.html'
 ];
 
-// 1. INSTALAÇÃO (Cache Inicial)
-self.addEventListener("install", (e) => {
-  self.skipWaiting();
-  e.waitUntil(
+// 1. INSTALAÇÃO (SILENCIOSA E SEGURA)
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // Força o SW a assumir o controle IMEDIATAMENTE (sem esperar fechar aba)
+  
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
+      // Tenta cachear o básico. Se der erro (ex: 404), ele AVISA mas NÃO TRAVA o site.
+      return cache.addAll(ASSETS_TO_CACHE).catch(err => {
+          console.warn("⚠️ SW: Alerta não-crítico na instalação:", err);
+      });
     })
   );
 });
 
-// 2. ATIVAÇÃO (Limpeza de Caches Antigos)
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keyList) => {
+// 2. ATIVAÇÃO (O EXTERMINADOR DE CACHE VELHO)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('🧹 SW: Faxina completa. Removendo cache antigo:', cache);
+            return caches.delete(cache); // Deleta versões antigas (v15.4, v16, etc)
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Assume o controle de todas as abas abertas
   );
-  return self.clients.claim();
 });
 
-// 3. INTERCEPTAÇÃO (Offline First com exceções)
-self.addEventListener("fetch", (e) => {
-  // Ignora requisições do Firestore/Google/API (Deixa passar pra rede)
-  if (e.request.url.includes('firestore') || 
-      e.request.url.includes('googleapis') || 
-      e.request.url.includes('firebase') ||
-      e.request.method !== 'GET') {
+// 3. INTERCEPTAÇÃO INTELIGENTE (STRATEGY: NETWORK FIRST)
+// O Segredo: Ele sempre tenta a INTERNET primeiro. Se conseguir, atualiza o cache.
+// Só usa o cache se a internet falhar.
+self.addEventListener('fetch', (event) => {
+  
+  // Ignora requisições externas (Google, Firebase, APIs, Analytics)
+  if (!event.request.url.startsWith(self.location.origin) || 
+      event.request.method !== 'GET') {
       return; 
   }
 
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      // Se achou no cache, devolve. Se não, busca na rede.
-      return response || fetch(e.request).catch(() => {
-          // Se falhar e for navegação (ex: sem internet), tenta retornar a home
-          if (e.request.mode === 'navigate') {
-              return caches.match('./index.html');
-          }
-      });
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // SUCESSO NA REDE:
+        // 1. Entrega o arquivo novo para o usuário.
+        // 2. Guarda uma cópia no cache para o futuro (atualização em background).
+        if(networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+            });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // FALHA NA REDE (OFFLINE):
+        // Entrega o que tiver guardado no cache.
+        return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            // Se não tiver no cache e for navegação, manda pro index (SPA)
+            if (event.request.mode === 'navigate') {
+                return caches.match('./index.html');
+            }
+        });
+      })
   );
 });
