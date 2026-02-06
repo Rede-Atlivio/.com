@@ -130,156 +130,77 @@ window.validarOferta = (val) => {
 
 function atualizarVisualModal() {
     const inputValor = document.getElementById('req-value');
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
-    const ofertaSegura = parseFloat(mem_CurrentOffer) || 0;
-
-    if(inputValor) inputValor.value = ofertaSegura.toFixed(2).replace('.', ','); 
-    
-    const valorReserva = ofertaSegura * (config.porcentagem_reserva / 100);
-    const elTotal = document.getElementById('calc-total-reserva');
-    if(elTotal) { 
-        elTotal.innerHTML = `
-            <div class="flex flex-col items-center">
-                <span class="text-lg font-black text-gray-800">R$ ${ofertaSegura.toFixed(2).replace('.', ',')}</span>
-                <span class="text-[9px] text-blue-600 font-bold uppercase">Reserva: R$ ${valorReserva.toFixed(2).replace('.', ',')}</span>
-            </div>
-        `; 
-    }
-    window.validarOferta(ofertaSegura);
-}
-
-export async function enviarPropostaAgora() {
-    const user = auth.currentUser;
-    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
-    
-    if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
-        return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
-    }
-
-    try {
-        const docRef = await addDoc(collection(db, "orders"), {
-            client_id: user.uid,
-            client_name: user.displayName || "Cliente",
-            provider_id: mem_ProviderId,
-            provider_name: mem_ProviderName,
-            service_title: mem_SelectedServiceTitle,
-            status: 'pending', 
-            offer_value: mem_CurrentOffer,
-            location: document.getElementById('req-local')?.value || "A combinar",
-            created_at: serverTimestamp()
-        });
-
-        await setDoc(doc(db, "chats", docRef.id), {
-            participants: [user.uid, mem_ProviderId],
-            order_id: docRef.id,
-            status: "pending_approval",
-            updated_at: serverTimestamp()
-        });
-
-        alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat...");
-        const modal = document.getElementById('request-modal');
-        if(modal) modal.classList.add('hidden');
-
-        if(window.switchTab) {
-            window.switchTab('chat');
-            setTimeout(() => {
-                if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-            }, 600);
-        }
-
-    } catch (e) { 
-        console.error("Erro ao enviar:", e);
-        alert("Erro: " + e.message); 
-    }
-}
-
-// ============================================================================
-// 2. RADAR DO PRESTADOR (STACK + OFFLINE GUARD)
-// ============================================================================
-export async function iniciarRadarPrestador(uid) {
-    const configRef = doc(db, "settings", "financeiro");
-    onSnapshot(configRef, (docSnap) => {
-        if (docSnap.exists()) window.configFinanceiroAtiva = docSnap.data();
-    });
-
-    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") removeRequestCard(change.doc.id);
-        });
-    });
-}
-
-function createRequestCard(pedido) {
-    const container = document.getElementById('radar-container');
-    if (!container) return;
-
-    // ⛔ OFFLINE GUARD (Resolve o Problema 2)
-    // Verifica se o botão "Online" está marcado no HTML
-    const toggleOnline = document.getElementById('online-toggle');
-    if (toggleOnline && !toggleOnline.checked) {
-        console.log("🔕 Radar ignorou pedido pois usuário está OFFLINE.");
-        return; 
-    }
-
-    // 1. Evita duplicidade
-    if (document.getElementById(`req-${pedido.id}`)) return;
-
-    // 2. Limite de Stack (5)
-    if (container.children.length >= 5) {
-        const oldest = container.firstElementChild;
-        if (oldest) oldest.remove();
-    }
-
-    // 3. Som
-    const audio = document.getElementById('notification-sound');
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
-
+    // 1. PREPARAÇÃO DOS DADOS (RICH DATA)
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * (config.porcentagem_reserva / 100);
-    const distance = pedido.location || "Local não informado";
+    
+    // Extração de dados ricos (Fallback se não houver foto/nome)
+    const clientName = pedido.client_name || "Cliente";
+    const clientPic = pedido.client_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(clientName)}&background=random&color=fff`;
+    const clientRating = pedido.client_rating || "5.0"; // Padrão 5.0 se for novo
+    const location = pedido.location || "Localização não informada";
+    const serviceTitle = pedido.service_title || "Serviço Geral";
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = "request-card"; 
+    card.className = "request-card"; // Aciona o CSS V12 (Dark Blue)
     
+    // 2. A ESTRUTURA HTML (PERFIL RICO V12)
     card.innerHTML = `
         <div class="card-details p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
-                    <h3 class="text-xl font-black text-slate-800 mt-1">${pedido.service_title}</h3>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-3">
+                    <img src="${clientPic}" class="w-12 h-12 rounded-full border-2 border-white/20 shadow-sm object-cover">
+                    <div>
+                        <h3 class="text-white font-bold text-sm leading-tight">${clientName}</h3>
+                        <div class="flex items-center text-yellow-400 text-xs gap-1">
+                            <span>★ ${clientRating}</span>
+                            <span class="text-slate-500 text-[10px]">• Novo</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="text-right">
-                    <h2 class="text-2xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
-                    <p class="text-[9px] text-gray-400 font-bold">Taxa: R$ ${taxa.toFixed(2)}</p>
+                    <div class="price-tag text-2xl">R$ ${valor.toFixed(0)}</div>
+                    <div class="text-[9px] text-slate-400">Reserva: R$ ${taxa.toFixed(2)}</div>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-2 text-gray-500 text-xs mb-4 bg-gray-50 p-2 rounded-lg">
-                <span>📍</span>
-                <span class="font-bold truncate">${distance}</span>
+
+            <div class="mb-5 pl-1 border-l-2 border-slate-700 ml-1">
+                <h4 class="text-blue-200 font-black text-sm uppercase mb-1 pl-2">${serviceTitle}</h4>
+                <div class="flex items-center gap-1 text-slate-400 text-xs pl-2">
+                    <span>📍</span>
+                    <span class="truncate max-w-[220px] font-medium">${location}</span>
+                </div>
             </div>
 
-            <div class="grid grid-cols-4 gap-2">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="col-span-1 bg-red-50 text-red-500 rounded-lg font-bold text-xs py-3 hover:bg-red-100 transition">✖</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-lg font-black text-xs uppercase py-3 shadow-lg hover:bg-blue-700 transition transform active:scale-95">ACEITAR AGORA</button>
-                <button onclick="window.minimizarPedido('${pedido.id}')" class="col-span-1 bg-gray-100 text-gray-500 rounded-lg font-bold text-xs py-3 hover:bg-gray-200 transition" title="Minimizar">_</button>
+            <div class="flex gap-3 items-stretch h-12">
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="btn-reject w-12 rounded-xl flex items-center justify-center font-bold text-lg hover:bg-slate-700 transition">
+                    ✕
+                </button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-accept flex-1 rounded-xl text-sm tracking-wide uppercase flex items-center justify-center gap-2 hover:scale-[1.02] transition">
+                    <span>ACEITAR PEDIDO</span>
+                    <span class="bg-white/20 px-2 rounded text-[10px]">🚀</span>
+                </button>
             </div>
             
-            <div class="h-1 w-full bg-gray-100 mt-2 rounded overflow-hidden">
-                <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+            <div class="h-1 w-full bg-slate-800 mt-4 rounded-full overflow-hidden">
+                <div class="timer-bar" id="timer-${pedido.id}"></div>
             </div>
         </div>
 
-        <div class="card-summary hidden items-center justify-between p-3 w-full h-full" onclick="window.minimizarPedido('${pedido.id}')">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 truncate w-32">${pedido.service_title}</span>
+        <div class="card-summary hidden" onclick="window.minimizarPedido('${pedido.id}')">
+            <div class="flex items-center gap-3">
+                <img src="${clientPic}" class="w-8 h-8 rounded-full border border-slate-500">
+                <div class="flex flex-col">
+                    <span class="text-xs font-bold text-white">${clientName}</span>
+                    <span class="text-[10px] text-slate-400">${serviceTitle}</span>
+                </div>
             </div>
-            <span class="text-xs font-black text-green-600">R$ ${valor.toFixed(0)}</span>
+            <div class="flex flex-col items-end">
+                <span class="text-xs font-black text-green-400">R$ ${valor.toFixed(0)}</span>
+                <span class="text-[8px] text-slate-500 animate-pulse">Aguardando...</span>
+            </div>
         </div>
     `;
 
