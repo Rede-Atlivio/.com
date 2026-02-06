@@ -247,115 +247,76 @@ function createRequestCard(pedido) {
     const container = document.getElementById('radar-container');
     if (!container) return;
 
-    // ⛔ OFFLINE GUARD
-    const toggleOnline = document.getElementById('online-toggle');
-    if (toggleOnline && !toggleOnline.checked) {
-        console.log("🔕 Radar ignorou pedido pois usuário está OFFLINE.");
-        return; 
-    }
-
-    // 1. Evita duplicidade
     if (document.getElementById(`req-${pedido.id}`)) return;
 
-    // 2. Limite de Stack (5)
     if (container.children.length >= 5) {
-        const oldest = container.firstElementChild;
+        const oldest = container.lastElementChild;
         if (oldest) oldest.remove();
     }
 
-    // 3. Som
     const audio = document.getElementById('notification-sound');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
-    // Cálculos Financeiros
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const percentual = (config.porcentagem_reserva || 20) / 100;
-    const taxa = valor * percentual;
+    const taxa = valor * ((config.porcentagem_reserva || 20) / 100);
     const lucro = valor - taxa;
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    
-    // 🔥 VISUAL: Sem 'fixed', agora obedece o container pai
-    card.className = "request-card p-0 animate-slideInLeft w-full";
+    card.className = "request-card p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300";
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
-            class="absolute top-4 right-4 z-50 text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl transition border border-slate-600 shadow-lg cursor-pointer">
+            class="absolute top-4 right-4 z-50 text-slate-400 hover:text-white bg-slate-800/80 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl border border-slate-600 cursor-pointer">
             &minus;
         </button>
 
-        <div class="relative z-10 p-5 text-center cursor-pointer" onclick="window.alternarMinimizacao('${pedido.id}')">
-            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/50">
+        <div class="p-5 text-center cursor-pointer" onclick="window.alternarMinimizacao('${pedido.id}')">
+            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
                 Nova Solicitação
             </span>
-            
-            <h2 class="text-4xl font-black text-white mt-4 tracking-tighter drop-shadow-lg">
-                R$ ${valor.toFixed(0)}
-            </h2>
-            
+            <h2 class="price-tag text-4xl font-black mt-4">R$ ${valor.toFixed(0)}</h2>
             <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase">
                 <span class="text-red-400">Taxa: -R$ ${taxa.toFixed(2)}</span>
-                <span class="text-green-400">Seu Lucro: R$ ${lucro.toFixed(2)}</span>
+                <span class="text-green-400">Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
 
-        <div id="detalhes-${pedido.id}" class="transition-all duration-300">
-            <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700 backdrop-blur-sm">
-                <div class="flex items-center gap-3 mb-3 border-b border-slate-700 pb-3">
-                    <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-lg">
-                        ${(pedido.client_name || 'C')[0]}
-                    </div>
-                    <div>
-                        <h3 class="text-white font-bold text-sm leading-tight">${pedido.client_name || 'Cliente Atlivio'}</h3>
-                        <p class="text-[10px] text-gray-400 flex items-center gap-1">
-                            Cliente 5.0 ★
-                        </p>
-                    </div>
-                </div>
-                
-                <div class="space-y-1">
-                    <p class="text-xs text-gray-300 font-medium flex items-center gap-2">
-                        <span class="text-red-500">📍</span> ${pedido.location || 'Local a combinar'}
-                    </p>
-                    <p class="text-xs text-gray-300 font-medium flex items-center gap-2">
-                        <span class="text-blue-400">📅</span> Data: ${new Date().toLocaleDateString()}
-                    </p>
-                </div>
+        <div id="detalhes-${pedido.id}" class="pb-4">
+            <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700">
+                <p class="text-xs text-white font-bold mb-2">${pedido.client_name || 'Cliente Atlivio'}</p>
+                <p class="text-[11px] text-gray-300"><span class="text-red-500">📍</span> ${pedido.location || 'Local a combinar'}</p>
             </div>
-
-            <div class="grid grid-cols-2 gap-3 p-4 pt-4">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" 
-                    class="bg-slate-700 text-gray-300 py-3 rounded-xl font-bold text-xs uppercase hover:bg-slate-600 transition flex items-center justify-center gap-2">
-                    ✖ Recusar
-                </button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" 
-                    class="bg-green-600 text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-green-500 transition shadow-lg shadow-green-900/20 flex items-center justify-center gap-2">
-                    ✔ Aceitar
-                </button>
+            <div class="grid grid-cols-2 gap-3 p-4">
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="btn-reject py-3 rounded-xl font-bold text-xs uppercase transition">✖ Recusar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-accept py-3 rounded-xl font-black text-xs uppercase transition">✔ Aceitar</button>
             </div>
         </div>
-        
-        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600 rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
-        
         <div class="absolute bottom-0 left-0 h-1 bg-slate-800 w-full">
-            <div class="h-full bg-gradient-to-r from-green-500 to-green-400 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+            <div class="h-full bg-green-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
         </div>
     `;
 
     container.prepend(card);
 
-    // Timer
     setTimeout(() => {
         const timerBar = document.getElementById(`timer-${pedido.id}`);
         if(timerBar) timerBar.style.width = '0%';
     }, 100);
 
-    // Auto-rejeição
+    // 15 segundos: Encolhe automaticamente (Estilo Uber)
+    setTimeout(() => {
+        const c = document.getElementById(`req-${pedido.id}`);
+        if (c && !c.classList.contains('minimized')) {
+            window.alternarMinimizacao(pedido.id);
+        }
+    }, 15000);
+
+    // 30 segundos: Remove da tela localmente
     setTimeout(() => {
         if (document.getElementById(`req-${pedido.id}`)) {
-             window.recusarPedidoReq(pedido.id);
+            removeRequestCard(pedido.id);
         }
     }, 30000);
 }
