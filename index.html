@@ -442,8 +442,11 @@
                         <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
                     </div>
 
-                    <div id="pview-radar" class="text-center py-10">
-                        </div>
+                    <div id="pview-radar" class="flex flex-col items-center gap-4 py-4 min-h-[300px]">
+                        <div id="radar-container" class="w-full max-w-md flex flex-col gap-3"></div>
+                        
+                        <p class="text-gray-400 text-xs mt-4 animate-pulse">📡 Buscando novas solicitações...</p>
+                    </div>
                     <div id="pview-ativos" class="hidden space-y-3">
                         <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
                         <div id="lista-chamados-ativos">
