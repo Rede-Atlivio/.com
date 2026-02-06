@@ -351,7 +351,6 @@ export async function aceitarPedidoRadar(orderId) {
         // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
         removeRequestCard(orderId);
         return;
-    }
 
     // 2. Se passou, processa o aceite
     try {
