@@ -109,27 +109,35 @@ export async function carregarCarteira() {
  */
 export function podeTrabalhar(custoEstimado = 0) {
     const user = window.userProfile;
-    if (!user) return false;
     
-    // Lê o saldo da memória (que o onSnapshot atualizou)
-    const saldo = parseFloat(user.wallet_balance || 0);
+    // 1. Trava de Segurança: Se não carregou perfil, bloqueia.
+    if (!user || user.wallet_balance === undefined) {
+        console.warn("⛔ Bloqueio: Perfil do usuário não carregado.");
+        return false;
+    }
     
-    // Validação com o limite configurado
-    if ((saldo - custoEstimado) <= CONFIG_FINANCEIRA.limite) {
-        // Formata para moeda BRL
+    const saldo = parseFloat(user.wallet_balance);
+    const custo = parseFloat(custoEstimado);
+
+    // 2. Trava Anti-Bug: Se os valores não forem números, bloqueia por segurança.
+    if (isNaN(saldo) || isNaN(custo)) {
+        console.error("⛔ Erro Crítico: Saldo ou Custo inválidos (NaN). Bloqueando por segurança.");
+        return false; 
+    }
+    
+    // 3. A Lógica Financeira Real
+    if ((saldo - custo) <= CONFIG_FINANCEIRA.limite) {
         const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         const limiteFmt = CONFIG_FINANCEIRA.limite.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         
-        console.warn(`⛔ Bloqueio: Saldo ${saldoFmt} atingiu limite ${limiteFmt}`);
-        
-        // Só alerta se for interação do usuário (evita spam no console)
-        if(custoEstimado > 0) {
+        if(custo > 0) {
              alert(`⛔ LIMITE ATINGIDO\n\nSeu saldo: ${saldoFmt}\nLimite: ${limiteFmt}\n\nPor favor, recarregue sua carteira.`);
              if(window.switchTab) window.switchTab('ganhar');
         }
-        return false;
+        return false; // BLOQUEADO
     }
-    return true;
+    
+    return true; // LIBERADO
 }
 
 // ============================================================================
