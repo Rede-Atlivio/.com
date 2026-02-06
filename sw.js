@@ -1,64 +1,60 @@
-const CACHE_NAME = "atlivio-v15.4";
+const CACHE_NAME = 'atlivio-dynamic-v1';
 const ASSETS_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./admin.html",
-  "./manifest.json",
-  "./js/app.js",
-  "./js/auth.js",
-  './js/modules/wallet.js',
-  "./js/modules/services.js",
-  "./js/modules/jobs.js",
-  "./js/modules/chat.js",
-  "./js/modules/profile.js",
-  "./js/modules/onboarding.js",
+  './',
+  './index.html',
+  './manifest.json',
+  './assets/logo.png' // Adicione seus assets fixos aqui
 ];
 
-// 1. INSTALAÇÃO (Cache Inicial)
-self.addEventListener("install", (e) => {
-  self.skipWaiting();
-  e.waitUntil(
+// 1. INSTALAÇÃO: Cacheia apenas o essencial (Shell)
+self.addEventListener('install', (event) => {
+  self.skipWaiting(); // 🚀 FORÇA A ATUALIZAÇÃO IMEDIATA
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE);
     })
   );
 });
 
-// 2. ATIVAÇÃO (Limpeza de Caches Antigos)
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keyList) => {
+// 2. ATIVAÇÃO: Limpa caches antigos automaticamente
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map((cache) => {
+          if (cache !== CACHE_NAME) {
+            console.log('🧹 SW: Limpando cache antigo:', cache);
+            return caches.delete(cache);
           }
         })
       );
-    })
+    }).then(() => self.clients.claim()) // Assume o controle da página na hora
   );
-  return self.clients.claim();
 });
 
-// 3. INTERCEPTAÇÃO (Offline First com exceções)
-self.addEventListener("fetch", (e) => {
-  // Ignora requisições do Firestore/Google/API (Deixa passar pra rede)
-  if (e.request.url.includes('firestore') || 
-      e.request.url.includes('googleapis') || 
-      e.request.url.includes('firebase') ||
-      e.request.method !== 'GET') {
-      return; 
+// 3. FETCH: ESTRATÉGIA "NETWORK FIRST" (Prioriza a Nuvem)
+// Tenta baixar a versão nova. Se der erro (offline), usa o cache.
+self.addEventListener('fetch', (event) => {
+  // Ignora requisições do Firestore/Google (elas já têm cache próprio)
+  if (event.request.url.includes('firestore') || event.request.url.includes('googleapis')) {
+    return;
   }
 
-  e.respondWith(
-    caches.match(e.request).then((response) => {
-      // Se achou no cache, devolve. Se não, busca na rede.
-      return response || fetch(e.request).catch(() => {
-          // Se falhar e for navegação (ex: sem internet), tenta retornar a home
-          if (e.request.mode === 'navigate') {
-              return caches.match('./index.html');
-          }
-      });
-    })
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        // Se baixou com sucesso, atualiza o cache com a versão nova
+        if(networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, responseToCache);
+            });
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        // Se estiver offline ou der erro, usa o cache
+        return caches.match(event.request);
+      })
   );
 });
