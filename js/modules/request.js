@@ -210,7 +210,16 @@ export async function iniciarRadarPrestador(uid) {
         });
     });
 }
-
+// 👇 LÓGICA DE MINIMIZAR (COLE ANTES DA FUNÇÃO createRequestCard)
+window.alternarMinimizacao = (id) => {
+    const detalhes = document.getElementById(`detalhes-${id}`);
+    const btn = document.getElementById(`btn-min-${id}`);
+    
+    if (detalhes) {
+        const estaEscondido = detalhes.classList.toggle('hidden');
+        if(btn) btn.innerHTML = estaEscondido ? "+" : "&minus;"; // Troca ícone
+    }
+};
 function createRequestCard(pedido) {
     const container = document.getElementById('radar-container');
     if (!container) return;
@@ -245,16 +254,16 @@ function createRequestCard(pedido) {
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
     
-    // 🔥 VISUAL DARK MODE MANTIDO
-    card.className = "bg-slate-900 border border-blue-900 rounded-2xl shadow-2xl p-0 mb-4 animate-slideInLeft relative overflow-hidden w-full max-w-md mx-auto transition-all duration-300";
+    // 🔥 VISUAL: Sem 'fixed', agora obedece o container pai
+    card.className = "bg-slate-900 border border-blue-900 rounded-2xl shadow-xl p-0 animate-slideInLeft relative overflow-hidden w-full transition-all duration-300";
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
-            class="absolute top-4 right-4 z-50 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl transition border border-slate-700">
+            class="absolute top-4 right-4 z-50 text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl transition border border-slate-600 shadow-lg cursor-pointer">
             &minus;
         </button>
 
-        <div class="relative z-10 p-5 text-center">
+        <div class="relative z-10 p-5 text-center cursor-pointer" onclick="window.alternarMinimizacao('${pedido.id}')">
             <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/50">
                 Nova Solicitação
             </span>
