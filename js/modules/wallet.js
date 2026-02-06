@@ -1,11 +1,10 @@
-// js/modules/wallet.js - V10.0 STABLE
-import { db, auth } from '../config.js';
+js/modules/wallet.js import { db, auth } from '../config.js';
 import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 💰 CONFIGURAÇÕES DINÂMICAS
+// 💰 CONFIGURAÇÕES DINÂMICAS (Vem do Admin)
 export let CONFIG_FINANCEIRA = {
-    taxa: 0.20,
-    limite: -60.00
+    taxa: 0.20,         // Fallback de segurança
+    limite: -60.00      // Fallback de segurança
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
@@ -27,7 +26,7 @@ function iniciarRegrasFinanceiras() {
 let unsubscribeWallet = null;
 
 // ============================================================================
-// 1. MONITORAMENTO REAL-TIME (V10.0 STACK COMPATIBLE)
+// 1. MONITORAMENTO REAL-TIME (SINCRONIZADO COM ADMIN/AUTH)
 // ============================================================================
 export function iniciarMonitoramentoCarteira() {
     if (!auth || !auth.currentUser) return; 
@@ -35,23 +34,25 @@ export function iniciarMonitoramentoCarteira() {
     const uid = auth.currentUser.uid;
     if (unsubscribeWallet) unsubscribeWallet();
 
-    // 🛡️ FONTE DE VERDADE: Documento do USUÁRIO
+    // 🛡️ CORREÇÃO V11.0: Monitoramos o documento do USUÁRIO (Fonte de Verdade)
     const ref = doc(db, "usuarios", uid);
 
-    console.log("📡 Carteira V10: Conectando ao Banco...");
+    console.log("📡 Carteira: Iniciando conexão Real-Time no perfil mestre...");
 
     unsubscribeWallet = onSnapshot(ref, (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // 🔥 UNIFICAÇÃO: Apenas 'wallet_balance' importa
+            // 🔥 UNIFICAÇÃO TOTAL: A partir de agora, o sistema só reconhece wallet_balance
             const saldoUnificado = parseFloat(data.wallet_balance || 0);
 
-            // MEMÓRIA COMPARTILHADA (Para o request.js ler sem ir no banco)
-            window.userProfile = window.userProfile || {};
+            if (!window.userProfile) window.userProfile = {};
+            
+            // ✅ CORREÇÃO CRÍTICA V11: Grava a Identidade (UID) na Memória para o Chat validar
             window.userProfile.uid = uid;
-            window.userProfile.wallet_balance = saldoUnificado; // Padrão novo
-            window.userProfile.balance = saldoUnificado; // Retrocompatibilidade
+            
+            window.userProfile.balance = saldoUnificado;
+            window.userProfile.wallet_balance = saldoUnificado;
 
             // ✅ Atualização de Interfaces
             verificarFaixaBonus(saldoUnificado);
@@ -102,32 +103,17 @@ export async function carregarCarteira() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE TRAVA (ANTI-CALOTE) - V10.0
+// 2. LÓGICA DE TRAVA (ANTI-CALOTE)
 // ============================================================================
-/**
- * Verifica se o prestador pode aceitar serviços.
- * Chamada pelo request.js antes de abrir o modal de aceite.
- */
-export function podeTrabalhar(custoEstimado = 0) {
+export function podeTrabalhar() {
     const user = window.userProfile;
     if (!user) return false;
+    const saldo = parseFloat(user.balance || 0);
     
-    // Lê o saldo da memória (que o onSnapshot atualizou)
-    const saldo = parseFloat(user.wallet_balance || 0);
-    
-    // Validação com o limite configurado
-    if ((saldo - custoEstimado) <= CONFIG_FINANCEIRA.limite) {
-        // Formata para moeda BRL
-        const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const limiteFmt = CONFIG_FINANCEIRA.limite.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        
-        console.warn(`⛔ Bloqueio: Saldo ${saldoFmt} atingiu limite ${limiteFmt}`);
-        
-        // Só alerta se for interação do usuário (evita spam no console)
-        if(custoEstimado > 0) {
-             alert(`⛔ LIMITE ATINGIDO\n\nSeu saldo: ${saldoFmt}\nLimite: ${limiteFmt}\n\nPor favor, recarregue sua carteira.`);
-             if(window.switchTab) window.switchTab('ganhar');
-        }
+    // 🆕 Usa a variável dinâmica
+    if (saldo <= CONFIG_FINANCEIRA.limite) {
+        alert(`⛔ LIMITE DE CRÉDITO ATINGIDO!\n\nSeu saldo atual é R$ ${saldo.toFixed(2)}.\nO limite é R$ ${CONFIG_FINANCEIRA.limite.toFixed(2)}.\n\nPor favor, faça uma recarga para continuar aceitando pedidos.`);
+        if(window.switchTab) window.switchTab('ganhar');
         return false;
     }
     return true;
