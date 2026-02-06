@@ -41,3 +41,5 @@ window.firebaseModules = {
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
 export { app, auth, db, storage, provider };
+// Mata qualquer tentativa de arquivos antigos recriarem o radar antigo
+window.SERVICOS_PADRAO = window.SERVICOS_PADRAO || [];
