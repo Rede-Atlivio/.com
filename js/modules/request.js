@@ -251,30 +251,46 @@ window.minimizarPedido = (orderId) => {
 };
 
 export async function aceitarPedidoRadar(orderId) {
-    // 1. Verifica Saldo e Limite (Anti-Calote)
-    // O podeTrabalhar agora está no wallet.js e lê do perfil global
-    const orderSnap = await getDoc(doc(db, "orders", orderId));
-    if (!orderSnap.exists()) {
-        removeRequestCard(orderId);
-        return alert("Este pedido não existe mais.");
-    }
+    const btn = document.querySelector(`#req-${orderId} .btn-accept`);
+    if(btn) { btn.disabled = true; btn.innerText = "⏳ Verificando..."; }
 
-    const valorServico = parseFloat(orderSnap.data().offer_value || 0);
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
-    const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
-
-    // A mágica: Pergunta ao wallet.js se tem dinheiro
-    if (!window.podeTrabalhar(taxaEstimada)) {
-        // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
-        removeRequestCard(orderId);
-        return;
-    }
-
-    // 2. Se passou, processa o aceite
     try {
+        // 1. Busca dados frescos do Pedido E do Usuário (Sem Cache)
+        const userUid = auth.currentUser.uid;
+        const [orderSnap, userSnap] = await Promise.all([
+            getDoc(doc(db, "orders", orderId)),
+            getDoc(doc(db, "usuarios", userUid))
+        ]);
+
+        if (!orderSnap.exists()) {
+            removeRequestCard(orderId);
+            return alert("❌ Este pedido expirou ou foi cancelado.");
+        }
+
+        // 2. CÁLCULO RIGOROSO DA TAXA
+        const valorServico = parseFloat(orderSnap.data().offer_value || 0);
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+        const taxaNecessaria = valorServico * (config.porcentagem_reserva / 100);
+        
+        // 3. VERIFICAÇÃO DE SALDO (TRAVA DE SEGURANÇA)
+        const saldoAtual = parseFloat(userSnap.data().wallet_balance || 0);
+        
+        if (saldoAtual < taxaNecessaria) {
+            // Bloqueio Imediato
+            alert(`⛔ SALDO INSUFICIENTE\n\nEste serviço requer R$ ${taxaNecessaria.toFixed(2)} de garantia em conta.\nSeu saldo atual: R$ ${saldoAtual.toFixed(2)}.\n\nPor favor, faça uma recarga na aba Carteira.`);
+            
+            // Redireciona para a carteira
+            if(window.switchTab) window.switchTab('ganhar');
+            removeRequestCard(orderId);
+            return;
+        }
+
+        // 4. SUCESSO: Processa o aceite
         await setDoc(doc(db, "orders", orderId), { 
             status: 'accepted', 
-            accepted_at: serverTimestamp() 
+            accepted_at: serverTimestamp(),
+            provider_accepted_lat: null, // Futuro: Geolocalização
+            provider_accepted_lng: null
         }, { merge: true });
         
         await setDoc(doc(db, "chats", orderId), { 
@@ -282,18 +298,23 @@ export async function aceitarPedidoRadar(orderId) {
             updated_at: serverTimestamp()
         }, { merge: true });
 
+        // Toca som de sucesso
+        const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg');
+        audio.play().catch(()=>{});
+
         removeRequestCard(orderId);
         
         if(window.switchTab) {
             window.switchTab('chat');
             setTimeout(() => {
                  if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-            }, 500);
+            }, 600);
         }
 
     } catch (e) { 
         console.error("Erro no aceite:", e);
-        alert("Erro: " + e.message); 
+        alert("Erro ao aceitar: " + e.message); 
+        if(btn) { btn.disabled = false; btn.innerText = "ACEITAR PEDIDO"; }
     }
 }
 
