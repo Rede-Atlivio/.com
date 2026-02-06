@@ -391,81 +391,75 @@
                 <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Realize missões rápidas e garanta uma renda extra</p>
                 <div id="lista-missoes" class="grid gap-4"></div>
             </section>
-   <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
-
-    <div id="category-filters" class="hidden"></div>
-
-    <div id="servicos-cliente" class="hidden">
-        <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
-            <div class="flex items-center gap-3">
-                <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
-                    <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                    <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
-                </div>
-                <div>
-                    <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
-                    <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
-                </div>
-            </div>
+<section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+    
+    <div class="flex justify-between items-center bg-white p-4 rounded-3xl shadow-sm border border-gray-100">
+        <div>
+            <h2 class="text-xl font-black text-blue-900 tracking-tighter">ATLIVIO</h2>
+            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Marketplace Híbrido</p>
         </div>
+        
+        <div class="flex items-center gap-2">
+            <span class="text-[9px] font-bold text-gray-400 uppercase">Sou:</span>
+            <button id="btn-mode-toggle" class="bg-blue-50 text-blue-600 px-3 py-1 rounded-lg text-[10px] font-black border border-blue-200 shadow-sm transition active:scale-95" onclick="window.alternarModoUsuario()">
+                PRESTADOR 🔄
+            </button>
+        </div>
+    </div>
 
-        <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
-            <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
-            <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
-            <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+    <div id="servicos-cliente">
+        <div class="flex p-1 bg-gray-100 rounded-xl mb-4">
+            <button id="subtab-contratar-btn" onclick="window.switchServiceSubTab('contratar')" class="flex-1 py-2 rounded-lg text-[10px] font-black text-blue-900 bg-white shadow-sm transition">CONTRATAR</button>
+            <button id="subtab-andamento-btn" onclick="window.switchServiceSubTab('andamento')" class="flex-1 py-2 rounded-lg text-[10px] font-bold text-gray-400 transition">EM ANDAMENTO</button>
+            <button id="subtab-historico-btn" onclick="window.switchServiceSubTab('historico')" class="flex-1 py-2 rounded-lg text-[10px] font-bold text-gray-400 transition">HISTÓRICO</button>
         </div>
 
         <div id="view-contratar">
-            <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3 pb-24"></div>
+            <div id="category-filters" class="mb-4 hidden animate-fade"></div>
+            <div id="lista-servicos" class="grid grid-cols-2 md:grid-cols-3 gap-3 pb-24">
+                </div>
         </div>
 
-        <div id="view-andamento" class="hidden space-y-2">
-            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Acompanhe seus pedidos em tempo real</p>
-            <div id="meus-pedidos-andamento" class="space-y-3"></div>
+        <div id="view-andamento" class="hidden">
+            <div id="meus-pedidos-andamento"></div>
         </div>
-        <div id="view-historico" class="hidden space-y-2">
-            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus serviços anteriores</p>
-            <div id="meus-pedidos-historico" class="space-y-3"></div>
+
+        <div id="view-historico" class="hidden">
+            <div id="meus-pedidos-historico"></div>
         </div>
     </div>
 
     <div id="servicos-prestador" class="hidden">
-        <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+        
+        <div class="bg-blue-900 text-white p-4 rounded-2xl mb-4 shadow-lg flex justify-between items-center">
             <div class="flex items-center gap-3">
-                <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
-                    <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                    <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                <div class="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center text-lg font-bold border-2 border-blue-400">
+                    <span id="user-avatar-initials">US</span>
                 </div>
                 <div>
-                    <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
-                    <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                    <h3 id="user-name-display" class="font-bold text-sm">Prestador</h3>
+                    <p class="text-[10px] text-blue-200 cursor-pointer hover:text-white underline" onclick="window.abrirConfiguracaoServicos()">✎ Meus Serviços</p>
                 </div>
             </div>
-            <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button>
+            
+            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/10">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-blue-200">ONLINE</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="online-toggle" class="sr-only peer" onchange="window.toggleOnlineStatus(this)">
+                    <div class="w-9 h-5 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                </label>
+            </div>
         </div>
 
-        <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
-            <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
-            <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
-            <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
+        <div class="flex border-b border-gray-200 mb-4">
+            <button id="ptab-radar-btn" onclick="window.switchProviderSubTab('radar')" class="flex-1 pb-2 text-[10px] font-black text-blue-900 border-b-2 border-blue-600 active">RADAR 📡</button>
+            <button id="ptab-ativos-btn" onclick="window.switchProviderSubTab('ativos')" class="flex-1 pb-2 text-[10px] font-bold text-gray-400 border-b-2 border-transparent">PEDIDOS ATIVOS 🔔</button>
+            <button id="ptab-historico-btn" onclick="window.switchProviderSubTab('historico')" class="flex-1 pb-2 text-[10px] font-bold text-gray-400 border-b-2 border-transparent">HISTÓRICO ✅</button>
         </div>
 
         <div id="pview-radar" class="flex flex-col items-center gap-4 py-4 min-h-[400px]">
-    <div id="radar-container" style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; z-index: 8000;"></div>
-    
-    <div id="radar-empty-state" class="flex flex-col items-center justify-center py-16">
-        <div class="relative flex h-32 w-32 items-center justify-center mb-6">
-            <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
-            <span class="relative inline-flex rounded-full h-20 w-20 bg-white border-4 border-blue-600 items-center justify-center text-4xl shadow-2xl z-10">📡</span>
-        </div>
-        <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse text-center leading-relaxed">
-            Radar Atlivio Conectado<br>
-            <span class="text-[10px] text-gray-400 font-bold tracking-normal">Aguardando V22...</span>
-        </p>
-    </div>
-</div>
-            <div id="radar-container" class="w-full max-w-md flex flex-col gap-4 p-2"></div>
-
+            <div id="radar-container" style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; z-index: 8000;"></div>
+            
             <div id="radar-empty-state" class="flex flex-col items-center justify-center py-16">
                 <div class="relative flex h-32 w-32 items-center justify-center mb-6">
                     <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
@@ -473,20 +467,18 @@
                 </div>
                 <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse text-center leading-relaxed">
                     Radar Atlivio Conectado<br>
-                    <span class="text-[10px] text-gray-400 font-bold tracking-normal">Procurando clientes ao seu redor...</span>
+                    <span class="text-[10px] text-gray-400 font-bold tracking-normal">Aguardando V22...</span>
                 </p>
             </div>
         </div>
 
         <div id="pview-ativos" class="hidden space-y-3">
-            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
             <div id="lista-chamados-ativos">
                 <p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>
             </div>
         </div>
 
         <div id="pview-historico" class="hidden space-y-3">
-            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus trabalhos concluídos</p>
             <div id="lista-chamados-historico">
                 <p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>
             </div>
