@@ -385,7 +385,9 @@ export async function recusarPedidoReq(orderId) {
     try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
 }
 
+// ============================================================================
 // EXPOSIÇÃO GLOBAL
+// ============================================================================
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
