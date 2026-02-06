@@ -408,7 +408,20 @@
                             </div>
                         </div>
                     </div>
-                </div> <div id="servicos-prestador" class="hidden">
+
+                    <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+                        <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
+                        <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
+                        <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+                    </div>
+
+                    <div id="view-contratar">
+                        <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3 pb-24"></div>
+                    </div>
+                    <div id="view-andamento" class="hidden"><div id="meus-pedidos-andamento"></div></div>
+                    <div id="view-historico" class="hidden"><div id="meus-pedidos-historico"></div></div>
+                </div>
+                 <div id="servicos-prestador" class="hidden"></div>
                 
                     <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
                         <div class="flex items-center gap-3">
