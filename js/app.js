@@ -34,8 +34,6 @@ window.switchTab = function(tabName) {
     const alvo = document.getElementById(`sec-${tabName}`);
     if(alvo) {
         alvo.classList.remove('hidden');
-    } else {
-        console.warn(`⚠️ Seção sec-${tabName} não encontrada.`);
     }
 
     // 3. Atualiza os botões do menu (Visual)
@@ -46,18 +44,25 @@ window.switchTab = function(tabName) {
 
     const activeBtn = document.getElementById(`tab-${tabName}`);
     if(activeBtn) {
-        activeBtn.classList.remove('border-transparent', 'text-gray-400');
         activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
     }
 
-    // 4. 🔥 GATILHOS DE CARREGAMENTO (AUTO-LOAD)
-    if(tabName === 'servicos' && window.carregarServicos) window.carregarServicos();
+    // 4. 🔥 GATILHOS DE CARREGAMENTO E PROTEÇÃO DO RADAR
+    if(tabName === 'servicos') {
+        if(window.carregarServicos) window.carregarServicos();
+        
+        // Se entrar na aba de serviços, garante que o Radar V12 não seja limpo por "lixo"
+        const toggle = document.getElementById('online-toggle');
+        if(toggle && toggle.checked && window.iniciarRadarPrestador) {
+            window.iniciarRadarPrestador();
+        }
+    }
+    
     if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
     if(tabName === 'chat' && window.carregarChat) window.carregarChat();
 };
-
 window.switchServiceSubTab = function(subTab) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const el = document.getElementById(`view-${t}`);
