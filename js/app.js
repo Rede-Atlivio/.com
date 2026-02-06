@@ -119,35 +119,38 @@ window.carregarInterface = async (user) => {
 };
 auth.onAuthStateChanged(async (user) => {
     if (user) {
-        // 🛡️ TRAVA DE SEGURANÇA: Verifica banimento antes de mostrar o app
+        console.log("🔐 Autenticado com Sucesso V12");
+
+        // 🛡️ Trava de Segurança Antecipada
         if (window.verificarSentenca) {
             const banido = await window.verificarSentenca(user.uid);
-            if (banido) return; // Para tudo aqui se estiver banido
+            if (banido) return; 
         }
 
-        console.log("👤 Usuário online:", user.uid);
-
-        // --- 🔔 ATIVAÇÃO DO CRM DE NOTIFICAÇÕES ---
+        // 🔔 CRM de Notificações
         if (typeof window.iniciarSistemaNotificacoes === 'function') {
-            try {
-                window.iniciarSistemaNotificacoes();
-            } catch (err) {
-                console.error("Erro ao iniciar notificações:", err);
-            }
+            window.iniciarSistemaNotificacoes();
         }
-        // ------------------------------------------
 
-        // Inicia sistemas dependentes de usuário
-        checkOnboarding(user); 
+        // 🎁 Fluxos de Boas-vindas
+        if (typeof checkOnboarding === 'function') {
+            checkOnboarding(user); 
+        }
         
-        // Inicia monitoramento da carteira
-        if(iniciarMonitoramentoCarteira) iniciarMonitoramentoCarteira();
+        // 💰 Monitoramento Financeiro
+        if (typeof iniciarMonitoramentoCarteira === 'function') {
+            iniciarMonitoramentoCarteira();
+        }
         
-        // Chama a interface unificada (Ação que resolve o seu problema)
+        // 🖥️ Montagem da Interface (Garante que o lixo antigo seja limpo)
         window.carregarInterface(user);
+
     } else {
-        // Garantia de reset caso deslogue
+        console.log("🚪 Usuário Desconectado.");
         document.getElementById('auth-container')?.classList.remove('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
+        
+        // Desliga o Radar fisicamente para evitar processos em background
+        if (window.pararRadarFisico) window.pararRadarFisico();
     }
 });
