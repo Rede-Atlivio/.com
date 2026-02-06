@@ -241,63 +241,85 @@ function createRequestCard(pedido) {
     const taxa = valor * (config.porcentagem_reserva / 100);
     const distance = pedido.location || "Local não informado";
 
+    function createRequestCard(pedido) {
+    const container = document.getElementById('radar-container');
+    if (!container) return;
+
+    // ⛔ OFFLINE GUARD
+    const toggleOnline = document.getElementById('online-toggle');
+    if (toggleOnline && !toggleOnline.checked) return;
+
+    // 1. Evita duplicidade
+    if (document.getElementById(`req-${pedido.id}`)) return;
+
+    // 2. Limite de Stack (5)
+    if (container.children.length >= 5) {
+        const oldest = container.firstElementChild;
+        if (oldest) oldest.remove();
+    }
+
+    // 3. Som
+    const audio = document.getElementById('notification-sound');
+    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
+
+    const config = window.CONFIG_FINANCEIRA || { taxa: 0.20 };
+    const valor = parseFloat(pedido.offer_value || 0);
+    const taxa = valor * config.taxa;
+    const lucro = valor - taxa;
+
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = "request-card"; 
+    // 🔥 CORREÇÃO VISUAL: Classes de Card, não de Modal
+    card.className = "bg-white border border-gray-100 rounded-xl shadow-sm p-4 mb-3 animate-slideInLeft relative overflow-hidden";
     
+    // O HTML AGORA SEGUE O PADRÃO DA IMAGEM 02 (CLEAN)
     card.innerHTML = `
-        <div class="card-details p-4">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
-                    <h3 class="text-xl font-black text-slate-800 mt-1">${pedido.service_title}</h3>
-                </div>
-                <div class="text-right">
-                    <h2 class="text-2xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
-                    <p class="text-[9px] text-gray-400 font-bold">Taxa: R$ ${taxa.toFixed(2)}</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-2 text-gray-500 text-xs mb-4 bg-gray-50 p-2 rounded-lg">
-                <span>📍</span>
-                <span class="font-bold truncate">${distance}</span>
-            </div>
+        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
 
-            <div class="grid grid-cols-4 gap-2">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="col-span-1 bg-red-50 text-red-500 rounded-lg font-bold text-xs py-3 hover:bg-red-100 transition">✖</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-lg font-black text-xs uppercase py-3 shadow-lg hover:bg-blue-700 transition transform active:scale-95">ACEITAR AGORA</button>
-                <button onclick="window.minimizarPedido('${pedido.id}')" class="col-span-1 bg-gray-100 text-gray-500 rounded-lg font-bold text-xs py-3 hover:bg-gray-200 transition" title="Minimizar">_</button>
+        <div class="flex justify-between items-start mb-3 pl-2">
+            <div>
+                <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wide">Nova Solicitação</span>
+                <h3 class="text-lg font-black text-slate-800 mt-1 leading-tight">${pedido.service_title || 'Serviço Geral'}</h3>
+                <p class="text-[10px] text-gray-400 font-bold mt-0.5 flex items-center gap-1">
+                   📍 ${pedido.location || 'Local a combinar'}
+                </p>
             </div>
-            
-            <div class="h-1 w-full bg-gray-100 mt-2 rounded overflow-hidden">
-                <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+            <div class="text-right">
+                <h2 class="text-2xl font-black text-slate-800">R$ ${valor.toFixed(0)}</h2>
+                <p class="text-[10px] text-red-400 font-bold">Taxa: -R$ ${taxa.toFixed(2)}</p>
+                <p class="text-[10px] text-green-600 font-black">Lucro: R$ ${lucro.toFixed(2)}</p>
             </div>
         </div>
 
-        <div class="card-summary hidden items-center justify-between p-3 w-full h-full" onclick="window.minimizarPedido('${pedido.id}')">
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 truncate w-32">${pedido.service_title}</span>
-            </div>
-            <span class="text-xs font-black text-green-600">R$ ${valor.toFixed(0)}</span>
+        <div class="grid grid-cols-2 gap-3 pl-2">
+            <button onclick="window.recusarPedidoReq('${pedido.id}')" 
+                class="bg-slate-100 text-slate-500 rounded-lg font-bold text-xs py-3 hover:bg-slate-200 transition uppercase">
+                ✖ Recusar
+            </button>
+            <button onclick="window.aceitarPedidoRadar('${pedido.id}')" 
+                class="bg-green-500 text-white rounded-lg font-black text-xs py-3 shadow-md hover:bg-green-600 transition transform active:scale-95 uppercase flex items-center justify-center gap-2">
+                <span>✔ Aceitar</span>
+            </button>
+        </div>
+        
+        <div class="absolute bottom-0 left-0 h-1 bg-gray-100 w-full">
+            <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
         </div>
     `;
 
-    container.appendChild(card);
+    // INSERE NO TOPO DA LISTA (Empilhamento correto)
+    container.prepend(card);
 
-    // ⏱️ TIMER AUTOMÁTICO (30 SEGUNDOS)
-    // Inicia a animação da barra
+    // ⏱️ TIMER
     setTimeout(() => {
         const timerBar = document.getElementById(`timer-${pedido.id}`);
         if(timerBar) timerBar.style.width = '0%';
     }, 100);
 
-    // Minimiza após 30s
+    // Auto-rejeição após 30s
     setTimeout(() => {
-        const currentCard = document.getElementById(`req-${pedido.id}`);
-        // Só minimiza se ainda existir e não tiver sido interagido
-        if (currentCard && !currentCard.classList.contains('minimized')) {
-            window.minimizarPedido(pedido.id);
+        if (document.getElementById(`req-${pedido.id}`)) {
+             window.recusarPedidoReq(pedido.id);
         }
     }, 30000);
 }
