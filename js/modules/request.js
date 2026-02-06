@@ -133,7 +133,8 @@ function atualizarVisualModal() {
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const ofertaSegura = parseFloat(mem_CurrentOffer) || 0;
 
-    if(inputValor) inputValor.value = ofertaSegura.toFixed(2).replace('.', ','); 
+    // CORREÇÃO: Input type="number" exige PONTO. Não use vírgula aqui.
+    if(inputValor) inputValor.value = ofertaSegura.toFixed(2); 
     
     const valorReserva = ofertaSegura * (config.porcentagem_reserva / 100);
     const elTotal = document.getElementById('calc-total-reserva');
