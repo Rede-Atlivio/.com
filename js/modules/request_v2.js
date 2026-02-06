@@ -449,3 +449,10 @@ window.iniciarRadarPrestador = iniciarRadarPrestador;
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
 window.pararRadarFisico = window.pararRadarFisico; // Fix para garantir acesso
+/** * 🛡️ BLINDAGEM CONTRA SCRIPT FANTASMA
+ * Neutraliza funções obsoletas que possam estar presas no cache do navegador.
+ */
+window.atualizarRadar = function() { 
+    console.warn("🛡️ Uma função fantasma (atualizarRadar) tentou rodar e foi bloqueada pela V12.");
+    return false; 
+};
