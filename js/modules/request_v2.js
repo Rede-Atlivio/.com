@@ -13,13 +13,6 @@ let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
 let mem_SelectedServiceTitle = ""; 
 
-// --- GATILHOS ---
-auth.onAuthStateChanged(user => {
-    if (user) {
-        iniciarRadarPrestador(user.uid);
-    }
-});
-
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
