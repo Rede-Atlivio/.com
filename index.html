@@ -66,59 +66,60 @@
         }
 
    /* ============================================================
-           RADAR VISUAL V12 (VISUAL DARK BLUE ORIGINAL - IMAGEM 1)
-           ============================================================ */
+      RADAR VISUAL V12 - SISTEMA MULTI-OFERTAS
+      ============================================================ */
 
-        /* 1. O CONTAINER RADAR V12 (Empilhamento Fluido) */
+        /* 1. CONTAINER FLUIDO */
         #radar-container {
             display: flex;
-            flex-direction: column; /* Mais novos aparecem primeiro se usar prepend no JS */
-            gap: 12px;
+            flex-direction: column;
+            gap: 10px;
             width: 100%;
             max-width: 400px;
             margin: 0 auto;
             z-index: 8000;
-            padding-bottom: 20px;
+            padding: 10px 0;
         }
 
-        /* AJUSTE PARA O CARD MINIMIZADO NÃO SUMIR DA TELA */
+        /* 2. O CARD PADRÃO (DARK BLUE) */
+        .request-card {
+            pointer-events: auto;
+            background-color: #0f172a !important; /* Azul Noturno */
+            border: 1px solid #1e3a8a;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInDown 0.4s ease-out;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        /* 3. O CARD MINIMIZADO (MODO LISTA) */
         .request-card.minimized {
             height: 65px !important;
             min-height: 65px !important;
             background-color: #1e293b !important;
             border-left: 4px solid #f59e0b !important;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 16px !important;
             opacity: 0.95;
             transform: scale(0.98);
-        }
-        /* 2. O CARD (Idêntico à Imagem 1: Azul Escuro, Sem borda lateral verde) */
-        .request-card {
-            pointer-events: auto;
-            background-color: #0f172a; /* Azul Noturno Profundo (Slate 900) */
-            border: 1px solid #1e3a8a; /* Borda Azul Sutil */
-            border-radius: 16px; /* Cantos bem arredondados */
-            box-shadow: 0 0 25px rgba(15, 23, 42, 0.8), 0 4px 10px rgba(0,0,0,0.5); /* Sombra Profunda */
-            color: white;
-            transition: all 0.3s ease;
-            animation: slideInDown 0.4s ease-out;
-            position: relative;
-            z-index: 9001;
-            overflow: hidden;
-        }
-
-        /* CARD MINIMIZADO (Modo Espera) */
-        .request-card.minimized {
-            height: 50px;
-            background-color: #1e293b; /* Um pouco mais claro */
-            border-left: 4px solid #f59e0b; /* Indicador Laranja apenas quando minimizado */
-            display: flex;
-            align-items: center;
-            padding: 0 16px;
             cursor: pointer;
         }
 
+        /* Esconde detalhes quando minimizado */
+        .request-card.minimized [id^="detalhes-"], 
+        .request-card.minimized .card-details { 
+            display: none !important; 
+        }
+
+        /* Animações */
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        .request-card.removing { animation: slideOutRight 0.3s ease-in forwards; }
+        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
         .request-card.minimized .card-details { display: none; }
         .request-card .card-summary { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
