@@ -213,12 +213,14 @@ export async function iniciarRadarPrestador(uid) {
 }
 // 👇 LÓGICA DE MINIMIZAR (COLE ANTES DA FUNÇÃO createRequestCard)
 window.alternarMinimizacao = (id) => {
+    const cardPai = document.getElementById(`req-${id}`);
     const detalhes = document.getElementById(`detalhes-${id}`);
     const btn = document.getElementById(`btn-min-${id}`);
     
-    if (detalhes) {
-        const estaEscondido = detalhes.classList.toggle('hidden');
-        if(btn) btn.innerHTML = estaEscondido ? "+" : "&minus;"; // Troca ícone
+    if (cardPai && detalhes) {
+        const estaMinimizado = cardPai.classList.toggle('minimized');
+        detalhes.classList.toggle('hidden');
+        if(btn) btn.innerHTML = estaMinimizado ? "+" : "&minus;";
     }
 };
 function createRequestCard(pedido) {
