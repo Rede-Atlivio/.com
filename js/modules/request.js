@@ -343,7 +343,10 @@ export async function aceitarPedidoRadar(orderId) {
     const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
 
     // A mágica: Pergunta ao wallet.js se tem dinheiro
-    if (!window.podeTrabalhar(taxaEstimada)) {
+    if (!podeTrabalhar(taxaEstimada)) {
+    removeRequestCard(orderId);
+    return;
+}
         // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
         removeRequestCard(orderId);
         return;
