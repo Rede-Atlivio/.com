@@ -327,36 +327,38 @@ export async function confirmarAcordo(orderId, aceitar) {
     const orderRef = doc(db, "orders", orderId);
 
     try {
-        // --- 1. CONFIGURAÇÕES FINANCEIRAS (Leitura do Cache ou Padrão) ---
-        // 🛡️ CORREÇÃO V11: Fallback inteligente -> Se não tem regra específica, usa a geral (10%)
-        const configPadrao = { porcentagem_reserva: 10, porcentagem_reserva_cliente: 10, limite_divida: 0 };
-        const config = window.configFinanceiroAtiva || configPadrao;
+        // --- 1. CONFIGURAÇÕES FINANCEIRAS (SEM FALLBACK DE 10%) ---
+        // Se não tiver config carregada, assume tudo ZERO.
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0, limite_divida: 0 };
         
         // --- 2. TRAVA PRELIMINAR DE UI (CLIENTE) ---
-        // Se já sabemos que o user é cliente e está negativo, nem abrimos a transação pesada
         const userMem = window.userProfile || {};
+        
+        // Verifica se é o Cliente tentando aceitar
         if (userMem.uid === uid && userMem.wallet_balance !== undefined) {
-             // Se não for prestador (ou seja, é cliente)
              const orderPreSnap = await getDoc(orderRef);
+             
+             // Se o usuário atual NÃO é o prestador do pedido, então é o Cliente
              if(orderPreSnap.exists() && orderPreSnap.data().provider_id !== uid) {
                  const valorTotal = parseFloat(orderPreSnap.data().offer_value || 0);
                  
-                // 🛡️ CORREÇÃO DEFINITIVA V12: Lógica que aceita ZERO como valor válido
+                 // 🛡️ CORREÇÃO REAL: Prioridade para a taxa específica, depois a geral.
+                 // Lógica: Se for undefined/null/vazio, tenta o próximo. Se for 0, É ZERO.
                  let taxaCli = config.porcentagem_reserva_cliente;
                  
-                 // Se for indefinido ou vazio, aí sim busca o geral. Se for 0, ele MANTÉM 0.
                  if (taxaCli === undefined || taxaCli === null || taxaCli === "") {
                      taxaCli = config.porcentagem_reserva;
                  }
-                 // Se ainda assim não tiver nada, usa 10
+                 // Se no final de tudo não tiver regra, define como ZERO (e não 10)
                  if (taxaCli === undefined || taxaCli === null || taxaCli === "") {
-                     taxaCli = 10;
+                     taxaCli = 0; 
                  }
                  
                  taxaCli = parseFloat(taxaCli);
                  
                  const precisa = valorTotal * (taxaCli / 100);
                  
+                 // Só bloqueia se realmente precisar de dinheiro (> 0) e não tiver saldo
                  if (precisa > 0 && parseFloat(userMem.wallet_balance) < precisa) {
                      alert(`⛔ SALDO INSUFICIENTE\n\nVocê precisa de R$ ${precisa.toFixed(2)} em conta para cobrir a garantia de proteção (${taxaCli}%).\nRecarregue sua carteira.`);
                      if(window.switchTab) window.switchTab('ganhar');
@@ -364,6 +366,96 @@ export async function confirmarAcordo(orderId, aceitar) {
                  }
              }
         }
+
+        // --- 3. OPERAÇÃO BLINDADA NO BANCO DE DADOS ---
+        let vaiFecharAgora = false;
+        await runTransaction(db, async (transaction) => {
+            // === 1. LEITURAS (READS) ===
+            const freshOrderSnap = await transaction.get(orderRef);
+            if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
+            const freshOrder = freshOrderSnap.data();
+
+            const clientRef = doc(db, "usuarios", freshOrder.client_id);
+            const clientSnap = await transaction.get(clientRef);
+            if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
+
+            // Lê a config direto do banco para garantir que não é cache velho
+            const configRef = doc(db, "settings", "financeiro");
+            const configSnap = await transaction.get(configRef);
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0 };
+
+            // === 2. LÓGICA (PROCESSAMENTO) ===
+            const isMeProvider = uid === freshOrder.provider_id;
+            const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
+            const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
+            vaiFecharAgora = oOutroJaConfirmou;
+
+            // === 3. ESCRITAS (WRITES) ===
+            transaction.update(orderRef, campoUpdate);
+
+            // SE OS DOIS ACEITARAM -> EXECUTA A CUSTÓDIA
+            if (vaiFecharAgora) {
+                const saldoClient = parseFloat(clientSnap.data()?.wallet_balance || 0);
+                
+                // Cálculo da taxa final usando os dados frescos do banco
+                let taxaClienteAdmin = configData.porcentagem_reserva_cliente;
+                if (taxaClienteAdmin === undefined || taxaClienteAdmin === null) {
+                    taxaClienteAdmin = configData.porcentagem_reserva;
+                }
+                // Se não tiver, é zero.
+                if (taxaClienteAdmin === undefined || taxaClienteAdmin === null) {
+                    taxaClienteAdmin = 0;
+                }
+                taxaClienteAdmin = parseFloat(taxaClienteAdmin);
+                
+                const valorPedido = parseFloat(freshOrder.offer_value || 0);
+                const valorCofre = valorPedido * (taxaClienteAdmin / 100);
+
+                if (valorCofre > 0) {
+                    if (saldoClient < valorCofre) {
+                        throw `O Cliente não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)} (${taxaClienteAdmin}%).`;
+                    }
+
+                    // 💸 Tira do Saldo -> Põe na Reserva
+                    transaction.update(clientRef, {
+                        wallet_balance: saldoClient - valorCofre,
+                        wallet_reserved: (parseFloat(clientSnap.data()?.wallet_reserved || 0) + valorCofre)
+                    });
+                }
+
+                // Atualiza status do pedido
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    status: 'confirmed_hold',
+                    value_reserved: valorCofre,
+                    confirmed_at: serverTimestamp()
+                });
+
+                // Mensagem no chat
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} em garantia.` : 'Taxa zero aplicada. Garantia isenta.'} Contato liberado!`,
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
+        });
+
+        if(vaiFecharAgora) {
+            alert("✅ Acordo Fechado! O serviço pode começar.");
+        } else {
+            alert("✅ Confirmado! Aguardando a outra parte aceitar.");
+        }
+
+    } catch(e) { 
+        console.error("Erro no acordo:", e);
+        if(String(e).includes("Cliente não possui saldo") || String(e).includes("insuficiente")) {
+            alert("⛔ FALHA NO FECHAMENTO\n\n" + e + "\n\nO acordo não foi fechado.");
+        } else {
+            alert("⚠️ Falha: " + e);
+        }
+    }
+}
 
         // --- 3. OPERAÇÃO BLINDADA NO BANCO DE DADOS ---
         let vaiFecharAgora = false;
