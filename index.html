@@ -123,19 +123,14 @@
         .request-card.minimized .card-details { display: none; }
         .request-card .card-summary { display: flex; width: 100%; justify-content: space-between; align-items: center; }
 
-        /* Animações de Entrada e Saída */
-        .request-card.removing {
-            animation: slideOutRight 0.3s ease-in forwards;
-        }
-
-        @keyframes slideInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideOutRight {
-            to { transform: translateX(100%); opacity: 0; }
-        }
+       /* ANIMAÇÕES V12 - SISTEMA FLUIDO */
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
+        .request-card.removing { animation: slideOutRight 0.4s ease-in forwards; }
+        
+        /* Ajuste de profundidade para Multi-Ofertas */
+        #radar-container > div:nth-child(1) { z-index: 50; }
+        #radar-container > div:nth-child(2) { z-index: 40; opacity: 0.9; transform: scale(0.98); }
 
         /* 3. ELEMENTOS INTERNOS (Forçando Cores da Imagem 1 via CSS) */
         
