@@ -203,13 +203,26 @@
 
         window.switchProviderSubTab = function(subTab) {
             ['radar', 'ativos', 'historico'].forEach(t => {
-                document.getElementById(`pview-${t}`).classList.add('hidden');
-                document.getElementById(`ptab-${t}-btn`).classList.remove('active');
+                const el = document.getElementById(`pview-${t}`);
+                if(el) el.classList.add('hidden');
+                const btn = document.getElementById(`ptab-${t}-btn`);
+                if(btn) btn.classList.remove('active');
             });
-            document.getElementById(`pview-${subTab}`).classList.remove('hidden');
-            document.getElementById(`ptab-${subTab}-btn`).classList.add('active');
+            
+            const target = document.getElementById(`pview-${subTab}`);
+            if(target) target.classList.remove('hidden');
+            const targetBtn = document.getElementById(`ptab-${subTab}-btn`);
+            if(targetBtn) targetBtn.classList.add('active');
+
+            // Se sair da aba Radar, desliga o ouvinte para não gastar dados nem "tocar" em background
+            if(subTab !== 'radar' && window.pararRadarFisico) {
+                window.pararRadarFisico();
+            } else if(subTab === 'radar' && window.iniciarRadarPrestador) {
+                // Se voltar para a aba radar e o switch estiver ON, ele religa
+                const toggle = document.getElementById('online-toggle');
+                if(toggle && toggle.checked) window.iniciarRadarPrestador(null); 
+            }
         };
-        
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
     </script>
 </head>
