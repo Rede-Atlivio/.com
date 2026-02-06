@@ -64,7 +64,71 @@
         .animate-bounce-subtle {
             animation: bounce-subtle 2s infinite;
         }
+
+        /* 📡 RADAR STACK V10.0 - ESTILO DOS CARDS FLUTUANTES */
+        #radar-container {
+            position: fixed;
+            top: 70px; /* Logo abaixo do Header */
+            left: 0;
+            width: 100%;
+            z-index: 9000; /* Alto, mas abaixo de Modais (9999) */
+            pointer-events: none; /* IMPORTANTE: Permite clicar no mapa "através" do container vazio */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+        }
+
+        .request-card {
+            pointer-events: auto; /* O Card em si é clicável */
+            background: white;
+            width: 95%;
+            max-width: 400px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border-left: 5px solid #2563eb; /* Azul Padrão */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInDown 0.4s ease-out;
+            position: relative;
+            z-index: 9001;
+            overflow: hidden; /* Para esconder conteúdo ao minimizar */
+        }
+
+        .request-card.minimized {
+            height: 48px; /* Altura da barra compacta */
+            background: #f8fafc;
+            border-left-color: #f59e0b; /* Laranja (Em Espera) */
+            transform: scale(0.98);
+            opacity: 0.95;
+            cursor: pointer;
+        }
+        
+        /* Oculta detalhes quando minimizado */
+        .request-card.minimized .card-details {
+            display: none;
+        }
+        
+        /* Mostra apenas o resumo quando minimizado */
+        .request-card .card-summary {
+            display: flex; /* Flex para alinhar ícone e texto */
+        }
+
+        .request-card.removing {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideOutRight {
+            to { transform: translateX(100%); opacity: 0; }
+        }
     </style>
+
+    <script>
 
     <script>
     window.switchTab = function(tabName) {
@@ -126,6 +190,8 @@
     </script>
 </head>
 <body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
+
+    <div id="radar-container"></div>
 
     <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
     <audio id="online-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
@@ -213,10 +279,14 @@
         </div>
     </div>
 
-    <div id="upload-overlay" class="hidden fixed inset-0 bg-slate-900 bg-opacity-95 z-50 flex flex-col items-center justify-center text-white">
-        <div class="loader mb-4"></div>
-        <h3 class="font-black uppercase italic text-xl animate-pulse">Processando...</h3>
+    <div id="transition-overlay" class="hidden fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center text-white">
+    <div class="relative flex h-24 w-24 items-center justify-center mb-6">
+        <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
+        <span class="relative inline-flex rounded-full h-16 w-16 bg-blue-600 items-center justify-center text-3xl shadow-xl">🔄</span>
     </div>
+    <h2 class="text-xl font-black uppercase italic tracking-tighter animate-pulse">Alternando Perfil...</h2>
+    <p class="text-[10px] text-gray-400 font-bold uppercase mt-2">Sincronizando sua carteira Atlivio</p>
+</div>
 
     <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
         
