@@ -65,67 +65,62 @@
             animation: bounce-subtle 2s infinite;
         }
 
-        /* 📡 RADAR STACK V10.0 - ESTILO DOS CARDS FLUTUANTES */
+   /* ============================================================
+           RADAR DOPAMINA V11 (DARK NEON STACK)
+           ============================================================ */
+
+        /* 1. O CONTAINER (PILHA VERTICAL) */
         #radar-container {
             position: fixed;
-            top: 70px; /* Logo abaixo do Header */
+            top: 127px !important; /* 📏 CORREÇÃO ROBÔ 21 (Header 117px + 10px) */
             left: 0;
-            width: 100%;
-            z-index: 9000; /* Alto, mas abaixo de Modais (9999) */
-            pointer-events: none; /* IMPORTANTE: Permite clicar no mapa "através" do container vazio */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            padding: 10px;
-        }
-
-        .request-card {
-            pointer-events: auto; /* O Card em si é clicável */
-            background: white;
+            right: 0;
             width: 95%;
-            max-width: 400px;
+            max-width: 500px;
+            margin: 0 auto;
+            z-index: 8000; /* Abaixo do Modal, Acima do Conteúdo */
+            display: flex;
+            flex-direction: column; /* Empilha um embaixo do outro */
+            gap: 12px; /* Espaço entre os cards */
+            pointer-events: none; /* Permite clicar no site atrás (nos espaços vazios) */
+            padding-bottom: 20px;
+        }
+
+        /* 2. O CARD (VISUAL DARK NEON) */
+        .request-card {
+            background-color: #0f172a; /* Azul Noturno Profundo */
+            border: 1px solid #1e293b; /* Borda Sutil */
+            border-left: 4px solid #22c55e; /* Indicador Neon Verde */
             border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-            border-left: 5px solid #2563eb; /* Azul Padrão */
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            animation: slideInDown 0.4s ease-out;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 0 15px rgba(34, 197, 94, 0.1); /* Sombra + Glow Verde */
+            color: #f8fafc; /* Texto Branco Gelo */
+            pointer-events: auto; /* Reativa o clique no card */
+            overflow: hidden;
             position: relative;
-            z-index: 9001;
-            overflow: hidden; /* Para esconder conteúdo ao minimizar */
+            animation: slideInDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Entrada Elástica */
+            transition: all 0.3s ease;
         }
 
-        .request-card.minimized {
-            height: 48px; /* Altura da barra compacta */
-            background: #f8fafc;
-            border-left-color: #f59e0b; /* Laranja (Em Espera) */
-            transform: scale(0.98);
-            opacity: 0.95;
-            cursor: pointer;
-        }
-        
-        /* Oculta detalhes quando minimizado */
-        .request-card.minimized .card-details {
-            display: none;
-        }
-        
-        /* Mostra apenas o resumo quando minimizado */
-        .request-card .card-summary {
-            display: flex; /* Flex para alinhar ícone e texto */
-        }
-
-        .request-card.removing {
-            animation: slideOutRight 0.3s ease-in forwards;
-        }
-
+        /* Animação de Entrada */
         @keyframes slideInDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
-        @keyframes slideOutRight {
-            to { transform: translateX(100%); opacity: 0; }
-        }
+        /* Barra de Tempo (Timer) */
+        .timer-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); /* Verde -> Amarelo -> Vermelho */
+            width: 100%;
+            transform-origin: left;
+            transition: width 1s linear;
+        }     
     </style>
 
     <script>
