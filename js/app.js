@@ -104,12 +104,11 @@ window.carregarInterface = async (user) => {
     }
 
     // Carrega o Radar de Pedidos Pendentes (SISTEMA NOVO V12)
+    // ✅ CORREÇÃO APLICADA: Chama a função certa do request_v2.js
     if (typeof window.iniciarRadarPrestador === 'function') {
-    // Só inicia se o botão "Online" estiver ligado (lógica interna da função cuida disso)
-    window.iniciarRadarPrestador(user.uid);
-  }
+        window.iniciarRadarPrestador(user.uid);
+    }
 };
-
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         // 🛡️ TRAVA DE SEGURANÇA: Verifica banimento antes de mostrar o app
