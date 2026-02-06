@@ -474,32 +474,6 @@ document.addEventListener('change', async (e) => {
     }
 });
 
-function iniciarRadarPrestador(uid) {
-    const radarContainer = document.getElementById('pview-radar'); if(!radarContainer) return;
-    const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    onSnapshot(q, (snap) => {
-        const toggle = document.getElementById('online-toggle'); if(toggle && !toggle.checked) return;
-        radarContainer.innerHTML = "";
-        if (snap.empty) { 
-    radarContainer.innerHTML = `
-        <div class="flex flex-col items-center justify-center py-10">
-            <div class="relative flex h-32 w-32 items-center justify-center mb-4">
-                <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
-                <div class="animate-ping absolute inline-flex h-24 w-24 rounded-full bg-blue-500 opacity-40 animation-delay-500"></div>
-                <span class="relative inline-flex rounded-full h-16 w-16 bg-white border-4 border-blue-600 items-center justify-center text-3xl shadow-xl z-10">📡</span>
-            </div>
-            <p class="text-xs font-black uppercase tracking-widest text-blue-900 animate-pulse">Procurando Clientes...</p>
-        </div>`; 
-    return; 
-}
-        document.getElementById('notification-sound')?.play().catch(()=>{}); if(navigator.vibrate) navigator.vibrate([500, 200, 500]);
-        snap.forEach(d => {
-            const pedido = d.data(); const taxa = pedido.offer_value * TAXA_PLATAFORMA; const liquido = pedido.offer_value - taxa;
-            radarContainer.innerHTML += `<div class="bg-slate-900 text-white p-6 rounded-2xl shadow-2xl mb-4 border-2 border-blue-500 animate-fadeIn relative overflow-hidden"><div class="relative z-10 text-center"><div class="bg-blue-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase inline-block mb-3 animate-pulse">Nova Solicitação</div><h2 class="text-4xl font-black text-white mb-1">R$ ${pedido.offer_value}</h2><div class="flex justify-center gap-4 text-[10px] text-gray-400 mb-4 bg-slate-800/50 p-2 rounded"><span>Taxa Futura: <b class="text-red-400">-R$ ${taxa.toFixed(2)}</b></span><span>Seu Lucro: <b class="text-green-400">R$ ${liquido.toFixed(2)}</b></span></div><div class="bg-slate-800 p-3 rounded-xl mb-6 text-left border border-slate-700"><p class="font-bold text-sm text-white">👤 ${pedido.client_name}</p><p class="text-xs text-gray-300">📍 ${pedido.location}</p><p class="text-xs text-gray-300">📅 ${pedido.service_date} às ${pedido.service_time}</p></div><div class="grid grid-cols-2 gap-3"><button onclick="responderPedido('${d.id}', false)" class="bg-slate-700 text-gray-300 py-4 rounded-xl font-black uppercase text-xs hover:bg-slate-600">✖ Recusar</button><button onclick="responderPedido('${d.id}', true, ${pedido.offer_value})" class="bg-green-500 text-white py-4 rounded-xl font-black uppercase text-xs shadow-lg hover:bg-green-600">✔ ACEITAR</button></div></div></div>`;
-        });
-    });
-}
-
 window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
     if(!aceitar) { await updateDoc(doc(db, "orders", orderId), { status: 'rejected' }); } 
     else {
