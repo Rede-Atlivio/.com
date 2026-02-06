@@ -322,6 +322,7 @@ function createRequestCard(pedido) {
              window.recusarPedidoReq(pedido.id);
         }
     }, 30000);
+ }
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
