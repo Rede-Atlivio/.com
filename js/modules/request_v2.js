@@ -408,3 +408,7 @@ window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
+
+// 👇 NECESSÁRIO PARA O SISTEMA V12 (BOTÕES E TIMER) 👇
+if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
+if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
