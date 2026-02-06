@@ -18,25 +18,30 @@ let mem_SelectedServiceTitle = "";
 // ============================================================================
 function garantirContainerRadar() {
     let container = document.getElementById('radar-container');
-    
-    // Se o container não existe, VAMOS CRIAR ELE NA MARRA
-    if (!container) {
-        console.warn("⚠️ Container Radar sumiu! Recriando estrutura...");
-        const parent = document.getElementById('pview-radar');
-        
-        if (parent) {
-            // Limpa qualquer lixo (como o texto "Procurando...")
-            parent.innerHTML = ''; 
-            
-            container = document.createElement('div');
-            container.id = 'radar-container';
-            // Força o CSS via JS para garantir que nada quebre
-            container.style.cssText = "display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; z-index: 8000; padding: 10px 0;";
-            parent.appendChild(container);
-        } else {
-            console.error("❌ ERRO FATAL: Aba 'pview-radar' não encontrada no HTML.");
-        }
+    const parent = document.getElementById('pview-radar');
+    const emptyState = document.getElementById('radar-empty-state');
+
+    if (!parent) {
+        console.error("❌ ERRO FATAL: Aba 'pview-radar' não encontrada.");
+        return null;
     }
+
+    // Se o container não existe, recria ele de forma limpa
+    if (!container) {
+        console.warn("🏗️ Recriando radar-container...");
+        container = document.createElement('div');
+        container.id = 'radar-container';
+        container.style.cssText = "display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; z-index: 8000; position: relative; padding: 10px 0;";
+        parent.prepend(container); 
+    }
+
+    // Controle do Empty State (Texto "Procurando Clientes")
+    if (container.children.length > 0) {
+        if (emptyState) emptyState.classList.add('hidden');
+    } else {
+        if (emptyState) emptyState.classList.remove('hidden');
+    }
+
     return container;
 }
 
