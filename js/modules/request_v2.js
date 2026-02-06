@@ -188,22 +188,49 @@ export async function enviarPropostaAgora() {
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (STACK + OFFLINE GUARD)
+// 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
-export async function iniciarRadarPrestador(uid) {
+let radarUnsubscribe = null;
+
+export async function iniciarRadarPrestador(uidManual = null) {
+    const uid = uidManual || auth.currentUser?.uid;
+    if (!uid) return;
+
+    if (radarUnsubscribe) radarUnsubscribe();
+
     const configRef = doc(db, "settings", "financeiro");
-    onSnapshot(configRef, (docSnap) => {
-        if (docSnap.exists()) window.configFinanceiroAtiva = docSnap.data();
-    });
+    getDoc(configRef).then(s => { if(s.exists()) window.configFinanceiroAtiva = s.data(); });
 
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
-    onSnapshot(q, (snapshot) => {
+    
+    radarUnsubscribe = onSnapshot(q, (snapshot) => {
+        const toggle = document.getElementById('online-toggle');
+        if (toggle && !toggle.checked) {
+            window.pararRadarFisico();
+            return;
+        }
+
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
             if (change.type === "removed") removeRequestCard(change.doc.id);
         });
     });
 }
+
+window.pararRadarFisico = () => {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+        document.getElementById('radar-container').innerHTML = "";
+    }
+};
+
+auth.onAuthStateChanged(user => {
+    if (user) {
+        const toggle = document.getElementById('online-toggle');
+        if(toggle && toggle.checked) iniciarRadarPrestador(user.uid);
+    }
+});
 // 👇 LÓGICA DE MINIMIZAR (COLE ANTES DA FUNÇÃO createRequestCard)
 window.alternarMinimizacao = (id) => {
     const cardPai = document.getElementById(`req-${id}`);
