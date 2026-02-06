@@ -236,43 +236,20 @@ function createRequestCard(pedido) {
     const audio = document.getElementById('notification-sound');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
+    // Cálculos Financeiros Corretos
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * (config.porcentagem_reserva / 100);
-    const distance = pedido.location || "Local não informado";
-
-    function createRequestCard(pedido) {
-    const container = document.getElementById('radar-container');
-    if (!container) return;
-
-    // ⛔ OFFLINE GUARD
-    const toggleOnline = document.getElementById('online-toggle');
-    if (toggleOnline && !toggleOnline.checked) return;
-
-    // 1. Evita duplicidade
-    if (document.getElementById(`req-${pedido.id}`)) return;
-
-    // 2. Limite de Stack (5)
-    if (container.children.length >= 5) {
-        const oldest = container.firstElementChild;
-        if (oldest) oldest.remove();
-    }
-
-    // 3. Som
-    const audio = document.getElementById('notification-sound');
-    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
-
-    const config = window.CONFIG_FINANCEIRA || { taxa: 0.20 };
-    const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * config.taxa;
+    // Usa config.porcentagem_reserva do Firebase ou padrão 20%
+    const percentual = (config.porcentagem_reserva || 20) / 100;
+    const taxa = valor * percentual;
     const lucro = valor - taxa;
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    // 🔥 CORREÇÃO VISUAL: Classes de Card, não de Modal
+    // 🔥 CORREÇÃO VISUAL: Classes de Card
     card.className = "bg-white border border-gray-100 rounded-xl shadow-sm p-4 mb-3 animate-slideInLeft relative overflow-hidden";
     
-    // O HTML AGORA SEGUE O PADRÃO DA IMAGEM 02 (CLEAN)
+    // O HTML LIMPO E FUNCIONAL
     card.innerHTML = `
         <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
 
@@ -281,7 +258,7 @@ function createRequestCard(pedido) {
                 <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wide">Nova Solicitação</span>
                 <h3 class="text-lg font-black text-slate-800 mt-1 leading-tight">${pedido.service_title || 'Serviço Geral'}</h3>
                 <p class="text-[10px] text-gray-400 font-bold mt-0.5 flex items-center gap-1">
-                   📍 ${pedido.location || 'Local a combinar'}
+                    📍 ${pedido.location || 'Local a combinar'}
                 </p>
             </div>
             <div class="text-right">
@@ -322,7 +299,7 @@ function createRequestCard(pedido) {
              window.recusarPedidoReq(pedido.id);
         }
     }, 30000);
-}
+}   
 
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
