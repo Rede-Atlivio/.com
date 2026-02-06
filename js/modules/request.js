@@ -235,21 +235,27 @@ window.minimizarPedido = (orderId) => {
     const card = document.getElementById(`req-${orderId}`);
     if(!card) return;
 
+    const details = card.querySelector('.card-details');
+    const summary = card.querySelector('.card-summary');
+
     if(card.classList.contains('minimized')) {
-        // Maximizar
+        // Ação: MAXIMIZAR (Volta ao card completo)
         card.classList.remove('minimized');
-        card.querySelector('.card-details').style.display = 'block';
-        card.querySelector('.card-summary').classList.add('hidden');
-        card.querySelector('.card-summary').classList.remove('flex');
+        if(details) details.style.display = 'block';
+        if(summary) {
+            summary.classList.add('hidden');
+            summary.classList.remove('flex');
+        }
     } else {
-        // Minimizar
+        // Ação: MINIMIZAR (Recolhe para a barra de oportunidades)
         card.classList.add('minimized');
-        card.querySelector('.card-details').style.display = 'none';
-        card.querySelector('.card-summary').classList.remove('hidden');
-        card.querySelector('.card-summary').classList.add('flex');
+        if(details) details.style.display = 'none';
+        if(summary) {
+            summary.classList.remove('hidden');
+            summary.classList.add('flex');
+        }
     }
 };
-
 export async function aceitarPedidoRadar(orderId) {
     const btn = document.querySelector(`#req-${orderId} .btn-accept`);
     if(btn) { btn.disabled = true; btn.innerText = "⏳ Verificando..."; }
