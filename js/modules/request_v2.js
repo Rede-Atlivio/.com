@@ -233,14 +233,14 @@ auth.onAuthStateChanged(user => {
 });
 // 👇 LÓGICA DE MINIMIZAR (COLE ANTES DA FUNÇÃO createRequestCard)
 window.alternarMinimizacao = (id) => {
-    const cardPai = document.getElementById(`req-${id}`);
+    const card = document.getElementById(`req-${id}`);
     const detalhes = document.getElementById(`detalhes-${id}`);
     const btn = document.getElementById(`btn-min-${id}`);
     
-    if (cardPai && detalhes) {
-        const estaMinimizado = cardPai.classList.toggle('minimized');
+    if (card && detalhes) {
+        const agoraMinimizado = card.classList.toggle('minimized');
         detalhes.classList.toggle('hidden');
-        if(btn) btn.innerHTML = estaMinimizado ? "+" : "&minus;";
+        if(btn) btn.innerHTML = agoraMinimizado ? "+" : "&minus;";
     }
 };
 function createRequestCard(pedido) {
