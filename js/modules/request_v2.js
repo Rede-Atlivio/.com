@@ -151,6 +151,10 @@ export async function enviarPropostaAgora() {
     }
 
     try {
+        // Captura valores dos inputs
+        const dataServico = document.getElementById('req-date')?.value || "A combinar";
+        const horaServico = document.getElementById('req-time')?.value || "A combinar";
+
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -160,6 +164,8 @@ export async function enviarPropostaAgora() {
             status: 'pending', 
             offer_value: mem_CurrentOffer,
             location: document.getElementById('req-local')?.value || "A combinar",
+            data: dataServico, // ✅ NOVO: Salva a data
+            hora: horaServico, // ✅ NOVO: Salva a hora
             created_at: serverTimestamp()
         });
 
@@ -186,7 +192,6 @@ export async function enviarPropostaAgora() {
         alert("Erro: " + e.message); 
     }
 }
-
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
