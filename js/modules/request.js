@@ -1,8 +1,9 @@
 // ============================================================================
-// js/modules/request.js - V10.2 (ESTÁVEL + TRAVA ADMIN + STACK + OFFLINE)
+// js/modules/request.js - V10.1 (STACK + OFFLINE GUARD + TIMER)
 // ============================================================================
 
 import { db, auth } from '../config.js'; 
+import { podeTrabalhar } from './wallet.js'; 
 import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- VARIÁVEIS DE MEMÓRIA ---
@@ -12,7 +13,7 @@ let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
 let mem_SelectedServiceTitle = ""; 
 
-// --- GATILHOS INICIAIS ---
+// --- GATILHOS ---
 auth.onAuthStateChanged(user => {
     if (user) {
         iniciarRadarPrestador(user.uid);
@@ -20,16 +21,16 @@ auth.onAuthStateChanged(user => {
 });
 
 // ============================================================================
-// 1. MODAL DE SOLICITAÇÃO (FLUXO DO CLIENTE)
+// 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    // Sincroniza regras do Admin antes de abrir
+    // Sincroniza regras
     try {
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
-    } catch (e) { console.error("Erro ao carregar configs:", e); }
+    } catch (e) { console.error("Erro config:", e); }
     
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
@@ -71,6 +72,20 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
         
+        // Injeta botões de desconto dinâmicos
+        const grids = modal.querySelectorAll('.grid');
+        grids.forEach(div => { 
+            if(div.innerHTML.includes('%')) {
+                div.className = "grid grid-cols-4 gap-2 mb-3"; 
+                div.innerHTML = `
+                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-10%</button>
+                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-5%</button>
+                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+10%</button>
+                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+20%</button>
+                `;
+            }
+        });
+
         const btn = document.getElementById('btn-confirm-req');
         if(btn) {
             btn.disabled = false;
@@ -90,6 +105,11 @@ window.mudarServicoSelecionado = (select) => {
 window.selecionarDesconto = (percent) => {
     mem_CurrentOffer = mem_BasePrice + (mem_BasePrice * parseFloat(percent));
     atualizarVisualModal();
+};
+
+window.ativarInputPersonalizado = () => {
+    const input = document.getElementById('req-value');
+    if(input) { input.disabled = false; input.focus(); input.style.border = "2px solid #3b82f6"; }
 };
 
 window.validarOferta = (val) => {
@@ -156,17 +176,25 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA!");
-        document.getElementById('request-modal')?.classList.add('hidden');
-        if(window.switchTab) window.switchTab('chat');
+        alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat...");
+        const modal = document.getElementById('request-modal');
+        if(modal) modal.classList.add('hidden');
+
+        if(window.switchTab) {
+            window.switchTab('chat');
+            setTimeout(() => {
+                if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
+            }, 600);
+        }
 
     } catch (e) { 
-        alert("Erro ao enviar: " + e.message); 
+        console.error("Erro ao enviar:", e);
+        alert("Erro: " + e.message); 
     }
 }
 
 // ============================================================================
-// 2. RADAR DO PRESTADOR (LOGICA DE STACK + OFFLINE)
+// 2. RADAR DO PRESTADOR (STACK + OFFLINE GUARD)
 // ============================================================================
 export async function iniciarRadarPrestador(uid) {
     const configRef = doc(db, "settings", "financeiro");
@@ -177,122 +205,175 @@ export async function iniciarRadarPrestador(uid) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") renderizarCardRadar({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
             if (change.type === "removed") removeRequestCard(change.doc.id);
         });
     });
 }
 
-function renderizarCardRadar(pedido) {
+function createRequestCard(pedido) {
     const container = document.getElementById('radar-container');
     if (!container) return;
 
-    // OFFLINE GUARD
+    // ⛔ OFFLINE GUARD (Resolve o Problema 2)
+    // Verifica se o botão "Online" está marcado no HTML
     const toggleOnline = document.getElementById('online-toggle');
-    if (toggleOnline && !toggleOnline.checked) return;
+    if (toggleOnline && !toggleOnline.checked) {
+        console.log("🔕 Radar ignorou pedido pois usuário está OFFLINE.");
+        return; 
+    }
 
+    // 1. Evita duplicidade
     if (document.getElementById(`req-${pedido.id}`)) return;
 
-    // Limite de Stack
-    if (container.children.length >= 5) { container.firstElementChild.remove(); }
+    // 2. Limite de Stack (5)
+    if (container.children.length >= 5) {
+        const oldest = container.firstElementChild;
+        if (oldest) oldest.remove();
+    }
 
-    const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg');
-    audio.play().catch(() => {});
+    // 3. Som
+    const audio = document.getElementById('notification-sound');
+    if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * (config.porcentagem_reserva / 100);
+    const distance = pedido.location || "Local não informado";
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = "request-card shadow-xl border border-gray-100 mb-3 bg-white rounded-2xl overflow-hidden transition-all duration-300"; 
+    card.className = "request-card"; 
     
     card.innerHTML = `
         <div class="card-details p-4">
             <div class="flex justify-between items-start mb-2">
                 <div>
-                    <span class="bg-blue-100 text-blue-800 text-[10px] font-black px-2 py-1 rounded-md uppercase">Novo Pedido</span>
-                    <h3 class="text-lg font-black text-slate-800 mt-1">${pedido.service_title}</h3>
+                    <span class="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-1 rounded uppercase">Novo Pedido</span>
+                    <h3 class="text-xl font-black text-slate-800 mt-1">${pedido.service_title}</h3>
                 </div>
                 <div class="text-right">
-                    <h2 class="text-xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase">Garantia: R$ ${taxa.toFixed(2)}</p>
+                    <h2 class="text-2xl font-black text-green-600">R$ ${valor.toFixed(0)}</h2>
+                    <p class="text-[9px] text-gray-400 font-bold">Taxa: R$ ${taxa.toFixed(2)}</p>
                 </div>
             </div>
+            
             <div class="flex items-center gap-2 text-gray-500 text-xs mb-4 bg-gray-50 p-2 rounded-lg">
-                <span>📍</span> <span class="font-bold truncate">${pedido.location || "A combinar"}</span>
+                <span>📍</span>
+                <span class="font-bold truncate">${distance}</span>
             </div>
+
             <div class="grid grid-cols-4 gap-2">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-red-50 text-red-500 rounded-xl font-bold py-2 hover:bg-red-100 transition">✖</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-xl font-black text-xs uppercase py-2 hover:bg-blue-700 transition active:scale-95">ACEITAR AGORA</button>
-                <button onclick="window.minimizarPedido('${pedido.id}')" class="bg-gray-100 text-gray-500 rounded-xl font-bold py-2 hover:bg-gray-200 transition">_</button>
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="col-span-1 bg-red-50 text-red-500 rounded-lg font-bold text-xs py-3 hover:bg-red-100 transition">✖</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="col-span-2 bg-blue-600 text-white rounded-lg font-black text-xs uppercase py-3 shadow-lg hover:bg-blue-700 transition transform active:scale-95">ACEITAR AGORA</button>
+                <button onclick="window.minimizarPedido('${pedido.id}')" class="col-span-1 bg-gray-100 text-gray-500 rounded-lg font-bold text-xs py-3 hover:bg-gray-200 transition" title="Minimizar">_</button>
             </div>
-            <div class="h-1.5 w-full bg-gray-100 mt-3 rounded-full overflow-hidden">
+            
+            <div class="h-1 w-full bg-gray-100 mt-2 rounded overflow-hidden">
                 <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
             </div>
         </div>
-        <div class="card-summary hidden items-center justify-between p-3 bg-blue-50 border-l-4 border-blue-600" onclick="window.minimizarPedido('${pedido.id}')">
+
+        <div class="card-summary hidden items-center justify-between p-3 w-full h-full" onclick="window.minimizarPedido('${pedido.id}')">
             <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-slate-700 truncate">${pedido.service_title}</span>
+                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                <span class="text-xs font-bold text-slate-700 truncate w-32">${pedido.service_title}</span>
             </div>
             <span class="text-xs font-black text-green-600">R$ ${valor.toFixed(0)}</span>
         </div>
     `;
 
     container.appendChild(card);
-    setTimeout(() => { if(document.getElementById(`timer-${pedido.id}`)) document.getElementById(`timer-${pedido.id}`).style.width = '0%'; }, 100);
-    setTimeout(() => { if(document.getElementById(`req-${pedido.id}`) && !document.getElementById(`req-${pedido.id}`).classList.contains('minimized')) window.minimizarPedido(pedido.id); }, 30000);
+
+    // ⏱️ TIMER AUTOMÁTICO (30 SEGUNDOS)
+    // Inicia a animação da barra
+    setTimeout(() => {
+        const timerBar = document.getElementById(`timer-${pedido.id}`);
+        if(timerBar) timerBar.style.width = '0%';
+    }, 100);
+
+    // Minimiza após 30s
+    setTimeout(() => {
+        const currentCard = document.getElementById(`req-${pedido.id}`);
+        // Só minimiza se ainda existir e não tiver sido interagido
+        if (currentCard && !currentCard.classList.contains('minimized')) {
+            window.minimizarPedido(pedido.id);
+        }
+    }, 30000);
+}
+
+function removeRequestCard(orderId) {
+    const card = document.getElementById(`req-${orderId}`);
+    if (card) {
+        card.classList.add('removing');
+        setTimeout(() => card.remove(), 300);
+    }
 }
 
 window.minimizarPedido = (orderId) => {
     const card = document.getElementById(`req-${orderId}`);
     if(!card) return;
-    const details = card.querySelector('.card-details');
-    const summary = card.querySelector('.card-summary');
+
     if(card.classList.contains('minimized')) {
+        // Maximizar
         card.classList.remove('minimized');
-        details.style.display = 'block';
-        summary.classList.add('hidden');
+        card.querySelector('.card-details').style.display = 'block';
+        card.querySelector('.card-summary').classList.add('hidden');
+        card.querySelector('.card-summary').classList.remove('flex');
     } else {
+        // Minimizar
         card.classList.add('minimized');
-        details.style.display = 'none';
-        summary.classList.remove('hidden');
-        summary.classList.add('flex');
+        card.querySelector('.card-details').style.display = 'none';
+        card.querySelector('.card-summary').classList.remove('hidden');
+        card.querySelector('.card-summary').classList.add('flex');
     }
 };
 
 export async function aceitarPedidoRadar(orderId) {
-    const btn = document.querySelector(`#req-${orderId} .btn-accept`) || document.querySelector(`#req-${orderId} button[onclick*="aceitar"]`);
-    if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
+    // 1. Verifica Saldo e Limite (Anti-Calote)
+    // O podeTrabalhar agora está no wallet.js e lê do perfil global
+    const orderSnap = await getDoc(doc(db, "orders", orderId));
+    if (!orderSnap.exists()) {
+        removeRequestCard(orderId);
+        return alert("Este pedido não existe mais.");
+    }
 
+    const valorServico = parseFloat(orderSnap.data().offer_value || 0);
+    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+    const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
+
+    // A mágica: Pergunta ao wallet.js se tem dinheiro
+    if (!window.podeTrabalhar(taxaEstimada)) {
+        // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
+        removeRequestCard(orderId);
+        return;
+    }
+
+    // 2. Se passou, processa o aceite
     try {
-        const userUid = auth.currentUser.uid;
-        const [orderSnap, userSnap, configSnap] = await Promise.all([
-            getDoc(doc(db, "orders", orderId)),
-            getDoc(doc(db, "usuarios", userUid)),
-            getDoc(doc(db, "settings", "financeiro"))
-        ]);
+        await setDoc(doc(db, "orders", orderId), { 
+            status: 'accepted', 
+            accepted_at: serverTimestamp() 
+        }, { merge: true });
+        
+        await setDoc(doc(db, "chats", orderId), { 
+            status: 'active',
+            updated_at: serverTimestamp()
+        }, { merge: true });
 
-        if (!orderSnap.exists()) { removeRequestCard(orderId); return alert("❌ Pedido Expirou."); }
-
-        const config = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 10 };
-        const taxaNecessaria = parseFloat(orderSnap.data().offer_value || 0) * (config.porcentagem_reserva / 100);
-        const saldoAtual = parseFloat(userSnap.data().wallet_balance || 0);
-
-        if (saldoAtual < taxaNecessaria) {
-            alert(`⛔ SALDO INSUFICIENTE (Necessário: R$ ${taxaNecessaria.toFixed(2)})`);
-            if(window.switchTab) window.switchTab('ganhar');
-            if(btn) { btn.disabled = false; btn.innerText = "ACEITAR AGORA"; }
-            return;
+        removeRequestCard(orderId);
+        
+        if(window.switchTab) {
+            window.switchTab('chat');
+            setTimeout(() => {
+                 if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
+            }, 500);
         }
 
-        await setDoc(doc(db, "orders", orderId), { status: 'accepted', accepted_at: serverTimestamp(), provider_id: userUid }, { merge: true });
-        await setDoc(doc(db, "chats", orderId), { status: 'active', updated_at: serverTimestamp() }, { merge: true });
-        
-        removeRequestCard(orderId);
-        if(window.switchTab) window.switchTab('chat');
-    } catch (e) { alert("Erro: " + e.message); }
+    } catch (e) { 
+        console.error("Erro no aceite:", e);
+        alert("Erro: " + e.message); 
+    }
 }
 
 export async function recusarPedidoReq(orderId) {
@@ -300,15 +381,11 @@ export async function recusarPedidoReq(orderId) {
     try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
 }
 
-function removeRequestCard(orderId) {
-    const card = document.getElementById(`req-${orderId}`);
-    if (card) { card.classList.add('opacity-0'); setTimeout(() => card.remove(), 300); }
-}
-
 // EXPOSIÇÃO GLOBAL
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
-window.validarOferta = window.validarOferta;
+window.ativarInputPersonalizado = ativarInputPersonalizado;
+window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.minimizarPedido = minimizarPedido;
