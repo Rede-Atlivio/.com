@@ -102,17 +102,32 @@ export async function carregarCarteira() {
 }
 
 // ============================================================================
-// 2. LÓGICA DE TRAVA (ANTI-CALOTE)
+// 2. LÓGICA DE TRAVA (ANTI-CALOTE) - V10.0
 // ============================================================================
-export function podeTrabalhar() {
+/**
+ * Verifica se o prestador pode aceitar serviços.
+ * Chamada pelo request.js antes de abrir o modal de aceite.
+ */
+export function podeTrabalhar(custoEstimado = 0) {
     const user = window.userProfile;
     if (!user) return false;
-    const saldo = parseFloat(user.balance || 0);
     
-    // 🆕 Usa a variável dinâmica
-    if (saldo <= CONFIG_FINANCEIRA.limite) {
-        alert(`⛔ LIMITE DE CRÉDITO ATINGIDO!\n\nSeu saldo atual é R$ ${saldo.toFixed(2)}.\nO limite é R$ ${CONFIG_FINANCEIRA.limite.toFixed(2)}.\n\nPor favor, faça uma recarga para continuar aceitando pedidos.`);
-        if(window.switchTab) window.switchTab('ganhar');
+    // Lê o saldo da memória (que o onSnapshot atualizou)
+    const saldo = parseFloat(user.wallet_balance || 0);
+    
+    // Validação com o limite configurado
+    if ((saldo - custoEstimado) <= CONFIG_FINANCEIRA.limite) {
+        // Formata para moeda BRL
+        const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const limiteFmt = CONFIG_FINANCEIRA.limite.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        console.warn(`⛔ Bloqueio: Saldo ${saldoFmt} atingiu limite ${limiteFmt}`);
+        
+        // Só alerta se for interação do usuário (evita spam no console)
+        if(custoEstimado > 0) {
+             alert(`⛔ LIMITE ATINGIDO\n\nSeu saldo: ${saldoFmt}\nLimite: ${limiteFmt}\n\nPor favor, recarregue sua carteira.`);
+             if(window.switchTab) window.switchTab('ganhar');
+        }
         return false;
     }
     return true;
