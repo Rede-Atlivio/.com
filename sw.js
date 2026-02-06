@@ -1,33 +1,32 @@
-const CACHE_NAME = 'atlivio-v17-reset'; // Mudei o nome para v17 para forçar atualização geral
+const CACHE_NAME = 'atlivio-v20-auto-update'; // Mudei o nome para limpar tudo
 const ASSETS_TO_CACHE = [
   './',
-  './index.html',
-  './manifest.json'
-  // ⚠️ RETIREI TODOS OS .JS DAQUI PARA EVITAR ERRO DE 404.
-  // O Service Worker vai cachear eles dinamicamente conforme o uso.
+  './index.html'
+  // ⚠️ NÃO COLOQUE MAIS NADA AQUI MANUALMENTE.
+  // O Service Worker vai aprender sozinho o que deve guardar.
 ];
 
-// 1. INSTALAÇÃO
-self.addEventListener("install", (e) => {
-  self.skipWaiting(); // Força a atualização imediata
-  e.waitUntil(
+// 1. INSTALAÇÃO (BLINDADA)
+self.addEventListener("install", (event) => {
+  self.skipWaiting(); // Força a assumir o controle imediatamente
+  event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Tenta cachear. Se falhar, não mata o SW, apenas avisa.
+      // Se der erro ao baixar o index, ele avisa mas não trava o sistema
       return cache.addAll(ASSETS_TO_CACHE).catch(err => {
-          console.error("⚠️ Erro ao cachear arquivos iniciais:", err);
+          console.warn("⚠️ SW: Alerta na instalação (não crítico):", err);
       });
     })
   );
 });
 
-// 2. ATIVAÇÃO (Limpa o lixo antigo)
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
+// 2. ATIVAÇÃO (LIMPEZA AUTOMÁTICA)
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(
         keyList.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log("🧹 SW: Removendo cache antigo:", key);
+            console.log("🧹 SW: Limpando cache antigo:", key);
             return caches.delete(key);
           }
         })
@@ -36,30 +35,30 @@ self.addEventListener("activate", (e) => {
   );
 });
 
-// 3. INTERCEPTAÇÃO (Estratégia: NETWORK FIRST - Prioriza a Nuvem)
-self.addEventListener("fetch", (e) => {
-  // Ignora requisições externas (Firestore, Google, etc)
-  if (e.request.url.includes('firestore') || 
-      e.request.url.includes('googleapis') || 
-      e.request.url.includes('firebase')) {
+// 3. INTERCEPTAÇÃO (ESTRATÉGIA: REDE PRIMEIRO, CACHE DEPOIS)
+// Isso garante que você SEMPRE veja a versão mais nova se tiver internet.
+self.addEventListener("fetch", (event) => {
+  // Ignora requisições do Google/Firebase/Firestore (Elas se viram sozinhas)
+  if (event.request.url.includes('firestore') || 
+      event.request.url.includes('googleapis') || 
+      event.request.url.includes('firebase') ||
+      event.request.method !== 'GET') {
       return; 
   }
 
-  e.respondWith(
-    fetch(e.request)
+  event.respondWith(
+    fetch(event.request)
       .then((networkResponse) => {
-        // Se a internet funcionou, atualiza o cache com a versão nova
+        // Se a internet respondeu bem, atualiza o cache com a versão nova
         if(networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, responseToCache);
-            });
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }
         return networkResponse;
       })
       .catch(() => {
-        // Se a internet falhou, usa o cache (Offline)
-        return caches.match(e.request);
+        // Só usa o cache se a internet estiver OFF ou o servidor cair
+        return caches.match(event.request);
       })
   );
 });
