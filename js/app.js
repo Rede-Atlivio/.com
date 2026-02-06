@@ -20,7 +20,7 @@ import './modules/user_notifications.js';
 window.abrirConfiguracoes = abrirConfiguracoes;
 
 // ============================================================================
-// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - CORREÇÃO CRÍTICA)
+// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
 window.switchTab = function(tabName) {
     console.log("👉 Trocando para aba:", tabName);
