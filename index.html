@@ -69,23 +69,30 @@
            RADAR VISUAL V12 (VISUAL DARK BLUE ORIGINAL - IMAGEM 1)
            ============================================================ */
 
-        /* 1. O CONTAINER (Posição Corrigida) */
+        /* 1. O CONTAINER RADAR V12 (Empilhamento Fluido) */
         #radar-container {
-            position: fixed;
-            top: 127px !important; /* 📏 Não cobre o Header */
-            left: 0;
-            right: 0;
-            width: 95%;
-            max-width: 400px; /* Largura compacta igual da imagem */
+            display: flex;
+            flex-direction: column; /* Mais novos aparecem primeiro se usar prepend no JS */
+            gap: 12px;
+            width: 100%;
+            max-width: 400px;
             margin: 0 auto;
             z-index: 8000;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            pointer-events: none;
             padding-bottom: 20px;
         }
 
+        /* AJUSTE PARA O CARD MINIMIZADO NÃO SUMIR DA TELA */
+        .request-card.minimized {
+            height: 65px !important;
+            min-height: 65px !important;
+            background-color: #1e293b !important;
+            border-left: 4px solid #f59e0b !important;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            opacity: 0.95;
+            transform: scale(0.98);
+        }
         /* 2. O CARD (Idêntico à Imagem 1: Azul Escuro, Sem borda lateral verde) */
         .request-card {
             pointer-events: auto;
