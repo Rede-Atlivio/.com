@@ -246,45 +246,68 @@ function createRequestCard(pedido) {
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    // 🔥 CORREÇÃO VISUAL: Classes de Card
-    card.className = "bg-white border border-gray-100 rounded-xl shadow-sm p-4 mb-3 animate-slideInLeft relative overflow-hidden";
     
-    // O HTML LIMPO E FUNCIONAL
+    // 🔥 VISUAL DARK MODE (Igual à Imagem)
+    card.className = "bg-slate-900 border border-blue-900 rounded-2xl shadow-2xl p-0 mb-4 animate-slideInLeft relative overflow-hidden w-full max-w-md mx-auto";
+    
     card.innerHTML = `
-        <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-blue-600"></div>
-
-        <div class="flex justify-between items-start mb-3 pl-2">
-            <div>
-                <span class="bg-blue-50 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wide">Nova Solicitação</span>
-                <h3 class="text-lg font-black text-slate-800 mt-1 leading-tight">${pedido.service_title || 'Serviço Geral'}</h3>
-                <p class="text-[10px] text-gray-400 font-bold mt-0.5 flex items-center gap-1">
-                    📍 ${pedido.location || 'Local a combinar'}
-                </p>
-            </div>
-            <div class="text-right">
-                <h2 class="text-2xl font-black text-slate-800">R$ ${valor.toFixed(0)}</h2>
-                <p class="text-[10px] text-red-400 font-bold">Taxa: -R$ ${taxa.toFixed(2)}</p>
-                <p class="text-[10px] text-green-600 font-black">Lucro: R$ ${lucro.toFixed(2)}</p>
+        <div class="relative z-10 p-5 text-center">
+            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/50">
+                Nova Solicitação
+            </span>
+            
+            <h2 class="text-4xl font-black text-white mt-4 tracking-tighter drop-shadow-lg">
+                R$ ${valor.toFixed(0)}
+            </h2>
+            
+            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase">
+                <span class="text-red-400">Taxa: -R$ ${taxa.toFixed(2)}</span>
+                <span class="text-green-400">Seu Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3 pl-2">
+        <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700 backdrop-blur-sm">
+            <div class="flex items-center gap-3 mb-3 border-b border-slate-700 pb-3">
+                <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-lg">
+                    ${(pedido.client_name || 'C')[0]}
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-sm leading-tight">${pedido.client_name || 'Cliente Atlivio'}</h3>
+                    <p class="text-[10px] text-gray-400 flex items-center gap-1">
+                        Cliente 5.0 ★
+                    </p>
+                </div>
+            </div>
+            
+            <div class="space-y-1">
+                <p class="text-xs text-gray-300 font-medium flex items-center gap-2">
+                    <span class="text-red-500">📍</span> ${pedido.location || 'Local a combinar'}
+                </p>
+                <p class="text-xs text-gray-300 font-medium flex items-center gap-2">
+                    <span class="text-blue-400">📅</span> Data: ${new Date().toLocaleDateString()}
+                </p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 p-4 pt-4">
             <button onclick="window.recusarPedidoReq('${pedido.id}')" 
-                class="bg-slate-100 text-slate-500 rounded-lg font-bold text-xs py-3 hover:bg-slate-200 transition uppercase">
+                class="bg-slate-700 text-gray-300 py-3 rounded-xl font-bold text-xs uppercase hover:bg-slate-600 transition flex items-center justify-center gap-2">
                 ✖ Recusar
             </button>
             <button onclick="window.aceitarPedidoRadar('${pedido.id}')" 
-                class="bg-green-500 text-white rounded-lg font-black text-xs py-3 shadow-md hover:bg-green-600 transition transform active:scale-95 uppercase flex items-center justify-center gap-2">
-                <span>✔ Aceitar</span>
+                class="bg-green-600 text-white py-3 rounded-xl font-black text-xs uppercase hover:bg-green-500 transition shadow-lg shadow-green-900/20 flex items-center justify-center gap-2">
+                ✔ Aceitar (-R$ ${taxa.toFixed(0)})
             </button>
         </div>
         
-        <div class="absolute bottom-0 left-0 h-1 bg-gray-100 w-full">
-            <div class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+        <div class="absolute top-0 right-0 w-32 h-32 bg-blue-600 rounded-full blur-[80px] opacity-20 pointer-events-none"></div>
+        
+        <div class="absolute bottom-0 left-0 h-1 bg-slate-800 w-full">
+            <div class="h-full bg-gradient-to-r from-green-500 to-green-400 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
         </div>
     `;
 
-    // INSERE NO TOPO DA LISTA (Empilhamento correto)
+    // INSERE NO TOPO DA LISTA
     container.prepend(card);
 
     // ⏱️ TIMER
@@ -299,8 +322,6 @@ function createRequestCard(pedido) {
              window.recusarPedidoReq(pedido.id);
         }
     }, 30000);
-}   
-
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
