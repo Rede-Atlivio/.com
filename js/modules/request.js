@@ -344,9 +344,10 @@ export async function aceitarPedidoRadar(orderId) {
 
     // A mágica: Pergunta ao wallet.js se tem dinheiro
     if (!podeTrabalhar(taxaEstimada)) {
-    removeRequestCard(orderId);
-    return;
-}
+        // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
+        removeRequestCard(orderId);
+        return;
+    }
         // Se não puder, o wallet.js já mandou o alert. A gente só fecha.
         removeRequestCard(orderId);
         return;
