@@ -841,6 +841,15 @@
             console.log("🔊 Som de sistema configurado com sucesso.");
         }
     });
+    <script>
+    console.log("💉 APLICANDO VACINA NO SISTEMA...");
+    // Isso bloqueia a criação da função antiga. Se o services.js tentar criar, vai falhar silenciosamente.
+    Object.defineProperty(window, 'atualizarRadar', {
+        value: function() { console.warn("🛡️ VACINA: O código velho tentou rodar e foi bloqueado!"); },
+        writable: false,
+        configurable: false
+    });
+</script>
 </script>          
           
 <script type="module" src="./js/app.js?v=21.0"></script>
