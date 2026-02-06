@@ -66,60 +66,91 @@
         }
 
    /* ============================================================
-           RADAR DOPAMINA V11 (DARK NEON STACK)
+           RADAR VISUAL V12 (VISUAL DARK BLUE ORIGINAL - IMAGEM 1)
            ============================================================ */
 
-        /* 1. O CONTAINER (PILHA VERTICAL) */
+        /* 1. O CONTAINER (Posição Corrigida) */
         #radar-container {
             position: fixed;
-            top: 127px !important; /* 📏 CORREÇÃO ROBÔ 21 (Header 117px + 10px) */
+            top: 127px !important; /* 📏 Não cobre o Header */
             left: 0;
             right: 0;
             width: 95%;
-            max-width: 500px;
+            max-width: 400px; /* Largura compacta igual da imagem */
             margin: 0 auto;
-            z-index: 8000; /* Abaixo do Modal, Acima do Conteúdo */
+            z-index: 8000;
             display: flex;
-            flex-direction: column; /* Empilha um embaixo do outro */
-            gap: 12px; /* Espaço entre os cards */
-            pointer-events: none; /* Permite clicar no site atrás (nos espaços vazios) */
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
             padding-bottom: 20px;
         }
 
-        /* 2. O CARD (VISUAL DARK NEON) */
+        /* 2. O CARD (Idêntico à Imagem 1: Azul Escuro, Sem borda lateral verde) */
         .request-card {
-            background-color: #0f172a; /* Azul Noturno Profundo */
-            border: 1px solid #1e293b; /* Borda Sutil */
-            border-left: 4px solid #22c55e; /* Indicador Neon Verde */
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 0 15px rgba(34, 197, 94, 0.1); /* Sombra + Glow Verde */
-            color: #f8fafc; /* Texto Branco Gelo */
-            pointer-events: auto; /* Reativa o clique no card */
-            overflow: hidden;
-            position: relative;
-            animation: slideInDown 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Entrada Elástica */
+            pointer-events: auto;
+            background-color: #0f172a; /* Azul Noturno Profundo (Slate 900) */
+            border: 1px solid #1e3a8a; /* Borda Azul Sutil */
+            border-radius: 16px; /* Cantos bem arredondados */
+            box-shadow: 0 0 25px rgba(15, 23, 42, 0.8), 0 4px 10px rgba(0,0,0,0.5); /* Sombra Profunda */
+            color: white;
             transition: all 0.3s ease;
+            animation: slideInDown 0.4s ease-out;
+            position: relative;
+            z-index: 9001;
+            overflow: hidden;
         }
 
-        /* Animação de Entrada */
+        /* CARD MINIMIZADO (Modo Espera) */
+        .request-card.minimized {
+            height: 50px;
+            background-color: #1e293b; /* Um pouco mais claro */
+            border-left: 4px solid #f59e0b; /* Indicador Laranja apenas quando minimizado */
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            cursor: pointer;
+        }
+
+        .request-card.minimized .card-details { display: none; }
+        .request-card .card-summary { display: flex; width: 100%; justify-content: space-between; align-items: center; }
+
+        /* Animações de Entrada e Saída */
+        .request-card.removing {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+
         @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Barra de Tempo (Timer) */
-        .timer-bar {
-            height: 4px;
-            background: linear-gradient(90deg, #22c55e, #eab308, #ef4444); /* Verde -> Amarelo -> Vermelho */
-            width: 100%;
-            transform-origin: left;
-            transition: width 1s linear;
+        @keyframes slideOutRight {
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* 3. ELEMENTOS INTERNOS (Forçando Cores da Imagem 1 via CSS) */
+        
+        /* Botão Aceitar (Verde Largo) */
+        .request-card button.btn-accept {
+            background-color: #22c55e !important;
+            color: white !important;
+            font-weight: 900 !important;
+            box-shadow: 0 4px 6px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Botão Recusar (Escuro/Cinza) */
+        .request-card button.btn-reject {
+            background-color: #334155 !important;
+            color: #94a3b8 !important;
+            border: 1px solid #475569 !important;
+        }
+
+        /* Preço (Texto Grande Branco) */
+        .request-card .price-tag {
+            color: white !important;
+            font-weight: 900 !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
     </style>
 
