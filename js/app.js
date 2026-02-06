@@ -103,10 +103,11 @@ window.carregarInterface = async (user) => {
         window.carregarChat();
     }
 
-    // Carrega o Radar de Pedidos Pendentes
-    if (typeof window.atualizarRadar === 'function') {
-        window.atualizarRadar();
-    }
+    // Carrega o Radar de Pedidos Pendentes (SISTEMA NOVO V12)
+    if (typeof window.iniciarRadarPrestador === 'function') {
+    // Só inicia se o botão "Online" estiver ligado (lógica interna da função cuida disso)
+    window.iniciarRadarPrestador(user.uid);
+  }
 };
 
 auth.onAuthStateChanged(async (user) => {
