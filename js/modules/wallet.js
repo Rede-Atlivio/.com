@@ -3,8 +3,8 @@ import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, ad
 
 // 💰 CONFIGURAÇÕES DINÂMICAS
 export let CONFIG_FINANCEIRA = {
-    taxa: 0.20,
-    limite: -60.00
+    taxa: 0.20,     // Padrão de 20% se o banco falhar
+    limite: 0.00    // 🔒 PADRÃO RIGOROSO: Começa com ZERO tolerância até o Admin carregar.
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
