@@ -332,25 +332,6 @@ function removeRequestCard(orderId) {
     }
 }
 
-window.minimizarPedido = (orderId) => {
-    const card = document.getElementById(`req-${orderId}`);
-    if(!card) return;
-
-    if(card.classList.contains('minimized')) {
-        // Maximizar
-        card.classList.remove('minimized');
-        card.querySelector('.card-details').style.display = 'block';
-        card.querySelector('.card-summary').classList.add('hidden');
-        card.querySelector('.card-summary').classList.remove('flex');
-    } else {
-        // Minimizar
-        card.classList.add('minimized');
-        card.querySelector('.card-details').style.display = 'none';
-        card.querySelector('.card-summary').classList.remove('hidden');
-        card.querySelector('.card-summary').classList.add('flex');
-    }
-};
-
 export async function aceitarPedidoRadar(orderId) {
     // 1. Verifica Saldo e Limite (Anti-Calote)
     // O podeTrabalhar agora está no wallet.js e lê do perfil global
