@@ -267,44 +267,57 @@ function createRequestCard(pedido) {
     const taxa = valor * ((config.porcentagem_reserva || 20) / 100);
     const lucro = valor - taxa;
 
+    // Tratamento de Data/Hora para não mostrar undefined
+    const dataDisplay = pedido.data ? pedido.data.split('-').reverse().join('/') : '--/--';
+    const horaDisplay = pedido.hora || '--:--';
+
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
     card.className = "request-card p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300";
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
-            class="absolute top-4 right-4 z-50 text-slate-400 hover:text-white bg-slate-800/80 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl border border-slate-600 cursor-pointer">
+            class="absolute top-3 right-3 z-[100] text-white hover:text-yellow-400 bg-black/40 hover:bg-black/80 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl border border-white/20 cursor-pointer backdrop-blur-sm transition-all shadow-lg">
             &minus;
         </button>
 
         <div class="p-5 text-center cursor-pointer" onclick="window.alternarMinimizacao('${pedido.id}')">
-            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
                 Nova Solicitação
             </span>
-            <h2 class="price-tag text-4xl font-black mt-4">R$ ${valor.toFixed(0)}</h2>
-            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase">
-                <span class="text-red-400">Taxa: -R$ ${taxa.toFixed(2)}</span>
-                <span class="text-green-400">Lucro: R$ ${lucro.toFixed(2)}</span>
+            <h2 class="price-tag text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
+            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80">
+                <span class="text-red-300">Taxa: -R$ ${taxa.toFixed(2)}</span>
+                <span class="text-green-300">Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
 
         <div id="detalhes-${pedido.id}" class="pb-4">
-            <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700">
-                <p class="text-xs text-white font-bold mb-2">${pedido.client_name || 'Cliente Atlivio'}</p>
-                <p class="text-[11px] text-gray-300"><span class="text-red-500">📍</span> ${pedido.location || 'Local a combinar'}</p>
+            <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700 shadow-inner">
+                <p class="text-xs text-white font-bold mb-1 flex items-center gap-2">
+                    👤 ${pedido.client_name || 'Cliente Atlivio'}
+                </p>
+                <p class="text-[11px] text-gray-300 mb-1 flex items-center gap-2">
+                    📍 ${pedido.location || 'Local a combinar'}
+                </p>
+                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">
+                    📅 ${dataDisplay} às ${horaDisplay}
+                </p>
             </div>
             <div class="grid grid-cols-2 gap-3 p-4">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="btn-reject py-3 rounded-xl font-bold text-xs uppercase transition">✖ Recusar</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-accept py-3 rounded-xl font-black text-xs uppercase transition">✔ Aceitar</button>
+                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="btn-reject py-3 rounded-xl font-bold text-xs uppercase transition hover:bg-slate-700 shadow-lg border-0">✖ Recusar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-accept py-3 rounded-xl font-black text-xs uppercase transition hover:scale-105 shadow-lg shadow-green-900/20 border-0">✔ Aceitar</button>
             </div>
         </div>
-        <div class="absolute bottom-0 left-0 h-1 bg-slate-800 w-full">
-            <div class="h-full bg-green-500 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+        
+        <div class="absolute bottom-0 left-0 h-2 bg-slate-900 w-full z-10">
+            <div class="h-full bg-gradient-to-r from-green-500 to-emerald-400 w-full transition-all duration-[30000ms] ease-linear shadow-[0_0_10px_rgba(34,197,94,0.5)]" id="timer-${pedido.id}"></div>
         </div>
     `;
 
     container.prepend(card);
 
+    // Inicia a animação da barra
     setTimeout(() => {
         const timerBar = document.getElementById(`timer-${pedido.id}`);
         if(timerBar) timerBar.style.width = '0%';
