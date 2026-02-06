@@ -256,7 +256,7 @@ function createRequestCard(pedido) {
     card.id = `req-${pedido.id}`;
     
     // 🔥 VISUAL: Sem 'fixed', agora obedece o container pai
-    card.className = "bg-slate-900 border border-blue-900 rounded-2xl shadow-xl p-0 animate-slideInLeft relative overflow-hidden w-full transition-all duration-300";
+    card.className = "request-card p-0 animate-slideInLeft w-full";
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
