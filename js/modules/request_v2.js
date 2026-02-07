@@ -334,56 +334,59 @@ window.alternarMinimizacao = (id) => {
 };
 
 export function createRequestCard(pedido) {
-    const container = document.getElementById('radar-pedidos-container');
+    // 🎯 CORREÇÃO DE ALVO: O container correto é 'radar-container'
+    const container = garantirContainerRadar();
     if (!container) return;
 
-    // 🛡️ SINCRONIA V12: Usa a taxa do Admin ou 0 como fallback (Sem NaN)
-    const taxaPlataforma = window.CONFIG_FINANCEIRA?.taxa || 0;
-    const valorComTaxa = pedido.price * (1 + taxaPlataforma);
+    // 🛡️ SINCRONIA V12: Busca a taxa dinâmica (ex: 0.5 para 50%)
+    const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
+    const valorOferta = parseFloat(pedido.offer_value || pedido.price || 0);
+    const taxaCalculada = valorOferta * regras.taxa;
+    const lucro = valorOferta - taxaCalculada;
 
     const card = document.createElement('div');
-    card.id = `card-${pedido.id}`;
-    card.className = "bg-white border-2 border-slate-900 rounded-3xl p-4 shadow-[8px_8px_0px_rgba(0,0,0,1)] mb-6 transition-all duration-500 animate-pulse";
+    card.id = `req-${pedido.id}`; // Mantendo o padrão de ID para o timer funcionar
+    card.className = "request-card bg-[#0f172a] p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300 rounded-2xl shadow-2xl border border-white/10 mb-3";
 
     card.innerHTML = `
-        <div class="flex justify-between items-start mb-3">
-            <span class="bg-yellow-400 text-black text-[10px] font-black px-2 py-1 rounded-full uppercase">Novo Pedido</span>
-            <span class="text-[10px] font-bold text-gray-400">#${pedido.id.slice(-4)}</span>
+        <div class="p-5 text-center">
+            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                Nova Solicitação
+            </span>
+            <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valorOferta.toFixed(0)}</h2>
+            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80 text-white">
+                <span class="text-red-300">Taxa: -R$ ${taxaCalculada.toFixed(2)}</span>
+                <span class="text-green-300">Lucro: R$ ${lucro.toFixed(2)}</span>
+            </div>
+        </div>
+
+        <div id="detalhes-${pedido.id}" class="pb-4 transition-all duration-500">
+            <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
+                <p class="text-xs font-bold mb-1">👤 ${pedido.client_name || 'Cliente'}</p>
+                <p class="text-[11px] opacity-70 mb-1">📍 ${pedido.location || 'A combinar'}</p>
+            </div>
+            
+            <div class="p-4 grid grid-cols-2 gap-3">
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-600 transition">Pular</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg transform active:scale-95 transition">✔ ACEITAR</button>
+            </div>
         </div>
         
-        <h3 class="font-black text-lg text-slate-900 leading-tight mb-1 uppercase">${pedido.service_name}</h3>
-        <p class="text-gray-500 text-xs mb-4">${pedido.description || 'Sem descrição adicional'}</p>
-
-        <div class="bg-slate-50 rounded-2xl p-3 mb-4 border border-slate-100">
-            <div class="flex justify-between items-center">
-                <span class="text-gray-400 text-[10px] font-bold uppercase italic">Você recebe</span>
-                <span class="text-xl font-black text-green-600">R$ ${pedido.price.toFixed(2)}</span>
-            </div>
-            <div class="flex justify-between items-center mt-1 border-t border-dashed pt-1">
-                <span class="text-gray-400 text-[8px] uppercase">Total Cliente (com taxa)</span>
-                <span class="text-[10px] font-bold text-slate-400">R$ ${valorComTaxa.toFixed(2)}</span>
-            </div>
-        </div>
-
-        <div id="actions-${pedido.id}" class="grid grid-cols-2 gap-3">
-            <button onclick="window.recusarPedido('${pedido.id}')" class="bg-white border-2 border-slate-900 p-3 rounded-2xl font-black text-xs uppercase hover:bg-red-50 transition">Recusar</button>
-            <button onclick="window.aceitarPedido('${pedido.id}')" class="bg-slate-900 text-white p-3 rounded-2xl font-black text-xs uppercase hover:scale-105 transition shadow-lg">Aceitar</button>
+        <div class="absolute bottom-0 left-0 h-1 bg-black/20 w-full">
+            <div class="h-full bg-green-400 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
         </div>
     `;
 
     container.prepend(card);
 
-    // 🔥 AUTOMAÇÃO V12: Minimiza em 15s e Auto-Deleta em 30s
+    // 🔥 AUTOMAÇÃO V12: Auto-minimiza visualmente e remove
     setTimeout(() => {
-        if (window.alternarMinimizacao) window.alternarMinimizacao(pedido.id);
-        card.classList.remove('animate-pulse');
+        const c = document.getElementById(`req-${pedido.id}`);
+        if(c) c.style.opacity = "0.5";
     }, 15000);
 
-    setTimeout(() => {
-        const aindaExiste = document.getElementById(`card-${pedido.id}`);
-        if (aindaExiste && !aindaExiste.classList.contains('pedido-aceito')) {
-            window.removeRequestCard(pedido.id);
-        }
+    setTimeout(() => { 
+        if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
     }, 30000);
 }
 function removeRequestCard(orderId) {
