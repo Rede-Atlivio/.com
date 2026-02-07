@@ -882,17 +882,35 @@ window.sugerirFrase = (msg) => {
 };
 
 window.verPerfilCompleto = (uid) => {
-    // Busca os dados do profissional e abre o modal de perfil (Ação Auditoria)
-    console.log("🔍 Abrindo Perfil Profissional:", uid);
-    if (window.abrirModalSolicitacao) {
-        // Reutiliza a lógica de visualização se necessário
+    console.log("🔍 Solicitando Perfil Completo do Usuário:", uid);
+    // Dispara o evento que o services.js ou request_v2.js escutam para mostrar o perfil
+    if (window.verPerfilPublico) {
+        window.verPerfilPublico(uid);
+    } else {
+        alert("Carregando reputação e histórico do profissional...");
     }
 };
 
-// 🕒 EXPOSIÇÃO GLOBAL DA FUNÇÃO DE TEMPO
 window.atualizarCronometro = (pedido) => atualizarRelogioDOM(pedido);
 
-// --- 🧠 GATILHOS CONTEXTUAIS (ASSISTENTE SILENCIOSO) ---
+let lembreteInatividadeChat = null;
+export function iniciarGatilhosContextuais(orderId, step) {
+    if (lembreteInatividadeChat) clearTimeout(lembreteInatividadeChat);
+    if (step >= 3) return;
+
+    lembreteInatividadeChat = setTimeout(async () => {
+        const container = document.getElementById('bubbles-area');
+        if (!container) return;
+        const dicaHtml = `<div class="flex justify-center my-4 animate-fadeIn"><div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm"><p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p><p class="text-[11px] text-amber-900 leading-tight">Serviços com reserva confirmada têm prioridade total. A reserva protege você contra imprevistos.</p></div></div>`;
+        container.insertAdjacentHTML('beforeend', dicaHtml);
+        const divMsgs = document.getElementById('chat-messages');
+        if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
+    }, 180000); 
+}
+
+window.exibirAlertaSegurancaReserva = () => {
+    alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
+};
 
 /**
  * Monitora a inatividade na negociação e injeta lembretes estratégicos.
