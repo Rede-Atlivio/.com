@@ -930,26 +930,54 @@
     import { db, auth } from './js/config.js';
     import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 📜 TEXTOS JURÍDICOS ÍNTEGROS (V3) ---
-    const TEXTOS = {
-        termos: `📜 TERMOS DE USO — ATLIVIO
-1. ACEITAÇÃO DOS TERMOS: Ao acessar ou utilizar a plataforma ATLIVIO, o usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso.
-2. NATUREZA DO SERVIÇO: A ATLIVIO é uma plataforma digital de intermediação, que conecta Clientes e Prestadores de Serviços. A ATLIVIO não executa serviços, não emprega prestadores e não possui vínculo trabalhista, societário ou contratual com nenhuma das partes.
-3. CADASTRO E RESPONSABILIDADE: O usuário é responsável por fornecer informações verdadeiras e atualizadas; manter a confidencialidade de seu acesso; utilizar a plataforma de forma ética e legal. A ATLIVIO pode suspender ou encerrar contas em caso de uso indevido, fraude ou tentativa de burlar o sistema.
-4. SALDO, CRÉDITOS E PAGAMENTOS: Os valores exibidos na carteira da ATLIVIO representam créditos virtuais internos, utilizados exclusivamente dentro da plataforma. Esses créditos não configuram moeda, investimento ou conta bancária. A liberação de valores ao Prestador ocorre somente conforme as regras operacionais da plataforma. A ATLIVIO pode reter, ajustar ou estornar créditos em casos de disputa, suspeita de fraude ou violação dos termos.
-5. SOLICITAÇÕES, ACEITE E DESISTÊNCIA: Ao aceitar uma solicitação, o Prestador concorda com as regras da plataforma. A ATLIVIO atua para registrar eventos dentro do ambiente digital, porém não tem controle sobre interações realizadas fora da plataforma. Caso Cliente e Prestador realizem acordos externos após a troca de informações, a responsabilidade é exclusivamente das partes envolvidas.
-6. LIMITAÇÃO DE RESPONSABILIDADE: A ATLIVIO não garante a conclusão de serviços; não se responsabiliza por qualidade, prazos ou resultados; não responde por prejuízos causados por acordos realizados fora da plataforma.
-7. CONDUTA E PENALIDADES: É proibido tentar burlar taxas, saldo ou regras; utilizar dados falsos; praticar golpes, assédio ou condutas abusivas. Usuários que violarem estas regras poderão ser banidos sem aviso prévio, com perda de acesso à plataforma.
-8. ALTERAÇÕES: A ATLIVIO pode atualizar estes Termos a qualquer momento. O uso contínuo da plataforma implica aceitação das alterações.`,
+    // --- 📜 TEXTOS JURÍDICOS ÍNTEGROS (V12 - Atualizado 05/02/2026) ---
+const TEXTOS = {
+    termos: `📜 TERMOS DE USO — ATLIVIO
+Última atualização: 05 de Fevereiro de 2026
 
-        privacidade: `🔐 POLÍTICA DE PRIVACIDADE — ATLIVIO
-1. COLETA DE DADOS: Coletamos apenas os dados necessários para o funcionamento da plataforma, como: Nome, WhatsApp, Email (quando aplicável) e informações relacionadas ao uso da plataforma.
-2. USO DAS INFORMAÇÕES: Os dados são utilizados para: Identificar usuários; Conectar Clientes e Prestadores; Garantir segurança, comunicação e funcionamento do sistema; Prevenir fraudes.
-3. COMPARTILHAMENTO: A ATLIVIO não vende dados pessoais. Os dados podem ser compartilhados apenas entre usuários envolvidos em uma solicitação, dentro dos limites operacionais da plataforma. Informações podem ser compartilhadas mediante obrigação legal.
-4. SEGURANÇA: Utilizamos criptografia SSL; Infraestrutura em Google Firebase; Práticas padrão de segurança para proteção dos dados. Apesar disso, nenhum sistema é 100% inviolável.
-5. DIREITOS DO USUÁRIO: O usuário pode solicitar correção de dados; Exclusão de conta (respeitando obrigações legais); Informações sobre o uso de seus dados.
-6. ALTERAÇÕES: Esta Política pode ser atualizada a qualquer momento. O uso contínuo da plataforma indica concordância.`
-    };
+1. ACEITAÇÃO DOS TERMOS
+Ao acessar ou utilizar a plataforma ATLIVIO, o usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso.
+
+2. NATUREZA DO SERVIÇO
+A ATLIVIO é uma plataforma digital de intermediação, que conecta Clientes e Prestadores de Serviços. A ATLIVIO não executa serviços, não emprega prestadores e não possui vínculo trabalhista, societário ou contratual com nenhuma das partes.
+
+3. CADASTRO E RESPONSABILIDADE
+O usuário é responsável por: fornecer informações verdadeiras; manter a confidencialidade de seu acesso; utilizar a plataforma de forma ética. A ATLIVIO pode suspender ou encerrar contas em caso de uso indevido, fraude ou tentativa de burlar o sistema.
+
+4. SALDO, CRÉDITOS E PAGAMENTOS
+Os valores na carteira ATLIVIO são créditos virtuais internos exclusivos da plataforma. Não configuram moeda, investimento ou conta bancária. A liberação de valores ao Prestador ocorre conforme as regras operacionais. A ATLIVIO pode reter ou estornar créditos em casos de disputa ou suspeita de fraude.
+
+5. SOLICITAÇÕES, ACEITE E DESISTÊNCIA
+Ao aceitar uma solicitação, o Prestador concorda com as regras. A ATLIVIO registra eventos digitais, mas não controla interações fora da plataforma. Acordos externos realizados após a troca de informações são de responsabilidade exclusiva das partes.
+
+6. LIMITAÇÃO DE RESPONSABILIDADE
+A ATLIVIO não garante a conclusão de serviços; não se responsabiliza por qualidade, prazos ou resultados; não responde por prejuízos causados por acordos externos.
+
+7. CONDUTA E PENALIDADES
+É proibido: tentar burlar taxas e saldo; utilizar dados falsos; praticar assédio ou golpes. Usuários que violarem estas regras poderão ser banidos sem aviso prévio, com perda total de acesso.
+
+8. ALTERAÇÕES
+A ATLIVIO pode atualizar estes Termos a qualquer momento. O uso contínuo implica aceitação das alterações.`,
+
+    privacidade: `🔐 POLÍTICA DE PRIVACIDADE — ATLIVIO
+1. COLETA DE DADOS
+Coletamos dados essenciais: Nome, WhatsApp, Email e informações de uso da plataforma.
+
+2. USO DAS INFORMAÇÕES
+Dados usados para: Identificar usuários; Conectar Clientes/Prestadores; Garantir segurança e prevenir fraudes.
+
+3. COMPARTILHAMENTO
+A ATLIVIO não vende dados pessoais. Dados são compartilhados apenas entre as partes envolvidas em uma solicitação ativa.
+
+4. SEGURANÇA
+Utilizamos SSL e infraestrutura Google Firebase. Embora sigamos padrões rigorosos, nenhum sistema é 100% inviolável.
+
+5. DIREITOS DO USUÁRIO
+O usuário pode solicitar correção, exclusão de conta ou informações sobre seus dados a qualquer momento.
+
+6. ALTERAÇÕES
+Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
+};
 
     // --- 🛠️ FUNÇÕES DE INTERFACE ---
     window.openTerms = (type) => {
