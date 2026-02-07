@@ -350,60 +350,58 @@ window.alternarMinimizacao = (id) => {
 };
 
 export function createRequestCard(pedido) {
-    // 🎯 CORREÇÃO DE ALVO: O container correto é 'radar-container'
-    const container = garantirContainerRadar();
+    // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
+    const container = document.getElementById('radar-container');
     if (!container) return;
 
-    // 🛡️ SINCRONIA V12: Busca a taxa dinâmica (ex: 0.5 para 50%)
+    // Se o card já existe, não cria de novo
+    if (document.getElementById(`req-${pedido.id}`)) return;
+
     const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
-    const valorOferta = parseFloat(pedido.offer_value || pedido.price || 0);
-    const taxaCalculada = valorOferta * regras.taxa;
-    const lucro = valorOferta - taxaCalculada;
+    const valor = parseFloat(pedido.offer_value || 0);
+    const taxa = valor * regras.taxa;
+    const lucro = valor - taxa;
 
     const card = document.createElement('div');
-    card.id = `req-${pedido.id}`; // Mantendo o padrão de ID para o timer funcionar
-    card.className = "request-card bg-[#0f172a] p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300 rounded-2xl shadow-2xl border border-white/10 mb-3";
+    card.id = `req-${pedido.id}`;
+    card.className = "request-card p-0 mb-3 bg-[#0f172a] rounded-2xl shadow-2xl border border-white/10 overflow-hidden animate-slideInDown";
 
     card.innerHTML = `
         <div class="p-5 text-center">
-            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
-                Nova Solicitação
-            </span>
-            <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valorOferta.toFixed(0)}</h2>
+            <span class="bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white">Nova Solicitação</span>
+            <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
             <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80 text-white">
-                <span class="text-red-300">Taxa: -R$ ${taxaCalculada.toFixed(2)}</span>
+                <span class="text-red-300">Taxa: -R$ ${taxa.toFixed(2)}</span>
                 <span class="text-green-300">Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
-
-        <div id="detalhes-${pedido.id}" class="pb-4 transition-all duration-500">
-            <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
-                <p class="text-xs font-bold mb-1">👤 ${pedido.client_name || 'Cliente'}</p>
-                <p class="text-[11px] opacity-70 mb-1">📍 ${pedido.location || 'A combinar'}</p>
+        <div class="pb-4 px-4">
+            <div class="bg-black/20 p-4 rounded-xl border border-white/5 text-white mb-4">
+                <p class="text-xs font-bold mb-1 italic uppercase opacity-60">Pedido de: ${pedido.client_name || 'Cliente'}</p>
+                <p class="text-[11px] opacity-90 italic">📍 ${pedido.location || 'A combinar'}</p>
             </div>
-            
-            <div class="p-4 grid grid-cols-2 gap-3">
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-600 transition">Pular</button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-600 transition">Ignorar</button>
                 <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg transform active:scale-95 transition">✔ ACEITAR</button>
             </div>
         </div>
-        
-        <div class="absolute bottom-0 left-0 h-1 bg-black/20 w-full">
-            <div class="h-full bg-green-400 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
+        <div class="h-1 bg-black/20 w-full relative">
+            <div id="timer-${pedido.id}" class="h-full bg-green-400 w-full transition-all duration-[30000ms] ease-linear"></div>
         </div>
     `;
 
     container.prepend(card);
-
-    // 🔥 AUTOMAÇÃO V12: Auto-minimiza visualmente e remove
-    setTimeout(() => {
-        const c = document.getElementById(`req-${pedido.id}`);
-        if(c) c.style.opacity = "0.5";
-    }, 15000);
+    
+    // Esconde a antena se houver card
+    const antena = document.getElementById('radar-empty-state');
+    if (antena) antena.classList.add('hidden');
 
     setTimeout(() => { 
-        if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
-    }, 30000);
+        const t = document.getElementById(`timer-${pedido.id}`);
+        if(t) t.style.width = '0%';
+    }, 100);
+
+    setTimeout(() => { if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); }, 30000);
 }
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
