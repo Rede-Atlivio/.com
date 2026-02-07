@@ -236,17 +236,17 @@ export async function enviarPropostaAgora() {
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
-// Controle de estado para evitar loops de processamento
-let radarIniciado = false;
+// Controle de estado usando a window para permitir reset externo
+window.radarIniciado = false;
 let radarUnsubscribe = null;
 
 export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🛡️ TRAVA DE SEGURANÇA V12: Se o radar já está rodando, não reinicia.
-    if (radarIniciado) {
-        console.log("🛰️ [SISTEMA] Radar já está operando. Ignorando re-inicialização.");
+    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
+    if (window.radarIniciado) {
+        console.log("🛰️ [SISTEMA] Radar já está operando.");
         return;
     }
 
@@ -256,12 +256,14 @@ export async function iniciarRadarPrestador(uidManual = null) {
     getDoc(configRef).then(s => { 
         if(s.exists()) {
             const data = s.data();
+            let taxaBruta = parseFloat(data.porcentagem_reserva || data.taxa_plataforma || 0);
+            if (taxaBruta > 1) taxaBruta = taxaBruta / 100;
+
             window.CONFIG_FINANCEIRA = {
-                taxa: parseFloat(data.taxa_plataforma || 0),
+                taxa: taxaBruta,
                 limite: parseFloat(data.limite_divida || 0)
             };
-            // Log silencioso apenas na primeira vez
-            console.log("💰 [RADAR] Taxas validadas com sucesso.");
+            console.log("💰 [RADAR] Taxas sincronizadas:", (taxaBruta * 100) + "%");
         }
     });
 
@@ -277,7 +279,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             return;
         }
 
-        radarIniciado = true; // Marca como iniciado apenas após a primeira conexão bem-sucedida
+        window.radarIniciado = true; 
         garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
@@ -290,8 +292,22 @@ export async function iniciarRadarPrestador(uidManual = null) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
             else emptyState.classList.add('hidden');
         }
+    }, (error) => {
+        console.error("❌ Erro no Snapshot do Radar:", error);
+        window.radarIniciado = false;
     });
 }
+
+window.pararRadarFisico = () => {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+    }
+    window.radarIniciado = false; 
+    console.log("🛰️ [SISTEMA] Radar desligado fisicamente.");
+    const container = document.getElementById('radar-container');
+    if (container) container.innerHTML = "";
+};
 
 // Atualização da função de parada para resetar a trava
 window.pararRadarFisico = () => {
