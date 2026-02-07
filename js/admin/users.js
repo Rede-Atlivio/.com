@@ -218,33 +218,56 @@ function abrirModalMassa() {
 }
 
 async function enviarMassaConfirmado() {
-    const msg = document.getElementById('massa-msg').value;
-    const tipo = document.getElementById('massa-tipo').value;
-    const credito = parseFloat(document.getElementById('massa-credito').value) || 0;
-    if(!msg && credito === 0) return alert("Preecha algo.");
-    if(!confirm(`Enviar para ${selectedUsers.size} usuários?`)) return;
-    const batch = writeBatch(window.db);
-    selectedUsers.forEach(uid => {
-        if(msg) {
-            const refNotif = doc(collection(window.db, "notifications"));
-            batch.set(refNotif, { uid: uid, message: msg, type: tipo, read: false, created_at: serverTimestamp() });
-        }
-    });
-    await batch.commit();
-    if(credito !== 0) {
-        for (let uid of selectedUsers) {
-            const ref = doc(window.db, "usuarios", uid);
-            const snap = await getDoc(ref);
-            if(snap.exists()) {
-                const novoSaldo = (snap.data().wallet_balance || snap.data().saldo || 0) + credito;
-                await updateDoc(ref, { saldo: novoSaldo, wallet_balance: novoSaldo });
-            }
-        }
-    }
-    alert("✅ Processo concluído!");
-    document.getElementById('modal-editor').classList.add('hidden');
-    selectedUsers.clear();
-    loadList();
+    const msg = document.getElementById('massa-msg').value;
+    const tipo = document.getElementById('massa-tipo').value;
+    const credito = parseFloat(document.getElementById('massa-credito').value) || 0;
+    
+    if(!msg && credito === 0) return alert("Preencha a mensagem ou o valor do crédito.");
+    if(!confirm(`Deseja aplicar esta ação para ${selectedUsers.size} usuários?`)) return;
+    
+    try {
+        const batch = writeBatch(window.db);
+        selectedUsers.forEach(uid => {
+            if(msg) {
+                const refNotif = doc(collection(window.db, "notifications"));
+                batch.set(refNotif, { 
+                    uid: uid, 
+                    message: msg, 
+                    type: tipo, 
+                    read: false, 
+                    created_at: serverTimestamp() 
+                });
+            }
+        });
+        
+        await batch.commit();
+
+        if(credito !== 0) {
+            for (let uid of selectedUsers) {
+                const ref = doc(window.db, "usuarios", uid);
+                const snap = await getDoc(ref);
+                if(snap.exists()) {
+                    const data = snap.data();
+                    const saldoAtual = parseFloat(data.wallet_balance || data.saldo || 0);
+                    const novoSaldo = saldoAtual + credito;
+                    
+                    await updateDoc(ref, { 
+                        wallet_balance: novoSaldo,
+                        saldo: novoSaldo, 
+                        updated_at: serverTimestamp() 
+                    });
+                }
+            }
+        }
+
+        alert("✅ Processo concluído com sucesso!");
+        document.getElementById('modal-editor').classList.add('hidden');
+        selectedUsers.clear();
+        loadList();
+    } catch (e) {
+        console.error("Erro na ação em massa:", e);
+        alert("Falha ao processar ação em massa.");
+    }
 }
 
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
