@@ -159,6 +159,15 @@ export async function abrirChatPedido(orderId) {
         const pedido = snap.data();
         const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
+
+        // Ativa o cronômetro visual se estiver em andamento
+        if (typeof window.atualizarCronometro === 'function') {
+            window.atualizarCronometro(pedido);
+        }
+
+        // Ativa os lembretes de fechamento se estiver em negociação
+        iniciarGatilhosContextuais(orderId, step);
+
         renderizarEstruturaChat(painelChat, pedido, isProvider, orderId, step);
     });
 }
