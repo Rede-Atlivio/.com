@@ -31,20 +31,52 @@ let mem_SelectedServiceTitle = "";
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
 // ============================================================================
+// ============================================================================
+// 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
+// ============================================================================
 function garantirContainerRadar() {
-    let container = document.getElementById('radar-container');
     const parent = document.getElementById('pview-radar');
-    const emptyState = document.getElementById('radar-empty-state');
+    if (!parent) return null;
 
-    // Se o container sumiu mas o pai existe, recria o container
-    if (!container && parent) {
+    // 1. LIMPEZA PROFUNDA: Se houver "lixo" (estado offline 💤), removemos tudo.
+    const temContainer = document.getElementById('radar-container');
+    const temEmptyState = document.getElementById('radar-empty-state');
+    
+    // Se não tem nossos componentes oficiais, mas tem coisa lá dentro (o ZZZ), limpa.
+    if ((!temContainer || !temEmptyState) && parent.children.length > 0) {
+        // Verifica se é o container correto antes de limpar
+        if(!temContainer) {
+            console.log("🧹 [AUTO-CURA] Limpando estado 'Offline' para iniciar o Radar.");
+            parent.innerHTML = ''; 
+        }
+    }
+
+    // 2. RECONSTRÓI O CONTAINER (Onde ficam os cards)
+    let container = document.getElementById('radar-container');
+    if (!container) {
         container = document.createElement('div');
         container.id = 'radar-container';
         container.className = "flex flex-col gap-3 w-full max-w-[400px] mx-auto z-[8000] relative py-2";
-        parent.prepend(container); 
+        parent.appendChild(container);
     }
 
-    // Gerencia a visibilidade do estado vazio (📡)
+    // 3. RECONSTRÓI O ESTADO VAZIO (A Antena 📡)
+    let emptyState = document.getElementById('radar-empty-state');
+    if (!emptyState) {
+        emptyState = document.createElement('div');
+        emptyState.id = 'radar-empty-state';
+        emptyState.className = "flex flex-col items-center justify-center py-20 animate-fadeIn";
+        emptyState.innerHTML = `
+            <div class="relative flex h-24 w-24 items-center justify-center mb-4">
+                <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
+                <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
+            </div>
+            <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse">Procurando clientes ao seu redor...</p>
+        `;
+        parent.appendChild(emptyState);
+    }
+
+    // 4. LÓGICA VISUAL (Tem card? Esconde antena.)
     if (container && emptyState) {
         const temCards = container.querySelectorAll('.request-card').length > 0;
         if (temCards) {
