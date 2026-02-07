@@ -47,11 +47,11 @@ window.switchTab = function(tabName) {
         activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
     }
 
-    // 4. 🔥 GATILHOS DE CARREGAMENTO E PROTEÇÃO DO RADAR
+    // 4. 🔥 GATILHOS DE CARREGAMENTO (Auto-load apenas de conteúdo)
     if(tabName === 'servicos') {
         if(window.carregarServicos) window.carregarServicos();
         
-        // Se entrar na aba de serviços, garante que o Radar V12 não seja limpo por "lixo"
+        // Proteção do Radar V12
         const toggle = document.getElementById('online-toggle');
         if(toggle && toggle.checked && window.iniciarRadarPrestador) {
             window.iniciarRadarPrestador();
@@ -61,7 +61,9 @@ window.switchTab = function(tabName) {
     if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-    if(tabName === 'chat' && window.carregarChat) window.carregarChat();
+    
+    // O Chat agora é uma janela de ação direta disparada pelos pedidos, 
+    // removido do sistema de carregamento automático de abas para evitar conflitos.
 };
 window.switchServiceSubTab = function(subTab) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
