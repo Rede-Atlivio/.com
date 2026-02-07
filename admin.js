@@ -420,19 +420,19 @@ window.saveModalData = async () => {
 window.closeModal = () => document.getElementById('modal-editor').classList.add('hidden');
 
 window.saveSettings = async () => { 
-    const msg = document.getElementById('conf-global-msg').value;
+    const msg = document.getElementById('conf-global-msg')?.value || "";
     const btn = document.querySelector('button[onclick="window.saveSettings()"]');
     if(btn) { btn.innerText = "⏳ SALVANDO..."; btn.disabled = true; }
 
     try {
-        // Unificação: Salva APENAS em configuracoes/global para o topo do app
+        // Salva apenas o aviso global para o app
         await setDoc(doc(db, "configuracoes", "global"), { 
             top_message: msg,
             show_msg: msg.length > 0,
             updated_at: serverTimestamp() 
         }, {merge:true}); 
 
-        alert("✅ AVISO GLOBAL ATUALIZADO!\nAs regras financeiras devem ser alteradas na aba 'CONFIGURAÇÕES'."); 
+        alert("✅ AVISO GLOBAL ATUALIZADO!"); 
     } catch (e) { 
         alert("Erro ao salvar: " + e.message); 
     } finally {
