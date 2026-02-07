@@ -173,8 +173,10 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     if (step < 3) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
-        if (jaConfirmei) return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
-        
+        if (jaConfirmei) {
+            return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
+        }
+
         const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0 };
         const pct = isProvider ? config.porcentagem_reserva : config.porcentagem_reserva_cliente;
         const valorAcordo = parseFloat(pedido.offer_value) || 0;
@@ -194,18 +196,15 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
             </button>
             <div class="mt-3 bg-amber-50 p-2 rounded-lg flex gap-2 items-center">
                 <span class="text-xs">🔒</span>
-                <p class="text-[9px] text-amber-800 font-bold leading-tight uppercase">Pagamento protegido pela ATLIVIO</p>
-            </div>
-        </div>`;
-            <div class="bg-amber-50 border border-amber-100 p-2 rounded-lg flex gap-2 items-start">
-                <span class="text-amber-500 text-xs mt-0.5">🔒</span>
-                <p class="text-amber-800 text-[9px] font-medium leading-tight">
-                    <strong>SISTEMA ATLIVIO:</strong> Reserva de <strong>R$ ${reservaCalculada.toFixed(2)} (${pct}%)</strong> como garantia.
-                </p>
+                <p class="text-[9px] text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia de Proteção: R$ ${reservaCalculada.toFixed(2)}</p>
             </div>
         </div>`;
     }
-    if (step === 3) return `<div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center mb-4 mx-4 shadow-sm"><p class="text-sm font-black text-emerald-800 uppercase">✨ Acordo Confirmado!</p></div>`;
+    
+    if (step === 3) {
+        return `<div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center mb-4 mx-4 shadow-sm"><p class="text-sm font-black text-emerald-800 uppercase">✨ Acordo Confirmado!</p></div>`;
+    }
+    
     return "";
 }
 
