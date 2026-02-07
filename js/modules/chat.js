@@ -819,8 +819,8 @@ window.novoEnviarProposta = async (orderId) => {
     if (!valorStr) return;
     const valor = parseFloat(valorStr.replace(',', '.'));
 
-    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: Desconto, 30min extras, etc):");
-    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO ESPECIAL";
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: Desconto, 30min extras, material incluso):");
+    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "OFERTA EXCLUSIVA";
 
     try {
         await updateDoc(doc(db, "orders", orderId), {
@@ -830,36 +830,36 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 🎨 Visual "Oferta Flash" com Tailwind
+        // 🎨 Visual de IMPACTO: Oferta Flash
         const htmlProposta = `
-            <div class="my-4 border-2 border-dashed border-amber-400 rounded-2xl overflow-hidden shadow-2xl transform rotate-1 animate-pulse-slow">
-                <div class="bg-amber-400 text-amber-900 text-[10px] font-black text-center py-1 uppercase tracking-widest">
-                    🔥 Oferta Exclusiva Ativo
+            <div class="my-4 border-2 border-dashed border-amber-500 rounded-2xl overflow-hidden shadow-xl transform rotate-1 animate-pulse" style="background: white;">
+                <div class="bg-amber-500 text-white text-[10px] font-black text-center py-1.5 uppercase tracking-tighter">
+                    ⚡ OFERTA FLASH - GARANTA SUA VAGA
                 </div>
-                <div class="bg-white p-4 text-center">
-                    <p class="text-slate-500 text-[9px] uppercase font-bold">Por apenas</p>
-                    <div class="flex justify-center items-baseline gap-1 text-slate-900">
-                        <span class="text-lg font-bold">R$</span>
-                        <span class="text-4xl font-black tracking-tighter">${valor.toFixed(2)}</span>
+                <div class="p-5 text-center">
+                    <p class="text-slate-400 text-[8px] uppercase font-black mb-1">Apenas agora por</p>
+                    <div class="flex justify-center items-center gap-1 text-blue-900">
+                        <span class="text-xl font-bold">R$</span>
+                        <span class="text-5xl font-black tracking-tighter">${valor.toFixed(2).replace('.', ',')}</span>
                     </div>
-                    <div class="mt-2 py-1 px-3 bg-green-100 rounded-full inline-block">
-                        <p class="text-green-700 text-[10px] font-black italic">🎁 ${labelBeneficio}</p>
+                    <div class="mt-3 py-1.5 px-4 bg-green-600 rounded-lg inline-block shadow-md">
+                        <p class="text-white text-[10px] font-black italic">🎁 ${labelBeneficio}</p>
                     </div>
-                    <p class="mt-3 text-[9px] text-slate-400 leading-tight">Válido para fechamento imediato.<br>Clique em <b>FECHAR ACORDO</b> para garantir.</p>
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <p class="text-[9px] text-slate-500 leading-tight">Clique no botão <b>ACEITAR E FECHAR</b> acima para reservar este valor e horário.</p>
+                    </div>
                 </div>
             </div>
         `;
 
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: htmlProposta, // O seu renderizador de chat precisa aceitar HTML ou converter este texto
-            isHTML: true,
+            text: htmlProposta,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
         
     } catch (e) { alert("Erro ao enviar proposta."); }
 };
-
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
