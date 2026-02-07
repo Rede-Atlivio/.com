@@ -313,28 +313,42 @@ window.alternarMinimizacao = (id) => {
 
 function createRequestCard(pedido) {
     const container = garantirContainerRadar();
+    const uid = auth.currentUser.uid;
+
+    // 🛡️ FILTRO DE BANCO: Se o prestador já rejeitou permanentemente, ignora o card
+    if (pedido.rejeitado_por && pedido.rejeitado_por[uid] === true) {
+        return; 
+    }
+
+    // 🛡️ FILTRO DE SESSÃO: Evita duplicidade imediata
+    if (window.REJEITADOS_SESSAO && window.REJEITADOS_SESSAO.has(pedido.id)) return;
     if (document.getElementById(`req-${pedido.id}`)) return;
 
-    // 🛡️ Filtro de Rejeição Local: Se o prestador já rejeitou este pedido nesta sessão, não mostra
-    if (window.REJEITADOS_SESSAO && window.REJEITADOS_SESSAO.has(pedido.id)) return;
-
+    // Limite visual de 5 cards
     if (container.children.length >= 5) {
         const oldest = container.lastElementChild;
         if (oldest) oldest.remove();
     }
 
+    // Som de notificação
     const audio = document.getElementById('notification-sound');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
-    const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0.20, limite: 0 };
+    // 📊 CÁLCULO FINANCEIRO V12 (Com blindagem contra NaN)
+    const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * regrasAtivas.taxa; 
-    const lucro = valor - taxa;
-    const saldo = window.userProfile?.wallet_balance || 0;
-    const temSaldoParaTaxa = (saldo - taxa) >= regrasAtivas.limite;
+    const taxaCalculada = valor * (parseFloat(regrasAtivas.taxa) || 0);
+    const lucro = valor - taxaCalculada;
+
+    const saldoAtual = parseFloat(window.userProfile?.wallet_balance || 0);
+    const limitePermitido = parseFloat(regrasAtivas.limite || 0);
+
+    // 🔵 LÓGICA DE COR: Azul se (Saldo - Taxa) não for menor que o limite
+    const temSaldoParaTaxa = (saldoAtual - taxaCalculada) >= limitePermitido;
 
     const cardBg = temSaldoParaTaxa ? "bg-[#0f172a]" : "bg-red-700 animate-pulse";
     const statusTag = temSaldoParaTaxa ? "bg-blue-600" : "bg-white text-red-700 shadow-lg";
+    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ SALDO INSUFICIENTE";
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
@@ -342,8 +356,7 @@ function createRequestCard(pedido) {
     
     card.innerHTML = `
         <button onclick="window.rejeitarPermanente('${pedido.id}')" 
-            class="absolute top-3 left-3 z-[101] text-white/50 bg-white/10 rounded-full w-6 h-6 flex items-center justify-center font-bold hover:bg-red-600 hover:text-white transition shadow-sm"
-            title="Não tenho interesse">
+            class="absolute top-3 left-3 z-[101] text-white/50 bg-white/10 rounded-full w-6 h-6 flex items-center justify-center font-bold hover:bg-red-600 hover:text-white transition shadow-sm">
             &times;
         </button>
 
@@ -353,24 +366,24 @@ function createRequestCard(pedido) {
         </button>
 
         <div class="p-5 text-center">
-            <span class="${statusTag} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest animate-fade">
-                ${temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ SALDO INSUFICIENTE"}
+            <span class="${statusTag} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                ${statusMsg}
             </span>
             <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
             <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80 text-white">
-                <span class="text-red-300">Taxa: -R$ ${taxa.toFixed(2)}</span>
+                <span class="text-red-300">Taxa: -R$ ${taxaCalculada.toFixed(2)}</span>
                 <span class="text-green-300">Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
 
         <div id="detalhes-${pedido.id}" class="pb-4 transition-all duration-500">
             <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
-                <p class="text-xs font-bold mb-1 flex items-center gap-2">👤 ${pedido.client_name || 'Cliente'}</p>
-                <p class="text-[11px] opacity-70 mb-1 flex items-center gap-2">📍 ${pedido.location || 'A combinar'}</p>
-                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">🕒 Expira em: <span id="countdown-${pedido.id}">30s</span></p>
+                <p class="text-xs font-bold mb-1">👤 ${pedido.client_name || 'Cliente'}</p>
+                <p class="text-[11px] opacity-70 mb-1">📍 ${pedido.location || 'A combinar'}</p>
+                <p class="text-[11px] text-yellow-400 font-mono">🕒 Expira em: <span id="countdown-${pedido.id}">30s</span></p>
             </div>
             
-            <div class="p-4 text-center">
+            <div class="p-4">
                 ${temSaldoParaTaxa ? `
                     <div class="grid grid-cols-2 gap-3">
                         <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-red-600 transition">Pular</button>
@@ -391,14 +404,15 @@ function createRequestCard(pedido) {
 
     container.prepend(card);
 
-    // Lógica de expiração original mantida
+    // Inicia animação da barra de tempo
     setTimeout(() => { 
-        if(document.getElementById(`timer-${pedido.id}`)) document.getElementById(`timer-${pedido.id}`).style.width = '0%';
+        const t = document.getElementById(`timer-${pedido.id}`);
+        if(t) t.style.width = '0%';
     }, 100);
 
+    // Auto-remover após 30s
     setTimeout(() => { if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); }, 30000);
 }
-
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
