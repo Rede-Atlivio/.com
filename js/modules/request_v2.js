@@ -287,9 +287,7 @@ window.alternarMinimizacao = (id) => {
 };
 
 function createRequestCard(pedido) {
-    // ✅ GARANTIA 3: Usa a função segura
     const container = garantirContainerRadar();
-    
     if (document.getElementById(`req-${pedido.id}`)) return;
 
     if (container.children.length >= 5) {
@@ -302,82 +300,71 @@ function createRequestCard(pedido) {
 
     const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * ((config.porcentagem_reserva || 20) / 100);
+    const taxa = valor * (20 / 100); // Taxa padrão de segurança
     const lucro = valor - taxa;
 
-    // Tratamento de Data/Hora
-    let dataDisplay = "--/--";
-    if (pedido.data) {
-        // Se vier como 2026-02-06, inverte. Se vier texto livre, mantém.
-        dataDisplay = pedido.data.includes('-') && pedido.data.length === 10 
-            ? pedido.data.split('-').reverse().join('/') 
-            : pedido.data;
-    }
+    // 🔴 DETECTOR DE SALDO (A LÓGICA DO CARD VERMELHO)
+    const saldo = window.userProfile?.wallet_balance || 0;
+    const limite = window.CONFIG_FINANCEIRA?.limite || 0;
+    const temSaldoParaTaxa = (saldo - taxa) > limite;
+
+    const cardBg = temSaldoParaTaxa ? "bg-[#0f172a]" : "bg-red-700 animate-pulse";
+    const statusTag = temSaldoParaTaxa ? "bg-blue-600" : "bg-white text-red-700";
+    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ SALDO INSUFICIENTE";
+
+    let dataDisplay = pedido.data || "--/--";
     const horaDisplay = pedido.hora || '--:--';
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = "request-card p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300";
+    card.className = `request-card ${cardBg} p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300 rounded-2xl shadow-2xl border border-white/10`;
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
-            class="absolute top-3 right-3 z-[100] text-white hover:text-yellow-400 bg-black/40 hover:bg-black/80 rounded-full w-8 h-8 flex items-center justify-center font-bold text-xl border border-white/20 cursor-pointer backdrop-blur-sm transition-all shadow-lg">
+            class="absolute top-3 right-3 z-[100] text-white bg-black/20 rounded-full w-8 h-8 flex items-center justify-center font-bold border border-white/10 shadow-lg">
             &minus;
         </button>
 
-        <div class="p-5 text-center cursor-pointer" onclick="window.alternarMinimizacao('${pedido.id}')">
-            <span class="bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
-                Nova Solicitação
+        <div class="p-5 text-center">
+            <span class="${statusTag} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+                ${statusMsg}
             </span>
-            <h2 class="price-tag text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
-            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80">
+            <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
+            <div class="flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-80 text-white">
                 <span class="text-red-300">Taxa: -R$ ${taxa.toFixed(2)}</span>
                 <span class="text-green-300">Lucro: R$ ${lucro.toFixed(2)}</span>
             </div>
         </div>
 
         <div id="detalhes-${pedido.id}" class="pb-4">
-            <div class="bg-slate-800/50 mx-4 p-4 rounded-xl border border-slate-700 shadow-inner">
-                <p class="text-xs text-white font-bold mb-1 flex items-center gap-2">
-                    👤 ${pedido.client_name || 'Cliente Atlivio'}
-                </p>
-                <p class="text-[11px] text-gray-300 mb-1 flex items-center gap-2">
-                    📍 ${pedido.location || 'Local a combinar'}
-                </p>
-                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">
-                    📅 ${dataDisplay} às ${horaDisplay}
-                </p>
+            <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
+                <p class="text-xs font-bold mb-1 flex items-center gap-2">👤 ${pedido.client_name || 'Cliente'}</p>
+                <p class="text-[11px] opacity-70 mb-1 flex items-center gap-2">📍 ${pedido.location || 'A combinar'}</p>
+                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">📅 ${dataDisplay} às ${horaDisplay}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3 p-4">
-                <button onclick="window.recusarPedidoReq('${pedido.id}')" class="btn-reject py-3 rounded-xl font-bold text-xs uppercase transition hover:bg-slate-700 shadow-lg border-0">✖ Recusar</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-accept py-3 rounded-xl font-black text-xs uppercase transition hover:scale-105 shadow-lg shadow-green-900/20 border-0">✔ Aceitar</button>
+            
+            <div class="p-4">
+                ${temSaldoParaTaxa ? `
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase transition hover:bg-white/20">✖ Recusar</button>
+                        <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-green-900/40 border-0">✔ Aceitar</button>
+                    </div>
+                ` : `
+                    <button onclick="window.switchTab('ganhar')" class="w-full bg-white text-red-700 py-4 rounded-xl font-black text-xs uppercase shadow-2xl animate-bounce">
+                        💰 RECARREGAR E GARANTIR SERVIÇO
+                    </button>
+                `}
             </div>
         </div>
         
-        <div class="absolute bottom-0 left-0 h-2 bg-slate-900 w-full z-10">
-            <div class="h-full bg-gradient-to-r from-green-500 to-emerald-400 w-full transition-all duration-[30000ms] ease-linear shadow-[0_0_10px_rgba(34,197,94,0.5)]" id="timer-${pedido.id}"></div>
+        <div class="absolute bottom-0 left-0 h-1 bg-black/20 w-full">
+            <div class="h-full bg-green-400 w-full transition-all duration-[30000ms] ease-linear" id="timer-${pedido.id}"></div>
         </div>
     `;
 
     container.prepend(card);
-
-    setTimeout(() => {
-        const timerBar = document.getElementById(`timer-${pedido.id}`);
-        if(timerBar) timerBar.style.width = '0%';
-    }, 100);
-
-    setTimeout(() => {
-        const c = document.getElementById(`req-${pedido.id}`);
-        if (c && !c.classList.contains('minimized')) {
-            window.alternarMinimizacao(pedido.id);
-        }
-    }, 15000);
-
-    setTimeout(() => {
-        if (document.getElementById(`req-${pedido.id}`)) {
-            removeRequestCard(pedido.id);
-        }
-    }, 30000);
+    setTimeout(() => { if(document.getElementById(`timer-${pedido.id}`)) document.getElementById(`timer-${pedido.id}`).style.width = '0%'; }, 100);
+    setTimeout(() => { if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); }, 30000);
 }
 
 function removeRequestCard(orderId) {
