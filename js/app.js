@@ -47,7 +47,7 @@ window.switchTab = function(tabName) {
         activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
     }
 
-    // 4. 🔥 GATILHOS DE CARREGAMENTO (Auto-load apenas de conteúdo)
+    // 4. 🔥 GATILHOS DE CARREGAMENTO (Saneados)
     if(tabName === 'servicos') {
         if(window.carregarServicos) window.carregarServicos();
         
@@ -63,7 +63,7 @@ window.switchTab = function(tabName) {
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
     
     // O Chat agora é uma janela de ação direta disparada pelos pedidos, 
-    // removido do sistema de carregamento automático de abas para evitar conflitos.
+    // removido deste sistema para evitar conflitos de carregamento.
 };
 window.switchServiceSubTab = function(subTab) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
