@@ -198,9 +198,10 @@ onAuthStateChanged(auth, async (user) => {
                         iniciarAppLogado(user); 
                         
                         if (userProfile.is_provider) {
-                            verificarStatusERadar(user.uid);
-                            if (!userProfile.setup_profissional_ok) window.abrirConfiguracaoServicos();
-                        }
+    verificarStatusERadar(user.uid);
+    // Auto-disparo desativado para não irritar o usuário. 
+    // Ele só abre se clicar no botão "MEUS SERVIÇOS".
+}
                     }
                 }
             } catch (err) { 
