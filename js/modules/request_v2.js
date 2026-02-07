@@ -36,20 +36,22 @@ function garantirContainerRadar() {
     const parent = document.getElementById('pview-radar');
     const emptyState = document.getElementById('radar-empty-state');
 
-    if (!parent) return null;
-
-    if (!container) {
+    // Se o container sumiu mas o pai existe, recria o container
+    if (!container && parent) {
         container = document.createElement('div');
         container.id = 'radar-container';
         container.className = "flex flex-col gap-3 w-full max-w-[400px] mx-auto z-[8000] relative py-2";
         parent.prepend(container); 
     }
 
-    // Gerencia o Empty State sem loop infinito
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (emptyState) {
-        if (temCards) emptyState.classList.add('hidden');
-        else emptyState.classList.remove('hidden');
+    // Gerencia a visibilidade do estado vazio (📡)
+    if (container && emptyState) {
+        const temCards = container.querySelectorAll('.request-card').length > 0;
+        if (temCards) {
+            emptyState.classList.add('hidden');
+        } else {
+            emptyState.classList.remove('hidden');
+        }
     }
 
     return container;
