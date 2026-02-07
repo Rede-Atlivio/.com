@@ -871,9 +871,8 @@ window.cancelarServico = window.cancelarServico;
 window.encerrarNegociacao = window.encerrarNegociacao;
 
 // 🚨 CORREÇÃO CRÍTICA: EXPORTANDO A NOVA FUNÇÃO PRINCIPAL
-window.carregarInterfaceDeChat = carregarInterfaceDeChat;
 // ============================================================================
-// 🛠️ MÓDULO DE SUPORTE E GATILHOS V12 (FINAL)
+// 🛠️ MÓDULO DE SUPORTE, GATILHOS E UTILITÁRIOS CHAT V12
 // ============================================================================
 
 window.sugerirFrase = (msg) => {
@@ -889,7 +888,8 @@ window.verPerfilCompleto = (uid) => {
     if (window.switchTab && window.carregarPerfilPublico) {
         window.carregarPerfilPublico(uid);
     } else {
-        alert("📊 Reputação Atlivio: Profissional com 100% de entregas garantidas.");
+        // Fallback caso o módulo de perfil ainda não tenha injetado a função global
+        alert("📊 Reputação Atlivio: Este profissional possui 100% de entregas garantidas pelo sistema.");
     }
 };
 
@@ -905,74 +905,41 @@ window.encerrarNegociacao = async (orderId) => {
         });
         alert("Conversa encerrada.");
         window.voltarParaListaPedidos();
-    } catch(e) { console.error("Erro ao encerrar:", e); }
+    } catch(e) { 
+        console.error("Erro ao encerrar:", e); 
+    }
 };
 
-// 💡 GATILHOS CONTEXTUAIS (ASSISTENTE)
-let varLembreteInatividade = null; // Mudei o nome para evitar conflitos de redeclaração
-export function iniciarGatilhosContextuais(orderId, step) {
-    if (varLembreteInatividade) clearTimeout(varLembreteInatividade);
-    if (step >= 3) return;
-
-    varLembreteInatividade = setTimeout(async () => {
-        const container = document.getElementById('bubbles-area');
-        if (!container) return;
-        const dicaHtml = `
-            <div class="flex justify-center my-4 animate-fadeIn">
-                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
-                    <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
-                    <p class="text-[11px] text-amber-900 leading-tight">Serviços com reserva confirmada têm prioridade total. A reserva protege você contra imprevistos.</p>
-                </div>
-            </div>`;
-        container.insertAdjacentHTML('beforeend', dicaHtml);
-        const divMsgs = document.getElementById('chat-messages');
-        if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
-    }, 180000); 
-}
-
-window.exibirAlertaSegurancaReserva = () => {
-    alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
-};
-
-/**
- * Monitora a inatividade na negociação e injeta lembretes estratégicos.
- * Se o sistema detectar que o acordo não foi fechado em 3 minutos,
- * ele envia uma dica de segurança para o cliente.
- */
-let lembreteInatividadeChat = null;
+// 💡 GATILHOS CONTEXTUAIS (ASSISTENTE SILENCIOSO)
+let timerLembreteInatividade = null; 
 
 export function iniciarGatilhosContextuais(orderId, step) {
-    if (lembreteInatividadeChat) clearTimeout(lembreteInatividadeChat);
-    if (step >= 3) return; // Não envia dicas de negociação se o acordo já fechou
+    if (timerLembreteInatividade) clearTimeout(timerLembreteInatividade);
+    if (step >= 3) return; // Não envia dicas se o acordo já fechou
 
-    lembreteInatividadeChat = setTimeout(async () => {
+    timerLembreteInatividade = setTimeout(async () => {
         const container = document.getElementById('bubbles-area');
         if (!container) return;
-
+        
         const dicaHtml = `
             <div class="flex justify-center my-4 animate-fadeIn">
                 <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
                     <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
                     <p class="text-[11px] text-amber-900 leading-tight">
-                        Serviços com reserva confirmada têm prioridade total. 
-                        A reserva de garantia protege você contra imprevistos.
+                        Serviços com reserva confirmada têm prioridade total na agenda. 
+                        A reserva protege você contra imprevistos.
                     </p>
                 </div>
-            </div>
-        `;
-        
+            </div>`;
+            
         container.insertAdjacentHTML('beforeend', dicaHtml);
         const divMsgs = document.getElementById('chat-messages');
         if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
         
-        console.log("💡 Gatilho Contextual ativado para o Pedido:", orderId);
+        console.log("💡 Gatilho Contextual ativado.");
     }, 180000); // 3 minutos
 }
 
-/**
- * 🔒 LEMBRETE DE SEGURANÇA NO FECHAMENTO
- * Aparece quando o usuário clica em "Fechar Acordo" mas hesita.
- */
 window.exibirAlertaSegurancaReserva = () => {
     alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
 };
