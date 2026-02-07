@@ -305,6 +305,7 @@ function createRequestCard(pedido) {
     const container = garantirContainerRadar();
     if (document.getElementById(`req-${pedido.id}`)) return;
 
+    // Limite de 5 cards para não bagunçar a tela
     if (container.children.length >= 5) {
         const oldest = container.lastElementChild;
         if (oldest) oldest.remove();
@@ -313,32 +314,32 @@ function createRequestCard(pedido) {
     const audio = document.getElementById('notification-sound');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
-    // 🛡️ SINCRONIA REAL: Busca a taxa do cérebro financeiro ou do Admin
-    const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
+    // 🛡️ TAXA DINÂMICA: Usa window.CONFIG_FINANCEIRA (Sincronizado com Admin)
+    const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0.20, limite: 0 };
     const valor = parseFloat(pedido.offer_value || 0);
     const taxa = valor * regrasAtivas.taxa; 
     const lucro = valor - taxa;
 
-    // 🔴 DETECTOR DE SALDO DINÂMICO
+    // 🔴 DETECTOR DE SALDO DINÂMICO (Impede aceite se não tiver saldo para a taxa real)
     const saldo = window.userProfile?.wallet_balance || 0;
     const temSaldoParaTaxa = (saldo - taxa) >= regrasAtivas.limite;
 
     const cardBg = temSaldoParaTaxa ? "bg-[#0f172a]" : "bg-red-700 animate-pulse";
-    const statusTag = temSaldoParaTaxa ? "bg-blue-600" : "bg-white text-red-700";
-    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ RECARGA NECESSÁRIA";
+    const statusTag = temSaldoParaTaxa ? "bg-blue-600" : "bg-white text-red-700 shadow-lg";
+    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ SALDO INSUFICIENTE";
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = `request-card ${cardBg} p-0 animate-slideInDown relative overflow-hidden w-full rounded-2xl shadow-2xl border border-white/10`;
+    card.className = `request-card ${cardBg} p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300 rounded-2xl shadow-2xl border border-white/10`;
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
-            class="absolute top-3 right-3 z-[100] text-white bg-black/20 rounded-full w-8 h-8 flex items-center justify-center font-bold border border-white/10 shadow-lg">
+            class="absolute top-3 right-3 z-[100] text-white bg-black/20 rounded-full w-8 h-8 flex items-center justify-center font-bold border border-white/10 shadow-lg hover:bg-black/40 transition">
             &minus;
         </button>
 
         <div class="p-5 text-center">
-            <span class="${statusTag} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest shadow-md">
+            <span class="${statusTag} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest animate-fade">
                 ${statusMsg}
             </span>
             <h2 class="text-white text-5xl font-black mt-4 tracking-tighter">R$ ${valor.toFixed(0)}</h2>
@@ -348,18 +349,22 @@ function createRequestCard(pedido) {
             </div>
         </div>
 
-        <div id="detalhes-${pedido.id}" class="pb-4">
+        <div id="detalhes-${pedido.id}" class="pb-4 transition-all duration-500">
             <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
                 <p class="text-xs font-bold mb-1 flex items-center gap-2">👤 ${pedido.client_name || 'Cliente'}</p>
                 <p class="text-[11px] opacity-70 mb-1 flex items-center gap-2">📍 ${pedido.location || 'A combinar'}</p>
+                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">🕒 Expira em: <span id="countdown-${pedido.id}">30s</span></p>
             </div>
             
             <div class="p-4">
                 ${temSaldoParaTaxa ? `
-                    <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg border-0">✔ ACEITAR AGORA</button>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase hover:bg-white/20 transition">✖ Pular</button>
+                        <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg border-0 transform active:scale-95 transition">✔ ACEITAR</button>
+                    </div>
                 ` : `
                     <button onclick="window.switchTab('ganhar')" class="w-full bg-white text-red-700 py-4 rounded-xl font-black text-xs uppercase shadow-2xl animate-bounce">
-                        💰 RECARREGAR SALDO
+                        💰 RECARREGAR E ACEITAR
                     </button>
                 `}
             </div>
@@ -371,7 +376,35 @@ function createRequestCard(pedido) {
     `;
 
     container.prepend(card);
-    setTimeout(() => { if(document.getElementById(`timer-${pedido.id}`)) document.getElementById(`timer-${pedido.id}`).style.width = '0%'; }, 100);
+
+    // 🕒 Lógica de Ciclo de Vida: Inicia barra e Minimización Automática
+    setTimeout(() => { 
+        if(document.getElementById(`timer-${pedido.id}`)) {
+            document.getElementById(`timer-${pedido.id}`).style.width = '0%';
+        }
+    }, 100);
+
+    // ⏲️ Cronômetro Visual (30s)
+    let timeLeft = 30;
+    const interval = setInterval(() => {
+        timeLeft--;
+        const el = document.getElementById(`countdown-${pedido.id}`);
+        if(el) el.innerText = `${timeLeft}s`;
+        if(timeLeft <= 0) clearInterval(interval);
+    }, 1000);
+
+    // 📉 Ação: Minimiza após 15s (Dá tempo de ler, mas limpa o visual)
+    setTimeout(() => {
+        if(document.getElementById(`req-${pedido.id}`) && !document.getElementById(`req-${pedido.id}`).classList.contains('minimized')) {
+            window.alternarMinimizacao(pedido.id);
+        }
+    }, 15000);
+
+    // 🗑️ Ação: Remove após 30s para não sobrecarregar
+    setTimeout(() => {
+        clearInterval(interval);
+        if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
+    }, 30000);
 }
 
 function removeRequestCard(orderId) {
