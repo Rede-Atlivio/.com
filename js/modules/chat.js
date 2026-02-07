@@ -532,63 +532,71 @@ window.voltarParaListaPedidos = () => {
 // ============================================================================
 
 function gerarPainelTempo(pedido, isProvider, orderId) {
-    // 1. Serviço em Execução (Cronômetro Ativo)
+    const step = pedido.system_step || 1;
+
+    // 1️⃣ MODO: EM EXECUÇÃO (Cronômetro Rodando)
     if (pedido.status === 'in_progress' && pedido.real_start) {
         return `
-        <div class="bg-green-600 text-white px-4 py-2 flex justify-between items-center shadow-inner">
-            <div class="flex items-center gap-2">
-                <span class="animate-pulse text-xs">🔴</span>
-                <span class="text-xs font-bold uppercase tracking-widest">Em Execução</span>
-            </div>
-            <div class="font-mono text-xl font-black tracking-widest" id="timer-display">00:00:00</div>
-            ${isProvider ? `<button onclick="window.finalizarTrabalho('${orderId}')" class="bg-white text-green-700 text-[9px] font-black px-2 py-1 rounded shadow hover:bg-gray-100">CONCLUIR</button>` : ''}
-        </div>`;
-    }
-
-    // 2. Serviço Agendado (Contagem Regressiva)
-    if (pedido.scheduled_at) {
-        const dataAgendada = pedido.scheduled_at.toDate ? pedido.scheduled_at.toDate() : new Date(pedido.scheduled_at);
-        const agora = new Date();
-        const diff = dataAgendada - agora;
-        const isHoje = dataAgendada.toDateString() === agora.toDateString();
-        
-        const dataFormatada = dataAgendada.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + dataAgendada.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-        return `
-        <div class="bg-slate-800 text-white px-4 py-2 flex justify-between items-center shadow-lg relative overflow-hidden">
-            <div class="z-10">
-                <p class="text-[9px] text-gray-400 uppercase font-bold tracking-wider">Agendado para ${isHoje ? 'HOJE' : ''}</p>
-                <div class="flex items-baseline gap-2">
-                    <span class="text-sm font-bold text-white">${dataFormatada}</span>
+        <div class="bg-green-600 text-white px-4 py-3 flex justify-between items-center shadow-lg border-b border-green-500">
+            <div class="flex items-center gap-3">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-black uppercase tracking-tighter">Serviço em Andamento</span>
+                    <div class="font-mono text-xl font-black leading-none" id="timer-display">00:00:00</div>
                 </div>
             </div>
-            
-            <div class="z-10 text-right">
-                ${diff > 0 ? 
-                    `<p class="text-[9px] text-gray-400">Começa em</p><p class="font-mono text-sm font-bold text-yellow-400" id="countdown-display">--:--</p>` : 
-                    `<p class="text-[10px] font-bold text-green-400 animate-pulse">⏰ HORA DE INICIAR</p>`
-                }
-            </div>
-
-            ${isProvider && pedido.status === 'confirmed_hold' ? 
-                `<button onclick="window.iniciarTrabalho('${orderId}')" class="absolute right-2 top-1/2 -translate-y-1/2 bg-green-500 hover:bg-green-400 text-white text-[10px] font-black px-3 py-2 rounded-lg shadow-lg z-20 flex items-center gap-1 animate-bounce-subtle">
-                    ▶ INICIAR
-                </button>` : ''
-            }
+            ${isProvider ? `
+                <button onclick="window.finalizarTrabalho('${orderId}')" class="bg-white text-green-700 text-[10px] font-black px-4 py-2 rounded-xl shadow-xl transform active:scale-95 transition">
+                    🏁 FINALIZAR
+                </button>
+            ` : `<span class="text-[9px] font-bold opacity-80 uppercase text-right">Valor protegido<br>pela ATLIVIO</span>`}
         </div>`;
     }
 
-    // 3. Sem Agendamento (Botão para Definir)
-    if (pedido.status === 'confirmed_hold' || pedido.status === 'accepted') {
+    // 2️⃣ MODO: ACORDO FECHADO (Botão Iniciar)
+    if (step === 3 && pedido.status === 'confirmed_hold') {
+        return `
+        <div class="bg-slate-900 text-white px-4 py-4 flex flex-col gap-3 shadow-xl">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase">Aguardando Início</p>
+                    <p class="text-xs font-black text-green-400">🛡️ RESERVA DE SALDO CONFIRMADA</p>
+                </div>
+                <span class="text-2xl">🔐</span>
+            </div>
+            ${isProvider ? `
+                <button onclick="window.iniciarTrabalho('${orderId}')" class="w-full bg-green-500 hover:bg-green-400 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg animate-bounce-subtle">
+                    ▶ INICIAR SERVIÇO AGORA
+                </button>
+            ` : `
+                <div class="bg-white/5 p-2 rounded-lg border border-white/10">
+                    <p class="text-[10px] text-center text-gray-300 italic">O cronômetro iniciará assim que o profissional der o play.</p>
+                </div>
+            `}
+        </div>`;
+    }
+
+    // 3️⃣ MODO: ACEITO MAS SEM ACORDO (Botão Definir Data)
+    if (pedido.status === 'accepted' || step < 3) {
         return `
         <div class="bg-amber-50 border-b border-amber-100 px-4 py-2 flex justify-between items-center">
             <div class="flex items-center gap-2 text-amber-800">
                 <span class="text-lg">📅</span>
-                <p class="text-[10px] font-bold uppercase">Data não definida</p>
+                <p class="text-[10px] font-bold uppercase">Aguardando Fechamento</p>
             </div>
-            <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded shadow hover:bg-amber-600 transition">
-                DEFINIR DATA
-            </button>
+            ${pedido.scheduled_at ? `
+                <div class="text-right">
+                    <p class="text-[9px] text-gray-500 uppercase">Agendado</p>
+                    <p class="text-[10px] font-black text-slate-800" id="countdown-display">--:--</p>
+                </div>
+            ` : `
+                <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded shadow-md">
+                    DEFINIR DATA
+                </button>
+            `}
         </div>`;
     }
 
