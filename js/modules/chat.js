@@ -819,8 +819,8 @@ window.novoEnviarProposta = async (orderId) => {
     if (!valorStr) return;
     const valor = parseFloat(valorStr.replace(',', '.'));
 
-    const beneficio = prompt("🎁 BENEFÍCIO EXTRA PARA FECHAR AGORA?\n(Ex: 30min extras, Desconto de R$ 10, Material incluso, etc.)");
-    const labelBeneficio = beneficio ? `\n🎁 BÔNUS: ${beneficio}` : "";
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: Desconto, 30min extras, etc):");
+    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO ESPECIAL";
 
     try {
         await updateDoc(doc(db, "orders", orderId), {
@@ -830,16 +830,33 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // Copy Irresistível baseada em técnicas de fechamento
-        const msgTexto = `🎯 NOVA PROPOSTA ENVIADA!\n\n💰 Valor: R$ ${valor.toFixed(2)}${labelBeneficio}\n\n⚡ Esta oferta é exclusiva para fechamento imediato e garante sua vaga na agenda.`;
+        // 🎨 Visual "Oferta Flash" com Tailwind
+        const htmlProposta = `
+            <div class="my-4 border-2 border-dashed border-amber-400 rounded-2xl overflow-hidden shadow-2xl transform rotate-1 animate-pulse-slow">
+                <div class="bg-amber-400 text-amber-900 text-[10px] font-black text-center py-1 uppercase tracking-widest">
+                    🔥 Oferta Exclusiva Ativo
+                </div>
+                <div class="bg-white p-4 text-center">
+                    <p class="text-slate-500 text-[9px] uppercase font-bold">Por apenas</p>
+                    <div class="flex justify-center items-baseline gap-1 text-slate-900">
+                        <span class="text-lg font-bold">R$</span>
+                        <span class="text-4xl font-black tracking-tighter">${valor.toFixed(2)}</span>
+                    </div>
+                    <div class="mt-2 py-1 px-3 bg-green-100 rounded-full inline-block">
+                        <p class="text-green-700 text-[10px] font-black italic">🎁 ${labelBeneficio}</p>
+                    </div>
+                    <p class="mt-3 text-[9px] text-slate-400 leading-tight">Válido para fechamento imediato.<br>Clique em <b>FECHAR ACORDO</b> para garantir.</p>
+                </div>
+            </div>
+        `;
 
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: msgTexto,
+            text: htmlProposta, // O seu renderizador de chat precisa aceitar HTML ou converter este texto
+            isHTML: true,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
         
-        console.log("✅ Proposta de Fechamento enviada.");
     } catch (e) { alert("Erro ao enviar proposta."); }
 };
 
