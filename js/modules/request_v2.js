@@ -453,3 +453,22 @@ window.atualizarRadar = function() {
     console.warn("🛡️ Uma função fantasma (atualizarRadar) tentou rodar e foi bloqueada pela V12.");
     return false; 
 };
+/**
+ * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
+ * Permite que o prestador veja um pedido que "sumiu" mas ainda está pendente.
+ */
+window.recuperarPedidoRadar = async (orderId) => {
+    const orderSnap = await getDoc(doc(db, "orders", orderId));
+    if (orderSnap.exists()) {
+        createRequestCard({ id: orderId, ...orderSnap.data() });
+        console.log("✅ Pedido recuperado para o Radar.");
+    }
+};
+
+/**
+ * ⚖️ MAPEAMENTO DE ETAPAS DO SISTEMA
+ * 1. Negociação (Chat Aberto)
+ * 2. Garantia (Aguardando Reserva de Saldo)
+ * 3. Execução (Cronômetro Rodando)
+ * 4. Concluído (Pagamento Liberado)
+ */
