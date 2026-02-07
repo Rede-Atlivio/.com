@@ -142,11 +142,26 @@ export async function carregarInterfaceDeChat() {
 }
 export async function abrirChatPedido(orderId) {
     let painelChat = document.getElementById('painel-chat-individual');
+    
+    // 🛡️ SEGURANÇA DE DADOS: Garante que as categorias existam antes de interagir
+    if (!window.CATEGORIAS_ATIVAS) {
+        const servicesMod = await import('./services.js');
+        window.CATEGORIAS_ATIVAS = servicesMod.CATEGORIAS_ATIVAS;
+    }
+
     if (!painelChat || painelChat.parentElement !== document.body) {
         if(painelChat) painelChat.remove();
         painelChat = document.createElement('div');
         painelChat.id = 'painel-chat-individual';
-        painelChat.className = "fixed inset-0 z-[9999] bg-white flex flex-col h-full w-full hidden";
+        
+        // 📏 RESPONSIVIDADE V12 (Injetada via JS para não depender do Index)
+        const isPC = window.innerWidth >= 768;
+        const stylePC = "width: 450px; height: 85vh; right: 20px; bottom: 20px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);";
+        const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0;";
+        
+        painelChat.className = "fixed z-[9999] bg-white flex flex-col hidden overflow-hidden animate-slideUp";
+        painelChat.style.cssText = isPC ? stylePC : styleMobile;
+        
         document.body.appendChild(painelChat);
     }
 
@@ -160,18 +175,14 @@ export async function abrirChatPedido(orderId) {
         const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
 
-        // Ativa o cronômetro visual se estiver em andamento
         if (typeof window.atualizarCronometro === 'function') {
             window.atualizarCronometro(pedido);
         }
 
-        // Ativa os lembretes de fechamento se estiver em negociação
         iniciarGatilhosContextuais(orderId, step);
-
         renderizarEstruturaChat(painelChat, pedido, isProvider, orderId, step);
     });
 }
-
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
