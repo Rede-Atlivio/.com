@@ -15,21 +15,23 @@ export let CONFIG_FINANCEIRA = {
 // Monitora alterações nas regras financeiras em Tempo Real
 function iniciarRegrasFinanceiras() {
     const ref = doc(db, "settings", "financeiro");
+    // Ouve em tempo real e força a exportação para o escopo global
     onSnapshot(ref, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
-            // Atualiza as variáveis globais
-            CONFIG_FINANCEIRA.taxa = data.taxa_plataforma !== undefined ? parseFloat(data.taxa_plataforma) : 0.20;
-            CONFIG_FINANCEIRA.limite = data.limite_divida !== undefined ? parseFloat(data.limite_divida) : -60.00;
-            console.log("💰 Regras Atualizadas:", CONFIG_FINANCEIRA);
-        } else {
-            console.warn("⚠️ Configuração 'settings/financeiro' não criada. Usando padrão.");
+            const novasRegras = {
+                taxa: parseFloat(data.taxa_plataforma ?? 0),
+                limite: parseFloat(data.limite_divida ?? 0)
+            };
+            // Atualiza a variável local e a global da window para o request.js ver
+            CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
+            CONFIG_FINANCEIRA.limite = novasRegras.limite;
+            window.CONFIG_FINANCEIRA = novasRegras; 
+            
+            console.log("💰 [CÉREBRO] Regras Sincronizadas:", window.CONFIG_FINANCEIRA);
         }
-    });
+    }, (err) => console.error("Erro na escuta de regras:", err));
 }
-
-let unsubscribeWallet = null;
-
 // ============================================================================
 // 1. MONITORAMENTO REAL-TIME (V10.0 STACK COMPATIBLE)
 // ============================================================================
