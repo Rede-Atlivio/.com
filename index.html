@@ -130,42 +130,35 @@
 
     <script>
     window.switchTab = function(tabName) {
-            console.log("👉 Trocando para aba:", tabName);
-            
-            // 1. Esconde todas as seções
-            document.querySelectorAll('main > section').forEach(el => {
-                el.classList.add('hidden');
-            });
-            
-            // 2. Mostra a seção alvo
-            const alvo = document.getElementById(`sec-${tabName}`);
-            if(alvo) {
-                alvo.classList.remove('hidden');
-            } else {
-                console.warn(`⚠️ Seção sec-${tabName} não encontrada.`);
-            }
-            
-            // 3. Atualiza os botões do menu (Visual)
-            document.querySelectorAll('nav button').forEach(btn => {
-                btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
-                btn.classList.add('border-transparent', 'text-gray-400');
-            });
-            
-            const activeBtn = document.getElementById(`tab-${tabName}`);
-            if(activeBtn) {
-                activeBtn.classList.remove('border-transparent', 'text-gray-400');
-                activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
-            }
+    console.log("👉 Navegação V12:", tabName);
 
-            // 4. 🔥 GATILHOS DE CARREGAMENTO (AUTO-LOAD)
-            // Essa linha abaixo era a que faltava para a vitrine abrir sozinha 👇
-            if(tabName === 'servicos' && window.carregarServicos) window.carregarServicos(); 
-            
-            if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-            if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
-            if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-            if(tabName === 'chat' && window.carregarChat) window.carregarChat();
-        };
+    // 1. Ocultar todas as seções
+    document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+
+    // 2. Exibir seção alvo
+    const alvo = document.getElementById(`sec-${tabName}`);
+    if (alvo) alvo.classList.remove('hidden');
+
+    // 3. Atualizar Menu de Navegação
+    document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
+        btn.classList.add('border-transparent', 'text-gray-400');
+    });
+
+    const activeBtn = document.getElementById(`tab-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.remove('border-transparent', 'text-gray-400');
+        activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+    }
+
+    // 4. Gatilhos de Carregamento Focados
+    if (tabName === 'servicos' && window.carregarServicos) window.carregarServicos();
+    if (tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
+    if (tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
+    if (tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
+    
+    // Chat foi removido do auto-load para evitar erros de 'find' no carregamento.
+};
         window.switchServiceSubTab = function(subTab) {
             ['contratar', 'andamento', 'historico'].forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
