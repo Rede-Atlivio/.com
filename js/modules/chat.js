@@ -174,7 +174,7 @@ export async function abrirChatPedido(orderId) {
 
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
-    let partnerData = { nome: "Usuário", photoURL: "" };
+    let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
 
     try {
         const pSnap = await getDoc(doc(db, "usuarios", uidPartner));
@@ -207,16 +207,16 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                         <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full">⬅</button>
                         <div class="relative group cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
                             <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
-                            <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px]">${isPartnerVerified === '🏅 Verificado' ? '✅' : ''}</div>
+                            <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">👤</div>
                         </div>
                         <div>
-                            <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none">${outroNome}</h3>
+                            <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition" onclick="window.verPerfilCompleto('${uidPartner}')">${outroNome}</h3>
                             <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
                         </div>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <p class="text-[10px] font-black text-emerald-600">R$ ${pedido.offer_value}</p>
-                        ${contatoLiberado ? `<a href="tel:${isProvider ? partnerData.phone : partnerData.phone}" class="bg-green-100 text-green-700 px-2 py-1 rounded text-[8px] font-black mt-1 uppercase">📞 Ligar</a>` : ''}
+                    <div class="flex items-center gap-2">
+                        ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase shadow-sm">📞 Ligar</a>` : ''}
+                        <button onclick="window.encerrarNegociacao('${orderId}')" class="text-gray-300 hover:text-red-500 p-2 transition" title="Encerrar Conversa">✋</button>
                     </div>
                 </div>
                 ${stepsHTML}
@@ -239,9 +239,9 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
                     ${step < 3 ? `
                         <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
-                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-blue-600 px-4 py-2 rounded-xl text-[10px] text-white font-black shadow-md flex flex-col items-center">
+                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-amber-400 text-amber-900 px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
                             <span>🎯 PROPOSTA</span>
-                            <span class="text-[7px] opacity-70 uppercase tracking-tighter">Garantir Agenda</span>
+                            <span class="text-[7px] opacity-70 uppercase tracking-tighter">OFERTA FLASH</span>
                         </button>
                     ` : ''}
                     
@@ -251,7 +251,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 </div>
 
                 <div class="px-3 pb-3 flex gap-2 items-center">
-                    <input type="text" id="chat-input-msg" placeholder="Negocie aqui..." class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
+                    <input type="text" id="chat-input-msg" placeholder="Negocie detalhes aqui..." class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
                     <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
                 </div>
             </div>` : ''}
