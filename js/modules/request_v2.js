@@ -427,18 +427,21 @@ export async function aceitarPedidoRadar(orderId) {
 
         const pedidoData = orderSnap.data();
         const valorServico = parseFloat(pedidoData.offer_value || 0);
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
-        const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
 
-        // 🛡️ Validação de Saldo do Prestador
+        // 🛡️ UNIFICAÇÃO DE VARIÁVEIS: Usa a mesma regra do visual (wallet.js)
+        const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
+        const taxaCalculada = valorServico * regrasAtivas.taxa;
+
+        // 🛑 Trava de Segurança V12: Usa a taxa calculada dinamicamente
         if (typeof window.podeTrabalhar === 'function') {
-            if (!window.podeTrabalhar(taxaEstimada)) {
-                removeRequestCard(orderId);
+            if (!window.podeTrabalhar(taxaCalculada)) {
+                // Não remove o card aqui para dar chance ao usuário de recarregar e tentar de novo
+                console.warn("⚠️ Aceite impedido por falta de saldo/limite.");
                 return;
             }
         }
 
-        // ✅ AÇÃO 10 & 11: Aceite Seguro com todas as funções importadas
+        // ✅ Aceite Seguro (Etapa 1)
         await updateDoc(orderRef, { 
             status: 'accepted', 
             accepted_at: serverTimestamp(),
@@ -454,18 +457,16 @@ export async function aceitarPedidoRadar(orderId) {
 
         removeRequestCard(orderId);
         
-        // Redirecionamento focado em Pedidos Ativos (Conforme Ação 04 aprovada)
         if(window.switchTab) {
             window.switchTab('servicos'); 
-            // Espera a aba trocar e abre os pedidos em andamento
             setTimeout(() => {
                  if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
             }, 500);
         }
 
     } catch (e) { 
-        console.error("Erro no aceite V12 (Critical):", e);
-        alert("Falha ao aceitar pedido. Verifique sua conexão."); 
+        console.error("❌ Erro fatal no aceite unificado:", e);
+        alert("Erro técnico ao aceitar. Tente novamente."); 
     }
 }
 
