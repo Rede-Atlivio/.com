@@ -413,7 +413,7 @@ export async function confirmarAcordo(orderId, aceitar) {
 
                 if (valorCofre > 0) {
                     if (saldoClient < valorCofre) {
-                        throw `O Cliente não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)} (${taxaClienteAdmin}%).`;
+                        throw `Você não possui saldo suficiente (R$ ${saldoClient.toFixed(2)}) para a garantia de R$ ${valorCofre.toFixed(2)} (${taxaClienteAdmin}%).`;
                     }
 
                     // 💸 Tira do Saldo -> Põe na Reserva
