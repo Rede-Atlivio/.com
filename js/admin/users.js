@@ -218,33 +218,33 @@ function abrirModalMassa() {
 }
 
 async function enviarMassaConfirmado() {
-    const msg = document.getElementById('massa-msg').value;
-    const tipo = document.getElementById('massa-tipo').value;
-    const credito = parseFloat(document.getElementById('massa-credito').value) || 0;
-    if(!msg && credito === 0) return alert("Preecha algo.");
-    if(!confirm(`Enviar para ${selectedUsers.size} usuários?`)) return;
-    const batch = writeBatch(window.db);
-    selectedUsers.forEach(uid => {
-        if(msg) {
-            const refNotif = doc(collection(window.db, "notifications"));
-            batch.set(refNotif, { uid: uid, message: msg, type: tipo, read: false, created_at: serverTimestamp() });
-        }
-    });
-    await batch.commit();
-    if(credito !== 0) {
-        for (let uid of selectedUsers) {
-            const ref = doc(window.db, "usuarios", uid);
-            const snap = await getDoc(ref);
-            if(snap.exists()) {
-                const novoSaldo = (snap.data().wallet_balance || snap.data().saldo || 0) + credito;
-                await updateDoc(ref, { saldo: novoSaldo, wallet_balance: novoSaldo });
-            }
-        }
-    }
-    alert("✅ Processo concluído!");
-    document.getElementById('modal-editor').classList.add('hidden');
-    selectedUsers.clear();
-    loadList();
+    const msg = document.getElementById('massa-msg').value;
+    const tipo = document.getElementById('massa-tipo').value;
+    const credito = parseFloat(document.getElementById('massa-credito').value) || 0;
+    if(!msg && credito === 0) return alert("Preecha algo.");
+    if(!confirm(`Enviar para ${selectedUsers.size} usuários?`)) return;
+    const batch = writeBatch(window.db);
+    selectedUsers.forEach(uid => {
+        if(msg) {
+            const refNotif = doc(collection(window.db, "notifications"));
+            batch.set(refNotif, { uid: uid, message: msg, type: tipo, read: false, created_at: serverTimestamp() });
+        }
+    });
+    await batch.commit();
+    if(credito !== 0) {
+        for (let uid of selectedUsers) {
+            const ref = doc(window.db, "usuarios", uid);
+            const snap = await getDoc(ref);
+            if(snap.exists()) {
+                const novoSaldo = (snap.data().wallet_balance || snap.data().saldo || 0) + credito;
+                await updateDoc(ref, { saldo: novoSaldo, wallet_balance: novoSaldo });
+            }
+        }
+    }
+    alert("✅ Processo concluído!");
+    document.getElementById('modal-editor').classList.add('hidden');
+    selectedUsers.clear();
+    loadList();
 }
 
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
