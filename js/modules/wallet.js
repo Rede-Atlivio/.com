@@ -25,39 +25,32 @@ let unsubscribeWallet = null;
  * Escuta as regras do Admin e garante que o Radar e o Robô de Cobrança falem a mesma língua.
  */
 function iniciarRegrasFinanceiras() {
+    // 🎯 Rota exata que o seu Admin usa
     const ref = doc(db, "settings", "financeiro");
     
     onSnapshot(ref, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
-            
-            // 🛡️ SINCRONIA DE CAMPOS: Mapeia o banco para o padrão do App
-            // Nota: Se no Admin estiver 0.50, aqui vira 0.50 (50%)
-            const taxaAdmin = parseFloat(data.taxa_plataforma);
-            const limiteAdmin = parseFloat(data.limite_divida);
+            console.log("📥 [DADO BRUTO ADMIN]:", data);
+
+            // 🧮 TRADUTOR V12: Converte 50 em 0.50 ou aceita 0.50 direto
+            let rawTaxa = parseFloat(data.taxa_plataforma || 0);
+            if (rawTaxa > 1) rawTaxa = rawTaxa / 100; 
 
             const novasRegras = {
-                taxa: isNaN(taxaAdmin) ? 0 : taxaAdmin,
-                limite: isNaN(limiteAdmin) ? 0 : limiteAdmin
+                taxa: rawTaxa,
+                limite: parseFloat(data.limite_divida || 0)
             };
             
-            // Atualiza o objeto exportado e a janela global
+            // Injeta na Window para o request_v2.js enxergar instantaneamente
+            window.CONFIG_FINANCEIRA = novasRegras;
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
-            window.CONFIG_FINANCEIRA = novasRegras; 
             
-            console.log(`💰 [CÉREBRO] Sincronizado: Taxa ${(novasRegras.taxa * 100).toFixed(0)}% | Limite R$ ${novasRegras.limite}`);
-            
-            // Força uma atualização visual no Radar se ele estiver aberto
-            if (window.atualizarVisualRadar) window.atualizarVisualRadar();
-            
+            console.log(`%c ✅ SINCRONIZADO: Taxa ${(novasRegras.taxa * 100).toFixed(0)}%`, "color: #059669; font-weight: bold;");
         } else {
-            console.error("❌ Erro Crítico: Documento settings/financeiro não existe no Firestore.");
-            // Fallback de segurança para não quebrar o app
-            window.CONFIG_FINANCEIRA = { taxa: 0, limite: 0 };
+            console.error("❌ Erro: Documento de taxas não encontrado no banco.");
         }
-    }, (err) => {
-        console.error("Falha na escuta de finanças (Permissão ou Conexão):", err);
     });
 }
 
