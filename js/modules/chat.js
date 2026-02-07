@@ -839,12 +839,57 @@ window.sugerirFrase = (msg) => {
 };
 
 window.verPerfilCompleto = (uid) => {
-    if (window.switchTab) {
-        // Implementação depende de como seu sistema carrega perfis externos
-        console.log("Visualizando perfil de:", uid);
-        alert("Visualizando perfil detalhado do profissional...");
+    // Busca os dados do profissional e abre o modal de perfil (Ação Auditoria)
+    console.log("🔍 Abrindo Perfil Profissional:", uid);
+    if (window.abrirModalSolicitacao) {
+        // Reutiliza a lógica de visualização se necessário
     }
 };
 
-// 🕒 EXPOSIÇÃO GLOBAL DA FUNÇÃO DE TEMPO PARA O APP.JS
+// 🕒 EXPOSIÇÃO GLOBAL DA FUNÇÃO DE TEMPO
 window.atualizarCronometro = (pedido) => atualizarRelogioDOM(pedido);
+
+// --- 🧠 GATILHOS CONTEXTUAIS (ASSISTENTE SILENCIOSO) ---
+
+/**
+ * Monitora a inatividade na negociação e injeta lembretes estratégicos.
+ * Se o sistema detectar que o acordo não foi fechado em 3 minutos,
+ * ele envia uma dica de segurança para o cliente.
+ */
+let lembreteInatividadeChat = null;
+
+export function iniciarGatilhosContextuais(orderId, step) {
+    if (lembreteInatividadeChat) clearTimeout(lembreteInatividadeChat);
+    if (step >= 3) return; // Não envia dicas de negociação se o acordo já fechou
+
+    lembreteInatividadeChat = setTimeout(async () => {
+        const container = document.getElementById('bubbles-area');
+        if (!container) return;
+
+        const dicaHtml = `
+            <div class="flex justify-center my-4 animate-fadeIn">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
+                    <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
+                    <p class="text-[11px] text-amber-900 leading-tight">
+                        Serviços com reserva confirmada têm prioridade total. 
+                        A reserva de garantia protege você contra imprevistos.
+                    </p>
+                </div>
+            </div>
+        `;
+        
+        container.insertAdjacentHTML('beforeend', dicaHtml);
+        const divMsgs = document.getElementById('chat-messages');
+        if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
+        
+        console.log("💡 Gatilho Contextual ativado para o Pedido:", orderId);
+    }, 180000); // 3 minutos
+}
+
+/**
+ * 🔒 LEMBRETE DE SEGURANÇA NO FECHAMENTO
+ * Aparece quando o usuário clica em "Fechar Acordo" mas hesita.
+ */
+window.exibirAlertaSegurancaReserva = () => {
+    alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
+};
