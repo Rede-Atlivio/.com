@@ -1,4 +1,5 @@
 import { app, auth, db, storage, provider } from './config.js';
+
 // ============================================================================
 // 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
 // ============================================================================
@@ -53,7 +54,8 @@ window.switchTab = function(tabName) {
         
         // Proteção do Radar V12
         const toggle = document.getElementById('online-toggle');
-        if(toggle && toggle.checked && window.iniciarRadarPrestador) {
+        // Apenas religa se estiver marcado E a memória disser que está desligado
+        if(toggle && toggle.checked && !window.radarIniciado && window.iniciarRadarPrestador) {
             window.iniciarRadarPrestador();
         }
     }
@@ -61,10 +63,8 @@ window.switchTab = function(tabName) {
     if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-    
-    // O Chat agora é uma janela de ação direta disparada pelos pedidos, 
-    // removido deste sistema para evitar conflitos de carregamento.
 };
+
 window.switchServiceSubTab = function(subTab) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const el = document.getElementById(`view-${t}`);
@@ -93,9 +93,10 @@ window.switchProviderSubTab = function(subTab) {
 
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
-// 6. MONITORAMENTO DE LOGIN (O CÉREBRO BLINDADO V10.0)
+// ============================================================================
+// 6. MONITORAMENTO DE LOGIN E CONTROLE DO RADAR (CORREÇÃO VITAL)
+// ============================================================================
 
-// Função Global para organizar o carregamento de dados (Mata o erro de undefined)
 window.carregarInterface = async (user) => {
     console.log("🚀 Inicializando Interface V12 para:", user.uid);
     
@@ -103,19 +104,35 @@ window.carregarInterface = async (user) => {
     document.getElementById('auth-container')?.classList.add('hidden');
     document.getElementById('app-container')?.classList.remove('hidden');
 
-    // 1. O Chat Individual será carregado apenas sob demanda (on-click no pedido)
-    // Isso remove o erro de 'find' ao tentar listar chats inexistentes no carregamento.
+    // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
+    const toggle = document.getElementById('online-toggle');
+    if (toggle) {
+        // Remove clones anteriores para evitar duplicação de eventos
+        const novoToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(novoToggle, toggle);
 
-    // 2. Inicializa o Radar V12 (O Coração do Prestador)
-    setTimeout(() => {
-        if (typeof window.iniciarRadarPrestador === 'function') {
-            const toggle = document.getElementById('online-toggle');
-            if (toggle && toggle.checked) {
-                window.iniciarRadarPrestador(user.uid);
+        novoToggle.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
+                // Reseta a memória para garantir que a função rode
+                window.radarIniciado = false; 
+                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
+            } else {
+                console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
+                if (window.pararRadarFisico) window.pararRadarFisico();
             }
+        });
+
+        // Inicializa estado atual
+        if (novoToggle.checked) {
+            setTimeout(() => {
+                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
+            }, 1000);
         }
-    }, 1000);
+    }
+    // ----------------------------------------------------
 };
+
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         console.log("🔐 Autenticado com Sucesso V12");
@@ -141,7 +158,7 @@ auth.onAuthStateChanged(async (user) => {
             iniciarMonitoramentoCarteira();
         }
         
-        // 🖥️ Montagem da Interface (Garante que o lixo antigo seja limpo)
+        // 🖥️ Montagem da Interface
         window.carregarInterface(user);
 
     } else {
@@ -149,7 +166,7 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('auth-container')?.classList.remove('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
         
-        // Desliga o Radar fisicamente para evitar processos em background
+        // Desliga o Radar fisicamente
         if (window.pararRadarFisico) window.pararRadarFisico();
     }
 });
