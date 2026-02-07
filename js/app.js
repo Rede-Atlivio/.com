@@ -103,13 +103,10 @@ window.carregarInterface = async (user) => {
     document.getElementById('auth-container')?.classList.add('hidden');
     document.getElementById('app-container')?.classList.remove('hidden');
 
-    // 1. Inicializa o Chat
-    if (typeof window.carregarChat === 'function') {
-        window.carregarChat();
-    }
+    // 1. O Chat Individual será carregado apenas sob demanda (on-click no pedido)
+    // Isso remove o erro de 'find' ao tentar listar chats inexistentes no carregamento.
 
     // 2. Inicializa o Radar V12 (O Coração do Prestador)
-    // Usamos setTimeout para garantir que o DOM do radar-container já foi montado
     setTimeout(() => {
         if (typeof window.iniciarRadarPrestador === 'function') {
             const toggle = document.getElementById('online-toggle');
