@@ -392,33 +392,33 @@ function removeRequestCard(orderId) {
 
 export async function aceitarPedidoRadar(orderId) {
     const orderRef = doc(db, "orders", orderId);
-    const orderSnap = await getDoc(orderRef);
     
-    if (!orderSnap.exists()) {
-        removeRequestCard(orderId);
-        return alert("Este pedido não existe mais.");
-    }
-
-    const pedidoData = orderSnap.data();
-    const valorServico = parseFloat(pedidoData.offer_value || 0);
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
-    const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
-
-    // 🛡️ Trava de Segurança V10 (Protege o Prestador)
-    if (typeof window.podeTrabalhar === 'function') {
-        if (!window.podeTrabalhar(taxaEstimada)) {
-            removeRequestCard(orderId);
-            return;
-        }
-    }
-
     try {
-        // ✅ Ação 10: Prepara o terreno para o Cronômetro e Agendamento
+        const orderSnap = await getDoc(orderRef);
+        if (!orderSnap.exists()) {
+            removeRequestCard(orderId);
+            return alert("Este pedido expirou ou foi cancelado.");
+        }
+
+        const pedidoData = orderSnap.data();
+        const valorServico = parseFloat(pedidoData.offer_value || 0);
+        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
+        const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
+
+        // 🛡️ Validação de Saldo do Prestador
+        if (typeof window.podeTrabalhar === 'function') {
+            if (!window.podeTrabalhar(taxaEstimada)) {
+                removeRequestCard(orderId);
+                return;
+            }
+        }
+
+        // ✅ AÇÃO 10 & 11: Aceite Seguro com todas as funções importadas
         await updateDoc(orderRef, { 
             status: 'accepted', 
             accepted_at: serverTimestamp(),
-            system_step: 1, // Inicia na Etapa 1: Negociação
-            timer_initialized: false // O cronômetro só inicia no clique real_start
+            system_step: 1,
+            timer_initialized: false 
         });
         
         await setDoc(doc(db, "chats", orderId), { 
@@ -429,16 +429,18 @@ export async function aceitarPedidoRadar(orderId) {
 
         removeRequestCard(orderId);
         
+        // Redirecionamento focado em Pedidos Ativos (Conforme Ação 04 aprovada)
         if(window.switchTab) {
-            window.switchTab('chat');
+            window.switchTab('servicos'); 
+            // Espera a aba trocar e abre os pedidos em andamento
             setTimeout(() => {
-                 if(window.carregarInterfaceDeChat) window.carregarInterfaceDeChat();
-            }, 600);
+                 if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
+            }, 500);
         }
 
     } catch (e) { 
-        console.error("Erro no aceite V12:", e);
-        alert("Erro ao aceitar: " + e.message); 
+        console.error("Erro no aceite V12 (Critical):", e);
+        alert("Falha ao aceitar pedido. Verifique sua conexão."); 
     }
 }
 
