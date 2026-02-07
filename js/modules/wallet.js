@@ -13,24 +13,64 @@ export let CONFIG_FINANCEIRA = {
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
+// Variáveis de controle de memória
+let unsubscribeWallet = null; 
+
+/**
+ * 🧠 CÉREBRO FINANCEIRO V12
+ * Escuta as regras do Admin e as expõe globalmente para o Radar e Chat
+ */
 function iniciarRegrasFinanceiras() {
     const ref = doc(db, "settings", "financeiro");
-    // Ouve em tempo real e força a exportação para o escopo global
+    
     onSnapshot(ref, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
+            // 🛡️ SINCRONIA TOTAL: Sem valores fixos no código. 
+            // Se não houver no banco, assume 0.
             const novasRegras = {
                 taxa: parseFloat(data.taxa_plataforma ?? 0),
                 limite: parseFloat(data.limite_divida ?? 0)
             };
-            // Atualiza a variável local e a global da window para o request.js ver
+            
+            // Atualiza memória local e global para o request.js
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
             window.CONFIG_FINANCEIRA = novasRegras; 
             
             console.log("💰 [CÉREBRO] Regras Sincronizadas:", window.CONFIG_FINANCEIRA);
+        } else {
+            console.error("❌ Erro Crítico: settings/financeiro não encontrado no banco.");
         }
-    }, (err) => console.error("Erro na escuta de regras:", err));
+    }, (err) => console.error("Falha na escuta de finanças:", err));
+}
+
+/**
+ * 🛡️ TRAVA DE TRABALHO V12
+ * Decide se o Radar fica AZUL ou VERMELHO
+ */
+export function podeTrabalhar(custoEstimado = 0) {
+    const user = window.userProfile;
+    if (!user || user.wallet_balance === undefined) return false;
+    
+    const saldo = parseFloat(user.wallet_balance || 0);
+    const custo = parseFloat(custoEstimado || 0);
+    const limite = parseFloat(window.CONFIG_FINANCEIRA?.limite || 0);
+
+    if (isNaN(saldo) || isNaN(custo)) return false; 
+    
+    // Lógica V12: (0 - 0) não é menor que 0. Então LIBERA saldo zero.
+    const saldoFinal = saldo - custo;
+
+    if (saldoFinal < limite) {
+        if(custo > 0) {
+             const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+             alert(`⛔ SALDO INSUFICIENTE\n\nSeu saldo (${saldoFmt}) não cobre a taxa do serviço.`);
+             if(window.switchTab) window.switchTab('ganhar');
+        }
+        return false; 
+    }
+    return true; 
 }
 // ============================================================================
 // 1. MONITORAMENTO REAL-TIME (V10.0 STACK COMPATIBLE)
