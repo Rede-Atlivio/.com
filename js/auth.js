@@ -176,15 +176,18 @@ onAuthStateChanged(auth, async (user) => {
                         updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     }
                     
-                    data.wallet_balance = data.saldo !== undefined ? data.saldo : (data.wallet_balance || 0);
+                    // 💰 BLINDAGEM DE SALDO V12: Unifica os campos garantindo que sejam números
+                    const valorSaldo = parseFloat(data.saldo || 0);
+                    const valorWallet = parseFloat(data.wallet_balance || 0);
                     
-                    // 🩹 CORREÇÃO AUTOMÁTICA DE SALDO (SYNC-FIX)
-                    if (data.saldo !== undefined && data.wallet_balance !== data.saldo) {
-                        console.log(`🔧 Sincronizando: Wallet(${data.wallet_balance}) -> Saldo(${data.saldo})`);
-                        // Atualiza o objeto local para não precisar recarregar
-                        data.wallet_balance = data.saldo; 
-                        // Salva no banco silenciosamente
-                        updateDoc(userRef, { wallet_balance: data.saldo }).catch(e => console.warn("Erro Sync:", e));
+                    // Prioridade total para o campo oficial da carteira
+                    data.wallet_balance = isNaN(valorWallet) ? valorSaldo : valorWallet;
+
+                    if (isNaN(data.wallet_balance)) data.wallet_balance = 0;
+
+                    // Sincronia silenciosa de segurança apenas se houver divergência real
+                    if (data.saldo !== undefined && valorSaldo !== valorWallet) {
+                        updateDoc(userRef, { wallet_balance: valorSaldo }).catch(() => {});
                     }
 
                     userProfile = data; 
