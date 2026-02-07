@@ -244,27 +244,29 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-    // 🛡️ GARANTIA DE REGRAS: Se o Admin não carregou na window, busca agora
-    if (!window.CONFIG_FINANCEIRA) {
-        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        if (configSnap.exists()) {
-            const d = configSnap.data();
-            window.CONFIG_FINANCEIRA = { taxa: parseFloat(d.taxa_plataforma || 0), limite: parseFloat(d.limite_divida || 0) };
-        }
-    }
+    // Sincroniza configurações financeiras do banco para o cálculo de taxas do card
+    const configRef = doc(db, "settings", "financeiro");
+    getDoc(configRef).then(s => { 
+        if(s.exists()) window.CONFIG_FINANCEIRA = s.data(); 
+    });
 
-    const container = garantirContainerRadar();
-    if (!container) return;
+    // Certifica-se de que o container existe antes de começar a ouvir o banco
+    garantirContainerRadar();
 
+    // Escuta a coleção 'orders' (Certifique-se que o cliente está gravando em 'orders')
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
         const toggle = document.getElementById('online-toggle');
-        // Se o prestador desligou o botão, para tudo fisicamente
+        
+        // Se o prestador desligar o botão, para o radar
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
             return;
         }
+
+        // Auto-cura do DOM em cada mudança do banco
+        garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
             if (change.type === "added") {
@@ -275,12 +277,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
             }
         });
 
-        // Gerenciamento dinâmico do estado vazio
-        const emptyState = document.getElementById('radar-empty-state');
-        if (emptyState) {
-            if (snapshot.empty) emptyState.classList.remove('hidden');
-            else emptyState.classList.add('hidden');
-        }
+        // Atualiza o Empty State após processar as mudanças
+        garantirContainerRadar();
     });
 }
 
