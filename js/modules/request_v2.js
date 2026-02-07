@@ -313,26 +313,23 @@ function createRequestCard(pedido) {
     const audio = document.getElementById('notification-sound');
     if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); }
 
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
+    // 🛡️ SINCRONIA REAL: Busca a taxa do cérebro financeiro ou do Admin
+    const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
     const valor = parseFloat(pedido.offer_value || 0);
-    const taxa = valor * (20 / 100); // Taxa padrão de segurança
+    const taxa = valor * regrasAtivas.taxa; 
     const lucro = valor - taxa;
 
-    // 🔴 DETECTOR DE SALDO (A LÓGICA DO CARD VERMELHO)
+    // 🔴 DETECTOR DE SALDO DINÂMICO
     const saldo = window.userProfile?.wallet_balance || 0;
-    const limite = window.CONFIG_FINANCEIRA?.limite || 0;
-    const temSaldoParaTaxa = (saldo - taxa) > limite;
+    const temSaldoParaTaxa = (saldo - taxa) >= regrasAtivas.limite;
 
     const cardBg = temSaldoParaTaxa ? "bg-[#0f172a]" : "bg-red-700 animate-pulse";
     const statusTag = temSaldoParaTaxa ? "bg-blue-600" : "bg-white text-red-700";
-    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ SALDO INSUFICIENTE";
-
-    let dataDisplay = pedido.data || "--/--";
-    const horaDisplay = pedido.hora || '--:--';
+    const statusMsg = temSaldoParaTaxa ? "Nova Solicitação" : "⚠️ RECARGA NECESSÁRIA";
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = `request-card ${cardBg} p-0 animate-slideInDown relative overflow-hidden w-full transition-all duration-300 rounded-2xl shadow-2xl border border-white/10`;
+    card.className = `request-card ${cardBg} p-0 animate-slideInDown relative overflow-hidden w-full rounded-2xl shadow-2xl border border-white/10`;
     
     card.innerHTML = `
         <button id="btn-min-${pedido.id}" onclick="window.alternarMinimizacao('${pedido.id}')" 
@@ -355,18 +352,14 @@ function createRequestCard(pedido) {
             <div class="bg-black/20 mx-4 p-4 rounded-xl border border-white/5 text-white">
                 <p class="text-xs font-bold mb-1 flex items-center gap-2">👤 ${pedido.client_name || 'Cliente'}</p>
                 <p class="text-[11px] opacity-70 mb-1 flex items-center gap-2">📍 ${pedido.location || 'A combinar'}</p>
-                <p class="text-[11px] text-yellow-400 font-mono flex items-center gap-2">📅 ${dataDisplay} às ${horaDisplay}</p>
             </div>
             
             <div class="p-4">
                 ${temSaldoParaTaxa ? `
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="window.recusarPedidoReq('${pedido.id}')" class="bg-white/10 text-white py-3 rounded-xl font-bold text-xs uppercase transition hover:bg-white/20">✖ Recusar</button>
-                        <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-500 text-white py-3 rounded-xl font-black text-xs uppercase shadow-lg shadow-green-900/40 border-0">✔ Aceitar</button>
-                    </div>
+                    <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="w-full bg-green-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg border-0">✔ ACEITAR AGORA</button>
                 ` : `
                     <button onclick="window.switchTab('ganhar')" class="w-full bg-white text-red-700 py-4 rounded-xl font-black text-xs uppercase shadow-2xl animate-bounce">
-                        💰 RECARREGAR E GARANTIR SERVIÇO
+                        💰 RECARREGAR SALDO
                     </button>
                 `}
             </div>
@@ -379,7 +372,6 @@ function createRequestCard(pedido) {
 
     container.prepend(card);
     setTimeout(() => { if(document.getElementById(`timer-${pedido.id}`)) document.getElementById(`timer-${pedido.id}`).style.width = '0%'; }, 100);
-    setTimeout(() => { if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); }, 30000);
 }
 
 function removeRequestCard(orderId) {
