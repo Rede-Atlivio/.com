@@ -829,3 +829,22 @@ window.encerrarNegociacao = window.encerrarNegociacao;
 
 // 🚨 CORREÇÃO CRÍTICA: EXPORTANDO A NOVA FUNÇÃO PRINCIPAL
 window.carregarInterfaceDeChat = carregarInterfaceDeChat;
+// --- 🛠️ FUNÇÕES DE SUPORTE CHAT V12 ---
+window.sugerirFrase = (msg) => {
+    const input = document.getElementById('chat-input-msg');
+    if (input) {
+        input.value = msg;
+        input.focus();
+    }
+};
+
+window.verPerfilCompleto = (uid) => {
+    if (window.switchTab) {
+        // Implementação depende de como seu sistema carrega perfis externos
+        console.log("Visualizando perfil de:", uid);
+        alert("Visualizando perfil detalhado do profissional...");
+    }
+};
+
+// 🕒 EXPOSIÇÃO GLOBAL DA FUNÇÃO DE TEMPO PARA O APP.JS
+window.atualizarCronometro = (pedido) => atualizarRelogioDOM(pedido);
