@@ -352,8 +352,6 @@ export function switchServiceSubTab(tabName) {
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
 
-    if(tabName === 'contratar') carregarServicos();
-    if(tabName === 'andamento') carregarPedidosAtivos();
     if(tabName === 'historico') carregarHistorico();
 }
 
