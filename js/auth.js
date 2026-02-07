@@ -146,7 +146,7 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(userRef, async (docSnap) => {
             try {
                 if (!docSnap.exists()) {
-                    // CRIAÇÃO DE NOVO PERFIL
+                    // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
                     const novoPerfil = { 
                         email: user.email, 
@@ -161,7 +161,8 @@ onAuthStateChanged(auth, async (user) => {
                         is_provider: false, 
                         created_at: serverTimestamp(), 
                         status: 'ativo',
-                        traffic_source: trafficSource 
+                        traffic_source: trafficSource,
+                        termo_aceito_versao: "05-02-2026" // ✅ Blindagem Jurídica Automática
                     };
                     userProfile = novoPerfil; 
                     window.userProfile = novoPerfil;
