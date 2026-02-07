@@ -236,10 +236,9 @@ export async function enviarPropostaAgora() {
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
-let radarUnsubscribe = null;
-
 // Controle de estado para evitar loops de processamento
 let radarIniciado = false;
+let radarUnsubscribe = null;
 
 export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
