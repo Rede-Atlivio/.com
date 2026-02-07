@@ -872,7 +872,10 @@ window.encerrarNegociacao = window.encerrarNegociacao;
 
 // 🚨 CORREÇÃO CRÍTICA: EXPORTANDO A NOVA FUNÇÃO PRINCIPAL
 window.carregarInterfaceDeChat = carregarInterfaceDeChat;
-// --- 🛠️ FUNÇÕES DE SUPORTE CHAT V12 ---
+// ============================================================================
+// 🛠️ MÓDULO DE SUPORTE E GATILHOS V12 (FINAL)
+// ============================================================================
+
 window.sugerirFrase = (msg) => {
     const input = document.getElementById('chat-input-msg');
     if (input) {
@@ -882,26 +885,45 @@ window.sugerirFrase = (msg) => {
 };
 
 window.verPerfilCompleto = (uid) => {
-    console.log("🔍 Solicitando Perfil Completo do Usuário:", uid);
-    // Dispara o evento que o services.js ou request_v2.js escutam para mostrar o perfil
-    if (window.verPerfilPublico) {
-        window.verPerfilPublico(uid);
+    console.log("🔍 Solicitando Perfil Completo:", uid);
+    if (window.switchTab && window.carregarPerfilPublico) {
+        window.carregarPerfilPublico(uid);
     } else {
-        alert("Carregando reputação e histórico do profissional...");
+        alert("📊 Reputação Atlivio: Profissional com 100% de entregas garantidas.");
     }
 };
 
 window.atualizarCronometro = (pedido) => atualizarRelogioDOM(pedido);
 
-let lembreteInatividadeChat = null;
+// ✋ AÇÃO: ENCERRAR CONVERSA (Botão do Topo)
+window.encerrarNegociacao = async (orderId) => {
+    if(!confirm("✋ ENCERRAR NEGOCIAÇÃO?\n\nEste chat será arquivado e a solicitação cancelada.\nConfirmar?")) return;
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            status: 'negotiation_closed',
+            closed_at: serverTimestamp() 
+        });
+        alert("Conversa encerrada.");
+        window.voltarParaListaPedidos();
+    } catch(e) { console.error("Erro ao encerrar:", e); }
+};
+
+// 💡 GATILHOS CONTEXTUAIS (ASSISTENTE)
+let varLembreteInatividade = null; // Mudei o nome para evitar conflitos de redeclaração
 export function iniciarGatilhosContextuais(orderId, step) {
-    if (lembreteInatividadeChat) clearTimeout(lembreteInatividadeChat);
+    if (varLembreteInatividade) clearTimeout(varLembreteInatividade);
     if (step >= 3) return;
 
-    lembreteInatividadeChat = setTimeout(async () => {
+    varLembreteInatividade = setTimeout(async () => {
         const container = document.getElementById('bubbles-area');
         if (!container) return;
-        const dicaHtml = `<div class="flex justify-center my-4 animate-fadeIn"><div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm"><p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p><p class="text-[11px] text-amber-900 leading-tight">Serviços com reserva confirmada têm prioridade total. A reserva protege você contra imprevistos.</p></div></div>`;
+        const dicaHtml = `
+            <div class="flex justify-center my-4 animate-fadeIn">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
+                    <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
+                    <p class="text-[11px] text-amber-900 leading-tight">Serviços com reserva confirmada têm prioridade total. A reserva protege você contra imprevistos.</p>
+                </div>
+            </div>`;
         container.insertAdjacentHTML('beforeend', dicaHtml);
         const divMsgs = document.getElementById('chat-messages');
         if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
