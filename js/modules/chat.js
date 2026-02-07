@@ -395,14 +395,19 @@ export function escutarMensagens(orderId) {
 }
 
 window.finalizarServicoPassoFinalAction = async (orderId) => {
-    if(!confirm("Confirmar finalização?")) return;
+    if(!confirm("🏁 Confirmar entrega e liberar pagamento?")) return;
+    
     try {
-        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
-        const taxaPercent = configSnap.exists() ? parseFloat(configSnap.data().taxa_plataforma) : 0.20;
+        // 🛡️ SINCRONIA: Busca a Taxa Master do Admin (settings/financeiro)
+        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
+        const regrasAtivas = configSnap.exists() ? configSnap.data() : { taxa_plataforma: 0 };
+        const taxaPercent = parseFloat(regrasAtivas.taxa_plataforma || 0);
 
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, "orders", orderId);
             const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Pedido não encontrado.";
+            
             const pedido = orderSnap.data();
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const providerRef = doc(db, "usuarios", pedido.provider_id);
@@ -412,20 +417,51 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             const valorReservado = parseFloat(pedido.value_reserved || 0);
             const valorTotal = parseFloat(pedido.offer_value || 0);
-            const valorLiquido = valorTotal - (valorTotal * taxaPercent);
+            
+            // 💸 CÁLCULO DINÂMICO: Aplica a taxa real do painel
+            const valorTaxa = valorTotal * taxaPercent;
+            const valorLiquido = valorTotal - valorTaxa;
 
+            // 1. Limpa Reserva do Cliente
             if (clientSnap.exists()) {
-                transaction.update(clientRef, { wallet_reserved: Math.max(0, (clientSnap.data().wallet_reserved || 0) - valorReservado) });
+                const currentRes = parseFloat(clientSnap.data().wallet_reserved || 0);
+                transaction.update(clientRef, { 
+                    wallet_reserved: Math.max(0, currentRes - valorReservado) 
+                });
             }
+
+            // 2. Libera Saldo Líquido para o Prestador
             if (providerSnap.exists()) {
-                const newBal = (providerSnap.data().wallet_balance || 0) + valorLiquido;
-                transaction.update(providerRef, { wallet_balance: newBal, saldo: newBal });
+                const currentBal = parseFloat(providerSnap.data().wallet_balance || 0);
+                const newBal = currentBal + valorLiquido;
+                transaction.update(providerRef, { 
+                    wallet_balance: newBal,
+                    updated_at: serverTimestamp()
+                });
             }
-            transaction.update(orderRef, { status: 'completed', completed_at: serverTimestamp() });
+
+            // 3. Finaliza Pedido
+            transaction.update(orderRef, { 
+                status: 'completed', 
+                system_step: 4,
+                fee_applied: valorTaxa,
+                net_value: valorLiquido,
+                completed_at: serverTimestamp() 
+            });
+
+            // 4. Registro na Ledger do Sistema (sys_finance)
+            const ledgerRef = doc(db, "sys_finance", "stats");
+            transaction.set(ledgerRef, { 
+                total_revenue: increment(valorTaxa) 
+            }, { merge: true });
         });
-        alert("✅ Concluído!");
+
+        alert(`✅ SUCESSO!\nPagamento liberado com taxa de ${(taxaPercent * 100).toFixed(1)}%.`);
         window.voltarParaListaPedidos();
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error("❌ Erro na liberação final:", e);
+        alert("Falha ao processar pagamento: " + e);
+    }
 };
 
 window.reportarProblema = async (orderId) => {
