@@ -180,13 +180,23 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         const valorAcordo = parseFloat(pedido.offer_value) || 0;
         const reservaCalculada = valorAcordo * (pct / 100);
 
-        return `<div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
-            <p class="text-sm font-black text-gray-800 mb-1">🤝 Fechar Acordo?</p>
-            <p class="text-xs text-gray-500 mb-4">Confirme se o valor e os detalhes estão certos.</p>
-            <div class="flex gap-3 mb-4">
-                <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase shadow-md hover:bg-blue-700 transition">🤝 ACEITAR E FECHAR</button>
+        return `<div id="banner-fechamento-v12" class="bg-white border-2 border-blue-600 p-5 rounded-2xl shadow-2xl mb-4 mx-4 relative overflow-hidden animate-bounce-subtle">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
+            <div class="flex justify-between items-start mb-2">
+                <div>
+                    <p class="text-sm font-black text-blue-900 mb-1">🤝 FINALIZAR NEGOCIAÇÃO</p>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Confirme para reservar sua agenda</p>
+                </div>
+                <span class="text-xl">✍️</span>
             </div>
+            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white py-4 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
+                🤝 ACEITAR E FECHAR AGORA
+            </button>
+            <div class="mt-3 bg-amber-50 p-2 rounded-lg flex gap-2 items-center">
+                <span class="text-xs">🔒</span>
+                <p class="text-[9px] text-amber-800 font-bold leading-tight uppercase">Pagamento protegido pela ATLIVIO</p>
+            </div>
+        </div>`;
             <div class="bg-amber-50 border border-amber-100 p-2 rounded-lg flex gap-2 items-start">
                 <span class="text-amber-500 text-xs mt-0.5">🔒</span>
                 <p class="text-amber-800 text-[9px] font-medium leading-tight">
