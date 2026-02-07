@@ -815,12 +815,25 @@ window.novoDescreverServico = async (orderId) => {
 
 // 🚑 RESTAURAÇÃO: FUNÇÃO DE ENVIAR PROPOSTA (Muda o Valor)
 window.novoEnviarProposta = async (orderId) => {
-    const valorStr = prompt("💰 VALOR DA PROPOSTA (R$):");
+    const orderSnap = await getDoc(doc(db, "orders", orderId));
+    if (!orderSnap.exists()) return;
+    const pedidoData = orderSnap.data();
+
+    // 🛡️ TRAVA DE VALOR MÍNIMO (Busca no services.js exportado)
+    const categoriaId = pedidoData.service_category_id || "gerais";
+    const infoCategoria = window.CATEGORIAS_ATIVAS.find(c => c.id === categoriaId) || { minPrice: 20 };
+    const valorMinimo = infoCategoria.minPrice;
+
+    const valorStr = prompt(`💰 VALOR DA PROPOSTA (Min: R$ ${valorMinimo}):`);
     if (!valorStr) return;
     const valor = parseFloat(valorStr.replace(',', '.'));
 
-    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: Desconto, 30min extras, material incluso):");
-    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "OFERTA EXCLUSIVA";
+    if (isNaN(valor) || valor < valorMinimo) {
+        return alert(`⛔ VALOR ABAIXO DO PERMITIDO\nO valor mínimo para esta categoria é R$ ${valorMinimo.toFixed(2)}.`);
+    }
+
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA PARA FECHAR AGORA?\n(Ex: 30min extras, Desconto VIP, Material incluso)");
+    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO EXCLUSIVA";
 
     try {
         await updateDoc(doc(db, "orders", orderId), {
@@ -830,23 +843,26 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 🎨 Visual de IMPACTO: Oferta Flash
+        // 🎨 Visual PREMIUM RETA (Sem tom torto)
         const htmlProposta = `
-            <div class="my-4 border-2 border-dashed border-amber-500 rounded-2xl overflow-hidden shadow-xl transform rotate-1 animate-pulse" style="background: white;">
-                <div class="bg-amber-500 text-white text-[10px] font-black text-center py-1.5 uppercase tracking-tighter">
-                    ⚡ OFERTA FLASH - GARANTA SUA VAGA
+            <div class="my-4 border border-blue-100 rounded-2xl overflow-hidden shadow-lg bg-white animate-fadeIn">
+                <div class="bg-slate-900 text-white text-[9px] font-black text-center py-2 uppercase tracking-[0.2em]">
+                    💎 Proposta de Fechamento
                 </div>
-                <div class="p-5 text-center">
-                    <p class="text-slate-400 text-[8px] uppercase font-black mb-1">Apenas agora por</p>
-                    <div class="flex justify-center items-center gap-1 text-blue-900">
+                <div class="p-6 text-center">
+                    <p class="text-slate-400 text-[10px] uppercase font-bold mb-1">Valor do Investimento</p>
+                    <div class="flex justify-center items-center gap-1 text-slate-900">
                         <span class="text-xl font-bold">R$</span>
                         <span class="text-5xl font-black tracking-tighter">${valor.toFixed(2).replace('.', ',')}</span>
                     </div>
-                    <div class="mt-3 py-1.5 px-4 bg-green-600 rounded-lg inline-block shadow-md">
-                        <p class="text-white text-[10px] font-black italic">🎁 ${labelBeneficio}</p>
+                    <div class="mt-4 py-2 px-4 bg-blue-50 border border-blue-100 rounded-xl inline-flex items-center gap-2">
+                        <span class="text-lg">🎁</span>
+                        <p class="text-blue-700 text-[10px] font-black uppercase tracking-tight">${labelBeneficio}</p>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-slate-100">
-                        <p class="text-[9px] text-slate-500 leading-tight">Clique no botão <b>ACEITAR E FECHAR</b> acima para reservar este valor e horário.</p>
+                    <div class="mt-5 pt-4 border-t border-slate-50">
+                        <p class="text-[10px] text-slate-500 leading-relaxed">
+                            Para confirmar este valor e garantir sua vaga na agenda, utilize o botão <b>ACEITAR E FECHAR</b> disponível nesta tela.
+                        </p>
                     </div>
                 </div>
             </div>
