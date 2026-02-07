@@ -36,25 +36,20 @@ function garantirContainerRadar() {
     const parent = document.getElementById('pview-radar');
     const emptyState = document.getElementById('radar-empty-state');
 
-    if (!parent) {
-        console.error("❌ ERRO FATAL: Aba 'pview-radar' não encontrada.");
-        return null;
-    }
+    if (!parent) return null;
 
-    // Se o container não existe, recria ele de forma limpa
     if (!container) {
-        console.warn("🏗️ Recriando radar-container...");
         container = document.createElement('div');
         container.id = 'radar-container';
-        container.style.cssText = "display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; margin: 0 auto; z-index: 8000; position: relative; padding: 10px 0;";
+        container.className = "flex flex-col gap-3 w-full max-w-[400px] mx-auto z-[8000] relative py-2";
         parent.prepend(container); 
     }
 
-    // Controle do Empty State (Texto "Procurando Clientes")
-    if (container.children.length > 0) {
-        if (emptyState) emptyState.classList.add('hidden');
-    } else {
-        if (emptyState) emptyState.classList.remove('hidden');
+    // Gerencia o Empty State sem loop infinito
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (emptyState) {
+        if (temCards) emptyState.classList.add('hidden');
+        else emptyState.classList.remove('hidden');
     }
 
     return container;
