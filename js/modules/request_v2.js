@@ -504,8 +504,26 @@ export async function recusarPedidoReq(orderId) {
 }
 
 // ============================================================================
-// EXPOSIÇÃO GLOBAL
+// EXPOSIÇÃO GLOBAL E LIMPEZA
 // ============================================================================
+
+// Função limpa para parar o radar
+window.pararRadarFisico = () => {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+    }
+    // Reseta a trava para permitir ligar novamente
+    window.radarIniciado = false; 
+    
+    // Limpa visualmente
+    const container = document.getElementById('radar-container');
+    if (container) container.innerHTML = "";
+    
+    console.log("🛑 [SISTEMA] Radar desligado e limpo.");
+};
+
+// Bindings Globais
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
@@ -514,19 +532,12 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 
+// Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
-window.pararRadarFisico = window.pararRadarFisico; // Fix para garantir acesso
-/** * 🛡️ BLINDAGEM CONTRA SCRIPT FANTASMA
- * Neutraliza funções obsoletas que possam estar presas no cache do navegador.
- */
-window.atualizarRadar = function() { 
-    console.warn("🛡️ Uma função fantasma (atualizarRadar) tentou rodar e foi bloqueada pela V12.");
-    return false; 
-};
+
 /**
  * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
- * Permite que o prestador veja um pedido que "sumiu" mas ainda está pendente.
  */
 window.recuperarPedidoRadar = async (orderId) => {
     const orderSnap = await getDoc(doc(db, "orders", orderId));
@@ -536,13 +547,6 @@ window.recuperarPedidoRadar = async (orderId) => {
     }
 };
 
-/**
- * ⚖️ MAPEAMENTO DE ETAPAS DO SISTEMA
- * 1. Negociação (Chat Aberto)
- * 2. Garantia (Aguardando Reserva de Saldo)
- * 3. Execução (Cronômetro Rodando)
- * 4. Concluído (Pagamento Liberado)
- */
 // Memória volátil para a sessão atual
 window.REJEITADOS_SESSAO = new Set();
 
@@ -550,11 +554,10 @@ window.rejeitarPermanente = async (orderId) => {
     // 1. Remove visualmente da tela imediatamente
     removeRequestCard(orderId);
     
-    // 2. Salva na memória da sessão para não reaparecer no onSnapshot
+    // 2. Salva na memória da sessão
     window.REJEITADOS_SESSAO.add(orderId);
 
-    // 3. Registra no banco de dados (Opcional - para blindagem total)
-    // Aqui marcamos na ordem que este prestador específico não quer vê-la
+    // 3. Registra rejeição no banco
     try {
         const orderRef = doc(db, "orders", orderId);
         const uid = auth.currentUser.uid;
@@ -564,8 +567,8 @@ window.rejeitarPermanente = async (orderId) => {
             status_rejeicao: 'skipped'
         });
         
-        console.log("🚫 Ordem marcada como 'sem interesse' para este prestador.");
+        console.log("🚫 Ordem marcada como 'sem interesse'.");
     } catch (e) {
-        console.warn("Erro ao registrar rejeição permanente:", e);
+        console.warn("Erro ao registrar rejeição:", e);
     }
 };
