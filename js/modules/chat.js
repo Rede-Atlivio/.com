@@ -813,29 +813,29 @@ window.novoDescreverServico = async (orderId) => {
     } catch (e) { console.error(e); alert("Erro ao atualizar."); }
 };
 
-// 🚑 RESTAURAÇÃO: FUNÇÃO DE ENVIAR PROPOSTA (Muda o Valor)
 window.novoEnviarProposta = async (orderId) => {
     const orderSnap = await getDoc(doc(db, "orders", orderId));
     if (!orderSnap.exists()) return;
     const pedidoData = orderSnap.data();
 
-    // 🛡️ TRAVA DE VALOR MÍNIMO (Busca no services.js exportado)
+    // 🛡️ TRAVA DINÂMICA DE VALOR MÍNIMO
     const categoriaId = pedidoData.service_category_id || "gerais";
-    const infoCategoria = window.CATEGORIAS_ATIVAS.find(c => c.id === categoriaId) || { minPrice: 20 };
+    const infoCategoria = (window.CATEGORIAS_ATIVAS || []).find(c => c.id === categoriaId) || { minPrice: 20 };
     const valorMinimo = infoCategoria.minPrice;
 
-    const valorStr = prompt(`💰 VALOR DA PROPOSTA (Min: R$ ${valorMinimo}):`);
+    const valorStr = prompt(`💰 VALOR DA PROPOSTA (Mínimo R$ ${valorMinimo}):`);
     if (!valorStr) return;
     const valor = parseFloat(valorStr.replace(',', '.'));
 
     if (isNaN(valor) || valor < valorMinimo) {
-        return alert(`⛔ VALOR ABAIXO DO PERMITIDO\nO valor mínimo para esta categoria é R$ ${valorMinimo.toFixed(2)}.`);
+        return alert(`⛔ VALOR INVÁLIDO\nO valor mínimo permitido para este serviço é R$ ${valorMinimo.toFixed(2)}.`);
     }
 
-    const beneficio = prompt("🎁 BENEFÍCIO EXTRA PARA FECHAR AGORA?\n(Ex: 30min extras, Desconto VIP, Material incluso)");
-    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO EXCLUSIVA";
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: 30min extras, Desconto, Material incluso):");
+    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO ESPECIAL";
 
     try {
+        // Atualiza o pedido e reseta as confirmações mútuas
         await updateDoc(doc(db, "orders", orderId), {
             offer_value: valor,
             offer_bonus: beneficio || "",
@@ -843,14 +843,14 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 🎨 Visual PREMIUM RETA (Sem tom torto)
+        // 🎨 VISUAL PREMIUM RETA (ALTA CONVERSÃO)
         const htmlProposta = `
-            <div class="my-4 border border-blue-100 rounded-2xl overflow-hidden shadow-lg bg-white animate-fadeIn">
+            <div class="my-4 border border-blue-100 rounded-2xl overflow-hidden shadow-xl bg-white animate-fadeIn" style="transform: rotate(0deg) !important;">
                 <div class="bg-slate-900 text-white text-[9px] font-black text-center py-2 uppercase tracking-[0.2em]">
-                    💎 Proposta de Fechamento
+                    💎 Nova Proposta Comercial
                 </div>
                 <div class="p-6 text-center">
-                    <p class="text-slate-400 text-[10px] uppercase font-bold mb-1">Valor do Investimento</p>
+                    <p class="text-slate-400 text-[10px] uppercase font-bold mb-1">Investimento Total</p>
                     <div class="flex justify-center items-center gap-1 text-slate-900">
                         <span class="text-xl font-bold">R$</span>
                         <span class="text-5xl font-black tracking-tighter">${valor.toFixed(2).replace('.', ',')}</span>
@@ -860,8 +860,8 @@ window.novoEnviarProposta = async (orderId) => {
                         <p class="text-blue-700 text-[10px] font-black uppercase tracking-tight">${labelBeneficio}</p>
                     </div>
                     <div class="mt-5 pt-4 border-t border-slate-50">
-                        <p class="text-[10px] text-slate-500 leading-relaxed">
-                            Para confirmar este valor e garantir sua vaga na agenda, utilize o botão <b>ACEITAR E FECHAR</b> disponível nesta tela.
+                        <p class="text-[10px] text-slate-500 leading-relaxed font-medium">
+                            Para aceitar este valor e garantir o compromisso, clique no botão <b>🤝 ACEITAR E FECHAR</b> localizado no topo ou no banner de etapa deste chat.
                         </p>
                     </div>
                 </div>
@@ -874,7 +874,11 @@ window.novoEnviarProposta = async (orderId) => {
             timestamp: serverTimestamp()
         });
         
-    } catch (e) { alert("Erro ao enviar proposta."); }
+        console.log("✅ Proposta V12 Premium enviada com sucesso.");
+    } catch (e) { 
+        console.error("Erro proposta:", e);
+        alert("Erro ao processar proposta."); 
+    }
 };
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
