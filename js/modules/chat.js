@@ -278,7 +278,7 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
             <p class="text-sm font-black text-gray-800 mb-1">🤝 Fechar Acordo?</p>
             <p class="text-xs text-gray-500 mb-4">Confirme se o valor e os detalhes estão certos.</p>
             <div class="flex gap-3 mb-4">
-                <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase shadow-md hover:bg-blue-700 transition">✅ ACEITAR E FECHAR</button>
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="flex-1 bg-blue-600 text-white py-3 rounded-xl text-xs font-black uppercase shadow-md hover:bg-blue-700 transition">🤝 ACEITAR E FECHAR</button>
             </div>
             <div class="bg-amber-50 border border-amber-100 p-2 rounded-lg flex gap-2 items-start">
                 <span class="text-amber-500 text-xs mt-0.5">🔒</span>
