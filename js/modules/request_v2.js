@@ -244,41 +244,43 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-    // Sincroniza configurações financeiras do banco para o cálculo de taxas do card
+    // 🛡️ SINCRONIA FINANCEIRA V12: Busca e valida os números antes de ligar o radar
     const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
-        if(s.exists()) window.CONFIG_FINANCEIRA = s.data(); 
+        if(s.exists()) {
+            const data = s.data();
+            window.CONFIG_FINANCEIRA = {
+                taxa: parseFloat(data.taxa_plataforma || 0),
+                limite: parseFloat(data.limite_divida || 0)
+            };
+            console.log("💰 [RADAR] Taxas validadas:", window.CONFIG_FINANCEIRA);
+        }
     });
 
-    // Certifica-se de que o container existe antes de começar a ouvir o banco
     garantirContainerRadar();
 
-    // Escuta a coleção 'orders' (Certifique-se que o cliente está gravando em 'orders')
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
         const toggle = document.getElementById('online-toggle');
-        
-        // Se o prestador desligar o botão, para o radar
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
             return;
         }
 
-        // Auto-cura do DOM em cada mudança do banco
         garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                createRequestCard({ id: change.doc.id, ...change.doc.data() });
-            }
-            if (change.type === "removed") {
-                removeRequestCard(change.doc.id);
-            }
+            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "removed") removeRequestCard(change.doc.id);
         });
 
-        // Atualiza o Empty State após processar as mudanças
-        garantirContainerRadar();
+        // 💤 Gerenciamento do Empty State (Fim do bug do 'undefined')
+        const emptyState = document.getElementById('radar-empty-state');
+        if (emptyState) {
+            if (snapshot.empty) emptyState.classList.remove('hidden');
+            else emptyState.classList.add('hidden');
+        }
     });
 }
 
