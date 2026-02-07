@@ -25,31 +25,29 @@ let unsubscribeWallet = null;
  * Escuta as regras do Admin e garante que o Radar e o Robô de Cobrança falem a mesma língua.
  */
 function iniciarRegrasFinanceiras() {
-    // 🎯 Rota exata que o seu Admin usa
     const ref = doc(db, "settings", "financeiro");
     
     onSnapshot(ref, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
-            console.log("📥 [DADO BRUTO ADMIN]:", data);
-
-            // 🧮 TRADUTOR V12: Converte 50 em 0.50 ou aceita 0.50 direto
-            let rawTaxa = parseFloat(data.taxa_plataforma || 0);
-            if (rawTaxa > 1) rawTaxa = rawTaxa / 100; 
+            
+            // 🎯 AJUSTE DE MIRA: O valor '50' está em 'porcentagem_reserva'
+            // Usamos || como plano B caso você mude o nome no Admin depois
+            let taxaBruta = parseFloat(data.porcentagem_reserva || data.taxa_plataforma || 0);
+            
+            // Converte 50 para 0.50 (50%)
+            if (taxaBruta > 1) taxaBruta = taxaBruta / 100;
 
             const novasRegras = {
-                taxa: rawTaxa,
+                taxa: taxaBruta,
                 limite: parseFloat(data.limite_divida || 0)
             };
             
-            // Injeta na Window para o request_v2.js enxergar instantaneamente
             window.CONFIG_FINANCEIRA = novasRegras;
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
             
-            console.log(`%c ✅ SINCRONIZADO: Taxa ${(novasRegras.taxa * 100).toFixed(0)}%`, "color: #059669; font-weight: bold;");
-        } else {
-            console.error("❌ Erro: Documento de taxas não encontrado no banco.");
+            console.log(`%c 🎯 SINCRONIA ATIVA: Taxa lida como ${(novasRegras.taxa * 100).toFixed(0)}%`, "color: #059669; font-weight: bold;");
         }
     });
 }
