@@ -807,23 +807,32 @@ window.novoDescreverServico = async (orderId) => {
 
 // 🚑 RESTAURAÇÃO: FUNÇÃO DE ENVIAR PROPOSTA (Muda o Valor)
 window.novoEnviarProposta = async (orderId) => {
-    const valorStr = prompt("💰 Qual o novo valor da proposta? (Apenas números)");
+    const valorStr = prompt("💰 VALOR DA PROPOSTA (R$):");
     if (!valorStr) return;
     const valor = parseFloat(valorStr.replace(',', '.'));
-    if (isNaN(valor) || valor <= 0) return alert("Valor inválido.");
+
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA PARA FECHAR AGORA?\n(Ex: 30min extras, Desconto de R$ 10, Material incluso, etc.)");
+    const labelBeneficio = beneficio ? `\n🎁 BÔNUS: ${beneficio}` : "";
 
     try {
         await updateDoc(doc(db, "orders", orderId), {
             offer_value: valor,
-            provider_confirmed: false, // Reseta confirmações para forçar novo aceite
+            offer_bonus: beneficio || "",
+            provider_confirmed: false, 
             client_confirmed: false
         });
+
+        // Copy Irresistível baseada em técnicas de fechamento
+        const msgTexto = `🎯 NOVA PROPOSTA ENVIADA!\n\n💰 Valor: R$ ${valor.toFixed(2)}${labelBeneficio}\n\n⚡ Esta oferta é exclusiva para fechamento imediato e garante sua vaga na agenda.`;
+
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: `💰 Nova Proposta: R$ ${valor.toFixed(2)}`,
+            text: msgTexto,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
-    } catch (e) { console.error(e); alert("Erro ao enviar proposta."); }
+        
+        console.log("✅ Proposta de Fechamento enviada.");
+    } catch (e) { alert("Erro ao enviar proposta."); }
 };
 
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
