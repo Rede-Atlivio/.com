@@ -421,24 +421,23 @@ window.closeModal = () => document.getElementById('modal-editor').classList.add(
 
 window.saveSettings = async () => { 
     const msg = document.getElementById('conf-global-msg').value;
-    const min = parseFloat(document.getElementById('conf-val-min').value) || 20;
-    const max = parseFloat(document.getElementById('conf-val-max').value) || 500;
-    const taxa = parseFloat(document.getElementById('conf-taxa-reserva').value) || 10;
+    const btn = document.querySelector('button[onclick="window.saveSettings()"]');
+    if(btn) { btn.innerText = "⏳ SALVANDO..."; btn.disabled = true; }
 
     try {
-        // 1. Salva a mensagem global (coleção antiga)
-        await setDoc(doc(db, "settings", "global"), { top_message: msg }, {merge:true}); 
-        
-        // 2. Salva as Regras Financeiras (Nova coleção que o APP agora lê)
-        await setDoc(doc(db, "configuracoes", "financeiro"), { 
-            valor_minimo: min, 
-            valor_maximo: max, 
-            porcentagem_reserva: taxa,
-            atualizado_em: serverTimestamp()
+        // Unificação: Salva APENAS em configuracoes/global para o topo do app
+        await setDoc(doc(db, "configuracoes", "global"), { 
+            top_message: msg,
+            show_msg: msg.length > 0,
+            updated_at: serverTimestamp() 
         }, {merge:true}); 
 
-        alert("✅ REGRAS GLOBAIS SALVAS!"); 
-    } catch (e) { alert("Erro: " + e.message); }
+        alert("✅ AVISO GLOBAL ATUALIZADO!\nAs regras financeiras devem ser alteradas na aba 'CONFIGURAÇÕES'."); 
+    } catch (e) { 
+        alert("Erro ao salvar: " + e.message); 
+    } finally {
+        if(btn) { btn.innerText = "Atualizar Todas as Regras Agora ⚡"; btn.disabled = false; }
+    }
 };
 
 window.loadSettings = async () => { 
