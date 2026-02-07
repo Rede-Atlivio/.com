@@ -29,7 +29,7 @@ export const SERVICOS_PADRAO = [
 // ⚡ INJEÇÃO GLOBAL IMEDIATA PARA MATAR ERROS DE REFERÊNCIA NO REQUEST.JS
 window.SERVICOS_PADRAO = SERVICOS_PADRAO;
 
-// CATEGORIAS E VALORES MÍNIMOS
+// CATEGORIAS E VALORES MÍNIMOS (FONTE DE VERDADE FINANCEIRA)
 export const CATEGORIAS_ATIVAS = [
     { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
     { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
@@ -44,6 +44,9 @@ export const CATEGORIAS_ATIVAS = [
     { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 },
     { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 }
 ];
+
+// 🔥 INJEÇÃO GLOBAL: Garante que o Chat.js consiga ler as travas de preço
+window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
 let servicesUnsubscribe = null;
 
 // ============================================================================
