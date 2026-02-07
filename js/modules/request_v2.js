@@ -4,7 +4,22 @@
 
 import { db, auth } from '../config.js'; 
 import { podeTrabalhar } from './wallet.js'; 
-import { collection, addDoc, serverTimestamp, setDoc, doc, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { 
+    collection, 
+    addDoc, 
+    serverTimestamp, 
+    setDoc, 
+    doc, 
+    query, 
+    where, 
+    onSnapshot, 
+    getDoc, 
+    updateDoc, 
+    deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// ⚡ GARANTIA DE ESCOPO GLOBAL: Evita erros de 'undefined' em execuções rápidas
+if (typeof window.updateDoc === 'undefined') window.updateDoc = updateDoc;
 
 // --- VARIÁVEIS DE MEMÓRIA ---
 let mem_ProviderId = null;
