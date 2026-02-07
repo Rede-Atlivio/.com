@@ -826,7 +826,6 @@
 <script type="module" src="./js/modules/reviews.js?v=18.0"></script>
 
 <script type="module">
-    // 1. IMPORTAÇÕES (TUDO JUNTO)
     import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { db, app } from './js/config.js'; 
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -834,59 +833,30 @@
     const auth = getAuth(app);
     auth.languageCode = 'pt-br';
 
-    // 2. MÁSCARA DO TELEFONE
-    window.mascaraTelefone = (input) => {
-        let v = input.value.replace(/\D/g,'');
-        v = v.substring(0, 11);
-        if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-        if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
-        input.value = v;
-    };
-
-    // 3. LÓGICA DE LOGIN (SMS)
-    const setupRecaptcha = () => {
-        if(!window.recaptchaVerifier) {
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {'size': 'invisible'});
-        }
-    };
-
     window.enviarSMSLogin = async () => {
         let rawPhone = document.getElementById('login-phone').value;
         let cleanPhone = rawPhone.replace(/\D/g, ''); 
         if(cleanPhone.length < 10) return alert("Digite o número completo!");
-
         const btn = document.getElementById('btn-login-send');
-        btn.disabled = true;
-        btn.innerText = "ENVIANDO...";
-
-        setupRecaptcha();
+        btn.disabled = true; btn.innerText = "ENVIANDO...";
+        if(!window.recaptchaVerifier) window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {'size': 'invisible'});
         try {
             const confirmationResult = await signInWithPhoneNumber(auth, '+55' + cleanPhone, window.recaptchaVerifier);
             window.confirmationResult = confirmationResult;
             document.getElementById('lbl-login-phone').innerText = '+55' + cleanPhone;
             document.getElementById('login-step-phone').classList.add('hidden');
             document.getElementById('login-step-code').classList.remove('hidden');
-        } catch (error) {
-            alert("Erro: " + error.message);
-            btn.disabled = false;
-            btn.innerText = "RECEBER CÓDIGO SMS 📲";
-        }
+        } catch (error) { alert("Erro: " + error.message); btn.disabled = false; btn.innerText = "RECEBER CÓDIGO SMS 📲"; }
     };
 
     window.confirmarCodigoLogin = async () => {
         const code = document.getElementById('login-code').value;
-        try {
-            await window.confirmationResult.confirm(code);
-            console.log("Sucesso no login!");
-        } catch (error) {
-            alert("Código inválido!");
-        }
+        try { await window.confirmationResult.confirm(code); console.log("Sucesso no login!"); } catch (error) { alert("Código inválido!"); }
     };
 
-    // 4. ALERTA GLOBAL E RASTREADOR V12
-    async function carregarConfiguracoesIniciais() {
+    // Sincronia de Alerta V12 - Corrigindo a rota para a nova coleção saneada
+    window.carregarConfiguracoesIniciais = async () => {
         try {
-            // Sincronia: Lê de configuracoes/global (onde o Admin salva agora)
             const docSnap = await getDoc(doc(db, "configuracoes", "global"));
             if (docSnap.exists() && docSnap.data().top_message && docSnap.data().show_msg) {
                 const msgDiv = document.getElementById('global-alert-banner');
@@ -896,18 +866,9 @@
                     msgDiv.classList.remove('hidden');
                 }
             }
-        } catch (e) { console.warn("Aviso Global não disponível."); }
+        } catch (e) { console.log("Aviso Global offline."); }
+    };
 
-        // Rastreador de Marketing
-        const p = new URLSearchParams(window.location.search);
-        const ref = p.get('ref') || p.get('utm_source') || p.get('source');
-        if(ref) {
-            console.log("🚀 Canal de Entrada Detectado:", ref);
-            localStorage.setItem("traffic_source", ref);
-        }
-    }
-
-    // DISPARA TUDO
     carregarConfiguracoesIniciais();
 </script>
     
