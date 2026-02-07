@@ -376,30 +376,40 @@ function removeRequestCard(orderId) {
 }
 
 export async function aceitarPedidoRadar(orderId) {
-    const orderSnap = await getDoc(doc(db, "orders", orderId));
+    const orderRef = doc(db, "orders", orderId);
+    const orderSnap = await getDoc(orderRef);
+    
     if (!orderSnap.exists()) {
         removeRequestCard(orderId);
         return alert("Este pedido não existe mais.");
     }
 
-    const valorServico = parseFloat(orderSnap.data().offer_value || 0);
-    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10 };
+    const pedidoData = orderSnap.data();
+    const valorServico = parseFloat(pedidoData.offer_value || 0);
+    const config = window.configFinanceiroAtiva || { porcentagem_reserva: 20 };
     const taxaEstimada = valorServico * (config.porcentagem_reserva / 100);
 
-    if (!podeTrabalhar(taxaEstimada)) {
-        removeRequestCard(orderId);
-        return;
+    // 🛡️ Trava de Segurança V10 (Protege o Prestador)
+    if (typeof window.podeTrabalhar === 'function') {
+        if (!window.podeTrabalhar(taxaEstimada)) {
+            removeRequestCard(orderId);
+            return;
+        }
     }
 
     try {
-        await setDoc(doc(db, "orders", orderId), { 
+        // ✅ Ação 10: Prepara o terreno para o Cronômetro e Agendamento
+        await updateDoc(orderRef, { 
             status: 'accepted', 
-            accepted_at: serverTimestamp() 
-        }, { merge: true });
+            accepted_at: serverTimestamp(),
+            system_step: 1, // Inicia na Etapa 1: Negociação
+            timer_initialized: false // O cronômetro só inicia no clique real_start
+        });
         
         await setDoc(doc(db, "chats", orderId), { 
             status: 'active', 
-            updated_at: serverTimestamp() 
+            updated_at: serverTimestamp(),
+            participants: [auth.currentUser.uid, pedidoData.client_id]
         }, { merge: true });
 
         removeRequestCard(orderId);
@@ -407,13 +417,13 @@ export async function aceitarPedidoRadar(orderId) {
         if(window.switchTab) {
             window.switchTab('chat');
             setTimeout(() => {
-                 if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-            }, 500);
+                 if(window.carregarInterfaceDeChat) window.carregarInterfaceDeChat();
+            }, 600);
         }
 
     } catch (e) { 
-        console.error("Erro no aceite:", e);
-        alert("Erro: " + e.message); 
+        console.error("Erro no aceite V12:", e);
+        alert("Erro ao aceitar: " + e.message); 
     }
 }
 
