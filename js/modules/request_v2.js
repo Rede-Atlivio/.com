@@ -507,3 +507,29 @@ window.recuperarPedidoRadar = async (orderId) => {
  * 3. Execução (Cronômetro Rodando)
  * 4. Concluído (Pagamento Liberado)
  */
+// Memória volátil para a sessão atual
+window.REJEITADOS_SESSAO = new Set();
+
+window.rejeitarPermanente = async (orderId) => {
+    // 1. Remove visualmente da tela imediatamente
+    removeRequestCard(orderId);
+    
+    // 2. Salva na memória da sessão para não reaparecer no onSnapshot
+    window.REJEITADOS_SESSAO.add(orderId);
+
+    // 3. Registra no banco de dados (Opcional - para blindagem total)
+    // Aqui marcamos na ordem que este prestador específico não quer vê-la
+    try {
+        const orderRef = doc(db, "orders", orderId);
+        const uid = auth.currentUser.uid;
+        
+        await updateDoc(orderRef, {
+            [`rejeitado_por.${uid}`]: true,
+            status_rejeicao: 'skipped'
+        });
+        
+        console.log("🚫 Ordem marcada como 'sem interesse' para este prestador.");
+    } catch (e) {
+        console.warn("Erro ao registrar rejeição permanente:", e);
+    }
+};
