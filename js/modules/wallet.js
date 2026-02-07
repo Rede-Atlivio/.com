@@ -1,10 +1,15 @@
 import { db, auth } from '../config.js';
 import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 💰 CONFIGURAÇÕES DINÂMICAS
+/**
+ * 💰 CONFIGURAÇÕES MESTRE
+ * O valor inicial é apenas um "placeholder". 
+ * O sistema irá sobrescrever esses valores em milissegundos assim que o 'iniciarRegrasFinanceiras' 
+ * ler o seu Painel Administrativo no Firestore.
+ */
 export let CONFIG_FINANCEIRA = {
-    taxa: 0.20,     // Padrão de 20% se o banco falhar
-    limite: 0.00    // 🔒 PADRÃO RIGOROSO: Começa com ZERO tolerância até o Admin carregar.
+    taxa: 0.20,     
+    limite: 0.00  
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
