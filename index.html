@@ -883,27 +883,27 @@
         }
     };
 
-    // 4. ALERTA GLOBAL E RASTREADOR (ITEM 39)
+    // 4. ALERTA GLOBAL E RASTREADOR V12
     async function carregarConfiguracoesIniciais() {
-        // Alerta do Admin
         try {
-            const docSnap = await getDoc(doc(db, "settings", "global"));
-            if (docSnap.exists() && docSnap.data().top_message) {
+            // Sincronia: Lê de configuracoes/global (onde o Admin salva agora)
+            const docSnap = await getDoc(doc(db, "configuracoes", "global"));
+            if (docSnap.exists() && docSnap.data().top_message && docSnap.data().show_msg) {
                 const msgDiv = document.getElementById('global-alert-banner');
                 const msgText = document.getElementById('global-alert-text');
                 if(msgDiv && msgText) {
-                    msgText.innerText = "⚠️ AVISO: " + docSnap.data().top_message;
+                    msgText.innerText = "📢 " + docSnap.data().top_message;
                     msgDiv.classList.remove('hidden');
                 }
             }
-        } catch (e) { console.log("Erro ao carregar alerta:", e); }
+        } catch (e) { console.warn("Aviso Global não disponível."); }
 
-        // Rastreador Universal de Bônus
+        // Rastreador de Marketing
         const p = new URLSearchParams(window.location.search);
-        const origem = p.get('ref') || p.get('utm_source') || p.get('source') || p.get('utm');
-        if(origem) {
-            console.log("🔗 ORIGEM RASTREADA:", origem);
-            localStorage.setItem("traffic_source", origem);
+        const ref = p.get('ref') || p.get('utm_source') || p.get('source');
+        if(ref) {
+            console.log("🚀 Canal de Entrada Detectado:", ref);
+            localStorage.setItem("traffic_source", ref);
         }
     }
 
