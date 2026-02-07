@@ -20,29 +20,45 @@ let unsubscribeWallet = null;
  * 🧠 CÉREBRO FINANCEIRO V12
  * Escuta as regras do Admin e as expõe globalmente para o Radar e Chat
  */
+/**
+ * 🧠 CÉREBRO FINANCEIRO V12.1 - SINCRONIA TOTAL
+ * Escuta as regras do Admin e garante que o Radar e o Robô de Cobrança falem a mesma língua.
+ */
 function iniciarRegrasFinanceiras() {
     const ref = doc(db, "settings", "financeiro");
     
     onSnapshot(ref, (snap) => {
         if (snap.exists()) {
             const data = snap.data();
-            // 🛡️ SINCRONIA TOTAL: Sem valores fixos no código. 
-            // Se não houver no banco, assume 0.
+            
+            // 🛡️ SINCRONIA DE CAMPOS: Mapeia o banco para o padrão do App
+            // Nota: Se no Admin estiver 0.50, aqui vira 0.50 (50%)
+            const taxaAdmin = parseFloat(data.taxa_plataforma);
+            const limiteAdmin = parseFloat(data.limite_divida);
+
             const novasRegras = {
-                taxa: parseFloat(data.taxa_plataforma ?? 0),
-                limite: parseFloat(data.limite_divida ?? 0)
+                taxa: isNaN(taxaAdmin) ? 0 : taxaAdmin,
+                limite: isNaN(limiteAdmin) ? 0 : limiteAdmin
             };
             
-            // Atualiza memória local e global para o request.js
+            // Atualiza o objeto exportado e a janela global
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
             window.CONFIG_FINANCEIRA = novasRegras; 
             
-            console.log("💰 [CÉREBRO] Regras Sincronizadas:", window.CONFIG_FINANCEIRA);
+            console.log(`💰 [CÉREBRO] Sincronizado: Taxa ${(novasRegras.taxa * 100).toFixed(0)}% | Limite R$ ${novasRegras.limite}`);
+            
+            // Força uma atualização visual no Radar se ele estiver aberto
+            if (window.atualizarVisualRadar) window.atualizarVisualRadar();
+            
         } else {
-            console.error("❌ Erro Crítico: settings/financeiro não encontrado no banco.");
+            console.error("❌ Erro Crítico: Documento settings/financeiro não existe no Firestore.");
+            // Fallback de segurança para não quebrar o app
+            window.CONFIG_FINANCEIRA = { taxa: 0, limite: 0 };
         }
-    }, (err) => console.error("Falha na escuta de finanças:", err));
+    }, (err) => {
+        console.error("Falha na escuta de finanças (Permissão ou Conexão):", err);
+    });
 }
 
 /**
