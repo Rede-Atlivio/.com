@@ -154,31 +154,6 @@ export async function carregarCarteira() {
  * Verifica se o prestador pode aceitar serviços.
  * Chamada pelo request.js antes de abrir o modal de aceite.
  */
-export function podeTrabalhar(custoEstimado = 0) {
-    const user = window.userProfile;
-    
-    if (!user || user.wallet_balance === undefined) return false;
-    
-    const saldo = parseFloat(user.wallet_balance);
-    const custo = parseFloat(custoEstimado);
-    const limite = parseFloat(CONFIG_FINANCEIRA.limite || 0);
-
-    if (isNaN(saldo) || isNaN(custo)) return false; 
-    
-    // 🛡️ LÓGICA V12: Só bloqueia se o saldo APÓS a taxa for MENOR que o limite.
-    // Se a taxa for 0 e o saldo for 0, (0-0) não é menor que 0, então LIBERA.
-    if ((saldo - custo) < limite) {
-        // Alerta apenas se houver uma tentativa real de serviço com custo
-        if(custo > 0) {
-             const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-             alert(`⛔ SALDO INSUFICIENTE\n\nSeu saldo (${saldoFmt}) não cobre a taxa deste serviço.\n\nPor favor, recarregue.`);
-             if(window.switchTab) window.switchTab('ganhar');
-        }
-        return false; 
-    }
-    
-    return true; 
-}
 
 // ============================================================================
 // 3. O COBRADOR (RESTAURADO ✅)
