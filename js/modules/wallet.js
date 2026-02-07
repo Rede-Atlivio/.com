@@ -115,34 +115,27 @@ export async function carregarCarteira() {
 export function podeTrabalhar(custoEstimado = 0) {
     const user = window.userProfile;
     
-    // 1. Trava de Segurança: Se não carregou perfil, bloqueia.
-    if (!user || user.wallet_balance === undefined) {
-        console.warn("⛔ Bloqueio: Perfil do usuário não carregado.");
-        return false;
-    }
+    if (!user || user.wallet_balance === undefined) return false;
     
     const saldo = parseFloat(user.wallet_balance);
     const custo = parseFloat(custoEstimado);
+    const limite = parseFloat(CONFIG_FINANCEIRA.limite || 0);
 
-    // 2. Trava Anti-Bug: Se os valores não forem números, bloqueia por segurança.
-    if (isNaN(saldo) || isNaN(custo)) {
-        console.error("⛔ Erro Crítico: Saldo ou Custo inválidos (NaN). Bloqueando por segurança.");
+    if (isNaN(saldo) || isNaN(custo)) return false; 
+    
+    // 🛡️ LÓGICA V12: Só bloqueia se o saldo APÓS a taxa for MENOR que o limite.
+    // Se a taxa for 0 e o saldo for 0, (0-0) não é menor que 0, então LIBERA.
+    if ((saldo - custo) < limite) {
+        // Alerta apenas se houver uma tentativa real de serviço com custo
+        if(custo > 0) {
+             const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+             alert(`⛔ SALDO INSUFICIENTE\n\nSeu saldo (${saldoFmt}) não cobre a taxa deste serviço.\n\nPor favor, recarregue.`);
+             if(window.switchTab) window.switchTab('ganhar');
+        }
         return false; 
     }
     
-    // 3. A Lógica Financeira Real
-    if ((saldo - custo) <= CONFIG_FINANCEIRA.limite) {
-        const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const limiteFmt = CONFIG_FINANCEIRA.limite.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        
-        if(custo > 0) {
-             alert(`⛔ LIMITE ATINGIDO\n\nSeu saldo: ${saldoFmt}\nLimite: ${limiteFmt}\n\nPor favor, recarregue sua carteira.`);
-             if(window.switchTab) window.switchTab('ganhar');
-        }
-        return false; // BLOQUEADO
-    }
-    
-    return true; // LIBERADO
+    return true; 
 }
 
 // ============================================================================
