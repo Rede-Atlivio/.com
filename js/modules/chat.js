@@ -959,3 +959,14 @@ export function iniciarGatilhosContextuais(orderId, step) {
 window.exibirAlertaSegurancaReserva = () => {
     alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
 };
+window.confirmarEncerramentoChat = async (orderId) => {
+    if(!confirm("✋ DESEJA ENCERRAR ESTE CHAT?\n\nEle será movido para o histórico e as negociações serão interrompidas.")) return;
+    try {
+        await updateDoc(doc(db, "orders", orderId), { 
+            status: 'negotiation_closed', 
+            closed_at: serverTimestamp() 
+        });
+        alert("Conversa encerrada.");
+        window.voltarParaListaPedidos();
+    } catch(e) { console.error("Erro ao encerrar:", e); }
+};
