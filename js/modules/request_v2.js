@@ -242,28 +242,43 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-    const configRef = doc(db, "settings", "financeiro");
-    getDoc(configRef).then(s => { if(s.exists()) window.configFinanceiroAtiva = s.data(); });
+    // 🛡️ GARANTIA DE REGRAS: Se o Admin não carregou na window, busca agora
+    if (!window.CONFIG_FINANCEIRA) {
+        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
+        if (configSnap.exists()) {
+            const d = configSnap.data();
+            window.CONFIG_FINANCEIRA = { taxa: parseFloat(d.taxa_plataforma || 0), limite: parseFloat(d.limite_divida || 0) };
+        }
+    }
 
-    // ✅ GARANTIA: Recria o container se ele não existir
-    garantirContainerRadar();
+    const container = garantirContainerRadar();
+    if (!container) return;
 
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
         const toggle = document.getElementById('online-toggle');
+        // Se o prestador desligou o botão, para tudo fisicamente
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
             return;
         }
 
-        // ✅ GARANTIA 2: Recria de novo caso o HTML tenha limpado
-        garantirContainerRadar();
-
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") removeRequestCard(change.doc.id);
+            if (change.type === "added") {
+                createRequestCard({ id: change.doc.id, ...change.doc.data() });
+            }
+            if (change.type === "removed") {
+                removeRequestCard(change.doc.id);
+            }
         });
+
+        // Gerenciamento dinâmico do estado vazio
+        const emptyState = document.getElementById('radar-empty-state');
+        if (emptyState) {
+            if (snapshot.empty) emptyState.classList.remove('hidden');
+            else emptyState.classList.add('hidden');
+        }
     });
 }
 
