@@ -238,13 +238,22 @@ export async function enviarPropostaAgora() {
 // ============================================================================
 let radarUnsubscribe = null;
 
+// Controle de estado para evitar loops de processamento
+let radarIniciado = false;
+let radarUnsubscribe = null;
+
 export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
+    // 🛡️ TRAVA DE SEGURANÇA V12: Se o radar já está rodando, não reinicia.
+    if (radarIniciado) {
+        console.log("🛰️ [SISTEMA] Radar já está operando. Ignorando re-inicialização.");
+        return;
+    }
+
     if (radarUnsubscribe) radarUnsubscribe();
 
-    // 🛡️ SINCRONIA FINANCEIRA V12: Busca e valida os números antes de ligar o radar
     const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
         if(s.exists()) {
@@ -253,7 +262,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 taxa: parseFloat(data.taxa_plataforma || 0),
                 limite: parseFloat(data.limite_divida || 0)
             };
-            console.log("💰 [RADAR] Taxas validadas:", window.CONFIG_FINANCEIRA);
+            // Log silencioso apenas na primeira vez
+            console.log("💰 [RADAR] Taxas validadas com sucesso.");
         }
     });
 
@@ -263,11 +273,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
         const toggle = document.getElementById('online-toggle');
+        
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
             return;
         }
 
+        radarIniciado = true; // Marca como iniciado apenas após a primeira conexão bem-sucedida
         garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
@@ -275,7 +287,6 @@ export async function iniciarRadarPrestador(uidManual = null) {
             if (change.type === "removed") removeRequestCard(change.doc.id);
         });
 
-        // 💤 Gerenciamento do Empty State (Fim do bug do 'undefined')
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
@@ -283,6 +294,17 @@ export async function iniciarRadarPrestador(uidManual = null) {
         }
     });
 }
+
+// Atualização da função de parada para resetar a trava
+window.pararRadarFisico = () => {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+    }
+    radarIniciado = false; // Libera a trava para quando o prestador quiser ficar online de novo
+    const container = document.getElementById('radar-container');
+    if (container) container.innerHTML = "";
+};
 
 window.pararRadarFisico = () => {
     if (radarUnsubscribe) {
