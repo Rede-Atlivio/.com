@@ -455,6 +455,9 @@ window.alternarMinimizacao = (id) => {
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM)
 // ============================================================================
+// ============================================================================
+// 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM PULSANTE)
+// ============================================================================
 export function createRequestCard(pedido) {
     // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
     const container = document.getElementById('radar-container');
@@ -483,16 +486,16 @@ export function createRequestCard(pedido) {
     if(pedido.data && pedido.data !== "A combinar") dataDisplay = pedido.data;
     if(pedido.hora && pedido.hora !== "A combinar") horaDisplay = pedido.hora;
 
-    // 🎨 4. CONSTRUÇÃO DO HTML (VISUAL RICO)
+    // 🎨 4. CONSTRUÇÃO DO HTML (VISUAL RICO E PULSANTE)
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
+    // Adicionado 'animate-slideInDown' para entrada suave
     card.className = "request-card relative mb-4 bg-slate-900 rounded-3xl shadow-2xl border border-white/10 overflow-hidden animate-slideInDown";
-    
     card.style.maxWidth = "100%";
 
     card.innerHTML = `
-        <div class="p-6 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/10 animate-pulse"></div>
+        <div class="p-6 text-center relative overflow-hidden animate-pulse z-0">
+            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/20"></div>
             
             <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg">
                 🚀 Nova Oportunidade
@@ -508,7 +511,7 @@ export function createRequestCard(pedido) {
             </div>
         </div>
 
-        <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
+        <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
             <div class="flex items-start gap-3 mb-3">
                 <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg">
                     👤
@@ -535,7 +538,7 @@ export function createRequestCard(pedido) {
             </div>
         </div>
 
-        <div class="p-4 grid grid-cols-[1fr_2fr] gap-3">
+        <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
             <button onclick="window.rejeitarPermanente('${pedido.id}')" 
                 class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">
                 Ignorar
@@ -547,7 +550,7 @@ export function createRequestCard(pedido) {
             </button>
         </div>
 
-        <div class="h-1.5 bg-slate-800 w-full relative">
+        <div class="h-1.5 bg-slate-800 w-full relative z-10">
             <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
         </div>
     `;
@@ -558,7 +561,8 @@ export function createRequestCard(pedido) {
     const antena = document.getElementById('radar-empty-state');
     if (antena) antena.classList.add('hidden');
 
-    // Inicia a animação da barra de tempo
+    // 🔥 GATILHO DA ANIMAÇÃO DA BARRA
+    // Isso força a barra a ir de 100% a 0% em 30 segundos
     setTimeout(() => { 
         const t = document.getElementById(`timer-${pedido.id}`);
         if(t) t.style.width = '0%';
