@@ -383,30 +383,32 @@ export async function iniciarRadarPrestador(uidManual = null) {
 }
 
 // ============================================================================
-// 2. LÓGICA DE INTERRUPÇAO FÍSICA E VISUAL DO RADAR (CORRIGIDA)
+// 2. LÓGICA DE INTERRUPÇAO FÍSICA E VISUAL DO RADAR (VISUAL IDÊNTICO À IMAGEM)
 // ============================================================================
 window.pararRadarFisico = () => {
-    // 1. Para o listener do Firebase (Economia de dados)
+    // 1. Para o listener do Firebase
     if (radarUnsubscribe) {
         radarUnsubscribe();
         radarUnsubscribe = null;
     }
     
-    // 2. DESTRAVA O SISTEMA
+    // 2. DESTRAVA O SISTEMA E MARCA COMO OFFLINE
     window.radarIniciado = false;
     
-    // 3. Desenha a Tela de "Offline/Dormindo"
+    // 3. Desenha a Tela "Você está Invisível" (Igual ao print)
     const parent = document.getElementById('pview-radar');
     
     if (parent) {
         parent.innerHTML = `
             <div id="radar-offline-state" class="flex flex-col items-center justify-center h-[60vh] animate-fadeIn select-none">
                 <div class="relative mb-6">
-                    <div class="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20"></div>
-                    <div class="w-24 h-24 bg-slate-50 border-4 border-slate-100 rounded-full flex items-center justify-center text-4xl shadow-inner relative z-10">
+                    <div class="w-24 h-24 bg-slate-50 border-4 border-slate-100 rounded-full flex items-center justify-center text-4xl shadow-sm relative z-10">
                         😴
                     </div>
-                    <div class="absolute -top-2 -right-2 bg-slate-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">OFF</div>
+                    
+                    <div class="absolute -top-1 -right-4 bg-slate-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide shadow-sm border-2 border-white">
+                        OFF
+                    </div>
                 </div>
                 
                 <h2 class="text-slate-800 font-black text-xl mb-2">Você está Invisível</h2>
@@ -417,12 +419,13 @@ window.pararRadarFisico = () => {
                     <b class="text-slate-600">"Online"</b> no topo da tela.
                 </p>
             </div>
+            
             <div id="radar-container" class="hidden"></div>
             <div id="radar-empty-state" class="hidden"></div>
         `;
     }
     
-    console.log("🛑 [SISTEMA] Radar desligado. Estado: Offline Visual.");
+    console.log("🛑 [SISTEMA] Radar desligado. Tela 'Invisível' ativa.");
 };
 
 auth.onAuthStateChanged(user => {
