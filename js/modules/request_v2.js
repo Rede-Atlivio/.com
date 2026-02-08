@@ -44,9 +44,10 @@ function garantirContainerRadar() {
         parent.appendChild(container);
     }
 
+    // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
     container.classList.remove('hidden');
 
-    // 2. Garante que o Estado Vazio (Antena) existe e está visível
+    // 2. Garante que o Estado Vazio (Antena) existe
     let emptyState = document.getElementById('radar-empty-state');
     if (!emptyState) {
         emptyState = document.createElement('div');
@@ -62,16 +63,18 @@ function garantirContainerRadar() {
         parent.appendChild(emptyState);
     }
 
-    // 3. Limpeza de estados legados (Remove tela de dormindo se existir)
+    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá (limpeza visual)
     const offlineState = document.getElementById('radar-offline-state');
     if(offlineState) offlineState.remove();
 
-    // 4. Lógica de Alternância (Card vs Antena)
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        emptyState.classList.add('hidden');
-    } else {
-        emptyState.classList.remove('hidden');
+    // 4. Lógica Visual (Tem card? Esconde antena.)
+    if (container && emptyState) {
+        const temCards = container.querySelectorAll('.request-card').length > 0;
+        if (temCards) {
+            emptyState.classList.add('hidden');
+        } else {
+            emptyState.classList.remove('hidden');
+        }
     }
 
     return container;
@@ -82,24 +85,11 @@ function garantirContainerRadar() {
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    // --- CARREGAMENTO OBRIGATÓRIO DAS REGRAS FINANCEIRAS ---
     try {
-        // Lê diretamente da coleção 'settings/financeiro' ou 'configuracoes/financeiro'
-        // (Ajuste o caminho conforme seu banco real)
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        
-        if (configSnap.exists()) {
-            window.configFinanceiroAtiva = configSnap.data();
-            console.log("💰 Regras Financeiras Carregadas:", window.configFinanceiroAtiva);
-        } else {
-            console.error("❌ ERRO FATAL: Documento de configuração financeira não existe no Admin!");
-            alert("Erro de sistema: Regras financeiras não definidas. Contate o suporte.");
-            return; // Impede abrir o modal sem regras
-        }
-    } catch (e) { 
-        console.error("Erro ao baixar configs:", e);
-        return;
-    }
+        if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
+    } catch (e) { console.error("Erro config:", e); }
+    
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
     
@@ -108,66 +98,47 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         modal.classList.remove('hidden');
         const containerServicos = document.getElementById('service-selection-container');
         
-        // Limpa estado anterior
-        containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
-
         try {
+            if(containerServicos) containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
             const docSnap = await getDoc(doc(db, "active_providers", providerId));
             let servicos = (docSnap.exists() && docSnap.data().services) ? docSnap.data().services : [];
 
-            // 🔥 CORREÇÃO CRÍTICA: LÓGICA DE SELEÇÃO INTELIGENTE
             let htmlSelect = "";
-            let precoDetectado = parseFloat(initialPrice); // Valor que veio do clique
-            let indexSelecionado = 0;
-
             if (servicos.length > 0) {
-                // Tenta encontrar qual serviço tem o preço do clique
-                const matchIndex = servicos.findIndex(s => parseFloat(s.price) === precoDetectado);
-                if (matchIndex !== -1) indexSelecionado = matchIndex;
-
                 htmlSelect = `
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Escolha o Serviço:</label>
-                    <select id="select-service-type" onchange="window.mudarServicoSelecionado(this)" class="w-full bg-blue-50 border border-blue-200 text-gray-800 text-sm rounded-lg p-3 font-bold mb-3 outline-none focus:ring-2 focus:ring-blue-400 transition">
-                        ${servicos.map((s, idx) => `
-                            <option value="${s.price}" data-title="${s.title || s.category}" ${idx === indexSelecionado ? 'selected' : ''}>
+                    <select id="select-service-type" onchange="window.mudarServicoSelecionado(this)" class="w-full bg-blue-50 border border-blue-200 text-gray-800 text-sm rounded-lg p-3 font-bold mb-3 outline-none">
+                        ${servicos.map((s) => `
+                            <option value="${s.price}" data-title="${s.title || s.category}">
                                 ${s.title || s.category} - R$ ${s.price}
                             </option>
                         `).join('')}
                     </select>
                 `;
-                
-                // Define a memória com base no item REALMENTE selecionado
-                mem_BasePrice = parseFloat(servicos[indexSelecionado].price);
-                mem_SelectedServiceTitle = servicos[indexSelecionado].title || servicos[indexSelecionado].category;
-
+                mem_BasePrice = parseFloat(servicos[0].price);
+                mem_SelectedServiceTitle = servicos[0].title || servicos[0].category;
             } else {
-                // Fallback para prestador sem lista detalhada
-                htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2 bg-gray-100 p-2 rounded text-center">Serviço Geral</p>`;
-                mem_BasePrice = precoDetectado;
+                htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2">Serviço Geral</p>`;
+                mem_BasePrice = parseFloat(initialPrice);
                 mem_SelectedServiceTitle = "Serviço Geral";
             }
-            
-            containerServicos.innerHTML = htmlSelect;
-
+            if(containerServicos) containerServicos.innerHTML = htmlSelect;
         } catch (e) {
-            console.error("Erro ao montar select:", e);
             mem_BasePrice = parseFloat(initialPrice);
-            containerServicos.innerHTML = `<p class="text-red-500 text-xs">Erro ao carregar detalhes.</p>`;
         }
 
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
         
-        // Reinicia botões de desconto/acréscimo
         const grids = modal.querySelectorAll('.grid');
         grids.forEach(div => { 
-            if(div.innerHTML.includes('%') || div.innerHTML.trim() === "") {
+            if(div.innerHTML.includes('%')) {
                 div.className = "grid grid-cols-4 gap-2 mb-3"; 
                 div.innerHTML = `
-                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-10%</button>
-                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-5%</button>
-                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+10%</button>
-                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+20%</button>
+                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-10%</button>
+                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-5%</button>
+                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+10%</button>
+                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+20%</button>
                 `;
             }
         });
@@ -200,61 +171,16 @@ window.ativarInputPersonalizado = () => {
 
 window.validarOferta = (val) => {
     let offer = parseFloat(String(val).replace(',', '.'));
-    
-    // 1. BUSCA CONFIGURAÇÃO DINÂMICA (Nada fixo no código)
-    // Se não tiver carregado ainda, bloqueia para segurança (melhor que chutar valor errado)
-    const config = window.configFinanceiroAtiva;
-    
-    if (!config) {
-        console.error("⛔ ERRO CRÍTICO: Configurações financeiras não carregadas do Firebase!");
-        // Opcional: Forçar recarregamento ou alertar erro
-        return; 
-    }
-
-    // --- VARIÁVEIS DO PAINEL ADMIN ---
-    // Ex: config.valor_minimo = 20 (Reais)
-    // Ex: config.margem_negociacao = 50 (Porcentagem aceitável do valor original, ex: 50%)
-    
-    const pisoAbsoluto = parseFloat(config.valor_minimo_global); 
-    const percentualAceitavel = parseFloat(config.margem_negociacao) / 100; // Transforma 50 em 0.5
-    
-    // 2. CÁLCULO DO PISO REAL
-    // O valor mínimo é calculado dinamicamente baseado na regra do Painel
-    const pisoPeloServico = mem_BasePrice * percentualAceitavel; 
-    
-    // O sistema escolhe o MAIOR valor entre o (Mínimo Global) e a (Porcentagem do Serviço)
-    const pisoFinal = Math.max(pisoAbsoluto, pisoPeloServico);
-
-    // --- INTERFACE ---
+    const config = window.configFinanceiroAtiva || { valor_minimo: 20 };
     const input = document.getElementById('req-value');
     const btn = document.getElementById('btn-confirm-req');
-    const msgErro = document.getElementById('msg-erro-oferta'); 
 
-    if (isNaN(offer) || offer < pisoFinal) {
-        // BLOQUEIO
-        if(input) {
-            input.style.borderColor = "#ef4444"; // Vermelho
-            input.style.color = "#ef4444";
-            input.classList.add('animate-pulse');
-        }
-        if(btn) {
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-            // Mostra ao usuário o valor calculado dinamicamente
-            btn.innerHTML = `Mínimo Permitido: R$ ${pisoFinal.toFixed(2).replace('.', ',')}`;
-        }
+    if (isNaN(offer) || offer < config.valor_minimo) {
+        if(input) input.style.borderColor = "red";
+        if(btn) btn.disabled = true;
     } else {
-        // LIBERAÇÃO
-        if(input) {
-            input.style.borderColor = "#22c55e"; // Verde
-            input.style.color = "#1f2937"; // Cinza
-            input.classList.remove('animate-pulse');
-        }
-        if(btn) {
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            btn.innerHTML = `ENVIAR PROPOSTA <span class="ml-2">🚀</span>`;
-        }
+        if(input) input.style.borderColor = "#e5e7eb";
+        if(btn) btn.disabled = false;
         mem_CurrentOffer = offer;
     }
 };
@@ -399,18 +325,14 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-    // 1. 🛡️ FORÇA A INTERFACE (CURA): Roda sempre para garantir que o 'hidden' suma
-    garantirContainerRadar();
-
-    // 2. 🛡️ TRAVA DE SEGURANÇA: Impede criar várias escutas no Firebase
+    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
     if (window.radarIniciado) {
-        console.log("🛰️ [SISTEMA] Radar já está operando no banco. Interface atualizada.");
+        console.log("🛰️ [SISTEMA] Radar já está operando.");
         return;
     }
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-    // Sincroniza configurações financeiras
     const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
         if(s.exists()) {
@@ -425,6 +347,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
             console.log("💰 [RADAR] Taxas sincronizadas:", (taxaBruta * 100) + "%");
         }
     });
+
+    garantirContainerRadar();
 
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
@@ -478,12 +402,12 @@ export function createRequestCard(pedido) {
     // Se o card já existe, não cria de novo (evita duplicidade)
     if (document.getElementById(`req-${pedido.id}`)) return;
 
-    // 🔊 1. TOCA O SOM (VOLTANDO PARA O ORIGINAL DO DOM - Lógica Antiga)
-    const audio = document.getElementById('notification-sound');
-    if (audio) { 
-        audio.currentTime = 0; 
-        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro).")); 
-    }
+    // 🔊 1. TOCA O SOM (EFEITO UBER)
+    try {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.volume = 1.0;
+        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
+    } catch(e) { console.warn("Erro ao tocar som"); }
 
     // 💰 2. CÁLCULOS FINANCEIROS
     const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
@@ -669,34 +593,8 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 // Corrigido: Aponta para a função única e correta
-window.pararRadarFisico = () => {
-    console.log("🛑 [SISTEMA] Desligando processos do Radar...");
-    
-    // 1. Interrompe a escuta do Firebase
-    if (radarUnsubscribe) {
-        radarUnsubscribe();
-        radarUnsubscribe = null;
-    }
-    
-    // 2. Reseta o estado global
-    window.radarIniciado = false;
-    
-    // 3. Limpa visualmente o Radar para o estado Offline
-    const container = document.getElementById('radar-container');
-    const emptyState = document.getElementById('radar-empty-state');
-    
-    if (container) {
-        container.innerHTML = ""; // Remove todos os cards
-        container.classList.add('hidden');
-    }
-    
-    if (emptyState) {
-        emptyState.classList.add('hidden'); // Esconde a antena ao desligar
-    }
+window.pararRadarFisico = window.pararRadarFisico; 
 
-    // 4. Opcional: Aqui você pode decidir se quer mostrar um aviso de "Radar Desligado" 
-    // ou apenas deixar a tela limpa esperando o Online.
-};
 // Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
