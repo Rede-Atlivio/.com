@@ -465,10 +465,9 @@ export async function aceitarPedidoRadar(orderId) {
         const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
         const taxaCalculada = valorServico * regrasAtivas.taxa;
 
-        // 🛑 Trava de Segurança V12: Usa a taxa calculada dinamicamente
+        // 🛑 Trava de Segurança V12
         if (typeof window.podeTrabalhar === 'function') {
             if (!window.podeTrabalhar(taxaCalculada)) {
-                // Não remove o card aqui para dar chance ao usuário de recarregar e tentar de novo
                 console.warn("⚠️ Aceite impedido por falta de saldo/limite.");
                 return;
             }
@@ -490,10 +489,12 @@ export async function aceitarPedidoRadar(orderId) {
 
         removeRequestCard(orderId);
         
+        // 🔥 REDIRECIONAMENTO IMEDIATO PARA O CHAT (PRESTADOR)
         if(window.switchTab) {
-            window.switchTab('servicos'); 
+            window.switchTab('chat'); 
             setTimeout(() => {
-                 if(window.switchServiceSubTab) window.switchServiceSubTab('andamento');
+                // Abre diretamente a conversa aceita para negociar
+                 if(window.abrirChatPedido) window.abrirChatPedido(orderId);
             }, 500);
         }
 
