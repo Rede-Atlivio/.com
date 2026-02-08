@@ -445,9 +445,6 @@ window.alternarMinimizacao = (id) => {
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM PULSANTE)
 // ============================================================================
-// ============================================================================
-// 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM RESTAURADA)
-// ============================================================================
 export function createRequestCard(pedido) {
     // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
     const container = document.getElementById('radar-container');
@@ -458,15 +455,9 @@ export function createRequestCard(pedido) {
 
     // 🔊 1. TOCA O SOM (EFEITO UBER)
     try {
-        // Tenta tocar o som de alerta
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         audio.volume = 1.0;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Áudio bloqueado pelo navegador (interaja primeiro).");
-            });
-        }
+        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
     } catch(e) { console.warn("Erro ao tocar som"); }
 
     // 💰 2. CÁLCULOS FINANCEIROS
