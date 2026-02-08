@@ -56,13 +56,13 @@ export async function init() {
         </div>
     </div>
 </div>
-                <div class="opacity-50 pointer-events-none grayscale">
-                    <p class="text-[9px] text-gray-500 mb-2">Parâmetros Legados (Min/Max)</p>
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div><input type="number" id="conf-val-min" class="inp-editor h-8 text-gray-500" placeholder="20.00"></div>
-                        <div><input type="number" id="conf-val-max" class="inp-editor h-8 text-gray-500" placeholder="500.00"></div>
-                    </div>
-                </div>
+                <div class="mt-2 border-t border-slate-700 pt-4">
+    <p class="text-[9px] text-blue-400 font-bold mb-2 uppercase">Parâmetros Operacionais (App)</p>
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div><label class="text-[9px] text-gray-500 uppercase">Valor Mín. Pedido</label><input type="number" id="conf-val-min" class="inp-editor h-8 text-white" placeholder="20.00"></div>
+        <div><label class="text-[9px] text-gray-500 uppercase">Valor Máx. Pedido</label><input type="number" id="conf-val-max" class="inp-editor h-8 text-white" placeholder="500.00"></div>
+    </div>
+</div>
 
                 <button onclick="window.saveBusinessRules()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
                     💾 SALVAR NOVAS REGRAS
