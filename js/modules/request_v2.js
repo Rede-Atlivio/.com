@@ -82,6 +82,7 @@ function garantirContainerRadar() {
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
+    // 1. Carrega Configurações Globais
     try {
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
@@ -95,47 +96,66 @@ export async function abrirModalSolicitacao(providerId, providerName, initialPri
         modal.classList.remove('hidden');
         const containerServicos = document.getElementById('service-selection-container');
         
+        // Limpa estado anterior
+        containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
+
         try {
-            if(containerServicos) containerServicos.innerHTML = `<div class="loader border-blue-500 mx-auto"></div>`;
             const docSnap = await getDoc(doc(db, "active_providers", providerId));
             let servicos = (docSnap.exists() && docSnap.data().services) ? docSnap.data().services : [];
 
+            // 🔥 CORREÇÃO CRÍTICA: LÓGICA DE SELEÇÃO INTELIGENTE
             let htmlSelect = "";
+            let precoDetectado = parseFloat(initialPrice); // Valor que veio do clique
+            let indexSelecionado = 0;
+
             if (servicos.length > 0) {
+                // Tenta encontrar qual serviço tem o preço do clique
+                const matchIndex = servicos.findIndex(s => parseFloat(s.price) === precoDetectado);
+                if (matchIndex !== -1) indexSelecionado = matchIndex;
+
                 htmlSelect = `
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Escolha o Serviço:</label>
-                    <select id="select-service-type" onchange="window.mudarServicoSelecionado(this)" class="w-full bg-blue-50 border border-blue-200 text-gray-800 text-sm rounded-lg p-3 font-bold mb-3 outline-none">
-                        ${servicos.map((s) => `
-                            <option value="${s.price}" data-title="${s.title || s.category}">
+                    <select id="select-service-type" onchange="window.mudarServicoSelecionado(this)" class="w-full bg-blue-50 border border-blue-200 text-gray-800 text-sm rounded-lg p-3 font-bold mb-3 outline-none focus:ring-2 focus:ring-blue-400 transition">
+                        ${servicos.map((s, idx) => `
+                            <option value="${s.price}" data-title="${s.title || s.category}" ${idx === indexSelecionado ? 'selected' : ''}>
                                 ${s.title || s.category} - R$ ${s.price}
                             </option>
                         `).join('')}
                     </select>
                 `;
-                mem_BasePrice = parseFloat(servicos[0].price);
-                mem_SelectedServiceTitle = servicos[0].title || servicos[0].category;
+                
+                // Define a memória com base no item REALMENTE selecionado
+                mem_BasePrice = parseFloat(servicos[indexSelecionado].price);
+                mem_SelectedServiceTitle = servicos[indexSelecionado].title || servicos[indexSelecionado].category;
+
             } else {
-                htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2">Serviço Geral</p>`;
-                mem_BasePrice = parseFloat(initialPrice);
+                // Fallback para prestador sem lista detalhada
+                htmlSelect = `<p class="text-sm font-bold text-gray-700 mb-2 bg-gray-100 p-2 rounded text-center">Serviço Geral</p>`;
+                mem_BasePrice = precoDetectado;
                 mem_SelectedServiceTitle = "Serviço Geral";
             }
-            if(containerServicos) containerServicos.innerHTML = htmlSelect;
+            
+            containerServicos.innerHTML = htmlSelect;
+
         } catch (e) {
+            console.error("Erro ao montar select:", e);
             mem_BasePrice = parseFloat(initialPrice);
+            containerServicos.innerHTML = `<p class="text-red-500 text-xs">Erro ao carregar detalhes.</p>`;
         }
 
         mem_CurrentOffer = mem_BasePrice;
         atualizarVisualModal();
         
+        // Reinicia botões de desconto/acréscimo
         const grids = modal.querySelectorAll('.grid');
         grids.forEach(div => { 
-            if(div.innerHTML.includes('%')) {
+            if(div.innerHTML.includes('%') || div.innerHTML.trim() === "") {
                 div.className = "grid grid-cols-4 gap-2 mb-3"; 
                 div.innerHTML = `
-                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-10%</button>
-                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100">-5%</button>
-                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+10%</button>
-                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100">+20%</button>
+                    <button onclick="window.selecionarDesconto(-0.10)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-10%</button>
+                    <button onclick="window.selecionarDesconto(-0.05)" class="bg-red-50 text-red-600 border border-red-200 py-2 rounded-lg font-bold text-xs hover:bg-red-100 transition">-5%</button>
+                    <button onclick="window.selecionarDesconto(0.10)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+10%</button>
+                    <button onclick="window.selecionarDesconto(0.20)" class="bg-green-50 text-green-600 border border-green-200 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">+20%</button>
                 `;
             }
         });
