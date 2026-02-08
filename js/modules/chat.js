@@ -243,7 +243,6 @@ export async function confirmarAcordo(orderId, aceitar) {
     const orderRef = doc(db, "orders", orderId);
 
     try {
-        // --- 1. OPERAÇÃO BLINDADA NO BANCO DE DADOS ---
         let vaiFecharAgora = false;
         
         await runTransaction(db, async (transaction) => {
@@ -256,57 +255,46 @@ export async function confirmarAcordo(orderId, aceitar) {
             const clientSnap = await transaction.get(clientRef);
             if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
             
-            // Busca Config (Fallback para 0 se der erro/não existir)
             const configRef = doc(db, "settings", "financeiro");
             const configSnap = await transaction.get(configRef);
-            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0, limite_debito: 0 };
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_debito: 0 };
 
-            // === LÓGICA DE VALIDAÇÃO FINANCEIRA V2 (DENTRO DA TRANSAÇÃO) ===
-            
-            // Identifica quem está clicando (Cliente ou Prestador)
-            const isMeProvider = uid === freshOrder.provider_id;
-            const isMeClient = uid === freshOrder.client_id;
-            
-            if (isMeClient) {
+            // === LÓGICA DE VALIDAÇÃO FINANCEIRA EXCLUSIVA DO CLIENTE ===
+            // Identifica se o usuário atual é o CLIENTE do pedido
+            if (uid === freshOrder.client_id) {
                 const saldoCliente = parseFloat(clientSnap.data().wallet_balance || clientSnap.data().saldo_atual || 0);
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
-
-                // Regra A: Limite de Débito (0 = Liberado)
                 const limiteDebito = parseFloat(configData.limite_debito || 0);
+                const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
+
+                // 1. REGRA: LIMITE QUE PODE DEVER (Ex: -60)
                 if (limiteDebito !== 0 && saldoCliente < limiteDebito) {
-                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite permitido (R$ ${limiteDebito.toFixed(2)}).`;
+                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de débito permitido (R$ ${limiteDebito.toFixed(2)}). Recarregue para prosseguir.`;
                 }
 
-                // Regra B: Reserva de Segurança (0 = Liberado)
-                // Prioridade: Config específica do cliente > Config geral > 0
-                let pctReserva = configData.porcentagem_reserva_cliente;
-                if (pctReserva === undefined || pctReserva === null) pctReserva = configData.porcentagem_reserva;
-                pctReserva = parseFloat(pctReserva || 0);
-
-                if (pctReserva > 0) {
-                    const valorReserva = valorAcordo * (pctReserva / 100);
+                // 2. REGRA: % RESERVA ACORDO (CLIENTE)
+                if (pctReservaCliente > 0) {
+                    const valorReserva = valorAcordo * (pctReservaCliente / 100);
                     if (saldoCliente < valorReserva) {
-                        throw `Você precisa de R$ ${valorReserva.toFixed(2)} em conta para cobrir a garantia (${pctReserva}%).`;
+                        throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
                     }
                 }
             }
 
-            // === LÓGICA DE FECHAMENTO ===
+            // === LÓGICA DE FECHAMENTO (MÚTUO) ===
+            const isMeProvider = uid === freshOrder.provider_id;
             const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
             const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
             vaiFecharAgora = oOutroJaConfirmou;
 
-            // === ESCRITAS (WRITES) ===
             transaction.update(orderRef, campoUpdate);
 
-            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA FINANCEIRA
+            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA
             if (vaiFecharAgora) {
-                // Reaplica cálculo de reserva para efetivar o débito
-                let pctFinal = parseFloat(configData.porcentagem_reserva_cliente || configData.porcentagem_reserva || 0);
+                const pctFinal = parseFloat(configData.porcentagem_reserva_cliente || 0);
                 const valorPedido = parseFloat(freshOrder.offer_value || 0);
                 const valorCofre = valorPedido * (pctFinal / 100);
 
-                // Só debita se a regra existir (> 0) e houver valor
                 if (valorCofre > 0) {
                     const saldoAtual = parseFloat(clientSnap.data().wallet_balance || 0);
                     const reservadoAtual = parseFloat(clientSnap.data().wallet_reserved || 0);
@@ -317,7 +305,6 @@ export async function confirmarAcordo(orderId, aceitar) {
                     });
                 }
 
-                // Atualiza status do pedido
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     status: 'confirmed_hold',
@@ -325,10 +312,9 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp()
                 });
 
-                // Mensagem no chat
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} em garantia.` : 'Garantia isenta.'} Contato liberado!`,
+                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} retidos em garantia.` : 'Garantia isenta.'} Contato liberado!`,
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
@@ -343,8 +329,7 @@ export async function confirmarAcordo(orderId, aceitar) {
 
     } catch(e) { 
         console.error("Erro no acordo:", e);
-        // Tratamento visual do erro vindo do throw
-        alert("⛔ NÃO FOI POSSÍVEL FECHAR O ACORDO\n\n" + e);
+        alert("⛔ BLOQUEIO FINANCEIRO\n\n" + e);
     }
 }
         
