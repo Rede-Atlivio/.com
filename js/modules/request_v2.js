@@ -450,10 +450,10 @@ window.alternarMinimizacao = (id) => {
 };
 
 // ============================================================================
-// 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM)
-// ============================================================================
-// ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM PULSANTE)
+// ============================================================================
+// ============================================================================
+// 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM RESTAURADA)
 // ============================================================================
 export function createRequestCard(pedido) {
     // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
@@ -465,9 +465,15 @@ export function createRequestCard(pedido) {
 
     // 🔊 1. TOCA O SOM (EFEITO UBER)
     try {
+        // Tenta tocar o som de alerta
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         audio.volume = 1.0;
-        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.log("Áudio bloqueado pelo navegador (interaja primeiro).");
+            });
+        }
     } catch(e) { console.warn("Erro ao tocar som"); }
 
     // 💰 2. CÁLCULOS FINANCEIROS
@@ -491,8 +497,8 @@ export function createRequestCard(pedido) {
     card.style.maxWidth = "100%";
 
     card.innerHTML = `
-        <div class="p-6 text-center relative overflow-hidden animate-pulse z-0">
-            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/20"></div>
+        <div class="p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/20 animate-pulse z-0"></div>
             
             <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg">
                 🚀 Nova Oportunidade
@@ -559,7 +565,6 @@ export function createRequestCard(pedido) {
     if (antena) antena.classList.add('hidden');
 
     // 🔥 GATILHO DA ANIMAÇÃO DA BARRA
-    // Isso força a barra a ir de 100% a 0% em 30 segundos
     setTimeout(() => { 
         const t = document.getElementById(`timer-${pedido.id}`);
         if(t) t.style.width = '0%';
