@@ -276,7 +276,6 @@ export async function confirmarAcordo(orderId, aceitar) {
                         throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
                     }
                 }
-            }
 
             // === LÓGICA DE FECHAMENTO (MÚTUO) ===
             const isMeProvider = uid === freshOrder.provider_id;
