@@ -259,22 +259,18 @@ export async function confirmarAcordo(orderId, aceitar) {
             const configSnap = await transaction.get(configRef);
             const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0, taxa_plataforma: 0.20 };
 
-            // === LÓGICA DE VALIDAÇÃO FINANCEIRA EXCLUSIVA DO CLIENTE ===
-            // Identifica se o usuário atual é o CLIENTE do pedido
+            // === LÓGICA DE VALIDAÇÃO FINANCEIRA (ANTI-DÍVIDA) ===
+            const saldoAtivo = parseFloat(uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (userData.wallet_balance ?? userData.saldo ?? 0));
+            const limiteFin = parseFloat(configData.limite_divida || 0);
+
+            if (limiteFin !== 0 && saldoAtivo < limiteFin) {
+                throw `Bloqueio Financeiro: Seu saldo (R$ ${saldoAtivo.toFixed(2)}) ultrapassa o limite de dívida (R$ ${limiteFin.toFixed(2)}).`;
+            }
+
             if (uid === freshOrder.client_id) {
-                // Sincronizado para ler 'balance' e 'limite_divida'
-                const saldoCliente = parseFloat(clientSnap.data().wallet_balance || 0);
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
-                const limitedivida = parseFloat(configData.limite_divida || 0);
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
-
-                // 1. REGRA: LIMITE QUE PODE DEVER (Ex: -60)
-                if (limitedivida !== 0 && saldoCliente < limitedivida) {
-                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de divida permitido (R$ ${limitedivida.toFixed(2)}). Recarregue para prosseguir.`;
-                }
-
-                // 2. REGRA: % RESERVA ACORDO (CLIENTE)
-                if (pctReservaCliente > 0) {
+            
                     const valorReserva = valorAcordo * (pctReservaCliente / 100);
                     if (saldoCliente < valorReserva) {
                         throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
