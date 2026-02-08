@@ -390,36 +390,47 @@ export async function iniciarRadarPrestador(uidManual = null) {
     });
 }
 
+// ============================================================================
+// 2. LÓGICA DE INTERRUPÇAO FÍSICA E VISUAL DO RADAR (CORRIGIDA)
+// ============================================================================
 window.pararRadarFisico = () => {
+    // 1. Para o listener do Firebase (Economia de dados)
     if (radarUnsubscribe) {
         radarUnsubscribe();
         radarUnsubscribe = null;
     }
-    window.radarIniciado = false; 
-    console.log("🛰️ [SISTEMA] Radar desligado fisicamente.");
-    const container = document.getElementById('radar-container');
-    if (container) container.innerHTML = "";
-};
-
-// Atualização da função de parada para resetar a trava
-window.pararRadarFisico = () => {
-    if (radarUnsubscribe) {
-        radarUnsubscribe();
-        radarUnsubscribe = null;
+    
+    // 2. DESTRAVA O SISTEMA
+    window.radarIniciado = false;
+    
+    // 3. Desenha a Tela de "Offline/Dormindo"
+    const parent = document.getElementById('pview-radar');
+    
+    if (parent) {
+        parent.innerHTML = `
+            <div id="radar-offline-state" class="flex flex-col items-center justify-center h-[60vh] animate-fadeIn select-none">
+                <div class="relative mb-6">
+                    <div class="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20"></div>
+                    <div class="w-24 h-24 bg-slate-50 border-4 border-slate-100 rounded-full flex items-center justify-center text-4xl shadow-inner relative z-10">
+                        😴
+                    </div>
+                    <div class="absolute -top-2 -right-2 bg-slate-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">OFF</div>
+                </div>
+                
+                <h2 class="text-slate-800 font-black text-xl mb-2">Você está Invisível</h2>
+                
+                <p class="text-slate-400 text-xs text-center max-w-[250px] leading-relaxed">
+                    Nenhum cliente pode te ver agora.
+                    <br>Para começar a trabalhar, toque no botão 
+                    <b class="text-slate-600">"Online"</b> no topo da tela.
+                </p>
+            </div>
+            <div id="radar-container" class="hidden"></div>
+            <div id="radar-empty-state" class="hidden"></div>
+        `;
     }
-    radarIniciado = false; // Libera a trava para quando o prestador quiser ficar online de novo
-    const container = document.getElementById('radar-container');
-    if (container) container.innerHTML = "";
-};
-
-window.pararRadarFisico = () => {
-    if (radarUnsubscribe) {
-        radarUnsubscribe();
-        radarUnsubscribe = null;
-    }
-    // ✅ CORREÇÃO DO ERRO 'NULL': Só limpa se existir
-    const container = document.getElementById('radar-container');
-    if (container) container.innerHTML = "";
+    
+    console.log("🛑 [SISTEMA] Radar desligado. Estado: Offline Visual.");
 };
 
 auth.onAuthStateChanged(user => {
@@ -466,7 +477,6 @@ export function createRequestCard(pedido) {
     const lucroLiquido = valorTotal - taxaValor;
 
     // 📅 3. FORMATAÇÃO DE DATA E HORA
-    // Tenta pegar do timestamp ou usa o texto do input
     let dataDisplay = "Hoje";
     let horaDisplay = "Agora";
     
@@ -478,7 +488,6 @@ export function createRequestCard(pedido) {
     card.id = `req-${pedido.id}`;
     card.className = "request-card relative mb-4 bg-slate-900 rounded-3xl shadow-2xl border border-white/10 overflow-hidden animate-slideInDown";
     
-    // Define a altura máxima para garantir que não quebre o layout
     card.style.maxWidth = "100%";
 
     card.innerHTML = `
@@ -560,6 +569,7 @@ export function createRequestCard(pedido) {
         if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
     }, 30000);
 }
+
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
@@ -613,7 +623,6 @@ export async function aceitarPedidoRadar(orderId) {
         if(window.switchTab) {
             window.switchTab('chat'); 
             setTimeout(() => {
-                // Abre diretamente a conversa aceita para negociar
                  if(window.abrirChatPedido) window.abrirChatPedido(orderId);
             }, 500);
         }
@@ -633,22 +642,6 @@ export async function recusarPedidoReq(orderId) {
 // EXPOSIÇÃO GLOBAL E LIMPEZA
 // ============================================================================
 
-// Função limpa para parar o radar
-window.pararRadarFisico = () => {
-    if (radarUnsubscribe) {
-        radarUnsubscribe();
-        radarUnsubscribe = null;
-    }
-    // Reseta a trava para permitir ligar novamente
-    window.radarIniciado = false; 
-    
-    // Limpa visualmente
-    const container = document.getElementById('radar-container');
-    if (container) container.innerHTML = "";
-    
-    console.log("🛑 [SISTEMA] Radar desligado e limpo.");
-};
-
 // Bindings Globais
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
@@ -657,6 +650,8 @@ window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
+// Corrigido: Aponta para a função única e correta
+window.pararRadarFisico = window.pararRadarFisico; 
 
 // Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
