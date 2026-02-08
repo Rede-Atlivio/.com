@@ -34,24 +34,14 @@ let mem_SelectedServiceTitle = "";
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
 // ============================================================================
+// ============================================================================
+// 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
+// ============================================================================
 function garantirContainerRadar() {
     const parent = document.getElementById('pview-radar');
     if (!parent) return null;
 
-    // 1. LIMPEZA PROFUNDA: Se houver "lixo" (estado offline 💤), removemos tudo.
-    const temContainer = document.getElementById('radar-container');
-    const temEmptyState = document.getElementById('radar-empty-state');
-    
-    // Se não tem nossos componentes oficiais, mas tem coisa lá dentro (o ZZZ), limpa.
-    if ((!temContainer || !temEmptyState) && parent.children.length > 0) {
-        // Verifica se é o container correto antes de limpar
-        if(!temContainer) {
-            console.log("🧹 [AUTO-CURA] Limpando estado 'Offline' para iniciar o Radar.");
-            parent.innerHTML = ''; 
-        }
-    }
-
-    // 2. RECONSTRÓI O CONTAINER (Onde ficam os cards)
+    // 1. Garante que o container existe
     let container = document.getElementById('radar-container');
     if (!container) {
         container = document.createElement('div');
@@ -60,7 +50,10 @@ function garantirContainerRadar() {
         parent.appendChild(container);
     }
 
-    // 3. RECONSTRÓI O ESTADO VAZIO (A Antena 📡)
+    // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
+    container.classList.remove('hidden');
+
+    // 2. Garante que o Estado Vazio (Antena) existe
     let emptyState = document.getElementById('radar-empty-state');
     if (!emptyState) {
         emptyState = document.createElement('div');
@@ -76,7 +69,11 @@ function garantirContainerRadar() {
         parent.appendChild(emptyState);
     }
 
-    // 4. LÓGICA VISUAL (Tem card? Esconde antena.)
+    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá
+    const offlineState = document.getElementById('radar-offline-state');
+    if(offlineState) offlineState.remove();
+
+    // 4. Lógica Visual (Tem card? Esconde antena.)
     if (container && emptyState) {
         const temCards = container.querySelectorAll('.request-card').length > 0;
         if (temCards) {
