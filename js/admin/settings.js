@@ -187,13 +187,15 @@ window.saveBusinessRules = async () => {
 
         // 🛡️ OBJETO SANITIZADO: Garante que o Firebase receba 'Number' e não 'String'
         const payloadMaster = { 
-            taxa_plataforma: Number(novaTaxa),
-            limite_divida: Number(novoLimite),
-            porcentagem_reserva: Number(pctPrestador),
-            porcentagem_reserva_cliente: Number(pctCliente),
-            updated_at: agora,
-            modificado_por: "admin"
-        };
+    taxa_plataforma: Number(novaTaxa),
+    limite_divida: Number(novoLimite),
+    porcentagem_reserva: Number(pctPrestador),
+    porcentagem_reserva_cliente: Number(pctCliente),
+    valor_minimo: Number(rawMin),
+    valor_maximo: Number(rawMax),
+    updated_at: agora,
+    modificado_por: "admin"
+};
 
         console.log("📤 Payload para settings/financeiro:", payloadMaster);
 
