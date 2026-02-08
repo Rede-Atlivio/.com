@@ -424,38 +424,30 @@ window.alternarMinimizacao = (id) => {
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
 // ============================================================================
 export function createRequestCard(pedido) {
-    // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
     const container = document.getElementById('radar-container');
-    if (!container) return;
+    // Evita duplicidade
+    if (!container || document.getElementById(`req-${pedido.id}`)) return;
 
-    // Se o card já existe, não cria de novo (evita duplicidade)
-    if (document.getElementById(`req-${pedido.id}`)) return;
-
-    // 🔊 1. TOCA O SOM (EFEITO UBER)
+    // 🔊 RESTAURAÇÃO DO SOM ORIGINAL (PROTEGIDO)
     try {
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
         audio.volume = 1.0;
         audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
     } catch(e) { console.warn("Erro ao tocar som"); }
 
-    // 💰 2. CÁLCULOS FINANCEIROS
+    // 💰 CÁLCULOS
     const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
     const valorTotal = parseFloat(pedido.offer_value || 0);
     const taxaValor = valorTotal * regras.taxa;
     const lucroLiquido = valorTotal - taxaValor;
 
-    // 📅 3. FORMATAÇÃO DE DATA E HORA
-    let dataDisplay = "Hoje";
-    let horaDisplay = "Agora";
-    
-    if(pedido.data && pedido.data !== "A combinar") dataDisplay = pedido.data;
-    if(pedido.hora && pedido.hora !== "A combinar") horaDisplay = pedido.hora;
+    // 📅 FORMATAÇÃO
+    let dataDisplay = pedido.data && pedido.data !== "A combinar" ? pedido.data : "Hoje";
+    let horaDisplay = pedido.hora && pedido.hora !== "A combinar" ? pedido.hora : "Agora";
 
-    // 🎨 4. CONSTRUÇÃO DO HTML (VISUAL GLOW + PULSO)
+    // 🎨 ESTRUTURA VISUAL (PREMIUM GLOW V22)
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    
-    // 🔥 EFEITO NEON/BRILHO TRASEIRO AQUI: 'shadow-[0_0_50px_rgba(37,99,235,0.6)]'
     card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
     card.style.maxWidth = "100%";
 
@@ -517,28 +509,26 @@ export function createRequestCard(pedido) {
         </div>
 
         <div class="h-1.5 bg-slate-800 w-full relative z-10">
-            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
+            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
         </div>
     `;
 
     container.prepend(card);
     
-    // Esconde a antena se houver card
+    // Controle de estado vazio
     const antena = document.getElementById('radar-empty-state');
     if (antena) antena.classList.add('hidden');
 
-    // 🔥 GATILHO DA ANIMAÇÃO DA BARRA
+    // Timer de 30s
     setTimeout(() => { 
-        const t = document.getElementById(`timer-${pedido.id}`);
-        if(t) t.style.width = '0%';
+        const t = document.getElementById(`timer-${pedido.id}`); 
+        if(t) t.style.width = '0%'; 
     }, 100);
 
-    // Auto-rejeição após 30 segundos
     setTimeout(() => { 
         if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
     }, 30000);
 }
-
 function removeRequestCard(orderId) {
     const card = document.getElementById(`req-${orderId}`);
     if (card) {
