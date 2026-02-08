@@ -354,7 +354,7 @@ export function escutarMensagens(orderId) {
 window.finalizarServicoPassoFinalAction = async (orderId) => {
     if(!confirm("Confirmar finalização?")) return;
     try {
-        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         const taxaPercent = configSnap.exists() ? parseFloat(configSnap.data().taxa_plataforma) : 0.20;
 
         await runTransaction(db, async (transaction) => {
