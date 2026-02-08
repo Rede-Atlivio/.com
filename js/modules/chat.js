@@ -262,9 +262,10 @@ export async function confirmarAcordo(orderId, aceitar) {
             // === LÓGICA DE VALIDAÇÃO FINANCEIRA EXCLUSIVA DO CLIENTE ===
             // Identifica se o usuário atual é o CLIENTE do pedido
             if (uid === freshOrder.client_id) {
-                const saldoCliente = parseFloat(clientSnap.data().wallet_balance || clientSnap.data().saldo_atual || 0);
+                // Sincronizado para ler 'balance' e 'limite_divida'
+                const saldoCliente = parseFloat(clientSnap.data().balance || 0);
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
-                const limiteDebito = parseFloat(configData.limite_debito || 0);
+                const limiteDebito = parseFloat(configData.limite_divida || 0);
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
 
                 // 1. REGRA: LIMITE QUE PODE DEVER (Ex: -60)
