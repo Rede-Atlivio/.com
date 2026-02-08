@@ -265,7 +265,7 @@ window.executeAdjustment = async (uid) => {
             transaction.set(newHistRef, {
                 provider_id: uid,
                 type: mode === 'credit' ? 'manual_credit' : 'manual_debit',
-                amount: finalAmount,
+                amount: Number(finalAmount),
                 description: `Admin: ${desc}`,
                 created_at: serverTimestamp()
             });
