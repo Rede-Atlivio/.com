@@ -161,9 +161,11 @@ window.saveBusinessRules = async () => {
     
     // Captura os valores e já limpa possíveis vírgulas que quebram o Firebase
     const rawTaxa = document.getElementById('conf-taxa-plataforma')?.value || "0.20";
-    const rawLimite = document.getElementById('conf-limite-divida')?.value || "-60";
+    const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
     const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
     const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
+    const rawMin = document.getElementById('conf-val-min')?.value || "20";
+    const rawMax = document.getElementById('conf-val-max')?.value || "500";
 
     // Converte para Número puro, aceitando ponto ou vírgula no input
     const novaTaxa = parseFloat(String(rawTaxa).replace(',', '.'));
