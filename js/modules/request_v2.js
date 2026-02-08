@@ -44,10 +44,9 @@ function garantirContainerRadar() {
         parent.appendChild(container);
     }
 
-    // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
     container.classList.remove('hidden');
 
-    // 2. Garante que o Estado Vazio (Antena) existe
+    // 2. Garante que o Estado Vazio (Antena) existe e está visível
     let emptyState = document.getElementById('radar-empty-state');
     if (!emptyState) {
         emptyState = document.createElement('div');
@@ -63,18 +62,16 @@ function garantirContainerRadar() {
         parent.appendChild(emptyState);
     }
 
-    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá (limpeza visual)
+    // 3. Limpeza de estados legados (Remove tela de dormindo se existir)
     const offlineState = document.getElementById('radar-offline-state');
     if(offlineState) offlineState.remove();
 
-    // 4. Lógica Visual (Tem card? Esconde antena.)
-    if (container && emptyState) {
-        const temCards = container.querySelectorAll('.request-card').length > 0;
-        if (temCards) {
-            emptyState.classList.add('hidden');
-        } else {
-            emptyState.classList.remove('hidden');
-        }
+    // 4. Lógica de Alternância (Card vs Antena)
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        emptyState.classList.add('hidden');
+    } else {
+        emptyState.classList.remove('hidden');
     }
 
     return container;
