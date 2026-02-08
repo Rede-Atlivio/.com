@@ -480,9 +480,6 @@ export function createRequestCard(pedido) {
     }, 30000);
 }
 // ============================================================================
-// 4. LÓGICA DE ACEITE (COM REDIRECIONAMENTO CORRETO PARA CHAT)
-// ============================================================================
-// ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
 export async function aceitarPedidoRadar(orderId) {
@@ -499,33 +496,32 @@ export async function aceitarPedidoRadar(orderId) {
         const currentUser = auth.currentUser;
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR
+        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (APENAS)
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
         const saldoAtual = parseFloat(userData.saldo_atual || userData.wallet_balance || 0);
         
-        const config = window.CONFIG_FINANCEIRA || { limite: 0, taxa: 0 };
-        const limiteDebito = parseFloat(config.limite || 0);
-        
-        // Configurações de Reserva (Vem do settings/financeiro)
+        // Configurações Globais do Admin
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        const dataFin = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0 };
-        const pctReservaPrestador = parseFloat(dataFin.porcentagem_reserva || 0);
+        const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_debito: 0 };
+        
+        const limiteDebito = parseFloat(configData.limite_debito || 0);
+        const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
         // 1. Bloqueio por Limite de Dívida (Ex: -60)
         if (limiteDebito !== 0 && saldoAtual < limiteDebito) {
-            return alert(`⛔ SALDO BLOQUEADO\n\nSeu saldo atual (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida (R$ ${limiteDebito.toFixed(2)}). Recarregue.`);
+            return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida permitido (R$ ${limiteDebito.toFixed(2)}).`);
         }
 
         // 2. Bloqueio por % Reserva Aceite (Prestador)
         if (pctReservaPrestador > 0) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoAtual < valorReserva) {
-                return alert(`⛔ SALDO INSUFICIENTE\n\nVocê precisa de R$ ${valorReserva.toFixed(2)} (${pctReservaPrestador}% de reserva) para aceitar este serviço.`);
+                return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)} (${pctReservaPrestador}% do valor).`);
             }
         }
 
-        // ✅ EXECUÇÃO DO ACEITE
+        // EXECUÇÃO DO ACEITE
         await updateDoc(orderRef, { 
             status: 'accepted', 
             accepted_at: serverTimestamp(),
@@ -550,7 +546,7 @@ export async function aceitarPedidoRadar(orderId) {
 
     } catch (e) { 
         console.error("Erro no aceite:", e);
-        alert("Erro técnico ao aceitar o pedido."); 
+        alert("Erro técnico ao processar o aceite."); 
     }
 }
 export async function recusarPedidoReq(orderId) {
