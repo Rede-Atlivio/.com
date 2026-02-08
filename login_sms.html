@@ -68,69 +68,61 @@
         const auth = getAuth(app);
         auth.languageCode = 'pt-br';
 
-        // 🎨 MÁSCARA AUTOMÁTICA (VISUAL)
-        window.mascaraTelefone = (input) => {
-            let v = input.value.replace(/\D/g,''); // Remove tudo que não é dígito
-            v = v.substring(0, 11); // Limita a 11 dígitos
-            
-            // Formata: (XX) XXXXX-XXXX
-            if (v.length > 2) v = `(${v.substring(0,2)}) ${v.substring(2)}`;
-            if (v.length > 9) v = `${v.substring(0,10)}-${v.substring(10)}`;
-            
-            input.value = v;
-        };
+        // 🎨 MÁSCARA AUTOMÁTICA MELHORADA (V23.0)
+window.mascaraTelefone = (input) => {
+    let v = input.value.replace(/\D/g,''); // Remove tudo que não é número
+    if (v.length > 11) v = v.substring(0, 11);
+    
+    if (v.length > 2) {
+        v = `(${v.substring(0,2)}) ${v.substring(2)}`;
+    }
+    if (v.length > 9) {
+        v = `${v.substring(0,10)}-${v.substring(10)}`;
+    }
+    
+    input.value = v;
+};
 
-        // SETUP RECAPTCHA
-        window.setupRecaptcha = () => {
-            if(!window.recaptchaVerifier) {
-                window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                    'size': 'invisible'
-                });
-            }
-        };
+// ENVIAR SMS COM TRATAMENTO DE ERRO BLINDADO
+window.enviarSMS = async () => {
+    let rawPhone = document.getElementById('phone-number').value;
+    let cleanPhone = rawPhone.replace(/\D/g, ''); // Garante que só fiquem números
 
-        // ENVIAR
-        window.enviarSMS = async () => {
-            let rawPhone = document.getElementById('phone-number').value;
-            let cleanPhone = rawPhone.replace(/\D/g, ''); // Só números
+    // Validação de tamanho para Brasil (DDD + 9 dígitos ou 8 dígitos)
+    if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 75 99999-0000)");
 
-            if(cleanPhone.length < 10) return alert("Digite o número completo com DDD (Ex: 759...)");
+    const finalPhone = '+55' + cleanPhone;
+    console.log("📲 Tentando enviar para:", finalPhone);
 
-            // 🔥 AQUI É O SEGREDO: Adiciona o +55 automaticamente
-            const finalPhone = '+55' + cleanPhone;
+    const btn = document.getElementById('btn-send');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="animate-pulse">Enviando... ⏳</span>`;
 
-            const btn = document.getElementById('btn-send');
-            btn.disabled = true;
-            btn.innerText = "Aguarde...";
+    setupRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
 
-            setupRecaptcha();
-            const appVerifier = window.recaptchaVerifier;
+    try {
+        const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
+        window.confirmationResult = confirmationResult;
+        
+        document.getElementById('lbl-phone').innerText = finalPhone;
+        document.getElementById('step-phone').classList.add('hidden');
+        document.getElementById('step-code').classList.remove('hidden');
+        document.getElementById('step-code').classList.remove('animate-pulse');
 
-            try {
-                const confirmationResult = await signInWithPhoneNumber(auth, finalPhone, appVerifier);
-                window.confirmationResult = confirmationResult;
-                
-                document.getElementById('lbl-phone').innerText = finalPhone;
-                document.getElementById('step-phone').classList.add('hidden');
-                document.getElementById('step-code').classList.remove('hidden');
-                document.getElementById('step-code').classList.remove('animate-pulse');
-
-            } catch (error) {
-                console.error(error);
-                if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
-                window.recaptchaVerifier = null;
-                btn.disabled = false;
-                btn.innerText = "RECEBER CÓDIGO VIA SMS";
-                
-                const logEl = document.getElementById('status-log');
-                logEl.classList.remove('hidden');
-                logEl.innerText = "Erro: " + error.message;
-
-                if(error.code === 'auth/invalid-phone-number') alert("Número inválido. Verifique o DDD.");
-                else if(error.code === 'auth/too-many-requests') alert("Muitas tentativas. Espere um pouco.");
-                else alert("Não foi possível enviar o SMS. Tente novamente.");
-            }
-        };
+    } catch (error) {
+        console.error("❌ Erro Firebase:", error.code);
+        if(window.recaptchaVerifier) window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+        btn.disabled = false;
+        btn.innerText = "RECEBER CÓDIGO VIA SMS";
+        
+        // Alertas amigáveis
+        if(error.code === 'auth/invalid-phone-number') alert("Número inválido! Verifique o DDD.");
+        else if(error.code === 'auth/too-many-requests') alert("Bloqueio temporário: Muitas tentativas. Aguarde 15 minutos.");
+        else alert("Erro ao enviar SMS: " + error.message);
+    }
+};
 
         // VERIFICAR
         window.verificarCodigo = async () => {
