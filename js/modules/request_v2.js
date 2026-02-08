@@ -215,6 +215,9 @@ function atualizarVisualModal() {
     window.validarOferta(ofertaSegura);
 }
 
+// ============================================================================
+// NOVA LÓGICA DE ENVIO COM TELA DE SUCESSO (SEM REDIRECIONAMENTO AUTOMÁTICO)
+// ============================================================================
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
@@ -223,11 +226,18 @@ export async function enviarPropostaAgora() {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
 
+    // 1. EFEITO VISUAL: Botão Carregando...
+    const btn = document.getElementById('btn-confirm-req');
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-pulse">Enviando... ⏳</span>`;
+    }
+
     try {
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
 
-        // 1. Cria o Pedido
+        // 2. CRIA O PEDIDO NO BANCO
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -242,7 +252,7 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
-        // 2. Cria o Chat Vinculado
+        // 3. CRIA O CHAT VINCULADO
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -250,43 +260,71 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        // 3. Fecha o Modal Visualmente
-        const modal = document.getElementById('request-modal');
-        if(modal) modal.classList.add('hidden');
-
-        // 4. REDIRECIONAMENTO BLINDADO (Garante que o chat abra)
-        if(window.switchTab) {
-            window.switchTab('chat');
-            
-            setTimeout(async () => {
-                console.log("🚀 Tentando abrir chat do pedido:", docRef.id);
-                
-                // Tenta usar a função global
-                if(window.abrirChatPedido) {
-                    window.abrirChatPedido(docRef.id);
-                } else {
-                    // FALLBACK: Se a função não existir, importa o módulo na força bruta
-                    console.warn("⚠️ Função abrirChatPedido não estava pronta. Forçando importação...");
-                    try {
-                        const chatModule = await import('./chat.js');
-                        if(chatModule.abrirChatPedido) {
-                            // Registra globalmente para a próxima vez
-                            window.abrirChatPedido = chatModule.abrirChatPedido; 
-                            chatModule.abrirChatPedido(docRef.id);
-                        }
-                    } catch(err) {
-                        console.error("❌ Falha crítica ao carregar módulo de chat:", err);
-                        alert("O pedido foi enviado! Acesse a aba 'Chat' para ver a conversa.");
-                    }
-                }
-            }, 800); // Aumentei levemente o tempo para garantir que a aba carregue
+        // 4. 🔥 AQUI ESTÁ O SEGREDO: NÃO FECHA O MODAL, MUDA O CONTEÚDO DELE!
+        // Transformamos o modal de solicitação em uma "Tela de Sucesso"
+        const modalContent = document.getElementById('request-modal').firstElementChild; 
+        // Se sua estrutura for diferente, pegue a div branca de dentro do modal.
+        // Geralmente é a primeira div filha direta do overlay.
+        
+        if(modalContent) {
+            modalContent.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-8 text-center animate-fadeIn">
+                    <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center text-5xl mb-4 shadow-sm">
+                        ✔
+                    </div>
+                    <h2 class="text-2xl font-black text-gray-800 mb-2">Solicitação Enviada!</h2>
+                    <p class="text-sm text-gray-500 mb-6 px-4">
+                        O prestador <b>${mem_ProviderName}</b> recebeu seu pedido.<br>
+                        Acesse o chat para negociar os detalhes.
+                    </p>
+                    
+                    <button onclick="window.irParaChatComSucesso('${docRef.id}')" 
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2">
+                        <span>💬</span> IR PARA O CHAT AGORA
+                    </button>
+                    
+                    <button onclick="document.getElementById('request-modal').classList.add('hidden')" 
+                        class="mt-4 text-gray-400 text-xs font-bold underline hover:text-gray-600">
+                        Fechar e continuar vendo a vitrine
+                    </button>
+                </div>
+            `;
         }
 
     } catch (e) { 
         console.error("Erro ao enviar:", e);
-        alert("Erro: " + e.message); 
+        alert("Erro: " + e.message);
+        if(btn) {
+            btn.disabled = false;
+            btn.innerText = "TENTAR NOVAMENTE";
+        }
     }
 }
+
+// ============================================================================
+// FUNÇÃO AUXILIAR GLOBAL (Para o botão funcionar)
+// ============================================================================
+window.irParaChatComSucesso = (orderId) => {
+    // 1. Fecha o modal
+    document.getElementById('request-modal')?.classList.add('hidden');
+    
+    // 2. Troca de aba (Agora sim a vitrine some, porque o usuário QUIS)
+    if(window.switchTab) window.switchTab('chat');
+    
+    // 3. Abre a conversa específica
+    setTimeout(async () => {
+        if(window.abrirChatPedido) {
+            window.abrirChatPedido(orderId);
+        } else {
+            // Fallback de segurança se o chat.js não carregou
+            const chatModule = await import('./chat.js');
+            if(chatModule.abrirChatPedido) {
+                window.abrirChatPedido = chatModule.abrirChatPedido;
+                chatModule.abrirChatPedido(orderId);
+            }
+        }
+    }, 500);
+};
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
