@@ -186,9 +186,9 @@ async function ejecutarCicloRobo() {
             origem: "robo_auto"
         };
 
-        if(tipoSorteado === 'jobs') { collectionName = "jobs"; data.titulo = modelo.t; data.descricao = modelo.d; data.salario = modelo.s; data.empresa = "Atlivio Jobs"; data.status = "ativo"; } 
-        else if(tipoSorteado === 'services') { collectionName = "active_providers"; data.nome_profissional = modelo.t; data.bio = "Profissional Verificado"; data.services = [{category: modelo.cat, price: modelo.p}]; data.is_online = true; data.status = "aprovado"; }
-        else if(tipoSorteado === 'missions') { collectionName = "missoes"; data.titulo = modelo.t; data.descricao = modelo.d; data.valor = modelo.p; data.status = "disponivel"; }
+       if(tipoSorteado === 'jobs') { collectionName = "jobs"; data.titulo = modelo.t; data.descricao = modelo.d; data.salario = modelo.s; data.empresa = "Atlivio Jobs"; data.status = "ativo"; } 
+        else if(tipoSorteado === 'services') { collectionName = "active_providers"; data.nome_profissional = modelo.t; data.bio = "Profissional Verificado"; data.services = [{category: modelo.cat, price: Number(modelo.p)}]; data.is_online = true; data.status = "aprovado"; data.balance = 0; data.wallet_balance = 0; }
+        else if(tipoSorteado === 'missions') { collectionName = "missoes"; data.titulo = modelo.t; data.descricao = modelo.d; data.valor = Number(modelo.p); data.status = "disponivel"; }
         else if(tipoSorteado === 'opps') { collectionName = "oportunidades"; data.titulo = modelo.t; data.descricao = modelo.d; data.link = modelo.link; data.tipo = "alerta"; }
 
         await addDoc(collection(db, collectionName), data);
