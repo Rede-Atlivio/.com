@@ -322,14 +322,18 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
+    // 1. 🛡️ FORÇA A INTERFACE (CURA): Roda sempre para garantir que o 'hidden' suma
+    garantirContainerRadar();
+
+    // 2. 🛡️ TRAVA DE SEGURANÇA: Impede criar várias escutas no Firebase
     if (window.radarIniciado) {
-        console.log("🛰️ [SISTEMA] Radar já está operando.");
+        console.log("🛰️ [SISTEMA] Radar já está operando no banco. Interface atualizada.");
         return;
     }
 
     if (radarUnsubscribe) radarUnsubscribe();
 
+    // Sincroniza configurações financeiras
     const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
         if(s.exists()) {
@@ -344,8 +348,6 @@ export async function iniciarRadarPrestador(uidManual = null) {
             console.log("💰 [RADAR] Taxas sincronizadas:", (taxaBruta * 100) + "%");
         }
     });
-
-    garantirContainerRadar();
 
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
