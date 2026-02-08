@@ -331,18 +331,18 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-    const configRef = doc(db, "settings", "financeiro");
+   const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
         if(s.exists()) {
             const data = s.data();
-            let taxaBruta = parseFloat(data.porcentagem_reserva || data.taxa_plataforma || 0);
-            if (taxaBruta > 1) taxaBruta = taxaBruta / 100;
+            let taxaPlataforma = parseFloat(data.taxa_plataforma || 0);
+            if (taxaPlataforma > 1) taxaPlataforma = taxaPlataforma / 100;
 
             window.CONFIG_FINANCEIRA = {
-                taxa: taxaBruta,
-                limite: parseFloat(data.limite_divida || 0)
+                taxa: taxaPlataforma, // Taxa para exibição de lucro no card
+                limite: parseFloat(data.limite_debito || 0)
             };
-            console.log("💰 [RADAR] Taxas sincronizadas:", (taxaBruta * 100) + "%");
+            console.log("💰 [RADAR] Configurações financeiras sincronizadas.");
         }
     });
 
