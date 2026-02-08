@@ -274,10 +274,12 @@ export async function confirmarAcordo(orderId, aceitar) {
             if (uid === freshOrder.client_id) {
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
-                const valorReserva = valorAcordo * (pctReservaCliente / 100);
-
-                if (saldoAtivo < valorReserva) {
-                    throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
+                
+                if (pctReservaCliente > 0) {
+                    const valorReserva = valorAcordo * (pctReservaCliente / 100);
+                    if (saldoAtivo < valorReserva) {
+                        throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
+                    }
                 }
             }
 
