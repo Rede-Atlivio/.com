@@ -82,12 +82,24 @@ function garantirContainerRadar() {
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
-    // 1. Carrega Configurações Globais
+    // --- CARREGAMENTO OBRIGATÓRIO DAS REGRAS FINANCEIRAS ---
     try {
+        // Lê diretamente da coleção 'settings/financeiro' ou 'configuracoes/financeiro'
+        // (Ajuste o caminho conforme seu banco real)
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        if (configSnap.exists()) window.configFinanceiroAtiva = configSnap.data();
-    } catch (e) { console.error("Erro config:", e); }
-    
+        
+        if (configSnap.exists()) {
+            window.configFinanceiroAtiva = configSnap.data();
+            console.log("💰 Regras Financeiras Carregadas:", window.configFinanceiroAtiva);
+        } else {
+            console.error("❌ ERRO FATAL: Documento de configuração financeira não existe no Admin!");
+            alert("Erro de sistema: Regras financeiras não definidas. Contate o suporte.");
+            return; // Impede abrir o modal sem regras
+        }
+    } catch (e) { 
+        console.error("Erro ao baixar configs:", e);
+        return;
+    }
     mem_ProviderId = providerId;
     mem_ProviderName = providerName;
     
