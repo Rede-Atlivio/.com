@@ -93,45 +93,76 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     const contatoLiberado = step >= 3;
     const isPartnerVerified = partnerData.is_verified ? '🏅 Verificado' : '⭐ Novo';
 
+    // Barra de Progresso
+    const stepsHTML = `
+        <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
+            <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
+            <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
+            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Execução</span>
+        </div>
+        <div class="h-1 w-full bg-gray-100">
+            <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
+        </div>
+    `;
+
     const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
-    // Estrutura Visual Blindada V12 (Garante Container e Botão de Envio)
     container.innerHTML = `
-        <div class="flex flex-col h-full bg-slate-50 relative">
+        <div class="flex flex-col h-full bg-slate-50">
             <div class="bg-white shadow-sm z-30">
                 <div class="p-3 flex items-center justify-between border-b">
                     <div class="flex items-center gap-3">
                         <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full">⬅</button>
-                        <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
-                        <div>
-                            <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none">${outroNome}</h3>
-                            <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified}</p>
+                        <div class="relative group cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                            <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
+                            <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">🔍</div>
+                        </div>
+                        <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                            <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
+                            <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase shadow-sm">📞 Ligar</a>` : ''}
-                        <button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-gray-400 hover:text-red-500 p-2 transition">✋</button>
+                        <button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-gray-300 hover:text-red-500 p-2 transition" title="Encerrar Conversa">Encerrar Conversa✋</button>
                     </div>
                 </div>
+                ${stepsHTML}
                 ${timeHTML}
             </div>
 
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-32 custom-scrollbar">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-48 custom-scrollbar">
                 ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
-                <div id="bubbles-area" class="space-y-3"></div>
+                <div id="bubbles-area"></div>
             </div>
 
-            <div class="absolute bottom-0 left-0 w-full bg-white border-t p-3 z-40 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
-                <div class="flex gap-2 items-center max-w-2xl mx-auto">
-                    <input type="text" id="chat-input-msg" placeholder="Digite sua mensagem..." 
-                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-900 outline-none border border-transparent focus:border-blue-200 transition">
-                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" 
-                        id="btn-send-msg"
-                        class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition transform">
-                        ➤
-                    </button>
+            ${!['completed', 'cancelled', 'negotiation_closed'].includes(pedido.status) ? `
+            <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40 shadow-2xl">
+                <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
+                    <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
+                    <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
+                    <button onclick="window.sugerirFrase('A ATLIVIO segura a reserva até o serviço ser concluído.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">🔒 Garantia</button>
                 </div>
-            </div>
+
+                <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                    ${step < 3 ? `
+                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
+                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
+                            <span>🎯 PROPOSTA</span>
+                            <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar Valor</span>
+                        </button>
+                    ` : ''}
+                    
+                    ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full">🏁 CONFIRMAR & PAGAR</button>` : ''}
+                    
+                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
+                </div>
+
+                <div class="px-3 pb-3 flex gap-2 items-center">
+                    <input type="text" id="chat-input-msg" placeholder="Digite sua mensagem..." class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
+                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
+                </div>
+            </div>` : ''}
         </div>
     `;
     
@@ -364,19 +395,14 @@ export function escutarMensagens(orderId) {
 }
 
 window.finalizarServicoPassoFinalAction = async (orderId) => {
-    if(!confirm("🏁 Confirmar entrega e liberar pagamento?")) return;
-    
+    if(!confirm("Confirmar finalização?")) return;
     try {
-        // 🛡️ SINCRONIA: Busca a Taxa Master do Admin (settings/financeiro)
-        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        const regrasAtivas = configSnap.exists() ? configSnap.data() : { taxa_plataforma: 0 };
-        const taxaPercent = parseFloat(regrasAtivas.taxa_plataforma || 0);
+        const configSnap = await getDoc(doc(db, "configuracoes", "financeiro"));
+        const taxaPercent = configSnap.exists() ? parseFloat(configSnap.data().taxa_plataforma) : 0.20;
 
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, "orders", orderId);
             const orderSnap = await transaction.get(orderRef);
-            if (!orderSnap.exists()) throw "Pedido não encontrado.";
-            
             const pedido = orderSnap.data();
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const providerRef = doc(db, "usuarios", pedido.provider_id);
@@ -386,51 +412,20 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             const valorReservado = parseFloat(pedido.value_reserved || 0);
             const valorTotal = parseFloat(pedido.offer_value || 0);
-            
-            // 💸 CÁLCULO DINÂMICO: Aplica a taxa real do painel
-            const valorTaxa = valorTotal * taxaPercent;
-            const valorLiquido = valorTotal - valorTaxa;
+            const valorLiquido = valorTotal - (valorTotal * taxaPercent);
 
-            // 1. Limpa Reserva do Cliente
             if (clientSnap.exists()) {
-                const currentRes = parseFloat(clientSnap.data().wallet_reserved || 0);
-                transaction.update(clientRef, { 
-                    wallet_reserved: Math.max(0, currentRes - valorReservado) 
-                });
+                transaction.update(clientRef, { wallet_reserved: Math.max(0, (clientSnap.data().wallet_reserved || 0) - valorReservado) });
             }
-
-            // 2. Libera Saldo Líquido para o Prestador
             if (providerSnap.exists()) {
-                const currentBal = parseFloat(providerSnap.data().wallet_balance || 0);
-                const newBal = currentBal + valorLiquido;
-                transaction.update(providerRef, { 
-                    wallet_balance: newBal,
-                    updated_at: serverTimestamp()
-                });
+                const newBal = (providerSnap.data().wallet_balance || 0) + valorLiquido;
+                transaction.update(providerRef, { wallet_balance: newBal, saldo: newBal });
             }
-
-            // 3. Finaliza Pedido
-            transaction.update(orderRef, { 
-                status: 'completed', 
-                system_step: 4,
-                fee_applied: valorTaxa,
-                net_value: valorLiquido,
-                completed_at: serverTimestamp() 
-            });
-
-            // 4. Registro na Ledger do Sistema (sys_finance)
-            const ledgerRef = doc(db, "sys_finance", "stats");
-            transaction.set(ledgerRef, { 
-                total_revenue: increment(valorTaxa) 
-            }, { merge: true });
+            transaction.update(orderRef, { status: 'completed', completed_at: serverTimestamp() });
         });
-
-        alert(`✅ SUCESSO!\nPagamento liberado com taxa de ${(taxaPercent * 100).toFixed(1)}%.`);
+        alert("✅ Concluído!");
         window.voltarParaListaPedidos();
-    } catch(e) { 
-        console.error("❌ Erro na liberação final:", e);
-        alert("Falha ao processar pagamento: " + e);
-    }
+    } catch(e) { console.error(e); }
 };
 
 window.reportarProblema = async (orderId) => {
