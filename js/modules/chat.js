@@ -260,7 +260,11 @@ export async function confirmarAcordo(orderId, aceitar) {
             const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0, taxa_plataforma: 0.20 };
 
             // === LÓGICA DE VALIDAÇÃO FINANCEIRA (ANTI-DÍVIDA) ===
-            const saldoAtivo = parseFloat(uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (userData.wallet_balance ?? userData.saldo ?? 0));
+            const providerRef = doc(db, "usuarios", freshOrder.provider_id);
+            const providerSnap = await transaction.get(providerRef);
+            
+            const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || providerSnap.data().saldo || 0);
+            const saldoAtivo = parseFloat(meuSaldo);
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
             if (limiteFin !== 0 && saldoAtivo < limiteFin) {
@@ -270,12 +274,12 @@ export async function confirmarAcordo(orderId, aceitar) {
             if (uid === freshOrder.client_id) {
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
-            
-                    const valorReserva = valorAcordo * (pctReservaCliente / 100);
-                    if (saldoCliente < valorReserva) {
-                        throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
-                    }
+                const valorReserva = valorAcordo * (pctReservaCliente / 100);
+
+                if (saldoAtivo < valorReserva) {
+                    throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
                 }
+            }
 
             // === LÓGICA DE FECHAMENTO (MÚTUO) ===
             const isMeProvider = uid === freshOrder.provider_id;
