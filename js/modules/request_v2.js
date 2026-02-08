@@ -219,6 +219,9 @@ export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
     
+    // Variáveis de memória do request_v2.js (mem_CurrentOffer, etc) devem estar acessíveis neste escopo
+    // Se der erro de variável não definida, certifique-se que elas estão declaradas no topo do arquivo request_v2.js
+    
     if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
@@ -248,15 +251,17 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat...");
+        // alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat..."); // Opcional
         const modal = document.getElementById('request-modal');
         if(modal) modal.classList.add('hidden');
 
+        // 🔥 REDIRECIONAMENTO IMEDIATO PARA O CHAT (CLIENTE)
         if(window.switchTab) {
             window.switchTab('chat');
             setTimeout(() => {
-                if(window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-            }, 600);
+                // Abre diretamente a conversa criada
+                if(window.abrirChatPedido) window.abrirChatPedido(docRef.id);
+            }, 500);
         }
 
     } catch (e) { 
