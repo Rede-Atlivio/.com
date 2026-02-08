@@ -430,7 +430,7 @@ export function createRequestCard(pedido) {
 
     // 🔊 RESTAURAÇÃO DO SOM ORIGINAL (PROTEGIDO)
     try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
         audio.volume = 1.0;
         audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
     } catch(e) { console.warn("Erro ao tocar som"); }
