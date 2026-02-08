@@ -340,7 +340,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
             window.CONFIG_FINANCEIRA = {
                 taxa: taxaPlataforma, // Taxa para exibição de lucro no card
-                limite: parseFloat(data.limite_debito || 0)
+                limite: parseFloat(data.limite_divida || 0)
             };
             console.log("💰 [RADAR] Configurações financeiras sincronizadas.");
         }
