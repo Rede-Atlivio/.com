@@ -544,6 +544,7 @@ export async function aceitarPedidoRadar(orderId) {
     const orderRef = doc(db, "orders", orderId);
     
     try {
+        // 1. Validação de Existência
         const orderSnap = await getDoc(orderRef);
         if (!orderSnap.exists()) {
             removeRequestCard(orderId);
@@ -551,21 +552,28 @@ export async function aceitarPedidoRadar(orderId) {
         }
 
         const pedidoData = orderSnap.data();
-        const valorServico = parseFloat(pedidoData.offer_value || 0);
+        const currentUser = auth.currentUser;
 
-        // 🛡️ UNIFICAÇÃO DE VARIÁVEIS
-        const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
-        const taxaCalculada = valorServico * regrasAtivas.taxa;
+        // =================================================================
+        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (REGRA DO ZERO)
+        // =================================================================
+        const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
+        const userData = userDoc.data();
+        const saldoAtual = parseFloat(userData.saldo_atual || userData.wallet_balance || 0);
+        
+        // Pega config da window (carregada no iniciarRadar) ou padrão
+        const config = window.CONFIG_FINANCEIRA || { limite: 0 };
+        const limiteDebito = parseFloat(config.limite || 0);
 
-        // 🛑 Trava de Segurança V12
-        if (typeof window.podeTrabalhar === 'function') {
-            if (!window.podeTrabalhar(taxaCalculada)) {
-                console.warn("⚠️ Aceite impedido por falta de saldo/limite.");
-                return;
-            }
+        // REGRA MANDATÓRIA:
+        // Se limite for 0 (Zero) -> LIBERADO (Infinite/Free Tier)
+        // Se limite for diferente de 0 -> Bloqueia se Saldo < Limite
+        if (limiteDebito !== 0 && saldoAtual < limiteDebito) {
+            return alert(`⛔ OPERAÇÃO BLOQUEADA\n\nSeu saldo atual (R$ ${saldoAtual.toFixed(2)}) está abaixo do limite operacional permitido (R$ ${limiteDebito.toFixed(2)}).\n\nPor favor, recarregue sua conta para aceitar novos serviços.`);
         }
+        // =================================================================
 
-        // ✅ Aceite Seguro (Etapa 1)
+        // 2. Execução do Aceite (Status & Chat)
         await updateDoc(orderRef, { 
             status: 'accepted', 
             accepted_at: serverTimestamp(),
@@ -575,13 +583,13 @@ export async function aceitarPedidoRadar(orderId) {
         
         await setDoc(doc(db, "chats", orderId), { 
             status: 'active', 
-            updated_at: serverTimestamp(),
-            participants: [auth.currentUser.uid, pedidoData.client_id]
+            updated_at: serverTimestamp(), 
+            participants: [currentUser.uid, pedidoData.client_id] 
         }, { merge: true });
 
+        // 3. Limpeza e Redirecionamento
         removeRequestCard(orderId);
         
-        // 🔥 REDIRECIONAMENTO IMEDIATO PARA O CHAT (PRESTADOR)
         if(window.switchTab) {
             window.switchTab('chat'); 
             setTimeout(() => {
@@ -590,8 +598,8 @@ export async function aceitarPedidoRadar(orderId) {
         }
 
     } catch (e) { 
-        console.error("❌ Erro fatal no aceite unificado:", e);
-        alert("Erro técnico ao aceitar. Tente novamente."); 
+        console.error("Erro no aceite:", e);
+        alert("Erro técnico ao aceitar o pedido. Tente novamente."); 
     }
 }
 export async function recusarPedidoReq(orderId) {
