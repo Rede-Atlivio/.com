@@ -245,16 +245,20 @@ window.executeAdjustment = async (uid) => {
                                    userDoc.data().wallet_balance : (userDoc.data().saldo || 0);
             const newBalance = currentBalance + finalAmount;
 
-            // 2. Sincronia Tripla: Usuarios + Active Providers + Extrato
-            transaction.update(userRef, { 
-                wallet_balance: newBalance,
-                saldo: newBalance 
-            });
+            // 2. Sincronia Tripla: Atualiza os 3 nomes de saldo conhecidos no sistema
+            const syncUpdate = { 
+                wallet_balance: Number(newBalance), 
+                saldo: Number(newBalance),
+                updated_at: serverTimestamp()
+            };
+            
+            transaction.update(userRef, syncUpdate);
 
-            // AQUI É O SEGREDO: Atualiza o campo 'balance' que deu undefined no teste
+            // Se for um prestador, atualiza também o campo 'balance' (usado no Radar/Mapa)
             if (provDoc.exists()) {
                 transaction.update(providerRef, { 
-                    balance: newBalance 
+                    balance: Number(newBalance),
+                    updated_at: serverTimestamp()
                 });
             }
 
