@@ -568,6 +568,9 @@ function removeRequestCard(orderId) {
     }
 }
 
+// ============================================================================
+// 4. LÓGICA DE ACEITE (COM REDIRECIONAMENTO CORRETO PARA CHAT)
+// ============================================================================
 export async function aceitarPedidoRadar(orderId) {
     const orderRef = doc(db, "orders", orderId);
     
@@ -581,7 +584,7 @@ export async function aceitarPedidoRadar(orderId) {
         const pedidoData = orderSnap.data();
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-        // 🛡️ UNIFICAÇÃO DE VARIÁVEIS: Usa a mesma regra do visual (wallet.js)
+        // 🛡️ UNIFICAÇÃO DE VARIÁVEIS
         const regrasAtivas = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
         const taxaCalculada = valorServico * regrasAtivas.taxa;
 
@@ -622,7 +625,6 @@ export async function aceitarPedidoRadar(orderId) {
         alert("Erro técnico ao aceitar. Tente novamente."); 
     }
 }
-
 export async function recusarPedidoReq(orderId) {
     removeRequestCard(orderId);
     try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
