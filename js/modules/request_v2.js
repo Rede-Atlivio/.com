@@ -219,9 +219,6 @@ export async function enviarPropostaAgora() {
     const user = auth.currentUser;
     const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
     
-    // Variáveis de memória do request_v2.js (mem_CurrentOffer, etc) devem estar acessíveis neste escopo
-    // Se der erro de variável não definida, certifique-se que elas estão declaradas no topo do arquivo request_v2.js
-    
     if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
@@ -230,6 +227,7 @@ export async function enviarPropostaAgora() {
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
 
+        // 1. Cria o Pedido
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
@@ -244,6 +242,7 @@ export async function enviarPropostaAgora() {
             created_at: serverTimestamp()
         });
 
+        // 2. Cria o Chat Vinculado
         await setDoc(doc(db, "chats", docRef.id), {
             participants: [user.uid, mem_ProviderId],
             order_id: docRef.id,
@@ -251,17 +250,36 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        // alert("✅ SOLICITAÇÃO ENVIADA! Redirecionando para o chat..."); // Opcional
+        // 3. Fecha o Modal Visualmente
         const modal = document.getElementById('request-modal');
         if(modal) modal.classList.add('hidden');
 
-        // 🔥 REDIRECIONAMENTO IMEDIATO PARA O CHAT (CLIENTE)
+        // 4. REDIRECIONAMENTO BLINDADO (Garante que o chat abra)
         if(window.switchTab) {
             window.switchTab('chat');
-            setTimeout(() => {
-                // Abre diretamente a conversa criada
-                if(window.abrirChatPedido) window.abrirChatPedido(docRef.id);
-            }, 500);
+            
+            setTimeout(async () => {
+                console.log("🚀 Tentando abrir chat do pedido:", docRef.id);
+                
+                // Tenta usar a função global
+                if(window.abrirChatPedido) {
+                    window.abrirChatPedido(docRef.id);
+                } else {
+                    // FALLBACK: Se a função não existir, importa o módulo na força bruta
+                    console.warn("⚠️ Função abrirChatPedido não estava pronta. Forçando importação...");
+                    try {
+                        const chatModule = await import('./chat.js');
+                        if(chatModule.abrirChatPedido) {
+                            // Registra globalmente para a próxima vez
+                            window.abrirChatPedido = chatModule.abrirChatPedido; 
+                            chatModule.abrirChatPedido(docRef.id);
+                        }
+                    } catch(err) {
+                        console.error("❌ Falha crítica ao carregar módulo de chat:", err);
+                        alert("O pedido foi enviado! Acesse a aba 'Chat' para ver a conversa.");
+                    }
+                }
+            }, 800); // Aumentei levemente o tempo para garantir que a aba carregue
         }
 
     } catch (e) { 
@@ -269,7 +287,6 @@ export async function enviarPropostaAgora() {
         alert("Erro: " + e.message); 
     }
 }
-
 // ============================================================================
 // 2. LÓGICA DE INTERRUPÇAO FÍSICA DO RADAR
 // ============================================================================
