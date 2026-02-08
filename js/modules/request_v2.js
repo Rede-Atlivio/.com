@@ -290,15 +290,14 @@ export async function enviarPropostaAgora() {
         }
     }
 }
-
 // ============================================================================
-// FUNÇÃO AUXILIAR GLOBAL (Para o botão funcionar)
+// FUNÇÃO AUXILIAR GLOBAL (Para o botão de sucesso funcionar)
 // ============================================================================
 window.irParaChatComSucesso = (orderId) => {
     // 1. Fecha o modal
     document.getElementById('request-modal')?.classList.add('hidden');
     
-    // 2. Troca de aba (Agora sim a vitrine some, porque o usuário QUIS)
+    // 2. Troca de aba
     if(window.switchTab) window.switchTab('chat');
     
     // 3. Abre a conversa específica
