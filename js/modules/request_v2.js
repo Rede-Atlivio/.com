@@ -32,6 +32,9 @@ let mem_SelectedServiceTitle = "";
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
+    / 🛑 TRAVA DE SEGURANÇA: Se o radar estiver desligado (OFF), 
+    // esta função NÃO DEVE TOCAR no HTML, para não apagar a tela "Você está Invisível".
+    if (window.radarIniciado === false) return document.getElementById('radar-container');
     const parent = document.getElementById('pview-radar');
     if (!parent) return null;
 
