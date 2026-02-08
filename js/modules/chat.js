@@ -375,7 +375,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 const resAtual = clientSnap.data().wallet_reserved || 0;
                 const novoRes = Math.max(0, resAtual - valorReservado);
                 transaction.update(clientRef, { wallet_reserved: novoRes });
-            }  
+            }
             
             if (providerSnap.exists()) {
                 const newBal = (providerSnap.data().wallet_balance || 0) + valorLiquido;
