@@ -252,8 +252,8 @@ async function enviarMassaConfirmado() {
                     const novoSaldo = saldoAtual + credito;
                     
                     await updateDoc(ref, { 
-                        wallet_balance: novoSaldo,
-                        saldo: novoSaldo, 
+                        wallet_balance: Number(novoSaldo),
+                        saldo: Number(novoSaldo), 
                         updated_at: serverTimestamp() 
                     });
                 }
