@@ -506,12 +506,12 @@ export async function aceitarPedidoRadar(orderId) {
         const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_divida: 0 };
         
         // Lendo 'limite_divida' conforme imagem do Firestore
-        const limiteDebito = parseFloat(configData.limite_divida || 0);
+        const limiteDivida = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
         // 1. Bloqueio por Limite de Dívida (Ex: -60)
-        if (limiteDebito !== 0 && saldoAtual < limiteDebito) {
-            return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida permitido (R$ ${limiteDebito.toFixed(2)}).`);
+        if (limiteDivida !== 0 && saldoAtual < limiteDivida) {
+            return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida permitido (R$ ${limiteDivida.toFixed(2)}).`);
         }
 
         // 2. Bloqueio por % Reserva Aceite (Prestador)
