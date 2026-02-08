@@ -29,12 +29,6 @@ let mem_CurrentOffer = 0;
 let mem_SelectedServiceTitle = ""; 
 
 // ============================================================================
-// 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
-// ============================================================================
-// ============================================================================
-// 0. FUNÇÃO DE AUTO-CURA DO HTML (O SEGREDO)
-// ============================================================================
-// ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
@@ -69,7 +63,7 @@ function garantirContainerRadar() {
         parent.appendChild(emptyState);
     }
 
-    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá
+    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá (limpeza visual)
     const offlineState = document.getElementById('radar-offline-state');
     if(offlineState) offlineState.remove();
 
@@ -85,7 +79,6 @@ function garantirContainerRadar() {
 
     return container;
 }
-
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
