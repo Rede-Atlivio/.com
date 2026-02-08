@@ -257,7 +257,7 @@ export async function confirmarAcordo(orderId, aceitar) {
             
             const configRef = doc(db, "settings", "financeiro");
             const configSnap = await transaction.get(configRef);
-            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_debito: 0 };
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0 };
 
             // === LÓGICA DE VALIDAÇÃO FINANCEIRA EXCLUSIVA DO CLIENTE ===
             // Identifica se o usuário atual é o CLIENTE do pedido
@@ -265,12 +265,12 @@ export async function confirmarAcordo(orderId, aceitar) {
                 // Sincronizado para ler 'balance' e 'limite_divida'
                 const saldoCliente = parseFloat(clientSnap.data().balance || 0);
                 const valorAcordo = parseFloat(freshOrder.offer_value || 0);
-                const limiteDebito = parseFloat(configData.limite_divida || 0);
+                const limiteDivida = parseFloat(configData.limite_divida || 0);
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
 
                 // 1. REGRA: LIMITE QUE PODE DEVER (Ex: -60)
-                if (limiteDebito !== 0 && saldoCliente < limiteDebito) {
-                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de débito permitido (R$ ${limiteDebito.toFixed(2)}). Recarregue para prosseguir.`;
+                if (limiteDivida !== 0 && saldoCliente < limitedivida) {
+                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de divida permitido (R$ ${limitedivida.toFixed(2)}). Recarregue para prosseguir.`;
                 }
 
                 // 2. REGRA: % RESERVA ACORDO (CLIENTE)
