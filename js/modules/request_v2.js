@@ -496,16 +496,17 @@ export async function aceitarPedidoRadar(orderId) {
         const currentUser = auth.currentUser;
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (APENAS)
+        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (Sincronizada com o Banco)
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
-        const saldoAtual = parseFloat(userData.saldo_atual || userData.wallet_balance || 0);
+        // Lendo 'balance' conforme imagem do Firestore
+        const saldoAtual = parseFloat(userData.balance || 0);
         
-        // Configurações Globais do Admin
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_debito: 0 };
+        const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_divida: 0 };
         
-        const limiteDebito = parseFloat(configData.limite_debito || 0);
+        // Lendo 'limite_divida' conforme imagem do Firestore
+        const limiteDebito = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
         // 1. Bloqueio por Limite de Dívida (Ex: -60)
