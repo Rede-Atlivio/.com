@@ -123,12 +123,17 @@ window.carregarInterface = async (user) => {
             }
         });
 
-        // Inicializa estado atual
-        if (novoToggle.checked) {
-            setTimeout(() => {
-                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-            }, 1000);
-        }
+       // Inicializa estado atual
+if (novoToggle.checked) {
+    setTimeout(() => {
+        if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
+    }, 1000);
+} else {
+    // 🔥 CORREÇÃO: Se nascer desligado, mostra a tela de "Dormindo" imediatamente
+    setTimeout(() => {
+        if (window.pararRadarFisico) window.pararRadarFisico();
+    }, 500);
+}
     }
     // ----------------------------------------------------
 };
