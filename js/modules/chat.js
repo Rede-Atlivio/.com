@@ -257,7 +257,7 @@ export async function confirmarAcordo(orderId, aceitar) {
             
             const configRef = doc(db, "settings", "financeiro");
             const configSnap = await transaction.get(configRef);
-            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0 };
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0, taxa_plataforma: 0.20 };
 
             // === LÓGICA DE VALIDAÇÃO FINANCEIRA EXCLUSIVA DO CLIENTE ===
             // Identifica se o usuário atual é o CLIENTE do pedido
