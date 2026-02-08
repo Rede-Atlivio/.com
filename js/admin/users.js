@@ -253,8 +253,8 @@ async function enviarMassaConfirmado() {
                     
                     await updateDoc(ref, { 
                         wallet_balance: Number(novoSaldo),
-                        saldo: Number(novoSaldo), 
-                        updated_at: serverTimestamp() 
+                        saldo: Number(novoSaldo),
+                        updated_at: serverTimestamp()
                     });
                 }
             }
