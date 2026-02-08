@@ -509,66 +509,113 @@ function removeRequestCard(orderId) {
 // ============================================================================
 // 4. LÓGICA DE ACEITE (COM REDIRECIONAMENTO CORRETO PARA CHAT)
 // ============================================================================
-export async function aceitarPedidoRadar(orderId) {
+export async function confirmarAcordo(orderId, aceitar) {
+    if(!aceitar) return;
+    const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
-    
+
     try {
-        // 1. Validação de Existência
-        const orderSnap = await getDoc(orderRef);
-        if (!orderSnap.exists()) {
-            removeRequestCard(orderId);
-            return alert("Este pedido expirou ou foi cancelado.");
-        }
-
-        const pedidoData = orderSnap.data();
-        const currentUser = auth.currentUser;
-
-        // =================================================================
-        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (REGRA DO ZERO)
-        // =================================================================
-        const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
-        const userData = userDoc.data();
-        const saldoAtual = parseFloat(userData.saldo_atual || userData.wallet_balance || 0);
+        let vaiFecharAgora = false;
         
-        // Pega config da window (carregada no iniciarRadar) ou padrão
-        const config = window.CONFIG_FINANCEIRA || { limite: 0 };
-        const limiteDebito = parseFloat(config.limite || 0);
+        await runTransaction(db, async (transaction) => {
+            // === 1. LEITURAS (READS) ===
+            const freshOrderSnap = await transaction.get(orderRef);
+            if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
+            const freshOrder = freshOrderSnap.data();
 
-        // REGRA MANDATÓRIA:
-        // Se limite for 0 (Zero) -> LIBERADO (Infinite/Free Tier)
-        // Se limite for diferente de 0 -> Bloqueia se Saldo < Limite
-        if (limiteDebito !== 0 && saldoAtual < limiteDebito) {
-            return alert(`⛔ OPERAÇÃO BLOQUEADA\n\nSeu saldo atual (R$ ${saldoAtual.toFixed(2)}) está abaixo do limite operacional permitido (R$ ${limiteDebito.toFixed(2)}).\n\nPor favor, recarregue sua conta para aceitar novos serviços.`);
-        }
-        // =================================================================
+            const clientRef = doc(db, "usuarios", freshOrder.client_id);
+            const clientSnap = await transaction.get(clientRef);
+            if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
+            
+            // Busca Configurações do Admin
+            const configRef = doc(db, "settings", "financeiro");
+            const configSnap = await transaction.get(configRef);
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0, limite_debito: 0 };
 
-        // 2. Execução do Aceite (Status & Chat)
-        await updateDoc(orderRef, { 
-            status: 'accepted', 
-            accepted_at: serverTimestamp(),
-            system_step: 1,
-            timer_initialized: false 
+            // Identificadores
+            const isMeClient = uid === freshOrder.client_id;
+            const isMeProvider = uid === freshOrder.provider_id;
+
+            // =================================================================
+            // 🛡️ VALIDAÇÃO FINANCEIRA CLIENTE (NO FECHAMENTO)
+            // =================================================================
+            if (isMeClient) {
+                const saldoCliente = parseFloat(clientSnap.data().wallet_balance || clientSnap.data().saldo_atual || 0);
+                const valorAcordo = parseFloat(freshOrder.offer_value || 0);
+                const limiteDebito = parseFloat(configData.limite_debito || 0);
+
+                // 1. Validação de Limite Global (Se configurado)
+                if (limiteDebito !== 0 && saldoCliente < limiteDebito) {
+                    throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de débito permitido (R$ ${limiteDebito.toFixed(2)}). Recarregue para continuar.`;
+                }
+
+                // 2. Validação de Reserva de Segurança (CLIENTE)
+                // Usa porcentagem_reserva_cliente. Se não existir, assume 0 (Liberado).
+                const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
+                
+                if (pctReservaCliente > 0) {
+                    const valorReserva = valorAcordo * (pctReservaCliente / 100);
+                    if (saldoCliente < valorReserva) {
+                        throw `Garantia necessária: Você precisa de R$ ${valorReserva.toFixed(2)} em conta (${pctReservaCliente}% do valor) para proteger este serviço.`;
+                    }
+                }
+            }
+            // =================================================================
+
+            // === LÓGICA DE CONFIRMAÇÃO ===
+            const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
+            const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
+            vaiFecharAgora = oOutroJaConfirmou;
+
+            // === ESCRITAS (WRITES) ===
+            transaction.update(orderRef, campoUpdate);
+
+            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA
+            if (vaiFecharAgora) {
+                // Reaplica cálculo para efetivar o débito da reserva (se houver)
+                const pctFinal = parseFloat(configData.porcentagem_reserva_cliente || 0);
+                const valorPedido = parseFloat(freshOrder.offer_value || 0);
+                const valorCofre = valorPedido * (pctFinal / 100);
+
+                if (valorCofre > 0) {
+                    const saldoAtual = parseFloat(clientSnap.data().wallet_balance || 0);
+                    const reservadoAtual = parseFloat(clientSnap.data().wallet_reserved || 0);
+                    
+                    // Nota: Se passou da validação acima, saldoAtual >= valorCofre (ou está dentro do limite)
+                    transaction.update(clientRef, {
+                        wallet_balance: saldoAtual - valorCofre,
+                        wallet_reserved: reservadoAtual + valorCofre
+                    });
+                }
+
+                // Atualiza status do pedido
+                transaction.update(orderRef, { 
+                    system_step: 3, 
+                    status: 'confirmed_hold',
+                    value_reserved: valorCofre,
+                    confirmed_at: serverTimestamp()
+                });
+
+                // Mensagem no chat
+                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
+                transaction.set(msgRef, {
+                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} retidos em garantia.` : 'Garantia isenta.'} Contato liberado!`,
+                    sender_id: "system",
+                    timestamp: serverTimestamp()
+                });
+            }
         });
-        
-        await setDoc(doc(db, "chats", orderId), { 
-            status: 'active', 
-            updated_at: serverTimestamp(), 
-            participants: [currentUser.uid, pedidoData.client_id] 
-        }, { merge: true });
 
-        // 3. Limpeza e Redirecionamento
-        removeRequestCard(orderId);
-        
-        if(window.switchTab) {
-            window.switchTab('chat'); 
-            setTimeout(() => {
-                 if(window.abrirChatPedido) window.abrirChatPedido(orderId);
-            }, 500);
+        if(vaiFecharAgora) {
+            alert("✅ Acordo Fechado! O serviço pode começar.");
+        } else {
+            alert("✅ Confirmado! Aguardando a outra parte aceitar.");
         }
 
-    } catch (e) { 
-        console.error("Erro no aceite:", e);
-        alert("Erro técnico ao aceitar o pedido. Tente novamente."); 
+    } catch(e) { 
+        console.error("Erro no acordo:", e);
+        // Exibe erro limpo para o usuário (ex: Saldo insuficiente)
+        alert("⛔ NÃO FOI POSSÍVEL FECHAR O ACORDO\n\n" + e);
     }
 }
 export async function recusarPedidoReq(orderId) {
