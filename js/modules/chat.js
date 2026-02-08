@@ -269,7 +269,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                 const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
 
                 // 1. REGRA: LIMITE QUE PODE DEVER (Ex: -60)
-                if (limiteDivida !== 0 && saldoCliente < limitedivida) {
+                if (limitedivida !== 0 && saldoCliente < limitedivida) {
                     throw `Seu saldo (R$ ${saldoCliente.toFixed(2)}) atingiu o limite de divida permitido (R$ ${limitedivida.toFixed(2)}). Recarregue para prosseguir.`;
                 }
 
