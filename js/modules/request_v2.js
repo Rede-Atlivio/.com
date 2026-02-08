@@ -210,20 +210,52 @@ function atualizarVisualModal() {
 // ============================================================================
 export async function enviarPropostaAgora() {
     const user = auth.currentUser;
-    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500 };
+    // Fallback de configuração local se o window falhar
+    const config = window.configFinanceiroAtiva || { valor_minimo: 20, valor_maximo: 500, limite_debito: 0 };
     
+    // 1. VALIDAÇÃO DE INPUT (Regras de Interface)
     if (mem_CurrentOffer < config.valor_minimo || mem_CurrentOffer > config.valor_maximo) {
         return alert(`⛔ Valor fora do permitido (R$ ${config.valor_minimo} - R$ ${config.valor_maximo})`);
     }
 
-    // 1. EFEITO VISUAL: Botão Carregando...
     const btn = document.getElementById('btn-confirm-req');
     if(btn) {
         btn.disabled = true;
-        btn.innerHTML = `<span class="animate-pulse">Enviando... ⏳</span>`;
+        btn.innerHTML = `<span class="animate-pulse">Verificando Carteira... ⏳</span>`;
     }
 
     try {
+        // =================================================================
+        // 🛡️ LÓGICA FINANCEIRA V2 (REGRA DO ZERO + ISOLAMENTO)
+        // =================================================================
+        
+        // A. Busca dados frescos do usuário (Evita fraude de cache)
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        if (!userDoc.exists()) throw new Error("Perfil de usuário não encontrado.");
+        
+        const userData = userDoc.data();
+        const saldoAtual = parseFloat(userData.saldo_atual || userData.wallet_balance || 0);
+
+        // B. Validação de Limite de Débito (Zero = Liberado)
+        const limiteDebito = parseFloat(config.limite_debito || 0);
+        
+        // Só bloqueia se existir um limite configurado (diferente de 0) E o usuário estourou
+        if (limiteDebito !== 0 && saldoAtual < limiteDebito) {
+            throw new Error(`⛔ SALDO BLOQUEADO\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) ultrapassou o limite operacional (R$ ${limiteDebito.toFixed(2)}).\nPor favor, recarregue sua carteira para continuar solicitando serviços.`);
+        }
+
+        // C. Validação de Reserva (Zero = Liberado)
+        const reservaPerc = parseFloat(config.porcentagem_reserva_cliente || config.porcentagem_reserva || 0);
+        if (reservaPerc > 0) {
+            const valorReserva = mem_CurrentOffer * (reservaPerc / 100);
+            if (saldoAtual < valorReserva) {
+                throw new Error(`⛔ GARANTIA NECESSÁRIA\n\nPara segurança do serviço, é necessário ter pelo menos R$ ${valorReserva.toFixed(2)} em conta (${reservaPerc}% do valor).\nSeu saldo atual: R$ ${saldoAtual.toFixed(2)}`);
+            }
+        }
+        // =================================================================
+
+        if(btn) btn.innerHTML = `<span class="animate-pulse">Enviando... ⏳</span>`;
+
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
 
@@ -250,11 +282,8 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
-        // 4. 🔥 AQUI ESTÁ O SEGREDO: NÃO FECHA O MODAL, MUDA O CONTEÚDO DELE!
-        // Transformamos o modal de solicitação em uma "Tela de Sucesso"
+        // 4. 🔥 TELA DE SUCESSO
         const modalContent = document.getElementById('request-modal').firstElementChild; 
-        // Se sua estrutura for diferente, pegue a div branca de dentro do modal.
-        // Geralmente é a primeira div filha direta do overlay.
         
         if(modalContent) {
             modalContent.innerHTML = `
@@ -283,7 +312,7 @@ export async function enviarPropostaAgora() {
 
     } catch (e) { 
         console.error("Erro ao enviar:", e);
-        alert("Erro: " + e.message);
+        alert(e.message); // Mostra a mensagem tratada do erro financeiro
         if(btn) {
             btn.disabled = false;
             btn.innerText = "TENTAR NOVAMENTE";
