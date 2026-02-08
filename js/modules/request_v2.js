@@ -401,12 +401,12 @@ export function createRequestCard(pedido) {
     // Se o card já existe, não cria de novo (evita duplicidade)
     if (document.getElementById(`req-${pedido.id}`)) return;
 
-    // 🔊 1. TOCA O SOM (EFEITO UBER)
-    try {
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-        audio.volume = 1.0;
-        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
-    } catch(e) { console.warn("Erro ao tocar som"); }
+    // 🔊 1. TOCA O SOM (VOLTANDO PARA O ORIGINAL DO DOM - Lógica Antiga)
+    const audio = document.getElementById('notification-sound');
+    if (audio) { 
+        audio.currentTime = 0; 
+        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro).")); 
+    }
 
     // 💰 2. CÁLCULOS FINANCEIROS
     const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
