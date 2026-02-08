@@ -188,16 +188,61 @@ window.ativarInputPersonalizado = () => {
 
 window.validarOferta = (val) => {
     let offer = parseFloat(String(val).replace(',', '.'));
-    const config = window.configFinanceiroAtiva || { valor_minimo: 20 };
+    
+    // 1. BUSCA CONFIGURAÇÃO DINÂMICA (Nada fixo no código)
+    // Se não tiver carregado ainda, bloqueia para segurança (melhor que chutar valor errado)
+    const config = window.configFinanceiroAtiva;
+    
+    if (!config) {
+        console.error("⛔ ERRO CRÍTICO: Configurações financeiras não carregadas do Firebase!");
+        // Opcional: Forçar recarregamento ou alertar erro
+        return; 
+    }
+
+    // --- VARIÁVEIS DO PAINEL ADMIN ---
+    // Ex: config.valor_minimo = 20 (Reais)
+    // Ex: config.margem_negociacao = 50 (Porcentagem aceitável do valor original, ex: 50%)
+    
+    const pisoAbsoluto = parseFloat(config.valor_minimo_global); 
+    const percentualAceitavel = parseFloat(config.margem_negociacao) / 100; // Transforma 50 em 0.5
+    
+    // 2. CÁLCULO DO PISO REAL
+    // O valor mínimo é calculado dinamicamente baseado na regra do Painel
+    const pisoPeloServico = mem_BasePrice * percentualAceitavel; 
+    
+    // O sistema escolhe o MAIOR valor entre o (Mínimo Global) e a (Porcentagem do Serviço)
+    const pisoFinal = Math.max(pisoAbsoluto, pisoPeloServico);
+
+    // --- INTERFACE ---
     const input = document.getElementById('req-value');
     const btn = document.getElementById('btn-confirm-req');
+    const msgErro = document.getElementById('msg-erro-oferta'); 
 
-    if (isNaN(offer) || offer < config.valor_minimo) {
-        if(input) input.style.borderColor = "red";
-        if(btn) btn.disabled = true;
+    if (isNaN(offer) || offer < pisoFinal) {
+        // BLOQUEIO
+        if(input) {
+            input.style.borderColor = "#ef4444"; // Vermelho
+            input.style.color = "#ef4444";
+            input.classList.add('animate-pulse');
+        }
+        if(btn) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            // Mostra ao usuário o valor calculado dinamicamente
+            btn.innerHTML = `Mínimo Permitido: R$ ${pisoFinal.toFixed(2).replace('.', ',')}`;
+        }
     } else {
-        if(input) input.style.borderColor = "#e5e7eb";
-        if(btn) btn.disabled = false;
+        // LIBERAÇÃO
+        if(input) {
+            input.style.borderColor = "#22c55e"; // Verde
+            input.style.color = "#1f2937"; // Cinza
+            input.classList.remove('animate-pulse');
+        }
+        if(btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = `ENVIAR PROPOSTA <span class="ml-2">🚀</span>`;
+        }
         mem_CurrentOffer = offer;
     }
 };
