@@ -590,8 +590,34 @@ window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 // Corrigido: Aponta para a função única e correta
-window.pararRadarFisico = window.pararRadarFisico; 
+window.pararRadarFisico = () => {
+    console.log("🛑 [SISTEMA] Desligando processos do Radar...");
+    
+    // 1. Interrompe a escuta do Firebase
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+    }
+    
+    // 2. Reseta o estado global
+    window.radarIniciado = false;
+    
+    // 3. Limpa visualmente o Radar para o estado Offline
+    const container = document.getElementById('radar-container');
+    const emptyState = document.getElementById('radar-empty-state');
+    
+    if (container) {
+        container.innerHTML = ""; // Remove todos os cards
+        container.classList.add('hidden');
+    }
+    
+    if (emptyState) {
+        emptyState.classList.add('hidden'); // Esconde a antena ao desligar
+    }
 
+    // 4. Opcional: Aqui você pode decidir se quer mostrar um aviso de "Radar Desligado" 
+    // ou apenas deixar a tela limpa esperando o Online.
+};
 // Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
