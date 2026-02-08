@@ -372,7 +372,6 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const valorLiquido = valorTotal - (valorTotal * taxaPercent);
 
             if (clientSnap.exists()) {
-               if (clientSnap.exists()) {
                 const resAtual = clientSnap.data().wallet_reserved || 0;
                 const novoRes = Math.max(0, resAtual - valorReservado);
                 transaction.update(clientRef, { wallet_reserved: novoRes });
