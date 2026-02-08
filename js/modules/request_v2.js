@@ -444,6 +444,9 @@ window.alternarMinimizacao = (id) => {
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM PULSANTE)
 // ============================================================================
+// ============================================================================
+// 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
+// ============================================================================
 export function createRequestCard(pedido) {
     // 🔥 ENGENHARIA REVERSA: Força o uso do ID exato do HTML
     const container = document.getElementById('radar-container');
@@ -472,22 +475,23 @@ export function createRequestCard(pedido) {
     if(pedido.data && pedido.data !== "A combinar") dataDisplay = pedido.data;
     if(pedido.hora && pedido.hora !== "A combinar") horaDisplay = pedido.hora;
 
-    // 🎨 4. CONSTRUÇÃO DO HTML (VISUAL RICO E PULSANTE)
+    // 🎨 4. CONSTRUÇÃO DO HTML (VISUAL GLOW + PULSO)
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    // Adicionado 'animate-slideInDown' para entrada suave
-    card.className = "request-card relative mb-4 bg-slate-900 rounded-3xl shadow-2xl border border-white/10 overflow-hidden animate-slideInDown";
+    
+    // 🔥 EFEITO NEON/BRILHO TRASEIRO AQUI: 'shadow-[0_0_50px_rgba(37,99,235,0.6)]'
+    card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
     card.style.maxWidth = "100%";
 
     card.innerHTML = `
         <div class="p-6 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/20 animate-pulse z-0"></div>
+            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
             
-            <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg">
+            <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
                 🚀 Nova Oportunidade
             </span>
             
-            <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-lg">
+            <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
                 R$ ${valorTotal.toFixed(0)}
             </h2>
             
@@ -499,7 +503,7 @@ export function createRequestCard(pedido) {
 
         <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
             <div class="flex items-start gap-3 mb-3">
-                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg">
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">
                     👤
                 </div>
                 <div>
@@ -531,13 +535,13 @@ export function createRequestCard(pedido) {
             </button>
             
             <button onclick="window.aceitarPedidoRadar('${pedido.id}')" 
-                class="bg-green-500 hover:bg-green-400 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition flex items-center justify-center gap-2">
+                class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
                 <span>⚡</span> ACEITAR AGORA
             </button>
         </div>
 
         <div class="h-1.5 bg-slate-800 w-full relative z-10">
-            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
+            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear shadow-[0_0_10px_rgba(74,222,128,0.5)]"></div>
         </div>
     `;
 
