@@ -562,7 +562,7 @@ export async function recusarPedidoReq(orderId) {
 // EXPOSIÇÃO GLOBAL E LIMPEZA
 // ============================================================================
 
-// Bindings Globais
+// Bindings Globais (Sistema de Exposição V22)
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
@@ -570,8 +570,8 @@ window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
-// Corrigido: Aponta para a função única e correta
-window.pararRadarFisico = window.pararRadarFisico; 
+window.createRequestCard = createRequestCard;
+window.irParaChatComSucesso = irParaChatComSucesso;
 
 // Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
