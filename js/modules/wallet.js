@@ -116,13 +116,15 @@ export function iniciarMonitoramentoCarteira() {
     });
 }
 
-function atualizarInterfaceCarteira(saldo) {
-    const el = document.getElementById('user-balance');
-    if (el) {
-        el.innerText = saldo.toFixed(2).replace('.', ',');
-        el.classList.remove('text-green-400', 'text-red-400');
-        el.classList.add(saldo < 0 ? 'text-red-400' : 'text-green-400');
-    }
+// Atualize a função atualizarInterfaceCarteira para mostrar os 3 cofres sincronizados com o banco
+function atualizarInterfaceCarteira(data) {
+    const elBalance = document.getElementById('user-balance'); // Disponível
+    const elReserved = document.getElementById('user-reserved'); // Custódia
+    const elEarnings = document.getElementById('user-earnings'); // Ganhos
+
+    if (elBalance) elBalance.innerText = (data.wallet_balance || 0).toFixed(2).replace('.', ',');
+    if (elReserved) elReserved.innerText = (data.wallet_reserved || 0).toFixed(2).replace('.', ',');
+    if (elEarnings) elEarnings.innerText = (data.wallet_earnings || 0).toFixed(2).replace('.', ',');
 }
 
 function atualizarInterfaceHeader(saldo) {
