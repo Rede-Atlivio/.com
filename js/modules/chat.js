@@ -383,8 +383,15 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             }
             
             if (providerSnap.exists()) {
-                const newBal = (providerSnap.data().wallet_balance || 0) + valorLiquido;
-                transaction.update(providerRef, { wallet_balance: newBal, saldo: newBal });
+                const currentBal = providerSnap.data().wallet_balance || 0;
+                const currentEarn = providerSnap.data().wallet_earnings || 0;
+                const newBal = currentBal + valorLiquido;
+                const newEarn = currentEarn + valorLiquido;
+                
+                transaction.update(providerRef, { 
+                    wallet_balance: newBal, 
+                    wallet_earnings: newEarn 
+                });
             }
             transaction.update(orderRef, { status: 'completed', completed_at: serverTimestamp() });
         });
