@@ -386,11 +386,10 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 const currentBal = providerSnap.data().wallet_balance || 0;
                 const currentEarn = providerSnap.data().wallet_earnings || 0;
                 const newBal = currentBal + valorLiquido;
-                const newEarn = currentEarn + valorLiquido;
                 
                 transaction.update(providerRef, { 
                     wallet_balance: newBal, 
-                    wallet_earnings: newEarn 
+                    wallet_earnings: currentEarn + valorLiquido 
                 });
             }
             transaction.update(orderRef, { status: 'completed', completed_at: serverTimestamp() });
