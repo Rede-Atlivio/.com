@@ -482,7 +482,15 @@
         <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
         <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo em Carteira</p>
         <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-        <p class="text-[9px] text-green-300 mt-2 opacity-80">Limite de débito: R$ 60,00</p>
+        <div class="grid grid-cols-2 gap-3 mt-2">
+        <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+            <p class="text-[8px] font-black text-gray-400 uppercase">🔒 Em Custódia</p>
+            <p class="text-lg font-black text-blue-600">R$ <span id="user-reserved">0,00</span></p>
+        </div>
+        <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+            <p class="text-[8px] font-black text-gray-400 uppercase">📈 Meus Ganhos</p>
+            <p class="text-lg font-black text-emerald-600">R$ <span id="user-earnings">0,00</span></p>
+        </div>
     </div>
 
     <div class="mt-4 mb-4">
