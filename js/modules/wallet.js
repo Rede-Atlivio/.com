@@ -118,14 +118,20 @@ export function iniciarMonitoramentoCarteira() {
 }
 
 // Atualize a função atualizarInterfaceCarteira para mostrar os 3 cofres sincronizados com o banco
-function atualizarInterfaceCarteira(data) {
-    const elBalance = document.getElementById('user-balance'); // Disponível
-    const elReserved = document.getElementById('user-reserved'); // Custódia
-    const elEarnings = document.getElementById('user-earnings'); // Ganhos
+function atualizarInterfaceCarteira(saldo) {
+    const elBalance = document.getElementById('user-balance'); 
+    const elReserved = document.getElementById('user-reserved'); 
+    const elEarnings = document.getElementById('user-earnings'); 
+    
+    const reserved = window.userProfile?.wallet_reserved || 0;
+    const earnings = window.userProfile?.wallet_earnings || 0;
 
-    if (elBalance) elBalance.innerText = (data.wallet_balance || 0).toFixed(2).replace('.', ',');
-    if (elReserved) elReserved.innerText = (data.wallet_reserved || 0).toFixed(2).replace('.', ',');
-    if (elEarnings) elEarnings.innerText = (data.wallet_earnings || 0).toFixed(2).replace('.', ',');
+    if (elBalance) {
+        elBalance.innerText = saldo.toFixed(2).replace('.', ',');
+        elBalance.className = saldo < 0 ? "text-red-400" : "text-green-400";
+    }
+    if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
+    if (elEarnings) elEarnings.innerText = earnings.toFixed(2).replace('.', ',');
 }
 
 function atualizarInterfaceHeader(saldo) {
