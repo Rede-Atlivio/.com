@@ -156,67 +156,39 @@ window.saveAppSettings = async () => {
 };
 
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
+// Localize a função saveBusinessRules e substitua por esta versão BLINDADA:
 window.saveBusinessRules = async () => {
-    console.log("🛠️ Iniciando salvamento blindado...");
-    
-    // Captura os valores e já limpa possíveis vírgulas que quebram o Firebase
-    const rawTaxa = document.getElementById('conf-taxa-plataforma')?.value || "0.20";
+    const rawTaxa = document.getElementById('conf-taxa-plataforma')?.value || "0";
     const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
     const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
     const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
-    const rawMin = document.getElementById('conf-val-min')?.value || "20";
-    const rawMax = document.getElementById('conf-val-max')?.value || "500";
 
-    // Converte para Número puro, aceitando ponto ou vírgula no input
-    const novaTaxa = parseFloat(String(rawTaxa).replace(',', '.'));
-    const novoLimite = parseFloat(String(rawLimite).replace(',', '.'));
-    const pctPrestador = parseInt(rawPctPres);
-    const pctCliente = parseInt(rawPctCli);
+    // 🛡️ BLINDAGEM DECIMAL: Transforma 15 em 0.15 automaticamente
+    let taxaNum = parseFloat(String(rawTaxa).replace(',', '.'));
+    if (taxaNum > 1) taxaNum = taxaNum / 100;
 
-    // Validação rígida antes de enviar para evitar Bad Request
-    if (isNaN(novaTaxa) || isNaN(novoLimite) || isNaN(pctPrestador) || isNaN(pctCliente)) {
-        return alert("❌ ERRO: Verifique se digitou apenas números. Não use letras ou símbolos nos campos financeiros.");
-    }
-
-    const btn = document.querySelector('button[onclick*="saveBusinessRules"]');
-    if(btn) { btn.innerText = "⏳ GRAVANDO NO BANCO..."; btn.disabled = true; }
+    const payloadMaster = { 
+        taxa_plataforma: Number(taxaNum),
+        limite_divida: Number(rawLimite),
+        porcentagem_reserva: Number(rawPctPres),
+        porcentagem_reserva_cliente: Number(rawPctCli),
+        updated_at: new Date(),
+        modificado_por: "admin"
+    };
 
     try {
-        const db = window.db;
-        const agora = new Date();
-
-        // 🛡️ OBJETO SANITIZADO: Garante que o Firebase receba 'Number' e não 'String'
-        const payloadMaster = { 
-    taxa_plataforma: Number(novaTaxa),
-    limite_divida: Number(novoLimite),
-    porcentagem_reserva: Number(pctPrestador),
-    porcentagem_reserva_cliente: Number(pctCliente),
-    valor_minimo: Number(rawMin),
-    valor_maximo: Number(rawMax),
-    updated_at: agora,
-    modificado_por: "admin"
-};
-
-        console.log("📤 Payload para settings/financeiro:", payloadMaster);
-
-        // 1. Gravação na Coleção Master
-        await setDoc(doc(db, "settings", "financeiro"), payloadMaster, { merge: true });
+        // GRAVAÇÃO UNIFICADA (Apenas na Coleção Master)
+        await setDoc(doc(window.db, "settings", "financeiro"), payloadMaster, { merge: true });
         
-        // 2. Sincronia na Coleção Legada (Segurança para o Radar)
-        await setDoc(doc(db, "configuracoes", "financeiro"), {
-            porcentagem_reserva: Number(pctPrestador),
-            taxa_prestador: Number(novaTaxa * 100),
-            updated_at: agora
+        // Sincroniza o legado apenas para não quebrar versões muito antigas
+        await setDoc(doc(window.db, "configuracoes", "financeiro"), {
+            porcentagem_reserva: Number(rawPctPres),
+            taxa_prestador: Number(taxaNum * 100), // Mantém 15 para o radar antigo se necessário
+            updated_at: new Date()
         }, { merge: true });
-        
-        alert(`✅ SUCESSO!\n\nAs novas taxas foram aplicadas em todo o sistema.\nOs perfis (Cliente/Prestador) já estão operando com estes valores.`);
-        
-    } catch(e) { 
-        console.error("❌ ERRO CRÍTICO NO FIREBASE:", e);
-        alert("Falha de Comunicação (Erro 400). Recarregue a página e tente novamente."); 
-    } finally {
-        if(btn) { btn.innerText = "💾 SALVAR NOVAS REGRAS"; btn.disabled = false; }
-    }
+
+        alert("✅ REGRAS UNIFICADAS! Taxa salva como: " + (taxaNum * 100) + "%");
+    } catch(e) { alert("Erro: " + e.message); }
 };
 
 // 🚀 AUDITORIA DE DADOS
