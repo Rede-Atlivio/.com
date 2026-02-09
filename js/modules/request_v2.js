@@ -500,7 +500,8 @@ export async function aceitarPedidoRadar(orderId) {
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
         // Lendo 'balance' conforme imagem do Firestore
-        const saldoAtual = parseFloat(userData.wallet_balance ?? userData.saldo ?? 0);
+        // 🎯 SINCRONIA V13: Lê EXCLUSIVAMENTE o campo oficial e ignora campos deletados
+        const saldoAtual = parseFloat(userData.wallet_balance || 0);
         
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_divida: 0 };
