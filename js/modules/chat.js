@@ -641,8 +641,8 @@ window.cancelarServico = async (orderId) => {
             transaction.update(userRef, {
                 risk_score: newRisk,
                 cancelation_count: currentCancels + 1,
-                wallet_balance: updateWallet.wallet_balance ?? user.wallet_balance,
-                wallet_reserved: updateWallet.wallet_reserved ?? user.wallet_reserved
+                wallet_balance: updateWallet.wallet_balance || user.wallet_balance,
+                wallet_reserved: updateWallet.wallet_reserved || 0
             });
 
             // 4. MENSAGEM NO SISTEMA
