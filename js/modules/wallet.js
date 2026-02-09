@@ -103,10 +103,11 @@ export function iniciarMonitoramentoCarteira() {
             // MEMÓRIA COMPARTILHADA (Para o request.js ler sem ir no banco)
             window.userProfile = window.userProfile || {};
             window.userProfile.uid = uid;
-            window.userProfile.wallet_balance = saldoUnificado; // Padrão novo
-            window.userProfile.balance = saldoUnificado; // Retrocompatibilidade
+            window.userProfile.wallet_balance = saldoUnificado;
+            window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
+            window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
 
-            // ✅ Atualização de Interfaces
+            // ✅ Atualização de Interfaces com Objeto de Dados Completo
             verificarFaixaBonus(saldoUnificado);
             atualizarInterfaceCarteira(saldoUnificado);
             atualizarInterfaceHeader(saldoUnificado);
