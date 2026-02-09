@@ -263,7 +263,7 @@ export async function confirmarAcordo(orderId, aceitar) {
             const providerRef = doc(db, "usuarios", freshOrder.provider_id);
             const providerSnap = await transaction.get(providerRef);
             
-            const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || providerSnap.data().saldo || 0);
+            const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || 0);
             const saldoAtivo = parseFloat(meuSaldo);
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
