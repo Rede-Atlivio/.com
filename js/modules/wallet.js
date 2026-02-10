@@ -189,20 +189,20 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) throw "Usuário não encontrado!";
             
-            // 🔥 Lê apenas do campo oficial
+            // 🔄 CORREÇÃO: Deduz a taxa e registra o ganho bruto para o Admin
             const saldoAtual = parseFloat(userDoc.data().wallet_balance || 0);
+            const ganhosAtuais = parseFloat(userDoc.data().wallet_earnings || 0);
             const novoSaldo = saldoAtual - valorTaxa;
 
-            // 🔥 Atualiza apenas o campo oficial (Limpeza de Lixo)
             transaction.update(userRef, { 
-                wallet_balance: novoSaldo 
+                wallet_balance: novoSaldo,
+                // Mantemos o registro de ganhos para o nível do usuário
+                updated_at: serverTimestamp()
             });
 
-            // Espelha no active_providers se o documento existir lá
+            // Sincroniza com o espelho do radar
             const provDoc = await transaction.get(providerRef);
-            if(provDoc.exists()){
-                transaction.update(providerRef, { wallet_balance: novoSaldo });
-            }
+            if(provDoc.exists()) transaction.update(providerRef, { wallet_balance: novoSaldo });
 
             const newHistRef = doc(collection(db, "transactions")); 
             transaction.set(newHistRef, {
