@@ -291,39 +291,34 @@ export async function confirmarAcordo(orderId, aceitar) {
 
             transaction.update(orderRef, campoUpdate);
 
-            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA
+            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA (VERSÃO CORRIGIDA V17.3)
             if (vaiFecharAgora) {
-                const pctFinal = parseFloat(configData.porcentagem_reserva_cliente || 0);
-                const valorPedido = parseFloat(freshOrder.offer_value || 0);
-                const valorCofre = valorPedido * (pctFinal / 100);
+                const taxaReserva = isMeProvider ? parseFloat(configData.porcentagem_reserva || 0) : parseFloat(configData.porcentagem_reserva_cliente || 0);
+                const totalPedido = parseFloat(freshOrder.offer_value || 0);
+                const valorFinalCofre = totalPedido * (taxaReserva / 100);
 
-                // 🔄 CORREÇÃO: Puxa a porcentagem correta do Admin para o cálculo real
-                const pctFinal = isMeProvider ? parseFloat(configData.porcentagem_reserva || 0) : parseFloat(configData.porcentagem_reserva_cliente || 0);
-                const valorPedido = parseFloat(freshOrder.offer_value || 0);
-                const valorCofre = valorPedido * (pctFinal / 100);
-
-                if (valorCofre > 0) {
-                    const userRef = doc(db, "usuarios", uid); // Referência de quem está clicando
+                if (valorFinalCofre > 0) {
+                    const userRef = doc(db, "usuarios", uid);
                     const userSnap = await transaction.get(userRef);
-                    const saldoAtual = parseFloat(userSnap.data().wallet_balance || 0);
-                    const reservadoAtual = parseFloat(userSnap.data().wallet_reserved || 0);
+                    const bal = parseFloat(userSnap.data().wallet_balance || 0);
+                    const res = parseFloat(userSnap.data().wallet_reserved || 0);
                     
                     transaction.update(userRef, {
-                        wallet_balance: saldoAtual - valorCofre,
-                        wallet_reserved: reservadoAtual + valorCofre
+                        wallet_balance: bal - valorFinalCofre,
+                        wallet_reserved: res + valorFinalCofre
                     });
                 }
 
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     status: 'confirmed_hold',
-                    value_reserved: valorCofre, // Grava no pedido para o Admin ver
+                    value_reserved: valorFinalCofre,
                     confirmed_at: serverTimestamp()
                 });
 
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 ACORDO FECHADO: ${valorCofre > 0 ? `R$ ${valorCofre.toFixed(2)} retidos em garantia.` : 'Garantia isenta.'} Contato liberado!`,
+                    text: `🔒 ACORDO FECHADO: ${valorFinalCofre > 0 ? `R$ ${valorFinalCofre.toFixed(2)} retidos em garantia.` : 'Garantia isenta.'}`,
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
