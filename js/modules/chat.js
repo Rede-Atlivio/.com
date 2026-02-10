@@ -363,7 +363,9 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const reservaCliente = parseFloat(pedido.value_reserved_client || 0);
             const reservaProvider = parseFloat(pedido.value_reserved_provider || 0);
             
-            const taxaPlataforma = valorTotal * (parseFloat(config.taxa_plataforma || 0) / 100);
+            let pTaxa = parseFloat(config.taxa_plataforma || 0);
+            if (pTaxa > 1) pTaxa = pTaxa / 100; // Se for 20, vira 0.2 - NÃO MUDAR ISSO PONTO CRÍTICO
+            const taxaPlataforma = valorTotal * pTaxa;
             const lucroLiquidoPrestador = valorTotal - taxaPlataforma;
 
             // 1. LIQUIDAÇÃO DO CLIENTE (Reserva sai da custódia e some)
