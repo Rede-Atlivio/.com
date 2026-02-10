@@ -124,7 +124,8 @@ function atualizarInterfaceCarteira(saldo) {
     const elEarnings = document.getElementById('user-earnings'); 
     
     const reserved = window.userProfile?.wallet_reserved || 0;
-    const earnings = window.userProfile?.wallet_earnings || 0;
+    // 🔄 CORREÇÃO: Garante que o valor de ganhos venha do banco e não da memória volátil
+    const earnings = parseFloat(window.userProfile?.wallet_earnings || 0);
 
     if (elBalance) {
         elBalance.innerText = saldo.toFixed(2).replace('.', ',');
