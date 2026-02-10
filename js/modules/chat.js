@@ -246,7 +246,6 @@ export async function confirmarAcordo(orderId, aceitar) {
         let vaiFecharAgora = false;
         
         await runTransaction(db, async (transaction) => {
-            // 1️⃣ TODAS AS LEITURAS (READS FIRST)
             const freshOrderSnap = await transaction.get(orderRef);
             if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
@@ -263,7 +262,6 @@ export async function confirmarAcordo(orderId, aceitar) {
 
             const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0 };
             
-            // 2️⃣ VALIDAÇÕES
             const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || 0);
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
@@ -275,7 +273,6 @@ export async function confirmarAcordo(orderId, aceitar) {
             const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
             vaiFecharAgora = oOutroJaConfirmou;
 
-            // 3️⃣ TODAS AS ESCRITAS (WRITES AFTER)
             transaction.update(orderRef, isMeProvider ? { provider_confirmed: true } : { client_confirmed: true });
 
             if (vaiFecharAgora) {
@@ -283,24 +280,20 @@ export async function confirmarAcordo(orderId, aceitar) {
                 const valorReservaPrestador = totalPedido * (parseFloat(configData.porcentagem_reserva || 0) / 100);
                 const valorReservaCliente = totalPedido * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
 
-                // Débito Cliente + Ledger
                 if (valorReservaCliente > 0) {
                     const cBal = parseFloat(clientSnap.data().wallet_balance || 0);
                     const cRes = parseFloat(clientSnap.data().wallet_reserved || 0);
                     transaction.update(clientRef, { wallet_balance: cBal - valorReservaCliente, wallet_reserved: cRes + valorReservaCliente });
                     
-                    const lRefC = doc(collection(db, "extrato_financeiro"));
-                    transaction.set(lRefC, { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Bloqueio de garantia para início do serviço`, timestamp: serverTimestamp() });
+                    transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Bloqueio de garantia para início do serviço`, timestamp: serverTimestamp() });
                 }
 
-                // Débito Prestador + Ledger
                 if (valorReservaPrestador > 0) {
                     const pBal = parseFloat(providerSnap.data().wallet_balance || 0);
                     const pRes = parseFloat(providerSnap.data().wallet_reserved || 0);
                     transaction.update(providerRef, { wallet_balance: pBal - valorReservaPrestador, wallet_reserved: pRes + valorReservaPrestador });
                     
-                    const lRefP = doc(collection(db, "extrato_financeiro"));
-                    transaction.set(lRefP, { uid: freshOrder.provider_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaPrestador, descricao: `Reserva garantia pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp() });
+                    transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.provider_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaPrestador, descricao: `Taxa de reserva para garantia de agenda`, timestamp: serverTimestamp() });
                 }
 
                 transaction.update(orderRef, { 
@@ -310,15 +303,14 @@ export async function confirmarAcordo(orderId, aceitar) {
                     confirmed_at: serverTimestamp() 
                 });
 
-                const msgRef = doc(collection(db, `chats/${orderId}/messages`));
-                transaction.set(msgRef, { text: `🔒 ACORDO FECHADO: Garantia retida.`, sender_id: "system", timestamp: serverTimestamp() });
+                transaction.set(doc(collection(db, `chats/${orderId}/messages`)), { text: `🔒 ACORDO FECHADO: Garantia retida conforme regras da plataforma.`, sender_id: "system", timestamp: serverTimestamp() });
             }
         });
 
-        alert(vaiFecharAgora ? "✅ Acordo Fechado!" : "✅ Confirmado! Aguardando o outro.");
+        alert(vaiFecharAgora ? "✅ Acordo Fechado! O serviço pode começar." : "✅ Confirmado! Aguardando a outra parte aceitar.");
     } catch(e) { 
         console.error("Erro no acordo:", e); 
-        alert("⛔ ERRO:\n" + e); 
+        alert("⛔ BLOQUEIO FINANCEIRO\n\n" + e); 
     }
 }
        
