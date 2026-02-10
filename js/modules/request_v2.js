@@ -13,9 +13,10 @@ import {
     query, 
     where, 
     onSnapshot, 
-    getDoc, 
-    updateDoc, 
-    deleteDoc 
+    getDoc,  
+    updateDoc,  
+    deleteDoc,
+    runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ⚡ GARANTIA DE ESCOPO GLOBAL: Evita erros de 'undefined' em execuções rápidas
