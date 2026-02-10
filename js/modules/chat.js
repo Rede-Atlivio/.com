@@ -246,96 +246,81 @@ export async function confirmarAcordo(orderId, aceitar) {
         let vaiFecharAgora = false;
         
         await runTransaction(db, async (transaction) => {
-            // === LEITURAS (READS) ===
+            // 1️⃣ TODAS AS LEITURAS (READS FIRST)
             const freshOrderSnap = await transaction.get(orderRef);
             if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
 
             const clientRef = doc(db, "usuarios", freshOrder.client_id);
-            const clientSnap = await transaction.get(clientRef);
-            if (!clientSnap.exists()) throw "Perfil do cliente não encontrado.";
-            
-            const configRef = doc(db, "settings", "financeiro");
-            const configSnap = await transaction.get(configRef);
-            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0, taxa_plataforma: 0.20 };
-
-            // === LÓGICA DE VALIDAÇÃO FINANCEIRA (ANTI-DÍVIDA) ===
             const providerRef = doc(db, "usuarios", freshOrder.provider_id);
-            const providerSnap = await transaction.get(providerRef);
+            const configRef = doc(db, "settings", "financeiro");
+
+            const [clientSnap, providerSnap, configSnap] = await Promise.all([
+                transaction.get(clientRef),
+                transaction.get(providerRef),
+                transaction.get(configRef)
+            ]);
+
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0 };
             
+            // 2️⃣ VALIDAÇÕES
             const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || 0);
-            const saldoAtivo = parseFloat(meuSaldo);
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-            if (limiteFin !== 0 && saldoAtivo < limiteFin) {
-                throw `Bloqueio Financeiro: Seu saldo (R$ ${saldoAtivo.toFixed(2)}) ultrapassa o limite de dívida (R$ ${limiteFin.toFixed(2)}).`;
+            if (limiteFin !== 0 && meuSaldo < limiteFin) {
+                throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
             }
 
-            if (uid === freshOrder.client_id) {
-                const valorAcordo = parseFloat(freshOrder.offer_value || 0);
-                const pctReservaCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
-                
-                if (pctReservaCliente > 0) {
-                    const valorReserva = valorAcordo * (pctReservaCliente / 100);
-                    if (saldoAtivo < valorReserva) {
-                        throw `Saldo insuficiente para garantia: R$ ${valorReserva.toFixed(2)} (${pctReservaCliente}% do valor) são necessários.`;
-                    }
-                }
-            }
-
-            // === LÓGICA DE FECHAMENTO (MÚTUO) ===
             const isMeProvider = uid === freshOrder.provider_id;
-            const campoUpdate = isMeProvider ? { provider_confirmed: true } : { client_confirmed: true };
             const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
             vaiFecharAgora = oOutroJaConfirmou;
 
-            transaction.update(orderRef, campoUpdate);
+            // 3️⃣ TODAS AS ESCRITAS (WRITES AFTER)
+            transaction.update(orderRef, isMeProvider ? { provider_confirmed: true } : { client_confirmed: true });
 
-           // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA DUPLA (V18.0)
             if (vaiFecharAgora) {
                 const totalPedido = parseFloat(freshOrder.offer_value || 0);
-                const pctPrestador = parseFloat(configData.porcentagem_reserva || 0);
-                const pctCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
+                const valorReservaPrestador = totalPedido * (parseFloat(configData.porcentagem_reserva || 0) / 100);
+                const valorReservaCliente = totalPedido * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
 
-                const valorReservaPrestador = totalPedido * (pctPrestador / 100);
-                const valorReservaCliente = totalPedido * (pctCliente / 100);
-
-                // Debita do Cliente (Se configurado)
+                // Débito Cliente + Ledger
                 if (valorReservaCliente > 0) {
-                    const cRef = doc(db, "usuarios", freshOrder.client_id);
-                    const cSnap = await transaction.get(cRef);
-                    transaction.update(cRef, {
-                        wallet_balance: parseFloat(cSnap.data().wallet_balance || 0) - valorReservaCliente,
-                        wallet_reserved: parseFloat(cSnap.data().wallet_reserved || 0) + valorReservaCliente
-                    });
+                    const cBal = parseFloat(clientSnap.data().wallet_balance || 0);
+                    const cRes = parseFloat(clientSnap.data().wallet_reserved || 0);
+                    transaction.update(clientRef, { wallet_balance: cBal - valorReservaCliente, wallet_reserved: cRes + valorReservaCliente });
+                    
+                    const lRefC = doc(collection(db, "extrato_financeiro"));
+                    transaction.set(lRefC, { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Reserva garantia pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp() });
                 }
 
-                // Debita do Prestador (Se configurado)
+                // Débito Prestador + Ledger
                 if (valorReservaPrestador > 0) {
-                    const pRef = doc(db, "usuarios", freshOrder.provider_id);
-                    const pSnap = await transaction.get(pRef);
-                    transaction.update(pRef, {
-                        wallet_balance: parseFloat(pSnap.data().wallet_balance || 0) - valorReservaPrestador,
-                        wallet_reserved: parseFloat(pSnap.data().wallet_reserved || 0) + valorReservaPrestador
-                    });
+                    const pBal = parseFloat(providerSnap.data().wallet_balance || 0);
+                    const pRes = parseFloat(providerSnap.data().wallet_reserved || 0);
+                    transaction.update(providerRef, { wallet_balance: pBal - valorReservaPrestador, wallet_reserved: pRes + valorReservaPrestador });
+                    
+                    const lRefP = doc(collection(db, "extrato_financeiro"));
+                    transaction.set(lRefP, { uid: freshOrder.provider_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaPrestador, descricao: `Reserva garantia pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp() });
                 }
 
                 transaction.update(orderRef, { 
-                    system_step: 3, 
-                    status: 'confirmed_hold',
-                    value_reserved_client: valorReservaCliente,
-                    value_reserved_provider: valorReservaPrestador,
-                    confirmed_at: serverTimestamp()
+                    system_step: 3, status: 'confirmed_hold', 
+                    value_reserved_client: valorReservaCliente, 
+                    value_reserved_provider: valorReservaPrestador, 
+                    confirmed_at: serverTimestamp() 
                 });
 
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
-                transaction.set(msgRef, {
-                    text: `🔒 ACORDO FECHADO: Garantia retida conforme regras da plataforma.`,
-                    sender_id: "system",
-                    timestamp: serverTimestamp()
-                });
-               }
-            });
+                transaction.set(msgRef, { text: `🔒 ACORDO FECHADO: Garantia retida.`, sender_id: "system", timestamp: serverTimestamp() });
+            }
+        });
+
+        alert(vaiFecharAgora ? "✅ Acordo Fechado!" : "✅ Confirmado! Aguardando o outro.");
+    } catch(e) { 
+        console.error("Erro no acordo:", e); 
+        alert("⛔ ERRO:\n" + e); 
+    }
+}
 
         if(vaiFecharAgora) {
             alert("✅ Acordo Fechado! O serviço pode começar.");
