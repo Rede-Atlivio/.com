@@ -321,19 +321,7 @@ export async function confirmarAcordo(orderId, aceitar) {
         alert("⛔ ERRO:\n" + e); 
     }
 }
-
-        if(vaiFecharAgora) {
-            alert("✅ Acordo Fechado! O serviço pode começar.");
-        } else {
-            alert("✅ Confirmado! Aguardando a outra parte aceitar.");
-        }
-
-    } catch(e) { 
-        console.error("Erro no acordo:", e);
-        alert("⛔ BLOQUEIO FINANCEIRO\n\n" + e);
-    }
-}
-        
+       
 export function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
