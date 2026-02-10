@@ -265,6 +265,14 @@ export async function confirmarAcordo(orderId, aceitar) {
             const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || 0);
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
+           const valorReservaNecessaria = isMeProvider ? //268 A 278 - TRAVA DO USUÁRIO NO CHAT - PONTO CRÍTICO, CUIDADO AO ALTERAR
+                valorTotal * (parseFloat(configData.porcentagem_reserva || 0) / 100) : 
+                valorTotal * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
+
+            if (meuSaldo < valorReservaNecessaria) {
+                throw `Saldo insuficiente para garantir este acordo. Reserva necessária: R$ ${valorReservaNecessaria.toFixed(2)}`;
+            }
+
             if (limiteFin !== 0 && meuSaldo < limiteFin) {
                 throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
             }
