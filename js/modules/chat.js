@@ -291,39 +291,50 @@ export async function confirmarAcordo(orderId, aceitar) {
 
             transaction.update(orderRef, campoUpdate);
 
-            // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA (VERSÃO CORRIGIDA V17.3)
+           // SE AMBOS ACEITARAM -> EXECUTA A CUSTÓDIA DUPLA (V18.0)
             if (vaiFecharAgora) {
-                const taxaReserva = isMeProvider ? parseFloat(configData.porcentagem_reserva || 0) : parseFloat(configData.porcentagem_reserva_cliente || 0);
                 const totalPedido = parseFloat(freshOrder.offer_value || 0);
-                const valorFinalCofre = totalPedido * (taxaReserva / 100);
+                const pctPrestador = parseFloat(configData.porcentagem_reserva || 0);
+                const pctCliente = parseFloat(configData.porcentagem_reserva_cliente || 0);
 
-                if (valorFinalCofre > 0) {
-                    const userRef = doc(db, "usuarios", uid);
-                    const userSnap = await transaction.get(userRef);
-                    const bal = parseFloat(userSnap.data().wallet_balance || 0);
-                    const res = parseFloat(userSnap.data().wallet_reserved || 0);
-                    
-                    transaction.update(userRef, {
-                        wallet_balance: bal - valorFinalCofre,
-                        wallet_reserved: res + valorFinalCofre
+                const valorReservaPrestador = totalPedido * (pctPrestador / 100);
+                const valorReservaCliente = totalPedido * (pctCliente / 100);
+
+                // Debita do Cliente (Se configurado)
+                if (valorReservaCliente > 0) {
+                    const cRef = doc(db, "usuarios", freshOrder.client_id);
+                    const cSnap = await transaction.get(cRef);
+                    transaction.update(cRef, {
+                        wallet_balance: parseFloat(cSnap.data().wallet_balance || 0) - valorReservaCliente,
+                        wallet_reserved: parseFloat(cSnap.data().wallet_reserved || 0) + valorReservaCliente
+                    });
+                }
+
+                // Debita do Prestador (Se configurado)
+                if (valorReservaPrestador > 0) {
+                    const pRef = doc(db, "usuarios", freshOrder.provider_id);
+                    const pSnap = await transaction.get(pRef);
+                    transaction.update(pRef, {
+                        wallet_balance: parseFloat(pSnap.data().wallet_balance || 0) - valorReservaPrestador,
+                        wallet_reserved: parseFloat(pSnap.data().wallet_reserved || 0) + valorReservaPrestador
                     });
                 }
 
                 transaction.update(orderRef, { 
                     system_step: 3, 
                     status: 'confirmed_hold',
-                    value_reserved: valorFinalCofre,
+                    value_reserved_client: valorReservaCliente,
+                    value_reserved_provider: valorReservaPrestador,
                     confirmed_at: serverTimestamp()
                 });
 
                 const msgRef = doc(collection(db, `chats/${orderId}/messages`));
                 transaction.set(msgRef, {
-                    text: `🔒 ACORDO FECHADO: ${valorFinalCofre > 0 ? `R$ ${valorFinalCofre.toFixed(2)} retidos em garantia.` : 'Garantia isenta.'}`,
+                    text: `🔒 ACORDO FECHADO: Garantia retida conforme regras da plataforma.`,
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
             }
-        });
 
         if(vaiFecharAgora) {
             alert("✅ Acordo Fechado! O serviço pode começar.");
