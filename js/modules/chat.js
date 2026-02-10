@@ -334,7 +334,8 @@ export async function confirmarAcordo(orderId, aceitar) {
                     sender_id: "system",
                     timestamp: serverTimestamp()
                 });
-            }
+               }
+            });
 
         if(vaiFecharAgora) {
             alert("✅ Acordo Fechado! O serviço pode começar.");
