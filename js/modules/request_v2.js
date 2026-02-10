@@ -524,42 +524,12 @@ export async function aceitarPedidoRadar(orderId) {
             }
         }
 
-        // 🔄 EXECUÇÃO DO ACEITE COM COBRANÇA REAL (V23.0)
-        const prestadorRef = doc(db, "usuarios", currentUser.uid);
-        
-        await runTransaction(db, async (transaction) => {
-            const pSnap = await transaction.get(prestadorRef);
-            const valorReserva = valorServico * (pctReservaPrestador / 100);
-            
-            // 1. Faz o débito real do saldo para a custódia
-            if (valorReserva > 0) {
-                const bal = parseFloat(pSnap.data().wallet_balance || 0);
-                const res = parseFloat(pSnap.data().wallet_reserved || 0);
-                
-                transaction.update(prestadorRef, {
-                    wallet_balance: bal - valorReserva,
-                    wallet_reserved: res + valorReserva
-                });
-
-                // 🧠 GERADOR DE RECIBO (LEDGER IMUTÁVEL)
-                const ledgerRef = doc(collection(db, "extrato_financeiro"));
-                transaction.set(ledgerRef, {
-                    uid: currentUser.uid,
-                    tipo: "RESERVA_SERVICO 🔒",
-                    valor: -valorReserva,
-                    descricao: `Reserva de garantia para o pedido #${orderId.slice(0,5)}`,
-                    timestamp: serverTimestamp()
-                });
-            }
-
-            // 2. Atualiza a ordem
-            transaction.update(orderRef, { 
-                status: 'accepted', 
-                accepted_at: serverTimestamp(),
-                system_step: 1,
-                value_reserved_provider: valorReserva,
-                timer_initialized: false 
-            });
+        // EXECUÇÃO DO ACEITE (SEM COBRANÇA IMEDIATA - V24.0)
+        await updateDoc(orderRef, { 
+            status: 'accepted', 
+            accepted_at: serverTimestamp(),
+            system_step: 1,
+            timer_initialized: false 
         });
         await setDoc(doc(db, "chats", orderId), { 
             status: 'active', 
