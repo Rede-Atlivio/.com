@@ -290,7 +290,7 @@ export async function confirmarAcordo(orderId, aceitar) {
                     transaction.update(clientRef, { wallet_balance: cBal - valorReservaCliente, wallet_reserved: cRes + valorReservaCliente });
                     
                     const lRefC = doc(collection(db, "extrato_financeiro"));
-                    transaction.set(lRefC, { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Reserva garantia pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp() });
+                    transaction.set(lRefC, { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Bloqueio de garantia para início do serviço`, timestamp: serverTimestamp() });
                 }
 
                 // Débito Prestador + Ledger
