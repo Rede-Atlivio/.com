@@ -336,46 +336,83 @@ export function escutarMensagens(orderId) {
 }
 
 window.finalizarServicoPassoFinalAction = async (orderId) => {
-    if(!confirm("Confirmar finalização?")) return;
+    if(!confirm("🏁 CONFIRMAR CONCLUSÃO E LIBERAR PAGAMENTO?\n\nEsta ação é irreversível.")) return;
     try {
-        const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-        const taxaPercent = configSnap.exists() ? parseFloat(configSnap.data().taxa_plataforma) : 0.20;
-
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, "orders", orderId);
-            const orderSnap = await transaction.get(orderRef);
+            const configRef = doc(db, "settings", "financeiro");
+            
+            const [orderSnap, configSnap] = await Promise.all([
+                transaction.get(orderRef),
+                transaction.get(configRef)
+            ]);
+
             const pedido = orderSnap.data();
+            const config = configSnap.data() || { taxa_plataforma: 0.20 };
+            
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const providerRef = doc(db, "usuarios", pedido.provider_id);
 
-            const clientSnap = await transaction.get(clientRef);
-            const providerSnap = await transaction.get(providerRef);
+            const [clientSnap, providerSnap] = await Promise.all([
+                transaction.get(clientRef),
+                transaction.get(providerRef)
+            ]);
 
-            const valorReservado = parseFloat(pedido.value_reserved || 0);
+            // ⚡ CÁLCULO DA CASCATA (OPÇÃO A)
             const valorTotal = parseFloat(pedido.offer_value || 0);
-            const valorLiquido = valorTotal - (valorTotal * taxaPercent);
-
-            if (clientSnap.exists()) {
-                const resAtual = clientSnap.data().wallet_reserved || 0;
-                const novoRes = Math.max(0, resAtual - valorReservado);
-                transaction.update(clientRef, { wallet_reserved: novoRes });
-            }
+            const reservaCliente = parseFloat(pedido.value_reserved_client || 0);
+            const reservaProvider = parseFloat(pedido.value_reserved_provider || 0);
             
-            if (providerSnap.exists()) {
-                const currentBal = providerSnap.data().wallet_balance || 0;
-                const currentEarn = providerSnap.data().wallet_earnings || 0;
-                const newBal = currentBal + valorLiquido;
-                
-                transaction.update(providerRef, { 
-                    wallet_balance: newBal, 
-                    wallet_earnings: currentEarn + valorLiquido 
-                });
-            }
-            transaction.update(orderRef, { status: 'completed', completed_at: serverTimestamp() });
+            const taxaPlataforma = valorTotal * (parseFloat(config.taxa_plataforma || 0) / 100);
+            const lucroLiquidoPrestador = valorTotal - taxaPlataforma;
+
+            // 1. LIQUIDAÇÃO DO CLIENTE (Reserva sai da custódia e some)
+            const cRes = parseFloat(clientSnap.data().wallet_reserved || 0);
+            transaction.update(clientRef, { 
+                wallet_reserved: cRes - reservaCliente 
+            });
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -reservaCliente,
+                descricao: `Pagamento finalizado pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
+            });
+
+            // 2. LIQUIDAÇÃO DO PRESTADOR (Garantia vai para Atlivio + Recebe Lucro)
+            const pBal = parseFloat(providerSnap.data().wallet_balance || 0);
+            const pRes = parseFloat(providerSnap.data().wallet_reserved || 0);
+            const pEarn = parseFloat(providerSnap.data().wallet_earnings || 0);
+
+            transaction.update(providerRef, {
+                wallet_reserved: pRes - reservaProvider, // Garantia "some" (vai para Atlivio)
+                wallet_balance: pBal + lucroLiquidoPrestador,
+                wallet_earnings: pEarn + lucroLiquidoPrestador
+            });
+
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: pedido.provider_id, tipo: "GANHO_SERVIÇO ⚡", valor: lucroLiquidoPrestador,
+                descricao: `Recebimento pedido #${orderId.slice(0,5)} (Taxas deduzidas)`, timestamp: serverTimestamp()
+            });
+
+            // 3. FINALIZA ORDEM
+            transaction.update(orderRef, { 
+                status: 'completed', 
+                system_step: 4,
+                completed_at: serverTimestamp(),
+                value_reserved_client: 0,
+                value_reserved_provider: 0
+            });
+
+            transaction.set(doc(collection(db, `chats/${orderId}/messages`)), {
+                text: `🏁 SERVIÇO CONCLUÍDO E PAGO. Obrigado por usar a ATLIVIO!`,
+                sender_id: "system", timestamp: serverTimestamp()
+            });
         });
-        alert("✅ Concluído!");
+
+        alert("✅ Pagamento Liberado com Sucesso!");
         window.voltarParaListaPedidos();
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error("Erro na liquidação:", e);
+        alert("⛔ FALHA NA LIQUIDAÇÃO:\n" + e);
+    }
 };
 
 window.reportarProblema = async (orderId) => {
