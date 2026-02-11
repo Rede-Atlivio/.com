@@ -282,13 +282,11 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             const pReservaPct = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
             const valorReservaExigida = totalPedido * (pReservaPct / 100);
             
-            // Re-checagem rigorosa do saldo dentro da transação
-            const saldoResultante = meuSaldo - valorReservaExigida;
+            // Re-checagem rigorosa usando o Poder de Compra (Real + Bônus) - PONTO CRÍTICO
+            const saldoResultante = meuPoderDeCompra - valorReservaExigida;
 
-            // Se o limite de dívida for 0, o saldoResultante não pode ser menor que 0.
-            // Se o limite for -50, o saldoResultante não pode ser menor que -50.
             if (saldoResultante < limiteFin) {
-                throw `Operação Negada: Saldo insuficiente ou limite de inadimplência atingido.\nSaldo Atual: R$ ${meuSaldo.toFixed(2)}\nReserva Exigida: R$ ${valorReservaExigida.toFixed(2)}\nLimite Permitido: R$ ${limiteFin.toFixed(2)}`;
+                throw `Operação Negada: Saldo insuficiente.\nDisponível: R$ ${meuPoderDeCompra.toFixed(2)}\nReserva Exigida: R$ ${valorReservaExigida.toFixed(2)}`;
             }
 
             // 3. ESCRITAS (WRITES AFTER ALL READS)
