@@ -271,16 +271,17 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-           // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE) - PONTO CRÍTICO TRAVAS FINANCEIRAS
-            const pReservaCalculo = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
-            const valorReservaNecessaria = totalPedido * (pReservaCalculo / 100);
+           // 🛡️ VALIDAÇÃO INTELIGENTE (RESPEITANDO LIMITE DE DÍVIDA DO ADMIN) - PONTO CRÍTICO TRAVAS FINANCEIRAS CHAT
+            const pReservaPct = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
+            const valorDaReserva = totalPedido * (pReservaPct / 100);
+            
+            // A conta real: Saldo após o débito
+            const saldoAposReserva = meuSaldo - valorDaReserva;
+            const limitePermitido = parseFloat(configData.limite_divida || 0); // Ex: -60
 
-            if (meuSaldo < valorReservaNecessaria) {
-                throw `Saldo insuficiente para garantir este acordo. Reserva necessária: R$ ${valorReservaNecessaria.toFixed(2)}`;
-            }
-
-            if (limiteFin !== 0 && meuSaldo < limiteFin) {
-                throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
+            // Se o saldo final for menor que o limite (ex: -70 < -60), bloqueia.
+            if (limitePermitido !== 0 && saldoAposReserva < limitePermitido) {
+                throw `Limite de inadimplência excedido. Seu saldo ficaria em R$ ${saldoAposReserva.toFixed(2)}, mas o limite permitido é R$ ${limitePermitido.toFixed(2)}.`;
             }
 
             // 3. ESCRITAS (WRITES AFTER ALL READS)
