@@ -154,7 +154,8 @@ function atualizarInterfaceHeader(saldo) {
             badge.id = 'header-balance-badge';
             headerName.appendChild(badge);
         }
-        badge.innerText = ` R$ ${saldo.toFixed(2)}`;
+        //PONTO CRÍTICO - LINHA 158 TRINDADE FINANCEIRA 
+        badge.innerText = `R$ ${saldo.toFixed(2).replace('.', ',')}`;
         badge.className = saldo < 0 
             ? "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-600 font-bold"
             : "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600 font-bold";
