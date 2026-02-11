@@ -237,7 +237,7 @@ export async function enviarMensagemChat(orderId, step) {
     } catch (e) { console.error(e); }
 }
 
-export async function confirmarAcordo(orderId, aceitar) {
+export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CRÍTICO remove o "lixo" do arquivo e coloca as leituras de saldo no lugar certo.
     if(!aceitar) return;
     const uid = auth.currentUser.uid;
     const orderRef = doc(db, "orders", orderId);
@@ -246,9 +246,16 @@ export async function confirmarAcordo(orderId, aceitar) {
         let vaiFecharAgora = false;
         
         await runTransaction(db, async (transaction) => {
+            // 1. LEITURAS INICIAIS (READS FIRST)
             const freshOrderSnap = await transaction.get(orderRef);
             if (!freshOrderSnap.exists()) throw "Pedido não encontrado!";
             const freshOrder = freshOrderSnap.data();
+
+            // ⚡ DEFINIÇÃO DE IDENTIDADE E VALORES (Impedindo ReferenceError)
+            const isMeProvider = uid === freshOrder.provider_id;
+            const totalPedido = parseFloat(freshOrder.offer_value || 0);
+            const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
+            vaiFecharAgora = oOutroJaConfirmou;
 
             const clientRef = doc(db, "usuarios", freshOrder.client_id);
             const providerRef = doc(db, "usuarios", freshOrder.provider_id);
@@ -260,14 +267,13 @@ export async function confirmarAcordo(orderId, aceitar) {
                 transaction.get(configRef)
             ]);
 
-            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva_cliente: 0, limite_divida: 0 };
-            
-            const meuSaldo = uid === freshOrder.client_id ? (clientSnap.data().wallet_balance || 0) : (providerSnap.data().wallet_balance || 0);
+            const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0, limite_divida: 0 };
+            const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-           const valorReservaNecessaria = isMeProvider ? //268 A 278 - TRAVA DO USUÁRIO NO CHAT - PONTO CRÍTICO, CUIDADO AO ALTERAR
-                valorTotal * (parseFloat(configData.porcentagem_reserva || 0) / 100) : 
-                valorTotal * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
+            // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE)
+            const pReservaCalculo = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
+            const valorReservaNecessaria = totalPedido * (pReservaCalculo / 100);
 
             if (meuSaldo < valorReservaNecessaria) {
                 throw `Saldo insuficiente para garantir este acordo. Reserva necessária: R$ ${valorReservaNecessaria.toFixed(2)}`;
@@ -277,14 +283,10 @@ export async function confirmarAcordo(orderId, aceitar) {
                 throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
             }
 
-            const isMeProvider = uid === freshOrder.provider_id;
-            const oOutroJaConfirmou = isMeProvider ? freshOrder.client_confirmed : freshOrder.provider_confirmed;
-            vaiFecharAgora = oOutroJaConfirmou;
-
+            // 3. ESCRITAS (WRITES AFTER ALL READS)
             transaction.update(orderRef, isMeProvider ? { provider_confirmed: true } : { client_confirmed: true });
 
             if (vaiFecharAgora) {
-                const totalPedido = parseFloat(freshOrder.offer_value || 0);
                 const valorReservaPrestador = totalPedido * (parseFloat(configData.porcentagem_reserva || 0) / 100);
                 const valorReservaCliente = totalPedido * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
 
@@ -292,7 +294,6 @@ export async function confirmarAcordo(orderId, aceitar) {
                     const cBal = parseFloat(clientSnap.data().wallet_balance || 0);
                     const cRes = parseFloat(clientSnap.data().wallet_reserved || 0);
                     transaction.update(clientRef, { wallet_balance: cBal - valorReservaCliente, wallet_reserved: cRes + valorReservaCliente });
-                    
                     transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Bloqueio de garantia para início do serviço`, timestamp: serverTimestamp() });
                 }
 
@@ -300,7 +301,6 @@ export async function confirmarAcordo(orderId, aceitar) {
                     const pBal = parseFloat(providerSnap.data().wallet_balance || 0);
                     const pRes = parseFloat(providerSnap.data().wallet_reserved || 0);
                     transaction.update(providerRef, { wallet_balance: pBal - valorReservaPrestador, wallet_reserved: pRes + valorReservaPrestador });
-                    
                     transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.provider_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaPrestador, descricao: `Taxa de reserva para garantia de agenda`, timestamp: serverTimestamp() });
                 }
 
@@ -315,10 +315,10 @@ export async function confirmarAcordo(orderId, aceitar) {
             }
         });
 
-        alert(vaiFecharAgora ? "✅ Acordo Fechado! O serviço pode começar." : "✅ Confirmado! Aguardando a outra parte aceitar.");
+        alert(vaiFecharAgora ? "✅ Acordo Fechado! O serviço pode começar." : "✅ Confirmado! Aguardando o outro.");
     } catch(e) { 
         console.error("Erro no acordo:", e); 
-        alert("⛔ BLOQUEIO FINANCEIRO\n\n" + e); 
+        alert("⛔ FALHA NO ACORDO:\n" + e); 
     }
 }
        
