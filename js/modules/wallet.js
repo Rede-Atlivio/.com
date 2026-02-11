@@ -120,21 +120,27 @@ export function iniciarMonitoramentoCarteira() {
         }
     });
 }
-
+//PONTO CRÍTICO: NOVAS LINHAS 125 A 146 - ATUALIZAÇÃO COM NOVOS CAMPOS - TRINDADE FINANCEIRA
 // Atualize a função atualizarInterfaceCarteira para mostrar os 3 cofres sincronizados com o banco
-function atualizarInterfaceCarteira(saldo) {
-    const elBalance = document.getElementById('user-balance'); 
+function atualizarInterfaceCarteira(saldoTotal) {
+    const elTotal = document.getElementById('user-balance'); 
+    const elReal = document.getElementById('user-balance-real');
+    const elBonus = document.getElementById('user-balance-bonus');
     const elReserved = document.getElementById('user-reserved'); 
     const elEarnings = document.getElementById('user-earnings'); 
     
-    const reserved = window.userProfile?.wallet_reserved || 0;
-    // 🔄 CORREÇÃO: Garante que o valor de ganhos venha do banco e não da memória volátil
+    const sReal = parseFloat(window.userProfile?.wallet_balance || 0);
+    const sBonus = parseFloat(window.userProfile?.wallet_bonus || 0);
+    const reserved = parseFloat(window.userProfile?.wallet_reserved || 0);
     const earnings = parseFloat(window.userProfile?.wallet_earnings || 0);
 
-    if (elBalance) {
-        elBalance.innerText = saldo.toFixed(2).replace('.', ',');
-        elBalance.className = saldo < 0 ? "text-red-400" : "text-green-400";
+    if (elTotal) {
+        elTotal.innerText = saldoTotal.toFixed(2).replace('.', ',');
     }
+    
+    if (elReal) elReal.innerText = sReal.toFixed(2).replace('.', ',');
+    if (elBonus) elBonus.innerText = sBonus.toFixed(2).replace('.', ',');
+    
     if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
     if (elEarnings) elEarnings.innerText = earnings.toFixed(2).replace('.', ',');
 }
