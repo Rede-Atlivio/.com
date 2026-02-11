@@ -98,21 +98,24 @@ export function iniciarMonitoramentoCarteira() {
         if (docSnap.exists()) {
             const data = docSnap.data();
             
-            // 🔥 UNIFICAÇÃO: Apenas 'wallet_balance' importa
-            const saldoUnificado = parseFloat(data.wallet_balance || 0);
+            //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 101 A 115 DEPOIS 102 A 118
+            // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
+            const sReal = parseFloat(data.wallet_balance || 0);
+            const sBonus = parseFloat(data.wallet_bonus || 0);
+            const saldoTotal = sReal + sBonus;
 
-            // MEMÓRIA COMPARTILHADA (Para o request.js ler sem ir no banco)
-            window.userProfile = window.userProfile || {};
             window.userProfile = window.userProfile || {};
             window.userProfile.uid = uid;
-            window.userProfile.wallet_balance = saldoUnificado;
+            window.userProfile.wallet_balance = sReal;
+            window.userProfile.wallet_bonus = sBonus;
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
             window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
-            // ✅ Atualização de Interfaces com Objeto de Dados Completo
-            verificarFaixaBonus(saldoUnificado);
-            atualizarInterfaceCarteira(saldoUnificado);
-            atualizarInterfaceHeader(saldoUnificado);
-            atualizarInterfaceGanhar(saldoUnificado);
+
+            // ✅ Atualização de Interfaces usando o Saldo Total (Poder de Compra)
+            verificarFaixaBonus(sBonus); 
+            atualizarInterfaceCarteira(saldoTotal);
+            atualizarInterfaceHeader(saldoTotal);
+            atualizarInterfaceGanhar(saldoTotal);
             carregarHistoricoCarteira(uid); 
         }
     });
