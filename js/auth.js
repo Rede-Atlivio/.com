@@ -157,7 +157,7 @@ onAuthStateChanged(auth, async (user) => {
                         perfil_completo: false, 
                         role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
                         wallet_balance: 0.00, 
-                        saldo: 0.00, 
+                        // Campo saldo removido globalmente da criação de conta
                         is_provider: false, 
                         created_at: serverTimestamp(), 
                         status: 'ativo',
