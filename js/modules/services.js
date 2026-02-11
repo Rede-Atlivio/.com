@@ -714,14 +714,14 @@ try {
             await setDoc(ref, { services: arrayRemove(oldService) }, { merge: true });
         }
         
-        // Salva o novo serviço (Cria o documento se ele não existir)
+       // Salva o serviço garantindo que não existam campos financeiros obsoletos no objeto - PONTO CRÍTICO SOLUÇÃO BÔNUS
         await setDoc(ref, { 
             uid: user.uid,
             nome_profissional: user.displayName || 'Prestador',
             services: arrayUnion(newService), 
             is_online: true,
-            status: 'aprovado', // Garante que ele já nasça aprovado para seus testes
-            updated_at: new Date()
+            status: 'aprovado',
+            updated_at: serverTimestamp()
         }, { merge: true });
 
         alert("✅ Serviço salvo com sucesso!");
