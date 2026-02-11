@@ -298,12 +298,11 @@ window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
-// 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS-VINDAS
-function verificarFaixaBonus(saldo) {
-    // ✅ CORREÇÃO: Usar localStorage para lembrar "para sempre" (ou até limpar cache)
+// 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS VINDAS - PONTO CRÍTICO SOLUÇÃO BÔNUS -  LINHAS ANTES 302 A 306 DEPOIS 302 A 305
+function verificarFaixaBonus(valorBonus) {
     const jaFechou = localStorage.getItem('atlivio_bonus_visto'); 
     
-    if (saldo === 20 && !jaFechou) {
+    if (valorBonus > 0 && !jaFechou) {
         let banner = document.getElementById('bonus-banner');
         
         if (!banner) {
