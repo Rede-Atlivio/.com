@@ -56,18 +56,19 @@ function iniciarRegrasFinanceiras() {
  * 🛡️ TRAVA DE TRABALHO V12
  * Decide se o Radar fica AZUL ou VERMELHO
  */
-export function podeTrabalhar(custoEstimado = 0) {
+export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 59 A 72 DEPOIS 59 A 73
     const user = window.userProfile;
-    if (!user || user.wallet_balance === undefined) return false;
+    // Soma Real + Bônus para saber se ele tem "poder de fogo"
+    const saldoReal = parseFloat(user?.wallet_balance || 0);
+    const saldoBonus = parseFloat(user?.wallet_bonus || 0);
+    const saldoTotal = saldoReal + saldoBonus;
     
-    const saldo = parseFloat(user.wallet_balance || 0);
     const custo = parseFloat(custoEstimado || 0);
     const limite = parseFloat(window.CONFIG_FINANCEIRA?.limite || 0);
 
-    if (isNaN(saldo) || isNaN(custo)) return false; 
+    if (isNaN(saldoTotal) || isNaN(custo)) return false; 
     
-    // Lógica V12: (0 - 0) não é menor que 0. Então LIBERA saldo zero.
-    const saldoFinal = saldo - custo;
+    const saldoFinal = saldoTotal - custo;
 
     if (saldoFinal < limite) {
         if(custo > 0) {
