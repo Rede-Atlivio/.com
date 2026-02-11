@@ -1014,13 +1014,13 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
             const userRef = doc(db, "usuarios", uid);
             const origem = localStorage.getItem("traffic_source") || "direto";
 
-            await setDoc(userRef, {
+           await setDoc(userRef, {
                 nome: nome,
                 telefone: fone,
-                wallet_balance: 20.00, // 💰 BÔNUS DE ENTRADA
+                // Removido wallet_balance daqui. O bônus agora é gerido pelo core do auth.js - PONTO CRÍTICO
                 traffic_source: origem,
                 onboarding_completed: true,
-                created_at: serverTimestamp()
+                updated_at: serverTimestamp()
             }, { merge: true });
 
             alert(`Parabéns ${nome}! Cadastro concluído e R$ 20,00 de bônus liberados!`);
