@@ -518,13 +518,14 @@ export async function aceitarPedidoRadar(orderId) {
         if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
             return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo total (R$ ${saldoTotalParaAceite.toFixed(2)}) atingiu o limite de dívida permitido.`);
         }
-        // 2. Bloqueio por % Reserva Aceite (Prestador)
-        if (pctReservaPrestador > 0) {
-            const valorReserva = valorServico * (pctReservaPrestador / 100);
-            if (saldoAtual < valorReserva) {
-                return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)} (${pctReservaPrestador}% do valor).`);
-            }
-        }
+        //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 521 A 527  DEPOIS 522 A 528
+        // 2. Bloqueio por % Reserva Aceite (Usa o bônus primeiro como proteção)
+        if (pctReservaPrestador > 0) {
+            const valorReserva = valorServico * (pctReservaPrestador / 100);
+            if (saldoTotalParaAceite < valorReserva) {
+                return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
+            }
+        }
         // EXECUÇÃO DO ACEITE (SEM COBRANÇA IMEDIATA - V24.0)
         await updateDoc(orderRef, { 
             status: 'accepted', 
