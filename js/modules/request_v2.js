@@ -497,13 +497,15 @@ export async function aceitarPedidoRadar(orderId) {
         const currentUser = auth.currentUser;
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-        // 🛡️ VALIDAÇÃO FINANCEIRA DO PRESTADOR (Sincronizada com o Banco)
+       //LINHAS ANTES 500 A 505 DEPOIS 501 A 508
+        // 🛡️ VALIDAÇÃO FINANCEIRA HÍBRIDA (Real + Bônus)
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
-        // Lendo 'balance' conforme imagem do Firestore
-        // 🎯 SINCRONIA V13: Leitura blindada da Carteira Oficial - PONTO CRÍTICO SOLUÇÃO BÔNUS
-        const saldoAtual = parseFloat(userData.wallet_balance || 0);
         
+        // 🎯 SINCRONIA V14: Soma o saldo real ao bônus para liberar o aceite do pedido
+        const saldoReal = parseFloat(userData.wallet_balance || 0);
+        const saldoBonus = parseFloat(userData.wallet_bonus || 0);
+        const saldoTotalParaAceite = saldoReal + saldoBonus;
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
         const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, limite_divida: 0 };
         
