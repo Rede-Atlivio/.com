@@ -157,7 +157,7 @@ onAuthStateChanged(auth, async (user) => {
                         perfil_completo: false, 
                         role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
                         wallet_balance: 0.00, 
-                        // Campo saldo removido globalmente da criação de conta
+                        // Campo saldo removido globalmente da criação de conta - PONTO CRÍTICO SOLUÇÃO BÔNUS
                         is_provider: false, 
                         created_at: serverTimestamp(), 
                         status: 'ativo',
@@ -177,19 +177,9 @@ onAuthStateChanged(auth, async (user) => {
                         updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
                     }
                     
-                    // 💰 BLINDAGEM DE SALDO V12: Unifica os campos garantindo que sejam números
-                    const valorSaldo = parseFloat(data.saldo || 0);
-                    const valorWallet = parseFloat(data.wallet_balance || 0);
-                    
-                    // Prioridade total para o campo oficial da carteira
-                    data.wallet_balance = isNaN(valorWallet) ? valorSaldo : valorWallet;
-
+                    // 💰 BLINDAGEM DE SALDO V13: Leitura exclusiva do campo oficial - PONTO CRÍTICO SOLUÇÃO BÔNUS
+                    data.wallet_balance = parseFloat(data.wallet_balance || 0);
                     if (isNaN(data.wallet_balance)) data.wallet_balance = 0;
-
-                    // Sincronia silenciosa de segurança apenas se houver divergência real
-                    if (data.saldo !== undefined && valorSaldo !== valorWallet) {
-                        updateDoc(userRef, { wallet_balance: valorSaldo }).catch(() => {});
-                    }
 
                     userProfile = data; 
                     window.userProfile = data;
