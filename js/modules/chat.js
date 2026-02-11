@@ -296,19 +296,34 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
                 const valorReservaPrestador = totalPedido * (parseFloat(configData.porcentagem_reserva || 0) / 100);
                 const valorReservaCliente = totalPedido * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
 
-                if (valorReservaCliente > 0) {
-                    const cBal = parseFloat(clientSnap.data().wallet_balance || 0);
-                    const cRes = parseFloat(clientSnap.data().wallet_reserved || 0);
-                    transaction.update(clientRef, { wallet_balance: cBal - valorReservaCliente, wallet_reserved: cRes + valorReservaCliente });
-                    transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.client_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaCliente, descricao: `Bloqueio de garantia para início do serviço`, timestamp: serverTimestamp() });
-                }
+                // 🌀 LIQUIDIFICADOR DE BÔNUS: Desconta do bônus antes do saldo real 299  A 326 - PONTO CRÍTICO
+                const processarDebitoHibrido = (snap, ref, valorDebito, uidDestino) => {
+                    let rBonus = parseFloat(snap.data().wallet_bonus || 0);
+                    let rBal = parseFloat(snap.data().wallet_balance || 0);
+                    let rRes = parseFloat(snap.data().wallet_reserved || 0);
 
-                if (valorReservaPrestador > 0) {
-                    const pBal = parseFloat(providerSnap.data().wallet_balance || 0);
-                    const pRes = parseFloat(providerSnap.data().wallet_reserved || 0);
-                    transaction.update(providerRef, { wallet_balance: pBal - valorReservaPrestador, wallet_reserved: pRes + valorReservaPrestador });
-                    transaction.set(doc(collection(db, "extrato_financeiro")), { uid: freshOrder.provider_id, tipo: "RESERVA_SERVICO 🔒", valor: -valorReservaPrestador, descricao: `Taxa de reserva para garantia de agenda`, timestamp: serverTimestamp() });
-                }
+                    if (rBonus >= valorDebito) {
+                        rBonus -= valorDebito;
+                    } else {
+                        const resto = valorDebito - rBonus;
+                        rBonus = 0;
+                        rBal -= resto;
+                    }
+
+                    transaction.update(ref, { 
+                        wallet_balance: rBal, 
+                        wallet_bonus: rBonus, 
+                        wallet_reserved: rRes + valorDebito 
+                    });
+                    
+                    transaction.set(doc(collection(db, "extrato_financeiro")), { 
+                        uid: uidDestino, tipo: "RESERVA_SERVICO 🔒", valor: -valorDebito, 
+                        descricao: `Reserva de garantia (Uso de Bônus/Saldo)`, timestamp: serverTimestamp() 
+                    });
+                };
+
+                if (valorReservaCliente > 0) processarDebitoHibrido(clientSnap, clientRef, valorReservaCliente, freshOrder.client_id);
+                if (valorReservaPrestador > 0) processarDebitoHibrido(providerSnap, providerRef, valorReservaPrestador, freshOrder.provider_id);
 
                 transaction.update(orderRef, { 
                     system_step: 3, status: 'confirmed_hold', 
