@@ -271,7 +271,7 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-           // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE)
+           // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE) - PONTO CRÍTICO TRAVAS FINANCEIRAS
             const pReservaCalculo = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
             const valorReservaNecessaria = totalPedido * (pReservaCalculo / 100);
 
