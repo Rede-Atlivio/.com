@@ -271,17 +271,7 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-            // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE)
-            const pReservaCalculo = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
-            const valorReservaNecessaria = totalPedido * (pReservaCalculo / 100);
-
-            if (meuSaldo < valorReservaNecessaria) {
-                throw `Saldo insuficiente para garantir este acordo. Reserva necessária: R$ ${valorReservaNecessaria.toFixed(2)}`;
-            }
-
-            if (limiteFin !== 0 && meuSaldo < limiteFin) {
-                throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
-            }
+           // ⚖️ SISTEMA DE DÍVIDA ATIVADO: Permitindo saldo negativo para garantir o fluxo do serviço.PONTO CRÍTICO
 
             // 3. ESCRITAS (WRITES AFTER ALL READS)
             transaction.update(orderRef, isMeProvider ? { provider_confirmed: true } : { client_confirmed: true });
