@@ -266,38 +266,71 @@ window.abrirCheckoutPix = async function(valor) {
     window.open(linkDinamico, '_blank');
 };
 
+//PONTO CRÍTICO: LEDGER IMUTÁVEL APÓS NOVA INTERFACE: LINHAS 270 A 333
+/**
+ * 📖 CARREGAR HISTÓRICO (FASE 8.5 - LEDGER IMUTÁVEL)
+ * Lê a coleção oficial 'extrato_financeiro' para desenhar o histórico premium.
+ */
 async function carregarHistoricoCarteira(uid) {
     const container = document.getElementById('lista-transacoes-carteira');
     if (!container) return;
 
     try {
-        const { collection, query, where, orderBy, limit, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const q = query(collection(db, "transactions"), where("provider_id", "==", uid), orderBy("created_at", "desc"), limit(10));
-        const snap = await getDocs(q);
+        const { collection, query, where, orderBy, limit, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const q = query(collection(db, "extrato_financeiro"), where("uid", "==", uid), orderBy("timestamp", "desc"), limit(15));
         
-        if (snap.empty) {
-            container.innerHTML = `<p class="text-center text-[10px] text-gray-400 py-4 italic">Nenhuma movimentação ainda.</p>`;
-            return;
-        }
+        onSnapshot(q, (snap) => {
+            if (snap.empty) {
+                container.innerHTML = `<p class="text-center text-[10px] text-gray-400 py-8 italic">Seu extrato aparecerá aqui assim que houver movimentações.</p>`;
+                return;
+            }
 
-        container.innerHTML = "";
-        snap.forEach(doc => {
-            const t = doc.data();
-            const isPositivo = t.amount > 0;
-            container.innerHTML += `
-                <div class="flex justify-between items-center p-3 bg-white rounded-xl border border-gray-100 shadow-sm mb-2">
-                    <div>
-                        <p class="text-[10px] font-black uppercase text-gray-800">${t.description || 'Transação'}</p>
-                        <p class="text-[8px] text-gray-400">${t.created_at?.toDate().toLocaleDateString() || 'Recentemente'}</p>
-                    </div>
-                    <span class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-red-500'}">
-                        ${isPositivo ? '+' : ''} R$ ${Math.abs(t.amount).toFixed(2)}
-                    </span>
-                </div>`;
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const t = doc.data();
+                const valor = parseFloat(t.valor || 0);
+                const isPositivo = valor > 0;
+                
+                container.innerHTML += `
+                    <div class="flex justify-between items-center p-4 bg-white rounded-[16px] border border-gray-100 shadow-sm mb-3 animate-fadeIn">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full ${isPositivo ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center text-lg font-bold">
+                                ${t.tipo.includes('🎁') ? '🎁' : t.tipo.includes('🔒') ? '🔒' : isPositivo ? '📈' : '🏁'}
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black uppercase text-slate-800 leading-tight">${t.tipo}</p>
+                                <p class="text-[9px] text-gray-400 font-medium">${t.descricao || 'Movimentação Automática'}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-slate-800'}">
+                                ${isPositivo ? '+' : ''} R$ ${Math.abs(valor).toFixed(2).replace('.', ',')}
+                            </p>
+                            <p class="text-[8px] text-gray-400 font-bold uppercase">${t.timestamp?.toDate().toLocaleDateString() || 'Processando'}</p>
+                        </div>
+                    </div>`;
+            });
         });
-    } catch (e) { console.warn("Erro histórico:", e); }
+    } catch (e) { console.warn("❌ Falha ao ler Extrato:", e); }
 }
 
+/**
+ * 🏗️ FUNÇÃO MESTRA: REGISTRAR MOVIMENTAÇÃO (PARA TODAS AS ABAS)
+ * Use: window.registrarMovimentacao(5.00, "RECOMPENSA_MISSÃO 🎯", "Aba Microtarefas")
+ */
+window.registrarMovimentacao = async (valor, tipo, descricao) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+        await addDoc(collection(db, "extrato_financeiro"), {
+            uid: user.uid,
+            valor: parseFloat(valor),
+            tipo: tipo,
+            descricao: descricao,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) { console.error("Erro ao gravar Ledger:", e); }
+};
 // ============================================================================
 // EXPORTAÇÕES GLOBAIS
 // ============================================================================
