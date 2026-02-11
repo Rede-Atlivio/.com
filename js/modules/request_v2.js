@@ -501,7 +501,7 @@ export async function aceitarPedidoRadar(orderId) {
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
         // Lendo 'balance' conforme imagem do Firestore
-        // 🎯 SINCRONIA V13: Lê EXCLUSIVAMENTE o campo oficial e ignora campos deletados
+        // 🎯 SINCRONIA V13: Leitura blindada da Carteira Oficial - PONTO CRÍTICO SOLUÇÃO BÔNUS
         const saldoAtual = parseFloat(userData.wallet_balance || 0);
         
         const configSnap = await getDoc(doc(db, "settings", "financeiro"));
