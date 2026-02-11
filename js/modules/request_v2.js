@@ -511,18 +511,7 @@ export async function aceitarPedidoRadar(orderId) {
         const limiteDivida = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
-        // 1. Bloqueio por Limite de Dívida (Ex: -60)
-        if (limiteDivida !== 0 && saldoAtual < limiteDivida) {
-            return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida permitido (R$ ${limiteDivida.toFixed(2)}).`);
-        }
-
-        // 2. Bloqueio por % Reserva Aceite (Prestador)
-        if (pctReservaPrestador > 0) {
-            const valorReserva = valorServico * (pctReservaPrestador / 100);
-            if (saldoAtual < valorReserva) {
-                return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)} (${pctReservaPrestador}% do valor).`);
-            }
-        }
+       // ✅ DÍVIDA PERMITIDA: Prestador autorizado a aceitar mesmo sem saldo (Crédito de Confiança). PONTO CRÍTICO REMOÇÃO DE TRAVAS, SE NO ADMIN TIVER COM TAXAS ZERADAS
 
         // EXECUÇÃO DO ACEITE (SEM COBRANÇA IMEDIATA - V24.0)
         await updateDoc(orderRef, { 
