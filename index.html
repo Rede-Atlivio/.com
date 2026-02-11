@@ -478,28 +478,54 @@
 <section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
     <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
 
-    <div class="bg-gradient-to-br from-green-900 to-slate-800 p-6 rounded-2xl text-white shadow-lg relative overflow-hidden">
-        <div class="absolute right-0 top-0 p-4 opacity-10 text-6xl">💰</div>
-        <p class="text-[10px] uppercase tracking-widest opacity-70 mb-1">Saldo em Carteira</p>
-        <h2 class="text-4xl font-black italic">R$ <span id="user-balance">0,00</span></h2>
-        <div class="grid grid-cols-2 gap-3 mt-2">
-        <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-[8px] font-black text-gray-400 uppercase">🔒 Em Custódia</p>
-            <p class="text-lg font-black text-blue-600">R$ <span id="user-reserved">0,00</span></p>
-        </div>
-        <div class="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-            <p class="text-[8px] font-black text-gray-400 uppercase">📈 Meus Ganhos</p>
-            <p class="text-lg font-black text-emerald-600">R$ <span id="user-earnings">0,00</span></p>
-        </div>
-    </div>
-
-    <div class="mt-4 mb-4">
-        <button onclick="window.switchTab('servicos')" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl shadow-lg flex items-center justify-between px-6 transform active:scale-95 transition group">
-            <div class="text-left">
-                <p class="text-[10px] uppercase font-black opacity-80">O que fazer com isso?</p>
-                <p class="text-sm font-black italic">🚀 USAR R$ <span id="user-balance-earn">0,00</span> AGORA</p>
+    <div class="space-y-4">
+        <div class="bg-[#0f172a] p-6 rounded-[24px] text-white shadow-2xl relative overflow-hidden border border-blue-500/20">
+            <div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-blue-600/10 rounded-full blur-3xl"></div>
+            
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-blue-400 mb-1">Poder de Compra Total</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-bold text-gray-400">R$</span>
+                        <h2 class="text-5xl font-black tracking-tighter" id="user-balance">0,00</h2>
+                    </div>
+                </div>
+                <div class="bg-blue-600/20 p-2 rounded-lg border border-blue-500/30">
+                    <span class="text-xl">💳</span>
+                </div>
             </div>
-            <span class="text-2xl group-hover:translate-x-2 transition">👉</span>
+
+            <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
+                <div>
+                    <p class="text-[8px] font-bold text-gray-500 uppercase mb-1">Dinheiro Real</p>
+                    <p class="text-sm font-black text-white">R$ <span id="user-balance-real">0,00</span></p>
+                </div>
+                <div>
+                    <p class="text-[8px] font-bold text-blue-400 uppercase mb-1">Crédito Bônus</p>
+                    <p class="text-sm font-black text-blue-400">R$ <span id="user-balance-bonus">0,00</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24">
+                <span class="text-blue-600 text-lg">🔒</span>
+                <div>
+                    <p class="text-[8px] font-black text-gray-400 uppercase">Em Custódia</p>
+                    <p class="text-lg font-black text-slate-800">R$ <span id="user-reserved">0,00</span></p>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24">
+                <span class="text-emerald-500 text-lg">📈</span>
+                <div>
+                    <p class="text-[8px] font-black text-gray-400 uppercase">Ganhos Totais</p>
+                    <p class="text-lg font-black text-slate-800">R$ <span id="user-earnings">0,00</span></p>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="window.switchTab('servicos')" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-500/20 flex justify-center items-center gap-2 transform active:scale-[0.98] transition">
+            Contratar ou Trabalhar Agora <span id="user-balance-earn" class="hidden">0,00</span> ➜
         </button>
     </div>
 
