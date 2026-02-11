@@ -474,7 +474,7 @@ window.responderPedido = async (orderId, aceitar, valorServico = 0) => {
     else {
         if(userProfile?.status === 'suspenso') return alert("⚠️ CONTA SUSPENSA. Você não pode aceitar pedidos.");
         const uid = auth.currentUser.uid; const userRef = doc(db, "usuarios", uid); const snap = await getDoc(userRef);
-        const saldoAtual = snap.data().saldo !== undefined ? snap.data().saldo : (snap.data().wallet_balance || 0);
+        const saldoAtual = parseFloat(snap.data().wallet_balance || 0); //  - PONTO CRÍTICO SOLUÇÃO BÔNUS
         if (saldoAtual <= LIMITE_CREDITO_NEGATIVO) return alert(`⛔ LIMITE EXCEDIDO (R$ ${LIMITE_CREDITO_NEGATIVO}).\nSaldo atual: R$ ${saldoAtual.toFixed(2)}.\nRecarregue para continuar.`);
         try { await updateDoc(doc(db, "orders", orderId), { status: 'accepted' }); getDoc(doc(db, "chats", orderId)).then(async (snapChat) => { if(snapChat.exists()) await updateDoc(snapChat.ref, { status: "active" }); }).catch(async () => { await updateDoc(doc(db, "chats", orderId), { status: "active" }); }); alert(`✅ Pedido Aceito!`); if (window.irParaChat) window.irParaChat(); else { document.getElementById('tab-chat').click(); setTimeout(() => { if(window.carregarChat) window.carregarChat(); }, 500); } } catch (e) { alert("Erro: " + e.message); }
     }
