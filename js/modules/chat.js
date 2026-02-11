@@ -268,7 +268,13 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             ]);
 
             const configData = configSnap.exists() ? configSnap.data() : { porcentagem_reserva: 0, porcentagem_reserva_cliente: 0, limite_divida: 0 };
-            const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
+            
+            // 💰 LEITURA HÍBRIDA: Identifica saldo real e bônus de quem está confirmando - PONTO CRÍTICO
+            const userData = uid === freshOrder.client_id ? clientSnap.data() : providerSnap.data();
+            const meuSaldoReal = parseFloat(userData.wallet_balance || 0);
+            const meuSaldoBonus = parseFloat(userData.wallet_bonus || 0);
+            const meuPoderDeCompra = meuSaldoReal + meuSaldoBonus;
+            
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
            // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE) - PONTO CRÍITICO TRAVAS FINANCEIRAS 274 A 286
