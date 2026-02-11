@@ -140,10 +140,69 @@ function atualizarInterfaceCarteira(saldoTotal) {
     
     if (elReal) elReal.innerText = sReal.toFixed(2).replace('.', ',');
     if (elBonus) elBonus.innerText = sBonus.toFixed(2).replace('.', ',');
-    
+    //PONTO CRÍTICO: COBRANÇA UNIVERSAL ATIVADA "TODAS AS ABAS" LINHAS: 144 A 205
     if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
     if (elEarnings) elEarnings.innerText = earnings.toFixed(2).replace('.', ',');
 }
+
+/**
+ * ⚡ MOTOR DE COBRANÇA UNIVERSAL (V14)
+ * Esta função é o 'pedágio' para as abas Empregos, Vídeos e Oportunidades.
+ * Ela prioriza o wallet_bonus e depois o wallet_balance.
+ */
+window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return { sucess: false, error: "Usuário deslogado" };
+
+    try {
+        let resultado = await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", uid);
+            const userSnap = await transaction.get(userRef);
+            if (!userSnap.exists()) throw "Usuário não encontrado";
+
+            const data = userSnap.data();
+            let rBonus = parseFloat(data.wallet_bonus || 0);
+            let rBal = parseFloat(data.wallet_balance || 0);
+            const poderCompra = rBonus + rBal;
+
+            if (poderCompra < valor) {
+                throw `Saldo insuficiente. Necessário R$ ${valor.toFixed(2)}`;
+            }
+
+            // Lógica do Liquidificador: Consome bônus primeiro
+            if (rBonus >= valor) {
+                rBonus -= valor;
+            } else {
+                const resto = valor - rBonus;
+                rBonus = 0;
+                rBal -= resto;
+            }
+
+            // Atualiza o banco
+            transaction.update(userRef, {
+                wallet_balance: rBal,
+                wallet_bonus: rBonus,
+                updated_at: serverTimestamp()
+            });
+
+            // Grava no Ledger (Extrato)
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: -valor,
+                tipo: etiqueta,
+                descricao: descricao,
+                timestamp: serverTimestamp()
+            });
+
+            return { success: true };
+        });
+        return resultado;
+    } catch (e) {
+        console.error("❌ Erro no pagamento:", e);
+        return { success: false, error: e };
+    }
+};
 
 function atualizarInterfaceHeader(saldo) {
     const headerName = document.getElementById('provider-header-name');
