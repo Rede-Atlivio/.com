@@ -511,7 +511,7 @@ export async function aceitarPedidoRadar(orderId) {
         const limiteDivida = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
-        // 1. Bloqueio por Limite de Dívida (Ex: -60)
+        // 1. Bloqueio por Limite de Dívida (Ex: -60) - PONTO CRÍTICO TRAVAS FINANCEIRAS
         if (limiteDivida !== 0 && saldoAtual < limiteDivida) {
             return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo (R$ ${saldoAtual.toFixed(2)}) atingiu o limite de dívida permitido (R$ ${limiteDivida.toFixed(2)}).`);
         }
