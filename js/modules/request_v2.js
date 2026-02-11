@@ -497,7 +497,7 @@ export async function aceitarPedidoRadar(orderId) {
         const currentUser = auth.currentUser;
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-       //LINHAS ANTES 500 A 505 DEPOIS 501 A 508
+       //PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 500 A 505 DEPOIS 501 A 508
         // 🛡️ VALIDAÇÃO FINANCEIRA HÍBRIDA (Real + Bônus)
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
         const userData = userDoc.data();
