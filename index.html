@@ -1017,7 +1017,8 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
            await setDoc(userRef, {
                 nome: nome,
                 telefone: fone,
-                // Removido wallet_balance daqui. O bônus agora é gerido pelo core do auth.js - PONTO CRÍTICO
+                // O bônus de R$ 20 agora é injetado via wallet_bonus para separação contábil   - PONTO CRÍTICO SOLUÇÃO BÔNUS
+                wallet_bonus: 20.00,
                 traffic_source: origem,
                 onboarding_completed: true,
                 updated_at: serverTimestamp()
