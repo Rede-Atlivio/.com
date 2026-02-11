@@ -271,16 +271,18 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
             const meuSaldo = uid === freshOrder.client_id ? (parseFloat(clientSnap.data().wallet_balance || 0)) : (parseFloat(providerSnap.data().wallet_balance || 0));
             const limiteFin = parseFloat(configData.limite_divida || 0);
 
-           // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE) - PONTO CRÍITICO TRAVAS FINANCEIRAS 
-            const pReservaCalculo = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
-            const valorReservaNecessaria = totalPedido * (pReservaCalculo / 100);
+           // 2. VALIDAÇÕES FINANCEIRAS (TRAVA ANTI-GOLPE) - PONTO CRÍITICO TRAVAS FINANCEIRAS 274 A 286
+           // 🛡️ TRAVA FINANCEIRA V27.2 (PROTEÇÃO CONTRA SAQUE E INADIMPLÊNCIA)
+            const pReservaPct = isMeProvider ? (parseFloat(configData.porcentagem_reserva || 0)) : (parseFloat(configData.porcentagem_reserva_cliente || 0));
+            const valorReservaExigida = totalPedido * (pReservaPct / 100);
+            
+            // Re-checagem rigorosa do saldo dentro da transação
+            const saldoResultante = meuSaldo - valorReservaExigida;
 
-            if (meuSaldo < valorReservaNecessaria) {
-                throw `Saldo insuficiente para garantir este acordo. Reserva necessária: R$ ${valorReservaNecessaria.toFixed(2)}`;
-            }
-
-            if (limiteFin !== 0 && meuSaldo < limiteFin) {
-                throw `Bloqueio Financeiro: Seu saldo (R$ ${meuSaldo.toFixed(2)}) atingiu o limite de dívida.`;
+            // Se o limite de dívida for 0, o saldoResultante não pode ser menor que 0.
+            // Se o limite for -50, o saldoResultante não pode ser menor que -50.
+            if (saldoResultante < limiteFin) {
+                throw `Operação Negada: Saldo insuficiente ou limite de inadimplência atingido.\nSaldo Atual: R$ ${meuSaldo.toFixed(2)}\nReserva Exigida: R$ ${valorReservaExigida.toFixed(2)}\nLimite Permitido: R$ ${limiteFin.toFixed(2)}`;
             }
 
             // 3. ESCRITAS (WRITES AFTER ALL READS)
