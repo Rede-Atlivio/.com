@@ -12,10 +12,10 @@ async function concederBonusSeAtivo(userUid) {
 
         if (config?.bonus_boas_vindas_ativo) {
             // Usa updateDoc, mas se falhar (doc não existe), usa setDoc
-            const userRef = doc(db, "usuarios", userUid);
+            //SOLUÇÃO BONUS NA RAIZ - ANTES LINHAS 16 A 20 DEPOIS 16 A 20
             await setDoc(userRef, {
                 wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
-                saldo: parseFloat(config.valor_bonus_promocional) || 20.00, // Garante que o saldo visual apareça
+                // Campo 'saldo' removido para evitar duplicidade fantasma
                 bonus_inicial_ok: true
             }, { merge: true });
             
