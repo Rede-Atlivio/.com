@@ -417,21 +417,25 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 descricao: `Liquidação de serviço #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
             });
 
-            // 4. EXECUÇÃO PRESTADOR: Transfere Lucro Líquido
+            //PONTO CRÍTICO 420 A 437 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
+            // 4. EXECUÇÃO PRESTADOR: Recebe Líquido e limpa Reserva de Agenda
             const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
-             
-            //PONTO CRÍTICO 428 A 445 - SOLUÇÃO MEUS GANHOS
-            // A MÁGICA: A reserva do prestador (resProvider) NÃO volta para o saldo dele. 
-            // Ela some da reserva e fica com a Atlivio como Taxa de Agenda.
-            // 4. EXECUÇÃO PRESTADOR: Recebe apenas o LÍQUIDO (Valor - Taxa)
+
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: walletBalP + ganhoLiquidoPrestador, // R$ 80 no seu teste
+                wallet_balance: walletBalP + ganhoLiquidoPrestador,
                 wallet_earnings: walletEarnP + ganhoLiquidoPrestador 
             });
 
+            // 5. COFRE ATLIVIO: Registra o lucro real no sistema
+            const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
+            transaction.set(atlivioReceitaRef, {
+                total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
+                ultima_atualizacao: serverTimestamp()
+            }, { merge: true });
+            
             // 5. REGISTRO DE RECEITA DA ATLIVIO (O cofre da plataforma)
             const atlivioReceitaRef = doc(collection(db, "sys_finance"), "receita_total");
             transaction.set(atlivioReceitaRef, {
