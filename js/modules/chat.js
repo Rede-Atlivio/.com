@@ -429,15 +429,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 wallet_earnings: walletEarnP + ganhoLiquidoPrestador 
             });
 
-            // 5. COFRE ATLIVIO: Registra o lucro real no sistema
+            // 5. COFRE ATLIVIO: Registra o lucro acumulado (taxas) no sistema central
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-            transaction.set(atlivioReceitaRef, {
-                total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
-                ultima_atualizacao: serverTimestamp()
-            }, { merge: true });
-            
-            // 5. REGISTRO DE RECEITA DA ATLIVIO (O cofre da plataforma)
-            const atlivioReceitaRef = doc(collection(db, "sys_finance"), "receita_total");
             transaction.set(atlivioReceitaRef, {
                 total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
                 ultima_atualizacao: serverTimestamp()
