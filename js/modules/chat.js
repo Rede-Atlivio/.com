@@ -417,19 +417,17 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 descricao: `Liquidação de serviço #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
             });
 
-            //PONTO CRÍTICO 420 A 437 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
-            // 4. EXECUÇÃO PRESTADOR: Recebe Líquido e limpa Reserva de Agenda
-            const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
+            //PONTO CRÍTICO 420 A 435 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
+            // 4. EXECUÇÃO PRESTADOR: Liquidação com proteção de campos (Garante os R$ 80)
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
-            const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
 
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: walletBalP + ganhoLiquidoPrestador,
-                wallet_earnings: walletEarnP + ganhoLiquidoPrestador 
+                wallet_balance: increment(ganhoLiquidoPrestador),
+                wallet_earnings: increment(ganhoLiquidoPrestador)
             });
 
-            // 5. COFRE ATLIVIO: Registra o lucro acumulado (taxas) no sistema central
+            // 5. COFRE ATLIVIO: Direcionamento da Taxa para o sistema central (Os R$ 20)
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
             transaction.set(atlivioReceitaRef, {
                 total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
