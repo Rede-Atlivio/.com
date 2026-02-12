@@ -476,9 +476,10 @@ window.filtrarGanhos = async (periodo) => {
 
         snap.forEach(doc => {
             const t = doc.data();
-            // Somamos apenas valores positivos que sejam de serviços ou missões
-            if (t.valor > 0 && (t.tipo.includes('✅') || t.tipo.includes('🎯'))) {
-                soma += t.valor;
+            const tipo = t.tipo || "";
+            // Captura qualquer ganho positivo de serviço ou missão (✅, ⚡ ou 🎯)
+            if (t.valor > 0 && (tipo.includes('GANHO') || tipo.includes('✅') || tipo.includes('⚡') || tipo.includes('🎯'))) {
+                soma += parseFloat(t.valor);
             }
         });
 
