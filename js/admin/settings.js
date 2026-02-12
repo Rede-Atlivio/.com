@@ -118,8 +118,9 @@ async function loadSettings() {
         const data = dFin.exists() ? dFin.data() : {};
         const legado = dLegado.exists() ? dLegado.data() : {};
 
-        // Sincroniza a Interface com os dados REAIS do Banco
+       // Sincroniza a Interface com os dados REAIS do Banco
         document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma ?? 0.20;
+        document.getElementById('conf-taxa-cliente').value = data.taxa_cliente ?? 0.05;
         document.getElementById('conf-limite-divida').value = data.limite_divida ?? -60.00;
         
         // Ponto 3 e 4: Mapeia as porcentagens específicas
