@@ -115,11 +115,11 @@ export function iniciarMonitoramentoCarteira() {
             window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
             
             const saldoExibicao = window.userProfile.wallet_total_power;
-            // ✅ Atualização de Interfaces usando o Saldo Total (Poder de Compra)
+            // ✅ Interfaces usam agora o campo oficial de Poder de Compra
             verificarFaixaBonus(sBonus); 
-            atualizarInterfaceCarteira(saldoTotal);
-            atualizarInterfaceHeader(saldoTotal);
-            atualizarInterfaceGanhar(saldoTotal);
+            atualizarInterfaceCarteira(saldoExibicao);
+            atualizarInterfaceHeader(saldoExibicao);
+            atualizarInterfaceGanhar(saldoExibicao);
             carregarHistoricoCarteira(uid); 
         }
     });
