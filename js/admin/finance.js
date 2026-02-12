@@ -251,27 +251,29 @@ window.executeAdjustment = async (uid) => {
             
             if (!userDoc.exists()) throw "Usuário não encontrado!";
 
-           // 1. Identifica o campo alvo selecionado pelo Admin
+           // 1. Identifica o campo alvo e calcula novos valores
             const field = document.getElementById('trans-target-field').value;
-            const currentVal = Number(userDoc.data()[field] || 0);
+            const userData = userDoc.data();
+            const currentVal = Number(userData[field] || 0);
             const newVal = currentVal + finalAmount;
 
-            // 🛡️ ATUALIZAÇÃO V12: Ajuste cirúrgico no campo escolhido
+            // 2. Cálculo do Novo Poder de Compra (Total Power) em tempo real
+            const novoReal = field === 'wallet_balance' ? newVal : Number(userData.wallet_balance || 0);
+            const novoBonus = field === 'wallet_bonus' ? newVal : Number(userData.wallet_bonus || 0);
+            const novoTotalPower = novoReal + novoBonus;
+
+            // 🛡️ ATUALIZAÇÃO V12.1: Sincronia de Trindade + Total Power (Fim do erro newBalance)
             const syncUpdate = { 
-                [field]: Number(newVal), 
+                [field]: Number(newVal),
+                wallet_total_power: Number(novoTotalPower),
                 updated_at: serverTimestamp()
             };
             transaction.update(userRef, syncUpdate);
 
-            // 🔄 SINCRONIA RADAR: Se mexeu no saldo real e for prestador, atualiza o 'balance' do mapa
-            if (field === 'wallet_balance' && provDoc.exists()) {
-                transaction.update(providerRef, { balance: Number(newVal) });
-            }
-
-            // Se for um prestador, atualiza também o campo 'balance' (usado no Radar/Mapa)
+            // 🔄 SINCRONIA RADAR: Se for prestador, mantém o mapa atualizado com o Saldo Real
             if (provDoc.exists()) {
                 transaction.update(providerRef, { 
-                    balance: Number(newBalance),
+                    balance: Number(novoReal),
                     updated_at: serverTimestamp()
                 });
             }
