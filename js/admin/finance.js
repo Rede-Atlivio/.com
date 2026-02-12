@@ -89,8 +89,9 @@ async function loadFinanceData() {
 
         snap.forEach(doc => {
             const d = doc.data();
-            // 🚨 INVESTIGAÇÃO DIVERGÊNCIA: Pega wallet_balance E saldo para comparar
-            const saldoFinal = parseFloat(d.wallet_balance || d.saldo || 0);
+            //PONTO CRÍTICO LIMPEZA CAMPO SALDO
+            // ✅ SANEAMENTO V12: Foco exclusivo na Trindade Financeira
+            const saldoFinal = parseFloat(d.wallet_balance || 0);
             
             if (saldoFinal > 0) custodia += saldoFinal;
             if (saldoFinal < 0) receber += Math.abs(saldoFinal);
