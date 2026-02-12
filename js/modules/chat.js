@@ -424,9 +424,14 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             // O ajuste real é: (Ganho Líquido - O que já estava preso na reserva)
             const ajusteSaldoNecessario = ganhoLiquidoPrestador - resProvider;
 
+            // 🛡️ SINCRONIA ATÔMICA: Atualiza Saldo, Reserva e o Poder de Compra (Total Power)
+            const novoBalanceReal = (parseFloat(providerSnap.data().wallet_balance || 0) + ajusteSaldoNecessario);
+            const novoBonusReal = parseFloat(providerSnap.data().wallet_bonus || 0);
+
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: increment(ajusteSaldoNecessario),
+                wallet_balance: Number(novoBalanceReal),
+                wallet_total_power: Number(novoBalanceReal + novoBonusReal),
                 wallet_earnings: increment(ganhoLiquidoPrestador)
             });
 
