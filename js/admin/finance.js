@@ -152,29 +152,41 @@ window.filterFinanceList = () => {
 // ============================================================================
 // 3. EDITOR DE SALDO (AJUSTE MANUAL)
 // ============================================================================
-window.openBalanceEditor = (uid, currentBalance) => {
+window.openBalanceEditor = (uid, balReal, balBonus, balReserved) => {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
-    
     modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = "AJUSTE FINANCEIRO MANUAL";
+    document.getElementById('modal-title').innerText = "GERENCIADOR DE CARTEIRA V12";
     document.getElementById('btn-close-modal').onclick = () => modal.classList.add('hidden');
 
     content.innerHTML = `
-        <div class="p-4 bg-slate-800 rounded-xl border border-slate-700 mb-6 text-center">
-            <p class="text-xs text-gray-400 uppercase font-bold">Saldo Atual</p>
-            <h2 class="text-3xl font-black ${currentBalance < 0 ? 'text-red-500' : 'text-emerald-500'}">R$ ${currentBalance.toFixed(2)}</h2>
+        <div class="grid grid-cols-3 gap-2 mb-6">
+            <div class="bg-slate-900 p-2 rounded-lg border border-blue-500/30 text-center">
+                <p class="text-[8px] text-gray-500 uppercase font-bold">Saldo Real</p>
+                <p class="text-xs font-bold text-white">R$ ${balReal.toFixed(2)}</p>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-lg border border-purple-500/30 text-center">
+                <p class="text-[8px] text-gray-500 uppercase font-bold">Bônus</p>
+                <p class="text-xs font-bold text-white">R$ ${balBonus.toFixed(2)}</p>
+            </div>
+            <div class="bg-slate-900 p-2 rounded-lg border border-amber-500/30 text-center">
+                <p class="text-[8px] text-gray-500 uppercase font-bold">Reserva</p>
+                <p class="text-xs font-bold text-white">R$ ${balReserved.toFixed(2)}</p>
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-            <button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/50 border border-emerald-500/30 text-white p-4 rounded-xl hover:bg-emerald-900/80 transition">
-                <p class="font-bold text-emerald-400">🟢 ADICIONAR CRÉDITO</p>
-                <p class="text-[10px] text-gray-400">Bônus, Estorno, Depósito Manual</p>
-            </button>
-            <button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/50 border border-red-500/30 text-white p-4 rounded-xl hover:bg-red-900/80 transition">
-                <p class="font-bold text-red-400">🔴 COBRAR / REMOVER</p>
-                <p class="text-[10px] text-gray-400">Taxas, Multas, Saque Manual</p>
-            </button>
+        <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6">
+            <label class="inp-label">SELECIONE O CAMPO PARA AJUSTAR:</label>
+            <select id="trans-target-field" class="inp-editor mb-4 text-white">
+                <option value="wallet_balance">💰 SALDO REAL (Disponível)</option>
+                <option value="wallet_bonus">💜 SALDO BÔNUS (Promo)</option>
+                <option value="wallet_reserved">🔒 SALDO RESERVADO (Em Serviço)</option>
+            </select>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="window.setTransactionMode('credit')" id="btn-mode-credit" class="bg-emerald-900/30 border border-emerald-500/30 text-white p-3 rounded-xl hover:bg-emerald-600 transition text-[10px] font-black uppercase">➕ Adicionar</button>
+                <button onclick="window.setTransactionMode('debit')" id="btn-mode-debit" class="bg-red-900/30 border border-red-500/30 text-white p-3 rounded-xl hover:bg-red-600 transition text-[10px] font-black uppercase">➖ Remover</button>
+            </div>
         </div>
 
         <div id="trans-form" class="mt-6 hidden animate-fade">
