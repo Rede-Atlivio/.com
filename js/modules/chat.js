@@ -421,13 +421,31 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
-
+             
+            //PONTO CRÍTICO 428 A 449 - SOLUÇÃO MEUS GANHOS
             // A MÁGICA: A reserva do prestador (resProvider) NÃO volta para o saldo dele. 
             // Ela some da reserva e fica com a Atlivio como Taxa de Agenda.
+            // 4. EXECUÇÃO PRESTADOR: Recebe apenas o LÍQUIDO (Valor - Taxa)
+            const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
+            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
+            const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
+
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: walletBalP + ganhoLiquidoPrestador,
-                wallet_earnings: walletEarnP + ganhoLiquidoPrestador
+                wallet_balance: walletBalP + ganhoLiquidoPrestador, // R$ 80 no seu teste
+                wallet_earnings: walletEarnP + ganhoLiquidoPrestador 
+            });
+
+            // 5. REGISTRO DE RECEITA DA ATLIVIO (O cofre da plataforma)
+            const atlivioReceitaRef = doc(collection(db, "sys_finance"), "receita_total");
+            transaction.set(atlivioReceitaRef, {
+                total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
+                ultima_atualizacao: serverTimestamp()
+            }, { merge: true });
+
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: pedido.provider_id, tipo: "GANHO_SERVIÇO ✅", valor: ganhoLiquidoPrestador,
+                descricao: `Recebimento pedido #${orderId.slice(0,5)} (Taxa Atlivio Deduzida)`, timestamp: serverTimestamp()
             });
 
             // Registro do Prestador: Ele vê o ganho líquido entrar no saldo real
