@@ -436,3 +436,57 @@ function verificarFaixaBonus(valorBonus) {
         if (banner) banner.remove();
     }
 }
+/**
+ * 📈 MOTOR DE GANHOS DINÂMICOS
+ * Calcula ganhos baseados no extrato_financeiro
+ */
+window.filtrarGanhos = async (periodo) => {
+    const uid = auth.currentUser?.uid;
+    const elEarnings = document.getElementById('user-earnings');
+    const elLabel = document.getElementById('label-ganhos');
+    if (!uid || !elEarnings) return;
+
+    window.filtroGanhosAtivo = periodo;
+    elEarnings.innerText = "...";
+
+    // Se o filtro for 'total', usamos o campo estático do perfil para ser instantâneo
+    if (periodo === 'total') {
+        elLabel.innerText = "Ganhos Totais";
+        elEarnings.innerText = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
+        return;
+    }
+
+    try {
+        const { collection, query, where, getDocs, Timestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        let dataCorte = new Date();
+        dataCorte.setHours(0, 0, 0, 0); // Início do dia de hoje
+
+        if (periodo === '7') dataCorte.setDate(dataCorte.getDate() - 7);
+        if (periodo === '30') dataCorte.setDate(dataCorte.getDate() - 30);
+
+        const q = query(
+            collection(db, "extrato_financeiro"),
+            where("uid", "==", uid),
+            where("timestamp", ">=", Timestamp.fromDate(dataCorte))
+        );
+
+        const snap = await getDocs(q);
+        let soma = 0;
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            // Somamos apenas valores positivos que sejam de serviços ou missões
+            if (t.valor > 0 && (t.tipo.includes('✅') || t.tipo.includes('🎯'))) {
+                soma += t.valor;
+            }
+        });
+
+        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos nos últimos ${periodo} dias`;
+        elEarnings.innerText = soma.toFixed(2).replace('.', ',');
+
+    } catch (e) {
+        console.error("Erro ao filtrar ganhos:", e);
+        elEarnings.innerText = "0,00";
+    }
+};
