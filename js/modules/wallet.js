@@ -100,17 +100,21 @@ export function iniciarMonitoramentoCarteira() {
             
             //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 101 A 115 DEPOIS 102 A 118
             // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
+            // 🛡️ SINCRONIA V12: Poder de Compra (Real + Bônus)
             const sReal = parseFloat(data.wallet_balance || 0);
             const sBonus = parseFloat(data.wallet_bonus || 0);
-            const saldoTotal = sReal + sBonus;
+            const powerCalculado = sReal + sBonus;
 
+            // Alinha o perfil global com o campo reflexo do banco
             window.userProfile = window.userProfile || {};
             window.userProfile.uid = uid;
             window.userProfile.wallet_balance = sReal;
             window.userProfile.wallet_bonus = sBonus;
+            window.userProfile.wallet_total_power = parseFloat(data.wallet_total_power || powerCalculado);
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
             window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
-
+            
+            const saldoExibicao = window.userProfile.wallet_total_power;
             // ✅ Atualização de Interfaces usando o Saldo Total (Poder de Compra)
             verificarFaixaBonus(sBonus); 
             atualizarInterfaceCarteira(saldoTotal);
