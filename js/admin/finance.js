@@ -111,30 +111,40 @@ window.filterFinanceList = () => {
     else if (filterMode === 'debtors') filtered.sort((a, b) => a.saldoCalculado - b.saldoCalculado);
     else filtered.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
 
-    tbody.innerHTML = filtered.length ? "" : `<tr><td colspan="3" class="p-10 text-center text-gray-500">Nenhum usuário encontrado.</td></tr>`;
+    tbody.innerHTML = filtered.length ? "" : `<div class="col-span-full p-10 text-center text-gray-500">Nenhum usuário encontrado.</div>`;
 
     filtered.forEach(u => {
-        const color = u.saldoCalculado < 0 ? 'text-red-400' : (u.saldoCalculado > 0 ? 'text-emerald-400' : 'text-gray-500');
+        const balReal = (u.wallet_balance || 0);
+        const balBonus = (u.wallet_bonus || 0);
+        const balReserved = (u.wallet_reserved || 0);
+        const color = balReal < 0 ? 'text-red-400' : 'text-emerald-400';
+
         tbody.innerHTML += `
-            <tr class="hover:bg-white/5 transition border-b border-white/5">
-                <td class="p-4">
-                    <div class="font-bold text-white">${u.nome || u.displayName || 'Usuário'}</div>
-                    <div class="flex gap-2 mt-1">
-                        <span class="text-[8px] bg-blue-500/20 text-blue-400 px-1 rounded">REAL: R$ ${(u.wallet_balance || 0).toFixed(2)}</span>
-                        <span class="text-[8px] bg-purple-500/20 text-purple-400 px-1 rounded">BÔNUS: R$ ${(u.wallet_bonus || 0).toFixed(2)}</span>
-                        <span class="text-[8px] bg-amber-500/20 text-amber-400 px-1 rounded">PRESO: R$ ${(u.wallet_reserved || 0).toFixed(2)}</span>
+            <div class="glass-panel p-4 border border-slate-800 hover:border-blue-500/50 transition-all group">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-white font-bold text-sm uppercase tracking-tighter truncate w-40">${u.nome || u.displayName || 'Usuário'}</h4>
+                        <p class="text-[9px] text-gray-500 font-mono">${u.id.slice(0,12)}...</p>
                     </div>
-                </td>
-                <td class="p-4 text-right font-mono font-bold ${color}">
-                    R$ ${(u.wallet_balance || 0).toFixed(2)}
-                </td>
-                <td class="p-4 text-right">
-                    <button onclick="window.openBalanceEditor('${u.id}', ${u.saldoCalculado})" 
-                        class="bg-slate-800 hover:bg-slate-700 text-white p-2 rounded-lg transition border border-slate-700">
-                        ⚙️ Ajustar
-                    </button>
-                </td>
-            </tr>
+                    <button onclick="window.openBalanceEditor('${u.id}', ${balReal}, ${balBonus}, ${balReserved})" 
+                        class="p-2 bg-slate-900 rounded-lg text-blue-400 hover:bg-blue-600 hover:text-white transition shadow-sm border border-slate-700">⚙️</button>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-black/20 p-2 rounded border border-white/5">
+                        <p class="text-[8px] text-gray-500 font-bold uppercase">Saldo Real</p>
+                        <p class="text-xs font-black ${color}">R$ ${balReal.toFixed(2)}</p>
+                    </div>
+                    <div class="bg-black/20 p-2 rounded border border-white/5">
+                        <p class="text-[8px] text-gray-500 font-bold uppercase">Bônus</p>
+                        <p class="text-xs font-black text-purple-400">R$ ${balBonus.toFixed(2)}</p>
+                    </div>
+                    <div class="bg-black/20 p-2 rounded border border-white/5">
+                        <p class="text-[8px] text-gray-500 font-bold uppercase">Reserva</p>
+                        <p class="text-xs font-black text-amber-400">R$ ${balReserved.toFixed(2)}</p>
+                    </div>
+                </div>
+            </div>
         `;
     });
 };
