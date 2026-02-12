@@ -246,13 +246,12 @@ window.executeAdjustment = async (uid) => {
                                    userDoc.data().wallet_balance : (userDoc.data().saldo || 0);
             const newBalance = currentBalance + finalAmount;
 
-            // 2. Sincronia Tripla: Atualiza os 3 nomes de saldo conhecidos no sistema
+            //PONTO CRÍTICO 02 - PROCESSO DE LIMPEZA CAMPO FANTASMA SALDO - 250 A 254
+            // 🛡️ BLINDAGEM V12: O campo 'saldo' foi oficialmente deletado.
             const syncUpdate = { 
                 wallet_balance: Number(newBalance), 
-                saldo: Number(newBalance),
                 updated_at: serverTimestamp()
             };
-            
             transaction.update(userRef, syncUpdate);
 
             // Se for um prestador, atualiza também o campo 'balance' (usado no Radar/Mapa)
