@@ -43,24 +43,8 @@ export async function init() {
             </button>
         </div>
 
-        <div class="glass-panel overflow-hidden border border-slate-800">
-            <div class="bg-slate-800/50 p-4 border-b border-slate-800">
-                <h3 class="font-bold text-white text-xs uppercase tracking-widest">Gestão de Saldos Real-Time</h3>
-            </div>
-            <div class="max-h-[500px] overflow-y-auto custom-scrollbar">
-                <table class="w-full text-left">
-                    <thead class="bg-slate-950 text-[10px] uppercase text-gray-500 font-bold sticky top-0 z-10">
-                        <tr>
-                            <th class="p-4">USUÁRIO</th>
-                            <th class="p-4 text-right">SALDO ATUAL</th>
-                            <th class="p-4 text-right">AÇÕES</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fin-master-list" class="text-xs divide-y divide-white/5">
-                        <tr><td colspan="3" class="p-10 text-center text-gray-500 italic">Carregando dados...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+        <div id="fin-master-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade">
+            <div class="col-span-full p-10 text-center text-gray-500 italic">Carregando carteiras...</div>
         </div>
     `;
 
