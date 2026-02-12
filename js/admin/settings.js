@@ -190,14 +190,14 @@ window.saveBusinessRules = async () => {
         // GRAVAÇÃO UNIFICADA (Apenas na Coleção Master)
         await setDoc(doc(window.db, "settings", "financeiro"), payloadMaster, { merge: true });
         
-        // Sincroniza o legado apenas para não quebrar versões muito antigas
+        // Sincroniza o legado (usando a variável correta taxaP)
         await setDoc(doc(window.db, "configuracoes", "financeiro"), {
             porcentagem_reserva: Number(rawPctPres),
-            taxa_prestador: Number(taxaNum * 100), // Mantém 15 para o radar antigo se necessário
+            taxa_prestador: Number(taxaP * 100),
             updated_at: new Date()
         }, { merge: true });
 
-        alert("✅ REGRAS UNIFICADAS! Taxa salva como: " + (taxaNum * 100) + "%");
+        alert("✅ REGRAS UNIFICADAS! Taxa Prestador: " + (taxaP * 100) + "% | Cliente: " + (taxaC * 100) + "%");
     } catch(e) { alert("Erro: " + e.message); }
 };
 
