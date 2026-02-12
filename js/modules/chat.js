@@ -422,14 +422,10 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
              
-            //PONTO CRÍTICO 428 A 449 - SOLUÇÃO MEUS GANHOS
+            //PONTO CRÍTICO 428 A 445 - SOLUÇÃO MEUS GANHOS
             // A MÁGICA: A reserva do prestador (resProvider) NÃO volta para o saldo dele. 
             // Ela some da reserva e fica com a Atlivio como Taxa de Agenda.
             // 4. EXECUÇÃO PRESTADOR: Recebe apenas o LÍQUIDO (Valor - Taxa)
-            const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
-            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
-            const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
-
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
                 wallet_balance: walletBalP + ganhoLiquidoPrestador, // R$ 80 no seu teste
