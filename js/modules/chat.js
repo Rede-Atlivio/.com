@@ -418,12 +418,15 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             });
 
             //PONTO CRÍTICO 420 A 435 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
-            // 4. EXECUÇÃO PRESTADOR: Liquidação com proteção de campos (Garante os R$ 80)
+           // 4. EXECUÇÃO PRESTADOR: Converte Reserva em Saldo Líquido Real
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
+            
+            // O ajuste real é: (Ganho Líquido - O que já estava preso na reserva)
+            const ajusteSaldoNecessario = ganhoLiquidoPrestador - resProvider;
 
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: increment(ganhoLiquidoPrestador),
+                wallet_balance: increment(ajusteSaldoNecessario),
                 wallet_earnings: increment(ganhoLiquidoPrestador)
             });
 
