@@ -406,29 +406,35 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             const ganhoLiquidoPrestador = valorTotalBase - valorTaxaAtlivioP;
 
-            // 3. EXECUÇÃO CLIENTE: Limpa reserva e registra saída
+            //PONTO CRÍTICO: LIQUIDAÇÃO ATÔMICA - LINHAS 410 A 437
+            // 3. EXECUÇÃO CLIENTE: Liquida a Reserva do Cliente
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
             transaction.update(clientRef, { wallet_reserved: Math.max(0, walletResC - resCliente) });
+            
+            // Registro do Cliente: Ele vê que o dinheiro saiu da reserva e o serviço foi pago
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -resCliente,
-                descricao: `Pagamento pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
+                descricao: `Liquidação de serviço #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
             });
 
-            // 4. EXECUÇÃO PRESTADOR: Limpa reserva, soma saldo e ganhos históricos
+            // 4. EXECUÇÃO PRESTADOR: Transfere Lucro Líquido
             const walletBalP = parseFloat(providerSnap.data().wallet_balance || 0);
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             const walletEarnP = parseFloat(providerSnap.data().wallet_earnings || 0);
 
+            // A MÁGICA: A reserva do prestador (resProvider) NÃO volta para o saldo dele. 
+            // Ela some da reserva e fica com a Atlivio como Taxa de Agenda.
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
                 wallet_balance: walletBalP + ganhoLiquidoPrestador,
                 wallet_earnings: walletEarnP + ganhoLiquidoPrestador
             });
+
+            // Registro do Prestador: Ele vê o ganho líquido entrar no saldo real
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id, tipo: "GANHO_SERVIÇO ✅", valor: ganhoLiquidoPrestador,
-                descricao: `Recebimento pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
+                descricao: `Crédito líquido pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
             });
-
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
             transaction.update(orderRef, { 
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
