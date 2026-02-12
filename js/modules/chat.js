@@ -437,15 +437,14 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 ultima_atualizacao: serverTimestamp()
             }, { merge: true });
 
+            // ✅ REGISTRO ÚNICO: Evita duplicidade no extrato e garante a leitura correta no site
+            //PONTO CRÍTICO - SOLUÇÃO MEUS GANHOS
             transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: pedido.provider_id, tipo: "GANHO_SERVIÇO ✅", valor: ganhoLiquidoPrestador,
-                descricao: `Recebimento pedido #${orderId.slice(0,5)} (Taxa Atlivio Deduzida)`, timestamp: serverTimestamp()
-            });
-
-            // Registro do Prestador: Ele vê o ganho líquido entrar no saldo real
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: pedido.provider_id, tipo: "GANHO_SERVIÇO ✅", valor: ganhoLiquidoPrestador,
-                descricao: `Crédito líquido pedido #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
+                uid: pedido.provider_id, 
+                tipo: "GANHO_SERVIÇO ✅", 
+                valor: Number(ganhoLiquidoPrestador),
+                descricao: `Crédito líquido pedido #${orderId.slice(0,5)} (Taxas pagas)`, 
+                timestamp: serverTimestamp()
             });
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
             transaction.update(orderRef, { 
