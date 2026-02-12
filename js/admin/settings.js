@@ -34,13 +34,17 @@ export async function init() {
                 <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-600 mb-4">
     <p class="text-[10px] font-black text-emerald-400 uppercase mb-3 tracking-widest">⚡ CÉREBRO FINANCEIRO (PRESTADOR VS CLIENTE)</p>
     
-    <div class="grid grid-cols-2 gap-4 mb-4">
+    <div class="grid grid-cols-3 gap-4 mb-4">
         <div>
-            <label class="text-[10px] font-bold text-gray-400 uppercase">Taxa Plataforma (Ex: 0.20)</label>
+            <label class="text-[10px] font-bold text-blue-400 uppercase">Taxa Prestador (Ex: 0.20)</label>
             <input type="number" step="0.01" id="conf-taxa-plataforma" class="inp-editor h-10 text-white font-mono" placeholder="0.20">
         </div>
         <div>
-            <label class="text-[10px] font-bold text-red-400 uppercase">Limite que pode dever (Ex: -60)</label>
+            <label class="text-[10px] font-bold text-purple-400 uppercase">Taxa Cliente (Ex: 0.05)</label>
+            <input type="number" step="0.01" id="conf-taxa-cliente" class="inp-editor h-10 text-white font-mono" placeholder="0.05">
+        </div>
+        <div>
+            <label class="text-[10px] font-bold text-red-400 uppercase">Limite Dívida (Ex: -60)</label>
             <input type="number" id="conf-limite-divida" class="inp-editor h-10 text-white font-mono" placeholder="-60.00">
         </div>
     </div>
