@@ -132,13 +132,17 @@ window.filterFinanceList = () => {
     filtered.forEach(u => {
         const color = u.saldoCalculado < 0 ? 'text-red-400' : (u.saldoCalculado > 0 ? 'text-emerald-400' : 'text-gray-500');
         tbody.innerHTML += `
-            <tr class="hover:bg-white/5 transition">
+            <tr class="hover:bg-white/5 transition border-b border-white/5">
                 <td class="p-4">
                     <div class="font-bold text-white">${u.nome || u.displayName || 'Usuário'}</div>
-                    <div class="text-[9px] text-gray-500 font-mono">${u.id}</div>
+                    <div class="flex gap-2 mt-1">
+                        <span class="text-[8px] bg-blue-500/20 text-blue-400 px-1 rounded">REAL: R$ ${(u.wallet_balance || 0).toFixed(2)}</span>
+                        <span class="text-[8px] bg-purple-500/20 text-purple-400 px-1 rounded">BÔNUS: R$ ${(u.wallet_bonus || 0).toFixed(2)}</span>
+                        <span class="text-[8px] bg-amber-500/20 text-amber-400 px-1 rounded">PRESO: R$ ${(u.wallet_reserved || 0).toFixed(2)}</span>
+                    </div>
                 </td>
                 <td class="p-4 text-right font-mono font-bold ${color}">
-                    R$ ${u.saldoCalculado.toFixed(2)}
+                    R$ ${(u.wallet_balance || 0).toFixed(2)}
                 </td>
                 <td class="p-4 text-right">
                     <button onclick="window.openBalanceEditor('${u.id}', ${u.saldoCalculado})" 
