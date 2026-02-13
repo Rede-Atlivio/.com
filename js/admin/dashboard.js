@@ -100,22 +100,38 @@ export async function init() {
         let trafficStats = {}; 
         let userSourceMap = {};
 
-        usersSnap.forEach(doc => {
-            const data = doc.data();
-            const valor = parseFloat(data.wallet_balance || data.saldo || 0);
-            totalSaldo += valor;
+       let totalSaldoPositivo = 0;
+        let totalDividas = 0;
+        let totalCustodia = 0;
+        let trafficStats = {}; 
+        let userSourceMap = {};
+
+        usersSnap.forEach(uDoc => {
+            const uData = uDoc.data();
+            const saldo = parseFloat(uData.wallet_balance || uData.saldo || 0);
+            const res = parseFloat(uData.wallet_reserved || 0);
             
-            let source = data.traffic_source || 'orgânico';
-            if(source === 'direct') source = 'orgânico';
+            if (saldo > 0) totalSaldoPositivo += saldo;
+            else totalDividas += Math.abs(saldo);
             
+            totalCustodia += res;
+
+            let source = uData.traffic_source || 'orgânico';
             trafficStats[source] = (trafficStats[source] || 0) + 1;
-            userSourceMap[doc.id] = source;
+            userSourceMap[uDoc.id] = source;
         });
 
+        // 🚀 BUSCA SALDO REAL DO COFRE (Plataforma)
+        const cofreSnap = await getDocs(collection(db, "sys_finance"));
+        let faturamentoTotal = 0;
+        cofreSnap.forEach(c => { if(c.id === 'receita_total') faturamentoTotal = c.data().total_acumulado || 0; });
+
+        // Atualiza a Interface
         document.getElementById('kpi-users').innerText = usersSnap.size;
-        document.getElementById('kpi-balance').innerText = `R$ ${totalSaldo.toFixed(2).replace('.', ',')}`;
-        document.getElementById('kpi-providers').innerText = providersSnap.size;
-        document.getElementById('kpi-jobs').innerText = jobsSnap.size;
+        document.getElementById('kpi-cofre').innerText = `R$ ${faturamentoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('kpi-custodia').innerText = `R$ ${totalCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('kpi-balance').innerText = `R$ ${totalSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('kpi-dividas').innerText = `R$ ${totalDividas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`; 
 
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
