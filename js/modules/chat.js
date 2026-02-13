@@ -432,18 +432,19 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             let valorParaInjetarNoSaldo = 0;
 
             if (configFin.completar_valor_total === true) {
-                // MODO GATEWAY: Injeta o valor líquido total do serviço (Garante o valor total no App)
+                // MODO GATEWAY: Garante o líquido total (ex: 90). Injeção = 90 - o que já era dele (20) = 70.
                 valorParaInjetarNoSaldo = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
             } else {
-                // MODO HÍBRIDO (Sua Regra): Apenas libera a sobra da custódia. O resto é por fora.
-                valorParaInjetarNoSaldo = sobraRealCustodia - resProvider;
+                // MODO HÍBRIDO: Devolve a SOBRA REAL da mesa sem subtrair a reserva dele novamente.
+                // Ex: Sobraram 20 na mesa. Injeta 20. Saldo dele pula de 80 para 100.
+                valorParaInjetarNoSaldo = sobraRealCustodia;
             }
 
-            const novoBalanceP = balanceP + valorParaInjetarNoSaldo;
+            const novoBalanceP = Number((balanceP + valorParaInjetarNoSaldo).toFixed(2));
 
-           transaction.update(providerRef, {
+            transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: Number(novoBalanceP.toFixed(2)),
+                wallet_balance: novoBalanceP,
                 wallet_total_power: Number((novoBalanceP + bonusP).toFixed(2)),
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
