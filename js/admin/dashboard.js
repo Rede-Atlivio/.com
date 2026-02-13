@@ -28,9 +28,14 @@ export async function init() {
                 <p class="text-[9px] uppercase font-bold text-gray-400">👥 Usuários</p>
                 <h3 class="text-xl font-black text-white" id="kpi-users">--</h3>
             </div>
-            <div class="glass-panel p-4 border-l-2 border-emerald-500 bg-emerald-500/5">
-                <p class="text-[9px] uppercase font-bold text-emerald-400">💰 Cofre Atlivio</p>
-                <h3 class="text-xl font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
+            <div class="glass-panel p-4 border-l-2 border-emerald-500 bg-emerald-500/5 flex flex-col justify-between overflow-hidden">
+                <div>
+                    <p class="text-[9px] uppercase font-bold text-emerald-400">💰 Cofre Atlivio</p>
+                    <h3 class="text-xl font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
+                </div>
+                <div id="mini-log-lucros" class="mt-2 space-y-1 h-12 overflow-y-auto custom-scrollbar border-t border-emerald-500/20 pt-1">
+                    <p class="text-[7px] text-gray-500 uppercase font-bold">Aguardando taxas...</p>
+                </div>
             </div>
             <div class="glass-panel p-4 border-l-2 border-amber-500">
                 <p class="text-[9px] uppercase font-bold text-amber-400">🔐 Em Custódia</p>
