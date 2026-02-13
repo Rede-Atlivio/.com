@@ -419,20 +419,33 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 descricao: `Reserva liquidada. Taxas aplicadas.`, timestamp: serverTimestamp()
             });
 
-            // 4. EXECUÇÃO PRESTADOR: Recebe a SOBRA real das custódias após Atlivio.
+            // 4. EXECUÇÃO PRESTADOR: Lógica Híbrida (Total ou Apenas Reserva)
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             const balanceP = parseFloat(providerSnap.data().wallet_balance || 0);
             const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
             
-            // Injeção = Valor Final Esperado - O que já estava retido (Custódia do Prestador)
-            const ajusteInjeção = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
-            const novoBalanceP = balanceP + ajusteInjeção;
+            // A Atlivio sempre retira primeiro a parte dela das custódias somadas.
+            const totalEmCustodia = resCliente + resProvider;
+            const taxaTotalAtlivio = valorTaxaAtlivioP + valorTaxaAtlivioC;
+            const sobraRealCustodia = totalEmCustodia - taxaTotalAtlivio;
+
+            let valorParaInjetarNoSaldo = 0;
+
+            if (configFin.completar_valor_total === true) {
+                // MODO GATEWAY: Injeta o valor líquido total do serviço (Garante o valor total no App)
+                valorParaInjetarNoSaldo = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+            } else {
+                // MODO HÍBRIDO (Sua Regra): Apenas libera a sobra da custódia. O resto é por fora.
+                valorParaInjetarNoSaldo = sobraRealCustodia - resProvider;
+            }
+
+            const novoBalanceP = balanceP + valorParaInjetarNoSaldo;
 
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
                 wallet_balance: Number(novoBalanceP.toFixed(2)),
                 wallet_total_power: Number((novoBalanceP + bonusP).toFixed(2)),
-                wallet_earnings: increment(ganhoLiquidoReal)
+                wallet_earnings: increment(valorTotalBase - valorTaxaAtlivioP) // Ganho Líquido Real para histórico
             });
 
             // 5. COFRE ATLIVIO: Direcionamento da Taxa para o sistema central (Os R$ 20)
