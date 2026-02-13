@@ -455,13 +455,16 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 ultima_atualizacao: serverTimestamp()
             }, { merge: true });
 
-            // ✅ REGISTRO ÚNICO: Evita duplicidade no extrato e garante a leitura correta no site
-            //PONTO CRÍTICO - SOLUÇÃO MEUS GANHOS
+           // ✅ REGISTRO DINÂMICO NO EXTRATO: Descrição baseada no modo de liquidação
+            const descExtrato = configFin.completar_valor_total === true 
+                ? `Pagamento integral pedido #${orderId.slice(0,5)} (Taxas retidas)` 
+                : `Liberação de garantia pedido #${orderId.slice(0,5)} (Saldo restante por fora)`;
+
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id, 
                 tipo: "GANHO_SERVIÇO ✅", 
-                valor: Number(ganhoLiquidoReal.toFixed(2)),
-                descricao: `Crédito líquido pedido #${orderId.slice(0,5)} (Taxas pagas)`, 
+                valor: Number(valorParaInjetarNoSaldo.toFixed(2)),
+                descricao: descExtrato, 
                 timestamp: serverTimestamp()
             });
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
