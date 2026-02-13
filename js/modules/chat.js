@@ -385,9 +385,11 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const providerRef = doc(db, "usuarios", pedido.provider_id);
 
-            const [clientSnap, providerSnap] = await Promise.all([
+            const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
+            const [clientSnap, providerSnap, cofreSnap] = await Promise.all([
                 transaction.get(clientRef),
-                transaction.get(providerRef)
+                transaction.get(providerRef),
+                transaction.get(atlivioReceitaRef)
             ]);
 
             const valorTotalBase = parseFloat(pedido.offer_value || 0);
