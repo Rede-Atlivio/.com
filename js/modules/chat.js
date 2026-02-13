@@ -421,17 +421,14 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
            // 4. EXECUÇÃO PRESTADOR: Converte Reserva em Saldo Líquido Real
             const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
             
-            // O ajuste real é: (Ganho Líquido - O que já estava preso na reserva)
-            const ajusteSaldoNecessario = ganhoLiquidoPrestador - resProvider;
-
-            // 🛡️ SINCRONIA ATÔMICA: Atualiza Saldo, Reserva e o Poder de Compra (Total Power)
-            const novoBalanceReal = (parseFloat(providerSnap.data().wallet_balance || 0) + ajusteSaldoNecessario);
+            // O ganho líquido entra integralmente no saldo real, pois a taxa Atlivio já foi retida do bruto.
+            const novoBalanceReal = parseFloat(providerSnap.data().wallet_balance || 0) + ganhoLiquidoPrestador;
             const novoBonusReal = parseFloat(providerSnap.data().wallet_bonus || 0);
 
             transaction.update(providerRef, {
                 wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: Number(novoBalanceReal),
-                wallet_total_power: Number(novoBalanceReal + novoBonusReal),
+                wallet_balance: Number(novoBalanceReal.toFixed(2)),
+                wallet_total_power: Number((novoBalanceReal + novoBonusReal).toFixed(2)),
                 wallet_earnings: increment(ganhoLiquidoPrestador)
             });
 
