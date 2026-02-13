@@ -448,10 +448,12 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 wallet_earnings: increment(valorTotalBase - valorTaxaAtlivioP) // Ganho Líquido Real para histórico
             });
 
-            // 5. COFRE ATLIVIO: Direcionamento da Taxa para o sistema central (Os R$ 20)
+            // 5. COFRE ATLIVIO: Soma as taxas P e C com precisão decimal
+            const taxaLiquidaTotal = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
+            
             transaction.set(atlivioReceitaRef, {
-                total_acumulado: increment(valorTaxaAtlivioP + valorTaxaAtlivioC),
+                total_acumulado: increment(taxaLiquidaTotal),
                 ultima_atualizacao: serverTimestamp()
             }, { merge: true });
 
