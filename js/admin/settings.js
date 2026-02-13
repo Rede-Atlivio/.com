@@ -131,9 +131,10 @@ async function loadSettings() {
         document.getElementById('conf-taxa-cliente').value = data.taxa_cliente ?? 0.05;
         document.getElementById('conf-limite-divida').value = data.limite_divida ?? -60.00;
         
-        // Ponto 3 e 4: Mapeia as porcentagens específicas
-        document.getElementById('conf-pct-reserva-prestador').value = data.porcentagem_reserva ?? legado.porcentagem_reserva ?? 20;
-        document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
+        // Ponto 3 e 4: Mapeia as porcentagens específicas e Modo de Liquidação
+        document.getElementById('conf-pct-reserva-prestador').value = data.porcentagem_reserva ?? legado.porcentagem_reserva ?? 20;
+        document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
+        document.getElementById('conf-completar-pagamento').checked = data.completar_valor_total ?? true;
 
         // 3. Parâmetros Legados (Apenas Visual/Histórico)
         if(dLegado.exists()) {
