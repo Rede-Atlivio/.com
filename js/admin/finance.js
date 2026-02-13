@@ -80,10 +80,12 @@ async function loadFinanceData() {
             //PONTO CRÍTICO LIMPEZA CAMPO SALDO
             // ✅ SANEAMENTO V12: Foco exclusivo na Trindade Financeira
             const saldoFinal = parseFloat(d.wallet_balance || 0);
+            const reservado = parseFloat(d.wallet_reserved || 0);
             
-            if (saldoFinal > 0) custodia += saldoFinal;
+            if (saldoFinal > 0) custodia += saldoFinal; 
             if (saldoFinal < 0) receber += Math.abs(saldoFinal);
-
+            let totalReservadoReal = 0; // Variável auxiliar para o próximo passo
+            
             window.allFinData.push({ id: doc.id, ...d, saldoCalculado: saldoFinal });
         });
 
