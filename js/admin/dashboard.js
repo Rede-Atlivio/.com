@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy, limit, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderAssistant } from "./assistant.js"; // 👈 IMPORTA A SECRETÁRIA
 
 // Função para abrir/fechar o detalhe do usuário
