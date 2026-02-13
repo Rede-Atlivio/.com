@@ -89,7 +89,9 @@ async function loadFinanceData() {
             window.allFinData.push({ id: doc.id, ...d, saldoCalculado: saldoFinal });
         });
 
-        document.getElementById('fin-custodia').innerText = `R$ ${custodia.toFixed(2)}`;
+        const totalCustodiaReal = window.allFinData.reduce((acc, curr) => acc + (parseFloat(curr.wallet_reserved) || 0), 0);
+        document.getElementById('fin-saldo-total').innerText = `R$ ${custodia.toFixed(2)}`;
+        document.getElementById('fin-custodia').innerText = `R$ ${totalCustodiaReal.toFixed(2)}`;
         document.getElementById('fin-receber').innerText = `R$ ${receber.toFixed(2)}`;
         document.getElementById('fin-total-users').innerText = window.allFinData.length;
 
