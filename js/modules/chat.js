@@ -399,12 +399,13 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             if (pTaxaP > 1) pTaxaP = pTaxaP / 100;
             const valorTaxaAtlivioP = valorTotalBase * pTaxaP;
 
-            // 2. CÁLCULO TAXA CLIENTE (Busca agora na configFin para evitar subfaturamento)
-            let pTaxaC = parseFloat(configFin.taxa_cliente || 0);
-            if (pTaxaC > 1) pTaxaC = pTaxaC / 100;
-            const valorTaxaAtlivioC = valorTotalBase * pTaxaC;
+            // 2. CÁLCULO TAXA CLIENTE (Configuração Centralizada)
+            let pTaxaC = parseFloat(configFin.taxa_cliente || 0);
+            if (pTaxaC > 1) pTaxaC = pTaxaC / 100;
+            const valorTaxaAtlivioC = valorTotalBase * pTaxaC;
 
-            const ganhoLiquidoPrestador = valorTotalBase - valorTaxaAtlivioP;
+            // REGRA DE OURO: Atlivio retira das custódias primeiro.
+            const ganhoLiquidoReal = valorTotalBase - valorTaxaAtlivioP;
 
             //PONTO CRÍTICO: LIQUIDAÇÃO ATÔMICA - LINHAS 410 A 437
             // 3. EXECUÇÃO CLIENTE: Liquida a Reserva do Cliente
