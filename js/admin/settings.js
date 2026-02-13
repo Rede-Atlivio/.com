@@ -60,13 +60,13 @@ export async function init() {
         </div>
     </div>
 
-    <div class="mt-4 p-3 bg-black/30 rounded-lg border border-white/5 flex items-center justify-between">
-        <div>
-            <p class="text-[10px] font-black text-white uppercase">Modo de Liquidação</p>
-            <p class="text-[8px] text-gray-400 uppercase">Ativado: Completa valor total | Desativado: Só libera reserva</p>
-        </div>
-        <input type="checkbox" id="conf-completar-pagamento" class="chk-custom">
-    </div>  
+   <div class="mt-4 p-3 bg-black/30 rounded-lg border border-white/5 flex items-center justify-between">
+        <div>
+            <p class="text-[10px] font-black text-white uppercase">Modo de Liquidação</p>
+            <p class="text-[8px] text-gray-400 uppercase">Ativado: Completa valor total | Desativado: Só libera reserva</p>
+        </div>
+        <input type="checkbox" id="conf-completar-pagamento" class="chk-custom" onchange="window.validarAtivacaoLiquidacao(this)">
+    </div>
 </div>
                 <div class="mt-2 border-t border-slate-700 pt-4">
     <p class="text-[9px] text-blue-400 font-bold mb-2 uppercase">Parâmetros Operacionais (App)</p>
