@@ -394,18 +394,18 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const resCliente = parseFloat(pedido.value_reserved_client || 0);
             const resProvider = parseFloat(pedido.value_reserved_provider || 0);
 
-            // 1. CÁLCULO TAXA PRESTADOR (Ex: 20%)
-            let pTaxaP = parseFloat(configFin.taxa_prestador || 0);
-            if (pTaxaP > 1) pTaxaP = pTaxaP / 100;
-            const valorTaxaAtlivioP = valorTotalBase * pTaxaP;
+           // 1. CÁLCULO TAXA PRESTADOR (Garante leitura de 'taxa_plataforma')
+            let pctP = parseFloat(configFin.taxa_plataforma || configFin.taxa_prestador || 0);
+            if (pctP > 1) pctP = pctP / 100;
+            const valorTaxaAtlivioP = Number((valorTotalBase * pctP).toFixed(2));
 
-            // 2. CÁLCULO TAXA CLIENTE (Configuração Centralizada)
-            let pTaxaC = parseFloat(configFin.taxa_cliente || 0);
-            if (pTaxaC > 1) pTaxaC = pTaxaC / 100;
-            const valorTaxaAtlivioC = valorTotalBase * pTaxaC;
+            // 2. CÁLCULO TAXA CLIENTE
+            let pctC = parseFloat(configFin.taxa_cliente || 0);
+            if (pctC > 1) pctC = pctC / 100;
+            const valorTaxaAtlivioC = Number((valorTotalBase * pctC).toFixed(2));
 
-            // REGRA DE OURO: Atlivio retira das custódias primeiro.
-            const ganhoLiquidoReal = valorTotalBase - valorTaxaAtlivioP;
+            // REGRA DO 90: Ganho Líquido Real para o Prestador (Métrica)
+            const ganhoLiquidoRealMétrica = Number((valorTotalBase - valorTaxaAtlivioP).toFixed(2));
 
             // 3. EXECUÇÃO CLIENTE: Liquida reserva e bloqueia ganhos.
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
