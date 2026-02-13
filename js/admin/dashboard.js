@@ -126,14 +126,36 @@ export async function init() {
             userSourceMap[uDoc.id] = source;
         });
 
-        // 🚀 BUSCA SALDO REAL DO COFRE (Plataforma)
-        const cofreSnap = await getDocs(collection(db, "sys_finance"));
-        let faturamentoTotal = 0;
-        cofreSnap.forEach(c => { if(c.id === 'receita_total') faturamentoTotal = c.data().total_acumulado || 0; });
+        // 🚀 ESCUTA REAL-TIME DO COFRE (Plataforma)
+        onSnapshot(doc(db, "sys_finance", "receita_total"), (doc) => {
+            const total = doc.exists() ? doc.data().total_acumulado || 0 : 0;
+            const el = document.getElementById('kpi-cofre');
+            if(el) el.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        });
 
-        // Atualiza a Interface
+        // 🚀 LOG DE ÚLTIMOS LUCROS (TAXAS)
+        const qTaxas = query(collection(db, "extrato_financeiro"), orderBy("timestamp", "desc"), limit(5));
+        onSnapshot(qTaxas, (snap) => {
+            const logContainer = document.getElementById('mini-log-lucros');
+            if(!logContainer) return;
+            logContainer.innerHTML = "";
+            snap.forEach(d => {
+                const data = d.data();
+                // Mostra apenas registros de reserva ou ganhos que indicam movimentação de taxa
+                if(data.tipo.includes("RESERVA") || data.tipo.includes("GANHO")) {
+                    const valorAbs = Math.abs(data.valor);
+                    logContainer.innerHTML += `
+                        <div class="flex justify-between items-center text-[8px] animate-fadeIn">
+                            <span class="text-gray-400 font-mono">${data.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span class="text-emerald-500 font-bold font-mono">+ R$ ${valorAbs.toFixed(2)}</span>
+                        </div>`;
+                }
+            });
+            if(logContainer.innerHTML === "") logContainer.innerHTML = `<p class="text-[7px] text-gray-500">Sem taxas recentes.</p>`;
+        });
+
+        // Atualiza a Interface estática
         document.getElementById('kpi-users').innerText = usersSnap.size;
-        document.getElementById('kpi-cofre').innerText = `R$ ${faturamentoTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('kpi-custodia').innerText = `R$ ${totalCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('kpi-balance').innerText = `R$ ${totalSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('kpi-dividas').innerText = `R$ ${totalDividas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`; 
