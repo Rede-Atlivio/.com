@@ -146,13 +146,11 @@ export async function init() {
             if(logContainer.innerHTML === "") logContainer.innerHTML = `<p class="text-[7px] text-gray-500">Aguardando taxas...</p>`;
         });
 
-        // Atualiza a Interface
-        document.getElementById('kpi-users').innerText = usersSnap.size;
-        document.getElementById('kpi-providers').innerText = providersSnap.size;
-        document.getElementById('kpi-jobs').innerText = jobsSnap.size;
-        document.getElementById('kpi-custodia').innerText = `R$ ${totalCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('kpi-balance').innerText = `R$ ${totalSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('kpi-dividas').innerText = `R$ ${totalDividas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        // Atualiza a Interface (Apenas IDs existentes no novo HTML de 5 colunas)
+        if(document.getElementById('kpi-users')) document.getElementById('kpi-users').innerText = usersSnap.size;
+        if(document.getElementById('kpi-custodia')) document.getElementById('kpi-custodia').innerText = `R$ ${somaCustodiaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if(document.getElementById('kpi-balance')) document.getElementById('kpi-balance').innerText = `R$ ${somaSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if(document.getElementById('kpi-dividas')) document.getElementById('kpi-dividas').innerText = `R$ ${somaDividasNegativas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
