@@ -411,11 +411,14 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
             transaction.update(clientRef, { wallet_reserved: Math.max(0, walletResC - resCliente) });
             
-            // Registro do Cliente: Ele vê que o dinheiro saiu da reserva e o serviço foi pago
+            // Registro do Cliente: Liquidação de reserva sem injetar ganhos
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -resCliente,
                 descricao: `Liquidação de serviço #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
             });
+
+            // Trava de segurança: Remove o campo wallet_earnings do cliente caso tenha sido injetado por erro anterior
+            transaction.update(clientRef, { wallet_earnings: 0 });
 
             //PONTO CRÍTICO 420 A 435 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
            // 4. EXECUÇÃO PRESTADOR: Converte Reserva em Saldo Líquido Real
