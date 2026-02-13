@@ -23,24 +23,28 @@ export async function init() {
     container.innerHTML = `
         <div id="admin-assistant-widget"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="glass-panel p-5 border-l-2 border-blue-500">
-                <p class="text-[10px] uppercase font-bold text-gray-400">USUÁRIOS TOTAIS</p>
-                <h3 class="text-2xl font-black text-white" id="kpi-users"><div class="loader w-4 h-4 border-white"></div></h3>
-            </div>
-            <div class="glass-panel p-5 border-l-2 border-green-500">
-                <p class="text-[10px] uppercase font-bold text-gray-400">PRESTADORES ONLINE</p>
-                <h3 class="text-2xl font-black text-green-400" id="kpi-providers"><div class="loader w-4 h-4 border-green-500"></div></h3>
-            </div>
-            <div class="glass-panel p-5 border-l-2 border-purple-500">
-                <p class="text-[10px] uppercase font-bold text-gray-400">VAGAS ATIVAS</p>
-                <h3 class="text-2xl font-black text-white" id="kpi-jobs"><div class="loader w-4 h-4 border-white"></div></h3>
-            </div>
-            <div class="glass-panel p-5 border-l-2 border-amber-500">
-                <p class="text-[10px] uppercase font-bold text-gray-400">SALDO EM CARTEIRAS</p>
-                <h3 class="text-2xl font-black text-amber-400" id="kpi-balance"><div class="loader w-4 h-4 border-amber-500"></div></h3>
-            </div>
-        </div>
+       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div class="glass-panel p-4 border-l-2 border-blue-500">
+                <p class="text-[9px] uppercase font-bold text-gray-400">👥 Usuários</p>
+                <h3 class="text-xl font-black text-white" id="kpi-users">--</h3>
+            </div>
+            <div class="glass-panel p-4 border-l-2 border-emerald-500 bg-emerald-500/5">
+                <p class="text-[9px] uppercase font-bold text-emerald-400">💰 Cofre Atlivio</p>
+                <h3 class="text-xl font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-l-2 border-amber-500">
+                <p class="text-[9px] uppercase font-bold text-amber-400">🔐 Em Custódia</p>
+                <h3 class="text-xl font-black text-amber-400" id="kpi-custodia">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-l-2 border-slate-500">
+                <p class="text-[9px] uppercase font-bold text-gray-400">💳 Saldo Clientes</p>
+                <h3 class="text-xl font-black text-white" id="kpi-balance">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-l-2 border-red-500">
+                <p class="text-[9px] uppercase font-bold text-red-400">📉 Dívidas Totais</p>
+                <h3 class="text-xl font-black text-red-400" id="kpi-dividas">R$ 0,00</h3>
+            </div>
+        </div> 
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel p-6 col-span-1 md:col-span-2">
