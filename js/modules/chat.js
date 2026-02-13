@@ -434,10 +434,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             let valorParaInjetarNoSaldo = 0;
 
             if (configFin.completar_valor_total === true) {
-                // 🛡️ TRAVA DE LASTRO: Verifica se existe dinheiro real para completar
+               // 🛡️ TRAVA DE LASTRO: Usa o cofreSnap lido no início da transação
                 const deficitTotal = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
-                const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-                const cofreSnap = await transaction.get(atlivioReceitaRef);
                 const saldoCofre = cofreSnap.exists() ? cofreSnap.data().total_acumulado || 0 : 0;
 
                 if (deficitTotal > 0 && saldoCofre < deficitTotal) {
