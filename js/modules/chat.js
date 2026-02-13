@@ -432,8 +432,25 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             let valorParaInjetarNoSaldo = 0;
 
             if (configFin.completar_valor_total === true) {
-                // MODO GATEWAY: Garante o líquido total (ex: 90). Injeção = 90 - o que já era dele (20) = 70.
-                valorParaInjetarNoSaldo = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+                // 🛡️ TRAVA DE LASTRO: Verifica se existe dinheiro real para completar
+                const deficitTotal = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+                const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
+                const cofreSnap = await transaction.get(atlivioReceitaRef);
+                const saldoCofre = cofreSnap.exists() ? cofreSnap.data().total_acumulado || 0 : 0;
+
+                if (deficitTotal > 0 && saldoCofre < deficitTotal) {
+                    throw `Liquidação Negada: A plataforma não possui lastro para completar este pagamento (Faltam R$ ${deficitTotal.toFixed(2)}).`;
+                }
+                
+                valorParaInjetarNoSaldo = deficitTotal;
+                
+                // Se houve déficit, a Atlivio paga
+                if (deficitTotal > 0) {
+                    transaction.update(atlivioReceitaRef, { 
+                        total_acumulado: increment(-deficitTotal),
+                        ultima_atualizacao: serverTimestamp()
+                    });
+                }
             } else {
                 // MODO HÍBRIDO: Devolve a SOBRA REAL da mesa sem subtrair a reserva dele novamente.
                 // Ex: Sobraram 20 na mesa. Injeta 20. Saldo dele pula de 80 para 100.
