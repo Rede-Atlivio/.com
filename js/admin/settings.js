@@ -185,16 +185,16 @@ window.saveBusinessRules = async () => {
     let taxaC = parseFloat(String(rawTaxaC).replace(',', '.'));
     if (taxaC > 1) taxaC = taxaC / 100;
 
-    const payloadMaster = { 
-        taxa_plataforma: Number(taxaP),
-        taxa_cliente: Number(taxaC),
-        limite_divida: Number(rawLimite),
-        porcentagem_reserva: Number(rawPctPres),
-        porcentagem_reserva_cliente: Number(rawPctCli),
-        updated_at: new Date(),
-        modificado_por: "admin"
-    };
-
+    const payloadMaster = { 
+        taxa_plataforma: Number(taxaP),
+        taxa_cliente: Number(taxaC),
+        limite_divida: Number(rawLimite),
+        porcentagem_reserva: Number(rawPctPres),
+        porcentagem_reserva_cliente: Number(rawPctCli),
+        completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
+        updated_at: new Date(),
+        modificado_por: "admin"
+    };
     try {
         // GRAVAÇÃO UNIFICADA (Apenas na Coleção Master)
         await setDoc(doc(window.db, "settings", "financeiro"), payloadMaster, { merge: true });
