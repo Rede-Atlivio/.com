@@ -246,3 +246,16 @@ window.clearDatabase = async () => {
     
     alert("Função de limpeza profunda desativada por segurança neste momento.\nUse a lixeira individual.");
 };
+// 🔐 TRAVA DE SEGURANÇA PARA MODO DE LIQUIDAÇÃO
+window.validarAtivacaoLiquidacao = (el) => {
+    if (el.checked) {
+        const confirmacao = prompt("⚠️ AVISO CRÍTICO:\nAtivar este modo obriga a plataforma a completar o pagamento integral ao prestador, mesmo que o cliente não tenha saldo.\n\nPara confirmar, digite exatamente:\nATIVAR MODO LIQUIDAÇÃO");
+        
+        if (confirmacao !== "ATIVAR MODO LIQUIDAÇÃO") {
+            alert("❌ Confirmação inválida. Operação cancelada.");
+            el.checked = false;
+        } else {
+            alert("✅ Modo de Liquidação Integral validado. Não esqueça de SALVAR as regras.");
+        }
+    }
+};
