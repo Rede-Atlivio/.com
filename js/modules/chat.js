@@ -456,25 +456,25 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 ultima_atualizacao: serverTimestamp()
             }, { merge: true });
 
-            // REGISTRO 1 (MÉTRICA DE HOJE/SITE): Grava o ganho líquido real (ex: 90)
+            // REGISTRO 1 (MÉTRICA): Sempre grava os 90 para o site mostrar Hoje/Total iguais.
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id,
                 tipo: "GANHO_SERVIÇO ✅",
                 valor: ganhoLiquidoRealMétrica,
-                descricao: `Lucro líquido do serviço #${orderId.slice(0,5)}`,
+                descricao: `Métrica de lucro líquido #${orderId.slice(0,5)}`,
                 timestamp: serverTimestamp()
             });
 
-            // REGISTRO 2 (FLUXO DE CAIXA): Grava apenas a movimentação na carteira (ex: 10)
+            // REGISTRO 2 (FLUXO): Grava a entrada real na carteira (os 20 que sobraram).
             if (valorParaInjetarNoSaldo !== 0) {
                 transaction.set(doc(collection(db, "extrato_financeiro")), {
                     uid: pedido.provider_id,
                     tipo: "LIBERAÇÃO_SALDO 💳",
                     valor: Number(valorParaInjetarNoSaldo.toFixed(2)),
-                    descricao: configFin.completar_valor_total ? "Injeção de saldo integral" : "Sobra da garantia liberada",
+                    descricao: `Crédito de garantia devolvido à carteira`,
                     timestamp: serverTimestamp()
                 });
-            } 
+            }
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
             transaction.update(orderRef, { 
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
