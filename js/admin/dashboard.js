@@ -96,30 +96,25 @@ export async function init() {
         // CARREGAMENTO DOS DADOS (CÓDIGO ANTERIOR MANTIDO IGUAL)
         // =================================================================================
         const usersSnap = await getDocs(collection(db, "usuarios"));
-        const qOnline = query(collection(db, "active_providers"), where("is_online", "==", true));
-        const providersSnap = await getDocs(qOnline);
-        const qJobs = query(collection(db, "jobs"), where("status", "==", "ativa"));
-        const jobsSnap = await getDocs(qJobs);
-
-        let totalSaldoPositivo = 0;
-        let totalDividas = 0;
-        let totalCustodia = 0;
+        
+        let somaSaldoPositivo = 0;
+        let somaDividasNegativas = 0;
+        let somaCustodiaTotal = 0;
         let trafficStats = {}; 
         let userSourceMap = {};
 
         usersSnap.forEach(uDoc => {
             const uData = uDoc.data();
-            const saldo = parseFloat(uData.wallet_balance || uData.saldo || 0);
-            const res = parseFloat(uData.wallet_reserved || 0);
+            const valBal = Number(uData.wallet_balance || 0);
+            const valRes = Number(uData.wallet_reserved || 0);
             
-            if (saldo > 0) totalSaldoPositivo += saldo;
-            else totalDividas += Math.abs(saldo);
+            if (valBal > 0) somaSaldoPositivo += valBal;
+            else if (valBal < 0) somaDividasNegativas += Math.abs(valBal);
             
-            totalCustodia += res;
+            somaCustodiaTotal += valRes;
 
             let source = uData.traffic_source || 'orgânico';
             if(source === 'direct') source = 'orgânico';
-            
             trafficStats[source] = (trafficStats[source] || 0) + 1;
             userSourceMap[uDoc.id] = source;
         });
