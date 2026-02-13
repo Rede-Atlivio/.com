@@ -407,34 +407,33 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             // REGRA DE OURO: Atlivio retira das custódias primeiro.
             const ganhoLiquidoReal = valorTotalBase - valorTaxaAtlivioP;
 
-            //PONTO CRÍTICO: LIQUIDAÇÃO ATÔMICA - LINHAS 410 A 437
-            // 3. EXECUÇÃO CLIENTE: Liquida a Reserva do Cliente
-            const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
-            transaction.update(clientRef, { wallet_reserved: Math.max(0, walletResC - resCliente) });
-            
-            // Registro do Cliente: Liquidação de reserva sem injetar ganhos
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -resCliente,
-                descricao: `Liquidação de serviço #${orderId.slice(0,5)}`, timestamp: serverTimestamp()
+            // 3. EXECUÇÃO CLIENTE: Liquida reserva e bloqueia ganhos.
+            const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
+            transaction.update(clientRef, { 
+                wallet_reserved: Math.max(0, walletResC - resCliente),
+                wallet_earnings: 0 
             });
+            
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -resCliente,
+                descricao: `Reserva liquidada. Taxas aplicadas.`, timestamp: serverTimestamp()
+            });
 
-            // Trava de segurança: Remove o campo wallet_earnings do cliente caso tenha sido injetado por erro anterior
-            transaction.update(clientRef, { wallet_earnings: 0 });
-
-            //PONTO CRÍTICO 420 A 435 - SOLUÇÃO MEUS GANHOS  E COFRE ATLÍVIO
-           // 4. EXECUÇÃO PRESTADOR: Converte Reserva em Saldo Líquido Real
-            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
+            // 4. EXECUÇÃO PRESTADOR: Recebe a SOBRA real das custódias após Atlivio.
+            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
+            const balanceP = parseFloat(providerSnap.data().wallet_balance || 0);
+            const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
             
-            // O ganho líquido entra integralmente no saldo real, pois a taxa Atlivio já foi retida do bruto.
-            const novoBalanceReal = parseFloat(providerSnap.data().wallet_balance || 0) + ganhoLiquidoPrestador;
-            const novoBonusReal = parseFloat(providerSnap.data().wallet_bonus || 0);
+            // Injeção = Valor Final Esperado - O que já estava retido (Custódia do Prestador)
+            const ajusteInjeção = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+            const novoBalanceP = balanceP + ajusteInjeção;
 
-            transaction.update(providerRef, {
-                wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: Number(novoBalanceReal.toFixed(2)),
-                wallet_total_power: Number((novoBalanceReal + novoBonusReal).toFixed(2)),
-                wallet_earnings: increment(ganhoLiquidoPrestador)
-            });
+            transaction.update(providerRef, {
+                wallet_reserved: Math.max(0, walletResP - resProvider),
+                wallet_balance: Number(novoBalanceP.toFixed(2)),
+                wallet_total_power: Number((novoBalanceP + bonusP).toFixed(2)),
+                wallet_earnings: increment(ganhoLiquidoReal)
+            });
 
             // 5. COFRE ATLIVIO: Direcionamento da Taxa para o sistema central (Os R$ 20)
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
