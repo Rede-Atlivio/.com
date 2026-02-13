@@ -399,8 +399,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             if (pTaxaP > 1) pTaxaP = pTaxaP / 100;
             const valorTaxaAtlivioP = valorTotalBase * pTaxaP;
 
-            // 2. CÁLCULO TAXA CLIENTE (Ex: 5%)
-            let pTaxaC = parseFloat(configGlob.taxa_intermediacao || 0);
+            // 2. CÁLCULO TAXA CLIENTE (Busca agora na configFin para evitar subfaturamento)
+            let pTaxaC = parseFloat(configFin.taxa_cliente || 0);
             if (pTaxaC > 1) pTaxaC = pTaxaC / 100;
             const valorTaxaAtlivioC = valorTotalBase * pTaxaC;
 
