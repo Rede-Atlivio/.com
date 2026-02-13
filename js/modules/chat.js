@@ -441,34 +441,39 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             const novoBalanceP = balanceP + valorParaInjetarNoSaldo;
 
-            transaction.update(providerRef, {
-                wallet_reserved: Math.max(0, walletResP - resProvider),
-                wallet_balance: Number(novoBalanceP.toFixed(2)),
-                wallet_total_power: Number((novoBalanceP + bonusP).toFixed(2)),
-                wallet_earnings: increment(valorTotalBase - valorTaxaAtlivioP) // Ganho Líquido Real para histórico
-            });
+           transaction.update(providerRef, {
+                wallet_reserved: Math.max(0, walletResP - resProvider),
+                wallet_balance: Number(novoBalanceP.toFixed(2)),
+                wallet_total_power: Number((novoBalanceP + bonusP).toFixed(2)),
+                wallet_earnings: increment(ganhoLiquidoRealMétrica)
+            });
 
-            // 5. COFRE ATLIVIO: Soma as taxas P e C com precisão decimal
-            const taxaLiquidaTotal = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
-            const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-            
-            transaction.set(atlivioReceitaRef, {
-                total_acumulado: increment(taxaLiquidaTotal),
+            // 5. COFRE ATLIVIO: Soma P + C explicitamente
+            const somaTaxasObrigatórias = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
+            transaction.set(doc(db, "sys_finance", "receita_total"), {
+                total_acumulado: increment(somaTaxasObrigatórias),
                 ultima_atualizacao: serverTimestamp()
             }, { merge: true });
 
-           // ✅ REGISTRO DINÂMICO NO EXTRATO: Descrição baseada no modo de liquidação
-            const descExtrato = configFin.completar_valor_total === true 
-                ? `Pagamento integral pedido #${orderId.slice(0,5)} (Taxas retidas)` 
-                : `Liberação de garantia pedido #${orderId.slice(0,5)} (Saldo restante por fora)`;
-
+            // REGISTRO 1 (MÉTRICA DE HOJE/SITE): Grava o ganho líquido real (ex: 90)
             transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: pedido.provider_id, 
-                tipo: "GANHO_SERVIÇO ✅", 
-                valor: Number(valorParaInjetarNoSaldo.toFixed(2)),
-                descricao: descExtrato, 
+                uid: pedido.provider_id,
+                tipo: "GANHO_SERVIÇO ✅",
+                valor: ganhoLiquidoRealMétrica,
+                descricao: `Lucro líquido do serviço #${orderId.slice(0,5)}`,
                 timestamp: serverTimestamp()
             });
+
+            // REGISTRO 2 (FLUXO DE CAIXA): Grava apenas a movimentação na carteira (ex: 10)
+            if (valorParaInjetarNoSaldo !== 0) {
+                transaction.set(doc(collection(db, "extrato_financeiro")), {
+                    uid: pedido.provider_id,
+                    tipo: "LIBERAÇÃO_SALDO 💳",
+                    valor: Number(valorParaInjetarNoSaldo.toFixed(2)),
+                    descricao: configFin.completar_valor_total ? "Injeção de saldo integral" : "Sobra da garantia liberada",
+                    timestamp: serverTimestamp()
+                });
+            } 
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
             transaction.update(orderRef, { 
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
