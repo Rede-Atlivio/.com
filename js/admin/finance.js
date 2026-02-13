@@ -11,8 +11,12 @@ export async function init() {
     
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade">
-            <div class="glass-panel p-6 border-l-4 border-amber-500 relative overflow-hidden">
-                <p class="text-[10px] uppercase font-bold text-amber-400 mb-1">EM CUSTÓDIA (PASSIVO)</p>
+           <div class="glass-panel p-6 border-l-4 border-amber-500 relative overflow-hidden">
+                <p class="text-[10px] uppercase font-bold text-amber-400 mb-1">SALDO TOTAL CLIENTES</p>
+                <h3 class="text-3xl font-black text-white" id="fin-saldo-total">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-6 border-l-4 border-blue-500 relative overflow-hidden">
+                <p class="text-[10px] uppercase font-bold text-blue-400 mb-1">CUSTÓDIA (RESERVADO)</p>
                 <h3 class="text-3xl font-black text-white" id="fin-custodia">R$ 0,00</h3>
             </div>
             <div class="glass-panel p-6 border-l-4 border-red-500 relative overflow-hidden">
