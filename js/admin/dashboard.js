@@ -125,39 +125,40 @@ export async function init() {
         });
 
         // 🚀 ESCUTA REAL-TIME DO COFRE (Plataforma)
-        onSnapshot(doc(db, "sys_finance", "receita_total"), (doc) => {
-            const total = doc.exists() ? doc.data().total_acumulado || 0 : 0;
-            const el = document.getElementById('kpi-cofre');
-            if(el) el.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        onSnapshot(doc(db, "sys_finance", "receita_total"), (snapDoc) => {
+            const total = snapDoc.exists() ? snapDoc.data().total_acumulado || 0 : 0;
+            const elCofre = document.getElementById('kpi-cofre');
+            if(elCofre) elCofre.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         });
 
         // 🚀 LOG DE ÚLTIMOS LUCROS (TAXAS)
         const qTaxas = query(collection(db, "extrato_financeiro"), orderBy("timestamp", "desc"), limit(5));
-        onSnapshot(qTaxas, (snap) => {
+        onSnapshot(qTaxas, (snapTaxas) => {
             const logContainer = document.getElementById('mini-log-lucros');
             if(!logContainer) return;
             logContainer.innerHTML = "";
-            snap.forEach(d => {
+            snapTaxas.forEach(d => {
                 const data = d.data();
-                // Mostra apenas registros de reserva ou ganhos que indicam movimentação de taxa
                 if(data.tipo.includes("RESERVA") || data.tipo.includes("GANHO")) {
                     const valorAbs = Math.abs(data.valor);
                     logContainer.innerHTML += `
                         <div class="flex justify-between items-center text-[8px] animate-fadeIn">
-                            <span class="text-gray-400 font-mono">${data.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                            <span class="text-gray-400 font-mono">${data.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || '--:--'}</span>
                             <span class="text-emerald-500 font-bold font-mono">+ R$ ${valorAbs.toFixed(2)}</span>
                         </div>`;
                 }
             });
-            if(logContainer.innerHTML === "") logContainer.innerHTML = `<p class="text-[7px] text-gray-500">Sem taxas recentes.</p>`;
+            if(logContainer.innerHTML === "") logContainer.innerHTML = `<p class="text-[7px] text-gray-500">Aguardando taxas...</p>`;
         });
 
-        // Atualiza a Interface estática
+        // Atualiza a Interface
         document.getElementById('kpi-users').innerText = usersSnap.size;
+        document.getElementById('kpi-providers').innerText = providersSnap.size;
+        document.getElementById('kpi-jobs').innerText = jobsSnap.size;
         document.getElementById('kpi-custodia').innerText = `R$ ${totalCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('kpi-balance').innerText = `R$ ${totalSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('kpi-dividas').innerText = `R$ ${totalDividas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`; 
-
+        document.getElementById('kpi-dividas').innerText = `R$ ${totalDividas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
         const sortedTraffic = Object.entries(trafficStats).sort(([,a], [,b]) => b - a); 
