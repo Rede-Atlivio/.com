@@ -101,11 +101,7 @@ export async function init() {
         const qJobs = query(collection(db, "jobs"), where("status", "==", "ativa"));
         const jobsSnap = await getDocs(qJobs);
 
-        let totalSaldo = 0;
-        let trafficStats = {}; 
-        let userSourceMap = {};
-
-       let totalSaldoPositivo = 0;
+        let totalSaldoPositivo = 0;
         let totalDividas = 0;
         let totalCustodia = 0;
         let trafficStats = {}; 
@@ -122,6 +118,8 @@ export async function init() {
             totalCustodia += res;
 
             let source = uData.traffic_source || 'orgânico';
+            if(source === 'direct') source = 'orgânico';
+            
             trafficStats[source] = (trafficStats[source] || 0) + 1;
             userSourceMap[uDoc.id] = source;
         });
