@@ -447,7 +447,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id, 
                 tipo: "GANHO_SERVIÇO ✅", 
-                valor: Number(ganhoLiquidoPrestador),
+                valor: Number(ganhoLiquidoReal.toFixed(2)),
                 descricao: `Crédito líquido pedido #${orderId.slice(0,5)} (Taxas pagas)`, 
                 timestamp: serverTimestamp()
             });
