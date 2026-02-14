@@ -308,7 +308,7 @@ window.buscarPedidoAuditoria = async (idOpcional = null) => {
 
         const data = docSnap.data();
         renderizarInfoPedido(data, data.original_id || docSnap.id);
-        renderizarChatBackup(data.original_id || docSnap.id, data.client_id, data.provider_id);
+        renderizarChatBackup(data.original_id || docSnap.id, data.client_id, data.provider_id, data.client_name, data.provider_name);
 
     } catch(e) {
         console.error(e);
