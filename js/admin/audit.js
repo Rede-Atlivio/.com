@@ -374,8 +374,15 @@ async function renderizarChatBackup(orderId, clientId, providerId) {
         const isSystem = msg.sender_id === 'system';
         const msg = doc.data();
         const isClient = msg.sender_id === clientId;
-        const align = isClient ? "items-start" : "items-end";
-        const bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
+        let align = isClient ? "items-start" : "items-end";
+        let bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
+        let label = isClient ? 'CLIENTE' : 'PRESTADOR';
+
+        if (isSystem) {
+            align = "items-center";
+            bubbleColor = "bg-amber-900/20 text-amber-200 border border-amber-500/20";
+            label = "SISTEMA";
+        }
         
         list.innerHTML += `
             <div class="flex flex-col ${align} w-full animate-fadeIn">
