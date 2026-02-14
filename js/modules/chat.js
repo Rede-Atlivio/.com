@@ -477,9 +477,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                     });
                 }
             } else {
-                // MODO HÍBRIDO: Devolve a SOBRA REAL da mesa sem subtrair a reserva dele novamente.
-                // Ex: Sobraram 20 na mesa. Injeta 20. Saldo dele pula de 80 para 100.
-                valorParaInjetarNoSaldo = sobraRealCustodia;
+                // MODO HÍBRIDO: Devolve a reserva do cliente + o troco da reserva do prestador
+                valorParaInjetarNoSaldo = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
             }
 
             const novoBalanceP = Number((balanceP + valorParaInjetarNoSaldo).toFixed(2));
