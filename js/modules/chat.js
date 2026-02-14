@@ -466,7 +466,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                     throw `Liquidação Negada: A plataforma não possui saldo no cofre (R$ ${saldoCofreAtual.toFixed(2)}) para completar o pagamento integral (Déficit: R$ ${deficitTotal.toFixed(2)}).`;
                 }
                 
-                valorParaInjetarNoSaldo = sobraRealCustodia; // CORREÇÃO V12: Paga apenas o sinal líquido (Sinal - Taxas)
+                // CORREÇÃO CIRÚRGICA: Garante que o prestador receba a reserva do cliente
+                valorParaInjetarNoSaldo = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
 
                 // Se houver déficit real, a Atlivio retira do cofre para pagar o prestador
                 if (deficitTotal > 0) {
