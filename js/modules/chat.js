@@ -422,7 +422,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
             // VALIDAÇÃO FLEXÍVEL V12: Permite saldo negativo até o limite configurado (Ex: -50.00)
-            if ((walletBalC - faltaPagar) < -(parseFloat(configFin.limite_divida) || 0)) {
+            if ((walletBalC - faltaPagar) < -Math.abs(parseFloat(configFin.limite_divida || 0))) {
                 throw `Saldo Insuficiente: O cliente possui apenas R$ ${walletBalC.toFixed(2)} livres, mas precisa de R$ ${faltaPagar.toFixed(2)} para quitar o restante do serviço.`;
             }
 
