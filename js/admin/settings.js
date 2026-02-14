@@ -170,11 +170,13 @@ window.saveAppSettings = async () => {
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
 //Agora, garantimos que quando você clicar em "Salvar", a taxa do cliente também vá para o Firebase.
 window.saveBusinessRules = async () => {
-    const rawTaxaP = document.getElementById('conf-taxa-plataforma')?.value || "0";
-    const rawTaxaC = document.getElementById('conf-taxa-cliente')?.value || "0";
-    const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
-    const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
-    const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
+    const rawTaxaP = document.getElementById('conf-taxa-plataforma')?.value || "0";
+    const rawTaxaC = document.getElementById('conf-taxa-cliente')?.value || "0";
+    const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
+    const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
+    const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
+    const rawValMin = document.getElementById('conf-val-min')?.value || "20";
+    const rawValMax = document.getElementById('conf-val-max')?.value || "500";
 
     // 🛡️ BLINDAGEM DECIMAL: Transforma 20 em 0.20 e 5 em 0.05
     let taxaP = parseFloat(String(rawTaxaP).replace(',', '.'));
