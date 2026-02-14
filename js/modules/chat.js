@@ -444,8 +444,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
             
             // O dinheiro na mesa agora é: Reserva Cliente + Reserva Provider + O que debitamos do Saldo Cliente
-            // MESA REAL V12: O lucro do prestador só pode vir do que o CLIENTE pagou (Reserva + Saldo).
-            const totalDinheiroNaMesa = Number((resCliente + faltaPagar).toFixed(2));
+            const totalDinheiroNaMesa = resCliente + resProvider + faltaPagar;
             const taxaTotalAtlivio = valorTaxaAtlivioP + valorTaxaAtlivioC;
             
             // A sobra real é o dinheiro total menos as taxas da plataforma
