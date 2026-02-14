@@ -466,29 +466,32 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
 
-            // 5. COFRE ATLIVIO: Soma P + C explicitamente
-            const somaTaxasObrigatórias = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
-            transaction.set(doc(db, "sys_finance", "receita_total"), {
-                total_acumulado: increment(somaTaxasObrigatórias),
-                ultima_atualizacao: serverTimestamp()
-            }, { merge: true });
+            // 5. COFRE ATLIVIO: Registra as taxas recebidas nesta transação - PONTO CRÍTICO SOLUÇÃO DO ERRO DO 0
+            const taxaLiquidaDestaOrdem = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
+            if (taxaLiquidaDestaOrdem > 0) {
+                transaction.update(atlivioReceitaRef, {
+                    total_acumulado: increment(taxaLiquidaDestaOrdem),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
 
-            // REGISTRO 1 (MÉTRICA): Sempre grava os 90 para o site mostrar Hoje/Total iguais.
+            // REGISTRO 1 (MÉTRICA SITE): Alimenta o "Hoje" e "Total" com o lucro líquido
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id,
                 tipo: "GANHO_SERVIÇO ✅",
                 valor: ganhoLiquidoRealMétrica,
-                descricao: `Métrica de lucro líquido #${orderId.slice(0,5)}`,
+                descricao: `Ganho líquido ref. pedido #${orderId.slice(0,5)}`,
                 timestamp: serverTimestamp()
             });
 
-            // REGISTRO 2 (FLUXO): Grava a entrada real na carteira (os 20 que sobraram).
+            // REGISTRO 2 (HISTÓRICO CARTEIRA): Explica a movimentação de saldo real
             if (valorParaInjetarNoSaldo !== 0) {
+                const descFinal = valorParaInjetarNoSaldo > sobraRealCustodia ? "Pagamento integral injetado" : "Sobra de custódia liberada";
                 transaction.set(doc(collection(db, "extrato_financeiro")), {
                     uid: pedido.provider_id,
                     tipo: "LIBERAÇÃO_SALDO 💳",
                     valor: Number(valorParaInjetarNoSaldo.toFixed(2)),
-                    descricao: `Crédito de garantia devolvido à carteira`,
+                    descricao: `${descFinal} (#${orderId.slice(0,5)})`,
                     timestamp: serverTimestamp()
                 });
             }
