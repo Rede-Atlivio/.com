@@ -384,12 +384,16 @@ async function renderizarChatBackup(orderId, clientId, providerId) {
             label = "SISTEMA";
         }
         
-        list.innerHTML += `
-            <div class="flex flex-col ${align} w-full animate-fadeIn">
-                <span class="text-[9px] text-gray-500 mb-0.5 px-1">${isClient ? 'CLIENTE' : 'PRESTADOR'}</span>
-                <div class="${bubbleColor} px-3 py-2 rounded-lg max-w-[85%] text-xs shadow-sm">
-                    ${msg.text}
-                </div>
-            </div>`;
+        const hora = msg.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '--:--';
+        list.innerHTML += `
+            <div class="flex flex-col ${align} w-full animate-fadeIn mb-2">
+                <div class="flex gap-2 items-center px-1">
+                    <span class="text-[8px] font-bold text-gray-500 uppercase">${label}</span>
+                    <span class="text-[8px] text-gray-600">${hora}</span>
+                </div>
+                <div class="${bubbleColor} px-3 py-2 rounded-lg max-w-[90%] text-xs shadow-sm">
+                    <p class="leading-relaxed">${msg.text}</p>
+                </div>
+            </div>`;
     });
 }
