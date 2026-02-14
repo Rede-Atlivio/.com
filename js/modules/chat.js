@@ -435,7 +435,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             if (configFin.completar_valor_total === true) {
                 // 🛡️ TRAVA DE LASTRO V12.2: Verifica se o cofre cobre o prejuízo de completar o valor
-                const deficitTotal = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+                const valorLiquidoGarantido = Number((valorTotalBase - valorTaxaAtlivioP).toFixed(2));
+                const deficitParaInjetar = Number((valorLiquidoGarantido - resProvider).toFixed(2));
                 const saldoCofreAtual = cofreSnap.exists() ? (cofreSnap.data().total_acumulado || 0) : 0;
 
                 if (deficitTotal > 0 && saldoCofreAtual < deficitTotal) {
