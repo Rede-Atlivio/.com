@@ -374,7 +374,7 @@ async function renderizarChatBackup(orderId, clientId, providerId, clientName, p
         const isClient = msg.sender_id === clientId;
         let align = isClient ? "items-start" : "items-end";
         let bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
-        let label = isClient ? 'CLIENTE' : 'PRESTADOR';
+        let label = isClient ? (clientName || 'CLIENTE') : (providerName || 'PRESTADOR');
 
         if (isSystem) {
             align = "items-center";
