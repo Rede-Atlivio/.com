@@ -454,7 +454,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             if (configFin.completar_valor_total === true) {
                 // 🛡️ TRAVA DE LASTRO V12.2: Verifica se o cofre cobre o prejuízo de completar o valor
-                const deficitTotal = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
+                // DÉFICIT REAL V12: O prejuízo só existe se a sobra da custódia for negativa (não pagar a taxa)
+                const deficitTotal = sobraRealCustodia < 0 ? Math.abs(sobraRealCustodia) : 0;
                 const saldoCofreAtual = cofreSnap.exists() ? (cofreSnap.data().total_acumulado || 0) : 0;
 
                 if (deficitTotal > 0 && saldoCofreAtual < deficitTotal) {
