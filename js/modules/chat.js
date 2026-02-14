@@ -39,15 +39,17 @@ window.sugerirDetalhe = (orderId, campo) => {
 // 🔄 RENOMEADA PARA EVITAR CONFLITO COM REQUEST.JS
 
 export async function abrirChatPedido(orderId) {
-    let painelChat = document.getElementById('painel-chat-individual');
-    
-    // 🛡️ SEGURANÇA DE DADOS: Garante que as categorias existam antes de interagir
-    if (!window.CATEGORIAS_ATIVAS) {
-        const servicesMod = await import('./services.js');
-        window.CATEGORIAS_ATIVAS = servicesMod.CATEGORIAS_ATIVAS;
-    }
+    // ✋ Desconecta o chat anterior se houver um aberto (Evita sobreposição de dados)
+    if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
 
-    if (!painelChat || painelChat.parentElement !== document.body) {
+    let painelChat = document.getElementById('painel-chat-individual');
+    
+    if (!window.CATEGORIAS_ATIVAS) {
+        const servicesMod = await import('./services.js');
+        window.CATEGORIAS_ATIVAS = servicesMod.CATEGORIAS_ATIVAS;
+    }
+
+    if (!painelChat || painelChat.parentElement !== document.body) {
         if(painelChat) painelChat.remove();
         painelChat = document.createElement('div');
         painelChat.id = 'painel-chat-individual';
