@@ -231,8 +231,7 @@ async function carregarRecentes() {
         }
 
         snap.forEach(docSnap => {
-            const d = docSnap.data();
-            const docId = docSnap.id; 
+        const msg = docSnap.data();
             
             let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
             if(d.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
