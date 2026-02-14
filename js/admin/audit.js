@@ -340,9 +340,9 @@ function renderizarInfoPedido(data, id) {
                 <p class="text-white font-bold">R$ ${data.offer_value}</p>
             </div>
             <div class="bg-slate-900/50 p-2 rounded">
-                <p class="text-[9px] text-emerald-400 font-bold">TAXA</p>
-                <p class="text-emerald-300 font-bold">R$ ${(data.offer_value * 0.20).toFixed(2)}</p>
-            </div>
+                <p class="text-[9px] text-emerald-400 font-bold">LUCRO ATLIVIO</p>
+                <p class="text-emerald-300 font-bold">R$ ${((data.lucro_atlivio_prestador || 0) + (data.lucro_atlivio_cliente || 0)).toFixed(2)}</p>
+            </div>
         </div>
         <div class="space-y-3 text-xs">
             <div>
