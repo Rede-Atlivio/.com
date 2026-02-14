@@ -369,7 +369,9 @@ async function renderizarChatBackup(orderId, clientId, providerId) {
         return;
     }
 
-    snap.forEach(doc => {
+    snap.forEach(docSnap => {
+        const msg = docSnap.data();
+        const isSystem = msg.sender_id === 'system';
         const msg = doc.data();
         const isClient = msg.sender_id === clientId;
         const align = isClient ? "items-start" : "items-end";
