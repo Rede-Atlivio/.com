@@ -274,9 +274,11 @@ async function carregarRecentes() {
 }
 
 // ============================================================================
-// FUNÇÕES DE BUSCA (Mantidas iguais ao anterior)
+// FUNÇÕES DE BUSCA
 // ============================================================================
-window.buscarPedidoAuditoria = async (idOpcional = null) => {
+export async function buscarPedidoAuditoria(idOpcional = null) {
+    const input = document.getElementById('audit-search-input');
+    const orderId = idOpcional || input.value.trim();
     const input = document.getElementById('audit-search-input');
     const orderId = idOpcional || input.value.trim();
     if(!orderId) return alert("Digite um ID.");
