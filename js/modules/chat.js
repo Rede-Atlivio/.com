@@ -417,7 +417,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             
             //ANTES: Calculava quanto falta pagar além da reserva (Ex: Serviço 100, Reserva 10, Falta 90)
             //AGORA:  CÁLCULO CASCATA: Só cobra do saldo livre se a Reserva não cobrir as Taxas da Atlivio
-            const faltaPagar = Math.max(0, Number(((valorTaxaAtlivioP + valorTaxaAtlivioC) - (resCliente + resProvider)).toFixed(2)));
+            //AGORA DE NOVO CÁLCULO DE PROTEÇÃO: Cobra as taxas do saldo para garantir que a Reserva (100%) vá para o Prestador.
+            const faltaPagar = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
             if (walletBalC < faltaPagar) {
