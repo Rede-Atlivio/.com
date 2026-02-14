@@ -397,7 +397,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const resProvider = parseFloat(pedido.value_reserved_provider || 0);
 
            // 1. CÁLCULO TAXA PRESTADOR (Blindagem contra erro do valor 0) - PONTO CRÍTICO SOLUÇÃO DE ERRO VALOR 0
-            let pctP = (configFin.taxa_plataforma !== undefined) ? parseFloat(configFin.taxa_plataforma) : parseFloat(configFin.taxa_prestador || 0);
+            let rawP = (configFin.taxa_plataforma !== undefined) ? configFin.taxa_plataforma : (configFin.taxa_prestador !== undefined ? configFin.taxa_prestador : 0.10);
             if (pctP > 1) pctP = pctP / 100;
             const valorTaxaAtlivioP = Number((valorTotalBase * pctP).toFixed(2));
 
