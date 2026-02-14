@@ -433,3 +433,9 @@ window.exportarChatPDF = async (orderId) => {
     printWindow.document.close();
     printWindow.print();
 };
+// MAPEAMENTO GLOBAL PARA O PAINEL ADMIN
+window.buscarPedidoAuditoria = buscarPedidoAuditoria;
+window.audit_alternarModo = audit_alternarModo;
+window.audit_toggleSelecao = audit_toggleSelecao;
+window.audit_toggleSelecionarTudo = audit_toggleSelecionarTudo;
+window.audit_executarAcaoMassa = audit_executarAcaoMassa;
