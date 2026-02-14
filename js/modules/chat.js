@@ -69,8 +69,8 @@ export async function abrirChatPedido(orderId) {
     painelChat.classList.remove('hidden');
 
     const pedidoRef = doc(db, "orders", orderId);
-    onSnapshot(pedidoRef, (snap) => {
-        if (!snap.exists()) return;
+    unsubscribeChat = onSnapshot(pedidoRef, (snap) => {
+        if (!snap.exists()) return;
         const pedido = snap.data();
         const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
