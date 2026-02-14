@@ -372,42 +372,42 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const configFinRef = doc(db, "settings", "financeiro");
             const configGlobRef = doc(db, "settings", "global");
             
-            const [orderSnap, configFinSnap, configGlobSnap] = await Promise.all([
-                transaction.get(orderRef),
-                transaction.get(configFinRef),
-                transaction.get(configGlobRef)
-            ]);
-
-            const pedido = orderSnap.data();
-            const configFin = configFinSnap.data();
-            const configGlob = configGlobSnap.data();
-            
-            const clientRef = doc(db, "usuarios", pedido.client_id);
-            const providerRef = doc(db, "usuarios", pedido.provider_id);
+            // 🔄 SINCRONIA DE LEITURAS (Lendo tudo que importa de uma vez)
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-
-            const [clientSnap, providerSnap, cofreSnap] = await Promise.all([
-                transaction.get(clientRef),
-                transaction.get(providerRef),
+            const [orderSnap, configFinSnap, clientSnap, providerSnap, cofreSnap] = await Promise.all([
+                transaction.get(orderRef),
+                transaction.get(configFinRef), // Lê settings/financeiro (ONDE TUDO ESTÁ SALVO)
+                transaction.get(doc(db, "usuarios", (await transaction.get(orderRef)).data().client_id)),
+                transaction.get(doc(db, "usuarios", (await transaction.get(orderRef)).data().provider_id)),
                 transaction.get(atlivioReceitaRef)
             ]);
 
+            if (!orderSnap.exists()) throw "Pedido não encontrado.";
+            const pedido = orderSnap.data();
+            
+            // 🛡️ PREVENÇÃO DE ERROS: Se não tiver config, assume tudo ZERO (nada de 10% automático)
+            const configFin = configFinSnap.exists() ? configFinSnap.data() : {};
+            
             const valorTotalBase = parseFloat(pedido.offer_value || 0);
             const resCliente = parseFloat(pedido.value_reserved_client || 0);
             const resProvider = parseFloat(pedido.value_reserved_provider || 0);
 
-            // 1. CÁLCULO TAXA PRESTADOR (Usa ?? para aceitar o 0 como valor válido)
-            let valP = configFin.taxa_plataforma ?? configFin.taxa_prestador ?? 0.10;
-            let pctP = parseFloat(valP) > 1 ? parseFloat(valP) / 100 : parseFloat(valP);
+            // 1. CÁLCULO TAXA PRESTADOR (Busca 'taxa_plataforma' primeiro, depois 'taxa_prestador', por fim 0)
+            let rawTaxaP = configFin.taxa_plataforma ?? configFin.taxa_prestador ?? 0;
+            let pctP = parseFloat(rawTaxaP);
+            if (pctP > 1) pctP = pctP / 100; // Converte 20 em 0.20
             const valorTaxaAtlivioP = Number((valorTotalBase * pctP).toFixed(2));
 
-            // 2. CÁLCULO TAXA CLIENTE
-            let valC = configFin.taxa_cliente ?? 0;
-            let pctC = parseFloat(valC) > 1 ? parseFloat(valC) / 100 : parseFloat(valC);
+            // 2. CÁLCULO TAXA CLIENTE (Busca 'taxa_cliente' no mesmo arquivo financeiro)
+            let rawTaxaC = configFin.taxa_cliente ?? 0;
+            let pctC = parseFloat(rawTaxaC);
+            if (pctC > 1) pctC = pctC / 100; // Converte 5 em 0.05
             const valorTaxaAtlivioC = Number((valorTotalBase * pctC).toFixed(2));
-          
-            // REGRA DO LUCRO LÍQUIDO (Métrica de Ganhos)
+
+            // REGRA DO LUCRO LÍQUIDO (O que o prestador efetivamente embolsa)
             const ganhoLiquidoRealMétrica = Number((valorTotalBase - valorTaxaAtlivioP).toFixed(2));
+            
+            console.log(`📊 SIMULAÇÃO V12: Base: ${valorTotalBase} | Taxa P: ${valorTaxaAtlivioP} (${pctP*100}%) | Taxa C: ${valorTaxaAtlivioC} (${pctC*100}%)`);
 
             // 3. EXECUÇÃO CLIENTE: Liquida reserva e bloqueia ganhos.
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
