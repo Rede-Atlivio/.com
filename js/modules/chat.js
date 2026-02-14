@@ -415,8 +415,9 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
             const walletBalC = parseFloat(clientSnap.data().wallet_balance || 0);
             
-            // Calcula quanto falta pagar além da reserva (Ex: Serviço 100, Reserva 10, Falta 90)
-            const faltaPagar = Number((valorTotalBase - resCliente).toFixed(2));
+            //ANTES: Calculava quanto falta pagar além da reserva (Ex: Serviço 100, Reserva 10, Falta 90)
+            //AGORA:  CÁLCULO CASCATA: Só cobra do saldo livre se a Reserva não cobrir as Taxas da Atlivio
+            const faltaPagar = Math.max(0, Number(((valorTaxaAtlivioP + valorTaxaAtlivioC) - (resCliente + resProvider)).toFixed(2)));
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
             if (walletBalC < faltaPagar) {
