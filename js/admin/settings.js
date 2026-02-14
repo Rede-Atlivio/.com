@@ -136,11 +136,9 @@ async function loadSettings() {
         document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
         document.getElementById('conf-completar-pagamento').checked = data.completar_valor_total ?? true;
 
-        // 3. Parâmetros Legados (Apenas Visual/Histórico)
-        if(dLegado.exists()) {
-            document.getElementById('conf-val-min').value = legado.valor_minimo || 20;
-            document.getElementById('conf-val-max').value = legado.valor_maximo || 500;
-        }
+        // 3. Parâmetros Operacionais (Lê do Master com Fallback no Legado)
+        document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
+        document.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
 
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
