@@ -414,12 +414,10 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             // 3. EXECUÇÃO CLIENTE: CASCATA FINANCEIRA (Reserva + Saldo Livre)
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
             const walletBalC = parseFloat(clientSnap.data().wallet_balance || 0);
-            
-            // CORREÇÃO MATEMÁTICA V13: Considera o que já está reservado antes de cobrar mais.
-            // Se (Taxas) < (Reservas), faltaPagar é 0. O dinheiro sai da custódia.
-            const totalReservado = resCliente + resProvider;
-            const totalTaxas = valorTaxaAtlivioP + valorTaxaAtlivioC;
-            const faltaPagar = Math.max(0, Number((totalTaxas - totalReservado).toFixed(2)));
+
+            // CORREÇÃO MATEMÁTICA V14 (DEFINITIVA): Cobra o SERVIÇO + TAXAS.
+            // A conta do cliente é: (Preço Serviço + Taxa Dele) - (O que ele já adiantou na Reserva).
+            const faltaPagar = Math.max(0, Number((valorTotalBase + valorTaxaAtlivioC - resCliente).toFixed(2)));
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
             // VALIDAÇÃO FLEXÍVEL V12: Permite saldo negativo até o limite configurado (Ex: -50.00)
