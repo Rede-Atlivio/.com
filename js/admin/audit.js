@@ -399,3 +399,35 @@ async function renderizarChatBackup(orderId, clientId, providerId, clientName, p
             </div>`;
     });
 }
+window.exportarChatPDF = async (orderId) => {
+    const chatArea = document.getElementById('audit-chat-list');
+    if (!chatArea || chatArea.innerText.includes("Nenhuma mensagem")) return alert("Sem mensagens para exportar.");
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>PROVA_ATLIVIO_${orderId}</title>
+                <style>
+                    body { font-family: sans-serif; padding: 40px; color: #333; }
+                    .header { border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 10px; }
+                    .msg { margin-bottom: 15px; padding: 10px; border-left: 4px solid #ccc; }
+                    .CLIENTE { border-color: #2563eb; background: #f8fafc; }
+                    .PRESTADOR { border-color: #4f46e5; background: #f5f3ff; }
+                    .SISTEMA { border-color: #d97706; font-style: italic; background: #fffbeb; }
+                    .meta { font-size: 10px; font-weight: bold; color: #666; margin-bottom: 4px; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Relatório de Auditoria Atlivio</h1>
+                    <p>ID do Pedido: <b>${orderId}</b></p>
+                    <p>Data de Extração: ${new Date().toLocaleString()}</p>
+                </div>
+                ${chatArea.innerHTML}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+};
