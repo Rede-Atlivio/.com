@@ -230,10 +230,11 @@ async function carregarRecentes() {
             return; 
         }
 
-        snap.forEach(docSnap => {
-        const msg = docSnap.data();
-            
-            let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
+       snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const docId = docSnap.id;
+            
+            let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
             if(d.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
             if(d.status === 'completed') statusBadge = `<span class="bg-green-900 text-green-300 text-[9px] px-1.5 py-0.5 rounded font-bold">PAGO</span>`;
             if(d.status === 'cancelled') statusBadge = `<span class="bg-red-900 text-red-300 text-[9px] px-1.5 py-0.5 rounded font-bold">CANCELADO</span>`;
