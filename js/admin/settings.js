@@ -191,10 +191,13 @@ window.saveBusinessRules = async () => {
         limite_divida: Number(rawLimite),
         porcentagem_reserva: Number(rawPctPres),
         porcentagem_reserva_cliente: Number(rawPctCli),
-        completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
+        valor_minimo: Number(rawValMin),
+        valor_maximo: Number(rawValMax),
+        completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
         updated_at: new Date(),
         modificado_por: "admin"
     };
+    
     try {
         // GRAVAÇÃO UNIFICADA (Apenas na Coleção Master)
         await setDoc(doc(window.db, "settings", "financeiro"), payloadMaster, { merge: true });
