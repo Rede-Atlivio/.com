@@ -428,9 +428,13 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             }
 
             // Debita a Reserva (que zera) E o Saldo Livre (o que faltava)
+            const novoSaldoC = Number((walletBalC - faltaPagar).toFixed(2));
+            const bonusAtualC = parseFloat(clientSnap.data().wallet_bonus || 0);
+
             transaction.update(clientRef, { 
                 wallet_reserved: Math.max(0, walletResC - resCliente),
-                wallet_balance: Number((walletBalC - faltaPagar).toFixed(2)),
+                wallet_balance: novoSaldoC,
+                wallet_total_power: Number((novoSaldoC + bonusAtualC).toFixed(2)),
                 wallet_earnings: 0 
             });
             
