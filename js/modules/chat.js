@@ -434,20 +434,20 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             let valorParaInjetarNoSaldo = 0;
 
             if (configFin.completar_valor_total === true) {
-               // 🛡️ TRAVA DE LASTRO: Usa o cofreSnap lido no início da transação
+                // 🛡️ TRAVA DE LASTRO V12.2: Verifica se o cofre cobre o prejuízo de completar o valor
                 const deficitTotal = (valorTotalBase - valorTaxaAtlivioP) - resProvider;
-                const saldoCofre = cofreSnap.exists() ? cofreSnap.data().total_acumulado || 0 : 0;
+                const saldoCofreAtual = cofreSnap.exists() ? (cofreSnap.data().total_acumulado || 0) : 0;
 
-                if (deficitTotal > 0 && saldoCofre < deficitTotal) {
-                    throw `Liquidação Negada: A plataforma não possui lastro para completar este pagamento (Faltam R$ ${deficitTotal.toFixed(2)}).`;
+                if (deficitTotal > 0 && saldoCofreAtual < deficitTotal) {
+                    throw `Liquidação Negada: A plataforma não possui saldo no cofre (R$ ${saldoCofreAtual.toFixed(2)}) para completar o pagamento integral (Déficit: R$ ${deficitTotal.toFixed(2)}).`;
                 }
                 
                 valorParaInjetarNoSaldo = deficitTotal;
-                
-                // Se houve déficit, a Atlivio paga
+
+                // Se houver déficit real, a Atlivio retira do cofre para pagar o prestador
                 if (deficitTotal > 0) {
                     transaction.update(atlivioReceitaRef, { 
-                        total_acumulado: increment(-deficitTotal),
+                        total_acumulado: increment(-Number(deficitTotal.toFixed(2))),
                         ultima_atualizacao: serverTimestamp()
                     });
                 }
