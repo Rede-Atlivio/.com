@@ -384,7 +384,9 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             if (!orderSnap.exists()) throw "Pedido não encontrado.";
             const pedido = orderSnap.data();
-            
+            // 🚨 ADICIONE ESTAS 2 LINHAS AQUI PARA CORRIGIR O REFERENCE ERROR:
+            const clientRef = doc(db, "usuarios", pedido.client_id);
+            const providerRef = doc(db, "usuarios", pedido.provider_id);
             // 🛡️ PREVENÇÃO DE ERROS: Se não tiver config, assume tudo ZERO (nada de 10% automático)
             const configFin = configFinSnap.exists() ? configFinSnap.data() : {};
             
