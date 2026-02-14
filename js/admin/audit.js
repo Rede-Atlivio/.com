@@ -371,8 +371,7 @@ async function renderizarChatBackup(orderId, clientId, providerId) {
     snap.forEach(docSnap => {
         const msg = docSnap.data();
         const isSystem = msg.sender_id === 'system';
-        const msg = doc.data();
-        const isClient = msg.sender_id === clientId;
+        const isClient = msg.sender_id === clientId;
         let align = isClient ? "items-start" : "items-end";
         let bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
         let label = isClient ? 'CLIENTE' : 'PRESTADOR';
