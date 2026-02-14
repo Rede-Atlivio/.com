@@ -219,9 +219,8 @@ async function carregarRecentes() {
         }
 
         const snap = await getDocs(q);
-        list.innerHTML = ""; // Limpa o loader
-        
-        container.innerHTML = "";
+        
+        container.innerHTML = "";
         
         if(snap.empty) { 
             container.innerHTML = `
