@@ -447,12 +447,12 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const balanceP = parseFloat(providerSnap.data().wallet_balance || 0);
             const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
             
-            // O dinheiro na mesa agora é: Reserva Cliente + Reserva Provider + O que debitamos do Saldo Cliente
-            const totalDinheiroNaMesa = resCliente + resProvider + faltaPagar;
-            const taxaTotalAtlivio = valorTaxaAtlivioP + valorTaxaAtlivioC;
+            // LÓGICA V16: Define o repasse direto e as taxas separadas
+            // O Prestador recebe a Reserva do Cliente + o estorno da sua própria reserva (descontada a taxa dele)
+            const repasseParaPrestador = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
             
-            // A sobra real é o dinheiro total menos as taxas da plataforma
-            const sobraRealCustodia = totalDinheiroNaMesa - taxaTotalAtlivio;
+            // Valor total que a Atlivio fatura neste serviço (Taxa P + Taxa C)
+            const receitaPlataforma = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
 
             let valorParaInjetarNoSaldo = 0;
 
