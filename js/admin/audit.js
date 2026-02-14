@@ -356,7 +356,7 @@ function renderizarInfoPedido(data, id) {
     `;
 }
 
-async function renderizarChatBackup(orderId, clientId, providerId) {
+async function renderizarChatBackup(orderId, clientId, providerId, clientName, providerName) {
     const list = document.getElementById('audit-chat-list');
     list.innerHTML = "";
     const db = window.db;
