@@ -204,10 +204,12 @@ window.saveBusinessRules = async () => {
         
         // Sincroniza o legado (usando a variável correta taxaP)
         await setDoc(doc(window.db, "configuracoes", "financeiro"), {
-            porcentagem_reserva: Number(rawPctPres),
-            taxa_prestador: Number(taxaP * 100),
-            updated_at: new Date()
-        }, { merge: true });
+            porcentagem_reserva: Number(rawPctPres),
+            taxa_prestador: Number(taxaP * 100),
+            valor_minimo: Number(rawValMin),
+            valor_maximo: Number(rawValMax),
+            updated_at: new Date()
+        }, { merge: true });
 
         alert("✅ REGRAS UNIFICADAS! Taxa Prestador: " + (taxaP * 100) + "% | Cliente: " + (taxaC * 100) + "%");
     } catch(e) { alert("Erro: " + e.message); }
