@@ -326,24 +326,27 @@ function renderizarInfoPedido(data, id) {
     if(data.status === 'completed') { statusColor = "text-green-400"; statusText = "✅ PAGO"; }
     
     card.innerHTML = `
-        <div class="mb-4 border-b border-slate-700 pb-4">
-            <p class="text-[10px] text-gray-500 uppercase font-bold">ID do Pedido</p>
-            <p class="font-mono text-xs text-white select-all bg-black/20 p-1 rounded">${id}</p>
-        </div>
-        <div class="mb-4">
-            <p class="text-[10px] text-gray-500 uppercase font-bold">Status</p>
-            <p class="font-black ${statusColor} text-lg">${statusText}</p>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <div class="bg-slate-900/50 p-2 rounded">
-                <p class="text-[9px] text-indigo-400 font-bold">VALOR</p>
-                <p class="text-white font-bold">R$ ${data.offer_value}</p>
-            </div>
-            <div class="bg-slate-900/50 p-2 rounded">
+        <div class="mb-4 border-b border-slate-700 pb-4 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold">ID do Pedido</p>
+                <p class="font-mono text-xs text-white select-all bg-black/20 p-1 rounded">${id}</p>
+            </div>
+            <button onclick="window.exportarChatPDF('${id}')" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg title="Exportar Log">📥</button>
+        </div>
+        <div class="mb-4">
+            <p class="text-[10px] text-gray-500 uppercase font-bold">Status</p>
+            <p class="font-black ${statusColor} text-lg">${statusText}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="bg-slate-900/50 p-2 rounded">
+                <p class="text-[9px] text-indigo-400 font-bold">VALOR</p>
+                <p class="text-white font-bold">R$ ${data.offer_value}</p>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded">
                 <p class="text-[9px] text-emerald-400 font-bold">LUCRO ATLIVIO</p>
                 <p class="text-emerald-300 font-bold">R$ ${((data.lucro_atlivio_prestador || 0) + (data.lucro_atlivio_cliente || 0)).toFixed(2)}</p>
             </div>
-        </div>
+        </div>
         <div class="space-y-3 text-xs">
             <div>
                 <span class="block text-[9px] text-gray-500 uppercase">Cliente</span>
