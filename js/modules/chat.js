@@ -418,6 +418,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             // CORREÇÃO MATEMÁTICA V15 (MODELO OLX/HÍBRIDO): O APP SÓ COBRA AS TAXAS.
             // O valor do serviço (valorTotalBase) é pago EM MÃOS. O app ignora.
             // O cliente paga apenas: (Sua Taxa - O que ele já reservou).
+            // LÓGICA V16: O cliente paga apenas a diferença da TAXA dele se a reserva não cobrir
             const faltaPagar = Math.max(0, Number((valorTaxaAtlivioC - resCliente).toFixed(2)));
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
