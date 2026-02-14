@@ -402,7 +402,7 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const valorTaxaAtlivioP = Number((valorTotalBase * pctP).toFixed(2));
 
             // 2. CÁLCULO TAXA CLIENTE
-            let rawC = (configFin.taxa_cliente !== undefined) ? configFin.taxa_cliente : 0;
+            let pctC = (configFin.taxa_cliente !== undefined) ? parseFloat(configFin.taxa_cliente) : 0;
             if (pctC > 1) pctC = pctC / 100;
             const valorTaxaAtlivioC = Number((valorTotalBase * pctC).toFixed(2));
 
