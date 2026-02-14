@@ -411,27 +411,41 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             
             console.log(`📊 SIMULAÇÃO V12: Base: ${valorTotalBase} | Taxa P: ${valorTaxaAtlivioP} (${pctP*100}%) | Taxa C: ${valorTaxaAtlivioC} (${pctC*100}%)`);
 
-            // 3. EXECUÇÃO CLIENTE: Liquida reserva e bloqueia ganhos.
-            const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
-            transaction.update(clientRef, { 
+            // 3. EXECUÇÃO CLIENTE: CASCATA FINANCEIRA (Reserva + Saldo Livre)
+            const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
+            const walletBalC = parseFloat(clientSnap.data().wallet_balance || 0);
+            
+            // Calcula quanto falta pagar além da reserva (Ex: Serviço 100, Reserva 10, Falta 90)
+            const faltaPagar = Number((valorTotalBase - resCliente).toFixed(2));
+            
+            // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
+            if (walletBalC < faltaPagar) {
+                throw `Saldo Insuficiente: O cliente possui apenas R$ ${walletBalC.toFixed(2)} livres, mas precisa de R$ ${faltaPagar.toFixed(2)} para quitar o restante do serviço.`;
+            }
+
+            // Debita a Reserva (que zera) E o Saldo Livre (o que faltava)
+            transaction.update(clientRef, { 
                 wallet_reserved: Math.max(0, walletResC - resCliente),
+                wallet_balance: Number((walletBalC - faltaPagar).toFixed(2)),
                 wallet_earnings: 0 
             });
-            
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -resCliente,
-                descricao: `Reserva liquidada. Taxas aplicadas.`, timestamp: serverTimestamp()
-            });
-
-            // 4. EXECUÇÃO PRESTADOR: Lógica Híbrida (Total ou Apenas Reserva)
-            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
-            const balanceP = parseFloat(providerSnap.data().wallet_balance || 0);
-            const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
             
-            // A Atlivio sempre retira primeiro a parte dela das custódias somadas.
-            const totalEmCustodia = resCliente + resProvider;
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: pedido.client_id, tipo: "SERVIÇO_PAGO 🏁", valor: -Number((resCliente + faltaPagar).toFixed(2)),
+                descricao: `Pagamento total (Reserva + Saldo).`, timestamp: serverTimestamp()
+            });
+
+            // 4. EXECUÇÃO PRESTADOR: Recebe a soma da Reserva + O que foi cobrado agora
+            const walletResP = parseFloat(providerSnap.data().wallet_reserved || 0);
+            const balanceP = parseFloat(providerSnap.data().wallet_balance || 0);
+            const bonusP = parseFloat(providerSnap.data().wallet_bonus || 0);
+            
+            // O dinheiro na mesa agora é: Reserva Cliente + Reserva Provider + O que debitamos do Saldo Cliente
+            const totalDinheiroNaMesa = resCliente + resProvider + faltaPagar;
             const taxaTotalAtlivio = valorTaxaAtlivioP + valorTaxaAtlivioC;
-            const sobraRealCustodia = totalEmCustodia - taxaTotalAtlivio;
+            
+            // A sobra real é o dinheiro total menos as taxas da plataforma
+            const sobraRealCustodia = totalDinheiroNaMesa - taxaTotalAtlivio;
 
             let valorParaInjetarNoSaldo = 0;
 
