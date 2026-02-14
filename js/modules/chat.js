@@ -415,9 +415,10 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const walletResC = parseFloat(clientSnap.data().wallet_reserved || 0);
             const walletBalC = parseFloat(clientSnap.data().wallet_balance || 0);
 
-            // CORREÇÃO MATEMÁTICA V14 (DEFINITIVA): Cobra o SERVIÇO + TAXAS.
-            // A conta do cliente é: (Preço Serviço + Taxa Dele) - (O que ele já adiantou na Reserva).
-            const faltaPagar = Math.max(0, Number((valorTotalBase + valorTaxaAtlivioC - resCliente).toFixed(2)));
+            // CORREÇÃO MATEMÁTICA V15 (MODELO OLX/HÍBRIDO): O APP SÓ COBRA AS TAXAS.
+            // O valor do serviço (valorTotalBase) é pago EM MÃOS. O app ignora.
+            // O cliente paga apenas: (Sua Taxa - O que ele já reservou).
+            const faltaPagar = Math.max(0, Number((valorTaxaAtlivioC - resCliente).toFixed(2)));
             
             // Validação de Fundos: Se não tiver saldo livre para cobrir a diferença, aborta.
             // VALIDAÇÃO FLEXÍVEL V12: Permite saldo negativo até o limite configurado (Ex: -50.00)
