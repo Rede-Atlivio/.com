@@ -466,11 +466,11 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
 
-            // 5. COFRE ATLIVIO: Registra as taxas recebidas nesta transação - PONTO CRÍTICO SOLUÇÃO DO ERRO DO 0
-            const taxaLiquidaDestaOrdem = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
-            if (taxaLiquidaDestaOrdem > 0) {
+            // 5. COFRE ATLIVIO: Soma as taxas P + C e atualiza o saldo global
+            const totalTaxasCalculadas = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
+            if (totalTaxasCalculadas > 0) {
                 transaction.update(atlivioReceitaRef, {
-                    total_acumulado: increment(taxaLiquidaDestaOrdem),
+                    total_acumulado: increment(totalTaxasCalculadas),
                     ultima_atualizacao: serverTimestamp()
                 });
             }
