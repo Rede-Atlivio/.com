@@ -396,17 +396,17 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
             const resCliente = parseFloat(pedido.value_reserved_client || 0);
             const resProvider = parseFloat(pedido.value_reserved_provider || 0);
 
-           // 1. CÁLCULO TAXA PRESTADOR (Garante leitura de 'taxa_plataforma')
-            let pctP = parseFloat(configFin.taxa_plataforma || configFin.taxa_prestador || 0);
+           // 1. CÁLCULO TAXA PRESTADOR (Blindagem contra erro do valor 0) - PONTO CRÍTICO SOLUÇÃO DE ERRO VALOR 0
+            let pctP = (configFin.taxa_plataforma !== undefined) ? parseFloat(configFin.taxa_plataforma) : parseFloat(configFin.taxa_prestador || 0);
             if (pctP > 1) pctP = pctP / 100;
             const valorTaxaAtlivioP = Number((valorTotalBase * pctP).toFixed(2));
 
             // 2. CÁLCULO TAXA CLIENTE
-            let pctC = parseFloat(configFin.taxa_cliente || 0);
+            let pctC = (configFin.taxa_cliente !== undefined) ? parseFloat(configFin.taxa_cliente) : 0;
             if (pctC > 1) pctC = pctC / 100;
             const valorTaxaAtlivioC = Number((valorTotalBase * pctC).toFixed(2));
 
-            // REGRA DO 90: Ganho Líquido Real para o Prestador (Métrica)
+            // REGRA DO LUCRO LÍQUIDO (Métrica de Ganhos)
             const ganhoLiquidoRealMétrica = Number((valorTotalBase - valorTaxaAtlivioP).toFixed(2));
 
             // 3. EXECUÇÃO CLIENTE: Liquida reserva e bloqueia ganhos.
