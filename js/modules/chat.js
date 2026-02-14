@@ -510,7 +510,8 @@ window.finalizarServicoPassoFinalAction = async (orderId) => {
 
             // REGISTRO 2 (HISTÓRICO CARTEIRA): Explica a movimentação de saldo real
             if (valorParaInjetarNoSaldo !== 0) {
-                const descFinal = valorParaInjetarNoSaldo > sobraRealCustodia ? "Pagamento integral injetado" : "Sobra de custódia liberada";
+                // CORREÇÃO: Usa apenas a variável de controle de injeção para definir o texto
+                const descFinal = valorParaInjetarNoSaldo > 0 ? "Pagamento de saldo/garantia liberado" : "Liquidação de taxas concluída";
                 transaction.set(doc(collection(db, "extrato_financeiro")), {
                     uid: pedido.provider_id,
                     tipo: "LIBERAÇÃO_SALDO 💳",
