@@ -446,11 +446,6 @@ async function verificarStatusERadar(uid) {
     } catch(e) {}
 }
 
-function renderizarRadarOffline() {
-    const radar = document.getElementById('pview-radar');
-    if(radar) radar.innerHTML = `<div class="flex flex-col items-center justify-center py-12 opacity-60 grayscale"><div class="text-5xl mb-3">💤</div><p class="text-xs font-black uppercase tracking-widest text-gray-400">Você está Offline</p></div>`;
-}
-
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
         const novoStatus = e.target.checked;
