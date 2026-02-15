@@ -145,8 +145,8 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
             </div>
 
             ${!['completed', 'cancelled', 'negotiation_closed'].includes(pedido.status) ? `
-            <div class="bg-white border-t fixed bottom-0 w-full max-w-2xl z-40 shadow-2xl">
-                <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
+            <div class="bg-white border-t mt-auto z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+                <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
                     <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
                     <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
                     <button onclick="window.sugerirFrase('A ATLIVIO segura a reserva até o serviço ser concluído.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">🔒 Garantia</button>
