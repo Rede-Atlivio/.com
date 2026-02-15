@@ -72,7 +72,7 @@ export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO 
 
     if (saldoFinal < limite) {
         if(custo > 0) {
-             const saldoFmt = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+             const saldoFmt = saldoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
              alert(`⛔ SALDO INSUFICIENTE\n\nSeu saldo (${saldoFmt}) não cobre a taxa do serviço.`);
              if(window.switchTab) window.switchTab('ganhar');
         }
