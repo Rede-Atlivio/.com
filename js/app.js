@@ -112,16 +112,16 @@ window.carregarInterface = async (user) => {
         toggle.parentNode.replaceChild(novoToggle, toggle);
 
         novoToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
+         if (e.target.checked) {
                 console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
-                // Reseta a memória para garantir que a função rode
                 window.radarIniciado = false; 
                 if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-          } else {
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            } else {
                 console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
                 if (window.pararRadarFisico) window.pararRadarFisico();
                 if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }  
+            }   
         });
 
        // Inicializa estado atual
