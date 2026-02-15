@@ -422,7 +422,7 @@
             <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
         </div>
 
-        <div id="pview-radar" class="flex flex-col items-center py-4 min-h-[400px]">
+       <div id="pview-radar" class="flex flex-col items-center py-4 min-h-[400px] relative">
             <div id="radar-offline-state" class="flex flex-col items-center justify-center py-20 animate-fadeIn">
                 <div class="relative flex h-24 w-24 items-center justify-center mb-4 opacity-50 grayscale">
                     <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl">💤</div>
@@ -430,16 +430,15 @@
                 <p class="text-xs font-black text-gray-500 uppercase tracking-widest">Você está Offline</p>
             </div>
 
-            <div id="radar-container" class="hidden w-full max-w-[400px] space-y-3 z-10"></div>
-
-            <div id="radar-empty-state" class="hidden flex flex-col items-center justify-center py-20">
+            <div id="radar-empty-state" class="hidden flex flex-col items-center justify-center py-20 animate-fadeIn">
                 <div class="relative flex h-24 w-24 items-center justify-center mb-4">
                     <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
                     <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
                 </div>
-                <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse">Procurando clientes ao seu redor...</p>
+                <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse text-center">Procurando clientes ao seu redor...</p>
             </div>
-        
+
+            <div id="radar-container" class="hidden w-full max-w-[400px] space-y-3 z-10"></div>
         </div>
         <div id="pview-ativos" class="hidden space-y-3">
             <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
