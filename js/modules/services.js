@@ -383,10 +383,9 @@ async function carregarPedidosPrestador() {
     if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
 
-    const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), 
+   const q = query(collection(db, "orders"), 
         where("provider_id", "==", uid), 
-        where("status", "in", ["pending", "accepted", "in_progress"]), 
+        where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress"]), 
         orderBy("created_at", "desc")
     );
 
