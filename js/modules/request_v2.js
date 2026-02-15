@@ -48,22 +48,10 @@ function garantirContainerRadar() {
 
     // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
     container.classList.remove('hidden');
-
-    // 2. Garante que o Estado Vazio (Antena) existe
+    
+    // 2. Localiza o Empty State (Antena) que já está no seu index.html
     let emptyState = document.getElementById('radar-empty-state');
-    if (!emptyState) {
-        emptyState = document.createElement('div');
-        emptyState.id = 'radar-empty-state';
-        emptyState.className = "flex flex-col items-center justify-center py-20 animate-fadeIn";
-        emptyState.innerHTML = `
-            <div class="relative flex h-24 w-24 items-center justify-center mb-4">
-                <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
-                <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
-            </div>
-            <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse">Procurando clientes ao seu redor...</p>
-        `;
-        parent.appendChild(emptyState);
-    }
+    
 
     // 3. Remove a tela de "Dormindo" se ela ainda estiver lá (limpeza visual)
     const offlineState = document.getElementById('radar-offline-state');
