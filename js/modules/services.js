@@ -267,8 +267,8 @@ function renderizarCards(servicos, container) {
 // 2. PEDIDOS E HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
-    const container = document.getElementById('meus-pedidos-andamento');
-    if (!container || !auth.currentUser) return;
+    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
+    if (!container || !auth.currentUser) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
     
     const uid = auth.currentUser.uid;
