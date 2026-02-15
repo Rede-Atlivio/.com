@@ -373,6 +373,7 @@ export function escutarMensagens(orderId) {
 }
 //PONTO CRÍTICO: UPGRADE DO BOTÃO CONFIRMAR E PAGAR, AGORA TEM A OPÇÃO DE TAXA PARA O CLIENTE TAMBÉM. LINHAS ANTES - 348 A 428 AGORA 348 A 432
 window.finalizarServicoPassoFinalAction = async (orderId) => {
+    if(!auth.currentUser) return alert("Sessão expirada. Faça login novamente.");
     if(!confirm("🏁 CONFIRMAR CONCLUSÃO E LIBERAR PAGAMENTO?\n\nEsta ação é irreversível.")) return;
     try {
         await runTransaction(db, async (transaction) => {
