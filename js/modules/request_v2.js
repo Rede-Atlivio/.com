@@ -34,20 +34,37 @@ let mem_SelectedServiceTitle = "";
 // ============================================================================
 function garantirContainerRadar() {
     const parent = document.getElementById('pview-radar');
-    if (!parent) return null;
+    const container = document.getElementById('radar-container');
+    const emptyState = document.getElementById('radar-empty-state');
+    const offlineState = document.getElementById('radar-offline-state');
+    const toggle = document.getElementById('online-toggle');
 
-    // 1. Busca o container (Seja o fixo do HTML ou o injetado)
-    let container = document.getElementById('radar-container');
+    if (!parent || !container) return null;
+
+    const isOnline = toggle ? toggle.checked : false;
+
+    if (!isOnline) {
+        // MODO OFFLINE
+        if(offlineState) offlineState.classList.remove('hidden');
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+        return container;
+    } 
+
+    // MODO ONLINE
+    if(offlineState) offlineState.classList.add('hidden');
     
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'radar-container';
-        container.className = "w-full max-w-[400px] space-y-3 z-10 py-2";
-        parent.prepend(container); // Coloca no topo do radar
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        container.classList.remove('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
     }
 
-    // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
-    container.classList.remove('hidden');
+    return container;
+}
     
     // 2. Localiza o Empty State (Antena) que já está no seu index.html
     let emptyState = document.getElementById('radar-empty-state');
