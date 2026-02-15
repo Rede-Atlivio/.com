@@ -66,39 +66,6 @@ function garantirContainerRadar() {
     return container;
 }
     
-    // 2. Localiza o Empty State (Antena) que já está no seu index.html
-    let emptyState = document.getElementById('radar-empty-state');
-    
-
-    // 3. Gerenciamento de Estados Visuais (Radar vs Antena vs Offline)
-    const offlineState = document.getElementById('radar-offline-state');
-    const toggle = document.getElementById('online-toggle');
-    const isOnline = toggle ? toggle.checked : false;
-
-    if (!isOnline) {
-        // MODO OFFLINE: Mostra ZZZ, Esconde Radar e Antena
-        if(offlineState) offlineState.classList.remove('hidden');
-        if(container) container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
-
-    // MODO ONLINE: Esconde ZZZ
-    if(offlineState) offlineState.classList.add('hidden');
-    
-    // Lógica da Antena (Tem card? Esconde antena. Não tem? Mostra antena.)
-    if (container && emptyState) {
-        const temCards = container.querySelectorAll('.request-card').length > 0;
-        if (temCards) {
-            container.classList.remove('hidden');
-            emptyState.classList.add('hidden');
-        } else {
-            emptyState.classList.remove('hidden');
-        }
-    }
-
-    return container;
-}
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
