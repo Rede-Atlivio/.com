@@ -301,8 +301,8 @@ export async function carregarPedidosAtivos() {
 }
 
 export async function carregarHistorico() {
-    const container = document.getElementById('meus-pedidos-historico');
-    if(!container) return;
+    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
+    if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
 
     const uid = auth.currentUser.uid;
