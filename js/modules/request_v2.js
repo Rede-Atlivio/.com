@@ -358,6 +358,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
         
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
+            garantirContainerRadar(); // Força a volta da imagem ZZZ
             return;
         }
 
