@@ -130,11 +130,12 @@ if (novoToggle.checked) {
         if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
     }, 1000);
 } else {
-    // 🔥 CORREÇÃO: Se nascer desligado, mostra a tela de "Dormindo" imediatamente
-    setTimeout(() => {
-        if (window.pararRadarFisico) window.pararRadarFisico();
-    }, 500);
-}
+            // 🔥 CORREÇÃO: Se nascer desligado, mostra a tela de "Dormindo" imediatamente
+            setTimeout(() => {
+                if (window.pararRadarFisico) window.pararRadarFisico();
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            }, 500);
+        }
     }
     // ----------------------------------------------------
 };
