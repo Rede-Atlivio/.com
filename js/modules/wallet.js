@@ -110,7 +110,7 @@ export function iniciarMonitoramentoCarteira() {
             window.userProfile.uid = uid;
             window.userProfile.wallet_balance = sReal;
             window.userProfile.wallet_bonus = sBonus;
-            window.userProfile.wallet_total_power = parseFloat(data.wallet_total_power || powerCalculado);
+           window.userProfile.wallet_total_power = powerCalculado;
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
             window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
             
