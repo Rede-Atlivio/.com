@@ -321,7 +321,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
     if (radarUnsubscribe) radarUnsubscribe();
 
-   const configRef = doc(db, "settings", "financeiro");
+   const uid = auth.currentUser?.uid;
+    if(!uid) return;
+    const configRef = doc(db, "settings", "financeiro");
     getDoc(configRef).then(s => { 
         if(s.exists()) {
             const data = s.data();
