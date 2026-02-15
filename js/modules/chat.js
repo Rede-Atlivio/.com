@@ -1002,6 +1002,7 @@ window.exibirAlertaSegurancaReserva = () => {
 window.confirmarEncerramentoChat = async (orderId) => {
     if(!confirm("✋ DESEJA ENCERRAR ESTE CHAT?\n\nEle será movido para o histórico e as negociações serão interrompidas.")) return;
     try {
+        if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
         await updateDoc(doc(db, "orders", orderId), { 
             status: 'negotiation_closed', 
             closed_at: serverTimestamp() 
