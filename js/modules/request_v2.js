@@ -53,14 +53,27 @@ function garantirContainerRadar() {
     let emptyState = document.getElementById('radar-empty-state');
     
 
-    // 3. Remove a tela de "Dormindo" se ela ainda estiver lá (limpeza visual)
+    // 3. Gerenciamento de Estados Visuais (Radar vs Antena vs Offline)
     const offlineState = document.getElementById('radar-offline-state');
-    if(offlineState) offlineState.remove();
+    const toggle = document.getElementById('online-toggle');
+    const isOnline = toggle ? toggle.checked : false;
 
-    // 4. Lógica Visual (Tem card? Esconde antena.)
+    if (!isOnline) {
+        // MODO OFFLINE: Mostra ZZZ, Esconde Radar e Antena
+        if(offlineState) offlineState.classList.remove('hidden');
+        if(container) container.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+        return container;
+    } 
+
+    // MODO ONLINE: Esconde ZZZ
+    if(offlineState) offlineState.classList.add('hidden');
+    
+    // Lógica da Antena (Tem card? Esconde antena. Não tem? Mostra antena.)
     if (container && emptyState) {
         const temCards = container.querySelectorAll('.request-card').length > 0;
         if (temCards) {
+            container.classList.remove('hidden');
             emptyState.classList.add('hidden');
         } else {
             emptyState.classList.remove('hidden');
