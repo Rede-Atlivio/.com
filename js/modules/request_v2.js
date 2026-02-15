@@ -488,12 +488,12 @@ export async function aceitarPedidoRadar(orderId) {
         const currentUser = auth.currentUser;
         const valorServico = parseFloat(pedidoData.offer_value || 0);
 
-       //PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 500 A 505 DEPOIS 501 A 508
-        // 🛡️ VALIDAÇÃO FINANCEIRA HÍBRIDA (Real + Bônus)
+       // 🛡️ VALIDAÇÃO FINANCEIRA HÍBRIDA (Real + Bônus)
         const userDoc = await getDoc(doc(db, "usuarios", currentUser.uid));
+        if (!userDoc.exists()) throw "Perfil do prestador não localizado.";
         const userData = userDoc.data();
         
-        // 🎯 SINCRONIA V14: Soma o saldo real ao bônus para liberar o aceite do pedido
+        // 🎯 SINCRONIA V14: Soma o saldo real ao bônus
         const saldoReal = parseFloat(userData.wallet_balance || 0);
         const saldoBonus = parseFloat(userData.wallet_bonus || 0);
         const saldoTotalParaAceite = saldoReal + saldoBonus;
