@@ -380,10 +380,11 @@ export function switchProviderSubTab(tabName) {
 
 async function carregarPedidosPrestador() {
     const container = document.getElementById('lista-chamados-ativos');
-    if(!container) return;
+    if(!container || !auth.currentUser) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500"></div>`;
 
-   const q = query(collection(db, "orders"), 
+    const uid = auth.currentUser.uid;
+    const q = query(collection(db, "orders"),
         where("provider_id", "==", uid), 
         where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress"]), 
         orderBy("created_at", "desc")
