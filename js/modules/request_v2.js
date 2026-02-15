@@ -600,3 +600,14 @@ window.rejeitarPermanente = async (orderId) => {
         console.warn("Erro ao registrar rejeição:", e);
     }
 };
+
+// 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
+window.garantirContainerRadar = garantirContainerRadar;
+window.pararRadarFisico = function() {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+        window.radarIniciado = false;
+        console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
+    }
+};
