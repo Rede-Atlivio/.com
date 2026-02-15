@@ -446,6 +446,12 @@ async function verificarStatusERadar(uid) {
     } catch(e) {}
 }
 
+function renderizarRadarOffline() {
+    // 🛡️ BLOQUEIO DE VANDALISMO: Não apagamos mais o innerHTML.
+    // O controle visual agora é feito via classes pelo request_v2.js
+    if (window.garantirContainerRadar) window.garantirContainerRadar();
+    console.log("💤 [AUTH] Solicitando visual offline com segurança.");
+}
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
         const novoStatus = e.target.checked;
