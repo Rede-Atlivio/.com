@@ -117,10 +117,11 @@ window.carregarInterface = async (user) => {
                 // Reseta a memória para garantir que a função rode
                 window.radarIniciado = false; 
                 if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-            } else {
+          } else {
                 console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
                 if (window.pararRadarFisico) window.pararRadarFisico();
-            }
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            }  
         });
 
        // Inicializa estado atual
