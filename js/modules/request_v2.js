@@ -36,13 +36,14 @@ function garantirContainerRadar() {
     const parent = document.getElementById('pview-radar');
     if (!parent) return null;
 
-    // 1. Garante que o container existe
+    // 1. Busca o container (Seja o fixo do HTML ou o injetado)
     let container = document.getElementById('radar-container');
+    
     if (!container) {
         container = document.createElement('div');
         container.id = 'radar-container';
-        container.className = "flex flex-col gap-3 w-full max-w-[400px] mx-auto z-[8000] relative py-2";
-        parent.appendChild(container);
+        container.className = "w-full max-w-[400px] space-y-3 z-10 py-2";
+        parent.prepend(container); // Coloca no topo do radar
     }
 
     // 🔥 CORREÇÃO DO SUMIÇO: Remove a classe 'hidden' se ela existir
