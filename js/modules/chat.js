@@ -139,7 +139,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 ${timeHTML}
             </div>
 
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-48 custom-scrollbar">
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-4 custom-scrollbar">
                 ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                 <div id="bubbles-area"></div>
             </div>
