@@ -149,8 +149,15 @@ async function loadSettings() {
         const dGlobal = await getDoc(doc(db, "configuracoes", "global"));
         if(dGlobal.exists()) {
             const data = dGlobal.data();
+            // Campos de Aviso
             document.getElementById('conf-global-msg').value = data.top_message || "";
             document.getElementById('conf-msg-active').checked = data.show_msg || false;
+            
+            // Campos de Bônus (Marketing)
+            document.getElementById('conf-bonus-ativo').checked = data.bonus_boas_vindas_ativo || false;
+            document.getElementById('conf-val-bonus-promo').value = data.valor_bonus_promocional || 20;
+            document.getElementById('conf-bonus-7dias').value = data.bonus_recuperacao_7d || 0;
+            document.getElementById('conf-bonus-15dias').value = data.bonus_recuperacao_15d || 0;
         }
 
         // 2. 🔥 Carrega Cérebro Financeiro (Lê o Novo e busca fallback no Legado)
