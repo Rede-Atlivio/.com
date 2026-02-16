@@ -403,6 +403,7 @@ async function carregarPedidosPrestador() {
         if (statusLixo.includes(order.status)) return; // Pula este item se for lixo
 
         let statusColor = order.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
+        const statusPT = order.status === 'in_progress' ? 'Em Andamento' : order.status === 'confirmed_hold' ? 'Acordo Fechado' : order.status === 'accepted' ? 'Aceito' : 'Pendente';
         container.innerHTML += `
             <div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50">
                 <div>
@@ -411,7 +412,7 @@ async function carregarPedidosPrestador() {
                 </div>
                 <div class="text-right">
                     <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                    <span class="text-[8px] px-2 py-0.5 rounded-full ${statusColor} uppercase font-bold">${order.status}</span>
+                    <span class="text-[8px] px-2 py-0.5 rounded-full ${statusColor} uppercase font-bold">${statusPT}</span>
                 </div>
             </div>
         `;
