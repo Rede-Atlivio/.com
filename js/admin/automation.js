@@ -262,10 +262,13 @@ window.saveLinkToFirebase = async () => {
 // 🚀 MOTOR DE BONIFICAÇÃO POR INATIVIDADE (V38.0)
 window.executarVarreduraDeInativos = async () => {
     console.log("🔍 Iniciando Varredura de Inativos...");
-    const { db } = window;
-    const { collection, getDocs, runTransaction, doc, getDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.db; // Garante a instância correta do Firebase
+    if (!db) return alert("❌ Erro: Banco de dados não inicializado.");
+
+    const { collection, getDocs, runTransaction, doc, getDoc, serverTimestamp, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
     try {
+        // Busca as regras na coleção correta
         const configSnap = await getDoc(doc(db, "settings", "global"));
         const config = configSnap.data();
         if (!config) return alert("❌ Regras de Marketing não encontradas em settings/global.");
