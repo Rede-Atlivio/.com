@@ -252,33 +252,26 @@ window.executeAdjustment = async (uid) => {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
             const providerRef = doc(db, "active_providers", uid);
-            const newHistRef = doc(collection(db, "transactions"));
-
-            const userDoc = await transaction.get(userRef);
+           const userDoc = await transaction.get(userRef);
             const provDoc = await transaction.get(providerRef);
             
             if (!userDoc.exists()) throw "Usuário não encontrado!";
 
-           // 1. Identifica o campo alvo e calcula novos valores
             const field = document.getElementById('trans-target-field').value;
             const userData = userDoc.data();
             const currentVal = Number(userData[field] || 0);
             const newVal = currentVal + finalAmount;
 
-            // 2. Cálculo do Novo Poder de Compra (Total Power) em tempo real
             const novoReal = field === 'wallet_balance' ? newVal : Number(userData.wallet_balance || 0);
             const novoBonus = field === 'wallet_bonus' ? newVal : Number(userData.wallet_bonus || 0);
             const novoTotalPower = novoReal + novoBonus;
 
-            // 🛡️ ATUALIZAÇÃO V12.1: Sincronia de Trindade + Total Power (Fim do erro newBalance)
-            const syncUpdate = { 
+            transaction.update(userRef, { 
                 [field]: Number(newVal),
                 wallet_total_power: Number(novoTotalPower),
                 updated_at: serverTimestamp()
-            };
-            transaction.update(userRef, syncUpdate);
+            });
 
-            // 🔄 SINCRONIA RADAR: Se for prestador, mantém o mapa atualizado com o Saldo Real
             if (provDoc.exists()) {
                 transaction.update(providerRef, { 
                     balance: Number(novoReal),
@@ -286,7 +279,6 @@ window.executeAdjustment = async (uid) => {
                 });
             }
 
-            // 📝 REGISTRO NO EXTRATO (Visível ao Usuário)
             const extratoRef = doc(collection(db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: uid,
@@ -294,7 +286,7 @@ window.executeAdjustment = async (uid) => {
                 tipo: mode === 'credit' ? 'CRÉDITO 📈' : 'DÉBITO 📉',
                 descricao: desc,
                 timestamp: serverTimestamp()
-            });
+            }); 
         });
 
         alert("✅ Saldo sincronizado em todas as bases!");
