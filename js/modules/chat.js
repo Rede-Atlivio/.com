@@ -675,9 +675,7 @@ function atualizarRelogioDOM(pedido) {
         <br>
         <span style="font-size: 9px; opacity: 0.8;">Você tem ${horasParaFrase}h para confirmar ou contestar.</span>
     `;
-     }
-    } // Fim do bloco contagem
-} // Fim da função (Agora com todas as chaves!)
+} // Fim da função atualizarRelogioDOM
 
 // --- FUNÇÕES DE AÇÃO DO TEMPO ---
 
