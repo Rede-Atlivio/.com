@@ -84,10 +84,24 @@ export async function abrirChatPedido(orderId) {
             window.atualizarCronometro(pedido);
         }
 
-        iniciarGatilhosContextuais(orderId, step);
+  iniciarGatilhosContextuais(orderId, step);
+
+        // 🚀 GATILHO DE LIQUIDAÇÃO AUTOMÁTICA (ATLIVIO V44)
+        if (step === 3 && pedido.status === 'in_progress' && pedido.real_start) {
+            const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
+            const dozeHorasMs = 12 * 60 * 60 * 1000;
+            
+            if (Date.now() - inicioMs >= dozeHorasMs) {
+                console.log("⚠️ PRAZO EXPIRADO: Executando auto-pagamento.");
+                if(window.finalizarServicoPassoFinalAction) {
+                    window.finalizarServicoPassoFinalAction(orderId); 
+                }
+            }
+        }
+
         renderizarEstruturaChat(painelChat, pedido, isProvider, orderId, step);
     });
-}
+}      
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
