@@ -279,8 +279,6 @@ async function carregarRecentes() {
 export async function buscarPedidoAuditoria(idOpcional = null) {
     const input = document.getElementById('audit-search-input');
     const orderId = idOpcional || input.value.trim();
-    const input = document.getElementById('audit-search-input');
-    const orderId = idOpcional || input.value.trim();
     if(!orderId) return alert("Digite um ID.");
     input.value = orderId;
 
