@@ -710,7 +710,9 @@ window.iniciarTrabalho = async (orderId) => {
     try {
         await updateDoc(doc(db, "orders", orderId), { 
             status: 'in_progress', 
-            real_start: serverTimestamp() 
+            system_step: 3,
+            real_start: serverTimestamp(),
+            timer_initialized: true
         });
          await addDoc(collection(db, `chats/${orderId}/messages`), { 
             text: `▶ Serviço Iniciado! Cronômetro rodando.`, 
