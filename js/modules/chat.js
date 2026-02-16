@@ -86,13 +86,13 @@ export async function abrirChatPedido(orderId) {
 
   iniciarGatilhosContextuais(orderId, step);
 
-        // 🚀 GATILHO DE LIQUIDAÇÃO AUTOMÁTICA (ATLIVIO V44)
-        if (step === 3 && pedido.status === 'in_progress' && pedido.real_start) {
+        // 🚀 GATILHO DE LIQUIDAÇÃO AUTOMÁTICA (ATLIVIO V47 - TRAVA DE DUPLICIDADE)
+        if (step === 3 && pedido.status === 'in_progress' && pedido.real_start && isProvider) {
             const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
             const dozeHorasMs = 12 * 60 * 60 * 1000;
             
             if (Date.now() - inicioMs >= dozeHorasMs) {
-                console.log("⚠️ PRAZO EXPIRADO: Executando auto-pagamento.");
+                console.log("⚠️ PRAZO EXPIRADO (PRESTADOR): Executando auto-pagamento.");
                 if(window.finalizarServicoPassoFinalAction) {
                     window.finalizarServicoPassoFinalAction(orderId); 
                 }
