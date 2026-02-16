@@ -87,7 +87,7 @@ export async function abrirChatPedido(orderId) {
   iniciarGatilhosContextuais(orderId, step);
 
         // 🚀 GATILHO DE LIQUIDAÇÃO AUTOMÁTICA (ATLIVIO V47 - TRAVA DE DUPLICIDADE)
-        if (step === 3 && pedido.status === 'in_progress' && pedido.real_start && isProvider) {
+        if (step === 3 && pedido.status === 'in_progress' && pedido.real_start && !isProvider) {
             const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
             const dozeHorasMs = 12 * 60 * 60 * 1000;
             
