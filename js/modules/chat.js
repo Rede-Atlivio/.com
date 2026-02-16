@@ -132,7 +132,10 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     </div>
                     <div class="flex items-center gap-2">
                         ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase shadow-sm">📞 Ligar</a>` : ''}
-                        <button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-gray-300 hover:text-red-500 p-2 transition" title="Encerrar Conversa">Encerrar Conversa✋</button>
+                        ${(step < 3 || step === 4) && pedido.status !== 'dispute' ? 
+    `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-gray-300 hover:text-red-500 p-2 transition">Encerrar Conversa✋</button>` : 
+    `<span class="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200">🔒 CONTRATO ATIVO</span>`
+}
                     </div>
                 </div>
                 ${stepsHTML}
