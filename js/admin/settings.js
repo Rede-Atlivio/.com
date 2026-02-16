@@ -22,9 +22,43 @@ export async function init() {
                     <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Mostrar Aviso?</label>
                 </div>
 
-                <button onclick="window.saveAppSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition">
+                <button onclick="window.saveAppSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition mb-8">
                     💾 SALVAR AVISO GLOBAL
                 </button>
+
+                <div class="mt-8 pt-8 border-t border-white/10">
+                    <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
+                    <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Incentivos de Cadastro e Retenção</p>
+                    
+                    <div class="space-y-6">
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="text-[10px] font-black text-gray-400 uppercase">Boas-Vindas (Novos)</span>
+                                <input type="checkbox" id="conf-bonus-ativo" class="chk-custom">
+                            </div>
+                            <label class="text-[9px] font-black text-gray-500 uppercase block mb-1">Valor do Presente (R$)</label>
+                            <input type="number" id="conf-val-bonus-promo" class="inp-editor h-10 text-white font-mono text-center bg-slate-900" placeholder="20.00">
+                        </div>
+
+                        <div class="bg-black/20 p-4 rounded-xl border border-white/5">
+                            <p class="text-[10px] font-black text-gray-400 uppercase mb-4">Recuperação de Inativos</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[9px] font-black text-emerald-500 uppercase block mb-1">7 Dias (R$)</label>
+                                    <input type="number" id="conf-bonus-7dias" class="inp-editor h-10 text-white text-center bg-slate-900" placeholder="5.00">
+                                </div>
+                                <div>
+                                    <label class="text-[9px] font-black text-orange-500 uppercase block mb-1">15 Dias (R$)</label>
+                                    <input type="number" id="conf-bonus-15dias" class="inp-editor h-10 text-white text-center bg-slate-900" placeholder="10.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="window.saveMarketingRules()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-2xl transition transform active:scale-95">
+                            🚀 ATUALIZAR REGRAS DE BÔNUS
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="glass-panel p-6 border border-emerald-500/30">
