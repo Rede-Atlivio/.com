@@ -746,13 +746,15 @@ window.finalizarTrabalho = async (orderId) => {
             real_end: serverTimestamp(),
             system_step: 4
         });
-         await addDoc(collection(db, `chats/${orderId}/messages`), { 
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
             text: `🏁 Serviço Finalizado pelo Prestador.`, 
             sender_id: 'system', 
             timestamp: serverTimestamp() 
         });
+        document.getElementById('painel-chat-individual')?.classList.add('hidden');
+        window.voltarParaListaPedidos();
     } catch(e) { console.error(e); }
-};
+}; 
 
 // ⚖️ AÇÃO 11: LÓGICA DE CANCELAMENTO COM PENALIDADE E ESTORNO
 window.cancelarServico = async (orderId) => {
