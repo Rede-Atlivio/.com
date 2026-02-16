@@ -137,7 +137,12 @@ window.switchView = async function(viewName) {
     else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-list'; } // <--- LINHA NOVA AQUI!
     else if (viewName === 'automation') { moduleFile = './automation.js'; containerId = 'view-automation'; }
     else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
-    else if (viewName === 'settings') { moduleFile = './settings.js'; containerId = 'view-settings'; }
+    else if (viewName === 'settings') { 
+        moduleFile = './settings.js'; 
+        containerId = 'view-settings';
+        // 🚀 CARGA DE APOIO: Garante que o motor de bônus do automation esteja disponível
+        import('./automation.js?v=' + Date.now()).catch(e => console.warn("Erro ao pré-carregar automation:", e));
+    }
     else if (viewName === 'support') { moduleFile = './support.js'; containerId = 'view-support'; }
     else if (viewName === 'audit') { moduleFile = './audit.js'; containerId = 'view-audit'; }
     else if (viewName === 'tutorials') { moduleFile = './tutorials.js'; containerId = 'view-tutorials'; }
