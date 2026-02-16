@@ -302,6 +302,31 @@ window.validarAtivacaoLiquidacao = (el) => {
             el.checked = false;
         } else {
             alert("✅ Modo de Liquidação Integral validado. Não esqueça de SALVAR as regras.");
-        }
+       }
+    }
+};
+
+// 💾 SALVAR REGRAS DE MARKETING (BÔNUS)
+window.saveMarketingRules = async () => {
+    const btn = document.querySelector('button[onclick="window.saveMarketingRules()"]');
+    const originalText = btn.innerText;
+    btn.innerText = "⏳ PROCESSANDO..."; btn.disabled = true;
+
+    const payload = {
+        bonus_boas_vindas_ativo: document.getElementById('conf-bonus-ativo').checked,
+        valor_bonus_promocional: Number(document.getElementById('conf-val-bonus-promo').value),
+        bonus_recuperacao_7d: Number(document.getElementById('conf-bonus-7dias').value),
+        bonus_recuperacao_15d: Number(document.getElementById('conf-bonus-15dias').value),
+        updated_at: new Date()
+    };
+
+    try {
+        await setDoc(doc(window.db, "settings", "global"), payload, { merge: true });
+        alert("✅ ESTRATÉGIA DE MARKETING ATUALIZADA!\nAs novas regras de bônus já estão em vigor.");
+    } catch(e) {
+        alert("❌ Erro ao salvar regras: " + e.message);
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
 };
