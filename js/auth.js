@@ -181,6 +181,12 @@ onAuthStateChanged(auth, async (user) => {
                     data.wallet_balance = parseFloat(data.wallet_balance || 0);
                     if (isNaN(data.wallet_balance)) data.wallet_balance = 0;
 
+                    // 🛰️ RASTREADOR DE PRESENÇA: Atualiza o banco sem dar reload na interface
+                    if (!window.presencaRegistrada) {
+                        updateDoc(userRef, { last_active: serverTimestamp() });
+                        window.presencaRegistrada = true;
+                    }
+
                     userProfile = data; 
                     window.userProfile = data;
                     
