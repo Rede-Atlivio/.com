@@ -652,7 +652,16 @@ function atualizarRelogioDOM(pedido) {
         const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
         const s = (diff % 60).toString().padStart(2, '0');
         
-        displayTimer.innerText = `${h}:${m}:${s}`;
+        // Cálculo da frase dinâmica de 12h (Protocolo V43)
+        const dozeHorasMs = 12 * 60 * 60 * 1000;
+        const tempoRestanteMs = dozeHorasMs - (diff * 1000);
+        const horasFaltando = Math.max(0, Math.floor(tempoRestanteMs / (1000 * 60 * 60)));
+        
+        const fraseAlerta = horasFaltando > 0 
+            ? `<br><span class="text-[9px] opacity-80">Confirme em até ${horasFaltando}h ou o sistema pagará automaticamente.</span>`
+            : `<br><span class="text-[9px] text-yellow-300 animate-pulse">Prazo expirado. Finalizando...</span>`;
+
+        displayTimer.innerHTML = `${h}:${m}:${s} ${fraseAlerta}`;
     }
 
     // Modo Contagem Regressiva
