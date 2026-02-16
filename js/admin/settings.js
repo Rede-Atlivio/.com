@@ -318,10 +318,10 @@ window.saveMarketingRules = async () => {
     btn.innerText = "⏳ PROCESSANDO..."; btn.disabled = true;
 
     const payload = {
-        bonus_boas_vindas_ativo: document.getElementById('conf-bonus-ativo').checked,
-        valor_bonus_promocional: Number(document.getElementById('conf-val-bonus-promo').value),
-        bonus_recuperacao_7d: Number(document.getElementById('conf-bonus-7dias').value),
-        bonus_recuperacao_15d: Number(document.getElementById('conf-bonus-15dias').value),
+      bonus_boas_vindas_ativo: document.getElementById('conf-bonus-ativo')?.checked || false,
+        valor_bonus_promocional: parseFloat(document.getElementById('conf-val-bonus-promo')?.value || 0),
+        bonus_recuperacao_7d: parseFloat(document.getElementById('conf-bonus-7dias')?.value || 0),
+        bonus_recuperacao_15d: parseFloat(document.getElementById('conf-bonus-15dias')?.value || 0),  
         updated_at: new Date()
     };
 
