@@ -286,12 +286,14 @@ window.executeAdjustment = async (uid) => {
                 });
             }
 
-            transaction.set(newHistRef, {
-                provider_id: uid,
-                type: mode === 'credit' ? 'manual_credit' : 'manual_debit',
-                amount: Number(finalAmount),
-                description: `Admin: ${desc}`,
-                created_at: serverTimestamp()
+            // 📝 REGISTRO NO EXTRATO (Visível ao Usuário)
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: Number(amount),
+                tipo: mode === 'credit' ? 'CRÉDITO 📈' : 'DÉBITO 📉',
+                descricao: desc,
+                timestamp: serverTimestamp()
             });
         });
 
