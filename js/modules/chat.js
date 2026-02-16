@@ -1026,6 +1026,7 @@ window.confirmarEncerramentoChat = async (orderId) => {
             closed_at: serverTimestamp() 
         });
         alert("Conversa encerrada.");
+        document.getElementById('painel-chat-individual')?.classList.add('hidden');
         window.voltarParaListaPedidos();
     } catch(e) { console.error("Erro ao encerrar:", e); }
 };
