@@ -259,21 +259,20 @@ window.saveLinkToFirebase = async () => {
     } catch(e) { alert("Erro: " + e.message); }
 };
 
-// 🚀 MOTOR DE BONIFICAÇÃO POR INATIVIDADE (V38.0)
+// 🚀 MOTOR DE BONIFICAÇÃO POR INATIVIDADE (V38.1 - LIMPO E FUNCIONAL)
 window.executarVarreduraDeInativos = async () => {
-    console.log("🚀 [MOTOR] Iniciando Varredura de Inativos (V10 Modular)...");
+    console.log("🚀 [MOTOR] Iniciando Varredura de Inativos...");
     const db = window.db;
     const { collection, getDocs, runTransaction, doc, getDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
     try {
-        // 1. LEITURA MODULAR DAS REGRAS
         const configRef = doc(db, "settings", "global");
         const configSnap = await getDoc(configRef);
         const config = configSnap.data();
 
-        if (!config) return alert("❌ Erro: Documento settings/global não existe.");
+        if (!config) return alert("❌ Erro: Regras não encontradas em settings/global.");
 
-        console.log("📋 Regras lidas:", { v7: config.bonus_recuperacao_7d, v15: config.bonus_recuperacao_15d });
+        console.log("📋 Regras lidas do Admin:", { v7: config.bonus_recuperacao_7d, v15: config.bonus_recuperacao_15d });
 
         const agora = new Date();
         const limite7d = new Date(agora.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -288,7 +287,6 @@ window.executarVarreduraDeInativos = async () => {
             let valorInjecao = 0;
             let tagMotivo = "";
 
-            // Prioridade 15 dias
             if (lastActive < limite15d && (config.bonus_recuperacao_15d || 0) > 0) {
                 valorInjecao = Number(config.bonus_recuperacao_15d);
                 tagMotivo = "RECUPERACAO_15D 🧡";
@@ -306,7 +304,6 @@ window.executarVarreduraDeInativos = async () => {
                         wallet_bonus: (u.wallet_bonus || 0) + valorInjecao,
                         last_bonus_recovery_at: serverTimestamp()
                     });
-
                     const extratoRef = doc(collection(db, "extrato_financeiro"));
                     transaction.set(extratoRef, {
                         uid: userDoc.id, valor: valorInjecao, tipo: tagMotivo,
@@ -318,55 +315,8 @@ window.executarVarreduraDeInativos = async () => {
                 console.log(`✅ BONIFICADO: ${u.nome || userDoc.id} recebeu R$ ${valorInjecao}`);
             }
         }
-        alert(`🎯 VARREDURA CONCLUÍDA!\n\n${contagem} usuários foram bonificados.`);
-    } catch (e) {
-        console.error("❌ Erro no Motor:", e);
-        alert("Falha na varredura. Veja o console.");
-    }
-};
-        const limite7d = new Date(agora.getTime() - (7 * 24 * 60 * 60 * 1000));
-        const limite15d = new Date(agora.getTime() - (15 * 24 * 60 * 60 * 1000));
-
-        const usuariosSnap = await getDocs(collection(db, "usuarios"));
-        let contagem = 0;
-
-        for (const userDoc of usuariosSnap.docs) {
-            const u = userDoc.data();
-            const lastActive = u.last_active?.toDate() || new Date(2000,0,1);
-            let valorInjecao = 0;
-            let tagMotivo = "";
-
-            if (lastActive < limite15d && config.bonus_recuperacao_15d > 0) {
-                valorInjecao = config.bonus_recuperacao_15d;
-                tagMotivo = "RECUPERACAO_15D 🧡";
-            } else if (lastActive < limite7d && config.bonus_recuperacao_7d > 0) {
-                valorInjecao = config.bonus_recuperacao_7d;
-                tagMotivo = "RECUPERACAO_7D 💛";
-            }
-
-            const jaRecebeuHoje = u.last_bonus_recovery_at?.toDate() > new Date(agora.getTime() - (24 * 60 * 60 * 1000));
-
-            if (valorInjecao > 0 && !jaRecebeuHoje) {
-                await runTransaction(db, async (transaction) => {
-                    transaction.update(userDoc.ref, {
-                        wallet_bonus: (u.wallet_bonus || 0) + valorInjecao,
-                        last_bonus_recovery_at: serverTimestamp()
-                    });
-                    const extratoRef = doc(collection(db, "extrato_financeiro"));
-                    transaction.set(extratoRef, {
-                        uid: userDoc.id,
-                        valor: valorInjecao,
-                        tipo: tagMotivo,
-                        descricao: `Presente de retorno! Sentimos sua falta.`,
-                        timestamp: serverTimestamp()
-                    });
-                });
-                contagem++;
-            }
-        }
         alert(`🎯 VARREDURA CONCLUÍDA!\n\n${contagem} usuários inativos foram bonificados.`);
     } catch (e) {
-        console.error("Erro na varredura:", e);
-        alert("Erro técnico ao bonificar inativos.");
+        console.error("❌ Erro técnico no motor:", e);
     }
 };
