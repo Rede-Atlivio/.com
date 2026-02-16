@@ -289,10 +289,10 @@ window.executarVarreduraDeInativos = async () => {
 
             if (lastActive < limite15d && (config.bonus_recuperacao_15d || 0) > 0) {
                 valorInjecao = Number(config.bonus_recuperacao_15d);
-                tagMotivo = "RECUPERACAO_15D 🧡";
+                tagMotivo = "🎁 BÔNUS FIDELIDADE 🧡";
             } else if (lastActive < limite7d && (config.bonus_recuperacao_7d || 0) > 0) {
                 valorInjecao = Number(config.bonus_recuperacao_7d);
-                tagMotivo = "RECUPERACAO_7D 💛";
+                tagMotivo = "🎁 PRESENTE DE RETORNO 💛";
             }
 
             const jaRecebeuHoje = u.last_bonus_recovery_at?.toDate() > new Date(agora.getTime() - (24 * 60 * 60 * 1000));
