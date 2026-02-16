@@ -52,6 +52,11 @@ export async function init() {
                                     <input type="number" id="conf-bonus-15dias" class="inp-editor h-10 text-white text-center bg-slate-900" placeholder="10.00">
                                 </div>
                             </div>
+                            <div class="mt-4 pt-4 border-t border-white/5">
+                                <button onclick="window.executarVarreduraDeInativos()" class="w-full bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-white py-2 rounded-lg text-[9px] font-black uppercase border border-emerald-500/30 transition flex items-center justify-center gap-2">
+                                    <span>🎯</span> DISPARAR BÔNUS PARA INATIVOS AGORA
+                                </button>
+                            </div>
                         </div>
 
                         <button onclick="window.saveMarketingRules()" class="w-full bg-purple-600 hover:bg-purple-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-2xl transition transform active:scale-95">
