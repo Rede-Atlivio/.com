@@ -645,30 +645,29 @@ function atualizarRelogioDOM(pedido) {
     const displayTimer = document.getElementById('timer-display');
     const displayCountdown = document.getElementById('countdown-display');
 
-    // Modo Cronômetro (Em execução)
+    // 1. MODO CRONÔMETRO REVERSO (Serviço em Andamento)
     if (displayTimer && pedido.real_start) {
-        const inicio = pedido.real_start.toDate ? pedido.real_start.toDate() : new Date(pedido.real_start);
-        const agora = new Date();
-        const diff = Math.floor((agora - inicio) / 1000);
+        const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
+        const agoraMs = Date.now();
+        const dozeHorasMs = 12 * 60 * 60 * 1000;
         
-        const h = Math.floor(diff / 3600).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-        const s = (diff % 60).toString().padStart(2, '0');
-        
-        const dozeHorasSegundos = 12 * 3600;
-        let fraseInjetada = "";
+        const tempoPassado = agoraMs - inicioMs;
+        const tempoRestante = dozeHorasMs - tempoPassado;
 
-        if (diff >= dozeHorasSegundos) {
-            fraseInjetada = `<br><span class="text-[9px] text-yellow-300 font-bold animate-pulse">⚠️ PRAZO EXPIRADO: Finalizando pagamento...</span>`;
+        if (tempoRestante <= 0) {
+            displayTimer.innerHTML = `<span class="text-yellow-300 animate-pulse text-sm">00:00:00 <br> <small>PRAZO EXPIRADO: Finalizando...</small></span>`;
         } else {
-            const horasRestantes = 12 - Math.floor(diff / 3600);
-            fraseInjetada = `<br><span class="text-[9px] opacity-80">Você tem ${horasRestantes}h para confirmar ou contestar este serviço.</span>`;
+            const totalSegundos = Math.floor(tempoRestante / 1000);
+            const h = Math.floor(totalSegundos / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSegundos % 3600) / 60).toString().padStart(2, '0');
+            const s = (totalSegundos % 60).toString().padStart(2, '0');
+            const horasParaFrase = Math.floor(totalSegundos / 3600);
+
+            displayTimer.innerHTML = `${h}:${m}:${s} <br> <span style="font-size: 9px; opacity: 0.8;">Você tem ${horasParaFrase}h para confirmar ou contestar este serviço.</span>`;
         }
+    } // Fim do bloco cronômetro
 
-        displayTimer.innerHTML = `${h}:${m}:${s} ${fraseInjetada}`;
-    }
-
-    // Modo Contagem Regressiva
+    // 2. MODO CONTAGEM REGRESSIVA (Agendamento pré-serviço)
     if (displayCountdown && pedido.scheduled_at) {
         const alvo = pedido.scheduled_at.toDate ? pedido.scheduled_at.toDate() : new Date(pedido.scheduled_at);
         const agora = new Date();
@@ -684,8 +683,8 @@ function atualizarRelogioDOM(pedido) {
             if (d > 0) displayCountdown.innerText = `${d}d ${h}h`;
             else displayCountdown.innerText = `${h}:${m}`;
         }
-    }
-}
+    } // Fim do bloco contagem
+} // Fim da função (Agora com todas as chaves!)
 
 // --- FUNÇÕES DE AÇÃO DO TEMPO ---
 
