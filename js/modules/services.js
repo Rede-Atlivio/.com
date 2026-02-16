@@ -291,7 +291,7 @@ export async function carregarPedidosAtivos() {
                 <div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
                     <div>
                         <h3 class="font-bold text-gray-800 text-sm">${p.provider_name}</h3>
-                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • ${p.status}</p>
+                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • ${p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente'}</p>
                     </div>
                     <span>💬</span>
                 </div>
