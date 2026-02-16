@@ -168,8 +168,8 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     <div id="bubbles-area" class="${pedido.status === 'dispute' ? 'opacity-30 pointer-events-none' : ''}"></div>
 </div>
 
-            ${!['completed', 'cancelled', 'negotiation_closed'].includes(pedido.status) ? `
-            <div class="bg-white border-t mt-auto z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
+            <div class="bg-white border-t mt-auto z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
                     <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
                     <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
