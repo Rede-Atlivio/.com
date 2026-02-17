@@ -22,7 +22,7 @@ window.carregarChat = () => {
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
-window.finalizarServicoPassoFinal = (id) => window.finalizarServicoPassoFinalAction(id);
+window.finalizarServicoPassoFinal = (id) => finalizarServicoPassoFinalAction(id);
 window.voltarParaListaPedidos = () => {
     document.getElementById('painel-chat-individual')?.classList.add('hidden');
     const painelLista = document.getElementById('painel-pedidos');
