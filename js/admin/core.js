@@ -371,7 +371,7 @@ window.finalizarManualmente = async (orderId) => {
             });
             transaction.update(providerRef, { 
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
-                wallet_balance: increment(repasseFinal),
+                wallet_balance: increment(Number((valorBase - valorTaxaP).toFixed(2))),
                 wallet_earnings: increment(Number((valorBase - valorTaxaP).toFixed(2)))
             });
             transaction.update(cofreRef, { 
