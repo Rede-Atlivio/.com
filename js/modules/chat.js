@@ -398,13 +398,11 @@ export const finalizarServicoPassoFinalAction = async (orderId, acaoPorAdmin = f
             const configFinRef = doc(db, "settings", "financeiro");
             const configGlobRef = doc(db, "settings", "global");
             
-            // 🔄 SINCRONIA DE LEITURAS (Lendo tudo que importa de uma vez)
+            // 🔄 SINCRONIA DE LEITURAS (Passo 1: Ordem, Config e Cofre)
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-            const [orderSnap, configFinSnap, clientSnap, providerSnap, cofreSnap] = await Promise.all([
-            transaction.get(orderRef),
+            const [orderSnap, configFinSnap, cofreSnap] = await Promise.all([
+                transaction.get(orderRef),
                 transaction.get(configFinRef),
-                null, // Espaço reservado para manter o índice do Promise.all
-                null,    
                 transaction.get(atlivioReceitaRef)
             ]);
 
