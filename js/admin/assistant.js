@@ -61,12 +61,14 @@ export async function renderAssistant(containerId) {
         const qAtrasados = query(collection(db, "orders"), where("status", "==", "in_progress"), where("real_start", "<=", Timestamp.fromDate(dozeHorasAtras)));
 
         // Execução
-        const [snapUsers, snapProv, snapAnalise, snapTickets, snapNotif] = await Promise.all([
+        const [snapUsers, snapProv, snapAnalise, snapTickets, snapNotif, snapDisputas, snapAtrasados] = await Promise.all([
             getCountFromServer(qUsersToday),
             getCountFromServer(qProvToday),
             getCountFromServer(qAnalise),
             getCountFromServer(qTickets),
-            getDocs(qNotificacoes)
+            getDocs(qNotificacoes),
+            getCountFromServer(qDisputas),
+            getCountFromServer(qAtrasados)
         ]);
 
         const newUsers = snapUsers.data().count;
