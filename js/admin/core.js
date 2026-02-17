@@ -317,3 +317,65 @@ window.saveModalData = async () => {
         alert("❌ Erro ao salvar: " + e.message);
     } 
 };
+
+// ============================================================================
+// 💀 AÇÃO MASTER KILL: LIQUIDAÇÃO ADMINISTRATIVA FORÇADA (ATLIVIO V43)
+// ============================================================================
+window.finalizarManualmente = async (orderId) => {
+    if (!confirm("⚠️ MASTER KILL: Deseja forçar o encerramento deste serviço?\n\nO saldo em custódia será movido para o prestador e o contrato será encerrado.")) return;
+
+    const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    try {
+        await runTransaction(window.db, async (transaction) => {
+            const orderRef = doc(window.db, "orders", orderId);
+            const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Ordem não encontrada.";
+            
+            const pedido = orderSnap.data();
+            const resCliente = parseFloat(pedido.value_reserved_client || 0);
+            const resProvider = parseFloat(pedido.value_reserved_provider || 0);
+            const valorTotal = parseFloat(pedido.offer_value || 0);
+
+            const clientRef = doc(window.db, "usuarios", pedido.client_id);
+            const providerRef = doc(window.db, "usuarios", pedido.provider_id);
+            const cofreRef = doc(window.db, "sys_finance", "receita_total");
+
+            const [cSnap, pSnap] = await Promise.all([
+                transaction.get(clientRef),
+                transaction.get(providerRef)
+            ]);
+
+            // 1. Limpa Reservas dos Usuários
+            transaction.update(clientRef, { 
+                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resCliente) 
+            });
+            transaction.update(providerRef, { 
+                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider),
+                wallet_balance: increment(resCliente + resProvider) // Devolve tudo ao prestador no Master Kill
+            });
+
+            // 2. Finaliza a Ordem com marcação administrativa
+            transaction.update(orderRef, {
+                status: 'completed',
+                system_step: 4,
+                completed_at: serverTimestamp(),
+                finalizado_por: 'admin',
+                kill_reason: 'Intervenção Suporte Atlivio'
+            });
+
+            // 3. Log de Auditoria
+            transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
+                text: `⚖️ MEDIAÇÃO ATLIVIO: Este serviço foi encerrado manualmente pelo suporte técnico.`,
+                sender_id: 'system',
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert("💀 SERVIÇO ENCERRADO COM SUCESSO!");
+        if(window.activeView === 'dashboard') window.switchView('dashboard');
+    } catch (e) {
+        console.error(e);
+        alert("Erro no Master Kill: " + e);
+    }
+};
