@@ -156,7 +156,11 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                         </div>
                         <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
                             <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
-                            <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span id="chat-partner-status" class="text-[9px] font-bold text-gray-400 lowercase">verificando...</span>
+                                <span class="text-[8px] text-gray-300">•</span>
+                                <p class="text-[8px] font-bold text-blue-600 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
+                            </div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
