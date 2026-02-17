@@ -7,6 +7,15 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, 
 
 // --- GATILHOS E NAVEGAÇÃO GLOBAL ---
 let unsubscribeChat = null; // 🔑 CHAVE PARA TROCAR DE CHAT SEM BUG
+
+// 🟢 FUNÇÕES GLOBAIS DE ESTADO (WHATSAPP STYLE)
+window.atlivioDigitando = async (orderId, status) => {
+    const uid = auth.currentUser?.uid;
+    if(!uid) return;
+    try {
+        await updateDoc(doc(db, "usuarios", uid), { typing_in: status ? orderId : "" });
+    } catch(e) {}
+};
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
