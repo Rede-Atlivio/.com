@@ -234,5 +234,41 @@ export async function init() {
             });
         });
 
+        // 🚀 MOTOR DO RADAR ADMIN: Monitora In Progress e Dispute
+        const qRadar = query(collection(db, "orders"), where("status", "in", ["in_progress", "dispute"]), orderBy("created_at", "desc"));
+        onSnapshot(qRadar, (snap) => {
+            const radarContainer = document.getElementById('admin-monitor-radar');
+            if(!radarContainer) return;
+            radarContainer.innerHTML = "";
+
+            if(snap.empty) {
+                radarContainer.innerHTML = `<div class="p-10 text-center opacity-30 uppercase font-black text-[10px]">Céu Limpo ☀️</div>`;
+                return;
+            }
+
+            snap.forEach(d => {
+                const p = d.data();
+                const isDispute = p.status === 'dispute';
+                const inicio = p.real_start?.toDate ? p.real_start.toDate() : new Date(p.real_start);
+                const decorridoH = Math.floor((Date.now() - inicio.getTime()) / (1000 * 60 * 60));
+                
+                radarContainer.innerHTML += `
+                    <div class="p-3 rounded-xl border ${isDispute ? 'border-red-500 bg-red-900/10' : 'border-slate-700 bg-slate-800/50'} animate-fade">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-[9px] font-black ${isDispute ? 'text-red-500' : 'text-blue-400'} uppercase">${isDispute ? '⚖️ DISPUTA' : '🛠️ EM EXECUÇÃO'}</span>
+                            <span class="text-[10px] font-mono text-white font-bold">R$ ${p.offer_value}</span>
+                        </div>
+                        <p class="text-xs font-bold text-white truncate">${p.provider_name} ➔ ${p.client_name}</p>
+                        <div class="flex justify-between items-center mt-3 pt-2 border-t border-white/5">
+                            <span class="text-[9px] font-bold ${decorridoH >= 12 ? 'text-amber-500 animate-pulse' : 'text-gray-500'}">${decorridoH}h decorridas</span>
+                            <div class="flex gap-2">
+                                <button onclick="window.switchView('audit'); setTimeout(() => window.buscarPedidoAuditoria('${d.id}'), 300)" class="text-[8px] bg-slate-700 px-2 py-1 rounded text-white font-bold uppercase hover:bg-indigo-600 transition">Investigar</button>
+                                <button onclick="window.finalizarManualmente('${d.id}')" class="text-[8px] bg-red-900/30 px-2 py-1 rounded text-red-500 border border-red-900/50 font-bold uppercase hover:bg-red-600 hover:text-white transition">Kill 💀</button>
+                            </div>
+                        </div>
+                    </div>`;
+            });
+        });
+
     } catch(e) { console.error("Erro Dashboard:", e); }
 }
