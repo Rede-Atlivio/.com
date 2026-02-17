@@ -113,20 +113,17 @@ export async function abrirChatPedido(orderId) {
 }      
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
-    const myUid = auth.currentUser.uid;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "", is_online: false };
 
     // 🟢 ESCUTA STATUS ONLINE E "DIGITANDO" DO PARCEIRO
     if (window.unsubscribePartnerStatus) window.unsubscribePartnerStatus();
     window.unsubscribePartnerStatus = onSnapshot(doc(db, "usuarios", uidPartner), (s) => {
-        if(s.exists()) {
+        const elStatus = document.getElementById('chat-partner-status');
+        if(s.exists() && elStatus) {
             const data = s.data();
-            const elStatus = document.getElementById('chat-partner-status');
             const isTyping = data.typing_in === orderId;
-            if(elStatus) {
-                if(isTyping) elStatus.innerHTML = `<span class="text-green-500 animate-pulse">digitando...</span>`;
-                else elStatus.innerText = data.is_online ? 'online' : 'offline';
-            }
+            if(isTyping) elStatus.innerHTML = `<span class="text-green-500 animate-pulse font-black italic">digitando...</span>`;
+            else elStatus.innerText = data.is_online ? 'online' : 'offline';
         }
     });
 
