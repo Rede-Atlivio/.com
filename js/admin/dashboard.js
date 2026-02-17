@@ -261,9 +261,10 @@ export async function init() {
                         <p class="text-xs font-bold text-white truncate">${p.provider_name} ➔ ${p.client_name}</p>
                         <div class="flex justify-between items-center mt-3 pt-2 border-t border-white/5">
                             <span class="text-[9px] font-bold ${decorridoH >= 12 ? 'text-amber-500 animate-pulse' : 'text-gray-500'}">${decorridoH}h decorridas</span>
-                            <div class="flex gap-2">
-                                <button onclick="window.switchView('audit'); setTimeout(() => window.buscarPedidoAuditoria('${d.id}'), 300)" class="text-[8px] bg-slate-700 px-2 py-1 rounded text-white font-bold uppercase hover:bg-indigo-600 transition">Investigar</button>
-                                <button onclick="window.finalizarManualmente('${d.id}')" class="text-[8px] bg-red-900/30 px-2 py-1 rounded text-red-500 border border-red-900/50 font-bold uppercase hover:bg-red-600 hover:text-white transition">Kill 💀</button>
+                            <div class="flex gap-1.5">
+                                <button onclick="window.switchView('audit'); setTimeout(() => window.buscarPedidoAuditoria('${d.id}'), 300)" class="bg-slate-700 p-1.5 rounded text-white" title="Investigar Chat">🕵️</button>
+                                <button onclick="window.finalizarManualmente('${d.id}')" class="flex-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white text-[8px] font-black uppercase rounded transition border border-blue-500/30">Pagar ✅</button>
+                                <button onclick="window.reembolsarManualmente('${d.id}')" class="flex-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase rounded transition border border-red-500/30">Refund ♻️</button>
                             </div>
                         </div>
                     </div>`;
