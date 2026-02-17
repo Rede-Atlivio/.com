@@ -110,8 +110,15 @@ export async function renderAssistant(containerId) {
                 statusColor = "border-l-4 border-yellow-500"; icon = "⚡";
             }
             if (pendingTickets > 0) {
-                insights.push(`💬 <b>Suporte:</b> ${pendingTickets} tickets abertos.`);
-                statusColor = "border-l-4 border-red-500"; icon = "🚨";
+                insights.push(`💬 <b>Suporte:</b> ${pendingTickets} tickets de chat abertos.`);
+            }
+            if (totalDisputas > 0) {
+                insights.push(`⚖️ <b>DISPUTAS:</b> ${totalDisputas} serviços aguardando mediação.`);
+                statusColor = "border-l-4 border-red-600"; icon = "🚨";
+            }
+            if (totalAtrasados > 0) {
+                insights.push(`⏰ <b>ATRASO CRÍTICO:</b> ${totalAtrasados} serviços passaram de 12h.`);
+                if(!totalDisputas) statusColor = "border-l-4 border-amber-600"; 
             }
         }
 
