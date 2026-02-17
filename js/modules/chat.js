@@ -224,11 +224,11 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
                 <div class="px-3 pb-3 flex gap-2 items-center">
                     <input type="text" id="chat-input-msg" 
-                        oninput="updateDoc(doc(db, 'usuarios', auth.currentUser.uid), { typing_in: '${orderId}' })"
-                        onblur="updateDoc(doc(db, 'usuarios', auth.currentUser.uid), { typing_in: '' })"
+                        oninput="window.atlivioDigitando('${orderId}', true)"
+                        onblur="window.atlivioDigitando('${orderId}', false)"
                         placeholder="Digite sua mensagem..." 
                         class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
-                    <button onclick="updateDoc(doc(db, 'usuarios', auth.currentUser.uid), { typing_in: '' }); window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
+                    <button onclick="window.atlivioDigitando('${orderId}', false); window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
                 </div>
             </div>` : ''}
         </div>
