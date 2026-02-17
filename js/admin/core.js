@@ -444,10 +444,7 @@ window.reembolsarManualmente = async (orderId) => {
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider),
                 wallet_balance: increment(resProvider) // Devolve apenas o que era do prestador
             });
-            transaction.update(providerRef, { 
-                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider) 
-            });
-
+            
             // 2. Cancela a Ordem com marcação de reembolso
             transaction.update(orderRef, {
                 status: 'cancelled',
