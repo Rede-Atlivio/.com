@@ -401,10 +401,10 @@ export const finalizarServicoPassoFinalAction = async (orderId, acaoPorAdmin = f
             // 🔄 SINCRONIA DE LEITURAS (Lendo tudo que importa de uma vez)
             const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
             const [orderSnap, configFinSnap, clientSnap, providerSnap, cofreSnap] = await Promise.all([
-                transaction.get(orderRef),
-                transaction.get(configFinRef), // Lê settings/financeiro (ONDE TUDO ESTÁ SALVO)
-                transaction.get(doc(db, "usuarios", (await transaction.get(orderRef)).data().client_id)),
-                transaction.get(doc(db, "usuarios", (await transaction.get(orderRef)).data().provider_id)),
+            transaction.get(orderRef),
+                transaction.get(configFinRef),
+                null, // Espaço reservado para manter o índice do Promise.all
+                null,    
                 transaction.get(atlivioReceitaRef)
             ]);
 
