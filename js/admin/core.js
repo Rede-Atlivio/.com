@@ -366,7 +366,8 @@ window.finalizarManualmente = async (orderId) => {
 
             // --- EXECUÇÃO FINANCEIRA ---
             transaction.update(clientRef, { 
-                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC)
+            wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC),
+            wallet_balance: novoSaldoCliente // ✅ O dinheiro sai da conta dele AQUI.
             });
             transaction.update(providerRef, { 
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
