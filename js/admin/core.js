@@ -358,26 +358,26 @@ window.finalizarManualmente = async (orderId) => {
             let pctC = parseFloat(rawTaxaC) > 1 ? parseFloat(rawTaxaC)/100 : parseFloat(rawTaxaC);
             const valorTaxaC = Number((valorBase * pctC).toFixed(2));
 
-            // ⚡ MATEMÁTICA DO DÉBITO REAL (O QUE FALTA COBRAR)
-            const faltaPagarCliente = Number((valorBase + valorTaxaC - resC).toFixed(2));
+            // ⚡ REGRA ATLIVIO: O Cliente paga apenas a TAXA dele pelo sistema
+            const faltaPagarCliente = valorTaxaC; 
             const limiteFin = -Math.abs(parseFloat(configFin.limite_divida || 0));
             const novoSaldoCliente = Number(((cSnap.data().wallet_balance || 0) - faltaPagarCliente).toFixed(2));
 
-            // 🛡️ TRAVA DE SEGURANÇA: Impede dinheiro fantasma
+            // 🛡️ TRAVA DE SEGURANÇA: Bloqueia se não houver lastro para a taxa
             if (novoSaldoCliente < limiteFin) {
-                throw `Saldo Insuficiente: O cliente ficaria com R$ ${novoSaldoCliente.toFixed(2)}, excedendo o limite de dívida de R$ ${limiteFin.toFixed(2)}.`;
+                throw `Saldo Insuficiente para Taxas: O cliente ficaria com R$ ${novoSaldoCliente.toFixed(2)}.`;
             }
 
-            const totalTaxasCalculadas = Number((valorTaxaP + valorTaxaC).toFixed(2));
+            const totalTaxasPlataforma = Number((valorTaxaP + valorTaxaC).toFixed(2));
 
-            // --- EXECUÇÃO DOS DOCUMENTOS ---
+            // --- EXECUÇÃO ---
             transaction.update(clientRef, { 
                 wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC),
-                wallet_balance: novoSaldoCliente 
+                wallet_balance: novoSaldoCliente
             });
             transaction.update(providerRef, { 
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
-                wallet_balance: increment(Number((valorBase - valorTaxaP).toFixed(2))),
+                wallet_balance: increment(Number((resC + (resP - valorTaxaP)).toFixed(2))),
                 wallet_earnings: increment(Number((valorBase - valorTaxaP).toFixed(2)))
             });
             transaction.update(cofreRef, { 
