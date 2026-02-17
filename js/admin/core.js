@@ -412,11 +412,14 @@ window.reembolsarManualmente = async (orderId) => {
                 transaction.get(providerRef)
             ]);
 
-            // 1. Estorna as Reservas de volta para o Saldo Real do Cliente
-            // Nota: O prestador apenas tem sua reserva zerada (pois não houve lucro)
+            // 1. Estorna as Reservas para seus respectivos donos originais
             transaction.update(clientRef, { 
                 wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resCliente),
-                wallet_balance: increment(resCliente + resProvider) 
+                wallet_balance: increment(resCliente) // Devolve apenas o que era do cliente
+            });
+            transaction.update(providerRef, { 
+                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider),
+                wallet_balance: increment(resProvider) // Devolve apenas o que era do prestador
             });
             transaction.update(providerRef, { 
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider) 
