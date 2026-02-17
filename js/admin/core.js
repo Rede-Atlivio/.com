@@ -379,3 +379,72 @@ window.finalizarManualmente = async (orderId) => {
         alert("Erro no Master Kill: " + e);
     }
 };
+
+// ============================================================================
+// ♻️ AÇÃO MASTER REFUND: ESTORNO ADMINISTRATIVO (ATLIVIO V43)
+// ============================================================================
+window.reembolsarManualmente = async (orderId) => {
+    const motivoPrivado = prompt("📝 MOTIVO INTERNO (Para Auditoria):");
+    if (!motivoPrivado) return;
+
+    const motivoPublico = prompt("⚖️ RESUMO PARA OS USUÁRIOS (Ex: Descumprimento de regras):", "Decisão administrativa após análise de evidências.");
+    if (!motivoPublico) return;
+
+    if (!confirm("⚠️ MASTER REFUND: Deseja estornar o valor integral para o CLIENTE?")) return;
+
+    const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    try {
+        await runTransaction(window.db, async (transaction) => {
+            const orderRef = doc(window.db, "orders", orderId);
+            const orderSnap = await transaction.get(orderRef);
+            if (!orderSnap.exists()) throw "Ordem não encontrada.";
+            
+            const pedido = orderSnap.data();
+            const resCliente = parseFloat(pedido.value_reserved_client || 0);
+            const resProvider = parseFloat(pedido.value_reserved_provider || 0);
+
+            const clientRef = doc(window.db, "usuarios", pedido.client_id);
+            const providerRef = doc(window.db, "usuarios", pedido.provider_id);
+
+            const [cSnap, pSnap] = await Promise.all([
+                transaction.get(clientRef),
+                transaction.get(providerRef)
+            ]);
+
+            // 1. Estorna as Reservas de volta para o Saldo Real do Cliente
+            // Nota: O prestador apenas tem sua reserva zerada (pois não houve lucro)
+            transaction.update(clientRef, { 
+                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resCliente),
+                wallet_balance: increment(resCliente + resProvider) 
+            });
+            transaction.update(providerRef, { 
+                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider) 
+            });
+
+            // 2. Cancela a Ordem com marcação de reembolso
+            transaction.update(orderRef, {
+                status: 'cancelled',
+                system_step: 4,
+                completed_at: serverTimestamp(),
+                finalizado_por: 'admin',
+                admin_decision_type: 'refund',
+                admin_decision_notes: motivoPrivado,
+                admin_public_reason: motivoPublico
+            });
+
+            // 3. Log de Arbitragem no Chat
+            transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
+                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço cancelado com estorno total ao cliente. \n\nVeredito: ${motivoPublico}`,
+                sender_id: 'system',
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert("♻️ REEMBOLSO PROCESSADO COM SUCESSO!");
+        if(window.activeView === 'dashboard') window.switchView('dashboard');
+    } catch (e) {
+        console.error(e);
+        alert("Erro no Refund: " + e);
+    }
+};
