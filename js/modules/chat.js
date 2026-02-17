@@ -410,6 +410,7 @@ export const finalizarServicoPassoFinalAction = async (orderId, acaoPorAdmin = f
             const pedido = orderSnap.data();
             const clientRef = doc(db, "usuarios", pedido.client_id);
             const providerRef = doc(db, "usuarios", pedido.provider_id);
+            // 💰 LEITURA DINÂMICA: Busca os donos reais da conta baseados na Ordem
             const [clientSnap, providerSnap] = await Promise.all([transaction.get(clientRef), transaction.get(providerRef)]);
             // 🛡️ PREVENÇÃO DE ERROS: Se não tiver config, assume tudo ZERO (nada de 10% automático)
             const configFin = configFinSnap.exists() ? configFinSnap.data() : {};
