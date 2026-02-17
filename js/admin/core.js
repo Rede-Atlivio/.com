@@ -322,7 +322,7 @@ window.saveModalData = async () => {
 // ✅ AÇÃO ADMINISTRATIVA: PAGAR PRESTADOR (COM TAXAS ATLIVIO)
 // ============================================================================
 window.finalizarManualmente = async (orderId) => {
-    if (!confirm("⚠️ PAGAR PRESTADOR: Confirmar a conclusão administrativa e liberar o pagamento (com taxas)?")) return;
+    if (!confirm("⚠️ PAGAR PRESTADOR: Confirmar a liquidação administrativa?\n\nO valor do serviço e as taxas serão debitados do saldo livre do cliente.")) return;
 
     const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
@@ -339,35 +339,41 @@ window.finalizarManualmente = async (orderId) => {
 
             if (!orderSnap.exists()) throw "Ordem não encontrada.";
             const pedido = orderSnap.data();
-            const configFin = configSnap.exists() ? configSnap.data() : {};
+            const configFin = configSnap.exists() ? configSnap.data() : { limite_divida: 0 };
 
             const clientRef = doc(window.db, "usuarios", pedido.client_id);
             const providerRef = doc(window.db, "usuarios", pedido.provider_id);
             const [cSnap, pSnap] = await Promise.all([transaction.get(clientRef), transaction.get(providerRef)]);
 
-            // --- LÓGICA DE TAXAS IGUAL AO CHAT.JS ---
             const valorBase = parseFloat(pedido.offer_value || 0);
             const resC = parseFloat(pedido.value_reserved_client || 0);
             const resP = parseFloat(pedido.value_reserved_provider || 0);
 
-            // 1. Taxa Prestador
+            // 1. Cálculos de Taxas
             let rawTaxaP = configFin.taxa_plataforma ?? configFin.taxa_prestador ?? 0;
             let pctP = parseFloat(rawTaxaP) > 1 ? parseFloat(rawTaxaP)/100 : parseFloat(rawTaxaP);
             const valorTaxaP = Number((valorBase * pctP).toFixed(2));
 
-            // 2. Taxa Cliente
             let rawTaxaC = configFin.taxa_cliente ?? 0;
             let pctC = parseFloat(rawTaxaC) > 1 ? parseFloat(rawTaxaC)/100 : parseFloat(rawTaxaC);
             const valorTaxaC = Number((valorBase * pctC).toFixed(2));
 
-            // 3. Repasse (Reserva do Cliente + Sobra da Reserva do Prestador)
-            const repasseFinal = Number((resC + (resP - valorTaxaP)).toFixed(2));
-            const totalTaxas = Number((valorTaxaP + valorTaxaC).toFixed(2));
+            // ⚡ MATEMÁTICA DO DÉBITO REAL (O QUE FALTA COBRAR)
+            const faltaPagarCliente = Number((valorBase + valorTaxaC - resC).toFixed(2));
+            const limiteFin = -Math.abs(parseFloat(configFin.limite_divida || 0));
+            const novoSaldoCliente = Number(((cSnap.data().wallet_balance || 0) - faltaPagarCliente).toFixed(2));
 
-            // --- EXECUÇÃO FINANCEIRA ---
+            // 🛡️ TRAVA DE SEGURANÇA: Impede dinheiro fantasma
+            if (novoSaldoCliente < limiteFin) {
+                throw `Saldo Insuficiente: O cliente ficaria com R$ ${novoSaldoCliente.toFixed(2)}, excedendo o limite de dívida de R$ ${limiteFin.toFixed(2)}.`;
+            }
+
+            const totalTaxasCalculadas = Number((valorTaxaP + valorTaxaC).toFixed(2));
+
+            // --- EXECUÇÃO DOS DOCUMENTOS ---
             transaction.update(clientRef, { 
-            wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC),
-            wallet_balance: novoSaldoCliente // ✅ O dinheiro sai da conta dele AQUI.
+                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC),
+                wallet_balance: novoSaldoCliente 
             });
             transaction.update(providerRef, { 
                 wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
@@ -375,23 +381,22 @@ window.finalizarManualmente = async (orderId) => {
                 wallet_earnings: increment(Number((valorBase - valorTaxaP).toFixed(2)))
             });
             transaction.update(cofreRef, { 
-                total_acumulado: increment(totalTaxas),
+                total_acumulado: increment(totalTaxasCalculadas),
                 ultima_atualizacao: serverTimestamp()
             });
 
-            // --- FINALIZAÇÃO ---
             transaction.update(orderRef, {
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
                 finalizado_por: 'admin', lucro_atlivio_prestador: valorTaxaP, lucro_atlivio_cliente: valorTaxaC
             });
 
             transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
-                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço liquidado administrativamente. Veredito favorável ao Prestador.`,
+                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço encerrado manualmente. Pagamento e taxas processados.`,
                 sender_id: 'system', timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ PAGAMENTO PROCESSADO E TAXAS COBRADAS!");
+        alert("✅ PAGAMENTO FINALIZADO COM LASTRO REAL!");
         if(window.activeView === 'dashboard') window.switchView('dashboard');
     } catch (e) {
         console.error(e);
