@@ -324,7 +324,7 @@ window.saveModalData = async () => {
 window.finalizarManualmente = async (orderId) => {
     try {
         // Importa a função real que o cliente usa no App
-        const chatModule = await import('./js/modules/chat.js?v=' + Date.now());
+        const chatModule = await import('/.com/js/modules/chat.js?v=' + Date.now());
         
         // Executa a liquidação usando a matemática oficial do sistema
         await chatModule.finalizarServicoPassoFinalAction(orderId, true);
