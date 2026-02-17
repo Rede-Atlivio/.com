@@ -75,6 +75,8 @@ export async function renderAssistant(containerId) {
         const newProvs = snapProv.data().count;
         const pendingAnalise = snapAnalise.data().count;
         const pendingTickets = snapTickets.data().count;
+        const totalDisputas = snapDisputas.data().count;
+        const totalAtrasados = snapAtrasados.data().count;
         
         let notifTexts = [];
         snapNotif.forEach(doc => {
