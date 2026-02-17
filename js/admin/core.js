@@ -319,87 +319,21 @@ window.saveModalData = async () => {
 };
 
 // ============================================================================
-// ✅ AÇÃO ADMINISTRATIVA: PAGAR PRESTADOR (COM TAXAS ATLIVIO)
+// ✅ PONTE ADMINISTRATIVA: LIQUIDAÇÃO VIA CHAT CORE (ATLIVIO V50)
 // ============================================================================
 window.finalizarManualmente = async (orderId) => {
-    if (!confirm("⚠️ PAGAR PRESTADOR: Confirmar a liquidação administrativa?\n\nO valor do serviço e as taxas serão debitados do saldo livre do cliente.")) return;
-
-    const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
     try {
-        await runTransaction(window.db, async (transaction) => {
-            const orderRef = doc(window.db, "orders", orderId);
-            const configFinRef = doc(window.db, "settings", "financeiro");
-            const cofreRef = doc(window.db, "sys_finance", "receita_total");
-
-            const [orderSnap, configSnap] = await Promise.all([
-                transaction.get(orderRef),
-                transaction.get(configFinRef)
-            ]);
-
-            if (!orderSnap.exists()) throw "Ordem não encontrada.";
-            const pedido = orderSnap.data();
-            const configFin = configSnap.exists() ? configSnap.data() : { limite_divida: 0 };
-
-            const clientRef = doc(window.db, "usuarios", pedido.client_id);
-            const providerRef = doc(window.db, "usuarios", pedido.provider_id);
-            const [cSnap, pSnap] = await Promise.all([transaction.get(clientRef), transaction.get(providerRef)]);
-
-            const valorBase = parseFloat(pedido.offer_value || 0);
-            const resC = parseFloat(pedido.value_reserved_client || 0);
-            const resP = parseFloat(pedido.value_reserved_provider || 0);
-
-            // 1. Cálculos de Taxas
-            let rawTaxaP = configFin.taxa_plataforma ?? configFin.taxa_prestador ?? 0;
-            let pctP = parseFloat(rawTaxaP) > 1 ? parseFloat(rawTaxaP)/100 : parseFloat(rawTaxaP);
-            const valorTaxaP = Number((valorBase * pctP).toFixed(2));
-
-            let rawTaxaC = configFin.taxa_cliente ?? 0;
-            let pctC = parseFloat(rawTaxaC) > 1 ? parseFloat(rawTaxaC)/100 : parseFloat(rawTaxaC);
-            const valorTaxaC = Number((valorBase * pctC).toFixed(2));
-
-            // ⚡ REGRA ATLIVIO: O Cliente paga apenas a TAXA dele pelo sistema
-            const faltaPagarCliente = valorTaxaC; 
-            const limiteFin = -Math.abs(parseFloat(configFin.limite_divida || 0));
-            const novoSaldoCliente = Number(((cSnap.data().wallet_balance || 0) - faltaPagarCliente).toFixed(2));
-
-            // 🛡️ TRAVA DE SEGURANÇA: Bloqueia se não houver lastro para a taxa
-            if (novoSaldoCliente < limiteFin) {
-                throw `Saldo Insuficiente para Taxas: O cliente ficaria com R$ ${novoSaldoCliente.toFixed(2)}.`;
-            }
-
-            const totalTaxasCalculadas = Number((valorTaxaP + valorTaxaC).toFixed(2));
-
-            // --- EXECUÇÃO ---
-            transaction.update(clientRef, { 
-                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC),
-                wallet_balance: novoSaldoCliente
-            });
-            transaction.update(providerRef, { 
-                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
-                wallet_balance: increment(Number((resC + (resP - valorTaxaP)).toFixed(2))),
-                wallet_earnings: increment(Number((valorBase - valorTaxaP).toFixed(2)))
-            });
-            transaction.update(cofreRef, { 
-                total_acumulado: increment(totalTaxasCalculadas),
-                ultima_atualizacao: serverTimestamp()
-            });
-            transaction.update(orderRef, {
-                status: 'completed', system_step: 4, completed_at: serverTimestamp(),
-                finalizado_por: 'admin', lucro_atlivio_prestador: valorTaxaP, lucro_atlivio_cliente: valorTaxaC
-            });
-
-            transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
-                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço encerrado manualmente. Pagamento e taxas processados.`,
-                sender_id: 'system', timestamp: serverTimestamp()
-            });
-        });
-
-        alert("✅ PAGAMENTO FINALIZADO COM LASTRO REAL!");
+        // Importa a função real que o cliente usa no App
+        const chatModule = await import('../../../js/modules/chat.js?v=' + Date.now());
+        
+        // Executa a liquidação usando a matemática oficial do sistema
+        await chatModule.finalizarServicoPassoFinalAction(orderId, true);
+        
+        console.log(`✅ Ordem ${orderId} liquidada via Chat-Bridge.`);
         if(window.activeView === 'dashboard') window.switchView('dashboard');
     } catch (e) {
-        console.error(e);
-        alert("Erro no Pagamento Admin: " + e);
+        console.error("Erro na Ponte de Liquidação:", e);
+        alert("Falha ao acessar o módulo de pagamento: " + e.message);
     }
 };
 
