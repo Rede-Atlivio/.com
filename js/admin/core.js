@@ -319,64 +319,82 @@ window.saveModalData = async () => {
 };
 
 // ============================================================================
-// 💀 AÇÃO MASTER KILL: LIQUIDAÇÃO ADMINISTRATIVA FORÇADA (ATLIVIO V43)
+// ✅ AÇÃO ADMINISTRATIVA: PAGAR PRESTADOR (COM TAXAS ATLIVIO)
 // ============================================================================
 window.finalizarManualmente = async (orderId) => {
-    if (!confirm("⚠️ MASTER KILL: Deseja forçar o encerramento deste serviço?\n\nO saldo em custódia será movido para o prestador e o contrato será encerrado.")) return;
+    if (!confirm("⚠️ PAGAR PRESTADOR: Confirmar a conclusão administrativa e liberar o pagamento (com taxas)?")) return;
 
     const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
 
     try {
         await runTransaction(window.db, async (transaction) => {
             const orderRef = doc(window.db, "orders", orderId);
-            const orderSnap = await transaction.get(orderRef);
+            const configFinRef = doc(window.db, "settings", "financeiro");
+            const cofreRef = doc(window.db, "sys_finance", "receita_total");
+
+            const [orderSnap, configSnap] = await Promise.all([
+                transaction.get(orderRef),
+                transaction.get(configFinRef)
+            ]);
+
             if (!orderSnap.exists()) throw "Ordem não encontrada.";
-            
             const pedido = orderSnap.data();
-            const resCliente = parseFloat(pedido.value_reserved_client || 0);
-            const resProvider = parseFloat(pedido.value_reserved_provider || 0);
-            const valorTotal = parseFloat(pedido.offer_value || 0);
+            const configFin = configSnap.exists() ? configSnap.data() : {};
 
             const clientRef = doc(window.db, "usuarios", pedido.client_id);
             const providerRef = doc(window.db, "usuarios", pedido.provider_id);
-            const cofreRef = doc(window.db, "sys_finance", "receita_total");
+            const [cSnap, pSnap] = await Promise.all([transaction.get(clientRef), transaction.get(providerRef)]);
 
-            const [cSnap, pSnap] = await Promise.all([
-                transaction.get(clientRef),
-                transaction.get(providerRef)
-            ]);
+            // --- LÓGICA DE TAXAS IGUAL AO CHAT.JS ---
+            const valorBase = parseFloat(pedido.offer_value || 0);
+            const resC = parseFloat(pedido.value_reserved_client || 0);
+            const resP = parseFloat(pedido.value_reserved_provider || 0);
 
-            // 1. Limpa Reservas dos Usuários
+            // 1. Taxa Prestador
+            let rawTaxaP = configFin.taxa_plataforma ?? configFin.taxa_prestador ?? 0;
+            let pctP = parseFloat(rawTaxaP) > 1 ? parseFloat(rawTaxaP)/100 : parseFloat(rawTaxaP);
+            const valorTaxaP = Number((valorBase * pctP).toFixed(2));
+
+            // 2. Taxa Cliente
+            let rawTaxaC = configFin.taxa_cliente ?? 0;
+            let pctC = parseFloat(rawTaxaC) > 1 ? parseFloat(rawTaxaC)/100 : parseFloat(rawTaxaC);
+            const valorTaxaC = Number((valorBase * pctC).toFixed(2));
+
+            // 3. Repasse (Reserva do Cliente + Sobra da Reserva do Prestador)
+            const repasseFinal = Number((resC + (resP - valorTaxaP)).toFixed(2));
+            const totalTaxas = Number((valorTaxaP + valorTaxaC).toFixed(2));
+
+            // --- EXECUÇÃO FINANCEIRA ---
             transaction.update(clientRef, { 
-                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resCliente) 
+                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resC)
             });
             transaction.update(providerRef, { 
-                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider),
-                wallet_balance: increment(resCliente + resProvider) // Devolve tudo ao prestador no Master Kill
+                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resP),
+                wallet_balance: increment(repasseFinal),
+                wallet_earnings: increment(Number((valorBase - valorTaxaP).toFixed(2)))
+            });
+            transaction.update(cofreRef, { 
+                total_acumulado: increment(totalTaxas),
+                ultima_atualizacao: serverTimestamp()
             });
 
-            // 2. Finaliza a Ordem com marcação administrativa
+            // --- FINALIZAÇÃO ---
             transaction.update(orderRef, {
-                status: 'completed',
-                system_step: 4,
-                completed_at: serverTimestamp(),
-                finalizado_por: 'admin',
-                kill_reason: 'Intervenção Suporte Atlivio'
+                status: 'completed', system_step: 4, completed_at: serverTimestamp(),
+                finalizado_por: 'admin', lucro_atlivio_prestador: valorTaxaP, lucro_atlivio_cliente: valorTaxaC
             });
 
-            // 3. Log de Auditoria
             transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
-                text: `⚖️ MEDIAÇÃO ATLIVIO: Este serviço foi encerrado manualmente pelo suporte técnico.`,
-                sender_id: 'system',
-                timestamp: serverTimestamp()
+                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço liquidado administrativamente. Veredito favorável ao Prestador.`,
+                sender_id: 'system', timestamp: serverTimestamp()
             });
         });
 
-        alert("💀 SERVIÇO ENCERRADO COM SUCESSO!");
+        alert("✅ PAGAMENTO PROCESSADO E TAXAS COBRADAS!");
         if(window.activeView === 'dashboard') window.switchView('dashboard');
     } catch (e) {
         console.error(e);
-        alert("Erro no Master Kill: " + e);
+        alert("Erro no Pagamento Admin: " + e);
     }
 };
 
