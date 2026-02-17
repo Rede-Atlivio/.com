@@ -389,7 +389,7 @@ export function escutarMensagens(orderId) {
     });
 }
 //PONTO CRÍTICO: UPGRADE DO BOTÃO CONFIRMAR E PAGAR, AGORA TEM A OPÇÃO DE TAXA PARA O CLIENTE TAMBÉM. LINHAS ANTES - 348 A 428 AGORA 348 A 432
-export const finalizarServicoPassoFinalAction = async (orderId, acaoPorAdmin = false) => {
+export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = false) {
     // 💡 RE-INJEÇÃO GLOBAL: Necessária para o gatilho de 12h e robôs funcionarem
     window.finalizarServicoPassoFinalAction = finalizarServicoPassoFinalAction;
     if(!auth.currentUser) return alert("Sessão expirada. Faça login novamente.");
