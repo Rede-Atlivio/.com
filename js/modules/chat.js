@@ -7,15 +7,6 @@ import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, 
 
 // --- GATILHOS E NAVEGAÇÃO GLOBAL ---
 let unsubscribeChat = null; // 🔑 CHAVE PARA TROCAR DE CHAT SEM BUG
-
-// 🟢 FUNÇÕES GLOBAIS DE ESTADO (WHATSAPP STYLE)
-window.atlivioDigitando = async (orderId, status) => {
-    const uid = auth.currentUser?.uid;
-    if(!uid) return;
-    try {
-        await updateDoc(doc(db, "usuarios", uid), { typing_in: status ? orderId : "" });
-    } catch(e) {}
-};
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
@@ -113,19 +104,7 @@ export async function abrirChatPedido(orderId) {
 }      
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
-    let partnerData = { nome: "Usuário", photoURL: "", phone: "", is_online: false };
-
-    // 🟢 ESCUTA STATUS ONLINE E "DIGITANDO" DO PARCEIRO
-    if (window.unsubscribePartnerStatus) window.unsubscribePartnerStatus();
-    window.unsubscribePartnerStatus = onSnapshot(doc(db, "usuarios", uidPartner), (s) => {
-        const elStatus = document.getElementById('chat-partner-status');
-        if(s.exists() && elStatus) {
-            const data = s.data();
-            const isTyping = data.typing_in === orderId;
-            if(isTyping) elStatus.innerHTML = `<span class="text-green-500 animate-pulse font-black italic">digitando...</span>`;
-            else elStatus.innerText = data.is_online ? 'online' : 'offline';
-        }
-    });
+    let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
 
     try {
         const pSnap = await getDoc(doc(db, "usuarios", uidPartner));
@@ -162,11 +141,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                         </div>
                         <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
                             <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span id="chat-partner-status" class="text-[9px] font-bold text-gray-400 lowercase">verificando...</span>
-                                <span class="text-[8px] text-gray-300">•</span>
-                                <p class="text-[8px] font-bold text-blue-600 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
-                            </div>
+                            <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
@@ -182,27 +157,12 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
             </div>
 
             <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-4 custom-scrollbar">
-                ${pedido.status === 'dispute' ? 
-                    `<div class="bg-red-600 text-white p-6 rounded-2xl text-center shadow-2xl animate-pulse mb-4">
-                        <span class="text-4xl">⚖️</span>
-                        <h2 class="font-black text-sm mt-2 uppercase">Serviço em Disputa</h2>
-                        <p class="text-[10px] opacity-90 mt-1">As ações e o chat foram bloqueados por segurança. <br> O suporte da ATLIVIO está analisando o caso.</p>
-                    </div>` : 
-                    (pedido.finalizado_por === 'admin' ? 
-                        `<div class="bg-purple-700 text-white p-6 rounded-2xl text-center shadow-2xl mb-4 border-2 border-purple-400/30">
-                            <span class="text-4xl">⚖️</span>
-                            <h2 class="font-black text-sm mt-2 uppercase">Serviço Encerrado pela Mediação</h2>
-                            <p class="text-[10px] opacity-90 mt-1">Após análise do suporte técnico, este contrato foi liquidado administrativamente. <br> <b>Veredito:</b> ${pedido.admin_public_reason || 'Encerrado pelo suporte.'}</p>
-                        </div>` : gerarBannerEtapa(step, isProvider, pedido, orderId))
-                }
-                <div id="bubbles-area" class="${pedido.status === 'dispute' || pedido.finalizado_por === 'admin' ? 'opacity-30 pointer-events-none' : ''}"></div>
+                ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
+                <div id="bubbles-area"></div>
             </div>
-    }
-    <div id="bubbles-area" class="${pedido.status === 'dispute' ? 'opacity-30 pointer-events-none' : ''}"></div>
-</div>
 
-            ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
-            <div class="bg-white border-t mt-auto z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
+            ${!['completed', 'cancelled', 'negotiation_closed'].includes(pedido.status) ? `
+            <div class="bg-white border-t mt-auto z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
                     <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
                     <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
@@ -218,17 +178,14 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                         </button>
                     ` : ''}
                     
-                    ${step === 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full animate-bounce-subtle">🏁 CONFIRMAR & PAGAR</button>` : ''}
+                    ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full">🏁 CONFIRMAR & PAGAR</button>` : ''}
+                    
                     <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
                 </div>
 
                 <div class="px-3 pb-3 flex gap-2 items-center">
-                    <input type="text" id="chat-input-msg" 
-                        oninput="window.atlivioDigitando('${orderId}', true)"
-                        onblur="window.atlivioDigitando('${orderId}', false)"
-                        placeholder="Digite sua mensagem..." 
-                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
-                    <button onclick="window.atlivioDigitando('${orderId}', false); window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
+                    <input type="text" id="chat-input-msg" placeholder="Digite sua mensagem..." class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
+                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
                 </div>
             </div>` : ''}
         </div>
@@ -790,15 +747,13 @@ window.finalizarTrabalho = async (orderId) => {
             real_end: serverTimestamp(),
             system_step: 4
         });
-        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+         await addDoc(collection(db, `chats/${orderId}/messages`), { 
             text: `🏁 Serviço Finalizado pelo Prestador.`, 
             sender_id: 'system', 
             timestamp: serverTimestamp() 
         });
-        document.getElementById('painel-chat-individual')?.classList.add('hidden');
-        window.voltarParaListaPedidos();
     } catch(e) { console.error(e); }
-}; 
+};
 
 // ⚖️ AÇÃO 11: LÓGICA DE CANCELAMENTO COM PENALIDADE E ESTORNO
 window.cancelarServico = async (orderId) => {
@@ -1024,7 +979,6 @@ window.encerrarNegociacao = async (orderId) => {
             closed_at: serverTimestamp() 
         });
         alert("Conversa encerrada.");
-        document.getElementById('painel-chat-individual')?.classList.add('hidden');
         window.voltarParaListaPedidos();
     } catch(e) { 
         console.error("Erro ao encerrar:", e); 
@@ -1073,7 +1027,6 @@ window.confirmarEncerramentoChat = async (orderId) => {
             closed_at: serverTimestamp() 
         });
         alert("Conversa encerrada.");
-        document.getElementById('painel-chat-individual')?.classList.add('hidden');
         window.voltarParaListaPedidos();
     } catch(e) { console.error("Erro ao encerrar:", e); }
 };
