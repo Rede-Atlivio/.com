@@ -71,6 +71,18 @@ export async function init() {
                 </div>
             </div>
 
+            <div class="glass-panel p-0 flex flex-col h-[500px] overflow-hidden border border-amber-500/20">
+                <div class="p-4 border-b border-gray-700 bg-amber-500/10 flex justify-between items-center">
+                    <h4 class="font-bold text-white text-xs flex items-center gap-2">
+                        <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> RADAR DE EXECUÇÃO
+                    </h4>
+                    <span class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Andamento & Disputa</span>
+                </div>
+                <div id="admin-monitor-radar" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-black/20">
+                    <p class="text-center text-gray-500 text-xs mt-10 italic">Aguardando dados críticos...</p>
+                </div>
+            </div>
+
             <div class="glass-panel p-0 flex flex-col h-[500px] overflow-hidden">
                 <div class="p-4 border-b border-gray-700 bg-gray-900/50 flex justify-between items-center">
                     <h4 class="font-bold text-white text-xs flex items-center gap-2">
