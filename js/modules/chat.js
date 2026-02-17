@@ -182,9 +182,14 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                         <h2 class="font-black text-sm mt-2 uppercase">Serviço em Disputa</h2>
                         <p class="text-[10px] opacity-90 mt-1">As ações e o chat foram bloqueados por segurança. <br> O suporte da ATLIVIO está analisando o caso.</p>
                     </div>` : 
-                    gerarBannerEtapa(step, isProvider, pedido, orderId)
+                    (pedido.finalizado_por === 'admin' ? 
+                        `<div class="bg-purple-700 text-white p-6 rounded-2xl text-center shadow-2xl mb-4 border-2 border-purple-400/30">
+                            <span class="text-4xl">⚖️</span>
+                            <h2 class="font-black text-sm mt-2 uppercase">Serviço Encerrado pela Mediação</h2>
+                            <p class="text-[10px] opacity-90 mt-1">Após análise do suporte técnico, este contrato foi liquidado administrativamente. <br> <b>Veredito:</b> ${pedido.admin_public_reason || 'Encerrado pelo suporte.'}</p>
+                        </div>` : gerarBannerEtapa(step, isProvider, pedido, orderId))
                 }
-                <div id="bubbles-area" class="${pedido.status === 'dispute' ? 'opacity-30 pointer-events-none' : ''}"></div>
+                <div id="bubbles-area" class="${pedido.status === 'dispute' || pedido.finalizado_por === 'admin' ? 'opacity-30 pointer-events-none' : ''}"></div>
             </div>
     }
     <div id="bubbles-area" class="${pedido.status === 'dispute' ? 'opacity-30 pointer-events-none' : ''}"></div>
