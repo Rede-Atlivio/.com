@@ -368,7 +368,7 @@ window.finalizarManualmente = async (orderId) => {
                 throw `Saldo Insuficiente para Taxas: O cliente ficaria com R$ ${novoSaldoCliente.toFixed(2)}.`;
             }
 
-            const totalTaxasPlataforma = Number((valorTaxaP + valorTaxaC).toFixed(2));
+            const totalTaxasCalculadas = Number((valorTaxaP + valorTaxaC).toFixed(2));
 
             // --- EXECUÇÃO ---
             transaction.update(clientRef, { 
@@ -384,7 +384,6 @@ window.finalizarManualmente = async (orderId) => {
                 total_acumulado: increment(totalTaxasCalculadas),
                 ultima_atualizacao: serverTimestamp()
             });
-
             transaction.update(orderRef, {
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
                 finalizado_por: 'admin', lucro_atlivio_prestador: valorTaxaP, lucro_atlivio_cliente: valorTaxaC
