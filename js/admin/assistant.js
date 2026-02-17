@@ -54,6 +54,11 @@ export async function renderAssistant(containerId) {
         const qAnalise = query(collection(db, "active_providers"), where("status", "==", "em_analise"));
         const qTickets = query(collection(db, "support_tickets"), where("read", "==", false), where("sender", "==", "user"));
         const qNotificacoes = query(collection(db, "notifications"), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
+        
+        // 🚀 MONITORAMENTO ATLIVIO (Fase 2)
+        const qDisputas = query(collection(db, "orders"), where("status", "==", "dispute"));
+        const dozeHorasAtras = new Date(Date.now() - (12 * 60 * 60 * 1000));
+        const qAtrasados = query(collection(db, "orders"), where("status", "==", "in_progress"), where("real_start", "<=", Timestamp.fromDate(dozeHorasAtras)));
 
         // Execução
         const [snapUsers, snapProv, snapAnalise, snapTickets, snapNotif] = await Promise.all([
