@@ -544,8 +544,7 @@ export function escutarPresenca(uidPartner) {
                 area.innerHTML += `<div class="flex ${souEu ? 'justify-end' : 'justify-start'} animate-fadeIn"><div class="${souEu ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white text-gray-800 border rounded-bl-none'} px-4 py-2 rounded-2xl max-w-[85%] text-xs shadow-sm"><p>${m.text}</p></div></div>`;
             }
         });
-        const divMsgs = document.getElementById('chat-messages');
-        if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
+        if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
     });
 }
 //PONTO CRÍTICO: UPGRADE DO BOTÃO CONFIRMAR E PAGAR, AGORA TEM A OPÇÃO DE TAXA PARA O CLIENTE TAMBÉM. LINHAS ANTES - 348 A 428 AGORA 348 A 432
