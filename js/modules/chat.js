@@ -71,7 +71,7 @@ export async function abrirChatPedido(orderId) {
         
         // 📏 RESPONSIVIDADE V12 (Injetada via JS para não depender do Index)
         const isPC = window.innerWidth >= 768;
-        const stylePC = "width: 450px; height: 85vh; right: 20px; bottom: 20px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1);";
+        const stylePC = "width: 450px; min-height: 600px; max-height: 90vh; right: 20px; bottom: 20px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); display: flex; flex-direction: column;";
         const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0;";
         
         painelChat.className = "fixed z-[9999] bg-white flex flex-col hidden overflow-hidden animate-slideUp";
