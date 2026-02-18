@@ -76,7 +76,7 @@ export async function init() {
                     <h4 class="font-bold text-white text-xs flex items-center gap-2">
                         <span class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></span> RADAR DE EXECUÇÃO
                     </h4>
-                    <span class="text-[10px] text-amber-500 font-bold uppercase tracking-widest">Andamento & Disputa</span>
+                    <button onclick="window.liquidarTodasExpiradas()" class="text-[9px] bg-amber-500/20 hover:bg-amber-500 text-amber-500 hover:text-black px-2 py-1 rounded-lg font-black border border-amber-500/30 transition shadow-lg">⚡ LIQUIDAR TODAS (>12H)</button>
                 </div>
                 <div id="admin-monitor-radar" class="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar bg-black/20">
                     <p class="text-center text-gray-500 text-xs mt-10 italic">Aguardando dados críticos...</p>
