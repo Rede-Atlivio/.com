@@ -280,8 +280,8 @@ export async function enviarMensagemChat(orderId, step) {
     // 🛡️ CAMADA 1: NORMALIZAÇÃO AGRESSIVA V14
     let t = textoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     t = t.replace(/ponto/g, ".").replace(/arroba/g, "@").replace(/whats/g, "whatsapp");
-    const textoLimpo = t.replace(/[^a-z0-9@.+]/g, ""); // Preserva +, @ e .
-
+    // Remove qualquer símbolo ou espaço para colar as letras (ex: P.O.R.R.A vira porra)
+    const textoLimpo = t.replace(/[^a-z0-9]/g, "");
     // 🔍 CAMADA 2: DICIONÁRIO PROIBIDO INTEGRAL
     const proibidos = [
         // 💰 EVASÃO FINANCEIRA / CONTATOS
