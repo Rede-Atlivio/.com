@@ -206,33 +206,38 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     escutarMensagens(orderId);
 }
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
+    // ⚖️ 1º PRIORIDADE: SUPORTE/DISPUTA (Bloqueia tudo o resto)
+    if (pedido.status === 'dispute') {
+        return `
+            <div class="bg-slate-900 p-6 rounded-2xl shadow-2xl mb-4 mx-4 border-2 border-amber-500 animate-slideUp">
+                <div class="flex flex-col items-center text-center gap-3">
+                    <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.5)]"><span class="text-2xl">⚖️</span></div>
+                    <div>
+                        <h4 class="text-amber-500 font-black text-xs uppercase tracking-widest">Negociação Sob Análise</h4>
+                        <p class="text-white text-[10px] font-bold mt-1 leading-tight">O suporte foi acionado. Por segurança, as mensagens e pagamentos foram bloqueados.</p>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // 🏆 2º PRIORIDADE: SUCESSO/CONCLUÍDO
+    if (step === 4 || pedido.status === 'completed') {
+        return `
+            <div class="bg-indigo-700 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden animate-fadeIn">
+                <div class="flex flex-col items-center text-center gap-2">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">🏆</div>
+                    <h4 class="text-white font-black italic text-sm uppercase">Pagamento Liberado</h4>
+                </div>
+            </div>`;
+    }
+
+    // 🤝 3º PRIORIDADE: NEGOCIAÇÃO E ACORDO
     if (step < 3) {
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
-        if (jaConfirmei) {
-            return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
-        }
-
-        const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0 };
-        const pct = isProvider ? config.porcentagem_reserva : config.porcentagem_reserva_cliente;
-        const valorAcordo = parseFloat(pedido.offer_value) || 0;
-        const reservaCalculada = valorAcordo * (pct / 100);
-
+        if (jaConfirmei) return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte...</p></div>`;
+        
         return `<div id="banner-fechamento-v12" class="bg-white border-2 border-blue-600 p-5 rounded-2xl shadow-2xl mb-4 mx-4 relative overflow-hidden animate-bounce-subtle">
-            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <p class="text-sm font-black text-blue-900 mb-1">🤝 FINALIZAR NEGOCIAÇÃO</p>
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Confirme para reservar sua agenda</p>
-                </div>
-                <span class="text-xl">✍️</span>
-            </div>
-            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white py-4 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
-                🤝 ACEITAR E FECHAR AGORA
-            </button>
-            <div class="mt-3 bg-amber-50 p-2 rounded-lg flex gap-2 items-center">
-                <span class="text-xs">🔒</span>
-                <p class="text-[9px] text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia de Proteção: R$ ${reservaCalculada.toFixed(2)}</p>
-            </div>
+            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white py-4 rounded-xl text-xs font-black uppercase">🤝 ACEITAR E FECHAR AGORA</button>
         </div>`;
     }
     
@@ -240,44 +245,6 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         return `<div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center mb-4 mx-4 shadow-sm"><p class="text-sm font-black text-emerald-800 uppercase">✨ Acordo Confirmado!</p></div>`;
     }
 
-    // 🏆 BANNER DE SUCESSO (CONCLUÍDO)
-    if (step === 4 || pedido.status === 'completed') {
-        return `
-            <div class="bg-indigo-700 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden animate-fadeIn">
-                <div class="absolute top-0 right-0 p-2 opacity-10 text-4xl font-black">VEREDITO</div>
-                <div class="flex flex-col items-center text-center gap-2">
-                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">🏆</div>
-                    <div>
-                        <p class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em]">Serviço Concluído</p>
-                        <h4 class="text-white font-black italic text-sm uppercase">Pagamento Liberado</h4>
-                    </div>
-                </div>
-                <div class="mt-3 py-2 bg-white/10 rounded-xl border border-white/5 text-center">
-                    <p class="text-[9px] text-indigo-100 font-bold uppercase tracking-tighter">Obrigado por usar a ATLIVIO! 🤝</p>
-                </div>
-            </div>
-        `;
-    }
-
-    // ⚖️ BANNER DE SUPORTE (DISPUTA/AJUDA) - RESTAURAÇÃO V10
-    if (pedido.status === 'dispute') {
-        return `
-            <div class="bg-slate-900 p-6 rounded-2xl shadow-2xl mb-4 mx-4 border-2 border-amber-500 animate-slideUp">
-                <div class="flex flex-col items-center text-center gap-3">
-                    <div class="w-12 h-12 bg-amber-500 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-                        <span class="text-2xl">⚖️</span>
-                    </div>
-                    <div>
-                        <h4 class="text-amber-500 font-black text-xs uppercase tracking-widest">Negociação Sob Análise</h4>
-                        <p class="text-white text-[10px] font-bold mt-1 leading-tight">O suporte foi acionado. Por segurança, as mensagens diretas e pagamentos foram bloqueados.</p>
-                    </div>
-                    <div class="w-full h-px bg-white/10 my-1"></div>
-                    <p class="text-[8px] text-gray-400 uppercase font-black italic">Aguarde o contato da nossa equipe de mediação.</p>
-                </div>
-            </div>
-        `;
-    }
-    
     return "";
 }
 
