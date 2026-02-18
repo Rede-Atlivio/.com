@@ -167,9 +167,12 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 ${timeHTML}
             </div>
 
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 pb-4 custom-scrollbar">
-                ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
-                <div id="bubbles-area"></div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-0 space-y-3 pb-4 custom-scrollbar relative">
+                <div class="sticky top-0 z-[50] w-full flex flex-col gap-0 bg-slate-50/90 backdrop-blur-sm">
+                    ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
+                    <div id="contextual-dica-area"></div>
+                </div>
+                <div id="bubbles-area" class="p-4 pt-2"></div>
             </div>
 
            ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
