@@ -284,15 +284,22 @@ export async function enviarMensagemChat(orderId, step) {
     const textoLimpo = t.replace(/[^a-z0-9]/g, "");
     // 🔍 CAMADA 2: DICIONÁRIO PROIBIDO INTEGRAL
     const proibidos = [
-        // 💰 EVASÃO FINANCEIRA / CONTATOS
-        'whatsapp', 'zap', 'wpp', 'insta', 'instagram', 'facebook', 'face', 'tiktok', 
-        'kawai', 'telegram', 'contato', 'chamanowhats', 'chamanozap', 'meunumero',
-        'hotmail', 'gmail', 'bit.ly', 'wa.me', 'linktr.ee', '.com', '@', 'pvd', 'direct', 
-        'dm', 'meadd', 'p-v-d', 'privado', 'pixdireto', 'pagamentoporfora', 'descontoporfora',
-        
-        // 🚫 TOXICIDADE E PALAVRÕES (BLINDAGEM DE MARCA)
-        'porra', 'caralho', 'fdp', 'vtnm', 'lixo', 'vagabundo', 'estelionato', 'golpe',
-        'golpista', 'mentira', 'merda', 'puta', 'desgraca', 'satanas', 'imbecil'
+        // 🚨 EVASÃO DE PLATAFORMA (CONTATOS E REDES)
+        'whatsapp', 'zap', 'wpp', 'whats', 'vvhats', 'vvp', 'z@p', 'zapp', 'contato', 'meucontato', 
+        'meunumero', 'chamanowhats', 'chamanozap', 'meadd', 'insta', 'instagram', 'facebook', 
+        'face', 'tiktok', 'kawai', 'telegram', 't-e-l-e-g-r-a-m', 'pvd', 'p-v-d', 'direct', 'dm', 
+        'privado', 'meulink', 'wa.me', 'bit.ly', 'linktr.ee', 'hotmail', 'gmail', 'outlook', 
+        '.com', '.br', '.net', '@', 'arroba', 'ponto',
+
+        // 💸 BURLA FINANCEIRA (PAGAMENTO POR FORA)
+        'pix', 'p-i-x', 'pixdireto', 'transferencia', 'deposito', 'ted', 'doc', 'dinheiro', 
+        'dinheironamao', 'pagamentoporfora', 'descontoporfora', 'metadeagora', 'metadedepois', 
+        'porfora', 'pagoemdinheiro', 'meupix',
+
+        // 🚫 TOXICIDADE, OFENSAS E GOLPES (BLINDAGEM DE REPUTAÇÃO)
+        'porra', 'caralho', 'fdp', 'f.d.p', 'vtnm', 'lixo', 'vagabundo', 'estelionato', 'golpe', 
+        'golpista', 'mentira', 'merda', 'puta', 'desgraca', 'satanas', 'imbecil', 'idiota', 
+        'trouxa', 'corno', 'maldito', 'safado', 'ladrao', 'ladra', 'm-e-r-d-a'
     ];
 
     // 🔢 CAMADA 3: DETECTOR DE TELEFONE (8+ DÍGITOS OU +55)
