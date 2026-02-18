@@ -389,7 +389,35 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
     }
 }
        
-export function escutarMensagens(orderId) {
+// 🟢 MOTOR DE PRESENÇA V12 (ESTILO WHATSAPP)
+export function escutarPresenca(uidPartner) {
+    const statusRef = doc(db, "status_online", uidPartner);
+    onSnapshot(statusRef, (doc) => {
+        const indicador = document.getElementById(`status-indicador-${uidPartner}`);
+        const texto = document.getElementById(`status-texto-${uidPartner}`);
+        if (!indicador || !texto) return;
+
+        const data = doc.data();
+        const isOnline = data?.state === 'online';
+        const isTyping = data?.typing_to === auth.currentUser.uid;
+
+        if (isTyping) {
+            indicador.className = "w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse";
+            texto.innerText = "digitando...";
+            texto.className = "text-[8px] font-black text-blue-600 mt-1 uppercase italic";
+        } else if (isOnline) {
+            indicador.className = "w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
+            texto.innerText = "online agora";
+            texto.className = "text-[8px] font-bold text-green-600 mt-1 uppercase tracking-tighter";
+        } else {
+            indicador.className = "w-1.5 h-1.5 rounded-full bg-gray-300";
+            texto.innerText = "offline";
+            texto.className = "text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic";
+        }
+    });
+}
+
+    export function escutarMensagens(orderId) {
     const q = query(collection(db, `chats/${orderId}/messages`), orderBy("timestamp", "asc"));
     onSnapshot(q, (snap) => {
         const area = document.getElementById('bubbles-area');
