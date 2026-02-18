@@ -140,8 +140,11 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                             <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">🔍</div>
                         </div>
                         <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
-                            <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
-                            <p class="text-[8px] font-bold text-blue-600 mt-1 uppercase tracking-tighter">${isPartnerVerified} • ${partnerData.rating_avg || '5.0'} ⭐</p>
+                          <div class="flex items-center gap-1.5">
+                                <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
+                                <div id="status-indicador-${uidPartner}" class="w-1.5 h-1.5 rounded-full bg-gray-300 shadow-[0_0_5px_rgba(0,0,0,0.1)]"></div>
+                            </div>
+                            <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic">offline</p>  
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
