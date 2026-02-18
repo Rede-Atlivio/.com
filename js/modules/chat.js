@@ -1165,7 +1165,7 @@ export function iniciarGatilhosContextuais(orderId, step) {
     if (step >= 3) return; // Não envia dicas se o acordo já fechou
 
     timerLembreteInatividade = setTimeout(async () => {
-        const container = document.getElementById('bubbles-area');
+        const container = document.getElementById('contextual-dica-area');
         if (!container) return;
         
         const dicaHtml = `
