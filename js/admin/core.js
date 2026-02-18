@@ -321,20 +321,52 @@ window.saveModalData = async () => {
 // ============================================================================
 // ✅ PONTE ADMINISTRATIVA: LIQUIDAÇÃO VIA CHAT CORE (ATLIVIO V50)
 // ============================================================================
+// ✅ PONTE ADMINISTRATIVA OTIMIZADA PARA MASSA
 window.finalizarManualmente = async (orderId) => {
     try {
-        // Importa a função real que o cliente usa no App
         const chatModule = await import('/.com/js/modules/chat.js?v=' + Date.now());
-        
-        // Executa a liquidação usando a matemática oficial do sistema
+        // Executa e aguarda a promessa. Lança erro para o loop de massa capturar se falhar.
         await chatModule.finalizarServicoPassoFinalAction(orderId, true);
-        
-        console.log(`✅ Ordem ${orderId} liquidada via Chat-Bridge.`);
-        if(window.activeView === 'dashboard') window.switchView('dashboard');
+        console.log(`✅ Ordem ${orderId} liquidada.`);
+        return true;
     } catch (e) {
-        console.error("Erro na Ponte de Liquidação:", e);
-        alert("Falha ao acessar o módulo de pagamento: " + e.message);
+        console.error(`❌ Falha na liquidação manual (${orderId}):`, e);
+        throw e; // Repassa o erro para o Motor de Massa decidir o que fazer
     }
+};
+
+// ⚡ MOTOR DE LIQUIDAÇÃO EM MASSA (PASSO 0 - SEGURO)
+window.liquidarTodasExpiradas = async () => {
+    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    if (!confirm("⚠️ AÇÃO EM MASSA: Deseja liquidar TODOS os serviços em ANDAMENTO com mais de 12h?")) return;
+
+    try {
+        // Filtra apenas o que está em andamento. Disputas são ignoradas por segurança.
+        const q = query(collection(window.db, "orders"), where("status", "==", "in_progress"), where("system_step", "==", 3));
+        const snap = await getDocs(q);
+        
+        let sucessos = 0, falhas = 0;
+        let listaFalhas = [];
+
+        for (const d of snap.docs) {
+            try {
+                const p = d.data();
+                const inicio = p.real_start?.toDate ? p.real_start.toDate() : new Date(p.real_start);
+                const decorridoH = (Date.now() - inicio.getTime()) / (1000 * 60 * 60);
+
+                if (decorridoH >= 12) {
+                    await window.finalizarManualmente(d.id);
+                    sucessos++;
+                }
+            } catch (innerError) {
+                falhas++;
+                listaFalhas.push(`ID ${d.id}: ${innerError}`);
+            }
+        }
+
+        alert(`PROCESSO FINALIZADO:\n✅ Sucessos: ${sucessos}\n❌ Falhas: ${falhas}`);
+        window.switchView('dashboard');
+    } catch (e) { alert("Erro no motor de massa: " + e.message); }
 };
 
 // ============================================================================
