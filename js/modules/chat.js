@@ -31,14 +31,10 @@ window.voltarParaListaPedidos = () => {
 
 // 🔄 ROLAGEM INTELIGENTE V15 (Blindagem Desktop/Mobile)
 window.rolarChatParaBaixo = () => {
-    const area = document.getElementById('chat-messages');
+    const area = document.getElementById('scroll-area-v16');
     if (area) {
-        // Timeout de 100ms garante que as novas mensagens já foram renderizadas no DOM
         setTimeout(() => {
-            area.scrollTo({
-                top: area.scrollHeight,
-                behavior: 'smooth'
-            });
+            area.scrollTop = area.scrollHeight;
         }, 100);
     }
 };
