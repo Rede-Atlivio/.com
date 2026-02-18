@@ -1178,3 +1178,26 @@ window.confirmarLeituraRegras = async (uid) => {
         document.getElementById('chat-onboarding')?.remove();
     } catch (e) { console.error("Erro onboarding:", e); }
 };
+
+// 📈 MOTOR DE ATUALIZAÇÃO DE RISCO E AUDITORIA V14
+window.atualizarRiscoUsuario = async (uid, novoScore) => {
+    try {
+        const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const userRef = doc(window.db, "usuarios", uid);
+        await updateDoc(userRef, { 
+            risk_score: novoScore,
+            ultima_tentativa_contato: serverTimestamp() 
+        });
+        
+        // 🚨 DISPARA AUDITORIA PARA COMPORTAMENTO SUSPEITO
+        if (novoScore >= 15) {
+            await addDoc(collection(window.db, "system_events"), {
+                tipo: "ALERTA_EVASAO",
+                uid: uid,
+                score_atingido: novoScore,
+                timestamp: serverTimestamp(),
+                descricao: "Tentativas repetidas de envio de contato detectadas pelo Filtro V14."
+            });
+        }
+    } catch (e) { console.error("Erro ao processar risco:", e); }
+};
