@@ -1117,3 +1117,26 @@ window.confirmarEncerramentoChat = async (orderId) => {
         window.voltarParaListaPedidos();
     } catch(e) { console.error("Erro ao encerrar:", e); }
 };
+
+// 🛡️ MOTOR DE EDUCAÇÃO E SEGURANÇA CHAT V12
+async function verificarOnboardingChat(uid) {
+    const userRef = doc(db, "usuarios", uid);
+    const snap = await getDoc(userRef);
+    if (snap.exists() && !snap.data().chat_onboarding_seen) {
+        const onboardingHtml = `
+            <div id="chat-onboarding" class="bg-blue-600 text-white p-4 rounded-xl mb-4 mx-4 shadow-xl animate-fadeIn relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-2 opacity-20 text-3xl font-black">🛡️</div>
+                <h4 class="text-xs font-black uppercase mb-1">Negocie com Segurança</h4>
+                <p class="text-[10px] leading-tight opacity-90 mb-3">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
+                <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-white text-blue-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm active:scale-95 transition">Entendi</button>
+            </div>`;
+        document.getElementById('chat-messages')?.insertAdjacentHTML('afterbegin', onboardingHtml);
+    }
+}
+
+window.confirmarLeituraRegras = async (uid) => {
+    try {
+        await updateDoc(doc(db, "usuarios", uid), { chat_onboarding_seen: true });
+        document.getElementById('chat-onboarding')?.remove();
+    } catch (e) { console.error("Erro onboarding:", e); }
+};
