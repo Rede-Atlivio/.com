@@ -232,6 +232,24 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     if (step === 3) {
         return `<div class="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center mb-4 mx-4 shadow-sm"><p class="text-sm font-black text-emerald-800 uppercase">✨ Acordo Confirmado!</p></div>`;
     }
+
+    if (step === 4 || pedido.status === 'completed') {
+        return `
+            <div class="bg-indigo-700 p-5 rounded-2xl shadow-xl mb-4 mx-4 relative overflow-hidden animate-fadeIn">
+                <div class="absolute top-0 right-0 p-2 opacity-10 text-4xl font-black">VEREDITO</div>
+                <div class="flex flex-col items-center text-center gap-2">
+                    <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">🏆</div>
+                    <div>
+                        <p class="text-[10px] font-black text-indigo-200 uppercase tracking-[0.2em]">Serviço Concluído</p>
+                        <h4 class="text-white font-black italic text-sm uppercase">Pagamento Liberado</h4>
+                    </div>
+                </div>
+                <div class="mt-3 py-2 bg-white/10 rounded-xl border border-white/5 text-center">
+                    <p class="text-[9px] text-indigo-100 font-bold uppercase tracking-tighter">Obrigado por usar a ATLIVIO! 🤝</p>
+                </div>
+            </div>
+        `;
+    }
     
     return "";
 }
