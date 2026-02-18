@@ -273,3 +273,28 @@ export async function init() {
 
     } catch(e) { console.error("Erro Dashboard:", e); }
 }
+// ⚡ MOTOR DE LIQUIDAÇÃO EM MASSA (ATLIVIO ADMIN V55)
+window.liquidarTodasExpiradas = async () => {
+    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    if (!confirm("⚠️ AÇÃO EM MASSA: Deseja liquidar TODOS os serviços com mais de 12h de atraso agora?")) return;
+
+    try {
+        const q = query(collection(window.db, "orders"), where("system_step", "==", 3), where("status", "==", "in_progress"));
+        const snap = await getDocs(q);
+        let cont = 0;
+
+        for (const d of snap.docs) {
+            const p = d.data();
+            const inicio = p.real_start?.toDate ? p.real_start.toDate() : new Date(p.real_start);
+            const decorridoH = (Date.now() - inicio.getTime()) / (1000 * 60 * 60);
+
+            if (decorridoH >= 12) {
+                console.log(`📡 Liquidando Automático: ${d.id}`);
+                await window.finalizarManualmente(d.id); // Reutiliza a ponte que já criamos
+                cont++;
+            }
+        }
+        alert(`✅ SUCESSO: ${cont} serviços foram liquidados e pagos aos prestadores.`);
+        window.switchView('dashboard');
+    } catch (e) { alert("Erro na varredura: " + e.message); }
+};
