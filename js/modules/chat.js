@@ -999,8 +999,26 @@ window.novoEnviarProposta = async (orderId) => {
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
+// 🟢 MOTOR DE STATUS V12 (VOZ)
+export async function atualizarMeuStatus(estado, paraUid = null) {
+    if (!auth.currentUser) return;
+    const statusRef = doc(db, "status_online", auth.currentUser.uid);
+    try {
+        await updateDoc(statusRef, {
+            state: estado,
+            typing_to: paraUid,
+            last_changed: serverTimestamp()
+        });
+    } catch (e) {
+        // Se o doc não existir, cria com setDoc
+        const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await setDoc(statusRef, { state: estado, typing_to: paraUid, last_changed: serverTimestamp() }, { merge: true });
+    }
+}
+
 // 🟢 CONEXÃO WHATSAPP: Expõe a escuta e o motor de status
 window.escutarPresenca = (uid) => escutarPresenca(uid);
+window.atualizarMeuStatus = (estado, uid) => atualizarMeuStatus(estado, uid);
 window.abrirAgendamento = window.abrirAgendamento;
 window.iniciarTrabalho = window.iniciarTrabalho;
 window.finalizarTrabalho = window.finalizarTrabalho;
