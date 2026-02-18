@@ -284,9 +284,15 @@ export async function enviarMensagemChat(orderId, step) {
 
     // 🔍 CAMADA 2: DICIONÁRIO PROIBIDO INTEGRAL
     const proibidos = [
+        // 💰 EVASÃO FINANCEIRA / CONTATOS
         'whatsapp', 'zap', 'wpp', 'insta', 'instagram', 'facebook', 'face', 'tiktok', 
         'kawai', 'telegram', 'contato', 'chamanowhats', 'chamanozap', 'meunumero',
-        'hotmail', 'gmail', 'bit.ly', 'wa.me', 'linktr.ee', '.com', '@'
+        'hotmail', 'gmail', 'bit.ly', 'wa.me', 'linktr.ee', '.com', '@', 'pvd', 'direct', 
+        'dm', 'meadd', 'p-v-d', 'privado', 'pixdireto', 'pagamentoporfora', 'descontoporfora',
+        
+        // 🚫 TOXICIDADE E PALAVRÕES (BLINDAGEM DE MARCA)
+        'porra', 'caralho', 'fdp', 'vtnm', 'lixo', 'vagabundo', 'estelionato', 'golpe',
+        'golpista', 'mentira', 'merda', 'puta', 'desgraca', 'satanas', 'imbecil'
     ];
 
     // 🔢 CAMADA 3: DETECTOR DE TELEFONE (8+ DÍGITOS OU +55)
