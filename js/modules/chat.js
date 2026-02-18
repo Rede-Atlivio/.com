@@ -275,12 +275,14 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
 export async function enviarMensagemChat(orderId, step) {
     const input = document.getElementById('chat-input-msg');
     let textoOriginal = input.value.trim();
-    // 🛡️ NORMALIZAÇÃO: Remove acentos e caracteres especiais para o filtro não ser enganado
+    // 🛡️ NORMALIZAÇÃO REFORÇADA: Transforma "Z-Á-P" em "zap" e "ponto com" em ".com"
     let textoAnalise = textoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    textoAnalise = textoAnalise.replace(/[^a-z0-9]/g, ""); // Remove tudo que não é letra ou número
+    textoAnalise = textoAnalise.replace(/ponto/g, ".").replace(/arroba/g, "@"); // Troca extenso por símbolo
+    const textoLimpo = textoAnalise.replace(/[^a-z0-9@.]/g, ""); // Mantém @ e . para análise
 
-    // 🔍 REGEX V12: Detecta WhatsApp, Zap, Telefones (8+ dígitos), Instagram, @ e Links
-    const padraoProibido = /(whatsapp|zap|wpp|contato|insta|@|http|www|bit\.ly|wa\.me|\.com)/gi;
+    // 🔍 REGEX V13: Captura evasão mesmo com hifens ou símbolos
+    const padraoProibido = /(whatsapp|zap|wpp|contato|insta|instagram|face|http|www|bit\.ly|wa\.me|\.com|@)/gi;
+    const temSinalProibido = padraoProibido.test(textoLimpo) || padraoProibido.test(textoOriginal);
     const temTelefone = (textoAnalise.match(/\d/g) || []).length >= 8;
 
     if ((padraoProibido.test(textoOriginal) || temTelefone) && step < 3) {
