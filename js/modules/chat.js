@@ -304,8 +304,9 @@ export async function enviarMensagemChat(orderId, step) {
 
     // 🔢 CAMADA 3: DETECTOR DE TELEFONE (8+ DÍGITOS OU +55)
     const apenasNumeros = t.replace(/\D/g, "");
-    const temTelefone = apenasNumeros.length >= 8 || t.includes("+55");
-
+   // Pega sequências de números mesmo com caracteres no meio (ex: 1.1-9_8)
+    const padraoNumericoEspalhado = t.replace(/[^0-9]/g, "");
+    const temTelefone = padraoNumericoEspalhado.length >= 8 || t.includes("+55") || t.includes("0800");
     // 🚨 VERIFICAÇÃO DE BLOQUEIO ATÔMICO
     const encontrouPalavra = proibidos.some(p => textoLimpo.includes(p) || t.includes(p));
     
