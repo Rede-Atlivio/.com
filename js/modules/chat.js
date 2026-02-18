@@ -29,6 +29,20 @@ window.voltarParaListaPedidos = () => {
     if(painelLista) painelLista.classList.remove('hidden');
 };
 
+// 🔄 ROLAGEM INTELIGENTE V15 (Blindagem Desktop/Mobile)
+window.rolarChatParaBaixo = () => {
+    const area = document.getElementById('chat-messages');
+    if (area) {
+        // Timeout de 100ms garante que as novas mensagens já foram renderizadas no DOM
+        setTimeout(() => {
+            area.scrollTo({
+                top: area.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+};
+
 window.sugerirDetalhe = (orderId, campo) => {
     const input = document.getElementById('chat-input-msg');
     if(!input) return;
