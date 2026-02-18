@@ -1169,9 +1169,9 @@ export function iniciarGatilhosContextuais(orderId, step) {
             <div class="flex justify-center my-4 animate-fadeIn">
                 <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
                     <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
-                    <p class="text-[11px] text-amber-900 leading-tight">
-                        Serviços com reserva confirmada têm prioridade total na agenda. 
-                        A reserva protege você contra imprevistos.
+                    <p class="text-[11px] text-amber-900 leading-tight font-medium">
+                        Serviços com reserva confirmada têm prioridade total. <br>
+                        <span class="font-black">⚠️ A troca de contatos é proibida antes do fechamento do acordo.</span>
                     </p>
                 </div>
             </div>`;
