@@ -275,23 +275,39 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
 export async function enviarMensagemChat(orderId, step) {
     const input = document.getElementById('chat-input-msg');
     let textoOriginal = input.value.trim();
-    // 🛡️ NORMALIZAÇÃO REFORÇADA: Transforma "Z-Á-P" em "zap" e "ponto com" em ".com"
-    let textoAnalise = textoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    textoAnalise = textoAnalise.replace(/ponto/g, ".").replace(/arroba/g, "@"); // Troca extenso por símbolo
-    const textoLimpo = textoAnalise.replace(/[^a-z0-9@.]/g, ""); // Mantém @ e . para análise
+    if (!textoOriginal) return;
 
-    // 🔍 REGEX V13: Captura evasão mesmo com hifens ou símbolos
-    const padraoProibido = /(whatsapp|zap|wpp|contato|insta|instagram|face|http|www|bit\.ly|wa\.me|\.com|@)/gi;
-    const temSinalProibido = padraoProibido.test(textoLimpo) || padraoProibido.test(textoOriginal);
-    const temTelefone = (textoAnalise.match(/\d/g) || []).length >= 8;
+    // 🛡️ CAMADA 1: NORMALIZAÇÃO AGRESSIVA V14
+    let t = textoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    t = t.replace(/ponto/g, ".").replace(/arroba/g, "@").replace(/whats/g, "whatsapp");
+    const textoLimpo = t.replace(/[^a-z0-9@.+]/g, ""); // Preserva +, @ e .
 
-    if ((padraoProibido.test(textoOriginal) || temTelefone) && step < 3) {
-        alert("⚠️ Por segurança, a troca de contatos só é permitida após o fechamento do acordo.");
+    // 🔍 CAMADA 2: DICIONÁRIO PROIBIDO INTEGRAL
+    const proibidos = [
+        'whatsapp', 'zap', 'wpp', 'insta', 'instagram', 'facebook', 'face', 'tiktok', 
+        'kawai', 'telegram', 'contato', 'chamanowhats', 'chamanozap', 'meunumero',
+        'hotmail', 'gmail', 'bit.ly', 'wa.me', 'linktr.ee', '.com', '@'
+    ];
+
+    // 🔢 CAMADA 3: DETECTOR DE TELEFONE (8+ DÍGITOS OU +55)
+    const apenasNumeros = t.replace(/\D/g, "");
+    const temTelefone = apenasNumeros.length >= 8 || t.includes("+55");
+
+    // 🚨 VERIFICAÇÃO DE BLOQUEIO ATÔMICO
+    const encontrouPalavra = proibidos.some(p => textoLimpo.includes(p) || t.includes(p));
+    
+    if ((encontrouPalavra || temTelefone) && step < 3) {
+        // 📈 CAMADA 4: EVOLUÇÃO DO RISK SCORE (CONTROLE DE EVASÃO)
+        let riskScoreAtual = (window.meuPerfil?.risk_score || 0) + 3;
+        window.atualizarRiscoUsuario(auth.currentUser.uid, riskScoreAtual);
+
+        let msgAlerta = "⚠️ Por segurança, a troca de contatos só é permitida após o fechamento do acordo.";
+        if (riskScoreAtual > 10) msgAlerta = "🚨 ATENÇÃO: Tentativas repetidas de burlar a plataforma geram bloqueio da conta.";
+        
+        alert(msgAlerta);
         input.value = "";
         return;
     }
-    let texto = textoOriginal;
-    if(!texto) return;
 
     try {
         const orderRef = doc(db, "orders", orderId);
