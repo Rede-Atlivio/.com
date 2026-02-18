@@ -254,7 +254,21 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
 
 export async function enviarMensagemChat(orderId, step) {
     const input = document.getElementById('chat-input-msg');
-    let texto = input.value.trim();
+    let textoOriginal = input.value.trim();
+    // 🛡️ NORMALIZAÇÃO: Remove acentos e caracteres especiais para o filtro não ser enganado
+    let textoAnalise = textoOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    textoAnalise = textoAnalise.replace(/[^a-z0-9]/g, ""); // Remove tudo que não é letra ou número
+
+    // 🔍 REGEX V12: Detecta WhatsApp, Zap, Telefones (8+ dígitos), Instagram, @ e Links
+    const padraoProibido = /(whatsapp|zap|wpp|contato|insta|@|http|www|bit\.ly|wa\.me|\.com)/gi;
+    const temTelefone = (textoAnalise.match(/\d/g) || []).length >= 8;
+
+    if ((padraoProibido.test(textoOriginal) || temTelefone) && step < 3) {
+        alert("⚠️ Por segurança, a troca de contatos só é permitida após o fechamento do acordo.");
+        input.value = "";
+        return;
+    }
+    let texto = textoOriginal;
     if(!texto) return;
 
     try {
