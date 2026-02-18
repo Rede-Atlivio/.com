@@ -370,7 +370,7 @@ export async function enviarMensagemChat(orderId, step) {
     input.value = "";
     try {
         await addDoc(collection(db, `chats/${orderId}/messages`), { 
-            text: texto, 
+            text: textoOriginal, 
             sender_id: auth.currentUser.uid, 
             timestamp: serverTimestamp() 
         });
