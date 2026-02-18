@@ -1264,3 +1264,20 @@ window.atualizarRiscoUsuario = async (uid, novoScore) => {
         }
     } catch (e) { console.error("Erro ao processar risco:", e); }
 };
+window.toggleFerramentasChat = () => {
+    const gaveta = document.getElementById('gaveta-ferramentas');
+    const icone = document.getElementById('icon-ferramentas');
+    const texto = document.getElementById('txt-ferramentas');
+    
+    if (gaveta.classList.contains('hidden')) {
+        gaveta.classList.remove('hidden');
+        icone.innerText = "➖";
+        texto.innerText = "Recolher";
+    } else {
+        gaveta.classList.add('hidden');
+        icone.innerText = "➕";
+        texto.innerText = "Mais Opções";
+    }
+    // Garante que o scroll ajuste após mudar o tamanho do rodapé
+    if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
+};
