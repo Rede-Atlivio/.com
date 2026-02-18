@@ -1193,8 +1193,7 @@ export function iniciarGatilhosContextuais(orderId, step) {
             </div>`;
             
         container.insertAdjacentHTML('beforeend', dicaHtml);
-        const divMsgs = document.getElementById('chat-messages');
-        if(divMsgs) divMsgs.scrollTop = divMsgs.scrollHeight;
+        if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
         
         console.log("💡 Gatilho Contextual ativado.");
     }, 180000); // 3 minutos
