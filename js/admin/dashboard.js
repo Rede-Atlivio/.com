@@ -264,7 +264,7 @@ export async function init() {
                             <div class="flex gap-1.5">
                                 <button onclick="window.switchView('audit'); setTimeout(() => window.buscarPedidoAuditoria('${d.id}'), 300)" class="bg-slate-700 p-1.5 rounded text-white" title="Investigar Chat">🕵️</button>
                                 <button onclick="window.finalizarManualmente('${d.id}')" class="flex-1 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white text-[8px] font-black uppercase rounded transition border border-blue-500/30">Pagar ✅</button>
-                                <button onclick="window.reembolsarManualmente('${d.id}')" class="flex-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase rounded transition border border-red-500/30">Refund ♻️</button>
+                                <button onclick="window.reembolsarManualmente('${d.id}')" class="flex-1 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white text-[8px] font-black uppercase rounded transition border border-red-500/30">Reembolsar ♻️</button>
                             </div>
                         </div>
                     </div>`;
