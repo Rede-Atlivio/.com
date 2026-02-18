@@ -105,6 +105,9 @@ export async function abrirChatPedido(orderId) {
         const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
         window.escutarPresenca(uidPartner);
         window.atualizarMeuStatus('online');
+
+        // 🛡️ EDUCAÇÃO INICIAL: Mostra regras se for o primeiro acesso
+        verificarOnboardingChat(auth.currentUser.uid);
     });
 }
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
