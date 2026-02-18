@@ -994,7 +994,8 @@ window.novoEnviarProposta = async (orderId) => {
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
 window.executarDescricao = (id) => window.novoDescreverServico(id);
 window.executarProposta = (id) => window.novoEnviarProposta(id);
-// Novas funções de tempo e cancelamento
+// 🟢 CONEXÃO WHATSAPP: Expõe a escuta e o motor de status
+window.escutarPresenca = (uid) => escutarPresenca(uid);
 window.abrirAgendamento = window.abrirAgendamento;
 window.iniciarTrabalho = window.iniciarTrabalho;
 window.finalizarTrabalho = window.finalizarTrabalho;
