@@ -100,8 +100,13 @@ export async function abrirChatPedido(orderId) {
         }
 
         renderizarEstruturaChat(painelChat, pedido, isProvider, orderId, step);
+        
+        // 📡 ATIVAÇÃO WHATSAPP: Inicia escuta do parceiro e marca você como online
+        const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
+        window.escutarPresenca(uidPartner);
+        window.atualizarMeuStatus('online');
     });
-}      
+}
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
