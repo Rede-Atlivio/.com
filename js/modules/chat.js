@@ -393,7 +393,10 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
     // 💡 RE-INJEÇÃO GLOBAL: Necessária para o gatilho de 12h e robôs funcionarem
     window.finalizarServicoPassoFinalAction = finalizarServicoPassoFinalAction;
     if(!auth.currentUser) return alert("Sessão expirada. Faça login novamente.");
-    if(!confirm("🏁 CONFIRMAR CONCLUSÃO E LIBERAR PAGAMENTO?\n\nEsta ação é irreversível.")) return;
+    // 🔕 MODO SILENCIOSO: Se a ação vier do Admin/Robô, pula o prompt de confirmação
+    if (!acaoPorAdmin) {
+        if (!confirm("🏁 CONFIRMAR CONCLUSÃO E LIBERAR PAGAMENTO?\n\nEsta ação é irreversível.")) return;
+    }
     try {
         await runTransaction(db, async (transaction) => {
             const orderRef = doc(db, "orders", orderId);
