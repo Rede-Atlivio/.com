@@ -234,7 +234,7 @@ export async function init() {
             });
         });
 
-        // 🚀 MOTOR DO RADAR ADMIN: Monitora In Progress e Dispute
+        // 🚀 MOTOR DO RADAR ADMIN: Monitora In Progress e Dispute (SEPARADOS)
         const qRadar = query(collection(db, "orders"), where("status", "in", ["in_progress", "dispute"]), orderBy("created_at", "desc"));
         onSnapshot(qRadar, (snap) => {
             const radarContainer = document.getElementById('admin-monitor-radar');
@@ -246,16 +246,21 @@ export async function init() {
                 return;
             }
 
+            let htmlDisputas = `<p class="text-[9px] font-black text-red-500 mb-2 border-b border-red-500/20 pb-1">⚖️ DISPUTAS ATIVAS</p>`;
+            let htmlAndamento = `<p class="text-[9px] font-black text-blue-400 mt-4 mb-2 border-b border-blue-400/20 pb-1">🛠️ EM EXECUÇÃO</p>`;
+            let temDisputa = false;
+            let temAndamento = false;
+
             snap.forEach(d => {
                 const p = d.data();
                 const isDispute = p.status === 'dispute';
                 const inicio = p.real_start?.toDate ? p.real_start.toDate() : new Date(p.real_start);
                 const decorridoH = Math.floor((Date.now() - inicio.getTime()) / (1000 * 60 * 60));
                 
-                radarContainer.innerHTML += `
-                    <div class="p-3 rounded-xl border ${isDispute ? 'border-red-500 bg-red-900/10' : 'border-slate-700 bg-slate-800/50'} animate-fade">
+                const cardHtml = `
+                    <div class="p-3 rounded-xl border ${isDispute ? 'border-red-500 bg-red-900/10' : 'border-slate-700 bg-slate-800/50'} animate-fade mb-2">
                         <div class="flex justify-between items-start mb-2">
-                            <span class="text-[9px] font-black ${isDispute ? 'text-red-500' : 'text-blue-400'} uppercase">${isDispute ? '⚖️ DISPUTA' : '🛠️ EM EXECUÇÃO'}</span>
+                            <span class="text-[8px] font-black ${isDispute ? 'text-red-500' : 'text-blue-400'} uppercase">${isDispute ? 'DISPUTA' : 'ANDAMENTO'}</span>
                             <span class="text-[10px] font-mono text-white font-bold">R$ ${p.offer_value}</span>
                         </div>
                         <p class="text-xs font-bold text-white truncate">${p.provider_name} ➔ ${p.client_name}</p>
@@ -268,11 +273,13 @@ export async function init() {
                             </div>
                         </div>
                     </div>`;
-            });
-        });
 
-    } catch(e) { console.error("Erro Dashboard:", e); }
-}
+                if(isDispute) { htmlDisputas += cardHtml; temDisputa = true; }
+                else { htmlAndamento += cardHtml; temAndamento = true; }
+            });
+
+            radarContainer.innerHTML = (temDisputa ? htmlDisputas : "") + (temAndamento ? htmlAndamento : "");
+        });
 // ⚡ MOTOR DE LIQUIDAÇÃO EM MASSA (ATLIVIO ADMIN V55)
 window.liquidarTodasExpiradas = async () => {
     const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
