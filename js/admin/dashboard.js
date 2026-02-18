@@ -280,6 +280,9 @@ export async function init() {
 
             radarContainer.innerHTML = (temDisputa ? htmlDisputas : "") + (temAndamento ? htmlAndamento : "");
         });
+
+    } catch(e) { console.error("Erro Dashboard:", e); }
+}
 // ⚡ MOTOR DE LIQUIDAÇÃO EM MASSA (ATLIVIO ADMIN V55)
 window.liquidarTodasExpiradas = async () => {
     const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
