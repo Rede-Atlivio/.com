@@ -186,7 +186,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                     <div id="contextual-dica-area"></div>
                 </div>
-                <div id="bubbles-area" class="p-4 pt-4 md:pt-6 flex flex-col gap-3" style="margin-top: 10px; padding-bottom: 50px;"></div>
+                <div id="bubbles-area" class="p-4 flex flex-col gap-3" style="padding-top: 30px; padding-bottom: 120px; min-height: 350px;"></div>
             </div>
 
            ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
