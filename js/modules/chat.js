@@ -308,7 +308,37 @@ export async function enviarMensagemChat(orderId, step) {
     const padraoNumericoEspalhado = t.replace(/[^0-9]/g, "");
     const temTelefone = padraoNumericoEspalhado.length >= 8 || t.includes("+55") || t.includes("0800");
     // 🚨 VERIFICAÇÃO DE BLOQUEIO ATÔMICO
+    // 🧩 CAMADA 2: DETECÇÃO DE FRAGMENTAÇÃO (BUFFER)
+    if (!window.chat_risk_buffer) window.chat_risk_buffer = [];
+    window.chat_risk_buffer.push({ n: apenasNumeros, t: Date.now() });
+    
+    // Limpa números com mais de 2 minutos
+    window.chat_risk_buffer = window.chat_risk_buffer.filter(i => Date.now() - i.t < 120000);
+    
+    const somaNumerosBuffer = window.chat_risk_buffer.reduce((acc, i) => acc + i.n, "");
+    const temFragmentacao = somaNumerosBuffer.length >= 8;
+
     const encontrouPalavra = proibidos.some(p => textoLimpo.includes(p) || t.includes(p));
+    
+    if ((encontrouPalavra || temTelefone || temFragmentacao) && step < 3) {
+        let riskScoreAtual = (window.meuPerfil?.risk_score || 0) + 3;
+        window.atualizarRiscoUsuario(auth.currentUser.uid, riskScoreAtual);
+
+        // 🔐 OBS 7: MODO SILENCIOSO (PUNIÇÃO PROGRESSIVA)
+        if (riskScoreAtual >= 15) {
+            console.warn("🔇 Modo Silencioso: Mensagem bloqueada sem aviso ao infrator.");
+            input.value = "";
+            return; // Encerra aqui, o usuário acha que enviou mas não salvamos no banco
+        }
+
+        let msgAlerta = riskScoreAtual > 10 ? 
+            "🚨 ATENÇÃO: Tentativas repetidas geram bloqueio da conta." : 
+            "⚠️ Por segurança, contatos só após o fechamento do acordo.";
+        
+        alert(msgAlerta);
+        input.value = "";
+        return;
+    }
     
     if ((encontrouPalavra || temTelefone) && step < 3) {
         // 📈 CAMADA 4: EVOLUÇÃO DO RISK SCORE (CONTROLE DE EVASÃO)
