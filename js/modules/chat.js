@@ -277,8 +277,16 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     container.innerHTML = `
         <div class="flex flex-col h-full bg-slate-50">
             <div class="bg-white shadow-sm z-30">
-                <div class="p-3 flex items-center justify-between border-b flex-shrink-0 overflow-hidden">
-                   <div class="flex items-center gap-3 flex-shrink-0" style="overflow: hidden !important;">
+                <div class="p-2 flex flex-col border-b bg-white sticky top-0 z-20">
+                    <div class="w-full flex justify-center pb-2">
+                        ${(step < 3 || step === 4) && pedido.status !== 'dispute' ? 
+                            `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-[9px] font-black text-gray-400 hover:text-red-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 shadow-sm transition uppercase tracking-widest italic">Encerrar Conversa ✋</button>` : 
+                            `<span class="text-[8px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 uppercase">🔒 Acordo em Andamento</span>`
+                        }
+                    </div>
+                    
+                    <div class="flex items-center justify-between w-full">
+                        <div class="flex items-center gap-3 flex-shrink-0" style="overflow: hidden !important;">
                     <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full flex-shrink-0">⬅</button>
                     <div class="relative group flex-shrink-0" style="cursor: pointer; overflow: hidden;" onclick="window.verPerfilCompleto('${uidPartner}')">
                             <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
