@@ -278,9 +278,10 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
 
     // 🤝 3º PRIORIDADE: NEGOCIAÇÃO E ACORDO (RESTAURADO)
     if (step < 3) {
+        const isPC = window.innerWidth >= 768;
         const jaConfirmei = isProvider ? pedido.provider_confirmed : pedido.client_confirmed;
         if (jaConfirmei) {
-            return `<div class="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center animate-pulse mb-4 mx-4"><p class="text-xs font-bold text-blue-800">⏳ Aguardando a outra parte confirmar...</p></div>`;
+            return `<div class="bg-blue-50 border border-blue-200 ${isPC ? 'p-2 mx-2 mb-2' : 'p-4 mx-4 mb-4'} rounded-xl text-center animate-pulse"><p class="text-xs font-bold text-blue-800">⏳ Aguardando confirmação...</p></div>`;
         }
 
         const config = window.configFinanceiroAtiva || { porcentagem_reserva: 10, porcentagem_reserva_cliente: 0 };
@@ -288,21 +289,21 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         const valorAcordo = parseFloat(pedido.offer_value) || 0;
         const reservaCalculada = valorAcordo * (pct / 100);
 
-        return `<div id="banner-fechamento-v12" class="bg-white border-2 border-blue-600 p-5 rounded-2xl shadow-2xl mb-4 mx-4 relative overflow-hidden animate-bounce-subtle">
+        return `<div id="banner-fechamento-v12" class="bg-white border-2 border-blue-600 ${isPC ? 'p-2 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-bounce-subtle">
             <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
-            <div class="flex justify-between items-start mb-2">
+            <div class="flex justify-between items-center ${isPC ? 'mb-1' : 'mb-2'}">
                 <div>
-                    <p class="text-sm font-black text-blue-900 mb-1">🤝 FINALIZAR NEGOCIAÇÃO</p>
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-tight">Confirme para reservar sua agenda</p>
+                    <p class="${isPC ? 'text-[10px]' : 'text-sm'} font-black text-blue-900 leading-none">🤝 FINALIZAR NEGOCIAÇÃO</p>
+                    <p class="text-[8px] text-gray-500 uppercase font-bold tracking-tight">Confirme para reservar sua agenda</p>
                 </div>
-                <span class="text-xl">✍️</span>
+                <span class="${isPC ? 'text-sm' : 'text-xl'}">✍️</span>
             </div>
-            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white py-4 rounded-xl text-xs font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
+            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white ${isPC ? 'py-2' : 'py-4'} rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
                 🤝 ACEITAR E FECHAR AGORA
             </button>
-            <div class="mt-3 bg-amber-50 p-2 rounded-lg flex gap-2 items-center">
-                <span class="text-xs">🔒</span>
-                <p class="text-[9px] text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia de Proteção: R$ ${reservaCalculada.toFixed(2)}</p>
+            <div class="${isPC ? 'mt-1 p-1' : 'mt-3 p-2'} bg-amber-50 rounded-lg flex gap-2 items-center">
+                <span class="${isPC ? 'text-[10px]' : 'text-xs'}">🔒</span>
+                <p class="${isPC ? 'text-[8px]' : 'text-[9px]'} text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia: R$ ${reservaCalculada.toFixed(2)}</p>
             </div>
         </div>`;
     }
