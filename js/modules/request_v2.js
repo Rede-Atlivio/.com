@@ -218,7 +218,7 @@ export async function enviarPropostaAgora() {
             collection(db, "orders"), 
             where("client_id", "==", user.uid), 
             where("provider_id", "==", mem_ProviderId),
-            where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress"])
+            where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress", "active"])
         );
         const snapCheck = await getDocs(qCheck);
 
