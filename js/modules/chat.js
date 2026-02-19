@@ -228,20 +228,20 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
     // Barra de Progresso
     const stepsHTML = `
-        <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
-            <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
-            <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
-            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Execução</span>
-        </div>
-        <div class="h-1 w-full bg-gray-100">
-            <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
-        </div>
-    `;
+        <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
+            <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
+            <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
+            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Execução</span>
+        </div>
+        <div class="h-1 w-full bg-gray-100">
+            <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
+        </div>
+    `;
 
     const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
     container.innerHTML = `
-        <div class="flex flex-col h-full bg-[#020617]">
+        <div class="flex flex-col h-full bg-slate-50">
             <div class="bg-white shadow-sm z-[100] border-b sticky top-0">
                 <div class="p-2 px-3 flex items-center justify-between w-full">
                     <div class="flex items-center gap-2 min-w-0">
@@ -273,13 +273,13 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 ${timeHTML}
             </div>
 
-           <div id="chat-messages" class="flex-1 flex flex-col bg-[#020617] relative overflow-hidden" style="height: 100%; min-height: 0;">
+           <div id="chat-messages" class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden" style="height: 100%; min-height: 0;">
                 <div id="header-estatico-chat" class="flex-shrink-0 w-full bg-white z-[50] border-b shadow-sm">
                     ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                     <div id="contextual-dica-area" class="bg-amber-50/50" style="display: none; height: 0; overflow: hidden;"></div>
                 </div>
                 
-               <div id="scroll-area-v16" class="custom-scrollbar p-4 flex-1" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #020617; height: 100%;">
+               <div id="scroll-area-v16" class="custom-scrollbar p-4 flex-1" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #f8fafc; height: 100%;">
                     <div id="bubbles-area" class="flex flex-col gap-3" style="padding-bottom: 20px; width: 100%;"></div>
                 </div>
             </div>
@@ -320,10 +320,10 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 
                 </div>
                 <div class="px-3 ${window.innerWidth < 768 ? 'pb-10 pt-3' : 'py-3'} flex gap-2 items-center bg-white border-t relative z-[10000]">
-                    <input type="text" id="chat-input-msg" 
-                        placeholder="${isProvider ? 'Explique como fará o serviço...' : 'Descreva o que precisa, datas e local...'}" 
-                        oninput="let uIdP = '${uidPartner}'; if(this.value.length > 0) { window.atualizarMeuStatus('online', uIdP); } clearTimeout(window.typingTimer); window.typingTimer = setTimeout(() => window.atualizarMeuStatus('online', null), 2000);"
-                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
+                    <input type="text" id="chat-input-msg" 
+                        placeholder="${isProvider ? 'Explique como fará o serviço...' : 'Descreva o que precisa, datas e local...'}" 
+                        oninput="let uIdP = '${uidPartner}'; if(this.value.length > 0) { window.atualizarMeuStatus('online', uIdP); } clearTimeout(window.typingTimer); window.typingTimer = setTimeout(() => window.atualizarMeuStatus('online', null), 2000);"
+                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
                     <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition relative z-[1000000]">➤</button>
                 </div>
             </div>` : ''}
