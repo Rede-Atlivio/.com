@@ -1290,40 +1290,6 @@ window.encerrarNegociacao = async (orderId) => {
     }
 };
 
-// 💡 GATILHOS CONTEXTUAIS (ASSISTENTE SILENCIOSO)
-let timerLembreteInatividade = null; 
-
-export function iniciarGatilhosContextuais(orderId, step) {
-    if (timerLembreteInatividade) clearTimeout(timerLembreteInatividade);
-    if (step >= 3) return; // Não envia dicas se o acordo já fechou
-
-    timerLembreteInatividade = setTimeout(async () => {
-        const container = document.getElementById('contextual-dica-area');
-        if (!container) return;
-        
-        // 🚀 Ajuste V30: Só mostra o container se houver dica
-        container.style.display = 'block';
-        container.style.height = 'auto';
-        container.style.marginBottom = '10px';
-        
-        const isPC = window.innerWidth >= 768;
-        const dicaHtml = `
-            <div class="flex justify-center ${isPC ? 'my-1' : 'my-2'} animate-fadeIn">
-                <div class="bg-amber-50 border border-amber-200 ${isPC ? 'p-1.5 px-3' : 'p-3'} rounded-xl max-w-[90%] text-center shadow-sm">
-                    <p class="text-[9px] text-amber-800 font-bold uppercase ${isPC ? 'inline-block mr-1' : 'mb-1'}">💡 Dica:</p>
-                    <p class="text-[10px] text-amber-900 leading-tight font-medium ${isPC ? 'inline' : ''}">
-                        Reserva confirmada tem prioridade. <span class="font-black">⚠️ Proibido contatos antes do acordo.</span>
-                    </p>
-                </div>
-            </div>`;
-            
-        container.innerHTML = dicaHtml; // Usa innerHTML para limpar lixos anteriores
-        if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
-        
-        console.log("💡 Gatilho Contextual ativado.");
-    }, 180000); // 3 minutos
-}
-
 window.exibirAlertaSegurancaReserva = () => {
     alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
 };
