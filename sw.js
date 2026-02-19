@@ -1,49 +1,56 @@
-// 🚀 SW PRODUÇÃO ATLIVIO - V1.1 (BLINDADO)
-const CACHE_NAME = 'atlivio-cache-v1.1'; // 👈 Se mudar o código, mude para v1.2
+// 🚀 SW PRODUÇÃO ATLIVIO - V1.2 (REPARO DE STREAM & BYPASS GOOGLE)
+const CACHE_NAME = 'atlivio-cache-v1.2'; 
 
 self.addEventListener('install', (e) => {
-    console.log("📥 SW: Instalando nova versão...");
     self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
-    console.log("🧹 SW: Faxina iniciada. Removendo caches obsoletos...");
     e.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames.map((cacheName) => {
-                    // Se o cache que ele achou não for o atual, DELETA!
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
+                    if (cacheName !== CACHE_NAME) return caches.delete(cacheName);
                 })
             );
-        }).then(() => self.clients.claim()) // Força o SW a mandar em todas as abas agora
+        }).then(() => self.clients.claim())
     );
 });
 
 self.addEventListener('fetch', (event) => {
-    // 🛡️ ESTRATÉGIA SNIPER: Prioridade para Lógica Versionada (?v=)
-    if (event.request.url.includes('?v=')) {
-        event.respondWith(
-            fetch(event.request).then((networkResponse) => {
-                const clone = networkResponse.clone();
-                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                return networkResponse;
-            }).catch(() => caches.match(event.request))
-        );
-    } else {
-        // ⚡ ESTRATÉGIA VELOCIDADE: Fotos, Fontes e Estática
-        event.respondWith(
-            caches.match(event.request).then((cached) => {
-                const fetchPromise = fetch(event.request).then((network) => {
-                    if (network.status === 200) {
-                        caches.open(CACHE_NAME).then(c => c.put(event.request, network.clone()));
-                    }
-                    return network;
-                });
-                return cached || fetchPromise;
-            })
-        );
+    const url = event.request.url;
+
+    // 🛡️ REGRA DE OURO: Ignora TUDO que for do Google/Firebase/Auth
+    // Isso evita que o cache trave a sincronização do banco de dados (o sumiço dos pedidos)
+    if (url.includes('firestore.googleapis.com') || 
+        url.includes('identitytoolkit.googleapis.com') || 
+        url.includes('firebase') ||
+        event.request.method !== 'GET') {
+        return; // Deixa o navegador lidar direto com a rede
     }
+
+    event.respondWith(
+        caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) return cachedResponse;
+
+            return fetch(event.request).then((networkResponse) => {
+                // Valida se a resposta é válida para cache
+                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+                    return networkResponse;
+                }
+
+                // 🔄 CLONAGEM SEGURA: Clona antes de qualquer outra operação
+                const responseToCache = networkResponse.clone();
+
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, responseToCache);
+                });
+
+                return networkResponse;
+            }).catch(() => {
+                // Fallback silencioso para erros de rede
+                return new Response("Offline", { status: 503, statusText: "Offline" });
+            });
+        })
+    );
 });
