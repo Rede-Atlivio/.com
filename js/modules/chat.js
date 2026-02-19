@@ -170,11 +170,11 @@ async function injetarGatilhosDemanda(uidPartner, isProvider, categoriaId) {
         }
         
         if (totalConcorrentes > 1) {
-            // Gina: Frase ultra específica baseada na leitura real de concorrência
-            const frasePrestador = `📍 Você é um dos ${totalConcorrentes} profissionais analisados para este serviço`;
-            const fraseCliente = `🚀 DECISÃO: Você está comparando ${totalConcorrentes} profissionais agora`;
+            const fraseP = `📍 Você é um dos ${totalConcorrentes} profissionais analisados agora`;
+            const fraseC = `🚀 DECISÃO: Você está comparando ${totalConcorrentes} profissionais`;
             
-            htmlStatus += `<span class="text-[7px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md uppercase italic shadow-sm">${isProvider ? frasePrestador : fraseCliente}</span>`;
+            // Gina: Azul Royal sólido para passar autoridade e seriedade
+            htmlStatus += `<span class="text-[7px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded-md uppercase italic shadow-md border border-blue-400/30">${isProvider ? fraseP : fraseC}</span>`;
         }
 
         container.innerHTML = htmlStatus;
