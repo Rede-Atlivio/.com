@@ -93,9 +93,9 @@ export async function abrirChatPedido(orderId) {
         painelChat = document.createElement('div');
         painelChat.id = 'painel-chat-individual';
         
-        // 📱 MODO APLICATIVO: Força visual mobile mesmo no Desktop (Padrão Pica Grossa)
+        // 🚀 MODO SUPER APP: Expansão máxima vertical no PC (Padrão PICA GROSSA)
         const isPC = window.innerWidth >= 768;
-        const stylePC = "width: 380px; height: 90vh; max-height: 700px; right: 20px; bottom: 20px; border-radius: 24px; border: 4px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; overflow: hidden !important; position: fixed; z-index: 9999;";
+        const stylePC = "width: 400px; height: 96vh; right: 20px; bottom: 2vh; border-radius: 28px; border: 6px solid #0f172a; box-shadow: 0 0 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden !important; position: fixed; z-index: 9999;";
         const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0; border: none; border-radius: 0;";
         
         painelChat.className = "fixed bg-white flex flex-col hidden overflow-hidden animate-slideUp";
