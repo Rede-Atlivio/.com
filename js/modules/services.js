@@ -274,50 +274,9 @@ function renderizarCards(servicos, container) {
 // 2. PEDIDOS E HISTÓRICO (VERSÃO BLINDADA V12.1)
 // ============================================================================
 
-export async function carregarPedidosAtivos() {
-    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
-    if (!container) return;
-
-    // 🛡️ Aguarda o Firebase acordar
-    if (!auth.currentUser) {
-        setTimeout(carregarPedidosAtivos, 500);
-        return;
-    }
-    
-    const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
-    
-    // 🔥 onSnapshot: Escuta ativa para não sumir no refresh
-    onSnapshot(q, (snap) => {
-        container.innerHTML = "";
-        let ativos = [];
-        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress'];
-
-        snap.forEach(d => {
-            const p = d.data();
-            if(statusVivos.includes(p.status)) ativos.push({id: d.id, ...p});
-        });
-
-        if (ativos.length === 0) { 
-            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo no momento.</p>`; 
-            return; 
-        }
-
-        ativos.forEach(p => {
-            const statusPT = p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente';
-            container.innerHTML += `
-                <div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
-                    <div>
-                        <h3 class="font-bold text-gray-800 text-sm">${p.provider_name || 'Prestador'}</h3>
-                        <p class="text-[10px] text-gray-500 uppercase">R$ ${p.offer_value} • ${statusPT}</p>
-                    </div>
-                    <span class="text-xl">💬</span>
-                </div>
-            `;
-        });
-    });
-}
-
+// ============================================================================
+// 2. PEDIDOS E HISTÓRICO (GERENCIAMENTO DE FLUXO)
+// ============================================================================
 export function switchServiceSubTab(tabName) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const elView = document.getElementById(`view-${t}`);
