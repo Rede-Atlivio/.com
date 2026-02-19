@@ -1204,13 +1204,13 @@ export function iniciarGatilhosContextuais(orderId, step) {
         container.style.height = 'auto';
         container.style.marginBottom = '10px';
         
+        const isPC = window.innerWidth >= 768;
         const dicaHtml = `
-            <div class="flex justify-center my-2 animate-fadeIn">
-                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[90%] text-center shadow-sm">
-                    <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
-                    <p class="text-[11px] text-amber-900 leading-tight font-medium">
-                        Serviços com reserva confirmada têm prioridade total. <br>
-                        <span class="font-black">⚠️ A troca de contatos é proibida antes do acordo.</span>
+            <div class="flex justify-center ${isPC ? 'my-1' : 'my-2'} animate-fadeIn">
+                <div class="bg-amber-50 border border-amber-200 ${isPC ? 'p-1.5 px-3' : 'p-3'} rounded-xl max-w-[90%] text-center shadow-sm">
+                    <p class="text-[9px] text-amber-800 font-bold uppercase ${isPC ? 'inline-block mr-1' : 'mb-1'}">💡 Dica:</p>
+                    <p class="text-[10px] text-amber-900 leading-tight font-medium ${isPC ? 'inline' : ''}">
+                        Reserva confirmada tem prioridade. <span class="font-black">⚠️ Proibido contatos antes do acordo.</span>
                     </p>
                 </div>
             </div>`;
