@@ -162,17 +162,24 @@ async function injetarGatilhosDemanda(uidPartner, isProvider, categoriaId) {
 
         let htmlStatus = "";
 
+        // 🚀 Ajuste V15: Layout Horizontal Compacto para o PICA GROSSA
+        container.className = "flex flex-row gap-1.5 flex-nowrap overflow-x-auto no-scrollbar py-1";
+
         if (!isProvider && totalAtivos >= 2) {
-            // Gina: Vermelho Agressivo para Escassez Real
-            htmlStatus += `<span class="text-[7px] font-black bg-red-600 text-white px-1.5 py-0.5 rounded-md uppercase animate-pulse italic shadow-sm">🔥 ALTA DEMANDA: Agenda Quase Cheia</span>`;
+            htmlStatus += `
+                <div class="flex items-center gap-1 bg-red-600 text-white px-2 py-0.5 rounded shadow-sm animate-pulse shrink-0">
+                    <span class="text-[7px]">🔥</span>
+                    <span class="text-[6.5px] font-black uppercase italic whitespace-nowrap">Alta Demanda</span>
+                </div>`;
         }
         
         if (totalConcorrentes > 1) {
-            const fraseP = `📍 Você é um dos ${totalConcorrentes} profissionais analisados agora`;
-            const fraseC = `🚀 DECISÃO: Você está comparando ${totalConcorrentes} profissionais`;
-            
-            // Gina: Azul Royal sólido para passar autoridade e seriedade
-            htmlStatus += `<span class="text-[7px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded-md uppercase italic shadow-md border border-blue-400/30">${isProvider ? fraseP : fraseC}</span>`;
+            const txt = isProvider ? `Comparando ${totalConcorrentes}` : `Comparando ${totalConcorrentes} Profissionais`;
+            htmlStatus += `
+                <div class="flex items-center gap-1 bg-blue-600 text-white px-2 py-0.5 rounded shadow-sm border border-blue-400/30 shrink-0">
+                    <span class="text-[7px]">📍</span>
+                    <span class="text-[6.5px] font-black uppercase italic whitespace-nowrap">${txt}</span>
+                </div>`;
         }
 
         container.innerHTML = htmlStatus;
