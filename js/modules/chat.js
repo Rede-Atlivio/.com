@@ -239,38 +239,35 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
     container.innerHTML = `
         <div class="flex flex-col h-full bg-slate-50">
-            <div class="bg-white shadow-sm z-30">
-                <div class="p-2 flex flex-col border-b bg-white sticky top-0 z-20">
-                    <div class="w-full flex justify-center pb-2">
+            <div class="bg-white shadow-sm z-[100] border-b sticky top-0">
+                <div class="p-2 px-3 flex items-center justify-between w-full">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-1 hover:bg-gray-50 rounded-full transition">⬅</button>
+                        <div class="flex flex-col leading-none cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                            <div class="flex items-center gap-1.5">
+                                <h3 class="font-black text-[11px] text-gray-800 uppercase italic leading-none truncate">${outroNome}</h3>
+                                <div id="status-indicador-${uidPartner}" class="w-2 h-2 rounded-full bg-gray-300 border border-white shadow-sm"></div>
+                            </div>
+                            <p id="status-texto-${uidPartner}" class="text-[7px] font-black text-gray-400 uppercase tracking-tighter italic mt-0.5">offline</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-sm">📞 Ligar</a>` : ''}
                         ${(step < 3 || step === 4) && pedido.status !== 'dispute' ? 
-                            `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-[9px] font-black text-gray-400 hover:text-red-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 shadow-sm transition uppercase tracking-widest italic">Encerrar Conversa ✋</button>` : 
-                            `<span class="text-[8px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 uppercase">🔒 Acordo em Andamento</span>`
+                            `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="bg-red-50 text-red-500 w-7 h-7 flex items-center justify-center rounded-lg border border-red-100 font-black text-sm hover:bg-red-100 transition active:scale-90" title="Encerrar Conversa">✕</button>` : 
+                            `<span class="text-[8px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-200 uppercase">🔒 ATIVO</span>`
                         }
                     </div>
-                    
-                    <div class="flex items-center justify-between w-full">
-                        <div class="flex items-center gap-3 flex-shrink-0" style="overflow: hidden !important;">
-                    <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full flex-shrink-0">⬅</button>
-                    <div class="relative group flex-shrink-0" style="cursor: pointer; overflow: hidden;" onclick="window.verPerfilCompleto('${uidPartner}')">
-                            <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
-                            <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">🔍</div>
-                        </div>
-                        <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
-                          <div class="flex items-center gap-1.5 flex-shrink-0" style="overflow: hidden;">
-                                <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
-                                <div id="status-indicador-${uidPartner}" class="w-1.5 h-1.5 rounded-full bg-gray-300 shadow-[0_0_5px_rgba(0,0,0,0.1)]"></div>
-                            </div>
-                            <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic leading-none">offline</p>
-                            <div id="demanda-indicador-${uidPartner}" class="mt-1.5 flex flex-col gap-0.5"></div>
-                            <div id="engajamento-indicador-${uidPartner}" class="mt-1 flex items-center gap-1"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-[10px] font-black uppercase shadow-sm">📞 Ligar Agora</a>` : ''}
-                    </div>
-                </div> </div> ${stepsHTML}
-            ${timeHTML}
-        </div>
+                </div>
+
+                <div class="px-10 pb-2 flex flex-col gap-1">
+                    <div id="demanda-indicador-${uidPartner}"></div>
+                    <div id="engajamento-indicador-${uidPartner}"></div>
+                </div> 
+               ${stepsHTML}
+                ${timeHTML}
+            </div>
 
            <div id="chat-messages" class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden" style="height: 100%; min-height: 0;">
                 <div id="header-estatico-chat" class="flex-shrink-0 w-full bg-white z-[50] border-b shadow-sm">
