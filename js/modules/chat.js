@@ -225,6 +225,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                             </div>
                             <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic leading-none">offline</p>
                             <div id="demanda-indicador-${uidPartner}" class="mt-1.5 flex flex-col gap-0.5"></div>
+                            <div id="proposta-fixa-topo-${orderId}" class="mt-2"></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
