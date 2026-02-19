@@ -1471,7 +1471,12 @@ window.verificarVidaUtilChat = async (pedido) => {
 
     const agora = Date.now();
     // Recupera a última interação (ou a criação do pedido se nunca houve chat)
-    const ultimaInteracao = pedido.last_interaction_at ? pedido.last_interaction_at.toMillis() : pedido.created_at.toMillis();
+    // 🛡️ Blindagem: Se não houver data ainda (pedido acabou de nascer), ignora a verificação por enquanto
+    if (!pedido.created_at && !pedido.last_interaction_at) return;
+    
+    const ultimaInteracao = pedido.last_interaction_at ? 
+        (pedido.last_interaction_at.toMillis ? pedido.last_interaction_at.toMillis() : Date.now()) : 
+        (pedido.created_at && pedido.created_at.toMillis ? pedido.created_at.toMillis() : Date.now());
     const horasPassadas = (agora - ultimaInteracao) / (1000 * 60 * 60);
 
     // 🧠 LÓGICA DE TIERS: Modelo Ideal Atlivio
