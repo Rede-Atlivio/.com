@@ -940,16 +940,19 @@ function gerarPainelTempo(pedido, isProvider, orderId) {
 }
 
 function atualizarRelogioDOM(pedido) {
-    // 🚨 VIGIA DO ULTIMATO: Encerramento Automático
     const displayUltimato = document.getElementById('timer-ultimato');
+    const displayTimer = document.getElementById('timer-display');
+
+    // 🚨 VIGIA DO ULTIMATO: Encerramento Automático (Correção ReferenceError)
     if (pedido.modo_ultimato && pedido.ultimato_expira) {
         const agora = Date.now();
         const restante = pedido.ultimato_expira - agora;
         
         if (restante <= 0 && pedido.status !== 'negotiation_closed') {
-            // O tempo acabou: Executa o Martelo do Pica Grossa
-            console.warn("🔥 ULTIMATO EXPIRADO: Encerrando chat automaticamente...");
-            window.encerrarNegociacaoSilenciosa(pedido.id || orderId); 
+            console.warn("🔥 ULTIMATO EXPIRADO: Encerrando...");
+            // Correção: Usa o ID que vem dentro do objeto pedido
+            const currentOrderId = pedido.id || pedido.order_id || window.lastOpenedOrderId;
+            window.encerrarNegociacaoSilenciosa(currentOrderId); 
             if (displayUltimato) displayUltimato.innerText = "🚨 OFERTA EXPIRADA";
             return;
         } else if (displayUltimato && restante > 0) {
@@ -959,8 +962,7 @@ function atualizarRelogioDOM(pedido) {
         }
     }
 
-    const displayTimer = document.getElementById('timer-display');
-    if (!displayTimer || !pedido.real_start) return;
+    if (!displayTimer || !pedido.real_start) return;
 
     // LÓGICA PARA O CARD VERMELHO (ULTIMATO)
     if (displayUltimato && pedido.modo_ultimato && pedido.ultimato_expira) {
