@@ -24,9 +24,22 @@ window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
 window.finalizarServicoPassoFinal = (id) => finalizarServicoPassoFinalAction(id);
 window.voltarParaListaPedidos = () => {
-    document.getElementById('painel-chat-individual')?.classList.add('hidden');
-    const painelLista = document.getElementById('painel-pedidos');
-    if(painelLista) painelLista.classList.remove('hidden');
+    console.log("⬅️ Acionando retorno para lista...");
+    
+    // 1. Esconde o chat na marra
+    const chat = document.getElementById('painel-chat-individual');
+    if(chat) chat.classList.add('hidden');
+
+    // 2. Força o clique na aba de serviços (Isso é o que garante a volta no Desktop)
+    const tabServicos = document.getElementById('tab-servicos');
+    if(tabServicos) {
+        tabServicos.click(); 
+        console.log("✅ Voltando via gatilho de aba.");
+    } else {
+        // Se a aba falhar, tenta o plano B (mostrar o que estiver disponível)
+        const fallback = document.getElementById('painel-pedidos') || document.querySelector('.bg-white.rounded-3xl.shadow-xl.p-4');
+        if(fallback) fallback.classList.remove('hidden');
+    }
 };
 
 // 🔄 ROLAGEM RADICAL V24 (Correção para Windows/Desktop)
