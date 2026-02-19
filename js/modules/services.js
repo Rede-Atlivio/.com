@@ -305,35 +305,48 @@ export async function carregarPedidosAtivos() {
 }
 
 export async function carregarHistorico() {
-    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
-    if(!container) return;
+    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
+    if(!container) return;
     container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
 
     const uid = auth.currentUser.uid;
     try {
-        const q = query(collection(db, "orders"), where("client_id", "==", uid), where("status", "==", "completed"), orderBy("completed_at", "desc"));
+        // 🚀 Query Aberta: Busca tudo do cliente e filtra no código
+        const q = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         
         container.innerHTML = "";
-        if(snap.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Histórico vazio.</p>`; return; }
+        
+        // Status que pertencem ao histórico
+        const statusHistorico = ['completed', 'archived', 'negotiation_closed', 'cancelled', 'rejected'];
+        let contador = 0;
 
         snap.forEach(d => {
             const order = d.data();
-            const safeName = (order.provider_name || 'Prestador').replace(/'/g, "");
-            container.innerHTML += `
-                <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
-                    <div>
-                        <p class="font-bold text-xs text-gray-700">${safeName}</p>
-                        <p class="text-[10px] text-gray-400">${order.completed_at?.toDate().toLocaleDateString()}</p>
+            if (statusHistorico.includes(order.status)) {
+                contador++;
+                const safeName = (order.provider_name || 'Prestador').replace(/'/g, "");
+                // Se não tiver data de conclusão, usa a de criação
+                const dataExibicao = order.completed_at ? order.completed_at.toDate().toLocaleDateString() : order.created_at?.toDate().toLocaleDateString() || "---";
+                
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center animate-fadeIn">
+                        <div>
+                            <p class="font-bold text-xs text-gray-700">${safeName}</p>
+                            <p class="text-[10px] text-gray-400">${dataExibicao} • <span class="uppercase">${order.status.replace('_', ' ')}</span></p>
+                        </div>
+                        <div class="text-right">
+                            <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
+                            <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer mt-1">Avaliar ⭐</button>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                        <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-bold underline cursor-pointer mt-1">Avaliar ⭐</button>
-                    </div>
-                </div>
-            `;
+                `;
+            }
         });
-    } catch(e) { console.error(e); }
+
+        if(contador === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Histórico vazio.</p>`; }
+
+    } catch(e) { console.error("Erro ao carregar histórico:", e); }
 }
 
 export function switchServiceSubTab(tabName) {
