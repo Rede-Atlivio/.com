@@ -243,11 +243,12 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 <div class="p-2 px-3 flex items-center justify-between w-full">
                     <div class="flex items-center gap-2 min-w-0">
                         <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-1 hover:bg-gray-50 rounded-full transition">⬅</button>
+                        <div class="relative flex-shrink-0 cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                            <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-8 h-8 rounded-full border-2 border-blue-500 object-cover">
+                            <div id="status-indicador-${uidPartner}" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-gray-300"></div>
+                        </div>
                         <div class="flex flex-col leading-none cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
-                            <div class="flex items-center gap-1.5">
-                                <h3 class="font-black text-[11px] text-gray-800 uppercase italic leading-none truncate">${outroNome}</h3>
-                                <div id="status-indicador-${uidPartner}" class="w-2 h-2 rounded-full bg-gray-300 border border-white shadow-sm"></div>
-                            </div>
+                            <h3 class="font-black text-[11px] text-gray-800 uppercase italic leading-none truncate">${outroNome}</h3>
                             <p id="status-texto-${uidPartner}" class="text-[7px] font-black text-gray-400 uppercase tracking-tighter italic mt-0.5">offline</p>
                         </div>
                     </div>
