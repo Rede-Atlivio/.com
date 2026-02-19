@@ -280,7 +280,10 @@ export async function enviarPropostaAgora() {
                 </div>
             `;
         }
-
+// 🧹 RESET DE MEMÓRIA GINA: Mata o vício no ID antigo
+        mem_ProviderId = null;
+        mem_BasePrice = 0;
+        console.log("✅ Memória de solicitação limpa. Pronto para um novo pedido.");
     } catch (e) { 
         console.error("Erro ao enviar:", e);
         alert("Erro técnico: " + e.message); 
