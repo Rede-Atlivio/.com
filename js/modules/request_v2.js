@@ -208,8 +208,10 @@ export async function enviarPropostaAgora() {
 
     const btn = document.getElementById('btn-confirm-req');
     if(btn) {
+        if(btn.dataset.loading === "true") return; // Bloqueio físico imediato
+        btn.dataset.loading = "true";
         btn.disabled = true;
-        btn.innerHTML = `<span class="animate-pulse">Enviando... ⏳</span>`;
+        btn.innerHTML = `<span class="animate-pulse">PROCESSANDO... ⏳</span>`;
     }
 
     try {
