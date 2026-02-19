@@ -750,10 +750,17 @@ window.reportarProblema = async (orderId) => {
 };
 
 window.voltarParaListaPedidos = () => {
-    const chatIndiv = document.getElementById('painel-chat-individual');
-    const listaPed = document.getElementById('painel-pedidos');
-    if(chatIndiv) chatIndiv.classList.add('hidden');
-    if(listaPed) listaPed.classList.remove('hidden');
+    // 🔄 Ajuste de IDs: Esconde o chat e mostra o que estiver servindo de lista
+    document.getElementById('painel-chat-individual')?.classList.add('hidden');
+    
+    // Tenta encontrar o painel de pedidos pelo ID antigo ou pela classe principal
+    const painelLista = document.getElementById('painel-pedidos') || document.querySelector('.bg-white.rounded-3xl.shadow-xl.p-4'); 
+    if(painelLista) {
+        painelLista.classList.remove('hidden');
+        console.log("✅ Voltando para a lista encontrada.");
+    } else {
+        console.error("❌ Erro: Nenhum painel de lista encontrado para voltar.");
+    }
 };
 
 // ============================================================================
