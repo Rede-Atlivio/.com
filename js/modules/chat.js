@@ -236,7 +236,60 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
         <div class="h-1 w-full bg-gray-100">
             <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
         </div>
-    `;
+    `;
+
+    // Injeção da Lógica Gold Elite (Geometria 67 + Cor 78)
+    setTimeout(() => {
+        const cards = document.querySelectorAll('.max-w-\\[290px\\]');
+        cards.forEach((card) => {
+            card.style.setProperty('background', '#020617', 'important');
+            card.style.setProperty('border', '2px solid #fbbf24', 'important');
+            card.style.setProperty('width', '340px', 'important'); 
+            card.style.setProperty('max-width', '340px', 'important'); 
+            card.style.setProperty('min-height', '75px', 'important');
+            card.style.setProperty('border-radius', '10px', 'important');
+            card.style.setProperty('margin', '12px auto', 'important');
+            card.style.setProperty('box-shadow', '0 4px 15px rgba(0,0,0,0.8)', 'important');
+
+            const container = card.querySelector('.p-4') || card.children[1];
+            if (container) {
+                container.style.display = "flex";
+                container.style.flexDirection = "row";
+                container.style.justifyContent = "space-between";
+                container.style.alignItems = "center";
+                container.style.padding = "8px 14px";
+                container.style.gap = "8px";
+            }
+
+            const elementos = card.querySelectorAll('p, span, b, div');
+            elementos.forEach(el => {
+                if (el.children.length === 0) {
+                    if (el.innerText.includes('R$') || (el.innerText.match(/\d/) && el.innerText.includes(','))) {
+                        el.style.setProperty('color', '#fbbf24', 'important');
+                        el.style.setProperty('-webkit-text-fill-color', '#fbbf24', 'important');
+                        el.style.setProperty('font-size', '1.25rem', 'important');
+                        el.style.setProperty('font-weight', '950', 'important');
+                        el.style.setProperty('text-shadow', '0 0 10px rgba(251,191,36,0.5)', 'important');
+                    }
+                    else if (el.innerText.includes('Investimento') || el.innerText.includes('Para aceitar') || el.innerText.includes('topo deste chat')) {
+                        el.style.setProperty('color', '#FFFFFF', 'important');
+                        el.style.setProperty('-webkit-text-fill-color', '#FFFFFF', 'important');
+                        el.style.setProperty('font-weight', '900', 'important');
+                        el.style.setProperty('font-size', el.innerText.includes('Investimento') ? '8px' : '7.5px', 'important');
+                    }
+                }
+            });
+
+            card.querySelectorAll('span').forEach(s => {
+                if (s.innerText.includes('ACEITAR E FECHAR')) {
+                    s.style.setProperty('color', '#22c55e', 'important');
+                    s.style.setProperty('-webkit-text-fill-color', '#22c55e', 'important');
+                    s.style.setProperty('text-shadow', '0 0 5px #22c55e', 'important');
+                    s.style.setProperty('font-weight', '950', 'important');
+                }
+            });
+        });
+    }, 100);
 
     const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
