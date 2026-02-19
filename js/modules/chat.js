@@ -368,26 +368,36 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         const valorAcordo = parseFloat(pedido.offer_value) || 0;
         const reservaCalculada = valorAcordo * (pct / 100);
 
-        return `<div id="banner-fechamento-v12" class="bg-white border-2 border-blue-600 ${isPC ? 'p-2 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-bounce-subtle">
-            <div class="absolute top-0 left-0 w-1.5 h-full bg-blue-600"></div>
-            <div class="flex justify-between items-center ${isPC ? 'mb-1' : 'mb-2'}">
-                <div>
-                    <p class="${isPC ? 'text-[10px]' : 'text-sm'} font-black text-blue-900 leading-none">🤝 FINALIZAR NEGOCIAÇÃO</p>
-                    <p class="text-[8px] text-gray-500 uppercase font-bold tracking-tight">Confirme para reservar sua agenda</p>
+       return `<div id="banner-fechamento-v12" class="bg-slate-900 border-2 border-slate-700 ${isPC ? 'p-3 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-fadeIn">
+            <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+            
+            <div class="flex justify-between items-center ${isPC ? 'mb-2' : 'mb-4'} relative z-10">
+                <div class="flex flex-col leading-none">
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.1em]">Investimento Total</p>
+                    <p class="text-2xl font-black text-emerald-400 mt-1 tracking-tighter">R$ ${valorAcordo.toFixed(2).replace('.', ',')}</p>
                 </div>
-                <span class="${isPC ? 'text-sm' : 'text-xl'}">✍️</span>
+                <div class="text-right leading-none max-w-[120px]">
+                    <p class="text-[7px] text-amber-400 font-black uppercase italic animate-pulse leading-tight">
+                        ⚠️ Disponibilidade sujeita a alteração
+                    </p>
+                </div>
             </div>
-            <div class="flex flex-col gap-1.5">
-                <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white ${isPC ? 'py-2' : 'py-4'} rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
+
+            <div class="flex flex-col gap-2 relative z-10">
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 ${isPC ? 'py-2.5' : 'py-4'} rounded-xl text-[11px] font-black uppercase shadow-lg transition active:scale-95 transform">
                     🤝 ACEITAR E FECHAR AGORA
                 </button>
-                <p class="text-[7px] text-red-500 font-black uppercase text-center italic tracking-tighter">
-                    ⚠️ ATENÇÃO: Confirme tudo no chat antes de clicar. Esta ação é irreversível e gera reserva de saldo.
+                <p class="text-[6px] text-slate-500 font-bold uppercase text-center tracking-widest italic">
+                    ⚠️ Confirme os detalhes no chat antes. Esta ação é <span class="text-amber-500 font-black">irreversível</span>.
                 </p>
             </div>
-            <div class="${isPC ? 'mt-1 p-1' : 'mt-3 p-2'} bg-amber-50 rounded-lg flex gap-2 items-center">
-                <span class="${isPC ? 'text-[10px]' : 'text-xs'}">🔒</span>
-                <p class="${isPC ? 'text-[8px]' : 'text-[9px]'} text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia: R$ ${reservaCalculada.toFixed(2)}</p>
+
+            <div class="${isPC ? 'mt-2 p-1.5' : 'mt-4 p-2'} bg-slate-800/50 rounded-lg flex justify-between items-center border border-slate-700/50 relative z-10">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px]">🔒</span>
+                    <p class="text-[8px] text-amber-500 font-black uppercase tracking-tighter italic">Garantia ATLIVIO: R$ ${reservaCalculada.toFixed(2).replace('.', ',')}</p>
+                </div>
+                <span class="text-[6px] text-slate-500 font-bold uppercase tracking-tighter">Reserva de saldo segura</span>
             </div>
         </div>`;
     }
