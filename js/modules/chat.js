@@ -280,7 +280,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 </div>
                 
                <div id="scroll-area-v16" class="custom-scrollbar p-4 flex-1" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #f8fafc; height: 100%;">
-                    <div id="bubbles-area" class="flex flex-col gap-3" style="padding-bottom: 100px; width: 100%;"></div>
+                    <div id="bubbles-area" class="flex flex-col gap-3" style="padding-bottom: 20px; width: 100%;"></div>
                 </div>
             </div>
 
