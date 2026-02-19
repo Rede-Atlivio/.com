@@ -303,10 +303,16 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
                         ${step < 3 ? `
                             <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
+                            <div class="flex gap-2">
                             <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
                                 <span>🎯 PROPOSTA</span>
-                                <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar Valor</span>
+                                <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar</span>
                             </button>
+                            <button onclick="window.ativarModoUltimato('${orderId}')" class="bg-red-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center animate-pulse transform active:scale-95 transition">
+                                <span>🔥 ULTIMATO</span>
+                                <span class="text-[7px] opacity-90 uppercase tracking-tighter">Última Oferta</span>
+                            </button>
+                        </div>
                         ` : ''}
                     
                     ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full">🏁 CONFIRMAR & PAGAR</button>` : ''}
