@@ -274,90 +274,39 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
     const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
-    container.innerHTML = `
-        <div class="flex flex-col h-full bg-slate-50">
-            <div class="bg-white shadow-sm z-30">
-                <div class="p-2 flex flex-col border-b bg-white sticky top-0 z-20">
-                    <div class="w-full flex justify-center pb-2">
-                        ${(step < 3 || step === 4) && pedido.status !== 'dispute' ? 
-                            `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="text-[9px] font-black text-gray-400 hover:text-red-500 bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100 shadow-sm transition uppercase tracking-widest italic">Encerrar Conversa ✋</button>` : 
-                            `<span class="text-[8px] font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 uppercase">🔒 Acordo em Andamento</span>`
-                        }
-                    </div>
-                    
-                    <div class="flex items-center justify-between w-full">
-                        <div class="flex items-center gap-3 flex-shrink-0" style="overflow: hidden !important;">
-                    <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full flex-shrink-0">⬅</button>
-                    <div class="relative group flex-shrink-0" style="cursor: pointer; overflow: hidden;" onclick="window.verPerfilCompleto('${uidPartner}')">
-                            <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
-                            <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">🔍</div>
-                        </div>
-                        <div class="cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
-                          <div class="flex items-center gap-1.5 flex-shrink-0" style="overflow: hidden;">
-                                <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
-                                <div id="status-indicador-${uidPartner}" class="w-1.5 h-1.5 rounded-full bg-gray-300 shadow-[0_0_5px_rgba(0,0,0,0.1)]"></div>
-                            </div>
-                            <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic leading-none">offline</p>
-                            <div id="demanda-indicador-${uidPartner}" class="mt-1.5 flex flex-col gap-0.5"></div>
-                            <div id="engajamento-indicador-${uidPartner}" class="mt-1 flex items-center gap-1"></div>
-                            <div id="proposta-fixa-topo-${orderId}" class="mt-2"></div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-[10px] font-black uppercase shadow-sm">📞 Ligar Agora</a>` : ''}
-                    </div>
-                </div> </div> ${stepsHTML}
-            ${timeHTML}
-        </div>
-
-           <div id="chat-messages" class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden" style="height: 100%; min-height: 0;">
-                <div id="header-estatico-chat" class="flex-shrink-0 w-full bg-white z-[50] border-b shadow-sm">
-                    ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
-                    <div id="contextual-dica-area" class="bg-amber-50/50" style="display: none; height: 0; overflow: hidden;"></div>
-                </div>
+    <div class="p-2 flex flex-col border-b bg-white sticky top-0 z-[100] shadow-sm">
+            <div class="grid grid-cols-[1fr_2fr_1fr] items-center gap-2 w-full">
                 
-               <div id="scroll-area-v16" class="custom-scrollbar p-4" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #f8fafc; min-height: 0;">
-                    <div id="bubbles-area" class="flex flex-col gap-3" style="padding-bottom: 100px; width: 100%;"></div>
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="relative flex-shrink-0 cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                        <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-8 h-8 rounded-full border-2 border-blue-500 object-cover">
+                        <div id="status-indicador-${uidPartner}" class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white bg-gray-300"></div>
+                    </div>
+                    <div class="flex flex-col min-w-0 cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                        <h3 class="font-black text-[9px] text-gray-800 uppercase italic truncate leading-none">${outroNome}</h3>
+                        <div id="engajamento-indicador-${uidPartner}" class="mt-0.5"></div>
+                    </div>
+                </div>
+
+                <div id="proposta-fixa-topo-${orderId}" class="flex justify-center"></div>
+
+                <div class="flex items-center justify-end gap-1.5">
+                    <button onclick="window.voltarParaListaPedidos()" class="text-blue-500 hover:bg-blue-50 p-1.5 rounded-lg transition active:scale-90">
+                        <span class="text-sm">⬅</span>
+                    </button>
+                    ${(step < 3 || step === 4) && pedido.status !== 'dispute' ? 
+                        `<button onclick="window.confirmarEncerramentoChat('${orderId}')" class="bg-red-50 text-red-500 w-7 h-7 flex items-center justify-center rounded-lg border border-red-100 font-black text-xs hover:bg-red-100 transition active:scale-90" title="Encerrar">✕</button>` : 
+                        `<span class="text-[7px] font-black text-amber-600 bg-amber-50 px-1.5 py-1 rounded-md border border-amber-100">🔒</span>`
+                    }
                 </div>
             </div>
 
-           ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
-            <div class="bg-white border-t z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
-                <button onclick="window.toggleFerramentasChat()" class="w-full py-1.5 bg-gray-50 border-b flex items-center justify-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition">
-                    <span id="icon-ferramentas">➕</span> <span id="txt-ferramentas">Mais Opções</span>
-                </button>
-
-                <div id="gaveta-ferramentas" class="hidden animate-fadeIn">
-                    <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
-                    <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
-                    <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
-                    <button onclick="window.sugerirFrase('A ATLIVIO segura a reserva até o serviço ser concluído.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">🔒 Garantia</button>
-                </div>
-
-                <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    ${step < 3 ? `
-                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
-                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
-                            <span>🎯 PROPOSTA</span>
-                            <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar Valor</span>
-                        </button>
-                    ` : ''}
-                    
-                    ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full">🏁 CONFIRMAR & PAGAR</button>` : ''}
-                    
-                    <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
-                </div>
-                
-                </div> <div class="px-3 py-3 flex gap-2 items-center bg-white">
-                    <input type="text" id="chat-input-msg" 
-                        placeholder="${isProvider ? 'Explique como fará o serviço...' : 'Descreva o que precisa, datas e local...'}" 
-                        oninput="let uIdP = '${uidPartner}'; if(this.value.length > 0) { window.atualizarMeuStatus('online', uIdP); } clearTimeout(window.typingTimer); window.typingTimer = setTimeout(() => window.atualizarMeuStatus('online', null), 2000);"
-                        class="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none border border-transparent focus:border-blue-200">
-                    <button onclick="window.enviarMensagemChat('${orderId}', ${step})" class="bg-slate-900 text-white w-12 h-12 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition">➤</button>
-                </div>
-            </div>` : ''}
+            <div class="w-full text-center mt-1 border-t border-gray-50 pt-1">
+                 <p class="text-[5px] text-slate-400 font-black uppercase tracking-tighter italic leading-none">
+                    ⚠️ Confirme no chat antes. Ação <span class="text-amber-500">irreversível</span> e disponibilidade sujeita a alteração.
+                </p>
+            </div>
         </div>
-    `;
     
     if(window.timerInterval) clearInterval(window.timerInterval);
     window.timerInterval = setInterval(() => atualizarRelogioDOM(pedido), 1000);
