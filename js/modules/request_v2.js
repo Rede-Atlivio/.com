@@ -71,6 +71,20 @@ function garantirContainerRadar() {
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
 export async function abrirModalSolicitacao(providerId, providerName, initialPrice) {
+    // 🚀 RESET DE SEGURANÇA: Garante que o novo pedido não herde lixo do chat anterior
+    mem_ProviderId = providerId;
+    mem_ProviderName = providerName;
+    mem_BasePrice = parseFloat(initialPrice) || 0;
+    mem_CurrentOffer = mem_BasePrice;
+    
+    // Limpa o botão para não ficar travado em "Processando"
+    const btnConfirm = document.getElementById('btn-confirm-req');
+    if(btnConfirm) {
+        btnConfirm.disabled = false;
+        btnConfirm.dataset.loading = "false";
+        btnConfirm.innerText = "ENVIAR SOLICITAÇÃO 🚀";
+    }
+
     if(!auth.currentUser) return alert("⚠️ Faça login para solicitar serviços!");
 
     try {
