@@ -1313,16 +1313,17 @@ window.atualizarCronometro = (pedido) => atualizarRelogioDOM(pedido);
 
 // ✋ AÇÃO: ENCERRAR CONVERSA (Botão do Topo)
 window.encerrarNegociacao = async (orderId) => {
-    if(!confirm("✋ ENCERRAR NEGOCIAÇÃO?\n\nEste chat será arquivado e a solicitação cancelada.\nConfirmar?")) return;
+    if(!confirm("✋ ENCERRAR E OCULTAR?\n\nA conversa será movida para o arquivo morto e não aparecerá mais na sua lista.\n\nConfirmar?")) return;
     try {
         await updateDoc(doc(db, "orders", orderId), { 
-            status: 'negotiation_closed',
+            status: 'archived', // Status especial para o Limbo
+            archived_by: auth.currentUser.uid,
             closed_at: serverTimestamp() 
         });
-        alert("Conversa encerrada.");
+        alert("✅ Conversa arquivada com sucesso.");
         window.voltarParaListaPedidos();
     } catch(e) { 
-        console.error("Erro ao encerrar:", e); 
+        console.error("Erro ao arquivar:", e); 
     }
 };
 
