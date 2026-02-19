@@ -192,32 +192,22 @@ function atualizarResumoPropostaTopo(orderId, pedido, isProvider) {
     const valor = parseFloat(pedido.offer_value || 0);
     if (valor <= 0) return;
 
-    // Gina: Design Slim e Imponente
     container.innerHTML = `
-        <div class="flex items-center justify-between bg-slate-900 text-white p-1.5 px-3 rounded-lg shadow-lg border border-slate-700 animate-fadeIn">
-            <div class="flex flex-col">
-                <span class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">Investimento</span>
-                <span class="text-[11px] font-black leading-none text-emerald-400">R$ ${valor.toFixed(2).replace('.', ',')}</span>
+        <div class="flex items-center gap-2 bg-slate-900 text-white p-1 px-2 rounded-lg shadow-md border border-slate-700">
+            <div class="flex flex-col leading-none">
+                <span class="text-[5px] text-slate-400 font-bold uppercase">Investimento</span>
+                <span class="text-[10px] font-black text-emerald-400">R$ ${valor.toFixed(2).replace('.', ',')}</span>
             </div>
-           ${!isProvider ? `
-                <div class="flex flex-col items-end gap-1 max-w-[180px]">
-                    <button onclick="window.confirmarAcordo('${orderId}', true)" class="bg-emerald-500 hover:bg-emerald-400 text-white text-[10px] font-black px-4 py-1.5 rounded-md shadow-sm transition active:scale-95 uppercase leading-none">
-                        🤝 Aceitar
-                    </button>
-                    <p class="text-[5px] text-slate-400 font-bold uppercase leading-tight text-right italic">
-                        ⚠️ Confirme os detalhes no chat antes de clicar. Esta ação é <span class="text-amber-500">irreversível</span>.
-                    </p>
-                    <span class="text-[5px] text-amber-400 font-black uppercase animate-pulse leading-none italic">
-                        ⚠️ Disponibilidade sujeita a alteração
-                    </span>
-                </div>
+            ${!isProvider ? `
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="bg-emerald-500 text-white text-[8px] font-black px-2 py-1 rounded-md active:scale-95 transition uppercase">
+                    🤝 Aceitar
+                </button>
             ` : `
-                <span class="text-[7px] font-bold text-slate-500 uppercase italic">Aguardando Cliente...</span>
+                <span class="text-[6px] font-bold text-slate-500 uppercase italic">Aguardando...</span>
             `}
         </div>
     `;
 }
-
 // Gina: Benção do Engajamento - Calcula e exibe o tempo de resposta
 async function injetarMétricasEngajamento(uidPartner) {
     const container = document.getElementById(`engajamento-indicador-${uidPartner}`);
