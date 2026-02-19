@@ -864,17 +864,34 @@
     });
 </script>          
           
-<script type="module" src="./js/app.js?v=18.0"></script>
-<script type="module" src="./js/auth.js?v=18.0"></script>
-<script type="module" src="./js/modules/missions.js?v=18.0"></script>
-<script type="module" src="./js/modules/opportunities.js?v=18.0"></script>
-<script type="module" src="./js/modules/services.js?v=18.0"></script>
-<script type="module" src="./js/modules/products.js?v=18.0"></script>
-<script type="module" src="./js/modules/request_v2.js?v=18.0"></script> 
-<script type="module" src="./js/modules/jobs.js?v=18.0"></script>
-<script type="module" src="./js/modules/chat.js?v=18.0"></script>
-<script type="module" src="./js/modules/wallet.js?v=18.0"></script>
-<script type="module" src="./js/modules/reviews.js?v=18.0"></script>
+<script>
+    // 🚀 CARREGADOR INTELIGENTE ATLIVIO - V31
+    // Gera uma versão baseada no dia e hora (muda a cada minuto)
+    const agora = new Date();
+    const VERSAO_SISTEMA = agora.getFullYear() + "" + (agora.getMonth() + 1) + "" + agora.getDate() + "_" + agora.getHours() + agora.getMinutes();
+
+    const scriptsModulos = [
+        "./js/app.js",
+        "./js/auth.js",
+        "./js/modules/missions.js",
+        "./js/modules/opportunities.js",
+        "./js/modules/services.js",
+        "./js/modules/products.js",
+        "./js/modules/request_v2.js",
+        "./js/modules/jobs.js",
+        "./js/modules/chat.js",
+        "./js/modules/wallet.js",
+        "./js/modules/reviews.js"
+    ];
+
+    scriptsModulos.forEach(src => {
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.src = `${src}?v=${VERSAO_SISTEMA}`;
+        document.head.appendChild(s);
+    });
+    console.log("🛰️ Módulos sincronizados na versão: " + VERSAO_SISTEMA);
+</script>
 
 <script type="module">
     import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
