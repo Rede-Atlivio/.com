@@ -1198,18 +1198,23 @@ export function iniciarGatilhosContextuais(orderId, step) {
         const container = document.getElementById('contextual-dica-area');
         if (!container) return;
         
+        // 🚀 Ajuste V30: Só mostra o container se houver dica
+        container.style.display = 'block';
+        container.style.height = 'auto';
+        container.style.marginBottom = '10px';
+        
         const dicaHtml = `
-            <div class="flex justify-center my-4 animate-fadeIn">
-                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[80%] text-center shadow-sm">
+            <div class="flex justify-center my-2 animate-fadeIn">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-xl max-w-[90%] text-center shadow-sm">
                     <p class="text-[10px] text-amber-800 font-bold uppercase mb-1">💡 Dica ATLIVIO:</p>
                     <p class="text-[11px] text-amber-900 leading-tight font-medium">
                         Serviços com reserva confirmada têm prioridade total. <br>
-                        <span class="font-black">⚠️ A troca de contatos é proibida antes do fechamento do acordo.</span>
+                        <span class="font-black">⚠️ A troca de contatos é proibida antes do acordo.</span>
                     </p>
                 </div>
             </div>`;
             
-        container.insertAdjacentHTML('beforeend', dicaHtml);
+        container.innerHTML = dicaHtml; // Usa innerHTML para limpar lixos anteriores
         if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
         
         console.log("💡 Gatilho Contextual ativado.");
