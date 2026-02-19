@@ -1362,3 +1362,23 @@ window.toggleFerramentasChat = () => {
     // Garante que o scroll ajuste após mudar o tamanho do rodapé
     if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
 };
+window.ativarModoUltimato = async (orderId) => {
+    if (!confirm("🚨 ATIVAR ÚLTIMA OFERTA?\n\nIsso iniciará um cronômetro de pressão para o cliente. Se ele não aceitar a tempo, a negociação será ENCERRADA AUTOMATICAMENTE.\n\nConfirmar envio?")) return;
+
+    const minutos = prompt("Em quantos minutos a oferta expira?", "5");
+    const tempoFinal = Date.now() + (parseInt(minutos) * 60000);
+
+    try {
+        await updateDoc(doc(db, "orders", orderId), {
+            modo_ultimato: true,
+            ultimato_expira: tempoFinal,
+            offer_bonus: "🔥 ÚLTIMA CHANCE: ACEITE AGORA OU PERDERÁ A VAGA"
+        });
+
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `🔥 O prestador enviou um ULTIMATO! Esta proposta expira em ${minutos} minutos.`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+    } catch (e) { console.error(e); }
+};
