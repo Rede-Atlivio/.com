@@ -212,10 +212,25 @@ export async function enviarPropostaAgora() {
     }
 
     try {
-        const dataServico = document.getElementById('req-date')?.value || "A combinar";
-        const horaServico = document.getElementById('req-time')?.value || "A combinar";
+        // 🛡️ TRAVA ANTI-RESSURREIÇÃO: Verifica se já existe negociação ativa antes de criar
+        const qCheck = query(
+            collection(db, "orders"), 
+            where("client_id", "==", user.uid), 
+            where("provider_id", "==", mem_ProviderId),
+            where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress"])
+        );
+        const snapCheck = await getDocs(qCheck);
 
-        // 2. CRIA O PEDIDO NO BANCO (SEM TRAVA FINANCEIRA)
+        if (!snapCheck.empty) {
+            const pedidoAtivo = snapCheck.docs[0];
+            alert("⚠️ Você já possui uma negociação ativa com este profissional.");
+            return window.irParaChatComSucesso(pedidoAtivo.id);
+        }
+
+        const dataServico = document.getElementById('req-date')?.value || "A combinar";
+        const horaServico = document.getElementById('req-time')?.value || "A combinar";
+
+        // 2. CRIA O PEDIDO NO BANCO (ID TOTALMENTE NOVO)
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
