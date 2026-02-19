@@ -940,8 +940,27 @@ function gerarPainelTempo(pedido, isProvider, orderId) {
 }
 
 function atualizarRelogioDOM(pedido) {
-    const displayTimer = document.getElementById('timer-display');
-    if (!displayTimer || !pedido.real_start) return;
+    // Relógio de Execução (Verde)
+    const displayTimer = document.getElementById('timer-display');
+    // Relógio de Ultimato (Vermelho)
+    const displayUltimato = document.getElementById('timer-ultimato');
+
+    // LÓGICA PARA O CARD VERMELHO (ULTIMATO)
+    if (displayUltimato && pedido.modo_ultimato && pedido.ultimato_expira) {
+        const agora = Date.now();
+        const restante = pedido.ultimato_expira - agora;
+        
+        if (restante <= 0) {
+            displayUltimato.innerText = "🚨 OFERTA EXPIRADA";
+            window.encerrarNegociacao(pedido.id || ""); // Opcional: auto-encerra
+        } else {
+            const m = Math.floor((restante % 3600000) / 60000).toString().padStart(2, '0');
+            const s = Math.floor((restante % 60000) / 1000).toString().padStart(2, '0');
+            displayUltimato.innerText = `🚨 EXPIRA EM ${m}:${s}`;
+        }
+    }
+
+    if (!displayTimer || !pedido.real_start) return;
 
     // Converte o início do banco para milissegundos
     const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
