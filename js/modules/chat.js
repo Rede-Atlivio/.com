@@ -181,6 +181,35 @@ async function injetarGatilhosDemanda(uidPartner, isProvider, categoriaId) {
     } catch (e) { console.error("Erro Gina Gatilhos:", e); }
 }
 
+// Gina: Benção do Martelo de Vendas - Mantém o preço na cara do cliente
+function atualizarResumoPropostaTopo(orderId, pedido, isProvider) {
+    const container = document.getElementById(`proposta-fixa-topo-${orderId}`);
+    if (!container || pedido.system_step >= 3) {
+        if (container) container.innerHTML = "";
+        return;
+    }
+
+    const valor = parseFloat(pedido.offer_value || 0);
+    if (valor <= 0) return;
+
+    // Gina: Design Slim e Imponente
+    container.innerHTML = `
+        <div class="flex items-center justify-between bg-slate-900 text-white p-1.5 px-3 rounded-lg shadow-lg border border-slate-700 animate-fadeIn">
+            <div class="flex flex-col">
+                <span class="text-[7px] text-slate-400 font-bold uppercase tracking-tighter">Investimento</span>
+                <span class="text-[11px] font-black leading-none text-emerald-400">R$ ${valor.toFixed(2).replace('.', ',')}</span>
+            </div>
+            ${!isProvider ? `
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="bg-emerald-500 hover:bg-emerald-400 text-white text-[9px] font-black px-3 py-1.5 rounded-md shadow-sm transition active:scale-95 uppercase">
+                    🤝 Aceitar
+                </button>
+            ` : `
+                <span class="text-[7px] font-bold text-slate-500 uppercase italic">Aguardando Cliente...</span>
+            `}
+        </div>
+    `;
+}
+
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
