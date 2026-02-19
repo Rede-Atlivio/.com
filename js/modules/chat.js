@@ -151,9 +151,9 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
         <div class="flex flex-col h-full bg-slate-50">
             <div class="bg-white shadow-sm z-30">
                 <div class="p-3 flex items-center justify-between border-b flex-shrink-0 overflow-hidden">
-                    <div class="flex items-center gap-3 overflow-hidden">
-                        <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full">⬅</button>
-                        <div class="relative group cursor-pointer" onclick="window.verPerfilCompleto('${uidPartner}')">
+                   <div class="flex items-center gap-3 flex-shrink-0" style="overflow: hidden !important;">
+                    <button onclick="window.voltarParaListaPedidos()" class="text-gray-400 p-2 hover:bg-gray-50 rounded-full flex-shrink-0">⬅</button>
+                    <div class="relative group flex-shrink-0" style="cursor: pointer; overflow: hidden;" onclick="window.verPerfilCompleto('${uidPartner}')">
                             <img src="${partnerData.photoURL || 'https://ui-avatars.com/api/?name=' + outroNome}" class="w-10 h-10 rounded-full border-2 border-blue-500 object-cover">
                             <div class="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 text-[8px] font-bold shadow-sm">🔍</div>
                         </div>
