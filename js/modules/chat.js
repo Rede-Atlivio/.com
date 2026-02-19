@@ -410,9 +410,14 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
                 </div>
                 <span class="${isPC ? 'text-sm' : 'text-xl'}">✍️</span>
             </div>
-            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white ${isPC ? 'py-2' : 'py-4'} rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
-                🤝 ACEITAR E FECHAR AGORA
-            </button>
+            <div class="flex flex-col gap-1.5">
+                <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-blue-600 text-white ${isPC ? 'py-2' : 'py-4'} rounded-xl text-[10px] font-black uppercase shadow-lg hover:bg-blue-700 active:scale-95 transition transform">
+                    🤝 ACEITAR E FECHAR AGORA
+                </button>
+                <p class="text-[7px] text-red-500 font-black uppercase text-center italic tracking-tighter">
+                    ⚠️ ATENÇÃO: Confirme tudo no chat antes de clicar. Esta ação é irreversível e gera reserva de saldo.
+                </p>
+            </div>
             <div class="${isPC ? 'mt-1 p-1' : 'mt-3 p-2'} bg-amber-50 rounded-lg flex gap-2 items-center">
                 <span class="${isPC ? 'text-[10px]' : 'text-xs'}">🔒</span>
                 <p class="${isPC ? 'text-[8px]' : 'text-[9px]'} text-amber-800 font-bold leading-tight uppercase tracking-tighter">Garantia: R$ ${reservaCalculada.toFixed(2)}</p>
