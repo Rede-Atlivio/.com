@@ -184,7 +184,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 ${timeHTML}
             </div>
 
-           <div id="chat-messages" class="flex-1 bg-slate-50 relative" style="display: grid; grid-template-rows: auto 1fr auto; height: 100%; max-height: 100%; overflow: hidden !important;">
+           <div id="chat-messages" class="flex-1 bg-slate-50 relative" style="display: grid; grid-template-rows: auto 1fr auto; height: calc(100% - 93px); overflow: hidden !important;">
                 <div id="header-estatico-chat" class="flex-shrink-0 w-full bg-white z-[50] border-b shadow-sm">
                     ${gerarBannerEtapa(step, isProvider, pedido, orderId)}
                     <div id="contextual-dica-area" class="bg-amber-50/50"></div>
