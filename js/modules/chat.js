@@ -1178,35 +1178,38 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 💎 V78: MODELO PERFECT FRAME (Fidelidade Absoluta ao Robô)
-        const htmlProposta = `
-            <div class="my-3 border-2 border-[#fbbf24] rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.8)] bg-[#020617] animate-fadeIn mx-auto w-[340px] max-w-[340px] min-h-[75px]">
-                <div class="bg-black text-[#fbbf24] text-[7px] font-black text-center py-1 uppercase tracking-[0.2em] flex items-center justify-center gap-2 border-b border-[#fbbf24]">
-                    <span>💎</span> NOVA PROPOSTA COMERCIAL <span>💎</span>
-                </div>
-                
-                <div class="p-2 px-3 flex flex-row items-center justify-between w-full gap-1">
-                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                        <p style="color: #FFFFFF !important; font-size: 8px !important; font-weight: 900 !important; text-transform: uppercase; margin: 0;">Investimento Total</p>
-                        <div style="display: flex; align-items: baseline; gap: 4px;">
-                            <span style="color: #fbbf24 !important; font-size: 12px !important; font-weight: 950 !important;">R$</span>
-                            <span style="color: #fbbf24 !important; font-size: 1.25rem !important; font-weight: 950 !important; text-shadow: 0 0 10px rgba(251,191,36,0.5);">${valor.toFixed(2).replace('.', ',')}</span>
-                        </div>
+        // 💎 V78: MODELO PERFECT FRAME (Geometria 67 + Fidelidade Absoluta)
+        const htmlProposta = `
+            <div class="my-3 border-2 border-[#fbbf24] rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.8)] bg-[#020617] animate-fadeIn mx-auto w-[340px] max-w-[340px] min-h-[75px]">
+                <div class="bg-black text-[#fbbf24] text-[7px] font-black text-center py-1 uppercase tracking-[0.2em] flex items-center justify-center gap-2 border-b border-[#fbbf24]">
+                    <span>💎</span> NOVA PROPOSTA COMERCIAL <span>💎</span>
+                </div>
+                
+                <div class="p-3 flex flex-row items-center justify-between w-full">
+                    <div class="flex flex-col items-start leading-tight">
+                        <p class="text-white text-[8px] font-black uppercase tracking-tighter m-0">Investimento Total</p>
+                        <div class="flex items-baseline gap-1 mt-0.5">
+                            <span class="text-[#fbbf24] text-[11px] font-black">R$</span>
+                            <span class="text-[#fbbf24] text-[1.25rem] font-black tracking-tighter drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]">${valor.toFixed(2).replace('.', ',')}</span>
+                        </div>
                     </div>
 
-                                        <div style="background: rgba(251, 191, 36, 0.2); padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; min-width: 80px;">
-                        <span style="font-size: 14px;">🎁</span>
-                        <p style="color: #fbbf24 !important; font-size: 8px !important; font-weight: 900 !important; text-transform: uppercase; margin: 0; leading-tight: 1;">${labelBeneficio}</p>
-                    </div>
+                    <div class="bg-[rgba(251,191,36,0.15)] px-2.5 py-1.5 rounded-lg border border-[#fbbf24]/30 flex items-center gap-2 mx-1">
+                        <span class="text-base">🎁</span>
+                        <div class="flex flex-col">
+                            <p class="text-[#fbbf24] text-[8px] font-black uppercase leading-[1] m-0">${labelBeneficio}</p>
+                            <p class="text-[#fbbf24]/60 text-[5px] font-bold uppercase m-0">Exclusivo</p>
+                        </div>
+                    </div>
 
-                                        <div style="max-width: 90px; text-align: right;">
-                        <p style="color: #FFFFFF !important; font-size: 7.5px !important; font-weight: 900 !important; margin: 0; line-height: 1.1;">
-                            Clique em <span style="color: #22c55e !important; text-shadow: 0 0 5px #22c55e;">🤝 ACEITAR E FECHAR</span> no topo.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        `;
+                    <div class="max-w-[85px] text-right">
+                        <p class="text-white text-[7.5px] font-black leading-[1.1] m-0">
+                            Para aceitar, clique em <span class="text-[#22c55e] drop-shadow-[0_0_5px_#22c55e]">🤝 ACEITAR E FECHAR</span> no topo.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        `;
 
         await addDoc(collection(db, `chats/${orderId}/messages`), {
             text: htmlProposta,
