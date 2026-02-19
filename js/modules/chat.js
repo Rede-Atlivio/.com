@@ -24,21 +24,21 @@ window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
 window.finalizarServicoPassoFinal = (id) => finalizarServicoPassoFinalAction(id);
 window.voltarParaListaPedidos = () => {
-    console.log("⬅️ Acionando retorno para lista...");
+    console.log("⬅️ Executando Minimizar e Voltar...");
     
-    // 1. Esconde o chat na marra
     const chat = document.getElementById('painel-chat-individual');
-    if(chat) chat.classList.add('hidden');
+    if(chat) {
+        // 1. Mata o estilo fixo que impede o chat de sumir
+        chat.style.display = 'none'; 
+        // 2. Garante a classe hidden por segurança
+        chat.classList.add('hidden');
+    }
 
-    // 2. Força o clique na aba de serviços (Isso é o que garante a volta no Desktop)
+    // 3. Força o clique na aba de serviços para mostrar os pedidos atrás
     const tabServicos = document.getElementById('tab-servicos');
     if(tabServicos) {
-        tabServicos.click(); 
-        console.log("✅ Voltando via gatilho de aba.");
-    } else {
-        // Se a aba falhar, tenta o plano B (mostrar o que estiver disponível)
-        const fallback = document.getElementById('painel-pedidos') || document.querySelector('.bg-white.rounded-3xl.shadow-xl.p-4');
-        if(fallback) fallback.classList.remove('hidden');
+        tabServicos.click();
+        console.log("✅ Chat minimizado e aba restaurada.");
     }
 };
 
