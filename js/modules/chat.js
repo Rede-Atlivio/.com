@@ -6,7 +6,7 @@ import { db, auth } from '../config.js';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, addDoc, serverTimestamp, getDoc, limit, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- GATILHOS E NAVEGAÇÃO GLOBAL ---
-let unsubscribeChat = null; // 🔑 CHAVE PARA TROCAR DE CHAT SEM BUG
+window.unsubscribeChat = null; // 🔑 CHAVE GLOBAL PARA TROCAR DE CHAT SEM BUG - PONTO CRÍTICO SOLUÇÃO 01 TROCA DE CHATS
 window.irParaChat = () => {
     const tab = document.getElementById('tab-chat');
     if(tab) tab.click();
