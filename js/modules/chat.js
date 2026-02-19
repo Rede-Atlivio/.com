@@ -77,11 +77,9 @@ export async function abrirChatPedido(orderId) {
         unsubscribeChat = null; 
     }
 
-    // 🧹 2. FAXINA VISUAL INSTANTÂNEA
-    const areaBubbles = document.getElementById('bubbles-area');
-    if (areaBubbles) areaBubbles.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
-    
+    // 🧹 2. RESET TOTAL DE INSTÂNCIA (Padrão PICA GROSSA)
     let painelChat = document.getElementById('painel-chat-individual');
+    if (painelChat) painelChat.innerHTML = ""; // Limpa tudo para não misturar chats
     
     if (!window.CATEGORIAS_ATIVAS) {
         const servicesMod = await import('./services.js');
