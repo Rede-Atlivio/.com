@@ -209,7 +209,11 @@ function renderizarCards(servicos, container) {
 
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
-                : `window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}')`;
+                : `(async () => { 
+                    window.lastOpenedOrderId = null; 
+                    if(window.unsubscribeChat) { window.unsubscribeChat(); window.unsubscribeChat = null; }
+                    window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}');
+                })()`;
 
             // --- HTML DO CARD ---
             container.innerHTML += `
