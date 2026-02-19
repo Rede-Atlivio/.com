@@ -93,12 +93,12 @@ export async function abrirChatPedido(orderId) {
         painelChat = document.createElement('div');
         painelChat.id = 'painel-chat-individual';
         
-        // 📏 RESPONSIVIDADE V12 (Injetada via JS para não depender do Index)
+        // 📱 MODO APLICATIVO: Força visual mobile mesmo no Desktop (Padrão Pica Grossa)
         const isPC = window.innerWidth >= 768;
-        const stylePC = "width: 450px; height: 550px; max-height: 85vh; right: 20px; bottom: 20px; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); display: flex; flex-direction: column; overflow: hidden !important; position: fixed;";
-        const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0;";
+        const stylePC = "width: 380px; height: 90vh; max-height: 700px; right: 20px; bottom: 20px; border-radius: 24px; border: 4px solid #1e293b; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; overflow: hidden !important; position: fixed; z-index: 9999;";
+        const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0; border: none; border-radius: 0;";
         
-        painelChat.className = "fixed z-[9999] bg-white flex flex-col hidden overflow-hidden animate-slideUp";
+        painelChat.className = "fixed bg-white flex flex-col hidden overflow-hidden animate-slideUp";
         painelChat.style.cssText = isPC ? stylePC : styleMobile;
         
         document.body.appendChild(painelChat);
