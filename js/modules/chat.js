@@ -200,11 +200,13 @@ function atualizarResumoPropostaTopo(orderId, pedido, isProvider) {
                 <span class="text-[11px] font-black leading-none text-emerald-400">R$ ${valor.toFixed(2).replace('.', ',')}</span>
             </div>
            ${!isProvider ? `
-                <div class="flex flex-col items-end gap-1">
-                    <button onclick="window.confirmarAcordo('${orderId}', true)" class="bg-emerald-500 hover:bg-emerald-400 text-white text-[9px] font-black px-3 py-1.5 rounded-md shadow-sm transition active:scale-95 uppercase">
+                <div class="flex flex-col items-end gap-1.5 max-w-[150px]">
+                    <button onclick="window.confirmarAcordo('${orderId}', true)" class="bg-emerald-500 hover:bg-emerald-400 text-white text-[10px] font-black px-4 py-2 rounded-md shadow-sm transition active:scale-95 uppercase leading-none">
                         🤝 Aceitar
                     </button>
-                    <span class="text-[6px] text-amber-400 font-medium uppercase leading-none animate-pulse">⚠️ Disponibilidade sujeita a alteração</span>
+                    <p class="text-[5px] text-slate-400 font-bold uppercase leading-tight text-right italic">
+                        ⚠️ Confirme os detalhes no chat antes de clicar. Esta ação é <span class="text-amber-500">irreversível</span>.
+                    </p>
                 </div>
             ` : `
                 <span class="text-[7px] font-bold text-slate-500 uppercase italic">Aguardando Cliente...</span>
