@@ -186,7 +186,8 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                                 <h3 class="font-black text-xs text-gray-800 uppercase italic leading-none hover:text-blue-600 transition">${outroNome}</h3>
                                 <div id="status-indicador-${uidPartner}" class="w-1.5 h-1.5 rounded-full bg-gray-300 shadow-[0_0_5px_rgba(0,0,0,0.1)]"></div>
                             </div>
-                            <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic">offline</p>  
+                            <p id="status-texto-${uidPartner}" class="text-[8px] font-bold text-gray-400 mt-1 uppercase tracking-tighter italic leading-none">offline</p>
+                            <div id="demanda-indicador-${uidPartner}" class="mt-1.5 flex flex-col gap-0.5"></div>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
