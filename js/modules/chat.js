@@ -1321,6 +1321,15 @@ window.encerrarNegociacao = async (orderId) => {
             closed_at: serverTimestamp() 
         });
         alert("✅ Conversa arquivada com sucesso.");
+        
+        // 🧼 FAXINA DE MEMÓRIA GINA: Mata o ID antigo para não ressuscitar
+        window.lastOpenedOrderId = null; 
+        if (window.unsubscribeChat) { 
+            window.unsubscribeChat(); 
+            window.unsubscribeChat = null; 
+        }
+        
+        console.log("🧹 Memória global limpa. O próximo chat será 100% novo.");
         window.voltarParaListaPedidos();
     } catch(e) { 
         console.error("Erro ao arquivar:", e); 
