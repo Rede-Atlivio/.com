@@ -540,11 +540,13 @@ export async function aceitarPedidoRadar(orderId) {
                 return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
             }
         }
-        // EXECUÇÃO DO ACEITE (SEM COBRANÇA IMEDIATA - V24.0)
+       // EXECUÇÃO DO ACEITE (Padronizado para Filtros Blindados)
         await updateDoc(orderRef, { 
             status: 'accepted', 
             accepted_at: serverTimestamp(),
+            last_interaction_at: serverTimestamp(), // Reseta cronômetro Lazarus no aceite
             system_step: 1,
+            chat_lifecycle_status: 'active',
             timer_initialized: false 
         });
         await setDoc(doc(db, "chats", orderId), { 
