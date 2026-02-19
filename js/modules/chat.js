@@ -262,7 +262,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     </div>
                 </div>
 
-                <div class="px-10 pb-2 flex flex-col gap-1">
+                <div class="px-4 pb-2 flex flex-col gap-1">
                     <div id="demanda-indicador-${uidPartner}"></div>
                     <div id="engajamento-indicador-${uidPartner}"></div>
                 </div> 
