@@ -340,6 +340,19 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     // Gina: Dispara a inteligência de fechamento e o Martelo de Vendas
     injetarGatilhosDemanda(uidPartner, isProvider, pedido.service_category_id || "gerais");
     injetarMétricasEngajamento(uidPartner);
+
+    // 🚀 LÓGICA ROBÔ 78: Garante Geometria e Cores na Troca de Chats
+    setTimeout(() => {
+        const cards = container.querySelectorAll('.max-w-\\[290px\\]');
+        cards.forEach((card) => {
+            card.style.setProperty('width', '340px', 'important');
+            card.style.setProperty('max-width', '340px', 'important');
+            card.style.setProperty('min-height', '75px', 'important');
+            card.style.setProperty('background', '#020617', 'important');
+            card.style.setProperty('border', '2px solid #fbbf24', 'important');
+            card.style.setProperty('border-radius', '10px', 'important');
+        });
+    }, 100);
 }
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     // ⚖️ 1º PRIORIDADE: SUPORTE/DISPUTA (Bloqueia tudo o resto)
