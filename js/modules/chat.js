@@ -1461,3 +1461,54 @@ window.encerrarNegociacaoSilenciosa = async (orderId) => {
         });
     } catch(e) { console.error("Erro no auto-close:", e); }
 };
+
+// ============================================================================
+// 🕒 SISTEMA LAZARUS: VIGILANTE DE VIDA ÚTIL DO CHAT
+// ============================================================================
+window.verificarVidaUtilChat = async (pedido) => {
+    // 🛡️ TRAVA DE SEGURANÇA: Não mexe em serviços pagos (Step 3+) ou já encerrados
+    if (pedido.system_step >= 3 || ['completed', 'archived', 'negotiation_closed'].includes(pedido.status)) return;
+
+    const agora = Date.now();
+    // Recupera a última interação (ou a criação do pedido se nunca houve chat)
+    const ultimaInteracao = pedido.last_interaction_at ? pedido.last_interaction_at.toMillis() : pedido.created_at.toMillis();
+    const horasPassadas = (agora - ultimaInteracao) / (1000 * 60 * 60);
+
+    // 🧠 LÓGICA DE TIERS: Modelo Ideal Atlivio
+    let limiteMorte = 48; // Tier 1: Apenas conversa
+    if (pedido.offer_value > 0) limiteMorte = 72; // Tier 2: Proposta enviada
+    if (pedido.system_step >= 2.5) limiteMorte = 96; // Tier 3: Negociação avançada
+
+    const limiteAviso = limiteMorte - 12; // Dispara aviso 12h antes do fim
+
+    // 🔴 ESTADO 3: ENCERRAMENTO POR INATIVIDADE
+    if (horasPassadas >= limiteMorte) {
+        console.warn(`💀 Lazarus: Pedido ${pedido.id} expirou.`);
+        if (window.encerrarNegociacaoSilenciosa) {
+            window.encerrarNegociacaoSilenciosa(pedido.id, "Encerrado por inatividade");
+        }
+        return;
+    }
+
+    // 🟡 ESTADO 2: AVISO DE MORTE IMINENTE
+    if (horasPassadas >= limiteAviso && pedido.chat_lifecycle_status !== 'warning') {
+        console.log(`⚠️ Lazarus: Enviando aviso para ${pedido.id}`);
+        
+        try {
+            const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const db = window.db;
+
+            // Marca que o aviso já foi dado para não repetir
+            await updateDoc(doc(db, "orders", pedido.id), { 
+                chat_lifecycle_status: 'warning' 
+            });
+
+            // Injeta mensagem do sistema no chat
+            await addDoc(collection(db, `chats/${pedido.id}/messages`), {
+                text: "⏳ Essa negociação está parada. Deseja continuar ou encerrar? Se não houver interação em breve, o chat será arquivado automaticamente por segurança.",
+                sender_id: 'system',
+                timestamp: serverTimestamp()
+            });
+        } catch (e) { console.error("Erro Lazarus:", e); }
+    }
+};
