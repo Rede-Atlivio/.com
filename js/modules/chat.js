@@ -165,7 +165,8 @@ async function injetarGatilhosDemanda(uidPartner, isProvider, categoriaId) {
         let htmlStatus = "";
 
         if (!isProvider && totalAtivos >= 2) {
-            htmlStatus += `<span class="text-[7px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md uppercase animate-pulse italic">🔥 ALTA DEMANDA: Agenda Quase Cheia</span>`;
+            // Gina: Vermelho Agressivo para Escassez Real
+            htmlStatus += `<span class="text-[7px] font-black bg-red-600 text-white px-1.5 py-0.5 rounded-md uppercase animate-pulse italic shadow-sm">🔥 ALTA DEMANDA: Agenda Quase Cheia</span>`;
         }
         
         if (totalConcorrentes > 1) {
