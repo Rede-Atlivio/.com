@@ -107,7 +107,8 @@ export async function abrirChatPedido(orderId) {
     document.getElementById('painel-pedidos')?.classList.add('hidden');
     painelChat.classList.remove('hidden');
     painelChat.style.display = window.innerWidth >= 768 ? 'flex' : 'block';
-    const pedidoRef = doc(db, "orders", orderId);
+    window.lastOpenedOrderId = orderId; // Garante ID para robôs e cronômetros
+    const pedidoRef = doc(db, "orders", orderId);
     window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => { //PONTO CRÍTICO - SOLUÇÃO 03 TROCA DE CHATS
         if (!snap.exists()) return;
         const pedido = snap.data();
