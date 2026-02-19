@@ -108,7 +108,7 @@ export async function abrirChatPedido(orderId) {
     painelChat.classList.remove('hidden');
     painelChat.style.display = window.innerWidth >= 768 ? 'flex' : 'block';
     const pedidoRef = doc(db, "orders", orderId);
-    unsubscribeChat = onSnapshot(pedidoRef, (snap) => {
+    window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => { //PONTO CRÍTICO - SOLUÇÃO 03 TROCA DE CHATS
         if (!snap.exists()) return;
         const pedido = snap.data();
         const isProvider = pedido.provider_id === auth.currentUser.uid;
