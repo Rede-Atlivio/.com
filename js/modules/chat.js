@@ -396,9 +396,9 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
                     <p class="text-2xl font-black text-[#34d399] mt-1 tracking-tighter">R$ ${valorAcordo.toFixed(2).replace('.', ',')}</p>
                 </div>
                 <div class="text-right leading-none max-w-[120px]">
-                    <p class="text-[7px] text-amber-400 font-black uppercase italic animate-pulse leading-tight">
-                        ${isUltimato ? '🚨 EXPIRA EM INSTANTES' : '⚠️ Disponibilidade sujeita a alteração'}
-                    </p>
+                    <p class="text-[7px] text-amber-400 font-black uppercase italic animate-pulse leading-tight" id="timer-ultimato">
+                        ${isUltimato ? '⏳ CALCULANDO...' : '⚠️ Disponibilidade sujeita a alteração'}
+                    </p>
                 </div>
             </div>
 
