@@ -1426,3 +1426,21 @@ window.ativarModoUltimato = async (orderId) => {
         });
     } catch (e) { console.error(e); }
 };
+
+// Função para o sistema matar o chat sem perguntar ao usuário
+window.encerrarNegociacaoSilenciosa = async (orderId) => {
+    if (!orderId) return;
+    try {
+        const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await updateDoc(doc(db, "orders", orderId), {
+            status: 'negotiation_closed',
+            closed_by: 'system_ultimato',
+            closed_at: serverTimestamp()
+        });
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `🚨 NEGOCIAÇÃO ENCERRADA: O tempo do ultimato expirou sem resposta.`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+    } catch(e) { console.error("Erro no auto-close:", e); }
+};
