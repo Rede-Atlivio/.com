@@ -237,11 +237,13 @@ export async function enviarPropostaAgora() {
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
 
-        // 2. CRIA O PEDIDO NO BANCO (ID TOTALMENTE NOVO)
+        // 2. CRIA O PEDIDO NO BANCO (ID TOTALMENTE NOVO com STEP 1)
         const docRef = await addDoc(collection(db, "orders"), {
             client_id: user.uid,
             client_name: user.displayName || "Cliente",
             provider_id: mem_ProviderId,
+            system_step: 1, // 🚀 ESSENCIAL: Garante que o Lazarus consiga ler o pedido
+            chat_lifecycle_status: 'active', // 🚀 ESSENCIAL: Define estado inicial
             provider_name: mem_ProviderName,
             service_title: mem_SelectedServiceTitle,
             status: 'pending', 
