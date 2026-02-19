@@ -1,3 +1,28 @@
+// ============================================================================
+// 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
+// ============================================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('📡 Monitorando versões do sistema...');
+
+            // Se o sistema detectar uma mudança no sw.js do servidor
+            reg.addEventListener('updatefound', () => {
+                const novoWorker = reg.installing;
+                novoWorker.addEventListener('statechange', () => {
+                    if (novoWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // 🚀 GATILHO DE ATUALIZAÇÃO IMEDIATA
+                        console.log("✨ Nova versão detectada!");
+                        if (confirm("🚀 Uma nova atualização da Atlivio está pronta. Atualizar agora para garantir o funcionamento?")) {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+        }).catch(err => console.error('❌ Erro no Registro PWA:', err));
+    });
+}
+// ============================================================================
 import { app, auth, db, storage, provider } from './config.js';
 
 // ============================================================================
