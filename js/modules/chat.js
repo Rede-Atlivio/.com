@@ -322,8 +322,9 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     window.timerInterval = setInterval(() => atualizarRelogioDOM(pedido), 1000);
     escutarMensagens(orderId);
     
-    // Gina: Dispara a inteligência de fechamento
+    // Gina: Dispara a inteligência de fechamento e o Martelo de Vendas
     injetarGatilhosDemanda(uidPartner, isProvider, pedido.service_category_id || "gerais");
+    atualizarResumoPropostaTopo(orderId, pedido, isProvider);
 }
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
     // ⚖️ 1º PRIORIDADE: SUPORTE/DISPUTA (Bloqueia tudo o resto)
