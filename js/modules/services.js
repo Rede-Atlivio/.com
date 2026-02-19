@@ -328,7 +328,14 @@ export async function carregarPedidosAtivos() {
         container.innerHTML = "";
         const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress'];
         let ativos = [];
-        snap.forEach(d => { if(statusVivos.includes(d.data().status)) ativos.push({id: d.id, ...d.data()}); });
+        snap.forEach(d => { 
+            const p = d.data();
+            if(statusVivos.includes(p.status)) {
+                ativos.push({id: d.id, ...p});
+                // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático
+                if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...p});
+            }
+        });
         if (ativos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
         ativos.forEach(p => {
             const statusPT = p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente';
