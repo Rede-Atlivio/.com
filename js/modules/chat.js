@@ -241,7 +241,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     const timeHTML = gerarPainelTempo(pedido, isProvider, orderId);
 
     container.innerHTML = `
-        <div class="flex flex-col h-full bg-slate-50">
+        <div class="flex flex-col h-full bg-[#020617]">
             <div class="bg-white shadow-sm z-[100] border-b sticky top-0">
                 <div class="p-2 px-3 flex items-center justify-between w-full">
                     <div class="flex items-center gap-2 min-w-0">
