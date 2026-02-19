@@ -318,61 +318,6 @@ export async function carregarPedidosAtivos() {
     });
 }
 
-export async function carregarHistorico() {
-    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
-    if(!container) return;
-
-    if (!auth.currentUser) {
-        setTimeout(carregarHistorico, 500);
-        return;
-    }
-
-    const uid = auth.currentUser.uid;
-    const q = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
-
-    onSnapshot(q, (snap) => {
-        console.log(`📥 [HISTÓRICO] Sincronizando ${snap.size} registros...`);
-        container.innerHTML = "";
-
-        const statusHistorico = ['completed', 'archived', 'negotiation_closed', 'cancelled', 'rejected'];
-        let contador = 0;
-
-        snap.forEach(d => {
-            try {
-                const order = d.data();
-                if (statusHistorico.includes(order.status)) {
-                    contador++;
-                    const safeName = (order.provider_name || 'Prestador').replace(/'/g, "");
-                    
-                    // 🛡️ Proteção contra erro de data (toDate)
-                    const dataObj = order.completed_at || order.created_at;
-                    const dataTexto = dataObj && typeof dataObj.toDate === 'function' 
-                        ? dataObj.toDate().toLocaleDateString() 
-                        : "---";
-
-                    container.innerHTML += `
-                        <div class="bg-white p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center shadow-sm animate-fadeIn">
-                            <div>
-                                <p class="font-bold text-xs text-gray-700">${safeName}</p>
-                                <p class="text-[9px] text-gray-400 uppercase font-medium">${dataTexto} • ${order.status.replace('_', ' ')}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="block font-black text-green-600 text-xs">R$ ${order.offer_value}</span>
-                                <button onclick="window.abrirModalAvaliacao('${d.id}', '${order.provider_id}', '${safeName}')" class="text-[9px] text-blue-600 font-black underline uppercase mt-1">Avaliar ⭐</button>
-                            </div>
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                console.error("❌ Erro em card individual:", err);
-            }
-        });
-
-        if(contador === 0) {
-            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6 italic">Histórico limpo.</p>`;
-        }
-    });
-}
 export function switchServiceSubTab(tabName) {
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const elView = document.getElementById(`view-${t}`);
