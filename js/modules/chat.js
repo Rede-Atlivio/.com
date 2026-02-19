@@ -141,6 +141,9 @@ export async function abrirChatPedido(orderId) {
 
         // 🛡️ EDUCAÇÃO INICIAL: Mostra regras se for o primeiro acesso
         verificarOnboardingChat(auth.currentUser.uid);
+
+        // 🕒 VIGILANTE LAZARUS: Verifica se o chat expirou por inatividade
+        if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: orderId, ...pedido});
     });
 }
 
