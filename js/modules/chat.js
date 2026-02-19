@@ -29,13 +29,20 @@ window.voltarParaListaPedidos = () => {
     if(painelLista) painelLista.classList.remove('hidden');
 };
 
-// 🔄 ROLAGEM INTELIGENTE V15 (Blindagem Desktop/Mobile)
+// 🔄 ROLAGEM RADICAL V24 (Correção para Windows/Desktop)
 window.rolarChatParaBaixo = () => {
     const area = document.getElementById('scroll-area-v16');
     if (area) {
-        setTimeout(() => {
-            area.scrollTop = area.scrollHeight;
-        }, 100);
+        // Dobramos a segurança com requestAnimationFrame + Timeout
+        // Isso força o navegador a terminar de desenhar ANTES de rolar
+        requestAnimationFrame(() => {
+            setTimeout(() => {
+                area.scrollTo({
+                    top: area.scrollHeight + 500, // Força bruta: tenta rolar mais do que existe
+                    behavior: 'instant' // Desktop precisa de resposta imediata
+                });
+            }, 50);
+        });
     }
 };
 
