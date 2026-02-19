@@ -271,31 +271,34 @@ function renderizarCards(servicos, container) {
 // 2. PEDIDOS E HISTÓRICO
 // ============================================================================
 export async function carregarPedidosAtivos() {
-    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
-    if (!container || !auth.currentUser) return;
-    container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-2"></div>`;
+    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
+    if (!container || !auth.currentUser) return;
     
     const uid = auth.currentUser.uid;
+    // Query focada em pedidos que NÃO estão encerrados
     const q = query(collection(db, "orders"), where("client_id", "==", uid), orderBy("created_at", "desc"));
     
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        let pedidos = [];
+        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress'];
+        let ativos = [];
+
         snap.forEach(d => {
-            const p = d.data();
-            // 🛡️ CORREÇÃO: Filtro rigoroso para remover Cancelados e Encerrados da vista
-            const statusLixo = ['completed', 'rejected', 'cancelled', 'negotiation_closed', 'archived'];
-            if(!statusLixo.includes(p.status)) pedidos.push({id: d.id, ...p});
+            if (statusVivos.includes(d.data().status)) ativos.push({id: d.id, ...d.data()});
         });
 
-        if (pedidos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
+        if (ativos.length === 0) { 
+            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; 
+            return; 
+        }
 
-        pedidos.forEach(p => {
+        ativos.forEach(p => {
+            const statusPT = p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente';
             container.innerHTML += `
                 <div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
                     <div>
                         <h3 class="font-bold text-gray-800 text-sm">${p.provider_name}</h3>
-                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • ${p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente'}</p>
+                        <p class="text-[10px] text-gray-500">R$ ${p.offer_value} • ${statusPT}</p>
                     </div>
                     <span>💬</span>
                 </div>
