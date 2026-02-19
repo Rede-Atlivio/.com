@@ -1349,15 +1349,25 @@ window.exibirAlertaSegurancaReserva = () => {
     alert("🔐 PROTEÇÃO ATLIVIO:\n\nAo fechar o acordo, o valor da garantia fica guardado com a plataforma e só é liberado ao profissional após você confirmar que o serviço foi concluído.");
 };
 window.confirmarEncerramentoChat = async (orderId) => {
-    if(!confirm("✋ DESEJA ENCERRAR ESTE CHAT?\n\nEle será movido para o histórico e as negociações serão interrompidas.")) return;
+    if(!confirm("✋ DESEJA ENCERRAR ESTE CHAT?")) return;
     try {
-        if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-        await updateDoc(doc(db, "orders", orderId), { 
+        // 1. Para de ouvir o chat atual
+        if (window.unsubscribeChat) { window.unsubscribeChat(); window.unsubscribeChat = null; }
+        
+        // 2. Atualiza o banco
+        const { doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await updateDoc(doc(window.db, "orders", orderId), { 
             status: 'negotiation_closed', 
-            closed_at: serverTimestamp() 
+            closed_at: serverTimestamp(),
+            chat_lifecycle_status: 'expired'
         });
+
+        // 3. 💣 O GOLPE FINAL: Limpa qualquer trava visual do Request
+        const btnReq = document.getElementById('btn-confirm-req');
+        if(btnReq) { btnReq.disabled = false; btnReq.dataset.loading = "false"; }
+
         alert("Conversa encerrada.");
-        window.voltarParaListaPedidos();
+        window.voltarParaListaPedidos(); // Volta para a tela de serviços
     } catch(e) { console.error("Erro ao encerrar:", e); }
 };
 
