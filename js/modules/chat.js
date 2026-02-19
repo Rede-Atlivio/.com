@@ -69,15 +69,19 @@ window.sugerirDetalhe = (orderId, campo) => {
 // 🔄 RENOMEADA PARA EVITAR CONFLITO COM REQUEST.JS
 
 export async function abrirChatPedido(orderId) {
-    // ✋ Desconecta o chat anterior se houver um aberto
-    if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
-
-    let painelChat = document.getElementById('painel-chat-individual');
+    console.log("🔄 Gina iniciando troca para o pedido:", orderId);
     
-    // Limpeza visual imediata para evitar "fantasma" do chat anterior
-    const areaMensagens = document.getElementById('chat-messages');
+    // ✋ 1. MATA A CONEXÃO ANTERIOR NA HORA
+    if (unsubscribeChat) { 
+        unsubscribeChat(); 
+        unsubscribeChat = null; 
+    }
+
+    // 🧹 2. FAXINA VISUAL INSTANTÂNEA
     const areaBubbles = document.getElementById('bubbles-area');
-    if (areaBubbles) areaBubbles.innerHTML = ""; 
+    if (areaBubbles) areaBubbles.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
+    
+    let painelChat = document.getElementById('painel-chat-individual');
     
     if (!window.CATEGORIAS_ATIVAS) {
         const servicesMod = await import('./services.js');
