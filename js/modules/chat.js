@@ -287,19 +287,20 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
                 <div id="gaveta-ferramentas" class="hidden animate-fadeIn">
                     <div class="flex gap-2 p-2 overflow-x-auto bg-gray-50 border-b no-scrollbar">
-                    <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
-                    <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
-                    <button onclick="window.sugerirFrase('A ATLIVIO segura a reserva até o serviço ser concluído.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">🔒 Garantia</button>
-                </div>
+                        <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-full text-[9px] font-black text-amber-800 shadow-sm whitespace-nowrap">📅 Definir Data</button>
+                        <button onclick="window.sugerirFrase('Já realizei serviços parecidos. Pode ficar tranquilo(a).')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">💡 Confiança</button>
+                        <button onclick="window.sugerirFrase('Tenho disponibilidade para hoje ou amanhã.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">⚡ Urgência</button>
+                        <button onclick="window.sugerirFrase('A ATLIVIO segura a reserva até o serviço ser concluído.')" class="bg-white border border-gray-200 px-3 py-1.5 rounded-full text-[9px] font-bold text-gray-600 shadow-sm whitespace-nowrap">🔒 Garantia</button>
+                    </div>
 
-                <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
-                    ${step < 3 ? `
-                        <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
-                        <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
-                            <span>🎯 PROPOSTA</span>
-                            <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar Valor</span>
-                        </button>
-                    ` : ''}
+                    <div class="flex gap-2 p-3 overflow-x-auto whitespace-nowrap scrollbar-hide">
+                        ${step < 3 ? `
+                            <button onclick="window.novoDescreverServico('${orderId}')" class="bg-white px-4 py-2 rounded-xl text-[10px] border border-blue-200 text-blue-700 font-black shadow-sm">📦 Descrever</button>
+                            <button onclick="window.novoEnviarProposta('${orderId}')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-md flex flex-col items-center transform active:scale-95 transition">
+                                <span>🎯 PROPOSTA</span>
+                                <span class="text-[7px] opacity-70 uppercase tracking-tighter">Negociar Valor</span>
+                            </button>
+                        ` : ''}
                     
                     ${step >= 3 && !isProvider ? `<button onclick="window.finalizarServicoPassoFinal('${orderId}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[10px] font-black shadow-lg w-full">🏁 CONFIRMAR & PAGAR</button>` : ''}
                     
