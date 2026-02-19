@@ -210,6 +210,35 @@ function atualizarResumoPropostaTopo(orderId, pedido, isProvider) {
     `;
 }
 
+// Gina: Benção do Engajamento - Calcula e exibe o tempo de resposta
+async function injetarMétricasEngajamento(uidPartner) {
+    const container = document.getElementById(`engajamento-indicador-${uidPartner}`);
+    if (!container) return;
+
+    try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const pSnap = await getDoc(doc(db, "usuarios", uidPartner));
+        if (!pSnap.exists()) return;
+        
+        const pData = pSnap.data();
+        const tempoMedio = pData?.avg_response_time || "5 min";
+        const totalServicos = pData?.completed_services_count || 0;
+
+        container.innerHTML = `
+            <div class="flex items-center gap-1 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 shadow-sm">
+                <span class="text-[7px]">⚡</span>
+                <span class="text-[7px] font-bold text-emerald-700 uppercase leading-none italic">Responde em ~${tempoMedio}</span>
+            </div>
+            ${totalServicos > 0 ? `
+                <div class="flex items-center gap-1 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 shadow-sm">
+                    <span class="text-[7px]">✅</span>
+                    <span class="text-[7px] font-bold text-blue-700 uppercase leading-none italic">${totalServicos} Serviços</span>
+                </div>
+            ` : ''}
+        `;
+    } catch (e) { console.error("Erro Engajamento:", e); }
+}
+
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
