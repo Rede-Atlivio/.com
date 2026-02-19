@@ -385,6 +385,8 @@ export async function carregarPedidosPrestador() {
             const o = d.data();
             if (statusAtivos.includes(o.status)) {
                 cont++;
+                // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático no Radar
+                if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...o});
                 const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
                 const txt = o.status === 'in_progress' ? 'Em Andamento' : o.status === 'confirmed_hold' ? 'Acordo Fechado' : o.status === 'accepted' ? 'Aceito' : 'Pendente';
                 container.innerHTML += `<div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 animate-fadeIn">
