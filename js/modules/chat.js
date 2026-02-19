@@ -144,6 +144,38 @@ export async function abrirChatPedido(orderId) {
         verificarOnboardingChat(auth.currentUser.uid);
     });
 }
+
+// Gina: Função Pesada para contar demanda e injetar gatilhos psicológicos
+async function injetarGatilhosDemanda(uidPartner, isProvider, categoriaId) {
+    try {
+        const { getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const container = document.getElementById(`demanda-indicador-${uidPartner}`);
+        if (!container) return;
+
+        // 1. Conta serviços ativos do prestador (Escassez)
+        const qDemanda = query(collection(db, "orders"), where("provider_id", "==", uidPartner), where("status", "in", ["confirmed_hold", "in_progress"]));
+        const snapDemanda = await getDocs(qDemanda);
+        const totalAtivos = snapDemanda.size;
+
+        // 2. Conta concorrentes para este serviço (Comparação Implícita)
+        const qConcorrencia = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), where("service_category_id", "==", categoriaId), where("status", "==", "pending"));
+        const snapConcorrencia = await getDocs(qConcorrencia);
+        const totalConcorrentes = snapConcorrencia.size;
+
+        let htmlStatus = "";
+
+        if (!isProvider && totalAtivos >= 2) {
+            htmlStatus += `<span class="text-[7px] font-black bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded-md uppercase animate-pulse italic">🔥 ALTA DEMANDA: Agenda Quase Cheia</span>`;
+        }
+        
+        if (totalConcorrentes > 1) {
+            htmlStatus += `<span class="text-[7px] font-black bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md uppercase italic">🚀 ${isProvider ? 'OPORTUNIDADE: Cliente analisando outros profissionais' : 'DECISÃO: Você está comparando ' + totalConcorrentes + ' profissionais'}</span>`;
+        }
+
+        container.innerHTML = htmlStatus;
+    } catch (e) { console.error("Erro Gina Gatilhos:", e); }
+}
+
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
