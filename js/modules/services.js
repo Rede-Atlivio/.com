@@ -313,7 +313,106 @@ export function switchProviderSubTab(tabName) {
     if(tabName === 'historico') carregarHistoricoPrestador();
 }
 
+// ============================================================================
+// 2. PEDIDOS E HISTÓRICO (VERSÃO BLINDADA V12.1)
+// ============================================================================
 
+// --- VISÃO DO CLIENTE (QUEM CONTRATA) ---
+export async function carregarPedidosAtivos() {
+    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
+    if (!container) return;
+    if (!auth.currentUser) { setTimeout(carregarPedidosAtivos, 500); return; }
+    
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress'];
+        let ativos = [];
+        snap.forEach(d => { if(statusVivos.includes(d.data().status)) ativos.push({id: d.id, ...d.data()}); });
+        if (ativos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
+        ativos.forEach(p => {
+            const statusPT = p.status === 'in_progress' ? 'Em Andamento 🛠️' : p.status === 'confirmed_hold' ? 'Acordo Fechado 🔒' : p.status === 'accepted' ? 'Aceito' : 'Pendente';
+            container.innerHTML += `<div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
+                <div><h3 class="font-bold text-gray-800 text-sm">${p.provider_name || 'Prestador'}</h3><p class="text-[10px] text-gray-500 uppercase">R$ ${p.offer_value} • ${statusPT}</p></div><span>💬</span></div>`;
+        });
+    });
+}
+
+export async function carregarHistorico() {
+    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
+    if(!container) return;
+    if (!auth.currentUser) { setTimeout(carregarHistorico, 500); return; }
+
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusHist = ['completed', 'archived', 'negotiation_closed', 'cancelled'];
+        let cont = 0;
+        snap.forEach(d => {
+            const o = d.data();
+            if (statusHist.includes(o.status)) {
+                cont++;
+                const dataObj = o.completed_at || o.created_at;
+                const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
+                container.innerHTML += `<div class="bg-white p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center shadow-sm animate-fadeIn">
+                    <div><p class="font-bold text-xs text-gray-700">${(o.provider_name || 'Prestador').replace(/'/g, "")}</p><p class="text-[9px] text-gray-400 uppercase">${dataTxt} • ${o.status}</p></div>
+                    <div class="text-right"><span class="block font-black text-green-600 text-xs">R$ ${o.offer_value}</span><button onclick="window.abrirModalAvaliacao('${d.id}', '${o.provider_id}', '${(o.provider_name || 'Prestador').replace(/'/g, "")}')" class="text-[9px] text-blue-600 font-bold underline uppercase mt-1">Avaliar ⭐</button></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6 italic">Histórico limpo.</p>`;
+    });
+}
+
+// --- VISÃO DO PRESTADOR (USUÁRIO QUE TRABALHA) ---
+export async function carregarPedidosPrestador() {
+    const container = document.getElementById('lista-chamados-ativos');
+    if(!container) return;
+    if (!auth.currentUser) { setTimeout(carregarPedidosPrestador, 500); return; }
+
+    const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusAtivos = ["pending", "accepted", "confirmed_hold", "in_progress"];
+        let cont = 0;
+        snap.forEach(d => {
+            const o = d.data();
+            if (statusAtivos.includes(o.status)) {
+                cont++;
+                const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
+                const txt = o.status === 'in_progress' ? 'Em Andamento' : o.status === 'confirmed_hold' ? 'Acordo Fechado' : o.status === 'accepted' ? 'Aceito' : 'Pendente';
+                container.innerHTML += `<div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 animate-fadeIn">
+                    <div><h3 class="font-bold text-xs text-gray-800">${o.client_name || 'Cliente'}</h3><p class="text-[10px] text-gray-500">${o.location || 'Local a combinar'}</p></div>
+                    <div class="text-right"><span class="block font-black text-green-600 text-xs">R$ ${o.offer_value}</span><span class="text-[8px] px-2 py-0.5 rounded-full ${color} uppercase font-bold">${txt}</span></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos no radar.</p>`;
+    });
+}
+
+export async function carregarHistoricoPrestador() {
+    const container = document.getElementById('lista-chamados-historico');
+    if(!container) return;
+    if (!auth.currentUser) { setTimeout(carregarHistoricoPrestador, 500); return; }
+
+    const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusFinal = ['completed', 'archived', 'negotiation_closed', 'cancelled'];
+        let cont = 0;
+        snap.forEach(d => {
+            const o = d.data();
+            if (statusFinal.includes(o.status)) {
+                cont++;
+                const dataObj = o.completed_at || o.created_at;
+                const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
+                container.innerHTML += `<div class="bg-green-50 p-3 rounded-xl mb-2 border border-green-100 flex justify-between items-center animate-fadeIn">
+                    <div><h3 class="font-bold text-xs text-green-900">${(o.client_name || 'Cliente').replace(/'/g, "")}</h3><p class="text-[10px] text-green-700">Finalizado em ${dataTxt} • <span class="uppercase">${o.status}</span></p></div>
+                    <div class="text-right"><span class="block font-black text-green-700 text-xs">+ R$ ${o.offer_value}</span><button onclick="window.abrirModalAvaliacao('${d.id}', '${o.client_id}', '${(o.client_name || 'Cliente').replace(/'/g, "")}')" class="text-[9px] text-blue-600 font-bold underline mt-1">Avaliar Cliente ⭐</button></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum histórico de trabalho.</p>`;
+    });
+}
 
 // ============================================================================
 // 4. EDITOR DE SERVIÇOS (COM CAPA, TÍTULO E DESCRIÇÃO)
