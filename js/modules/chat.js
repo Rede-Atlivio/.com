@@ -915,24 +915,29 @@ function gerarPainelTempo(pedido, isProvider, orderId) {
     // 3️⃣ MODO: ACEITO MAS SEM ACORDO (Botão Definir Data)
     if (pedido.status === 'accepted' || step < 3) {
         return `
-        <div class="bg-amber-50 border-b border-amber-100 px-4 py-2 flex justify-between items-center">
-            <div class="flex items-center gap-2 text-amber-800">
-                <span class="text-lg">📅</span>
-                <p class="text-[10px] font-bold uppercase">Aguardando Fechamento</p>
-            </div>
-            ${pedido.scheduled_at ? `
-                <div class="text-right">
-                    <p class="text-[9px] text-gray-500 uppercase">Agendado</p>
-                    <p class="text-[10px] font-black text-slate-800" id="countdown-display">--:--</p>
+        <div class="bg-amber-50 border-b border-amber-100 px-4 py-2 flex flex-col gap-1.5 shadow-sm">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2 text-amber-800">
+                    <span class="text-sm">📅</span>
+                    <p class="text-[9px] font-black uppercase tracking-wider">Aguardando Fechamento</p>
                 </div>
-            ` : `
-                <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded shadow-md">
-                    DEFINIR DATA
-                </button>
-            `}
+                ${pedido.scheduled_at ? `
+                    <div class="text-right">
+                        <p class="text-[10px] font-black text-slate-800" id="countdown-display">--:--</p>
+                    </div>
+                ` : `
+                    <button onclick="window.abrirAgendamento('${orderId}')" class="bg-amber-500 hover:bg-amber-600 text-white text-[9px] font-black px-3 py-1.5 rounded-lg shadow-sm transition active:scale-95 uppercase">
+                        Definir Data
+                    </button>
+                `}
+            </div>
+            <div class="border-t border-amber-200/50 pt-1">
+                <p class="text-[8px] text-amber-900 leading-tight font-medium">
+                    💡 <span class="font-black text-amber-800">DICA:</span> Reserva confirmada tem prioridade. <span class="font-black text-red-600">⚠️ PROIBIDO CONTATOS ANTES DO ACORDO.</span>
+                </p>
+            </div>
         </div>`;
     }
-
     return '';
 }
 
