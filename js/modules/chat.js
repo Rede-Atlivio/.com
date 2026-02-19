@@ -320,7 +320,8 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     <button onclick="window.reportarProblema('${orderId}')" class="bg-red-50 text-red-600 px-3 py-2 rounded-xl text-[10px] font-bold border border-red-100">⚠️ Ajuda</button>
                 </div>
                 
-                </div> <div class="px-3 ${window.innerWidth < 768 ? 'pb-8 pt-3' : 'py-3'} flex gap-2 items-center bg-white border-t">
+                </div>
+                <div class="px-3 ${window.innerWidth < 768 ? 'pb-10 pt-3' : 'py-3'} flex gap-2 items-center bg-white border-t relative z-[10000]">
                     <input type="text" id="chat-input-msg" 
                         placeholder="${isProvider ? 'Explique como fará o serviço...' : 'Descreva o que precisa, datas e local...'}" 
                         oninput="let uIdP = '${uidPartner}'; if(this.value.length > 0) { window.atualizarMeuStatus('online', uIdP); } clearTimeout(window.typingTimer); window.typingTimer = setTimeout(() => window.atualizarMeuStatus('online', null), 2000);"
