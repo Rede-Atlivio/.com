@@ -1178,30 +1178,30 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 💎 V78: MODELO PERFECT FRAME (Geometria 67 + Cores Vivas)
+        // 💎 V78: MODELO PERFECT FRAME (Fidelidade Absoluta ao Robô)
         const htmlProposta = `
             <div class="my-3 border-2 border-[#fbbf24] rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.8)] bg-[#020617] animate-fadeIn mx-auto w-[340px] max-w-[340px] min-h-[75px]">
                 <div class="bg-black text-[#fbbf24] text-[7px] font-black text-center py-1 uppercase tracking-[0.2em] flex items-center justify-center gap-2 border-b border-[#fbbf24]">
                     <span>💎</span> NOVA PROPOSTA COMERCIAL <span>💎</span>
                 </div>
                 
-                <div class="p-2 px-3.5 flex flex-row items-center justify-between gap-2">
-                    <div class="flex flex-col">
-                        <p class="text-white text-[8px] font-black uppercase tracking-tighter">Investimento Total</p>
-                        <div class="flex items-baseline gap-1 text-[#fbbf24] mt-0.5">
-                            <span class="text-xs font-black drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">R$</span>
-                            <span class="text-[1.25rem] font-black tracking-tighter drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]">${valor.toFixed(2).replace('.', ',')}</span>
+                <div class="p-2 px-3 flex flex-row items-center justify-between w-full gap-1">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <p style="color: #FFFFFF !important; font-size: 8px !important; font-weight: 900 !important; text-transform: uppercase; margin: 0;">Investimento Total</p>
+                        <div style="display: flex; align-items: baseline; gap: 4px;">
+                            <span style="color: #fbbf24 !important; font-size: 12px !important; font-weight: 950 !important;">R$</span>
+                            <span style="color: #fbbf24 !important; font-size: 1.25rem !important; font-weight: 950 !important; text-shadow: 0 0 10px rgba(251,191,36,0.5);">${valor.toFixed(2).replace('.', ',')}</span>
                         </div>
                     </div>
 
-                    <div class="py-1 px-1.5 bg-[rgba(251,191,36,0.2)] rounded-md flex items-center gap-1.5 border-none">
-                        <span class="text-sm">🎁</span>
-                        <p class="text-[#fbbf24] text-[8px] font-black uppercase leading-tight">${labelBeneficio}</p>
+                                        <div style="background: rgba(251, 191, 36, 0.2); padding: 4px 8px; border-radius: 6px; display: flex; align-items: center; gap: 6px; min-width: 80px;">
+                        <span style="font-size: 14px;">🎁</span>
+                        <p style="color: #fbbf24 !important; font-size: 8px !important; font-weight: 900 !important; text-transform: uppercase; margin: 0; leading-tight: 1;">${labelBeneficio}</p>
                     </div>
 
-                    <div class="max-w-[85px]">
-                        <p class="text-[7.5px] text-white leading-tight text-right font-black">
-                            Clique em <span class="text-[#22c55e] drop-shadow-[0_0_5px_#22c55e]">🤝 ACEITAR E FECHAR</span> no topo.
+                                        <div style="max-width: 90px; text-align: right;">
+                        <p style="color: #FFFFFF !important; font-size: 7.5px !important; font-weight: 900 !important; margin: 0; line-height: 1.1;">
+                            Clique em <span style="color: #22c55e !important; text-shadow: 0 0 5px #22c55e;">🤝 ACEITAR E FECHAR</span> no topo.
                         </p>
                     </div>
                 </div>
