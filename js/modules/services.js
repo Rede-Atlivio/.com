@@ -284,7 +284,7 @@ export async function carregarPedidosAtivos() {
         snap.forEach(d => {
             const p = d.data();
             // 🛡️ CORREÇÃO: Filtro rigoroso para remover Cancelados e Encerrados da vista
-            const statusLixo = ['completed', 'rejected', 'cancelled', 'negotiation_closed'];
+            const statusLixo = ['completed', 'rejected', 'cancelled', 'negotiation_closed', 'archived'];
             if(!statusLixo.includes(p.status)) pedidos.push({id: d.id, ...p});
         });
 
