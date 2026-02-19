@@ -102,7 +102,7 @@ export async function abrirChatPedido(orderId) {
 
     document.getElementById('painel-pedidos')?.classList.add('hidden');
     painelChat.classList.remove('hidden');
-
+    painelChat.style.display = window.innerWidth >= 768 ? 'flex' : 'block';
     const pedidoRef = doc(db, "orders", orderId);
     unsubscribeChat = onSnapshot(pedidoRef, (snap) => {
         if (!snap.exists()) return;
