@@ -957,16 +957,15 @@ function atualizarRelogioDOM(pedido) {
     const displayUltimato = document.getElementById('timer-ultimato');
     const displayTimer = document.getElementById('timer-display');
 
-    // 🚨 VIGIA DO ULTIMATO: Encerramento Automático (Correção ReferenceError)
+    // 🚨 VIGIA DO ULTIMATO (Versão Corrigida V12)
     if (pedido.modo_ultimato && pedido.ultimato_expira) {
         const agora = Date.now();
         const restante = pedido.ultimato_expira - agora;
         
         if (restante <= 0 && pedido.status !== 'negotiation_closed') {
-            console.warn("🔥 ULTIMATO EXPIRADO: Encerrando...");
-            // Correção: Usa o ID que vem dentro do objeto pedido
-            const currentOrderId = pedido.id || pedido.order_id || window.lastOpenedOrderId;
-            window.encerrarNegociacaoSilenciosa(currentOrderId); 
+            console.warn("🔥 ULTIMATO EXPIRADO!");
+            const currentId = pedido.id || window.lastOpenedOrderId;
+            window.encerrarNegociacaoSilenciosa(currentId); 
             if (displayUltimato) displayUltimato.innerText = "🚨 OFERTA EXPIRADA";
             return;
         } else if (displayUltimato && restante > 0) {
@@ -977,23 +976,6 @@ function atualizarRelogioDOM(pedido) {
     }
 
     if (!displayTimer || !pedido.real_start) return;
-
-    // LÓGICA PARA O CARD VERMELHO (ULTIMATO)
-    if (displayUltimato && pedido.modo_ultimato && pedido.ultimato_expira) {
-        const agora = Date.now();
-        const restante = pedido.ultimato_expira - agora;
-        
-        if (restante <= 0) {
-            displayUltimato.innerText = "🚨 OFERTA EXPIRADA";
-            window.encerrarNegociacao(pedido.id || ""); // Opcional: auto-encerra
-        } else {
-            const m = Math.floor((restante % 3600000) / 60000).toString().padStart(2, '0');
-            const s = Math.floor((restante % 60000) / 1000).toString().padStart(2, '0');
-            displayUltimato.innerText = `🚨 EXPIRA EM ${m}:${s}`;
-        }
-    }
-
-    if (!displayTimer || !pedido.real_start) return;
 
     // Converte o início do banco para milissegundos
     const inicioMs = pedido.real_start.toDate ? pedido.real_start.toDate().getTime() : new Date(pedido.real_start).getTime();
