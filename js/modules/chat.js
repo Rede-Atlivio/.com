@@ -366,36 +366,34 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
         const valorAcordo = parseFloat(pedido.offer_value) || 0;
         const reservaCalculada = valorAcordo * (pct / 100);
 
-       return `<div id="banner-fechamento-v12" class="bg-slate-900 border-2 border-slate-700 ${isPC ? 'p-3 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-fadeIn">
-            <div class="absolute top-0 left-0 w-1.5 h-full bg-emerald-500"></div>
+       return `
+        <style>
+            @keyframes bounce-subtle { from { transform: translateY(0); } to { transform: translateY(-4px); } }
+            .animate-martelo { animation: bounce-subtle 1.5s infinite alternate; }
+        </style>
+        <div id="banner-fechamento-v12" class="bg-[#0f172a] border-2 border-slate-700 ${isPC ? 'p-3 mx-2 mb-2' : 'p-4 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-martelo">
+            <div class="absolute top-0 left-0 w-1 h-full bg-[#10b981]"></div>
             
-            <div class="flex justify-between items-center ${isPC ? 'mb-2' : 'mb-4'} relative z-10">
+            <div class="flex justify-between items-center mb-3 relative z-10">
                 <div class="flex flex-col leading-none">
-                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.1em]">Investimento Total</p>
-                    <p class="text-2xl font-black text-emerald-400 mt-1 tracking-tighter">R$ ${valorAcordo.toFixed(2).replace('.', ',')}</p>
+                    <p class="text-[8px] font-black text-white uppercase tracking-widest">Investimento Total</p>
+                    <p class="text-2xl font-black text-[#34d399] mt-1 tracking-tighter">R$ ${valorAcordo.toFixed(2).replace('.', ',')}</p>
                 </div>
-                <div class="text-right leading-none max-w-[120px]">
-                    <p class="text-[7px] text-amber-400 font-black uppercase italic animate-pulse leading-tight">
-                        ⚠️ Disponibilidade sujeita a alteração
-                    </p>
+                <div class="text-right">
+                    <p class="text-[7px] text-amber-400 font-black uppercase italic animate-pulse">⚠️ Disponibilidade Limitada</p>
                 </div>
             </div>
 
-            <div class="flex flex-col gap-2 relative z-10">
-                <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 ${isPC ? 'py-2.5' : 'py-4'} rounded-xl text-[11px] font-black uppercase shadow-lg transition active:scale-95 transform">
-                    🤝 ACEITAR E FECHAR AGORA
-                </button>
-                <p class="text-[6px] text-slate-500 font-bold uppercase text-center tracking-widest italic">
-                    ⚠️ Confirme os detalhes no chat antes. Esta ação é <span class="text-amber-500 font-black">irreversível</span>.
-                </p>
-            </div>
+            <button onclick="window.confirmarAcordo('${orderId}', true)" class="w-full bg-[#10b981] text-black ${isPC ? 'py-2.5' : 'py-3.5'} rounded-xl text-[11px] font-black uppercase shadow-[0_4px_10px_rgba(16,185,129,0.3)] transition active:scale-95 mb-2 relative z-10">
+                🤝 Aceitar e Fechar Agora
+            </button>
 
-            <div class="${isPC ? 'mt-2 p-1.5' : 'mt-4 p-2'} bg-slate-800/50 rounded-lg flex justify-between items-center border border-slate-700/50 relative z-10">
-                <div class="flex items-center gap-1.5">
-                    <span class="text-[10px]">🔒</span>
-                    <p class="text-[8px] text-amber-500 font-black uppercase tracking-tighter italic">Garantia ATLIVIO: R$ ${reservaCalculada.toFixed(2).replace('.', ',')}</p>
-                </div>
-                <span class="text-[6px] text-slate-500 font-bold uppercase tracking-tighter">Reserva de saldo segura</span>
+            <p class="text-[7px] text-white font-bold uppercase text-center tracking-tighter italic opacity-90 relative z-10">
+                Ação irreversível • Garantia Atlivio Protegida
+            </p>
+
+            <div class="${isPC ? 'mt-2 p-1' : 'mt-3 p-1.5'} bg-slate-800/40 rounded-lg flex justify-center items-center border border-slate-700/30 relative z-10">
+                <p class="text-[8px] text-amber-500 font-black uppercase tracking-tighter italic">🔒 Garantia: R$ ${reservaCalculada.toFixed(2).replace('.', ',')}</p>
             </div>
         </div>`;
     }
