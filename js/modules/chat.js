@@ -279,7 +279,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     <div id="contextual-dica-area" class="bg-amber-50/50" style="display: none; height: 0; overflow: hidden;"></div>
                 </div>
                 
-               <div id="scroll-area-v16" class="custom-scrollbar p-4" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #f8fafc; min-height: 0;">
+               <div id="scroll-area-v16" class="custom-scrollbar p-4 flex-1" style="overflow-y: auto; scroll-behavior: smooth; display: flex; flex-direction: column; background: #f8fafc; height: 100%;">
                     <div id="bubbles-area" class="flex flex-col gap-3" style="padding-bottom: 100px; width: 100%;"></div>
                 </div>
             </div>
