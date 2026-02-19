@@ -383,7 +383,14 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
             @keyframes bounce-subtle { from { transform: translateY(0); } to { transform: translateY(-4px); } }
             .animate-martelo { animation: bounce-subtle 1.5s infinite alternate; }
         </style>
-        <div id="banner-fechamento-v12" class="bg-[#0f172a] border-2 border-slate-700 ${isPC ? 'p-3 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden animate-martelo">
+        const isUltimato = pedido.modo_ultimato === true;
+        return `
+        <style>
+            @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+            .animate-ultimato { animation: pulse-red 2s infinite; background: #7f1d1d !important; border-color: #ef4444 !important; }
+        </style>
+        <div id="banner-fechamento-v12" class="${isUltimato ? 'animate-ultimato' : 'bg-[#0f172a] animate-martelo'} border-2 border-slate-700 ${isPC ? 'p-3 mx-2 mb-2' : 'p-5 mx-4 mb-4'} rounded-2xl shadow-2xl relative overflow-hidden">
+            ${isUltimato ? `<div class="absolute top-0 left-0 w-full h-1 bg-red-500 animate-pulse"></div>` : `<div class="absolute top-0 left-0 w-1.5 h-full bg-[#10b981]"></div>`}
             <div class="absolute top-0 left-0 w-1.5 h-full bg-[#10b981]"></div>
             
             <div class="flex justify-between items-center mb-4 relative z-10">
