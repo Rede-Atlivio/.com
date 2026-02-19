@@ -1155,7 +1155,6 @@ window.novoEnviarProposta = async (orderId) => {
     if (!orderSnap.exists()) return;
     const pedidoData = orderSnap.data();
 
-    // 🛡️ TRAVA DINÂMICA DE VALOR MÍNIMO
     const categoriaId = pedidoData.service_category_id || "gerais";
     const infoCategoria = (window.CATEGORIAS_ATIVAS || []).find(c => c.id === categoriaId) || { minPrice: 20 };
     const valorMinimo = infoCategoria.minPrice;
@@ -1165,14 +1164,13 @@ window.novoEnviarProposta = async (orderId) => {
     const valor = parseFloat(valorStr.replace(',', '.'));
 
     if (isNaN(valor) || valor < valorMinimo) {
-        return alert(`⛔ VALOR INVÁLIDO\nO valor mínimo permitido para este serviço é R$ ${valorMinimo.toFixed(2)}.`);
+        return alert(`⛔ VALOR INVÁLIDO\nO valor mínimo permitido é R$ ${valorMinimo.toFixed(2)}.`);
     }
 
-    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: 30min extras, Desconto, Material incluso):");
-    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "CONDIÇÃO ESPECIAL";
+    const beneficio = prompt("🎁 BENEFÍCIO EXTRA (Ex: Material incluso, Garantia estendida):");
+    const labelBeneficio = beneficio ? beneficio.toUpperCase() : "QUALIDADE PREMIUM GARANTIDA";
 
     try {
-        // Atualiza o pedido e reseta as confirmações mútuas
         await updateDoc(doc(db, "orders", orderId), {
             offer_value: valor,
             offer_bonus: beneficio || "",
@@ -1180,25 +1178,31 @@ window.novoEnviarProposta = async (orderId) => {
             client_confirmed: false
         });
 
-        // 🎨 VISUAL PREMIUM RETA (ALTA CONVERSÃO)
+        // 💎 V34: MODELO OFERTA IRRESISTÍVEL (Compacto e Poderoso)
         const htmlProposta = `
-            <div class="my-4 border border-blue-100 rounded-2xl overflow-hidden shadow-xl bg-white animate-fadeIn" style="transform: rotate(0deg) !important;">
-                <div class="bg-slate-900 text-white text-[9px] font-black text-center py-2 uppercase tracking-[0.2em]">
-                    💎 Nova Proposta Comercial
+            <div class="my-3 border-2 border-slate-900 rounded-2xl overflow-hidden shadow-2xl bg-white animate-fadeIn mx-auto max-w-[290px]">
+                <div class="bg-slate-900 text-white text-[7px] font-black text-center py-1.5 uppercase tracking-[0.2em] flex items-center justify-center gap-2">
+                    <span>💎</span> NOVA PROPOSTA COMERCIAL <span>💎</span>
                 </div>
-                <div class="p-6 text-center">
-                    <p class="text-slate-400 text-[10px] uppercase font-bold mb-1">Investimento Total</p>
-                    <div class="flex justify-center items-center gap-1 text-slate-900">
-                        <span class="text-xl font-bold">R$</span>
-                        <span class="text-5xl font-black tracking-tighter">${valor.toFixed(2).replace('.', ',')}</span>
+                
+                <div class="p-4 flex flex-col items-center">
+                    <p class="text-slate-400 text-[8px] font-bold uppercase tracking-tighter">Investimento Total</p>
+                    <div class="flex items-baseline gap-1 text-slate-900 my-1">
+                        <span class="text-xs font-bold">R$</span>
+                        <span class="text-3xl font-black tracking-tighter">${valor.toFixed(2).replace('.', ',')}</span>
                     </div>
-                    <div class="mt-4 py-2 px-4 bg-blue-50 border border-blue-100 rounded-xl inline-flex items-center gap-2">
-                        <span class="text-lg">🎁</span>
-                        <p class="text-blue-700 text-[10px] font-black uppercase tracking-tight">${labelBeneficio}</p>
+
+                    <div class="w-full mt-2 py-2 px-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2">
+                        <span class="text-base">🎁</span>
+                        <div class="leading-none">
+                            <p class="text-emerald-800 text-[9px] font-black uppercase">${labelBeneficio}</p>
+                            <p class="text-emerald-600 text-[6px] font-bold uppercase tracking-tighter">Bônus exclusivo para este acordo</p>
+                        </div>
                     </div>
-                    <div class="mt-5 pt-4 border-t border-slate-50">
-                        <p class="text-[10px] text-slate-500 leading-relaxed font-medium">
-                            Para aceitar este valor e garantir o compromisso, clique no botão <b>🤝 ACEITAR E FECHAR</b> localizado no topo ou no banner de etapa deste chat.
+
+                    <div class="mt-3 pt-3 border-t border-slate-100 w-full">
+                        <p class="text-[7px] text-slate-500 leading-tight text-center font-medium">
+                            Para aceitar e garantir o compromisso, clique no botão <span class="text-slate-900 font-bold">🤝 ACEITAR E FECHAR</span> no topo deste chat.
                         </p>
                     </div>
                 </div>
@@ -1211,10 +1215,8 @@ window.novoEnviarProposta = async (orderId) => {
             timestamp: serverTimestamp()
         });
         
-        console.log("✅ Proposta V12 Premium enviada com sucesso.");
     } catch (e) { 
-        console.error("Erro proposta:", e);
-        alert("Erro ao processar proposta."); 
+        console.error("Erro proposta V34:", e); 
     }
 };
 // --- MAPEAMENTO FINAL DE GATILHOS (FECHANDO O ARQUIVO) ---
