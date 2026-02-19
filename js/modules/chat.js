@@ -538,12 +538,18 @@ export async function enviarMensagemChat(orderId, step) {
 
     input.value = "";
     try {
-        await addDoc(collection(db, `chats/${orderId}/messages`), { 
-            text: textoOriginal, 
-            sender_id: auth.currentUser.uid, 
-            timestamp: serverTimestamp() 
-        });
-    } catch (e) { console.error(e); }
+        // 🚀 AÇÃO LAZARUS: Salva mensagem e reseta cronômetro de vida útil do chat
+        const batchMsg = [
+            addDoc(collection(db, `chats/${orderId}/messages`), { 
+                text: textoOriginal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
+            }),
+            updateDoc(doc(db, "orders", orderId), { 
+                last_interaction_at: serverTimestamp(),
+                chat_lifecycle_status: 'active' // Reseta para ativo se estava em aviso
+            })
+        ];
+        await Promise.all(batchMsg);
+    } catch (e) { console.error("Erro Lazarus Passo 1:", e); }
 }
 
 export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CRÍTICO remove o "lixo" do arquivo e coloca as leituras de saldo no lugar certo.
