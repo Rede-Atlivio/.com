@@ -71,11 +71,13 @@ window.sugerirDetalhe = (orderId, campo) => {
 export async function abrirChatPedido(orderId) {
     console.log("🔄 Gina iniciando troca para o pedido:", orderId);
     
-    // ✋ 1. MATA A CONEXÃO ANTERIOR NA HORA
-    if (unsubscribeChat) { 
-        unsubscribeChat(); 
-        unsubscribeChat = null; 
-    }
+    // ✋ 1. MATA A CONEXÃO ANTERIOR NA HORA - PONTO CRÍTICO SOLUÇÃO 02 - TROCA DE CHATS
+    // ✋ 1. MATA A CONEXÃO ANTERIOR NA HORA (Reforço Global)
+    if (window.unsubscribeChat) { 
+        window.unsubscribeChat(); 
+        window.unsubscribeChat = null; 
+    }
+    
 
     // 🧹 2. RESET TOTAL DE INSTÂNCIA (Padrão PICA GROSSA)
     let painelChat = document.getElementById('painel-chat-individual');
