@@ -1,20 +1,20 @@
-// 💀 SERVICE WORKER SELF-DESTRUCT V99
-self.addEventListener('install', () => {
-  self.skipWaiting(); // Não espera nada, instala agora
-});
+// 🚀 SW INTELIGENTE V1.0 - Atlivio Production
+const CACHE_NAME = 'atlivio-cache-v1';
 
-self.addEventListener('activate', (event) => {
-  // 1. Limpa TODOS os caches do navegador
-  event.waitUntil(
-    caches.keys().then((names) => {
-      return Promise.all(names.map(name => caches.delete(name)));
-    }).then(() => {
-      // 2. Desinstala a si mesmo e avisa as abas
-      return self.registration.unregister();
-    }).then(() => {
-      return self.clients.matchAll();
-    }).then((clients) => {
-      clients.forEach(client => client.navigate(client.url)); // Recarrega o app do usuário
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request).then((networkResponse) => {
+          // Atualiza o cache com a versão nova da rede
+          if (networkResponse.status === 200) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
+        });
+        // Entrega o cache (se houver) ou espera a rede
+        return cachedResponse || fetchPromise;
+      });
     })
   );
 });
