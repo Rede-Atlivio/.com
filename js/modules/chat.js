@@ -96,7 +96,7 @@ export async function abrirChatPedido(orderId) {
         // 🚀 MODO SUPER APP: Expansão máxima vertical no PC (Padrão PICA GROSSA)
         const isPC = window.innerWidth >= 768;
         const stylePC = "width: 400px; height: 96vh; right: 20px; bottom: 2vh; border-radius: 28px; border: 6px solid #0f172a; box-shadow: 0 0 50px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden !important; position: fixed; z-index: 9999;";
-        const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0; border: none; border-radius: 0;";
+        const styleMobile = "width: 100%; height: 100%; right: 0; bottom: 0; border: none; border-radius: 0; z-index: 999999 !important;";
         
         painelChat.className = "fixed bg-white flex flex-col hidden overflow-hidden animate-slideUp";
         painelChat.style.cssText = isPC ? stylePC : styleMobile;
