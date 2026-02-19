@@ -228,14 +228,14 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
 
     // Barra de Progresso
     const stepsHTML = `
-        <div class="flex justify-between px-6 py-2 bg-[#020617] text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-slate-800">
-            <span class="${step >= 1 ? 'text-[#fbbf24]' : ''}">1. Negociação</span>
-            <span class="${step >= 2 ? 'text-[#fbbf24]' : ''}">2. Garantia</span>
-            <span class="${step >= 3 ? 'text-[#22c55e]' : ''}">3. Execução</span>
+        <div class="flex justify-between px-6 py-2 bg-white text-[9px] font-bold text-gray-400 uppercase tracking-widest border-b">
+            <span class="${step >= 1 ? 'text-blue-600' : ''}">1. Negociação</span>
+            <span class="${step >= 2 ? 'text-blue-600' : ''}">2. Garantia</span>
+            <span class="${step >= 3 ? 'text-green-600' : ''}">3. Execução</span>
         </div>
-        <div class="h-[2px] w-full bg-slate-900">
-            <div class="h-full ${step >= 3 ? 'bg-[#22c55e]' : 'bg-[#fbbf24]'} shadow-[0_0_10px_rgba(251,191,36,0.5)] transition-all duration-500" style="width: ${step * 33.33}%"></div>
-      0 </div>
+        <div class="h-1 w-full bg-gray-100">
+            <div class="h-full ${step >= 3 ? 'bg-green-500' : 'bg-blue-600'} transition-all duration-500" style="width: ${step * 33.33}%"></div>
+        </div>
     `;
 
     // Injeção da Lógica Gold Elite (Geometria 67 + Cor 78)
