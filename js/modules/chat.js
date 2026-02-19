@@ -306,10 +306,9 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                     <div class="flex items-center gap-2">
                         ${contatoLiberado ? `<a href="tel:${partnerData.phone || partnerData.telefone}" class="bg-green-100 text-green-700 px-4 py-2 rounded-full text-[10px] font-black uppercase shadow-sm">📞 Ligar Agora</a>` : ''}
                     </div>
-                </div>
-                ${stepsHTML}
-                ${timeHTML}
-            </div>
+                </div> </div> ${stepsHTML}
+            ${timeHTML}
+        </div>
 
            <div id="chat-messages" class="flex-1 flex flex-col bg-slate-50 relative overflow-hidden" style="height: 100%; min-height: 0;">
                 <div id="header-estatico-chat" class="flex-shrink-0 w-full bg-white z-[50] border-b shadow-sm">
