@@ -213,20 +213,26 @@ export async function enviarPropostaAgora() {
     }
 
     try {
-        // 🛡️ TRAVA ANTI-RESSURREIÇÃO: Verifica se já existe negociação ativa antes de criar
+       // 🛡️ TRAVA ANTI-RESSURREIÇÃO V3: Mata o vício de chats mortos
         const qCheck = query(
             collection(db, "orders"), 
             where("client_id", "==", user.uid), 
-            where("provider_id", "==", mem_ProviderId),
-            where("status", "in", ["pending", "accepted", "confirmed_hold", "in_progress", "active"])
+            where("provider_id", "==", mem_ProviderId)
         );
         const snapCheck = await getDocs(qCheck);
 
-        if (!snapCheck.empty) {
-            const pedidoAtivo = snapCheck.docs[0];
+        // Verifica se entre os pedidos encontrados, algum está REALMENTE ativo
+        const pedidoVivo = snapCheck.docs.find(d => 
+            !['negotiation_closed', 'cancelled', 'completed', 'archived', 'rejected'].includes(d.data().status)
+        );
+
+        if (pedidoVivo) {
+            console.log("📍 Pedido vivo encontrado:", pedidoVivo.id);
             alert("⚠️ Você já possui uma negociação ativa com este profissional.");
-            return window.irParaChatComSucesso(pedidoAtivo.id);
+            return window.irParaChatComSucesso(pedidoVivo.id);
         }
+        
+        console.log("✨ Nenhum pedido vivo. Gerando ID totalmente novo...");
 
         const dataServico = document.getElementById('req-date')?.value || "A combinar";
         const horaServico = document.getElementById('req-time')?.value || "A combinar";
