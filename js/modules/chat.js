@@ -365,7 +365,6 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
     
     // Gina: Dispara a inteligência de fechamento e o Martelo de Vendas
     injetarGatilhosDemanda(uidPartner, isProvider, pedido.service_category_id || "gerais");
-    atualizarResumoPropostaTopo(orderId, pedido, isProvider);
     injetarMétricasEngajamento(uidPartner);
 }
 function gerarBannerEtapa(step, isProvider, pedido, orderId) {
