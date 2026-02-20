@@ -392,21 +392,24 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        // 🧠 TRIAGEM POR VALOR E ESTADO ONLINE V23
+        // 🧠 MOTOR DE SINCRONIA V23: Prioriza "VER" ou Maior Valor
         const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        const ordenados = todosPedidos.sort((a, b) => (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0));
+        const pedidosFiltrados = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
+        
+        const ordenados = pedidosFiltrados.sort((a, b) => {
+            if (a.id === window.PEDIDO_MAXIMIZADO_ID) return -1;
+            if (b.id === window.PEDIDO_MAXIMIZADO_ID) return 1;
+            return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
+        });
         
         const container = document.getElementById('radar-container');
         if (container) {
-            container.innerHTML = ""; // Limpa para reconstruir a fila por valor
+            container.innerHTML = ""; 
             ordenados.forEach((pedido, index) => {
-                const isFoco = index === 0; // Apenas o maior valor ganha o card grande
+                const isFoco = index === 0;
                 createRequestCard(pedido, isFoco);
-                
-                // Injeta linha divisória após o primeiro se houver fila real
                 if (isFoco && ordenados.length > 1) {
-                    const temPilulas = ordenados.slice(1).length > 0;
-                    if (temPilulas) container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Fila de Espera</span></div>`);
+                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Mais Oportunidades na Fila</span></div>`);
                 }
             });
         }
