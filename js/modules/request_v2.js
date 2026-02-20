@@ -586,25 +586,21 @@ export function createRequestCard(pedido, isFoco = true) {
     // Injeta no container
     container.appendChild(card);
 
-    // --- MOTOR DE ESTACIONAMENTO: EXPIRA -> VIRA PÍLULA ---
+    // --- MOTOR DE ESTACIONAMENTO V25 ---
     if (isFoco && !isBlocked) {
-        const timerHtml = `<div class="h-1.5 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-blue-400 to-indigo-600 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
+        const timerHtml = `<div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
         card.insertAdjacentHTML('beforeend', timerHtml);
-        setTimeout(() => { 
-            const t = document.getElementById(`timer-${pedido.id}`); 
-            if(t) t.style.width = '0%'; 
-        }, 100);
+        setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
-            if (el && !el.classList.contains('atlivio-pill') && !isBlocked) {
-                console.log("🕒 Tempo esgotado. Voltando para a fila.");
+            // Só estaciona se não estiver bloqueado e ainda for card grande
+            if (el && !el.classList.contains('atlivio-pill')) {
                 window.PEDIDO_MAXIMIZADO_ID = null;
                 if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
             }
         }, 30000);
     }
-
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
