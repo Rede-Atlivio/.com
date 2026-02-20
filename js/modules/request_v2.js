@@ -510,9 +510,7 @@ export function createRequestCard(pedido, isFoco = true) {
         </div>
     `;
 
-    container.prepend(card);
-    const antena = document.getElementById('radar-empty-state');
-    if (antena) antena.classList.add('hidden');
+    container.appendChild(card);
 
     setTimeout(() => { 
         const t = document.getElementById(`timer-${pedido.id}`); 
