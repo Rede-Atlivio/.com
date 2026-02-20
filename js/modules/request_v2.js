@@ -392,13 +392,18 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        // 🧠 MOTOR DE SINCRONIA V23: Prioriza "VER" ou Maior Valor
+        // 🧠 MOTOR DE SINCRONIA V24: Prioriza Trava de Saldo, Maximizado ou Valor
         const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         const pedidosFiltrados = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
         
         const ordenados = pedidosFiltrados.sort((a, b) => {
+            // Regra 1: Se um pedido está bloqueado por carteira, ele tem prioridade ABSOLUTA no topo (Trava visual)
+            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
+            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
+            // Regra 2: Se o usuário clicou em "VER"
             if (a.id === window.PEDIDO_MAXIMIZADO_ID) return -1;
             if (b.id === window.PEDIDO_MAXIMIZADO_ID) return 1;
+            // Regra 3: Maior valor
             return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
         });
         
@@ -409,7 +414,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isFoco = index === 0;
                 createRequestCard(pedido, isFoco);
                 if (isFoco && ordenados.length > 1) {
-                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Mais Oportunidades na Fila</span></div>`);
+                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Lista de Espera Atlivio</span></div>`);
                 }
             });
         }
