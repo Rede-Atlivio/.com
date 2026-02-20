@@ -593,19 +593,20 @@ export function createRequestCard(pedido, isFoco = true) {
     if (isFoco && !isBlocked) {
         const timerHtml = `<div class="h-1.5 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-blue-400 to-indigo-600 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
         card.insertAdjacentHTML('beforeend', timerHtml);
-        setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
+        setTimeout(() => { 
+            const t = document.getElementById(`timer-${pedido.id}`); 
+            if(t) t.style.width = '0%'; 
+        }, 100);
 
-       setTimeout(() => {
-                const el = document.getElementById(`req-${pedido.id}`);
-                // Estaciona apenas se for azul (normal). O Vermelho (Bloqueado) fica travado na tela.
-                if (el && !el.classList.contains('atlivio-pill') && !isBlocked) {
-                    console.log("🕒 Tempo esgotado. Voltando para a fila.");
-                    window.PEDIDO_MAXIMIZADO_ID = null;
-                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
-                }
-            }, 30000);
-         }
-      }
+        setTimeout(() => {
+            const el = document.getElementById(`req-${pedido.id}`);
+            if (el && !el.classList.contains('atlivio-pill') && !isBlocked) {
+                console.log("🕒 Tempo esgotado. Voltando para a fila.");
+                window.PEDIDO_MAXIMIZADO_ID = null;
+                if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
+            }
+        }, 30000);
+    }
 
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
