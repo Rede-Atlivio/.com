@@ -396,6 +396,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
         const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         const pedidosVivos = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
 
+        // 💾 CACHE DE SISTEMA: Alimenta o Robô de Maximização Instantânea
+        window.ULTIMOS_PEDIDOS_CACHED = pedidosVivos;
+
         const ordenados = pedidosVivos.sort((a, b) => {
             // 1. PRIORIDADE MÁXIMA: Pedido bloqueado por falta de saldo (Trava o funil)
             if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
