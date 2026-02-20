@@ -437,14 +437,12 @@ export async function iniciarRadarPrestador(uidManual = null) {
 window.PEDIDO_MAXIMIZADO_ID = null;
 
 window.maximizarPedido = (id) => {
-    console.log("🚀 [CONVERSÃO] Maximizar ID:", id);
     window.PEDIDO_MAXIMIZADO_ID = id;
-    // Força o motor do radar a rodar a triagem novamente com o novo foco
-    if(window.iniciarRadarPrestador) {
-        const container = document.getElementById('radar-container');
-        if(container) container.innerHTML = ""; 
-        window.iniciarRadarPrestador(); 
-    }
+    console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
+    const container = document.getElementById('radar-container');
+    if(container) container.innerHTML = ""; 
+    // Reinicia o motor para o Snapshot ler o PEDIDO_MAXIMIZADO_ID no topo
+    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
 };
 
 window.alternarMinimizacao = (id) => {
