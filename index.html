@@ -28,9 +28,21 @@
         .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { border-color: #2563eb; color: #1e3a8a; font-weight: 900; }
-        
+
+        /* 1. Linha Separadora de Fila */
+        .radar-divider { display: flex; align-items: center; gap: 10px; margin: 15px 0; opacity: 0.6; }
+        .radar-divider::before, .radar-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); }
+        .radar-divider span { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* 2. Estilo Pílula (Compacto) */
+        .request-pill { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+        .request-pill.blocked-pill { background-color: #450a0a; border-left-color: #ef4444; }
+
+        /* 3. Variante Vermelha (Bloqueio) */
+        .request-card.blocked { background-color: #450a0a !important; border-color: #ef4444 !important; }
+
         /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
-        input, textarea, select { 
+        input, textarea, select {
             color: #1f2937 !important; /* Cinza Escuro */
             background-color: #f9fafb !important; /* Fundo Claro */
         }
