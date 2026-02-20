@@ -530,13 +530,13 @@ export function createRequestCard(pedido, isFoco = true) {
             <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
                 ${isBlocked ? '🔴' : '💰'}
             </div>
-            <div class="flex flex-col min-w-0">
-                <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
-                <span class="text-gray-400 text-[9px] uppercase font-bold italic truncate opacity-70">${pedido.service_title || 'Serviço Geral'}</span>
+            <div class="flex-1 min-w-0">
+                <p class="text-white font-black text-[10px] uppercase truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</p>
+                <p class="text-gray-500 text-[8px] uppercase font-bold italic truncate">${pedido.service_title || 'Serviço Geral'}</p>
             </div>
             <div class="flex items-center gap-2">
-                <button onclick="window.alternarMinimizacao('${pedido.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 text-sm font-bold">＋</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-600/10 text-red-400 text-sm font-bold">×</button>
+                <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill">VER</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-lg px-1">×</button>
             </div>
         `;
     }
