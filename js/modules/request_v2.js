@@ -425,16 +425,21 @@ export async function iniciarRadarPrestador(uidManual = null) {
     });
 }
 
+// 🏗️ GESTÃO DE FOCO DO RADAR
+window.PEDIDO_MAXIMIZADO_ID = null;
+
+window.maximizarPedido = (id) => {
+    window.PEDIDO_MAXIMIZADO_ID = id;
+    console.log("🔍 Promovendo pedido ao topo:", id);
+    // Limpa o container para o onSnapshot reconstruir com o novo ID em primeiro
+    const container = document.getElementById('radar-container');
+    if(container) container.innerHTML = ""; 
+};
+
 window.alternarMinimizacao = (id) => {
-    const card = document.getElementById(`req-${id}`);
-    const detalhes = document.getElementById(`detalhes-${id}`);
-    const btn = document.getElementById(`btn-min-${id}`);
-    
-    if (card && detalhes) {
-        const agoraMinimizado = card.classList.toggle('minimized');
-        detalhes.classList.toggle('hidden');
-        if(btn) btn.innerHTML = agoraMinimizado ? "+" : "&minus;";
-    }
+    // Agora o "Minimizar" reseta o foco manual, jogando o card para a fila de pílulas
+    window.PEDIDO_MAXIMIZADO_ID = null;
+    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
 };
 
 // ============================================================================
