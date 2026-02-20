@@ -631,7 +631,9 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
 
                 // 2. Injeta a Pílula manualmente para não deixar buraco na tela
                 // Usamos a função que você já tem para garantir o padrão visual
-                createRequestCard(pedido, false); 
+                // Busca o container de espera antes de criar a pílula
+                const waitList = document.getElementById('radar-wait-list');
+                createRequestCard(pedido, false, waitList); 
 
                 // 3. Organiza o divisor (Caso existam outros pedidos)
                 const container = document.getElementById('radar-container');
