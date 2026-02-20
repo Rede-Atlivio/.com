@@ -392,33 +392,36 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        // 🧠 MOTOR DE SINCRONIA V24: Prioriza Trava de Saldo, Maximizado ou Valor
+        // 🧠 MOTOR DE PRIORIDADE V25 (ESTUDO DE DUPLICAÇÃO)
         const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        const pedidosFiltrados = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
-        
-        const ordenados = pedidosFiltrados.sort((a, b) => {
-            // Regra 1: Se um pedido está bloqueado por carteira, ele tem prioridade ABSOLUTA no topo (Trava visual)
+        const pedidosVivos = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
+
+        const ordenados = pedidosVivos.sort((a, b) => {
+            // 1. PRIORIDADE MÁXIMA: Pedido bloqueado por falta de saldo (Trava o funil)
             if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
             if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
-            // Regra 2: Se o usuário clicou em "VER"
+            
+            // 2. PRIORIDADE MANUAL: Se o prestador clicou em "VER" na pílula
             if (a.id === window.PEDIDO_MAXIMIZADO_ID) return -1;
             if (b.id === window.PEDIDO_MAXIMIZADO_ID) return 1;
-            // Regra 3: Maior valor
+            
+            // 3. PRIORIDADE FINANCEIRA: Maior valor de oferta
             return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
         });
-        
+
         const container = document.getElementById('radar-container');
         if (container) {
             container.innerHTML = ""; 
             ordenados.forEach((pedido, index) => {
                 const isFoco = index === 0;
+                // Envia para a fábrica de cards com indicação de foco real
                 createRequestCard(pedido, isFoco);
+                
                 if (isFoco && ordenados.length > 1) {
-                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Lista de Espera Atlivio</span></div>`);
+                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`);
                 }
             });
         }
-
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
