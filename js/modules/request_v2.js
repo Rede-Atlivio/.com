@@ -606,17 +606,22 @@ export function createRequestCard(pedido, isFoco = true) {
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
-            // Se o card grande ainda estiver na tela após 30s
             if (el && !el.classList.contains('atlivio-pill')) {
-                console.log("🕒 Tempo esgotado: Forçando rebaixamento para pílula.");
-                el.classList.add('removing'); // Adiciona classe de saída se houver no CSS
-                window.PEDIDO_MAXIMIZADO_ID = null; 
+                console.log("🕒 Estacionamento Instantâneo: Trocando Card por Pílula.");
                 
-                // ✅ FOLGA DE SEGURANÇA: Espera o card sumir fisicamente antes de redesenhar
-                setTimeout(() => {
-                    if (document.getElementById(`req-${pedido.id}`)) el.remove();
-                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
-                }, 100); 
+                // 1. Remove o card grande imediatamente
+                el.remove(); 
+                window.PEDIDO_MAXIMIZADO_ID = null;
+
+                // 2. Injeta a Pílula manualmente para não deixar buraco na tela
+                // Usamos a função que você já tem para garantir o padrão visual
+                createRequestCard(pedido, false); 
+
+                // 3. Organiza o divisor (Caso existam outros pedidos)
+                const container = document.getElementById('radar-container');
+                if (container && !container.querySelector('.radar-divider')) {
+                    container.insertAdjacentHTML('afterbegin', `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`);
+                }
             }
         }, 30000);
     }
