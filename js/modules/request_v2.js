@@ -564,15 +564,16 @@ export function createRequestCard(pedido, isFoco = true) {
             if(t) t.style.width = '0%'; 
         }, 100);
 
-        // 🛡️ TRAVA DE PERSISTÊNCIA: Pílulas e Bloqueados NÃO somem sozinhos
-        const tempoExpiracao = 30000; 
+        // 🛡️ PERSISTÊNCIA NANA-BANANA: Somente o Card Foco Azul expira
         setTimeout(() => { 
             const el = document.getElementById(`req-${pedido.id}`);
-            // Só remove se ainda for um card principal azul. Pílulas ficam.
-            if(el && el.classList.contains('request-card') && !el.classList.contains('is-blocked-status')) {
+            const isPilula = el ? el.classList.contains('atlivio-pill') : false;
+            const isRed = el ? el.classList.contains('is-blocked-status') : false;
+
+            if(el && !isPilula && !isRed) {
                 removeRequestCard(pedido.id); 
             }
-        }, tempoExpiracao);
+        }, 30000);
     }
 }
 
