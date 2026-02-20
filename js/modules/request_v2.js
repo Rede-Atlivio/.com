@@ -468,6 +468,7 @@ export function createRequestCard(pedido, isFoco = true) {
     let horaDisplay = pedido.hora && pedido.hora !== "A combinar" ? pedido.hora : "Agora";
 
     const isBlocked = pedido.is_blocked_by_wallet === true;
+    const classeStatusBloqueio = isBlocked ? "is-blocked-status" : "";
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
     
