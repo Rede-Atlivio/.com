@@ -562,9 +562,9 @@ export function createRequestCard(pedido, isFoco = true) {
                 <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
                     <span>⚡</span> ACEITAR AGORA
                 </button>
-           </div>
+          </div>
         `;
-        } // Fim do else (Card Azul)
+        }
     } else {
         // BLOCO C: A PÍLULA DE CONVERSÃO (LAYOUT GRID V25)
         const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
