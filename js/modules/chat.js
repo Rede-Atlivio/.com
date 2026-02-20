@@ -1371,22 +1371,40 @@ window.confirmarEncerramentoChat = async (orderId) => {
     } catch(e) { console.error("Erro ao encerrar:", e); }
 };
 
-// 🛡️ MOTOR DE EDUCAÇÃO E SEGURANÇA CHAT V12
+// 🛡️ MOTOR DE EDUCAÇÃO E SEGURANÇA CHAT V13 (POSICIONAMENTO GARANTIDO)
 async function verificarOnboardingChat(uid) {
     const userRef = doc(db, "usuarios", uid);
     const snap = await getDoc(userRef);
-    if (snap.exists() && !snap.data().chat_onboarding_seen) {
-        const onboardingHtml = `
-            <div id="chat-onboarding" class="bg-blue-600 text-white p-4 rounded-2xl my-6 mx-4 shadow-2xl animate-slideUp relative overflow-hidden border-2 border-white/20">
-                <div class="absolute top-0 right-0 p-2 opacity-20 text-3xl font-black">🛡️</div>
-                <h4 class="text-xs font-black uppercase mb-1">Negocie com Segurança</h4>
-                <p class="text-[10px] leading-tight opacity-90 mb-3">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
-                <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-white text-blue-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm active:scale-95 transition">Entendi</button>
-            </div>`;
-        // 📥 Reposicionado para o final para não sumir atrás do banner fixo
-        document.getElementById('bubbles-area')?.insertAdjacentHTML('beforeend', onboardingHtml);
-        if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
-    }
+    
+    // Se o campo for true, encerra. Se for false ou não existir, prossegue.
+    if (snap.exists() && snap.data().chat_onboarding_seen === true) return;
+
+    const onboardingHtml = `
+        <div id="chat-onboarding" class="bg-blue-600 text-white p-5 rounded-2xl my-6 mx-4 shadow-2xl animate-slideUp relative overflow-hidden border-2 border-white/20 z-[50]">
+            <div class="absolute top-0 right-0 p-2 opacity-20 text-3xl font-black">🛡️</div>
+            <h4 class="text-[11px] font-black uppercase mb-1 tracking-tight">Negocie com Segurança</h4>
+            <p class="text-[10px] leading-tight opacity-90 mb-4">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
+            <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-white text-blue-600 px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm active:scale-95 transition">Entendi, vamos lá!</button>
+        </div>`;
+
+    // 🚀 TENTATIVA RECURSIVA: Espera a área de bolhas carregar para injetar no final
+    let checkExist = setInterval(() => {
+        const areaAlvo = document.getElementById('bubbles-area');
+        if (areaAlvo) {
+            // Remove duplicata se houver
+            document.getElementById('chat-onboarding')?.remove();
+            
+            areaAlvo.insertAdjacentHTML('beforeend', onboardingHtml);
+            clearInterval(checkExist);
+            console.log("💉 Onboarding injetado no final do chat com sucesso.");
+            
+            // Força a rolagem para o usuário ver o balão
+            setTimeout(() => { if(window.rolarChatParaBaixo) window.rolarChatParaBaixo(); }, 300);
+        }
+    }, 500);
+
+    // Timeout de segurança para não rodar infinito
+    setTimeout(() => clearInterval(checkExist), 5000);
 }
 
 window.confirmarLeituraRegras = async (uid) => {
