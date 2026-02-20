@@ -490,11 +490,14 @@ export function createRequestCard(pedido, isFoco = true) {
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
 
-    // --- BLOCO B: O CARD ALERTA VERMELHO (DUPLICAÇÃO REAL) ---
-    if (isFoco && isBlocked) {
-        card.className = `request-card is-red-alert relative mb-6 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 overflow-hidden animate-slideInDown`;
-        card.innerHTML = `
-            <div class="p-6 text-center relative">
+    // ✅ CORREÇÃO V25: Verifica se é FOCO (Grande). Independente se é azul ou vermelho.
+    if (isFoco) {
+        // Agora o sistema entra aqui e decide qual SKIN usar dentro do Bloco Grande
+        if (isBlocked) {
+            // BLOCO B: CARD VERMELHO (DUPLICAÇÃO REAL)
+            card.className = `request-card is-red-alert relative mb-6 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 overflow-hidden animate-slideInDown`;
+            card.innerHTML = `
+                <div class="p-6 text-center relative">
                 <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
                 <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
                     ⚠️ OPORTUNIDADE EM RISCO
