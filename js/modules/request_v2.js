@@ -430,6 +430,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 // Criamos um container de "espera" com margem superior forçada
                 const waitContainer = document.createElement('div');
                 waitContainer.id = "radar-wait-list";
+                // Adicionamos mt-16 para dar 64px de distância do card de cima
+                waitContainer.className = "mt-16 pt-8 border-t border-white/5 w-full block clear-both";
                 waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full";
                 waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
                 
