@@ -88,9 +88,11 @@
             gap: 10px;
             width: 100%;
             max-width: 400px;
+            max-height: 80vh; /* Limita a altura para não vazar da tela */
+            overflow-y: auto; /* Scroll interno se houver muitos cards */
             margin: 0 auto;
             z-index: 8000;
-            padding: 10px 0;
+            padding: 10px 5px;
         }
 
         /* 2. O CARD PADRÃO (DARK BLUE) */
