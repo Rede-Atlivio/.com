@@ -1529,11 +1529,15 @@ window.verificarVidaUtilChat = async (pedido) => {
             });
 
             // Injeta mensagem do sistema no chat
-            await addDoc(collection(db, `chats/${pedido.id}/messages`), {
-                text: "⏳ Essa negociação está parada. Deseja continuar ou encerrar? Se não houver interação em breve, o chat será arquivado automaticamente por segurança.",
+            // 📢 INJEÇÃO DE AVISO V3 (Garantia de visibilidade)
+            const msgAlerta = "⏳ ESTA NEGOCIAÇÃO ESTÁ PARADA. Deseja continuar? Se não houver interação em 12h, o chat será arquivado.";
+            await addDoc(collection(window.db, "chats", pedido.id, "messages"), {
+                text: msgAlerta,
                 sender_id: 'system',
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp(),
+                type: 'warning'
             });
+            console.log("✅ Mensagem de aviso enviada para o Firestore.");
         } catch (e) { console.error("Erro Lazarus:", e); }
     }
 };
