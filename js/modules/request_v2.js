@@ -562,16 +562,22 @@ export function createRequestCard(pedido, isFoco = true) {
             </div>
         `;
 
-    // --- BLOCO C: A PÍLULA PREMIUM (VERSÃO ANTIGA ESTÁVEL) ---
+    // --- BLOCO C: A PÍLULA DE CONVERSÃO (LAYOUT GRID V25) ---
     } else {
         const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
         card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <span class="text-sm">${isBlocked ? '🔴' : '🔵'}</span>
-                <span class="text-[10px] font-black text-white uppercase italic truncate tracking-tight">R$ ${valorTotal.toFixed(0)} - ${pedido.client_name}</span>
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
+                ${isBlocked ? '🔴' : '💰'}
             </div>
-            <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-xl font-bold">&times;</button>
+            <div class="flex flex-col min-w-0 flex-1">
+                <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
+                <span class="text-gray-400 text-[9px] uppercase font-bold italic truncate opacity-60">${pedido.service_title || 'Serviço Geral'}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill">VER</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-500 text-lg">×</button>
+            </div>
         `;
     }
     // Injeta no container
