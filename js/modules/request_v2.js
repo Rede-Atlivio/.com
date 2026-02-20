@@ -554,9 +554,11 @@ export async function aceitarPedidoRadar(orderId) {
         const limiteDivida = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
-        //PONTO CRÍTICO SOLUÇÃO BÔNUSLINHAS ANTES 516 A 519 DEPOIS 517 A 520
+        //PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 516 A 519 DEPOIS 517 A 520
         // 1. Bloqueio por Limite de Dívida (Considerando saldo total disponível)
-        if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
+       if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
+            document.getElementById(`req-${orderId}`)?.remove();
+            createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, false);
             return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo total (R$ ${saldoTotalParaAceite.toFixed(2)}) atingiu o limite de dívida permitido.`);
         }
         //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 521 A 527  DEPOIS 522 A 528
