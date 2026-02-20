@@ -511,26 +511,25 @@ export function createRequestCard(pedido, isFoco = true) {
                 </button>
             </div>
         `;
-    } else {
-        // --- MODO PÍLULA (COMPACTO) ---
-        const corPilula = isBlocked ? "blocked-pill" : "";
+   } else {
+        // --- MODO PÍLULA INDEPENDENTE V23 ---
+        const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
         const textoStatus = isBlocked ? "⚠️ Saldo Insuficiente" : `R$ ${valorTotal.toFixed(0)} - ${pedido.client_name}`;
         const acaoTxt = isBlocked ? "Recarregar" : "Ver";
         const acaoFn = isBlocked ? "window.switchTab('ganhar')" : `window.rejeitarPermanente('${pedido.id}')`;
 
-        card.className = `request-pill ${corPilula} animate-fadeIn mb-2`;
+        card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
-            <div class="flex items-center gap-2 flex-1 min-w-0">
-                <span class="text-xs">${isBlocked ? '🔴' : '🔵'}</span>
-                <span class="text-[10px] font-bold text-white uppercase italic truncate">${textoStatus}</span>
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+                <span class="text-sm">${isBlocked ? '🔴' : '🔵'}</span>
+                <span class="text-[10px] font-black text-white uppercase italic truncate tracking-tight">${textoStatus}</span>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="${acaoFn}" class="text-[9px] font-black ${isBlocked ? 'text-red-400 underline' : 'text-blue-400 underline'} uppercase">${acaoTxt}</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-lg font-bold leading-none">&times;</button>
+                <button onclick="${acaoFn}" class="text-[9px] font-black ${isBlocked ? 'text-red-400 underline' : 'text-blue-400 underline'} uppercase tracking-tighter">${acaoTxt}</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-xl font-bold leading-none">&times;</button>
             </div>
         `;
     }
-
     // Injeta no container
     container.appendChild(card);
 
