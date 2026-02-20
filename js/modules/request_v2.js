@@ -474,7 +474,7 @@ export function createRequestCard(pedido, isFoco = true) {
     
     if (isFoco && !isBlocked) {
         // --- SEU CARD ORIGINAL INTEGRAL ---
-        card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
+        card.className = `request-card ${classeStatusBloqueio} relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown`;
         card.style.maxWidth = "100%";
         card.innerHTML = `
             <div class="p-6 text-center relative overflow-hidden">
