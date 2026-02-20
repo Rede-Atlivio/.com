@@ -34,12 +34,12 @@
         .radar-divider::before, .radar-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); }
         .radar-divider span { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* 2. Estilo Pílula (Compacto) */
-        .request-pill { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 14px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
-        .request-pill.blocked-pill { background-color: #450a0a; border-left-color: #ef4444; }
+        /* 2. Estilo Pílula Independente (Sem herança do card principal) */
+        .atlivio-pill { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s; }
+        .atlivio-pill.is-red { background-color: #450a0a; border-left-color: #ef4444; }
 
-        /* 3. Variante Vermelha (Bloqueio) */
-        .request-card.blocked { background-color: #450a0a !important; border-color: #ef4444 !important; }
+        /* 3. Variante Vermelha (Usa seletor forte para vencer o !important azul) */
+        div.request-card.is-blocked-status { background-color: #450a0a !important; border-color: #ef4444 !important; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
 
         /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
         input, textarea, select {
