@@ -34,22 +34,26 @@
         .radar-divider::before, .radar-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); }
         .radar-divider span { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* 2. Estilo Pílula Independente (Sem herança do card principal) */
+        /* 2. Pílula Premium (Design com Desejo) */
         .atlivio-pill { 
-            display: flex; align-items: center; justify-content: space-between; 
-            padding: 10px 16px; background: rgba(30, 41, 59, 0.7); 
-            backdrop-filter: blur(8px); border: 1px solid rgba(59, 130, 246, 0.2);
-            border-left: 4px solid #3b82f6; border-radius: 16px; 
-            margin-bottom: 6px; shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+            padding: 12px 16px; background: linear-gradient(145deg, #1e293b, #0f172a); 
+            border: 1px solid rgba(55, 65, 81, 0.5); border-left: 4px solid #3b82f6; 
+            border-radius: 20px; margin-bottom: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
         }
-        .atlivio-pill.is-red { 
-            background: rgba(69, 10, 10, 0.8); border-color: rgba(239, 68, 68, 0.2); 
-            border-left-color: #ef4444; 
-        }
-        .atlivio-pill:active { transform: scale(0.96); }
+        .atlivio-pill.is-red { border-left-color: #ef4444; background: linear-gradient(145deg, #450a0a, #2d0606); }
+        .atlivio-pill:hover { transform: translateY(-2px); border-color: #3b82f6; }
+        
+        /* 3. Variante Vermelha do Card Principal */
+        div.request-card.is-blocked-status { background-color: #2d0606 !important; border-color: #ef4444 !important; box-shadow: 0 0 40px rgba(220, 38, 38, 0.4) !important; }
 
-        /* 3. Variante Vermelha (Usa seletor forte para vencer o !important azul) */
-        div.request-card.is-blocked-status { background-color: #450a0a !important; border-color: #ef4444 !important; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
+        /* 4. Botões de Controle Flutuantes (iPhone Style) */
+        .card-controls { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 100; }
+        .ctrl-btn { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; transition: all 0.2s; backdrop-filter: blur(4px); }
+        .btn-min { background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .btn-close { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .ctrl-btn:active { transform: scale(0.9); }
 
         /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
         input, textarea, select {
