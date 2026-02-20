@@ -570,8 +570,8 @@ export function createRequestCard(pedido, isFoco = true) {
         const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
         card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
-            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
-                ${isBlocked ? '🔴' : '💰'}
+            <div class="flex items-center justify-center w-9 h-9 rounded-full ${isBlocked ? 'bg-red-500/20 border-red-500/40' : 'bg-green-500/20 border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.3)]'} border text-sm transition-all">
+                ${isBlocked ? '🔴' : '💵'}
             </div>
             <div class="flex flex-col min-w-0 flex-1 leading-tight">
                 <span class="text-[7px] text-orange-400 font-black uppercase tracking-widest animate-pulse">🔥 OPORTUNIDADE DISPUTADA</span>
