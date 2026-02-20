@@ -1527,3 +1527,13 @@ window.verificarVidaUtilChat = async (pedido) => {
         } catch (e) { console.error("Erro Lazarus:", e); }
     }
 };
+
+// 🚀 ATIVAÇÃO AUTOMÁTICA LAZARUS (Vigilante de Ciclo de Vida)
+// Roda 5 segundos após o carregamento para não pesar o login
+setTimeout(async () => {
+    const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const snap = await getDocs(query(collection(window.db, "orders"), where("status", "in", ["pending", "accepted"])));
+    snap.forEach(d => {
+        if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...d.data()});
+    });
+}, 5000);
