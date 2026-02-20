@@ -1380,11 +1380,24 @@ async function verificarOnboardingChat(uid) {
     if (snap.exists() && snap.data().chat_onboarding_seen === true) return;
 
     const onboardingHtml = `
-        <div id="chat-onboarding" class="bg-blue-600 text-white p-5 rounded-2xl my-6 mx-4 shadow-2xl animate-slideUp relative overflow-hidden border-2 border-white/20 z-[50]">
-            <div class="absolute top-0 right-0 p-2 opacity-20 text-3xl font-black">🛡️</div>
-            <h4 class="text-[11px] font-black uppercase mb-1 tracking-tight">Negocie com Segurança</h4>
-            <p class="text-[10px] leading-tight opacity-90 mb-4">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
-            <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-white text-blue-600 px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm active:scale-95 transition">Entendi, vamos lá!</button>
+        <div id="chat-onboarding" class="my-6 border-2 border-blue-400 rounded-xl overflow-hidden shadow-[0_4px_15px_rgba(0,0,0,0.8)] bg-[#020617] animate-slideUp mx-auto w-[340px] max-w-[340px] min-h-[75px] z-[50]">
+            <div class="bg-blue-600 text-white text-[7px] font-black text-center py-1 uppercase tracking-[0.2em] flex items-center justify-center gap-2 border-b border-blue-400">
+                <span>🛡️</span> NEGOCIAÇÃO SEGURA ATLIVIO <span>🛡️</span>
+            </div>
+            
+            <div class="p-3 flex flex-row items-center justify-between w-full">
+                <div class="flex flex-col items-start leading-tight flex-1 pr-2">
+                    <p class="text-white text-[8px] font-black uppercase tracking-tighter m-0">Atenção às Regras</p>
+                    <p class="text-blue-400 text-[10px] font-bold leading-tight mt-1">Troca de contatos liberada apenas após o acordo.</p>
+                </div>
+
+                <div class="flex flex-col gap-1 items-end">
+                    <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-md active:scale-95 transition whitespace-nowrap">
+                        🤝 ENTENDI
+                    </button>
+                    <p class="text-white/40 text-[5px] font-bold uppercase m-0">Segurança V12</p>
+                </div>
+            </div>
         </div>`;
 
     // 🚀 TENTATIVA RECURSIVA: Espera a área de bolhas carregar para injetar no final
