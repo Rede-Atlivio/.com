@@ -411,16 +411,23 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
         const container = document.getElementById('radar-container');
         if (container) {
-            container.innerHTML = ""; 
+            // ✅ LIMPEZA ABSOLUTA: Mata qualquer resíduo antes de começar
+            while (container.firstChild) { container.removeChild(container.firstChild); }
+            
             ordenados.forEach((pedido, index) => {
-                const isFoco = index === 0;
-                // Envia para a fábrica de cards com indicação de foco real
-                createRequestCard(pedido, isFoco);
-                
-                if (isFoco && ordenados.length > 1) {
-                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`);
+                const isFoco = (index === 0);
+                // 🛡️ TRAVA ANTIDUPLICAÇÃO: Só cria se não houver um fantasma no DOM
+                if (!document.getElementById(`req-${pedido.id}`)) {
+                    createRequestCard(pedido, isFoco);
                 }
             });
+
+            // Adiciona o divisor apenas se houver o que dividir
+            if (ordenados.length > 1) {
+                const divider = `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`;
+                const primeiroCard = container.querySelector('.request-card');
+                if (primeiroCard) primeiroCard.insertAdjacentHTML('afterend', divider);
+            }
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
