@@ -554,18 +554,19 @@ export function createRequestCard(pedido, isFoco = true) {
     // Injeta no container
     container.appendChild(card);
 
-    // 🕒 SINCRONIA V23: O tempo do Card Principal acabou? Ele vira pílula.
+    // 🕒 SINCRONIA V24: O Card Azul expira e "estaciona" automaticamente
         if (isFoco && !isBlocked) {
-            const timerHtml = `<div class="h-1 bg-slate-800 w-full"><div id="timer-${pedido.id}" class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
+            const timerHtml = `<div class="h-1.5 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-blue-400 to-indigo-600 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
             card.insertAdjacentHTML('beforeend', timerHtml);
             setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
             setTimeout(() => {
                 const el = document.getElementById(`req-${pedido.id}`);
+                // Se ainda for card foco (não pílula) e não foi aceito, reseta o foco para forçar estacionamento
                 if (el && !el.classList.contains('atlivio-pill')) {
-                    console.log("🕒 Oportunidade estacionada na fila.");
-                    window.PEDIDO_MAXIMIZADO_ID = null; // Libera o foco manual
-                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); // Redesenha a fila
+                    console.log("🕒 Estacionando pedido...");
+                    window.PEDIDO_MAXIMIZADO_ID = null; 
+                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); 
                 }
             }, 30000);
         }
