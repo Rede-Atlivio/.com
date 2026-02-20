@@ -564,9 +564,9 @@ export function createRequestCard(pedido, isFoco = true) {
                 </button>
            </div>
         `;
-        }
+        } // Fim do else (Card Azul)
     } else {
-        // BLOCO C: PÍLULA (Quando NÃO é Foco)
+        // BLOCO C: A PÍLULA DE CONVERSÃO (LAYOUT GRID V25)
         const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
         card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
