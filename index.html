@@ -35,8 +35,18 @@
         .radar-divider span { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
 
         /* 2. Estilo Pílula Independente (Sem herança do card principal) */
-        .atlivio-pill { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 12px; margin-bottom: 8px; transition: all 0.2s; }
-        .atlivio-pill.is-red { background-color: #450a0a; border-left-color: #ef4444; }
+        .atlivio-pill { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 10px 16px; background: rgba(30, 41, 59, 0.7); 
+            backdrop-filter: blur(8px); border: 1px solid rgba(59, 130, 246, 0.2);
+            border-left: 4px solid #3b82f6; border-radius: 16px; 
+            margin-bottom: 6px; shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .atlivio-pill.is-red { 
+            background: rgba(69, 10, 10, 0.8); border-color: rgba(239, 68, 68, 0.2); 
+            border-left-color: #ef4444; 
+        }
+        .atlivio-pill:active { transform: scale(0.96); }
 
         /* 3. Variante Vermelha (Usa seletor forte para vencer o !important azul) */
         div.request-card.is-blocked-status { background-color: #450a0a !important; border-color: #ef4444 !important; box-shadow: 0 0 30px rgba(239, 68, 68, 0.3) !important; }
