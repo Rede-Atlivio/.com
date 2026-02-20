@@ -1383,7 +1383,9 @@ async function verificarOnboardingChat(uid) {
                 <p class="text-[10px] leading-tight opacity-90 mb-3">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
                 <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-white text-blue-600 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase shadow-sm active:scale-95 transition">Entendi</button>
             </div>`;
-        document.getElementById('chat-messages')?.insertAdjacentHTML('afterbegin', onboardingHtml);
+        // 📥 Reposicionado para o final para não sumir atrás do banner fixo
+        document.getElementById('bubbles-area')?.insertAdjacentHTML('beforeend', onboardingHtml);
+        if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
     }
 }
 
