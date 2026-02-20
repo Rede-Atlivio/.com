@@ -508,11 +508,19 @@ export function createRequestCard(pedido, isFoco = true) {
                     <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
             </div>
-            <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
-                    <span>⚡</span> ACEITAR AGORA
-                </button>
+            <div class="p-4 relative z-10">
+                ${isBlocked ? `
+                    <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-4 rounded-xl font-black text-sm uppercase shadow-xl border border-blue-400/30 animate-bounce-subtle">
+                        💳 RECARREGAR CARTEIRA AGORA
+                    </button>
+                ` : `
+                    <div class="grid grid-cols-[1fr_2fr] gap-3">
+                        <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
+                        <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg flex items-center justify-center gap-2 border border-green-400/30">
+                            <span>⚡</span> ACEITAR AGORA
+                        </button>
+                    </div>
+                `}
             </div>
         `;
    } else {
