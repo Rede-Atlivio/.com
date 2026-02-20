@@ -485,70 +485,54 @@ export function createRequestCard(pedido, isFoco = true) {
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
     
+    
     if (isFoco && !isBlocked) {
-        // --- SEU CARD ORIGINAL INTEGRAL ---
-    // --- FUNIL DE VENDAS V24: CARD GRANDE ---
-        const skinClass = isBlocked ? "is-red-alert" : "";
-        card.className = `request-card ${skinClass} relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown`;
+        card.className = `request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown`;
         card.style.maxWidth = "100%";
         card.innerHTML = `
             <div class="p-6 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-full ${isBlocked ? 'bg-red-600/20' : 'bg-blue-600/30'} animate-pulse z-0"></div>
-                <span class="relative z-10 ${isBlocked ? 'bg-red-600' : 'bg-blue-600'} text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
-                    ${isBlocked ? '⚠️ OPORTUNIDADE EM RISCO' : '🚀 NOVA OPORTUNIDADE'}
+                <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
+                <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
+                    🚀 Nova Oportunidade
                 </span>
-                <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter">R$ ${valorTotal.toFixed(0)}</h2>
-                ${isBlocked ? `<p class="relative z-10 text-[10px] font-black text-red-100 uppercase mt-2 italic px-4 leading-tight">⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO! RECARREGUE AGORA PARA NÃO PERDER.</p>` : ''}
+                <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                    R$ ${valorTotal.toFixed(0)}
+                </h2>
+                <div class="relative z-10 flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-90 text-white">
+                    <span class="bg-red-500/20 px-2 py-1 rounded text-red-300">Taxa: -R$ ${taxaValor.toFixed(2)}</span>
+                    <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
+                </div>
             </div>
             <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
                 <div class="flex items-start gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full ${isBlocked ? 'bg-red-500' : 'bg-blue-500'} flex items-center justify-center text-xl shadow-lg">👤</div>
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
                     <div>
                         <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-gray-400 text-[10px] uppercase font-bold">⭐ Cliente Atlivio</p>
+                        <p class="text-gray-400 text-[10px] uppercase font-bold">⭐ Novo Cliente</p>
                     </div>
                 </div>
                 <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black ${isBlocked ? 'text-red-300' : 'text-blue-300'} uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-xs font-medium leading-tight line-clamp-2">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📅</span><p class="text-xs font-medium">${dataDisplay} às ${horaDisplay}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
             </div>
-            <div class="p-4 relative z-10">
-                ${isBlocked ? `
-                    <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-700 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl border border-red-400/30 animate-bounce-subtle">
-                        💳 RECARREGUE AGORA E TRABALHE
-                    </button>
-                ` : `
-                    <div class="grid grid-cols-[1fr_2fr] gap-3">
-                        <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
-                        <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg flex items-center justify-center gap-2 border border-green-400/30">
-                            <span>⚡</span> ACEITAR AGORA
-                        </button>
-                    </div>
-                `}
+            <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
+                    <span>⚡</span> ACEITAR AGORA
+                </button>
             </div>
         `;
-        
-   } else {
-        // --- MODO PÍLULA INDEPENDENTE V23 ---
+    } else {
         const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
-        const textoStatus = isBlocked ? "⚠️ Saldo Insuficiente" : `R$ ${valorTotal.toFixed(0)} - ${pedido.client_name}`;
-        const acaoTxt = isBlocked ? "Recarregar" : "Ver";
-        const acaoFn = isBlocked ? "window.switchTab('ganhar')" : `window.rejeitarPermanente('${pedido.id}')`;
-
         card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
-            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
-                ${isBlocked ? '🔴' : '💰'}
+            <div class="flex items-center gap-3 flex-1 min-w-0">
+                <span class="text-sm">${isBlocked ? '🔴' : '🔵'}</span>
+                <span class="text-[10px] font-black text-white uppercase italic truncate tracking-tight">R$ ${valorTotal.toFixed(0)} - ${pedido.client_name}</span>
             </div>
-            <div class="flex-1 min-w-0">
-                <p class="text-white font-black text-[10px] uppercase truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</p>
-                <p class="text-gray-500 text-[8px] uppercase font-bold italic truncate">${pedido.service_title || 'Serviço Geral'}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill">VER</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-lg px-1">×</button>
-            </div>
+            <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-xl font-bold">&times;</button>
         `;
     }
     // Injeta no container
