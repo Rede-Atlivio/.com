@@ -549,10 +549,15 @@ export function createRequestCard(pedido, isFoco = true) {
             if(t) t.style.width = '0%'; 
         }, 100);
 
-        // Auto-Remoção após 30s
+        // 🛡️ TRAVA DE PERSISTÊNCIA: Pílulas e Bloqueados NÃO somem sozinhos
+        const tempoExpiracao = 30000; 
         setTimeout(() => { 
-            if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
-        }, 30000);
+            const el = document.getElementById(`req-${pedido.id}`);
+            // Só remove se ainda for um card principal azul. Pílulas ficam.
+            if(el && el.classList.contains('request-card') && !el.classList.contains('is-blocked-status')) {
+                removeRequestCard(pedido.id); 
+            }
+        }, tempoExpiracao);
     }
 }
 
