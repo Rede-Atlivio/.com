@@ -602,9 +602,14 @@ export function createRequestCard(pedido, isFoco = true) {
             // Se o card grande ainda estiver na tela após 30s
             if (el && !el.classList.contains('atlivio-pill')) {
                 console.log("🕒 Tempo esgotado: Forçando rebaixamento para pílula.");
-                el.remove(); // 👈 REMOÇÃO FÍSICA: Garante que o card grande suma da tela
-                window.PEDIDO_MAXIMIZADO_ID = null; // Libera o foco
-                if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); // Reconstrói o Radar
+                el.classList.add('removing'); // Adiciona classe de saída se houver no CSS
+                window.PEDIDO_MAXIMIZADO_ID = null; 
+                
+                // ✅ FOLGA DE SEGURANÇA: Espera o card sumir fisicamente antes de redesenhar
+                setTimeout(() => {
+                    if (document.getElementById(`req-${pedido.id}`)) el.remove();
+                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
+                }, 100); 
             }
         }, 30000);
     }
