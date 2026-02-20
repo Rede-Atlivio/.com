@@ -543,34 +543,22 @@ export function createRequestCard(pedido, isFoco = true) {
     // Injeta no container
     container.appendChild(card);
 
-    // 🕒 LÓGICA DE TIMER: Apenas para Cards de Foco (Azuis)
-    if (isFoco && !isBlocked) {
-        // Adiciona a barra de progresso dinamicamente apenas no card grande
-        const timerHtml = `
-            <div class="h-1.5 bg-slate-800 w-full relative z-10">
-                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
-            </div>
-        `;
-        card.insertAdjacentHTML('beforeend', timerHtml);
+    // 🕒 SINCRONIA V23: O tempo do Card Principal acabou? Ele vira pílula.
+        if (isFoco && !isBlocked) {
+            const timerHtml = `<div class="h-1 bg-slate-800 w-full"><div id="timer-${pedido.id}" class="h-full bg-blue-500 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
+            card.insertAdjacentHTML('beforeend', timerHtml);
+            setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
-        // Inicia animação da barra
-        setTimeout(() => { 
-            const t = document.getElementById(`timer-${pedido.id}`); 
-            if(t) t.style.width = '0%'; 
-        }, 100);
-
-        // 🛡️ PERSISTÊNCIA NANA-BANANA: Somente o Card Foco Azul expira
-        setTimeout(() => { 
-            const el = document.getElementById(`req-${pedido.id}`);
-            const isPilula = el ? el.classList.contains('atlivio-pill') : false;
-            const isRed = el ? el.classList.contains('is-blocked-status') : false;
-
-            if(el && !isPilula && !isRed) {
-                removeRequestCard(pedido.id); 
-            }
-        }, 30000);
-    }
-}
+            setTimeout(() => {
+                const el = document.getElementById(`req-${pedido.id}`);
+                if (el && !el.classList.contains('atlivio-pill')) {
+                    console.log("🕒 Oportunidade estacionada na fila.");
+                    window.PEDIDO_MAXIMIZADO_ID = null; // Libera o foco manual
+                    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); // Redesenha a fila
+                }
+            }, 30000);
+        }
+      }
 
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
