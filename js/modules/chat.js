@@ -1481,8 +1481,18 @@ window.verificarVidaUtilChat = async (pedido) => {
 
     const agora = Date.now();
     // Recupera a última interação (ou a criação do pedido se nunca houve chat)
-    // 🛡️ Blindagem: Se não houver data ainda (pedido acabou de nascer), ignora a verificação por enquanto
-    if (!pedido.created_at && !pedido.last_interaction_at) return;
+    // 🛡️ DESFIBRILADOR LAZARUS: Se o pedido nasceu sem carimbo, cura ele automaticamente agora
+    if (!pedido.last_interaction_at || !pedido.system_step) {
+        console.log("💉 Lazarus: Curando pedido incompleto detectado na abertura...");
+        const { doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        updateDoc(doc(window.db, "orders", pedido.id), {
+            last_interaction_at: pedido.created_at || serverTimestamp(),
+            system_step: pedido.system_step || 1,
+            chat_lifecycle_status: 'active'
+        });
+        // Segue a função usando o tempo atual para não travar a primeira execução
+    }
+    
     
     const ultimaInteracao = pedido.last_interaction_at ? 
         (pedido.last_interaction_at.toMillis ? pedido.last_interaction_at.toMillis() : Date.now()) : 
