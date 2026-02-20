@@ -633,7 +633,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 // Usamos a função que você já tem para garantir o padrão visual
                 // Busca o container de espera antes de criar a pílula
                 const waitList = document.getElementById('radar-wait-list');
-                createRequestCard(pedido, false, waitList); 
+                // Se o waitList não existir, ele usa o container principal como fallback
+                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
 
                 // 3. Organiza o divisor (Caso existam outros pedidos)
                 const container = document.getElementById('radar-container');
