@@ -610,7 +610,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
         `;
     }
     // Injeta no container
-    container.appendChild(card);
+    (targetContainer || container).appendChild(card);
 
     // --- MOTOR DE ESTACIONAMENTO V25 ---
     if (isFoco && !isBlocked) {
