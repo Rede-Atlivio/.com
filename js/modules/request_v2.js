@@ -425,11 +425,22 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-            // Adiciona o divisor apenas se houver o que dividir
+            // ✅ TRIAGEM V27: Criação de Zona de Escape para evitar sobreposição visual
             if (ordenados.length > 1) {
-                const divider = `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`;
-                const primeiroCard = container.querySelector('.request-card');
-                if (primeiroCard) primeiroCard.insertAdjacentHTML('afterend', divider);
+                // Criamos um container de "espera" com margem superior forçada
+                const waitContainer = document.createElement('div');
+                waitContainer.id = "radar-wait-list";
+                waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full";
+                waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
+                
+                // Movemos todas as pílulas (do index 1 em diante) para dentro deste container
+                ordenados.forEach((pedido, index) => {
+                    if (index > 0) {
+                        // Chamamos a criação passando o container de espera como alvo
+                        const pilula = createRequestCard(pedido, false, waitContainer);
+                    }
+                });
+                container.appendChild(waitContainer);
             }
         }
         const emptyState = document.getElementById('radar-empty-state');
