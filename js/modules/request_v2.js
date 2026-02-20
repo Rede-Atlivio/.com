@@ -599,10 +599,12 @@ export function createRequestCard(pedido, isFoco = true) {
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
+            // Se o card grande ainda estiver na tela após 30s
             if (el && !el.classList.contains('atlivio-pill')) {
-                console.log("🕒 Oportunidade estacionada na fila.");
-                window.PEDIDO_MAXIMIZADO_ID = null;
-                if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
+                console.log("🕒 Tempo esgotado: Forçando rebaixamento para pílula.");
+                el.remove(); // 👈 REMOÇÃO FÍSICA: Garante que o card grande suma da tela
+                window.PEDIDO_MAXIMIZADO_ID = null; // Libera o foco
+                if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); // Reconstrói o Radar
             }
         }, 30000);
     }
