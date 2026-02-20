@@ -392,10 +392,23 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
-            if (change.type === "removed") removeRequestCard(change.doc.id);
-        });
+        // 🧠 TRIAGEM POR VALOR E ESTADO ONLINE V23
+        const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        const ordenados = todosPedidos.sort((a, b) => (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0));
+        
+        const container = document.getElementById('radar-container');
+        if (container) {
+            container.innerHTML = ""; // Limpa para reconstruir a fila por valor
+            ordenados.forEach((pedido, index) => {
+                const isFoco = index === 0; // Apenas o maior valor ganha o card grande
+                createRequestCard(pedido, isFoco);
+                
+                // Injeta linha divisória após o primeiro se houver mais
+                if (isFoco && ordenados.length > 1) {
+                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Fila de Espera</span></div>`);
+                }
+            });
+        }
 
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
