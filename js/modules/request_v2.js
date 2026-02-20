@@ -532,13 +532,16 @@ export function createRequestCard(pedido, isFoco = true) {
 
         card.className = `${classePilula} animate-fadeIn mb-2`;
         card.innerHTML = `
-            <div class="flex items-center gap-3 flex-1 min-w-0">
-                <span class="text-sm">${isBlocked ? '🔴' : '🔵'}</span>
-                <span class="text-[10px] font-black text-white uppercase italic truncate tracking-tight">${textoStatus}</span>
+            <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
+                ${isBlocked ? '🔴' : '💰'}
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="${acaoFn}" class="text-[9px] font-black ${isBlocked ? 'text-red-400 underline' : 'text-blue-400 underline'} uppercase tracking-tighter">${acaoTxt}</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="text-gray-500 text-xl font-bold leading-none">&times;</button>
+            <div class="flex flex-col min-w-0">
+                <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
+                <span class="text-gray-400 text-[9px] uppercase font-bold italic truncate opacity-70">${pedido.service_title || 'Serviço Geral'}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="window.alternarMinimizacao('${pedido.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-blue-600/20 text-blue-400 text-sm font-bold">＋</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-7 h-7 flex items-center justify-center rounded-lg bg-red-600/10 text-red-400 text-sm font-bold">×</button>
             </div>
         `;
     }
