@@ -1395,7 +1395,7 @@ async function verificarOnboardingChat(uid) {
                     <button onclick="window.confirmarLeituraRegras('${uid}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-md active:scale-95 transition whitespace-nowrap">
                         🤝 ENTENDI
                     </button>
-                    <p class="text-white/40 text-[5px] font-bold uppercase m-0">Segurança V12</p>
+                    <p class="text-white/40 text-[5px] font-bold uppercase m-0">Segurança ATLÍVIO</p>
                 </div>
             </div>
         </div>`;
