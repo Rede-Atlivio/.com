@@ -573,9 +573,10 @@ export function createRequestCard(pedido, isFoco = true) {
             <div class="flex items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-xs">
                 ${isBlocked ? '🔴' : '💰'}
             </div>
-            <div class="flex flex-col min-w-0 flex-1">
+            <div class="flex flex-col min-w-0 flex-1 leading-tight">
+                <span class="text-[7px] text-orange-400 font-black uppercase tracking-widest animate-pulse">🔥 OPORTUNIDADE DISPUTADA</span>
                 <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
-                <span class="text-gray-400 text-[9px] uppercase font-bold italic truncate opacity-60">${pedido.service_title || 'Serviço Geral'}</span>
+                <span class="text-gray-400 text-[8px] uppercase font-bold italic truncate opacity-70">${pedido.service_title || 'Serviço Geral'} • ${horaDisplay}</span>
             </div>
             <div class="flex items-center gap-2">
                 <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill">VER</button>
