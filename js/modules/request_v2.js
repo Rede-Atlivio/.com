@@ -594,8 +594,8 @@ export function createRequestCard(pedido, isFoco = true) {
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
-            // Só estaciona se não estiver bloqueado e ainda for card grande
             if (el && !el.classList.contains('atlivio-pill')) {
+                console.log("🕒 Oportunidade estacionada na fila.");
                 window.PEDIDO_MAXIMIZADO_ID = null;
                 if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
             }
