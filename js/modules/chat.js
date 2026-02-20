@@ -1377,7 +1377,7 @@ async function verificarOnboardingChat(uid) {
     const snap = await getDoc(userRef);
     if (snap.exists() && !snap.data().chat_onboarding_seen) {
         const onboardingHtml = `
-            <div id="chat-onboarding" class="bg-blue-600 text-white p-4 rounded-xl mb-4 mx-4 shadow-xl animate-fadeIn relative overflow-hidden">
+            <div id="chat-onboarding" class="bg-blue-600 text-white p-4 rounded-2xl my-6 mx-4 shadow-2xl animate-slideUp relative overflow-hidden border-2 border-white/20">
                 <div class="absolute top-0 right-0 p-2 opacity-20 text-3xl font-black">🛡️</div>
                 <h4 class="text-xs font-black uppercase mb-1">Negocie com Segurança</h4>
                 <p class="text-[10px] leading-tight opacity-90 mb-3">Combine detalhes por aqui. A troca de contatos só é liberada após o fechamento do acordo oficial.</p>
