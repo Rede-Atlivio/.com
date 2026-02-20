@@ -403,9 +403,10 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isFoco = index === 0; // Apenas o maior valor ganha o card grande
                 createRequestCard(pedido, isFoco);
                 
-                // Injeta linha divisória após o primeiro se houver mais
+                // Injeta linha divisória após o primeiro se houver fila real
                 if (isFoco && ordenados.length > 1) {
-                    container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Fila de Espera</span></div>`);
+                    const temPilulas = ordenados.slice(1).length > 0;
+                    if (temPilulas) container.insertAdjacentHTML('beforeend', `<div class="radar-divider"><span>Fila de Espera</span></div>`);
                 }
             });
         }
