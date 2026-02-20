@@ -492,7 +492,6 @@ export function createRequestCard(pedido, isFoco = true) {
 
     // ✅ CORREÇÃO V25: Verifica se é FOCO (Grande). Independente se é azul ou vermelho.
     if (isFoco) {
-        // Agora o sistema entra aqui e decide qual SKIN usar dentro do Bloco Grande
         if (isBlocked) {
             // BLOCO B: CARD VERMELHO (DUPLICAÇÃO REAL)
             card.className = `request-card is-red-alert relative mb-6 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 overflow-hidden animate-slideInDown`;
