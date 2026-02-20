@@ -583,15 +583,19 @@ export function createRequestCard(pedido, isFoco = true) {
     // Injeta no container
     container.appendChild(card);
 
+    // --- MOTOR DE ESTACIONAMENTO: EXPIRA -> VIRA PÍLULA ---
     if (isFoco && !isBlocked) {
-        const timerHtml = `<div class="h-1.5 bg-slate-800 w-full relative z-10"><div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
+        const timerHtml = `<div class="h-1.5 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-blue-400 to-indigo-600 w-full transition-all duration-[30000ms] ease-linear"></div></div>`;
         card.insertAdjacentHTML('beforeend', timerHtml);
         setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
+            // Se o tempo acabou e ainda é Card Grande (não pílula), estaciona
             if (el && !el.classList.contains('atlivio-pill')) {
-                removeRequestCard(pedido.id);
+                console.log("🕒 Tempo esgotado. Estacionando oportunidade na fila.");
+                window.PEDIDO_MAXIMIZADO_ID = null; // Libera foco manual
+                if(window.iniciarRadarPrestador) window.iniciarRadarPrestador(); // Redesenha a fila
             }
         }, 30000);
       }
