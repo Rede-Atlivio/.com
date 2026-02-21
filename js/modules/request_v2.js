@@ -422,8 +422,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             if (ordenados.length > 0) {
                 const waitContainer = document.createElement('div');
                 waitContainer.id = "radar-wait-list";
-                waitContainer.className = "block mt-2 pt-2 border-t border-white/5 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
-                waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
+                waitContainer.className = "block mt-2 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
                 // VERSÃO LIMPA (SEM DIVIDER)
                 waitContainer.innerHTML = `
                 <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
