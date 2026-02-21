@@ -439,11 +439,14 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 if (isFoco) {
+                    // 🔵 Card Azul Grande (Topo)
                     createRequestCard(pedido, true, container);
+                } else if (isPendente) {
+                    // 🔴 Card Vermelho Grande (Abaixo da linha)
+                    createRequestCard(pedido, true, waitContainer);
                 } else {
-                    /// ✅ FORÇA CARD VERMELHO: Garante que bloqueados nasçam dentro da waitContainer
-                    const isPendenteLocal = pedido.is_blocked_by_wallet === true;
-                    createRequestCard(pedido, isPendenteLocal, waitContainer);
+                    // 💊 Pílula Azul (Abaixo da linha)
+                    createRequestCard(pedido, false, waitContainer);
                 }
             });
 
