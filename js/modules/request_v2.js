@@ -419,8 +419,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             
             const quinzeMinutosMs = 15 * 60 * 1000;
             //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-            const waitContainer = document.createElement('div');
-            // ✅ CRIAÇÃO OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
+           // ✅ CRIAÇÃO ÚNICA E OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
             const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
             waitContainer.className = "mt-16 pt-8 border-t-2 border-white/20 relative w-full clear-both h-auto overflow-visible pb-20";
