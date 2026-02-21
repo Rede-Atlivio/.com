@@ -442,14 +442,12 @@ export async function iniciarRadarPrestador(uidManual = null) {
                     }
                 });
 
-                // ✅ ANEXO GARANTIDO E HIERÁRQUICO
+               // ✅ ANEXO GARANTIDO E HIERÁRQUICO
                 if (container) {
-                    container.style.display = "flex";
-                    container.style.flexDirection = "column";
                     container.appendChild(waitContainer);
-                    // Empurra a waitContainer para o final do container
-                    waitContainer.style.marginTop = "auto";
-                    container.style.zIndex = "0"; 
+                    // Margem fixa simples em vez de empurrar pro fundo da tela
+                    waitContainer.style.marginTop = "16px";
+                    container.style.zIndex = "0"; 
                     container.style.position = "relative";
                 }
             }
