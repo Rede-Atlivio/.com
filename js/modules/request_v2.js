@@ -466,6 +466,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
 window.PEDIDO_MAXIMIZADO_ID = null;
 
 window.maximizarPedido = (id) => {
+    // ✅ LIBERAÇÃO: Remove da memória de estacionamento para permitir a promoção
+    if (window.ESTACIONADOS_SESSAO) window.ESTACIONADOS_SESSAO.delete(id); 
+    
     window.PEDIDO_MAXIMIZADO_ID = id;
     console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
     const container = document.getElementById('radar-container');
