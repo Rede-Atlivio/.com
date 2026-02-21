@@ -417,41 +417,33 @@ export async function iniciarRadarPrestador(uidManual = null) {
             // ✅ LIMPEZA ABSOLUTA: Mata qualquer resíduo antes de começar
             while (container.firstChild) { container.removeChild(container.firstChild); }
             
+            const quinzeMinutosMs = 15 * 60 * 1000;
+            const waitContainer = document.createElement('div');
+            waitContainer.id = "radar-wait-list";
+            waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full clear-both";
+            waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
+            let temPilula = false;
+
             ordenados.forEach((pedido, index) => {
                 const isPendente = pedido.is_blocked_by_wallet === true;
                 const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
+                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
-                // ✅ VACINA DE FRESCOR: Pedidos com +15min nascem como pílula para evitar sustos
-                const quinzeMinutosMs = 15 * 60 * 1000;
-                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
-                if (!document.getElementById(`req-${pedido.id}`)) {
-                    // Pendentes são tratados pelo waitContainer abaixo, comuns seguem aqui
-                    if (!isPendente) createRequestCard(pedido, isFoco);
+                if (isFoco) {
+                    // Se for foco, vai direto pro container principal como Card Grande
+                    createRequestCard(pedido, true, container);
+                } else {
+                    // Se não for foco (pílula comum, pendente ou antiga), vai para a espera
+                    createRequestCard(pedido, false, waitContainer);
+                    temPilula = true;
                 }
             });
 
-            // ✅ TRIAGEM V27: Criação de Zona de Escape para evitar sobreposição visual
-            if (ordenados.length > 1) {
-                // Criamos um container de "espera" com margem superior forçada
-                const waitContainer = document.createElement('div');
-                waitContainer.id = "radar-wait-list";
-                // Adicionamos mt-16 para dar 64px de distância do card de cima
-                waitContainer.className = "mt-16 pt-8 border-t border-white/5 w-full block clear-both";
-                waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full";
-                waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
-                
-                // Movemos todas as pílulas (do index 1 em diante) para dentro deste container
-                ordenados.forEach((pedido, index) => {
-                    if (index > 0) {
-                        // Chamamos a criação passando o container de espera como alvo
-                        const pilula = createRequestCard(pedido, false, waitContainer);
-                    }
-                });
-                container.appendChild(waitContainer);
-            }
+            // Só anexa a zona de espera se realmente houver pílulas dentro dela
+            if (temPilula) container.appendChild(waitContainer);
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
