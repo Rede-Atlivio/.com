@@ -520,7 +520,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     if (isFoco) {
         if (isBlocked) {
             // BLOCO B: CARD VERMELHO (DUPLICAÇÃO REAL)
-            card.className = `request-card is-red-alert relative mb-6 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 overflow-hidden animate-slideInDown`;
+            // ✅ z-50 coloca o card à frente de outros elementos; animate-fadeIn é mais suave e evita saltos visuais
+            card.className = `request-card is-red-alert relative mb-8 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn`;
             card.innerHTML = `
                 <div class="p-6 text-center relative">
                 <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
