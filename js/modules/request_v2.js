@@ -598,10 +598,10 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     removeRequestCard(pedido.id);
                 } else if (!el.classList.contains('atlivio-pill') && !isFoco) {
                     el.remove();
-                    window.ESTACIONADOS_SESSAO.add(pedido.id);
-                    const target = document.getElementById('radar-wait-list') || document.getElementById('radar-container');
-                    // Garante que o retorno visual seja pílula apenas se não for bloqueado
-                    createRequestCard(pedido, false, target);
+                    window.ESTACIONADOS_SESSAO.add(pedido.id);
+                    const target = document.getElementById('radar-container');
+                    // Garante que o retorno visual seja pílula apenas se não for bloqueado
+                    createRequestCard(pedido, false, target);
                 }
             }
         }, duracao);
