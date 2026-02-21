@@ -525,6 +525,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             // ✅ FLUXO LIVRE: Adicionamos 'h-fit' para o card se ajustar ao texto e 'block' para ocupar espaço real
             card.className = "request-card is-red-alert relative mb-12 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn block h-fit w-full overflow-visible";
             card.innerHTML = `
+                <div id="timer-container-${pedido.id}" class="h-2 bg-slate-900/50 w-full relative z-30 overflow-hidden rounded-t-3xl"></div>
+                
                 <div class="p-6 text-center relative">
                 <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
                 <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
