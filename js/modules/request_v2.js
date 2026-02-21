@@ -34,33 +34,29 @@ let mem_SelectedServiceTitle = "";
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const parent = document.getElementById('pview-radar');
-    const container = document.getElementById('radar-container');
-    const emptyState = document.getElementById('radar-empty-state');
-    const offlineState = document.getElementById('radar-offline-state');
-    const toggle = document.getElementById('online-toggle');
+    const parent = document.getElementById('pview-radar');
+    const container = document.getElementById('radar-container');
+    const emptyState = document.getElementById('radar-empty-state');
+    const offlineState = document.getElementById('radar-offline-state');
+    const toggle = document.getElementById('online-toggle');
 
-    if (!parent || !container) return null;
+    if (!parent || !container) return null;
 
-    const isOnline = toggle ? toggle.checked : false;
+    const isOnline = toggle ? toggle.checked : false;
 
-    if (!isOnline) {
-        if(offlineState) offlineState.classList.remove('hidden');
-        if(container) container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return null;
-    }
+    if (!isOnline) {
+        // MODO OFFLINE ABSOLUTO
+        if(offlineState) offlineState.classList.remove('hidden');
+        if(container) container.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+        return container;
+    } 
 
-    // MODO ONLINE
-    if(offlineState) offlineState.classList.add('hidden');
-    
-   // MODO ONLINE: Garante que o container do Radar exista e esteja limpo para os novos cards
-    container.classList.remove('hidden');
-    if(emptyState) emptyState.classList.add('hidden');
-
-    return container;
-}
-    
+    // MODO ONLINE INICIAL (Mata o ZZZ. O Snapshot decide o resto)
+    if(offlineState) offlineState.classList.add('hidden');
+    
+    return container;
+}   
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
@@ -408,63 +404,36 @@ export async function iniciarRadarPrestador(uidManual = null) {
             while (container.firstChild) { container.removeChild(container.firstChild); }
             
             const quinzeMinutosMs = 15 * 60 * 1000;
-            //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-           //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-            // ✅ VERIFICAÇÃO ADICIONADA: Só cria a área de espera se houver pedidos
+            // ✅ RENDERIZAÇÃO DIRETA NO RADAR (Sem linha de Espera)
             if (ordenados.length > 0) {
-                const waitContainer = document.createElement('div');
-                waitContainer.id = "radar-wait-list";
-                waitContainer.className = "block mt-2 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
-                // VERSÃO LIMPA (SEM DIVIDER)
-                waitContainer.innerHTML = `
-                <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
-                <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
-            `;
-                
-               // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
                 ordenados.forEach((pedido, index) => {
                     const isPendente = pedido.is_blocked_by_wallet === true;
-                    const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
                     const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                     
-                    // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
                     const isFoco = (index === 0 && !isPendente && !isMuitoAntigo);
 
-                    //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
-                    // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
-                    if (isFoco) {
-                        createRequestCard(pedido, true, container);
-                    } else {
-                        if (isPendente) {
-                            const targetRed = waitContainer.querySelector('#red-cards-group');
-                            createRequestCard(pedido, true, targetRed);
-                        } else {
-                            const targetPills = waitContainer.querySelector('#pills-group');
-                            createRequestCard(pedido, false, targetPills);
-                        }
-                    }
+                    // Desenha os cards ou pílulas jogando diretamente dentro do container principal
+                    createRequestCard(pedido, isFoco, container);
                 });
-
-                // ✅ ANEXO GARANTIDO E HIERÁRQUICO
-                if (container) {
-                    container.style.display = "flex";
-                    container.style.flexDirection = "column";
-                    container.appendChild(waitContainer);
-                    // Empurra a waitContainer para o final do container
-                    waitContainer.style.marginTop = "auto";
-                    container.style.zIndex = "0"; 
-                    container.style.position = "relative";
-                }
             }
-        }
-        const elEmpty = document.getElementById('radar-empty-state');
-        if (elEmpty) elEmpty.classList.add('hidden');
-    }, (error) => {
-        console.error("❌ Erro no Snapshot do Radar:", error);
-        window.radarIniciado = false;
-    });
+        }
+        
+        // ✅ CORREÇÃO: O Empty State e o Container obedecem a lista real filtrada
+        const emptyState = document.getElementById('radar-empty-state');
+        const radarContainer = document.getElementById('radar-container');
+        
+        if (ordenados.length === 0) {
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (radarContainer) radarContainer.classList.add('hidden'); // Mata a div vazia
+        } else {
+            if (emptyState) emptyState.classList.add('hidden');
+            if (radarContainer) radarContainer.classList.remove('hidden'); // Exibe a div com os cards
+        }
+    }, (error) => {
+        console.error("❌ Erro no Snapshot do Radar:", error);
+        window.radarIniciado = false;
+    });
 }
-// (Funções de Maximizar/Minimizar removidas - Aceite direto via Pílula)
 
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
@@ -569,19 +538,24 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
                 </div>
             </div>
-            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
-                    <div>
-                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">⭐ Cliente Atlivio</p>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
-                </div>
-            </div>
+           <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
+                                <div class="flex justify-between items-center gap-4 relative">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
+                            <div>
+                                <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                                <p class="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">⭐ Cliente Atlivio</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
+                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                        </div>
+                    </div>
+                                        <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
+                </div>
+            </div>
             <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
                 <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
@@ -647,10 +621,10 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     removeRequestCard(pedido.id);
                 } else if (!el.classList.contains('atlivio-pill') && !isFoco) {
                     el.remove();
-                    window.ESTACIONADOS_SESSAO.add(pedido.id);
-                    const target = document.getElementById('radar-wait-list') || document.getElementById('radar-container');
-                    // Garante que o retorno visual seja pílula apenas se não for bloqueado
-                    createRequestCard(pedido, false, target);
+                    window.ESTACIONADOS_SESSAO.add(pedido.id);
+                    const target = document.getElementById('radar-container');
+                    // Garante que o retorno visual seja pílula apenas se não for bloqueado
+                    createRequestCard(pedido, false, target);
                 }
             }
         }, duracao);
