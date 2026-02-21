@@ -425,8 +425,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             waitContainer.className = "mt-16 pt-8 border-t-2 border-white/20 relative w-full clear-both h-auto overflow-visible pb-20";
             waitContainer.innerHTML = `<div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>`;
             
-            // Já anexa no container principal imediatamente para o ROBO 53 encontrar
-            container.appendChild(waitContainer);
+            // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
             ordenados.forEach((pedido, index) => {
                 const isPendente = pedido.is_blocked_by_wallet === true;
                 const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
