@@ -523,7 +523,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
 
         } else {
             // BLOCO A: CARD AZUL (CARD ORIGINAL)
-            card.className = `request-card relative mb-10 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 flex flex-col h-auto min-h-[460px] flex-shrink-0 animate-slideInDown`;
+            card.className = "request-card relative mb-12 bg-slate-900 rounded-3xl shadow-[0_0_60px_rgba(37,99,235,0.6)] border-2 border-blue-500 z-50 animate-fadeIn block h-fit w-full overflow-visible";
             card.innerHTML = `
             <div class="p-6 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
