@@ -430,6 +430,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
+                // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 if (isFoco) {
