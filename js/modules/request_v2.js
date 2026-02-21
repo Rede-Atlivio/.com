@@ -455,14 +455,16 @@ export async function iniciarRadarPrestador(uidManual = null) {
             }
         }
         
-        // ✅ CORREÇÃO: O Empty State agora obedece a lista real filtrada, não apenas o banco
+        // ✅ CORREÇÃO: O Empty State e o Container obedecem a lista real filtrada
         const emptyState = document.getElementById('radar-empty-state');
-        if (emptyState) {
-            if (ordenados.length === 0) {
-                emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-            }
+        const radarContainer = document.getElementById('radar-container');
+        
+        if (ordenados.length === 0) {
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (radarContainer) radarContainer.classList.add('hidden'); // Mata a div vazia
+        } else {
+            if (emptyState) emptyState.classList.add('hidden');
+            if (radarContainer) radarContainer.classList.remove('hidden'); // Exibe a div com os cards
         }
     }, (error) => {
         console.error("❌ Erro no Snapshot do Radar:", error);
