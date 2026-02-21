@@ -675,7 +675,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             }
         }, duracao);
     }
- }
+    return card;
+}
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
