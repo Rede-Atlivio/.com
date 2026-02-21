@@ -498,22 +498,19 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                         ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO!
                     </p>
                 </div>
-               <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm flex justify-between items-center gap-4 relative">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
-                            <div>
-                                <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                                <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2 opacity-80">
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
-                        </div>
-                    </div>
-                    <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
-                </div>
+               <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
+                        <div>
+                            <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                            <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 opacity-80">
+                        <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
+                        <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                    </div>
+                </div>
                 <div class="p-4 relative">
                     <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl border border-red-400/30 transition">
                         RECARREGUE AGORA E TRABALHE 💳
