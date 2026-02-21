@@ -397,7 +397,12 @@ export async function iniciarRadarPrestador(uidManual = null) {
         garantirContainerRadar();
 
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "added") {
+                const pedido = { id: change.doc.id, ...change.doc.data() };
+                const isPendente = pedido.is_blocked_by_wallet === true;
+                // Se o pedido estiver bloqueado por saldo, ele nasce como "Foco" (Grande/Vermelho)
+                createRequestCard(pedido, isPendente);
+            }
             if (change.type === "removed") removeRequestCard(change.doc.id);
         });
 
