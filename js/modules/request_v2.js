@@ -635,13 +635,13 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 el.remove(); 
                 window.PEDIDO_MAXIMIZADO_ID = null;
 
-                // 2. Injeta a Pílula manualmente para não deixar buraco na tela
-                // Usamos a função que você já tem para garantir o padrão visual
-                // Busca o container de espera antes de criar a pílula
-                const waitList = document.getElementById('radar-wait-list');
-                // Se o waitList não existir, ele usa o container principal como fallback
-                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+                // ✅ REGISTRO: Adiciona à lista de estacionados para não subir no Reconnect
+                window.ESTACIONADOS_SESSAO.add(pedido.id); 
 
+                // 2. Injeta a Pílula manualmente
+                const waitList = document.getElementById('radar-wait-list');
+                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+                
                 // 3. Organiza o divisor (Caso existam outros pedidos)
                 const container = document.getElementById('radar-container');
                 if (container && !container.querySelector('.radar-divider')) {
