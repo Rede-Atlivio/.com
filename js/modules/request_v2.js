@@ -30,6 +30,10 @@ let mem_BasePrice = 0;
 let mem_CurrentOffer = 0;
 let mem_SelectedServiceTitle = ""; 
 
+// Memória de Sessão para Radar V22
+window.ESTACIONADOS_SESSAO = new Set();
+window.REJEITADOS_SESSAO = new Set();
+
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
