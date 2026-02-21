@@ -508,8 +508,12 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     const container = targetContainer || document.getElementById('radar-container');
     if (!container) return;
     const existingCard = document.getElementById(`req-${pedido.id}`);
-    if (existingCard) existingCard.remove();
-
+    if (existingCard) {
+        // Se o card já está no estado certo (Foco ou Pílula), não mexe nele para não resetar áudio/animação
+        const isJaEraFoco = existingCard.classList.contains('request-card') && !existingCard.classList.contains('atlivio-pill');
+        if (isJaEraFoco === isFoco) return existingCard;
+        existingCard.remove();
+    }
     // 🔊 RESTAURAÇÃO DO SOM ORIGINAL (PROTEGIDO)
     try {
         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
