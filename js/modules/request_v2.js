@@ -430,15 +430,14 @@ export async function iniciarRadarPrestador(uidManual = null) {
                     <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
                 `;
                 
-                // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
+               // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
                 ordenados.forEach((pedido, index) => {
                     const isPendente = pedido.is_blocked_by_wallet === true;
                     const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
                     const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
-                    const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                     
                     // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
-                    const isFoco = (index === 0 && !isPendente && !isMuitoAntigo) || clicouVer;
+                    const isFoco = (index === 0 && !isPendente && !isMuitoAntigo);
 
                     //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
                     // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
