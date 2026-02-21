@@ -505,7 +505,7 @@ function removeRequestCard(orderId) {
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
 // ============================================================================
 export function createRequestCard(pedido, isFoco = true, targetContainer = null) {
-    const container = document.getElementById('radar-container');
+    const container = targetContainer || document.getElementById('radar-container');
     if (!container) return;
     const existingCard = document.getElementById(`req-${pedido.id}`);
     if (existingCard) existingCard.remove();
