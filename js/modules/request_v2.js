@@ -506,7 +506,9 @@ function removeRequestCard(orderId) {
 // ============================================================================
 export function createRequestCard(pedido, isFoco = true, targetContainer = null) {
     const container = document.getElementById('radar-container');
-    if (!container || document.getElementById(`req-${pedido.id}`)) return;
+    if (!container) return;
+    const existingCard = document.getElementById(`req-${pedido.id}`);
+    if (existingCard) existingCard.remove();
 
     // 🔊 RESTAURAÇÃO DO SOM ORIGINAL (PROTEGIDO)
     try {
