@@ -422,7 +422,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
             waitContainer.id = "radar-wait-list";
             // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
             // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
-            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
+            // ✅ LINHA RESTAURADA: 'border-t' e 'border-white/10' garantem a divisória visível
+            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full flex flex-col gap-4 h-auto min-h-max overflow-visible pb-20 clear-both";
             waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
             let temPilula = false;
 
