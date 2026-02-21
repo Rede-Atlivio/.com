@@ -455,8 +455,11 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-           // ✅ ANEXO GARANTIDO: Injeta a linha divisória no final do radar-container
-            if (container) container.appendChild(waitContainer);
+           // ✅ ANEXO CONDICIONAL: Só injeta a divisória se houver pílulas ou cards bloqueados
+            const temEspera = ordenados.some(p => p.is_blocked_by_wallet || !window.ESTACIONADOS_SESSAO.has(p.id));
+            if (container && ordenados.length > 1) {
+                container.appendChild(waitContainer);
+            }
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
