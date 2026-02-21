@@ -458,8 +458,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
             });
 
            // ✅ ANEXO GARANTIDO: Injeta a linha divisória no final do radar-container
-            if (container) container.appendChild(waitContainer);
-        }
+            // ✅ ANEXO GARANTIDO E HIERÁRQUICO
+if (container) {
+    container.appendChild(waitContainer);
+    // Força o container a respeitar o z-index baixo para o Perfil passar na frente
+    container.style.zIndex = "0"; 
+    container.style.position = "relative";
+}
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
