@@ -458,8 +458,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
             });
 
            // ✅ ANEXO GARANTIDO E HIERÁRQUICO
+            // ✅ ANEXO FIXO: Garante que a linha fique no fundo e não suba no vácuo
             if (container) {
+                container.style.display = "flex";
+                container.style.flexDirection = "column";
                 container.appendChild(waitContainer);
+                // Empurra a waitContainer para o final do container
+                waitContainer.style.marginTop = "auto";
                 container.style.zIndex = "0"; 
                 container.style.position = "relative";
             }
