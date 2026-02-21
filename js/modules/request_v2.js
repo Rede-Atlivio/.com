@@ -55,19 +55,12 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    // ✅ CORREÇÃO: No modo Online, o container base NUNCA deve ser hidden para não sumir com a imagem/animação.
-    container.classList.remove('hidden');
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    // ✅ FORÇA BRUTA: Se está online, o container TEM que estar visível.
-    if (isOnline) {
-        container.classList.remove('hidden');
-        parent.classList.remove('hidden'); // Garante que o pai também não suma
-    }
-
+    const temCards = container.querySelectorAll('.request-card').length > 0;
     if (temCards) {
+        container.classList.remove('hidden');
         if(emptyState) emptyState.classList.add('hidden');
     } else {
-        // Se não tem cards, mostra o estado vazio (o radar buscando)
+        container.classList.add('hidden');
         if(emptyState) emptyState.classList.remove('hidden');
     }
 
@@ -360,11 +353,11 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-   // 🛡️ TRAVA INTELIGENTE: Só bloqueia se o radar já estiver ativo E o botão continuar ligado.
-    const toggleStatus = document.getElementById('online-toggle');
-    if (window.radarIniciado && toggleStatus && toggleStatus.checked) {
-        return;
-    }
+    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
+    if (window.radarIniciado) {
+        console.log("🛰️ [SISTEMA] Radar já está operando.");
+        return;
+    }
   if (radarUnsubscribe) radarUnsubscribe();
 
     const configRef = doc(db, "settings", "financeiro");
@@ -421,8 +414,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
         const container = document.getElementById('radar-container');
         if (container) {
-            // ✅ LIMPEZA SELETIVA: Mata apenas cards e a lista de espera antiga, preservando a imagem de fundo/animação.
-            container.querySelectorAll('.request-card, #radar-wait-list, .radar-divider').forEach(el => el.remove());
+            // ✅ LIMPEZA ABSOLUTA: Mata qualquer resíduo antes de começar
+            while (container.firstChild) { container.removeChild(container.firstChild); }
             
             const quinzeMinutosMs = 15 * 60 * 1000;
             const waitContainer = document.createElement('div');
@@ -430,11 +423,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
             // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
             waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
-            // ✅ CORREÇÃO: Usamos textContent ou elementos isolados para não causar repintura total do container.
-            const divider = document.createElement('div');
-            divider.className = "radar-divider mb-4";
-            divider.innerHTML = `<span>Oportunidades em Espera</span>`;
-            waitContainer.appendChild(divider);
+            waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
             let temPilula = false;
 
             ordenados.forEach((pedido, index) => {
