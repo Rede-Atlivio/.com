@@ -444,7 +444,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                     // 🚨 FORÇA CARD VERMELHO: Se isPendente for true, nasce Grande.
                     // O 'waitContainer' garante que ele fique abaixo da linha.
                     createRequestCard(pedido, isPendente, waitContainer);
-                    temPilula = true;
+                    // ✅ Variável removida para evitar o erro ReferenceError
                 }
             });
 
