@@ -426,8 +426,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
             waitContainer.style.borderTop = "2px solid rgba(255, 255, 255, 0.2)";
             waitContainer.innerHTML = `
                 <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
-                <div id="red-cards-group" class="flex flex-col gap-4 mb-6"></div>
-                <div id="pills-group" class="flex flex-col gap-2"></div>
+                <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
+                <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
             `;
             
             // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
