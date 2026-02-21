@@ -639,10 +639,17 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 const waitList = document.getElementById('radar-wait-list');
                 createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
                 
-                // 3. Organiza o divisor (Caso existam outros pedidos)
-                const container = document.getElementById('radar-container');
-                if (container && !container.querySelector('.radar-divider')) {
-                    container.insertAdjacentHTML('afterbegin', `<div class="radar-divider"><span>Oportunidades em Espera</span></div>`);
+                // 3. Garante estrutura visual se o Radar estiver "vazio" de cards grandes
+                const radarMain = document.getElementById('radar-container');
+                if (radarMain && !document.getElementById('radar-wait-list')) {
+                    const freshWaitList = document.createElement('div');
+                    freshWaitList.id = "radar-wait-list";
+                    freshWaitList.className = "mt-12 pt-6 border-t border-white/5 relative w-full clear-both";
+                    freshWaitList.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
+                    radarMain.appendChild(freshWaitList);
+                    
+                    // Move a pílula para dentro do novo container de espera
+                    freshWaitList.appendChild(document.getElementById(`req-${pedido.id}`));
                 }
             }
         }, 30000);
