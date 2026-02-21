@@ -444,17 +444,16 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
                 //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
                if (isFoco) {
-                    // 🔵 TOPO: Sempre no container principal
+                    // 🔵 TOPO: Espaço Nobre
                     createRequestCard(pedido, true, container);
                 } else {
-                    // 🔴/💊 ABAIXO DA LINHA:
+                    // 🟢 ABAIXO DA LINHA: Organização por Grupo
                     if (isPendente) {
-                        // Card Vermelho: Usa prepend para ficar logo abaixo da linha divisória
-                        const card = createRequestCard(pedido, true, null); // Cria o card mas não anexa ainda
-                        if (card) waitContainer.insertBefore(card, waitContainer.children[1] || null);
+                        const targetRed = document.getElementById('red-cards-group') || waitContainer;
+                        createRequestCard(pedido, true, targetRed);
                     } else {
-                        // Pílula: Usa append para ir para o fim da lista
-                        createRequestCard(pedido, false, waitContainer);
+                        const targetPills = document.getElementById('pills-group') || waitContainer;
+                        createRequestCard(pedido, false, targetPills);
                     }
                 }
             });
