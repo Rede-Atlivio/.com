@@ -447,8 +447,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-            // Só anexa a zona de espera se realmente houver pílulas dentro dela
-            if (temPilula) container.appendChild(waitContainer);
+            // ✅ TRAVA REMOVIDA: O waitContainer já foi anexado no Passo 1.
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
