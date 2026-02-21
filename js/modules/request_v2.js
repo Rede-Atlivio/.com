@@ -636,11 +636,11 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             </div>
             <div class="flex items-center gap-2">
                 <div class="hidden xs:flex flex-col items-end mr-1 text-[8px] font-bold text-green-400 uppercase leading-none">
-                    <span>Lucro</span>
-                    <span>R$ ${lucroLiquido.toFixed(2)}</span>
-                </div>
-                <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-[10px] font-black shadow-lg shadow-blue-900/20 transition-all active:scale-90">VER AGORA</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-500 hover:text-red-400 transition-colors">×</button>
+                    <span>Lucro</span>
+                    <span>R$ ${lucroLiquido.toFixed(2)}</span>
+                </div>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="btn-ver-pill bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-[10px] font-black shadow-lg shadow-green-900/20 transition-all active:scale-90">ACEITAR</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-500 hover:text-red-400 transition-colors">×</button>
             </div>
         `;
     }
