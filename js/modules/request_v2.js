@@ -414,8 +414,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
 
         const container = document.getElementById('radar-container');
         if (container) {
-            // ✅ LIMPEZA ABSOLUTA: Mata qualquer resíduo antes de começar
-            while (container.firstChild) { container.removeChild(container.firstChild); }
+            // ✅ LIMPEZA SELETIVA: Mata apenas cards e a lista de espera antiga, preservando a imagem de fundo/animação.
+            container.querySelectorAll('.request-card, #radar-wait-list, .radar-divider').forEach(el => el.remove());
             
             const quinzeMinutosMs = 15 * 60 * 1000;
             const waitContainer = document.createElement('div');
