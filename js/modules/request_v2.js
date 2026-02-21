@@ -466,12 +466,17 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             }
         }
-        const emptyState = document.getElementById('radar-empty-state');
-        if (emptyState) {
-            if (snapshot.empty) emptyState.classList.remove('hidden');
-            else emptyState.classList.add('hidden');
-        }
-    }, (error) => {
+        
+        // ✅ CORREÇÃO: O Empty State agora obedece a lista real filtrada, não apenas o banco
+        const emptyState = document.getElementById('radar-empty-state');
+        if (emptyState) {
+            if (ordenados.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+    }, (error) => {
         console.error("❌ Erro no Snapshot do Radar:", error);
         window.radarIniciado = false;
     });
