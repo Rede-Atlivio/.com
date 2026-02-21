@@ -468,38 +468,39 @@ export function createRequestCard(pedido, forceRed = false) {
     card.id = `req-${pedido.id}`;
 
     if (isBlocked) {
-        card.className = "request-card is-red-alert relative mb-12 bg-red-950 rounded-3xl shadow-[0_0_60_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn block h-fit w-full overflow-hidden";
+        card.className = "request-card is-red-alert relative mb-6 bg-red-900 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/50 overflow-hidden animate-slideInDown";
+        card.style.maxWidth = "100%";
         card.innerHTML = `
-            <div class="p-6 text-center relative">
-                <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
+            <div class="p-6 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse z-0"></div>
                 <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
                     ⚠️ OPORTUNIDADE EM RISCO
                 </span>
-                <h2 class="relative z-10 text-red-50 text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
+                <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                     R$ ${valorTotal.toFixed(0)}
                 </h2>
-                <p class="relative z-10 text-[10px] font-black text-red-200 uppercase mt-2 italic px-4 leading-tight">
-                    ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO! RECARREGUE AGORA PARA NÃO PERDER.
+                <p class="relative z-10 text-[9px] font-bold text-red-200 uppercase mt-2 italic px-2">
+                    OUTROS PROFISSIONAIS ESTÃO AVALIANDO! RECARREGUE AGORA.
                 </p>
             </div>
-            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
+            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
                 <div class="flex items-start gap-3 mb-3">
                     <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
                     <div>
                         <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
+                        <p class="text-red-400 text-[10px] uppercase font-bold">Status: Bloqueado por Saldo</p>
                     </div>
                 </div>
-                <div class="space-y-2 opacity-80">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-xs font-medium leading-tight line-clamp-2">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
             </div>
-            <div class="p-4 relative">
-                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl animate-bounce-subtle border border-red-400/30 transition flex items-center justify-center gap-2">
-                    RECARREGUE AGORA E TRABALHE 💳
+            <div class="p-4 relative z-10 flex flex-col gap-2">
+                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg animate-bounce-subtle transition flex items-center justify-center gap-2 border border-red-400/30">
+                    RECARREGUE AGORA 💳
                 </button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full mt-3 text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition">Não tenho interesse neste pedido</button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition underline">Ignorar pedido</button>
             </div>
             <div class="h-1.5 bg-slate-800 w-full relative z-10">
                 <div id="timer-${pedido.id}" class="h-full bg-red-500 w-full transition-all duration-[600000ms] ease-linear"></div>
