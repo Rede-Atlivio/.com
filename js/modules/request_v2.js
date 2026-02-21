@@ -761,6 +761,8 @@ window.recuperarPedidoRadar = async (orderId) => {
 
 // Memória volátil para a sessão atual
 window.REJEITADOS_SESSAO = new Set();
+// ✅ NOVA: Guarda quem já cumpriu os 30s e não deve mais subir sozinho
+window.ESTACIONADOS_SESSAO = new Set();
 
 window.rejeitarPermanente = async (orderId) => {
     // 1. Remove visualmente da tela imediatamente
