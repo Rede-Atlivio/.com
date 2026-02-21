@@ -430,7 +430,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
-                const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
+                // ✅ NOVA REGRA: Pendentes e Clicados ganham o topo. O resto vai para baixo da linha.
+                const isFoco = isPendente || clicouVer || (index === 0 && !jaEstacionou && !isMuitoAntigo);
 
                 if (isFoco) {
                     // Se for foco, vai direto pro container principal como Card Grande
