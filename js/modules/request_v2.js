@@ -445,7 +445,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-            // ✅ TRAVA REMOVIDA: O waitContainer já foi anexado no Passo 1.
+            // ✅ ANEXO FINAL: A linha divisória e as pílulas agora são enviadas para o fim do radar
+            container.appendChild(waitContainer);
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
