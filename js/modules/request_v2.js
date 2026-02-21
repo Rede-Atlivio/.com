@@ -441,7 +441,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
-               // ✅ HIERARQUIA FIXA: Foco no topo, Vermelhos na gaveta A, Pílulas na gaveta B
+               // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
                 if (isFoco) {
                     createRequestCard(pedido, true, container);
                 } else {
