@@ -353,11 +353,11 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
-    if (window.radarIniciado) {
-        console.log("🛰️ [SISTEMA] Radar já está operando.");
-        return;
-    }
+   // 🛡️ TRAVA INTELIGENTE: Só bloqueia se o radar já estiver ativo E o botão continuar ligado.
+    const toggleStatus = document.getElementById('online-toggle');
+    if (window.radarIniciado && toggleStatus && toggleStatus.checked) {
+        return;
+    }
   if (radarUnsubscribe) radarUnsubscribe();
 
     const configRef = doc(db, "settings", "financeiro");
