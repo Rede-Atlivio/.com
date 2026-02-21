@@ -422,14 +422,12 @@ export async function iniciarRadarPrestador(uidManual = null) {
            // ✅ CRIAÇÃO ÚNICA E OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
             const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
-            // ✅ LINHA BLINDADA: border-t-2 força a espessura e block garante que não suma
             waitContainer.className = "block mt-12 pt-8 border-t-2 border-white/20 relative w-full clear-both h-auto min-h-[100px] overflow-visible pb-20";
-            // ✅ ESTILO FORÇADO: Adicionamos a borda superior via style para garantir visibilidade
             waitContainer.style.borderTop = "2px solid rgba(255, 255, 255, 0.2)";
             waitContainer.innerHTML = `
                 <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
-                <div id="red-cards-container" class="flex flex-col gap-4 mb-6"></div>
-                <div id="pills-container" class="flex flex-col gap-2"></div>
+                <div id="red-cards-group" class="flex flex-col gap-4 mb-6"></div>
+                <div id="pills-group" class="flex flex-col gap-2"></div>
             `;
             
             // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
