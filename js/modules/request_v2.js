@@ -423,9 +423,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
             waitContainer.className = "block mt-4 pt-4 border-t-2 border-white/20 relative w-full clear-both h-fit overflow-visible pb-10";
-            waitContainer.style.borderTop = "4px solid #3b82f6";
-            waitContainer.style.boxShadow = "0 -8px 15px rgba(59, 130, 246, 0.4)";
-            waitContainer.style.zIndex = "40";
+            waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
             waitContainer.innerHTML = `
                 <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
                 <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
