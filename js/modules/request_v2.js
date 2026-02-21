@@ -422,8 +422,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             waitContainer.id = "radar-wait-list";
             // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
             // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
-            // ✅ LINHA RESTAURADA: 'border-t' e 'border-white/10' garantem a divisória visível
-            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full flex flex-col gap-4 h-auto min-h-max overflow-visible pb-20 clear-both";
+            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
             waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
             let temPilula = false;
 
@@ -527,39 +526,37 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             card.className = "request-card is-red-alert relative mb-12 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn block h-fit w-full overflow-visible";
             card.innerHTML = `
                 <div class="p-6 text-center relative">
-                    <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
-                    <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
-                        ⚠️ OPORTUNIDADE EM RISCO
-                    </span>
-                    <h2 class="relative z-10 text-red-50 text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
-                        R$ ${valorTotal.toFixed(0)}
-                    </h2>
-                    <p class="relative z-10 text-[10px] font-black text-red-200 uppercase mt-2 italic px-4 leading-tight">
-                        ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO!
-                    </p>
-                </div>
-               <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm flex justify-between items-center gap-4 relative">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
-                            <div>
-                                <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                                <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2 opacity-80">
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
-                        </div>
+                <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
+                <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
+                    ⚠️ OPORTUNIDADE EM RISCO
+                </span>
+                <h2 class="relative z-10 text-red-50 text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
+                    R$ ${valorTotal.toFixed(0)}
+                </h2>
+                <p class="relative z-10 text-[10px] font-black text-red-200 uppercase mt-2 italic px-4 leading-tight">
+                    ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO! RECARREGUE AGORA PARA NÃO PERDER.
+                </p>
+            </div>
+            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
+                    <div>
+                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                        <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
                     </div>
-                    <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
                 </div>
-                <div class="p-4 relative">
-                    <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl border border-red-400/30 transition">
-                        RECARREGUE AGORA E TRABALHE 💳
-                    </button>
+                <div class="space-y-2 opacity-80">
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
-            `;
+            </div>
+            <div class="p-4 relative">
+                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl animate-bounce-subtle border border-red-400/30 transition">
+                    RECARREGUE AGORA E TRABALHE 💳
+                </button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full mt-3 text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition">Não tenho interesse neste pedido</button>
+            </div>
+        `;
 
         } else {
             // BLOCO A: CARD AZUL (CARD ORIGINAL)
@@ -625,41 +622,29 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     // Injeta no container
     (targetContainer || container).appendChild(card);
 
-    // --- MOTOR DE ESTACIONAMENTO V30 (CORREÇÃO LATERAL) ---
+    // --- MOTOR DE ESTACIONAMENTO V25 ---
+    // ✅ CRONÔMETRO DIFERENCIADO: Azul morre em 30s, Vermelho abaixo da linha dura 10 minutos (600s)
     if (isFoco || isBlocked) {
-        // ✅ TRAVA DE SEGURANÇA: Garante 10 minutos (600.000ms) para Bloqueados
-        const duracao = isBlocked ? 600000 : 30000;
-        const cor = isBlocked ? 'bg-red-500 shadow-[0_0_10px_#ff0000]' : 'bg-blue-500';
-        const tContainer = card.querySelector(`#timer-container-${pedido.id}`);
+        const tempoExposicao = isBlocked ? 600000 : 30000;
+        const corTimer = isBlocked ? 'bg-red-500' : 'bg-blue-500';
+        const timerHtml = `<div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full ${corTimer} w-full transition-all duration-[${tempoExposicao}ms] ease-linear"></div></div>`;
+        card.insertAdjacentHTML('beforeend', timerHtml);
+        setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
-        if (tContainer) {
-            // ✅ SINCRONIA TOTAL: O CSS recebe exatamente os 600.000ms
-            const timerHtml = isBlocked 
-                ? `<div id="timer-${pedido.id}" class="absolute top-0 left-0 w-full ${cor}" style="height: 100%; transition: height ${duracao}ms linear;"></div>`
-                : `<div id="timer-${pedido.id}" class="h-full ${cor} w-full" style="transition: width ${duracao}ms linear;"></div>`;
-            tContainer.innerHTML = timerHtml;
-            
-            setTimeout(() => {
-                const t = document.getElementById(`timer-${pedido.id}`);
-                if (t) isBlocked ? t.style.height = '0%' : t.style.width = '0%';
-            }, 100);
-        }
-
-       // ✅ TRAVA DE 10 MINUTOS: O Card só será removido após o tempo definido em 'duracao' (600s para bloqueados)
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
             if (el && !el.classList.contains('atlivio-pill')) {
                 if (isBlocked) {
-                    console.log("🕒 Tempo esgotado para card de bloqueio. Removendo...");
+                    // O Card Vermelho apenas some após 10 min para não poluir eternamente
                     removeRequestCard(pedido.id);
                 } else {
-                    el.remove();
-                    window.ESTACIONADOS_SESSAO.add(pedido.id);
+                    el.remove(); 
+                    window.ESTACIONADOS_SESSAO.add(pedido.id); 
                     const waitList = document.getElementById('radar-wait-list');
                     createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
                 }
             }
-        }, duracao);
+        }, tempoExposicao);
     }
  }
 // ============================================================================
