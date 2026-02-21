@@ -539,22 +539,20 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 </div>
             </div>
            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
-                                <div class="flex justify-between items-center gap-4 relative">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-start gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
-                            <div>
-                                <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                                <p class="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">⭐ Cliente Atlivio</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2">
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
-                            <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
-                        </div>
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
+                    <div>
+                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                        <p class="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">⭐ Cliente Atlivio</p>
                     </div>
-                                        <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
                 </div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                </div>
+            </div>
+                        <div class="px-6 mt-4 relative z-10 w-full">
+                <div id="timer-container-${pedido.id}" class="w-full h-1.5 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10"></div>
             </div>
             <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
