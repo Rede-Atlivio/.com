@@ -402,17 +402,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.ULTIMOS_PEDIDOS_CACHED = pedidosVivos;
 
         const ordenados = pedidosVivos.sort((a, b) => {
-            // 1. PRIORIDADE MÁXIMA: Pedido bloqueado por falta de saldo (Trava o funil)
-            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
-            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
-            
-            // 2. PRIORIDADE MANUAL: Se o prestador clicou em "VER" na pílula
-            if (a.id === window.PEDIDO_MAXIMIZADO_ID) return -1;
-            if (b.id === window.PEDIDO_MAXIMIZADO_ID) return 1;
-            
-            // 3. PRIORIDADE FINANCEIRA: Maior valor de oferta
-            return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
-        });
+            // 1. PRIORIDADE MÁXIMA: Pedido bloqueado por falta de saldo (Trava o funil)
+            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
+            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
+            
+            // 2. PRIORIDADE FINANCEIRA: Maior valor de oferta
+            return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
+        });
 
         const container = document.getElementById('radar-container');
         if (container) {
