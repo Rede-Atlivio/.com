@@ -538,7 +538,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
                 </div>
             </div>
-           <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
+           <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm flex justify-between items-center gap-4 relative">
                                 <div class="flex justify-between items-center gap-4 relative">
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start gap-3 mb-3">
