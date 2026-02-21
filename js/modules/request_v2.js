@@ -438,7 +438,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
                 // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
-                const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
+                const isFoco = (index === 0 && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
                // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
