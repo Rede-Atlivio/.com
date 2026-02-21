@@ -569,6 +569,9 @@ export async function aceitarPedidoRadar(orderId) {
         if (pctReservaPrestador > 0) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoTotalParaAceite < valorReserva) {
+                // Transforma o card em Vermelho antes de avisar
+                document.getElementById(`req-${orderId}`)?.remove();
+                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
                 return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
             }
         }
