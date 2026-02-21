@@ -626,6 +626,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
 
     // --- MOTOR DE ESTACIONAMENTO V30 (CORREÇÃO LATERAL) ---
     if (isFoco || isBlocked) {
+        // ✅ TRAVA DE SEGURANÇA: Garante 10 minutos (600.000ms) para Bloqueados
         const duracao = isBlocked ? 600000 : 30000;
         const cor = isBlocked ? 'bg-red-500 shadow-[0_0_10px_#ff0000]' : 'bg-blue-500';
         const tContainer = card.querySelector(`#timer-container-${pedido.id}`);
