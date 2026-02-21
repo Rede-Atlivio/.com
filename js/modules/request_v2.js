@@ -632,10 +632,10 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
         const tContainer = card.querySelector(`#timer-container-${pedido.id}`);
 
         if (tContainer) {
+            // ✅ SINCRONIA TOTAL: O CSS recebe exatamente os 600.000ms
             const timerHtml = isBlocked 
-                ? `<div id="timer-${pedido.id}" class="absolute top-0 left-0 w-full ${cor} transition-all ease-linear" style="height: 100%; transition-duration: ${duracao}ms;"></div>`
-                : `<div id="timer-${pedido.id}" class="h-full ${cor} w-full transition-all ease-linear" style="transition-duration: ${duracao}ms;"></div>`;
-            
+                ? `<div id="timer-${pedido.id}" class="absolute top-0 left-0 w-full ${cor}" style="height: 100%; transition: height ${duracao}ms linear;"></div>`
+                : `<div id="timer-${pedido.id}" class="h-full ${cor} w-full" style="transition: width ${duracao}ms linear;"></div>`;
             tContainer.innerHTML = timerHtml;
             
             setTimeout(() => {
