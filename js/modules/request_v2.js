@@ -445,8 +445,18 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-            // Só anexa a zona de espera se realmente houver pílulas dentro dela
-            if (temPilula) container.appendChild(waitContainer);
+            // ✅ ESTRATÉGIA DE RECONSTRUÇÃO: Se o container está vazio após a limpeza, fabricamos o Radar de volta.
+            const temCardsNoTopo = container.querySelectorAll('.request-card').length > 0;
+            if (!temCardsNoTopo) {
+                container.insertAdjacentHTML('afterbegin', `
+                    <div id="radar-reconstruido" class="flex flex-col items-center justify-center p-10 animate-fadeIn">
+                        <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                        <p class="text-blue-500 font-black text-[10px] mt-4 uppercase tracking-widest animate-pulse">Buscando Oportunidades...</p>
+                    </div>
+                `);
+            }
+
+            if (temPilula) container.appendChild(waitContainer);
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
