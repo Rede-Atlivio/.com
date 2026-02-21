@@ -55,15 +55,19 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        container.classList.remove('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
-    }
+   // ✅ BLOQUEIO DE INTERFERÊNCIA: Se estiver Online, o Radar NUNCA fica 'hidden'.
+    if (isOnline) {
+        container.classList.remove('hidden');
+        if (parent) parent.classList.remove('hidden');
+    }
 
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        // O emptyState original falhou nos testes de CSS, por isso a reconstrução acima é soberana.
+        if(emptyState) emptyState.classList.remove('hidden');
+    }
     return container;
 }
     
