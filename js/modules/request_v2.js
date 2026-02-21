@@ -525,7 +525,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             // BLOCO A: CARD AZUL (CARD ORIGINAL)
             card.className = "request-card relative mb-12 bg-slate-900 rounded-3xl shadow-[0_0_60px_rgba(37,99,235,0.6)] border-2 border-blue-500 z-50 animate-fadeIn block h-fit w-full overflow-visible";
             card.innerHTML = `
-            <div class="p-6 text-center relative overflow-hidden">
+            <div class="p-6 text-center relative">
                 <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
                 <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
                     🚀 Nova Oportunidade
