@@ -431,7 +431,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
                 // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
-               if (isFoco) {
+                const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
+
+                if (isFoco) {
                     createRequestCard(pedido, true, container);
                 } else {
                     // Se for bloqueado, enviamos como Card Grande (true) mas para o container de espera
