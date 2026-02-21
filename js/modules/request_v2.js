@@ -419,14 +419,14 @@ export async function iniciarRadarPrestador(uidManual = null) {
             
             const quinzeMinutosMs = 15 * 60 * 1000;
             const waitContainer = document.createElement('div');
+            // ✅ CRIAÇÃO OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
+            const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
-            // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
-            // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
-            // ✅ LINHA RESTAURADA: 'border-t' e 'border-white/10' garantem a divisória visível
-            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full flex flex-col gap-4 h-auto min-h-max overflow-visible pb-20 clear-both";
-            waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
-            let temPilula = false;
-
+            waitContainer.className = "mt-16 pt-8 border-t-2 border-white/20 relative w-full clear-both h-auto overflow-visible pb-20";
+            waitContainer.innerHTML = `<div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>`;
+            
+            // Já anexa no container principal imediatamente para o ROBO 53 encontrar
+            container.appendChild(waitContainer);
             ordenados.forEach((pedido, index) => {
                 const isPendente = pedido.is_blocked_by_wallet === true;
                 const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
