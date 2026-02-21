@@ -421,53 +421,55 @@ export async function iniciarRadarPrestador(uidManual = null) {
             
             const quinzeMinutosMs = 15 * 60 * 1000;
             //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-           // ✅ CRIAÇÃO ÚNICA E OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
-            const waitContainer = document.createElement('div');
-            waitContainer.id = "radar-wait-list";
-            waitContainer.className = "block mt-2 pt-2 border-t border-white/5 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
-            waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
-            waitContainer.innerHTML = `
-                <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
-                <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
-                <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
-            `;
-            
-            // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
-            ordenados.forEach((pedido, index) => {
-                const isPendente = pedido.is_blocked_by_wallet === true;
-                const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
-                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
-                const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
-                
-                // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
-                const isFoco = (index === 0 && !isPendente && !isMuitoAntigo) || clicouVer;
+           //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
+            // ✅ VERIFICAÇÃO ADICIONADA: Só cria a área de espera se houver pedidos
+            if (ordenados.length > 0) {
+                const waitContainer = document.createElement('div');
+                waitContainer.id = "radar-wait-list";
+                waitContainer.className = "block mt-2 pt-2 border-t border-white/5 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
+                waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
+                waitContainer.innerHTML = `
+                    <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
+                    <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
+                    <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
+                `;
+                
+                // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
+                ordenados.forEach((pedido, index) => {
+                    const isPendente = pedido.is_blocked_by_wallet === true;
+                    const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
+                    const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
+                    const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
+                    
+                    // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
+                    const isFoco = (index === 0 && !isPendente && !isMuitoAntigo) || clicouVer;
 
-                //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
-               // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
-                if (isFoco) {
-                    createRequestCard(pedido, true, container);
-                } else {
-                    if (isPendente) {
-                        const targetRed = document.getElementById('red-cards-group') || waitContainer;
-                        createRequestCard(pedido, true, targetRed);
-                    } else {
-                        const targetPills = document.getElementById('pills-group') || waitContainer;
-                        createRequestCard(pedido, false, targetPills);
-                    }
-                }
-            });
+                    //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
+                    // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
+                    if (isFoco) {
+                        createRequestCard(pedido, true, container);
+                    } else {
+                        if (isPendente) {
+                            const targetRed = waitContainer.querySelector('#red-cards-group');
+                            createRequestCard(pedido, true, targetRed);
+                        } else {
+                            const targetPills = waitContainer.querySelector('#pills-group');
+                            createRequestCard(pedido, false, targetPills);
+                        }
+                    }
+                });
 
-           // ✅ ANEXO GARANTIDO E HIERÁRQUICO
-            // ✅ ANEXO FIXO: Garante que a linha fique no fundo e não suba no vácuo
-            if (container) {
-                container.style.display = "flex";
-                container.style.flexDirection = "column";
-                container.appendChild(waitContainer);
-                // Empurra a waitContainer para o final do container
-                waitContainer.style.marginTop = "auto";
-                container.style.zIndex = "0"; 
-                container.style.position = "relative";
-            }
+                // ✅ ANEXO GARANTIDO E HIERÁRQUICO
+                if (container) {
+                    container.style.display = "flex";
+                    container.style.flexDirection = "column";
+                    container.appendChild(waitContainer);
+                    // Empurra a waitContainer para o final do container
+                    waitContainer.style.marginTop = "auto";
+                    container.style.zIndex = "0"; 
+                    container.style.position = "relative";
+                }
+            }
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
