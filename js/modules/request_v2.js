@@ -457,14 +457,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-           // ✅ ANEXO GARANTIDO: Injeta a linha divisória no final do radar-container
-            // ✅ ANEXO GARANTIDO E HIERÁRQUICO
-if (container) {
-    container.appendChild(waitContainer);
-    // Força o container a respeitar o z-index baixo para o Perfil passar na frente
-    container.style.zIndex = "0"; 
-    container.style.position = "relative";
-}
+           // ✅ ANEXO GARANTIDO E HIERÁRQUICO
+            if (container) {
+                container.appendChild(waitContainer);
+                container.style.zIndex = "0"; 
+                container.style.position = "relative";
+            }
+        }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
@@ -475,7 +474,6 @@ if (container) {
         window.radarIniciado = false;
     });
 }
-
 // 🏗️ GESTÃO DE FOCO DO RADAR
 window.PEDIDO_MAXIMIZADO_ID = null;
 
