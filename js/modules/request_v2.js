@@ -654,7 +654,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 } else if (!el.classList.contains('atlivio-pill')) {
                     el.remove();
                     window.ESTACIONADOS_SESSAO.add(pedido.id);
-                    createRequestCard(pedido, false, document.getElementById('radar-wait-list'));
+                    const target = document.getElementById('radar-wait-list') || document.getElementById('radar-container');
+                    createRequestCard(pedido, false, target);
                 }
             }
         }, duracao);
