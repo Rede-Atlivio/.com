@@ -539,8 +539,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 </div>
             </div>
            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm flex justify-between items-center gap-4 relative">
-                                <div class="flex justify-between items-center gap-4 relative">
-                    <div class="flex-1 min-w-0">
+                        <div class="flex-1 min-w-0">
                         <div class="flex items-start gap-3 mb-3">
                             <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
                             <div>
