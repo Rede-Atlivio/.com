@@ -420,7 +420,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
             const quinzeMinutosMs = 15 * 60 * 1000;
             const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
-            waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full clear-both";
+            // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
+            waitContainer.className = "mt-12 pt-6 border-t border-white/5 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
             waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
             let temPilula = false;
 
