@@ -645,14 +645,18 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             }, 100);
         }
 
+       // ✅ TRAVA DE 10 MINUTOS: O Card só será removido após o tempo definido em 'duracao' (600s para bloqueados)
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
             if (el && !el.classList.contains('atlivio-pill')) {
-                if (isBlocked) removeRequestCard(pedido.id);
-                else {
+                if (isBlocked) {
+                    console.log("🕒 Tempo esgotado para card de bloqueio. Removendo...");
+                    removeRequestCard(pedido.id);
+                } else {
                     el.remove();
                     window.ESTACIONADOS_SESSAO.add(pedido.id);
-                    createRequestCard(pedido, false, document.getElementById('radar-wait-list'));
+                    const waitList = document.getElementById('radar-wait-list');
+                    createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
                 }
             }
         }, duracao);
