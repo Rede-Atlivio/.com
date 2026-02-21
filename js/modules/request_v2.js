@@ -446,8 +446,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-            // ✅ ANEXO FINAL: A linha divisória e as pílulas agora são enviadas para o fim do radar
-            container.appendChild(waitContainer);
+           // ✅ ANEXO GARANTIDO: Injeta a linha divisória no final do radar-container
+            if (container) container.appendChild(waitContainer);
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
