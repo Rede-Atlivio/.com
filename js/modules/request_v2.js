@@ -436,8 +436,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 if (isFoco) {
                     createRequestCard(pedido, true, container);
                 } else {
-                    // Se for bloqueado (isPendente), renderiza como GRANDE (true) no container de baixo.
-                    // Se for apenas pílula comum, renderiza como PEQUENO (false).
+                    // 🚨 FORÇA CARD VERMELHO: Se isPendente for true, nasce Grande.
+                    // O 'waitContainer' garante que ele fique abaixo da linha.
                     createRequestCard(pedido, isPendente, waitContainer);
                     temPilula = true;
                 }
