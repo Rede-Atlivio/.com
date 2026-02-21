@@ -418,6 +418,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
             while (container.firstChild) { container.removeChild(container.firstChild); }
             
             const quinzeMinutosMs = 15 * 60 * 1000;
+            //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
             const waitContainer = document.createElement('div');
             // ✅ CRIAÇÃO OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
             const waitContainer = document.createElement('div');
