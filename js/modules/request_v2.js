@@ -552,8 +552,8 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                             <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                         </div>
                     </div>
-                                        <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
-                </div>
+                     <div id="timer-container-${pedido.id}" class="w-1.5 h-16 bg-slate-900/80 rounded-full overflow-hidden relative border border-white/10 flex-shrink-0"></div>
+                
             </div>
             <div class="p-4 relative">
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
