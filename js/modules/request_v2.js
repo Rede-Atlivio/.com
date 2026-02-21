@@ -58,11 +58,18 @@ function garantirContainerRadar() {
     // ✅ CORREÇÃO: No modo Online, o container base NUNCA deve ser hidden para não sumir com a imagem/animação.
     container.classList.remove('hidden');
     const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        if(emptyState) emptyState.classList.remove('hidden');
-    }
+    // ✅ FORÇA BRUTA: Se está online, o container TEM que estar visível.
+    if (isOnline) {
+        container.classList.remove('hidden');
+        parent.classList.remove('hidden'); // Garante que o pai também não suma
+    }
+
+    if (temCards) {
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        // Se não tem cards, mostra o estado vazio (o radar buscando)
+        if(emptyState) emptyState.classList.remove('hidden');
+    }
 
     return container;
 }
