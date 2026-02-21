@@ -680,7 +680,8 @@ export async function aceitarPedidoRadar(orderId) {
         // 1. Bloqueio por Limite de Dívida (Considerando saldo total disponível)
        if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
             document.getElementById(`req-${orderId}`)?.remove();
-            createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, false);
+            // ✅ CORREÇÃO: Passamos 'true' para nascer como Card Grande Vermelho
+            createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
             return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo total (R$ ${saldoTotalParaAceite.toFixed(2)}) atingiu o limite de dívida permitido.`);
         }
         //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 521 A 527  DEPOIS 522 A 528
@@ -689,7 +690,8 @@ export async function aceitarPedidoRadar(orderId) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoTotalParaAceite < valorReserva) {
                 document.getElementById(`req-${orderId}`)?.remove();
-                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, false);
+                // ✅ CORREÇÃO: Passamos 'true' para nascer como Card Grande Vermelho
+                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
                 return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
             }
         }
