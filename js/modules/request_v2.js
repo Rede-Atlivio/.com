@@ -55,12 +55,14 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
+    // ✅ CORREÇÃO: O container do Radar agora fica sempre visível no modo Online
+    container.classList.remove('hidden');
+    
     const temCards = container.querySelectorAll('.request-card').length > 0;
     if (temCards) {
-        container.classList.remove('hidden');
         if(emptyState) emptyState.classList.add('hidden');
     } else {
-        container.classList.add('hidden');
+        // Se não tem cards, mostra o emptyState dentro da área do Radar, mas não esconde a área!
         if(emptyState) emptyState.classList.remove('hidden');
     }
 
