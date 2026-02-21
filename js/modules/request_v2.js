@@ -665,7 +665,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 if (isBlocked) {
                     // ✅ PERSISTÊNCIA: Card vermelho só morre após os 10 minutos (600s)
                     removeRequestCard(pedido.id);
-                } else if (!el.classList.contains('atlivio-pill')) {
+                } else if (!el.classList.contains('atlivio-pill') && !isFoco) {
                     el.remove();
                     window.ESTACIONADOS_SESSAO.add(pedido.id);
                     const target = document.getElementById('radar-wait-list') || document.getElementById('radar-container');
