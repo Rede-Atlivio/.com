@@ -34,41 +34,29 @@ let mem_SelectedServiceTitle = "";
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const parent = document.getElementById('pview-radar');
-    const container = document.getElementById('radar-container');
-    const emptyState = document.getElementById('radar-empty-state');
-    const offlineState = document.getElementById('radar-offline-state');
-    const toggle = document.getElementById('online-toggle');
+    const parent = document.getElementById('pview-radar');
+    const container = document.getElementById('radar-container');
+    const emptyState = document.getElementById('radar-empty-state');
+    const offlineState = document.getElementById('radar-offline-state');
+    const toggle = document.getElementById('online-toggle');
 
-    if (!parent || !container) return null;
+    if (!parent || !container) return null;
 
-    const isOnline = toggle ? toggle.checked : false;
+    const isOnline = toggle ? toggle.checked : false;
 
-    if (!isOnline) {
-        // MODO OFFLINE
-        if(offlineState) offlineState.classList.remove('hidden');
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
+    if (!isOnline) {
+        // MODO OFFLINE ABSOLUTO
+        if(offlineState) offlineState.classList.remove('hidden');
+        if(container) container.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+        return container;
+    } 
 
-    // MODO ONLINE
-    if(offlineState) offlineState.classList.add('hidden');
-    
-    // ✅ CORREÇÃO: O container do Radar agora fica sempre visível no modo Online
-    container.classList.remove('hidden');
-    
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // Se não tem cards, mostra o emptyState dentro da área do Radar, mas não esconde a área!
-        if(emptyState) emptyState.classList.remove('hidden');
-    }
-
-    return container;
-}
-    
+    // MODO ONLINE INICIAL (Mata o ZZZ. O Snapshot decide o resto)
+    if(offlineState) offlineState.classList.add('hidden');
+    
+    return container;
+}   
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
 // ============================================================================
