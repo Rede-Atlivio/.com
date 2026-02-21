@@ -633,11 +633,10 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
             </div>
         `;
     }
-   // Injeta no container (se fornecido) ou retorna o card para inserção manual
+    
     if (targetContainer || container) {
         (targetContainer || container).appendChild(card);
     }
-    return card;
 
     // --- MOTOR DE ESTACIONAMENTO V30 (CORREÇÃO LATERAL) ---
     if (isFoco || isBlocked) {
