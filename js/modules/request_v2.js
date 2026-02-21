@@ -404,72 +404,18 @@ export async function iniciarRadarPrestador(uidManual = null) {
             while (container.firstChild) { container.removeChild(container.firstChild); }
             
             const quinzeMinutosMs = 15 * 60 * 1000;
-            //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-           //PONTO CRÍTICA: CRIAÇÃO DA LINHA NO RADAR
-            // ✅ VERIFICAÇÃO ADICIONADA: Só cria a área de espera se houver pedidos
+            // ✅ RENDERIZAÇÃO DIRETA NO RADAR (Sem linha de Espera)
             if (ordenados.length > 0) {
-                const waitContainer = document.createElement('div');
-                waitContainer.id = "radar-wait-list";
-                waitContainer.className = "block mt-2 pt-2 border-t border-white/5 relative w-full clear-both h-fit overflow-visible pb-6 z-0";
-                waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
-                waitContainer.innerHTML = `
-                    <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
-                    <div id="red-cards-group" class="flex flex-col gap-4 mb-4 min-h-fit"></div>
-                    <div id="pills-group" class="flex flex-col gap-2 min-h-fit h-auto"></div>
-                `;
-                
-               // ✅ POSICIONAMENTO CORRETO: Primeiro limpamos, depois definimos a ordem de entrada.
                 ordenados.forEach((pedido, index) => {
                     const isPendente = pedido.is_blocked_by_wallet === true;
-                    const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
                     const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                     
-                    // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
                     const isFoco = (index === 0 && !isPendente && !isMuitoAntigo);
 
-                    //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
-                    // ✅ DISTRIBUIÇÃO POR GRUPOS: Garante que pílulas nunca fiquem acima de cards vermelhos
-                    if (isFoco) {
-                        createRequestCard(pedido, true, container);
-                    } else {
-                        if (isPendente) {
-                            const targetRed = waitContainer.querySelector('#red-cards-group');
-                            createRequestCard(pedido, true, targetRed);
-                        } else {
-                            const targetPills = waitContainer.querySelector('#pills-group');
-                            createRequestCard(pedido, false, targetPills);
-                        }
-                    }
+                    // Desenha os cards ou pílulas jogando diretamente dentro do container principal
+                    createRequestCard(pedido, isFoco, container);
                 });
-
-               // ✅ ANEXO GARANTIDO E HIERÁRQUICO
-                if (container) {
-                    container.appendChild(waitContainer);
-                    // Margem fixa simples em vez de empurrar pro fundo da tela
-                    waitContainer.style.marginTop = "16px";
-                    container.style.zIndex = "0"; 
-                    container.style.position = "relative";
-                }
             }
-        }
-        
-        // ✅ CORREÇÃO: O Empty State e o Container obedecem a lista real filtrada
-        const emptyState = document.getElementById('radar-empty-state');
-        const radarContainer = document.getElementById('radar-container');
-        
-        if (ordenados.length === 0) {
-            if (emptyState) emptyState.classList.remove('hidden');
-            if (radarContainer) radarContainer.classList.add('hidden'); // Mata a div vazia
-        } else {
-            if (emptyState) emptyState.classList.add('hidden');
-            if (radarContainer) radarContainer.classList.remove('hidden'); // Exibe a div com os cards
-        }
-    }, (error) => {
-        console.error("❌ Erro no Snapshot do Radar:", error);
-        window.radarIniciado = false;
-    });
-}
-// (Funções de Maximizar/Minimizar removidas - Aceite direto via Pílula)
 
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
