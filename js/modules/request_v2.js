@@ -772,7 +772,6 @@ window.irParaChatComSucesso = irParaChatComSucesso;
 
 // Garantias de acesso
 if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
-if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
 
 /**
  * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
