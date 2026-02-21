@@ -423,7 +423,11 @@ export async function iniciarRadarPrestador(uidManual = null) {
             // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
             // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
             waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
-            waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
+            // ✅ CORREÇÃO: Usamos textContent ou elementos isolados para não causar repintura total do container.
+            const divider = document.createElement('div');
+            divider.className = "radar-divider mb-4";
+            divider.innerHTML = `<span>Oportunidades em Espera</span>`;
+            waitContainer.appendChild(divider);
             let temPilula = false;
 
             ordenados.forEach((pedido, index) => {
