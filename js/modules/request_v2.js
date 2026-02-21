@@ -630,10 +630,17 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     if (isFoco || isBlocked) {
         const tempoExposicao = isBlocked ? 600000 : 30000;
         const corBarra = isBlocked ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-blue-500';
-        // ✅ INJEÇÃO PRECISA: Garante que a barra nasça dentro do container de timer
-        const timerHtml = `<div id="timer-${pedido.id}" class="h-full ${corBarra} w-full transition-all duration-[${tempoExposicao}ms] ease-linear"></div>`;
+        // ✅ INJEÇÃO NO TOPO: Agora a barra fica visível acima de todo o conteúdo
+        const timerHtml = `<div id="timer-${pedido.id}" class="h-full ${corBarra} w-full transition-all duration-[${tempoExposicao}ms] ease-linear shadow-[0_0_15px_rgba(239,68,68,0.8)]"></div>`;
         const tContainer = card.querySelector(`#timer-container-${pedido.id}`);
-        if(tContainer) tContainer.innerHTML = timerHtml;
+        if(tContainer) {
+            tContainer.innerHTML = timerHtml;
+            // Força o início da animação
+            setTimeout(() => { 
+                const t = document.getElementById(`timer-${pedido.id}`);
+                if(t) t.style.width = '0%'; 
+            }, 100);
+        }
         setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
 
         setTimeout(() => {
