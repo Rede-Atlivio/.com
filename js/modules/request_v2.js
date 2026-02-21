@@ -555,6 +555,7 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     RECARREGUE AGORA E TRABALHE 💳
                 </button>
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full mt-3 text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition">Não tenho interesse neste pedido</button>
+            <div id="timer-container-${pedido.id}" class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20"></div>
             </div>
         `;
 
