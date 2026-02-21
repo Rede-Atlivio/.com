@@ -438,15 +438,20 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
-                if (isFoco) {
-                    // 🔵 Card Azul Grande (Topo)
+                //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
+               if (isFoco) {
+                    // 🔵 TOPO: Sempre no container principal
                     createRequestCard(pedido, true, container);
-                } else if (isPendente) {
-                    // 🔴 Card Vermelho Grande (Abaixo da linha)
-                    createRequestCard(pedido, true, waitContainer);
                 } else {
-                    // 💊 Pílula Azul (Abaixo da linha)
-                    createRequestCard(pedido, false, waitContainer);
+                    // 🔴/💊 ABAIXO DA LINHA:
+                    if (isPendente) {
+                        // Card Vermelho: Usa prepend para ficar logo abaixo da linha divisória
+                        const card = createRequestCard(pedido, true, null); // Cria o card mas não anexa ainda
+                        if (card) waitContainer.insertBefore(card, waitContainer.children[1] || null);
+                    } else {
+                        // Pílula: Usa append para ir para o fim da lista
+                        createRequestCard(pedido, false, waitContainer);
+                    }
                 }
             });
 
