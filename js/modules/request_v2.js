@@ -466,47 +466,87 @@ export function createRequestCard(pedido, forceRed = false) {
 
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
-    card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
-    card.style.maxWidth = "100%";
 
-    card.innerHTML = `
-        <div class="p-6 text-center relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
-            <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
-                🚀 Nova Oportunidade
-            </span>
-            <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                R$ ${valorTotal.toFixed(0)}
-            </h2>
-            <div class="relative z-10 flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-90 text-white">
-                <span class="bg-red-500/20 px-2 py-1 rounded text-red-300">Taxa: -R$ ${taxaValor.toFixed(2)}</span>
-                <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
+    if (isBlocked) {
+        card.className = "request-card is-red-alert relative mb-12 bg-red-950 rounded-3xl shadow-[0_0_60_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn block h-fit w-full overflow-hidden";
+        card.innerHTML = `
+            <div class="p-6 text-center relative">
+                <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
+                <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
+                    ⚠️ OPORTUNIDADE EM RISCO
+                </span>
+                <h2 class="relative z-10 text-red-50 text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
+                    R$ ${valorTotal.toFixed(0)}
+                </h2>
+                <p class="relative z-10 text-[10px] font-black text-red-200 uppercase mt-2 italic px-4 leading-tight">
+                    ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO! RECARREGUE AGORA PARA NÃO PERDER.
+                </p>
             </div>
-        </div>
-        <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
-            <div class="flex items-start gap-3 mb-3">
-                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
-                <div>
-                    <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                    <p class="text-gray-400 text-[10px] uppercase font-bold">⭐ Novo Cliente</p>
+            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
+                    <div>
+                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                        <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
+                    </div>
+                </div>
+                <div class="space-y-2 opacity-80">
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
             </div>
-            <div class="space-y-2">
-                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-xs font-medium leading-tight line-clamp-2">${pedido.location || 'Local a combinar'}</p></div>
-                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📅</span><p class="text-xs font-medium">${dataDisplay} às ${horaDisplay}</p></div>
-                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+            <div class="p-4 relative">
+                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl animate-bounce-subtle border border-red-400/30 transition flex items-center justify-center gap-2">
+                    RECARREGUE AGORA E TRABALHE 💳
+                </button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full mt-3 text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition">Não tenho interesse neste pedido</button>
             </div>
-        </div>
-        <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
-            <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
-            <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
-                <span>⚡</span> ACEITAR AGORA
-            </button>
-        </div>
-        <div class="h-1.5 bg-slate-800 w-full relative z-10">
-            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
-        </div>
-    `;
+            <div class="h-1.5 bg-slate-800 w-full relative z-10">
+                <div id="timer-${pedido.id}" class="h-full bg-red-500 w-full transition-all duration-[600000ms] ease-linear"></div>
+            </div>
+        `;
+    } else {
+        card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
+        card.style.maxWidth = "100%";
+        card.innerHTML = `
+            <div class="p-6 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
+                <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
+                    🚀 Nova Oportunidade
+                </span>
+                <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                    R$ ${valorTotal.toFixed(0)}
+                </h2>
+                <div class="relative z-10 flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-90 text-white">
+                    <span class="bg-red-500/20 px-2 py-1 rounded text-red-300">Taxa: -R$ ${taxaValor.toFixed(2)}</span>
+                    <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
+                </div>
+            </div>
+            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
+                <div class="flex items-start gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
+                    <div>
+                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                        <p class="text-gray-400 text-[10px] uppercase font-bold">⭐ Novo Cliente</p>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-xs font-medium leading-tight line-clamp-2">${pedido.location || 'Local a combinar'}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📅</span><p class="text-xs font-medium">${dataDisplay} às ${horaDisplay}</p></div>
+                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                </div>
+            </div>
+            <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
+                    <span>⚡</span> ACEITAR AGORA
+                </button>
+            </div>
+            <div class="h-1.5 bg-slate-800 w-full relative z-10">
+                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
+            </div>
+        `;
+    }
 
     container.prepend(card);
     const antena = document.getElementById('radar-empty-state');
