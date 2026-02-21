@@ -476,26 +476,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = false;
     });
 }
-// 🏗️ GESTÃO DE FOCO DO RADAR
-window.PEDIDO_MAXIMIZADO_ID = null;
-
-window.maximizarPedido = (id) => {
-    // ✅ LIBERAÇÃO: Remove da memória de estacionamento para permitir a promoção
-    if (window.ESTACIONADOS_SESSAO) window.ESTACIONADOS_SESSAO.delete(id); 
-    
-    window.PEDIDO_MAXIMIZADO_ID = id;
-    console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
-    const container = document.getElementById('radar-container');
-    if(container) container.innerHTML = ""; 
-    // Reinicia o motor para o Snapshot ler o PEDIDO_MAXIMIZADO_ID no topo
-    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
-};
-
-window.alternarMinimizacao = (id) => {
-    // Agora o "Minimizar" reseta o foco manual, jogando o card para a fila de pílulas
-    window.PEDIDO_MAXIMIZADO_ID = null;
-    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
-};
+// (Funções de Maximizar/Minimizar removidas - Aceite direto via Pílula)
 
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
