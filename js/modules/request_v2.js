@@ -512,14 +512,19 @@ export function createRequestCard(pedido, forceRed = false) {
     const antena = document.getElementById('radar-empty-state');
     if (antena) antena.classList.add('hidden');
 
+    const tempoExposicao = isBlocked ? 600000 : 30000; // 10min vs 30s
+
     setTimeout(() => { 
         const t = document.getElementById(`timer-${pedido.id}`); 
         if(t) t.style.width = '0%'; 
     }, 100);
 
     setTimeout(() => { 
-        if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
-    }, 30000);
+        if(document.getElementById(`req-${pedido.id}`)) {
+            removeRequestCard(pedido.id);
+            if(!isBlocked) window.ESTACIONADOS_SESSAO.add(pedido.id);
+        }
+    }, tempoExposicao);
 }
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
