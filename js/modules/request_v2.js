@@ -45,12 +45,11 @@ function garantirContainerRadar() {
     const isOnline = toggle ? toggle.checked : false;
 
     if (!isOnline) {
-        // MODO OFFLINE
         if(offlineState) offlineState.classList.remove('hidden');
-        container.classList.add('hidden');
+        if(container) container.classList.add('hidden');
         if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
+        return null;
+    }
 
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
