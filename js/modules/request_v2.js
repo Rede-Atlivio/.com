@@ -441,10 +441,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 if (isFoco) {
                     createRequestCard(pedido, true, container);
                 } else {
-                    // 🚨 FORÇA CARD VERMELHO: Se isPendente for true, nasce Grande.
-                    // O 'waitContainer' garante que ele fique abaixo da linha.
-                    createRequestCard(pedido, isPendente, waitContainer);
-                    // ✅ Variável removida para evitar o erro ReferenceError
+                    /// ✅ FORÇA CARD VERMELHO: Garante que bloqueados nasçam dentro da waitContainer
+                    const isPendenteLocal = pedido.is_blocked_by_wallet === true;
+                    createRequestCard(pedido, isPendenteLocal, waitContainer);
                 }
             });
 
