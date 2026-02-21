@@ -646,7 +646,14 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                 if(t) t.style.width = '0%'; 
             }, 100);
         }
-        setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
+        // ✅ ANIMAÇÃO VERTICAL: A barra desce (esvazia) de cima para baixo
+        setTimeout(() => { 
+            const t = document.getElementById(`timer-${pedido.id}`); 
+            if(t) {
+                if (isBlocked) t.style.height = '0%'; 
+                else t.style.width = '0%'; 
+            }
+        }, 100);
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
