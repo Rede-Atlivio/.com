@@ -482,6 +482,7 @@ window.maximizarPedido = (id) => {
     window.PEDIDO_MAXIMIZADO_ID = id;
     console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
     const container = document.getElementById('radar-container');
+        if (container) container.style.zIndex = "0";
     if(container) container.innerHTML = ""; 
     // Reinicia o motor para o Snapshot ler o PEDIDO_MAXIMIZADO_ID no topo
     if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
