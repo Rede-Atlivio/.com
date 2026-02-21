@@ -628,33 +628,17 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
             if (el && !el.classList.contains('atlivio-pill')) {
-                console.log("🕒 Estacionamento Instantâneo: Trocando Card por Pílula.");
-                
-                // 1. Remove o card grande imediatamente
-                el.remove(); 
-                window.PEDIDO_MAXIMIZADO_ID = null;
-
-                // ✅ REGISTRO: Adiciona à lista de estacionados para não subir no Reconnect
-                window.ESTACIONADOS_SESSAO.add(pedido.id); 
-
-                // 2. Injeta a Pílula manualmente
-                const waitList = document.getElementById('radar-wait-list');
-                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
-                
-                // 3. Garante estrutura visual se o Radar estiver "vazio" de cards grandes
-                const radarMain = document.getElementById('radar-container');
-                if (radarMain && !document.getElementById('radar-wait-list')) {
-                    const freshWaitList = document.createElement('div');
-                    freshWaitList.id = "radar-wait-list";
-                    freshWaitList.className = "mt-12 pt-6 border-t border-white/5 relative w-full clear-both";
-                    freshWaitList.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
-                    radarMain.appendChild(freshWaitList);
-                    
-                    // Move a pílula para dentro do novo container de espera
-                    freshWaitList.appendChild(document.getElementById(`req-${pedido.id}`));
+                if (isBlocked) {
+                    // O Card Vermelho apenas some após 10 min para não poluir eternamente
+                    removeRequestCard(pedido.id);
+                } else {
+                    el.remove(); 
+                    window.ESTACIONADOS_SESSAO.add(pedido.id); 
+                    const waitList = document.getElementById('radar-wait-list');
+                    createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
                 }
             }
-        }, 30000);
+        }, tempoExposicao);
     }
  }
 // ============================================================================
