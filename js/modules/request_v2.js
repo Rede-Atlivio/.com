@@ -457,7 +457,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             }
         }
-        if (emptyState) emptyState.classList.add('hidden');
+        const elEmpty = document.getElementById('radar-empty-state');
+        if (elEmpty) elEmpty.classList.add('hidden');
     }, (error) => {
         console.error("❌ Erro no Snapshot do Radar:", error);
         window.radarIniciado = false;
