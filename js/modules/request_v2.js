@@ -55,14 +55,14 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        container.classList.remove('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
-    }
+    // ✅ CORREÇÃO: No modo Online, o container base NUNCA deve ser hidden para não sumir com a imagem/animação.
+    container.classList.remove('hidden');
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        if(emptyState) emptyState.classList.remove('hidden');
+    }
 
     return container;
 }
