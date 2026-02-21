@@ -418,10 +418,16 @@ export async function iniciarRadarPrestador(uidManual = null) {
             while (container.firstChild) { container.removeChild(container.firstChild); }
             
             ordenados.forEach((pedido, index) => {
-                const isFoco = (index === 0);
-                // 🛡️ TRAVA ANTIDUPLICAÇÃO: Só cria se não houver um fantasma no DOM
+                const isPendente = pedido.is_blocked_by_wallet === true;
+                const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
+                const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
+                
+                // ✅ REGRA DE OURO: Só é foco no index 0 se não estiver estacionado nem pendente
+                const isFoco = (index === 0 && !jaEstacionou && !isPendente) || clicouVer;
+
                 if (!document.getElementById(`req-${pedido.id}`)) {
-                    createRequestCard(pedido, isFoco);
+                    // Pendentes são tratados pelo waitContainer abaixo, comuns seguem aqui
+                    if (!isPendente) createRequestCard(pedido, isFoco);
                 }
             });
 
