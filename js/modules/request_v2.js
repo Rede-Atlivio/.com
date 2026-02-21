@@ -422,10 +422,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
                 const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
                 
-                // ✅ REGRA DE OURO: Só é foco no index 0 se não estiver estacionado nem pendente
-                // ✅ REGRA DE FRESCOR: Pedidos com mais de 15 minutos já nascem como pílula (evita sustos pós-cache)
-                const dezMinutosEmMs = 15 * 60 * 1000;
-                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > dezMinutosEmMs;
+                // ✅ VACINA DE FRESCOR: Pedidos com +15min nascem como pílula para evitar sustos
+                const quinzeMinutosMs = 15 * 60 * 1000;
+                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 if (!document.getElementById(`req-${pedido.id}`)) {
