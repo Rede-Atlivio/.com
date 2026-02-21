@@ -55,19 +55,15 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-   // ✅ BLOQUEIO DE INTERFERÊNCIA: Se estiver Online, o Radar NUNCA fica 'hidden'.
-    if (isOnline) {
-        container.classList.remove('hidden');
-        if (parent) parent.classList.remove('hidden');
-    }
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        container.classList.remove('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
+    }
 
-    const temCards = container.querySelectorAll('.request-card').length > 0;
-    if (temCards) {
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // O emptyState original falhou nos testes de CSS, por isso a reconstrução acima é soberana.
-        if(emptyState) emptyState.classList.remove('hidden');
-    }
     return container;
 }
     
@@ -396,72 +392,11 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        // 🧠 MOTOR DE PRIORIDADE V25 (ESTUDO DE DUPLICAÇÃO)
-        const todosPedidos = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        const pedidosVivos = todosPedidos.filter(p => !window.REJEITADOS_SESSAO.has(p.id));
-
-        // 💾 CACHE DE SISTEMA: Alimenta o Robô de Maximização Instantânea
-        window.ULTIMOS_PEDIDOS_CACHED = pedidosVivos;
-
-        const ordenados = pedidosVivos.sort((a, b) => {
-            // 1. PRIORIDADE MÁXIMA: Pedido bloqueado por falta de saldo (Trava o funil)
-            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
-            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
-            
-            // 2. PRIORIDADE MANUAL: Se o prestador clicou em "VER" na pílula
-            if (a.id === window.PEDIDO_MAXIMIZADO_ID) return -1;
-            if (b.id === window.PEDIDO_MAXIMIZADO_ID) return 1;
-            
-            // 3. PRIORIDADE FINANCEIRA: Maior valor de oferta
-            return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") createRequestCard({ id: change.doc.id, ...change.doc.data() });
+            if (change.type === "removed") removeRequestCard(change.doc.id);
         });
 
-        const container = document.getElementById('radar-container');
-        if (container) {
-            // ✅ LIMPEZA ABSOLUTA: Mata qualquer resíduo antes de começar
-            while (container.firstChild) { container.removeChild(container.firstChild); }
-            
-            const quinzeMinutosMs = 15 * 60 * 1000;
-            const waitContainer = document.createElement('div');
-            waitContainer.id = "radar-wait-list";
-            // ✅ overflow-visible e h-auto permitem que cards grandes apareçam sem cortes
-            // ✅ LINHA RESTAURADA: 'border-t' desenha a linha, 'border-white/10' dá o brilho nela
-            waitContainer.className = "mt-16 pt-8 border-t border-white/10 relative w-full clear-both h-auto min-h-fit overflow-visible pb-10";
-            waitContainer.innerHTML = `<div class="radar-divider mb-4"><span>Oportunidades em Espera</span></div>`;
-            let temPilula = false;
-
-            ordenados.forEach((pedido, index) => {
-                const isPendente = pedido.is_blocked_by_wallet === true;
-                const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
-                const isMuitoAntigo = (Date.now() - (pedido.created_at?.seconds * 1000)) > quinzeMinutosMs;
-                const clicouVer = (pedido.id === window.PEDIDO_MAXIMIZADO_ID);
-                
-                // ✅ ESTRATÉGIA "LIMPA TOPO": Bloqueados perdem o direito ao topo mas ganham destaque abaixo.
-                const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
-
-                if (isFoco) {
-                    createRequestCard(pedido, true, container);
-                } else {
-                    // 🚨 FORÇA CARD VERMELHO: Se isPendente for true, nasce Grande.
-                    // O 'waitContainer' garante que ele fique abaixo da linha.
-                    createRequestCard(pedido, isPendente, waitContainer);
-                    temPilula = true;
-                }
-            });
-
-            // ✅ ESTRATÉGIA DE RECONSTRUÇÃO: Se o container está vazio após a limpeza, fabricamos o Radar de volta.
-            const temCardsNoTopo = container.querySelectorAll('.request-card').length > 0;
-            if (!temCardsNoTopo) {
-                container.insertAdjacentHTML('afterbegin', `
-                    <div id="radar-reconstruido" class="flex flex-col items-center justify-center p-10 animate-fadeIn">
-                        <div class="w-20 h-20 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p class="text-blue-500 font-black text-[10px] mt-4 uppercase tracking-widest animate-pulse">Buscando Oportunidades...</p>
-                    </div>
-                `);
-            }
-
-            if (temPilula) container.appendChild(waitContainer);
-        }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
             if (snapshot.empty) emptyState.classList.remove('hidden');
@@ -473,25 +408,16 @@ export async function iniciarRadarPrestador(uidManual = null) {
     });
 }
 
-// 🏗️ GESTÃO DE FOCO DO RADAR
-window.PEDIDO_MAXIMIZADO_ID = null;
-
-window.maximizarPedido = (id) => {
-    // ✅ LIBERAÇÃO: Remove da memória de estacionamento para permitir a promoção
-    if (window.ESTACIONADOS_SESSAO) window.ESTACIONADOS_SESSAO.delete(id); 
-    
-    window.PEDIDO_MAXIMIZADO_ID = id;
-    console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
-    const container = document.getElementById('radar-container');
-    if(container) container.innerHTML = ""; 
-    // Reinicia o motor para o Snapshot ler o PEDIDO_MAXIMIZADO_ID no topo
-    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
-};
-
 window.alternarMinimizacao = (id) => {
-    // Agora o "Minimizar" reseta o foco manual, jogando o card para a fila de pílulas
-    window.PEDIDO_MAXIMIZADO_ID = null;
-    if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
+    const card = document.getElementById(`req-${id}`);
+    const detalhes = document.getElementById(`detalhes-${id}`);
+    const btn = document.getElementById(`btn-min-${id}`);
+    
+    if (card && detalhes) {
+        const agoraMinimizado = card.classList.toggle('minimized');
+        detalhes.classList.toggle('hidden');
+        if(btn) btn.innerHTML = agoraMinimizado ? "+" : "&minus;";
+    }
 };
 
 // ============================================================================
@@ -508,7 +434,7 @@ function removeRequestCard(orderId) {
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
 // ============================================================================
-export function createRequestCard(pedido, isFoco = true, targetContainer = null) {
+export function createRequestCard(pedido) {
     const container = document.getElementById('radar-container');
     if (!container || document.getElementById(`req-${pedido.id}`)) return;
 
@@ -527,140 +453,63 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     let dataDisplay = pedido.data && pedido.data !== "A combinar" ? pedido.data : "Hoje";
     let horaDisplay = pedido.hora && pedido.hora !== "A combinar" ? pedido.hora : "Agora";
 
-    const isBlocked = pedido.is_blocked_by_wallet === true;
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
+    card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
+    card.style.maxWidth = "100%";
 
-    // ✅ CORREÇÃO V25: Verifica se é FOCO (Grande). Independente se é azul ou vermelho.
-    if (isFoco) {
-        if (isBlocked) {
-            // BLOCO B: CARD VERMELHO (DUPLICAÇÃO REAL)
-            // ✅ z-50 coloca o card à frente de outros elementos; animate-fadeIn é mais suave e evita saltos visuais
-            // ✅ FLUXO LIVRE: Adicionamos 'h-fit' para o card se ajustar ao texto e 'block' para ocupar espaço real
-            card.className = "request-card is-red-alert relative mb-12 bg-red-950 rounded-3xl shadow-[0_0_60px_rgba(220,38,38,0.7)] border-2 border-red-500 z-50 animate-fadeIn block h-fit w-full overflow-visible";
-            card.innerHTML = `
-                <div class="p-6 text-center relative">
-                <div class="absolute top-0 left-0 w-full h-full bg-red-600/20 animate-pulse"></div>
-                <span class="relative z-10 bg-red-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
-                    ⚠️ OPORTUNIDADE EM RISCO
-                </span>
-                <h2 class="relative z-10 text-red-50 text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">
-                    R$ ${valorTotal.toFixed(0)}
-                </h2>
-                <p class="relative z-10 text-[10px] font-black text-red-200 uppercase mt-2 italic px-4 leading-tight">
-                    ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO! RECARREGUE AGORA PARA NÃO PERDER.
-                </p>
+    card.innerHTML = `
+        <div class="p-6 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
+            <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
+                🚀 Nova Oportunidade
+            </span>
+            <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                R$ ${valorTotal.toFixed(0)}
+            </h2>
+            <div class="relative z-10 flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-90 text-white">
+                <span class="bg-red-500/20 px-2 py-1 rounded text-red-300">Taxa: -R$ ${taxaValor.toFixed(2)}</span>
+                <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
             </div>
-            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
-                    <div>
-                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
-                    </div>
-                </div>
-                <div class="space-y-2 opacity-80">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+        </div>
+        <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
+            <div class="flex items-start gap-3 mb-3">
+                <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
+                <div>
+                    <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                    <p class="text-gray-400 text-[10px] uppercase font-bold">⭐ Novo Cliente</p>
                 </div>
             </div>
-            <div class="p-4 relative">
-                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl animate-bounce-subtle border border-red-400/30 transition">
-                    RECARREGUE AGORA E TRABALHE 💳
-                </button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full mt-3 text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition">Não tenho interesse neste pedido</button>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-xs font-medium leading-tight line-clamp-2">${pedido.location || 'Local a combinar'}</p></div>
+                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📅</span><p class="text-xs font-medium">${dataDisplay} às ${horaDisplay}</p></div>
+                <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
             </div>
-        `;
+        </div>
+        <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
+            <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
+            <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-[0_0_20px_rgba(34,197,94,0.4)] transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
+                <span>⚡</span> ACEITAR AGORA
+            </button>
+        </div>
+        <div class="h-1.5 bg-slate-800 w-full relative z-10">
+            <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
+        </div>
+    `;
 
-        } else {
-            // BLOCO A: CARD AZUL (CARD ORIGINAL)
-            card.className = `request-card relative mb-10 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 flex flex-col h-auto min-h-[460px] flex-shrink-0 animate-slideInDown`;
-            card.innerHTML = `
-            <div class="p-6 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
-                <span class="relative z-10 bg-blue-600 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest text-white shadow-lg border border-white/20">
-                    🚀 Nova Oportunidade
-                </span>
-                <h2 class="relative z-10 text-white text-5xl font-black mt-3 tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
-                    R$ ${valorTotal.toFixed(0)}
-                </h2>
-                <div class="relative z-10 flex justify-center gap-3 mt-2 text-[10px] font-bold uppercase opacity-90 text-white">
-                    <span class="bg-red-500/20 px-2 py-1 rounded text-red-300">Taxa: -R$ ${taxaValor.toFixed(2)}</span>
-                    <span class="bg-green-500/20 px-2 py-1 rounded text-green-300">Seu Lucro: R$ ${lucroLiquido.toFixed(2)}</span>
-                </div>
-            </div>
-            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm relative z-10">
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-xl shadow-lg border border-blue-400">👤</div>
-                    <div>
-                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">⭐ Cliente Atlivio</p>
-                    </div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight line-clamp-1">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-blue-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
-                </div>
-            </div>
-            <div class="p-4 grid grid-cols-[1fr_2fr] gap-3 relative z-10">
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="bg-white/10 hover:bg-red-500/80 text-white py-4 rounded-xl font-bold text-xs uppercase transition border border-white/5">Ignorar</button>
-                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg transform active:scale-95 transition flex items-center justify-center gap-2 border border-green-400/30">
-                    <span>⚡</span> ACEITAR AGORA
-                </button>
-          </div>
-        `;
-        }
-    } else {
-        // BLOCO C: A PÍLULA DE CONVERSÃO (LAYOUT GRID V25)
-        const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
-        card.className = `${classePilula} animate-fadeIn mb-2`;
-        card.innerHTML = `
-            <div class="flex items-center justify-center w-9 h-9 rounded-full ${isBlocked ? 'bg-red-500/20 border-red-500/40' : 'bg-green-500/20 border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.3)]'} border text-sm transition-all">
-                ${isBlocked ? '🔴' : '💵'}
-            </div>
-            <div class="flex flex-col min-w-0 flex-1 leading-tight">
-                <span class="text-[7px] text-orange-400 font-black uppercase tracking-widest animate-pulse">🔥 OPORTUNIDADE DISPUTADA</span>
-                <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
-                <span class="text-gray-400 text-[8px] uppercase font-bold italic truncate opacity-70">${pedido.service_title || 'Serviço Geral'} • ${horaDisplay}</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="hidden xs:flex flex-col items-end mr-1 text-[8px] font-bold text-green-400 uppercase leading-none">
-                    <span>Lucro</span>
-                    <span>R$ ${lucroLiquido.toFixed(2)}</span>
-                </div>
-                <button onclick="window.maximizarPedido('${pedido.id}')" class="btn-ver-pill bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-[10px] font-black shadow-lg shadow-blue-900/20 transition-all active:scale-90">VER AGORA</button>
-                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-500 hover:text-red-400 transition-colors">×</button>
-            </div>
-        `;
-    }
-    // Injeta no container
-    (targetContainer || container).appendChild(card);
+    container.prepend(card);
+    const antena = document.getElementById('radar-empty-state');
+    if (antena) antena.classList.add('hidden');
 
-    // --- MOTOR DE ESTACIONAMENTO V25 ---
-    // ✅ CRONÔMETRO DIFERENCIADO: Azul morre em 30s, Vermelho abaixo da linha dura 10 minutos (600s)
-    if (isFoco || isBlocked) {
-        const tempoExposicao = isBlocked ? 600000 : 30000;
-        const corTimer = isBlocked ? 'bg-red-500' : 'bg-blue-500';
-        const timerHtml = `<div class="h-1 bg-slate-800 w-full absolute bottom-0 left-0 z-20"><div id="timer-${pedido.id}" class="h-full ${corTimer} w-full transition-all duration-[${tempoExposicao}ms] ease-linear"></div></div>`;
-        card.insertAdjacentHTML('beforeend', timerHtml);
-        setTimeout(() => { const t = document.getElementById(`timer-${pedido.id}`); if(t) t.style.width = '0%'; }, 100);
+    setTimeout(() => { 
+        const t = document.getElementById(`timer-${pedido.id}`); 
+        if(t) t.style.width = '0%'; 
+    }, 100);
 
-        setTimeout(() => {
-            const el = document.getElementById(`req-${pedido.id}`);
-            if (el && !el.classList.contains('atlivio-pill')) {
-                if (isBlocked) {
-                    // O Card Vermelho apenas some após 10 min para não poluir eternamente
-                    removeRequestCard(pedido.id);
-                } else {
-                    el.remove(); 
-                    window.ESTACIONADOS_SESSAO.add(pedido.id); 
-                    const waitList = document.getElementById('radar-wait-list');
-                    createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
-                }
-            }
-        }, tempoExposicao);
-    }
- }
+    setTimeout(() => { 
+        if(document.getElementById(`req-${pedido.id}`)) removeRequestCard(pedido.id); 
+    }, 30000);
+}
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
@@ -694,12 +543,9 @@ export async function aceitarPedidoRadar(orderId) {
         const limiteDivida = parseFloat(configData.limite_divida || 0);
         const pctReservaPrestador = parseFloat(configData.porcentagem_reserva || 0);
 
-        //PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 516 A 519 DEPOIS 517 A 520
+        //PONTO CRÍTICO SOLUÇÃO BÔNUSLINHAS ANTES 516 A 519 DEPOIS 517 A 520
         // 1. Bloqueio por Limite de Dívida (Considerando saldo total disponível)
-       if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
-            document.getElementById(`req-${orderId}`)?.remove();
-            // ✅ CORREÇÃO: Passamos 'true' para nascer como Card Grande Vermelho
-            createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
+        if (limiteDivida !== 0 && saldoTotalParaAceite < limiteDivida) {
             return alert(`⛔ OPERAÇÃO NEGADA\n\nSeu saldo total (R$ ${saldoTotalParaAceite.toFixed(2)}) atingiu o limite de dívida permitido.`);
         }
         //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 521 A 527  DEPOIS 522 A 528
@@ -707,9 +553,6 @@ export async function aceitarPedidoRadar(orderId) {
         if (pctReservaPrestador > 0) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoTotalParaAceite < valorReserva) {
-                document.getElementById(`req-${orderId}`)?.remove();
-                // ✅ CORREÇÃO: Passamos 'true' para nascer como Card Grande Vermelho
-                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
                 return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
             }
         }
@@ -779,8 +622,6 @@ window.recuperarPedidoRadar = async (orderId) => {
 
 // Memória volátil para a sessão atual
 window.REJEITADOS_SESSAO = new Set();
-// ✅ NOVA: Guarda quem já cumpriu os 30s e não deve mais subir sozinho
-window.ESTACIONADOS_SESSAO = new Set();
 
 window.rejeitarPermanente = async (orderId) => {
     // 1. Remove visualmente da tela imediatamente
