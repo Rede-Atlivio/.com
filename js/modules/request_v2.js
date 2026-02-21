@@ -539,17 +539,22 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
                     ⚠️ OUTROS PROFISSIONAIS JÁ ESTÃO AVALIANDO ESTA SOLICITAÇÃO! RECARREGUE AGORA PARA NÃO PERDER.
                 </p>
             </div>
-            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm">
-                <div class="flex items-start gap-3 mb-3">
-                    <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
-                    <div>
-                        <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
-                        <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
+            <div class="bg-white/5 p-4 mx-4 rounded-xl border border-white/5 backdrop-blur-sm flex justify-between items-center gap-4">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-start gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-xl shadow-lg border border-red-400">👤</div>
+                        <div>
+                            <p class="text-white text-sm font-bold leading-tight">${pedido.client_name || 'Cliente'}</p>
+                            <p class="text-red-400 text-[10px] uppercase font-bold tracking-tighter">Status: Bloqueado por Saldo</p>
+                        </div>
+                    </div>
+                    <div class="space-y-2 opacity-80">
+                        <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
+                        <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                     </div>
                 </div>
-                <div class="space-y-2 opacity-80">
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">📍</span><p class="text-[10px] font-medium leading-tight">${pedido.location || 'Local a combinar'}</p></div>
-                    <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-[10px] font-black text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
+                <div class="w-2 h-24 bg-slate-900/50 rounded-full overflow-hidden relative border border-white/5 flex-shrink-0">
+                    <div id="timer-${pedido.id}" class="absolute bottom-0 left-0 w-full ${corTimer} transition-all duration-[${tempoExposicao}ms] ease-linear" style="height: 100%;"></div>
                 </div>
             </div>
             <div class="p-4 relative">
