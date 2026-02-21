@@ -624,45 +624,36 @@ export function createRequestCard(pedido, isFoco = true, targetContainer = null)
     // Injeta no container
     (targetContainer || container).appendChild(card);
 
-    // --- MOTOR DE ESTACIONAMENTO V25 ---
-    // ✅ CRONÔMETRO INTELIGENTE: Azul (30s) | Vermelho (600s/10min) com brilho de alerta
+    // --- MOTOR DE ESTACIONAMENTO V30 (CORREÇÃO LATERAL) ---
     if (isFoco || isBlocked) {
-        const tempoExposicao = isBlocked ? 600000 : 30000;
-        const corBarra = isBlocked ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-blue-500';
-        // ✅ INJEÇÃO NO TOPO: Agora a barra fica visível acima de todo o conteúdo
-        const timerHtml = `<div id="timer-${pedido.id}" class="h-full ${corBarra} w-full transition-all duration-[${tempoExposicao}ms] ease-linear shadow-[0_0_15px_rgba(239,68,68,0.8)]"></div>`;
+        const duracao = isBlocked ? 600000 : 30000;
+        const cor = isBlocked ? 'bg-red-500 shadow-[0_0_10px_#ff0000]' : 'bg-blue-500';
         const tContainer = card.querySelector(`#timer-container-${pedido.id}`);
-        if(tContainer) {
+
+        if (tContainer) {
+            const timerHtml = isBlocked 
+                ? `<div id="timer-${pedido.id}" class="absolute top-0 left-0 w-full ${cor} transition-all ease-linear" style="height: 100%; transition-duration: ${duracao}ms;"></div>`
+                : `<div id="timer-${pedido.id}" class="h-full ${cor} w-full transition-all ease-linear" style="transition-duration: ${duracao}ms;"></div>`;
+            
             tContainer.innerHTML = timerHtml;
-            // Força o início da animação
-            setTimeout(() => { 
+            
+            setTimeout(() => {
                 const t = document.getElementById(`timer-${pedido.id}`);
-                if(t) t.style.width = '0%'; 
+                if (t) isBlocked ? t.style.height = '0%' : t.style.width = '0%';
             }, 100);
         }
-        // ✅ ANIMAÇÃO VERTICAL: A barra desce (esvazia) de cima para baixo
-        setTimeout(() => { 
-            const t = document.getElementById(`timer-${pedido.id}`); 
-            if(t) {
-                if (isBlocked) t.style.height = '0%'; 
-                else t.style.width = '0%'; 
-            }
-        }, 100);
 
         setTimeout(() => {
             const el = document.getElementById(`req-${pedido.id}`);
             if (el && !el.classList.contains('atlivio-pill')) {
-                if (isBlocked) {
-                    // O Card Vermelho apenas some após 10 min para não poluir eternamente
-                    removeRequestCard(pedido.id);
-                } else {
-                    el.remove(); 
-                    window.ESTACIONADOS_SESSAO.add(pedido.id); 
-                    const waitList = document.getElementById('radar-wait-list');
-                    createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+                if (isBlocked) removeRequestCard(pedido.id);
+                else {
+                    el.remove();
+                    window.ESTACIONADOS_SESSAO.add(pedido.id);
+                    createRequestCard(pedido, false, document.getElementById('radar-wait-list'));
                 }
             }
-        }, tempoExposicao);
+        }, duracao);
     }
  }
 // ============================================================================
