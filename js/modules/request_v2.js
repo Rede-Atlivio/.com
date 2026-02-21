@@ -441,11 +441,10 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 const isFoco = (index === 0 && !jaEstacionou && !isPendente && !isMuitoAntigo) || clicouVer;
 
                 //PONTO CRÍTICO - NÃO MEXER - ORDEM DOS CARDS E DAS PÍLULAS 
-               if (isFoco) {
-                    // 🔵 TOPO: Espaço Nobre
+               // ✅ HIERARQUIA FIXA: Foco no topo, Vermelhos na gaveta A, Pílulas na gaveta B
+                if (isFoco) {
                     createRequestCard(pedido, true, container);
                 } else {
-                    // 🟢 ABAIXO DA LINHA: Organização por Grupo
                     if (isPendente) {
                         const targetRed = document.getElementById('red-cards-group') || waitContainer;
                         createRequestCard(pedido, true, targetRed);
