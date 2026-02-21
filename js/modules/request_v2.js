@@ -422,7 +422,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
            // ✅ CRIAÇÃO ÚNICA E OBRIGATÓRIA: A linha agora nasce independente de ter pílulas ou não
             const waitContainer = document.createElement('div');
             waitContainer.id = "radar-wait-list";
-            waitContainer.className = "block mt-2 pt-2 border-t border-white/5 relative w-full clear-both h-fit overflow-visible pb-8 z-0";
+            waitContainer.className = "block mt-4 pt-4 border-t-2 border-white/20 relative w-full clear-both h-fit overflow-visible pb-10";
             waitContainer.style.borderTop = "1px solid rgba(255, 255, 255, 0.1)";
             waitContainer.innerHTML = `
                 <div class="radar-divider mb-6"><span class="bg-slate-900 px-4 text-blue-400 font-black tracking-widest uppercase text-[10px]">Oportunidades em Espera</span></div>
@@ -455,11 +455,8 @@ export async function iniciarRadarPrestador(uidManual = null) {
                 }
             });
 
-           // ✅ ANEXO CONDICIONAL: Só injeta a divisória se houver pílulas ou cards bloqueados
-            const temEspera = ordenados.some(p => p.is_blocked_by_wallet || !window.ESTACIONADOS_SESSAO.has(p.id));
-            if (container && ordenados.length > 1) {
-                container.appendChild(waitContainer);
-            }
+           // ✅ ANEXO GARANTIDO: Injeta a linha divisória no final do radar-container
+            if (container) container.appendChild(waitContainer);
         }
         const emptyState = document.getElementById('radar-empty-state');
         if (emptyState) {
@@ -482,7 +479,6 @@ window.maximizarPedido = (id) => {
     window.PEDIDO_MAXIMIZADO_ID = id;
     console.log("🔍 [PROMOÇÃO] Elevando pedido ao foco:", id);
     const container = document.getElementById('radar-container');
-        if (container) container.style.zIndex = "0";
     if(container) container.innerHTML = ""; 
     // Reinicia o motor para o Snapshot ler o PEDIDO_MAXIMIZADO_ID no topo
     if(window.iniciarRadarPrestador) window.iniciarRadarPrestador();
