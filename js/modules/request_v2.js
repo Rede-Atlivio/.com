@@ -809,6 +809,7 @@ export async function aceitarPedidoRadar(orderId) {
 }
 export async function recusarPedidoReq(orderId) {
     removeRequestCard(orderId);
+    window.HOUVE_BLOQUEIO_SESSAO = true; 
     try { 
         await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
         // Se o radar estiver instável (bug do vazio), força cura
