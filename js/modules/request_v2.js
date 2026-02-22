@@ -509,6 +509,9 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     if (!container || document.getElementById(`req-${pedido.id}`)) return;
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
+    
+    // Se nasceu um card vermelho, o sistema "lembra" disso para a limpeza futura
+    if (isBlocked) window.HOUVE_BLOQUEIO_SESSAO = true;
 
     // 🔓 DESTRAVA VISUAL: Garante que o container apareça antes do áudio ou do card
     container.classList.remove('hidden');
