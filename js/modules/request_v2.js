@@ -584,9 +584,18 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     }, 100);
 
     setTimeout(() => { 
-        if(document.getElementById(`req-${pedido.id}`)) {
-            removeRequestCard(pedido.id);
-            if(!isBlocked) window.ESTACIONADOS_SESSAO.add(pedido.id);
+        const el = document.getElementById(`req-${pedido.id}`);
+        if(el) {
+            // Se for card azul e não for pílula, estaciona na lista de espera
+            if(!isBlocked && !el.classList.contains('atlivio-pill')) {
+                el.remove();
+                window.ESTACIONADOS_SESSAO.add(pedido.id);
+                const waitList = document.getElementById('radar-wait-list');
+                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+            } else {
+                // Se for vermelho ou já for pílula, remove permanentemente após o tempo
+                removeRequestCard(pedido.id);
+            }
         }
     }, tempoExposicao);
 }
