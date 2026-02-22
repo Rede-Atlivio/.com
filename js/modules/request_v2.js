@@ -505,9 +505,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
 
     // 🔓 DESTRAVA VISUAL: Limpa o palco para entrar o container de cards
-    const stage = document.getElementById('radar-stage');
-    const antena = document.getElementById('radar-empty-state');
-    if (antena) antena.remove();
+    const antenaExistente = document.getElementById('radar-empty-state');
+    if (antenaExistente) antenaExistente.remove();
     container.classList.remove('hidden');
     
     // 🔊 LÓGICA DE ÁUDIO ÚNICO EM LOOP (ESTILO UBER/99)
