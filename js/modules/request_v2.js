@@ -400,10 +400,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
         const pedidosVivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
             .filter(p => !window.REJEITADOS_SESSAO.has(p.id));
 
-        // 2. MOTOR DE PRIORIDADE: Bloqueados primeiro, depois maior valor
+        // 2. MOTOR DE PRIORIDADE: Vermelhos (Bloqueados) no TOPO ABSOLUTO, depois valor.
         const ordenados = pedidosVivos.sort((a, b) => {
-            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
-            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
+            const aBloqueado = a.is_blocked_by_wallet === true || a.status_bloqueio === 'active';
+            const bBloqueado = b.is_blocked_by_wallet === true || b.status_bloqueio === 'active';
+
+            if (aBloqueado && !bBloqueado) return -1;
+            if (!aBloqueado && bBloqueado) return 1;
             return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
         });
 
