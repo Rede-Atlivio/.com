@@ -45,15 +45,17 @@ function garantirContainerRadar() {
 
     const isOnline = toggle ? toggle.checked : false;
 
-    // 1. ESTADO OFFLINE
+   // 🛡️ TRAVA DE SOBERANIA: Se desligou, mata a conexão e blinda o palco contra o Firebase
     if (!isOnline) {
+        if (radarUnsubscribe) { radarUnsubscribe(); radarUnsubscribe = null; }
+        window.radarIniciado = false;
         stage.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 animate-fadeIn">
                 <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl opacity-50 grayscale">💤</div>
                 <p class="text-xs font-black text-gray-500 uppercase tracking-widest mt-4">Você está Offline</p>
             </div>`;
         pararSomRadarSeNecessario();
-        return stage;
+        return null; // Aborta qualquer tentativa de renderização posterior
     }
 
     // 2. ESTADO ONLINE (BUSCANDO OU COM CARDS)
