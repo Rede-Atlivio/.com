@@ -880,16 +880,21 @@ window.rejeitarPermanente = async (orderId) => {
 window.garantirContainerRadar = garantirContainerRadar;
 window.pararRadarFisico = function() {
     if (radarUnsubscribe) {
-        // 🚀 VERIFICAÇÃO DE EMERGÊNCIA: Checa se houve bloqueio nesta sessão, mesmo que o card tenha sido ignorado
-        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert');
+        // 🚀 GATILHO MESTRE: Checa se houve bloqueio na memória OU se o card ainda está na tela
+        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert') || document.querySelector('.is-red');
+        
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
         console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
 
-        if (temCardBloqueado) {
-            console.warn("⚠️ Bloqueio detectado no DOM. Executando auto-limpeza...");
-            setTimeout(() => window.executarLimpezaNuclear(), 500);
+        if (precisaLimpar) {
+            console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza nuclear...");
+            setTimeout(() => {
+                if(typeof window.executarLimpezaNuclear === 'function') {
+                    window.executarLimpezaNuclear();
+                }
+            }, 500);
         }
     }
 };
