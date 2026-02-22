@@ -490,3 +490,20 @@ async function initDashboard() {
 
 // Desativa o gerador manual antigo
 window.runMassGenerator = () => { alert("Use o NOVO Painel do Robô acima! ☝️"); };
+// ☢️ COMANDO MASTER: FORÇAR ATUALIZAÇÃO EM TODOS OS USUÁRIOS
+window.dispararUpdateGlobal = async function() {
+    if (!confirm("⚠️ ATENÇÃO: Isso forçará TODOS os usuários logados a recarregarem o app e limparem o cache. Confirmar?")) return;
+    
+    try {
+        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await setDoc(doc(window.db, "settings", "deploy"), {
+            force_reset_timestamp: serverTimestamp(),
+            reason: "Atualização de Sistema V22",
+            admin_by: "Gil Borges"
+        }, { merge: true });
+        
+        alert("🚀 COMANDO ENVIADO! Os usuários serão atualizados em tempo real.");
+    } catch (e) {
+        alert("Erro ao disparar update: " + e.message);
+    }
+};
