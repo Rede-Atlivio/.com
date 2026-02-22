@@ -414,14 +414,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
         
        if (toggle && !toggle.checked) {
             window.pararRadarFisico();
-            garantirContainerRadar(); 
-            
-            // 🚀 GATILHO AUTO-EXTERMINADOR: Se desligar com bloqueio na tela, limpa tudo.
-            const temBloqueio = snapshot.docs.some(d => d.data().is_blocked_by_wallet === true);
-            if (temBloqueio) {
-                console.warn("⚠️ Bloqueio detectado no desligamento. Limpando cache para evitar tela branca no retorno.");
-                setTimeout(() => window.executarLimpezaNuclear(), 1000); 
-            }
+            garantirContainerRadar();
             return;
         }
 
