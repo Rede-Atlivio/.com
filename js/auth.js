@@ -132,6 +132,9 @@ window.alternarPerfil = async () => {
 
 // --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
 onAuthStateChanged(auth, async (user) => {
+    // 🛡️ TRAVA ANTI-FANTASMA: Impede que o sistema processe contas incompletas do Google
+    if (user && !user.displayName) return console.warn("⏳ Sincronizando dados do Google...");
+
     const transitionOverlay = document.getElementById('transition-overlay');
     const isToggling = sessionStorage.getItem('is_toggling_profile'); // 🆕 LÊ A FLAG
 
