@@ -1493,7 +1493,7 @@ window.encerrarNegociacaoSilenciosa = async (orderId) => {
     try {
         const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         await updateDoc(doc(db, "orders", orderId), {
-            status: 'negotiation_closed',
+            status: 'negotiation_closed'.toLowerCase(),
             closed_by: 'system_ultimato',
             closed_at: serverTimestamp()
         });
