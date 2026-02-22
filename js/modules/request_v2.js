@@ -36,7 +36,7 @@ window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
 // ☢️ PROTOCOLO AUTO-EXTERMINADOR (LIMPEZA AUTOMÁTICA DE CACHE CORROMPIDO)
-async function executarLimpezaNuclear() {
+window.executarLimpezaNuclear = async function() {
     console.log("☢️ STATUS CRÍTICO DETECTADO: INICIANDO AUTO-LIMPEZA...");
     if (navigator.serviceWorker) {
         const registrations = await navigator.serviceWorker.getRegistrations();
@@ -47,7 +47,7 @@ async function executarLimpezaNuclear() {
         for (let k of keys) await caches.delete(k);
     }
     window.location.reload(true);
-}
+};
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
