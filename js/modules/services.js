@@ -438,7 +438,7 @@ export async function carregarHistoricoPrestador() {
                 const dataObj = o.completed_at || o.created_at;
                 const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
                 container.innerHTML += `<div class="bg-green-50 p-3 rounded-xl mb-2 border border-green-100 flex justify-between items-center animate-fadeIn">
-                    <div><h3 class="font-bold text-xs text-green-900">${(o.client_name || 'Cliente').replace(/'/g, "")}</h3><p class="text-[10px] text-green-700">Finalizado em ${dataTxt} • <span class="uppercase">${o.status}</span></p></div>
+                    <div><h3 class="font-bold text-xs text-green-900">${(o.client_name || 'Cliente').replace(/['"]/g, "")}</h3><p class="text-[10px] text-green-700">Finalizado em ${dataTxt} • <span class="uppercase">CONCLUÍDO ✨</span></p></div>
                     <div class="text-right"><span class="block font-black text-green-700 text-xs">+ R$ ${o.offer_value}</span><button onclick="window.abrirModalAvaliacao('${d.id}', '${o.client_id}', '${(o.client_name || 'Cliente').replace(/'/g, "")}')" class="text-[9px] text-blue-600 font-bold underline mt-1">Avaliar Cliente ⭐</button></div></div>`;
             }
         });
