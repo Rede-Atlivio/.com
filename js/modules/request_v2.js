@@ -881,9 +881,17 @@ window.rejeitarPermanente = async (orderId) => {
 window.garantirContainerRadar = garantirContainerRadar;
 window.pararRadarFisico = function() {
     if (radarUnsubscribe) {
+        // 🚀 VERIFICAÇÃO DE EMERGÊNCIA: Antes de desligar, vê se tem card vermelho na tela
+        const temCardBloqueado = document.querySelector('.is-red-alert') || document.querySelector('.is-red');
+        
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
         console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
+
+        if (temCardBloqueado) {
+            console.warn("⚠️ Bloqueio detectado no DOM. Executando auto-limpeza...");
+            setTimeout(() => window.executarLimpezaNuclear(), 500);
+        }
     }
 };
