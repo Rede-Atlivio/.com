@@ -11,13 +11,15 @@ async function concederBonusSeAtivo(userUid) {
         const config = configSnap.data();
 
         if (config?.bonus_boas_vindas_ativo) {
-            const { doc, setDoc } = window.firebaseModules;
-            const userRef = doc(db, "usuarios", userUid);
+            // Usa updateDoc, mas se falhar (doc não existe), usa setDoc
+            //SOLUÇÃO BONUS NA RAIZ - ANTES LINHAS 16 A 20 DEPOIS 16 A 20
             await setDoc(userRef, {
                 wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
+                // Campo 'saldo' removido para evitar duplicidade fantasma
                 bonus_inicial_ok: true
             }, { merge: true });
-            console.log("🎁 Bônus de R$ 20 concedido com sucesso!");
+            
+            console.log("🎁 Bônus de R$ 20 concedido automaticamente!");
         }
     } catch(e) { console.error("Erro ao dar bônus:", e); }
 }
@@ -81,14 +83,9 @@ getRedirectResult(auth).then(async (result) => {
                 dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
             }
 
-            // Cria perfil inicial completo para evitar resets visuais
+            // Cria perfil inicial (o resto vem no onAuthStateChanged)
             await setDoc(userRef, {
-                uid: user.uid, 
-                email: user.email || "sem@email.com", 
-                phone: user.phoneNumber || data?.whatsapp || "",
-                photoURL: user.photoURL,
-                created_at: serverTimestamp(), 
-                ...dadosIndicacao
+                uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
             }, { merge: true });
         }
         sessionStorage.removeItem("pending_ref");
@@ -132,11 +129,6 @@ window.alternarPerfil = async () => {
 
 // --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
 onAuthStateChanged(auth, async (user) => {
-    // 🛡️ TRAVA ANTI-RESET: Se os dados essenciais sumirem, tenta recuperar do objeto Auth
-    if (user && !user.displayName && !user.email) {
-        console.warn("⏳ Dados voláteis detectados. Tentando estabilizar sessão...");
-        return; 
-    }
     const transitionOverlay = document.getElementById('transition-overlay');
     const isToggling = sessionStorage.getItem('is_toggling_profile'); // 🆕 LÊ A FLAG
 
@@ -156,10 +148,10 @@ onAuthStateChanged(auth, async (user) => {
                 if (!docSnap.exists()) {
                     // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                   const novoPerfil = { 
-                        email: user.email || "login-via-sms", 
-                        phone: user.phoneNumber || "S/N", 
-                        displayName: user.displayName || user.phoneNumber || "Usuário",
+                    const novoPerfil = { 
+                        email: user.email, 
+                        phone: user.phoneNumber, 
+                        displayName: user.displayName || "Usuário", 
                         photoURL: user.photoURL, 
                         tenant_id: DEFAULT_TENANT, 
                         perfil_completo: false, 
@@ -195,9 +187,8 @@ onAuthStateChanged(auth, async (user) => {
                         window.presencaRegistrada = true;
                     }
 
-                    // Garante que o status de prestador seja respeitado mesmo sem e-mail
-                    userProfile = { ...data, uid: user.uid }; 
-                    window.userProfile = userProfile;
+                    userProfile = data; 
+                    window.userProfile = data;
                     
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
@@ -461,20 +452,27 @@ async function verificarStatusERadar(uid) {
     } catch(e) {}
 }
 
-// 🔐 SEGURANÇA DE STATUS: O Auth apenas valida permissões no banco. PONTO CRÍTICO - TENTATIVA DE SOLUÇÃO DO BUG NO RADAR
+function renderizarRadarOffline() {
+    // 🛡️ BLOQUEIO DE VANDALISMO: Não apagamos mais o innerHTML.
+    // O controle visual agora é feito via classes pelo request_v2.js
+    if (window.garantirContainerRadar) window.garantirContainerRadar();
+    console.log("💤 [AUTH] Solicitando visual offline com segurança.");
+}
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
+        const novoStatus = e.target.checked;
         const uid = auth.currentUser?.uid;
         if(!uid) return;
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const st = snap.data().status;
-            if(['em_analise', 'banido', 'suspenso'].includes(st)) {
-                e.target.checked = false;
-                return alert("⚠️ Acesso negado: Perfil " + st.replace('_', ' '));
-            }
+            if(st === 'em_analise') { e.target.checked = false; return alert("⏳ Seu perfil está em análise."); }
+            if(st === 'banido') { e.target.checked = false; return alert("⛔ Você foi banido."); }
+            if(st === 'suspenso') { e.target.checked = false; return alert("⚠️ CONTA SUSPENSA."); }
         }
-        await updateDoc(doc(db, "active_providers", uid), { is_online: e.target.checked });
+        if (novoStatus) { iniciarRadarPrestador(uid); document.getElementById('online-sound')?.play().catch(()=>{}); } 
+        else { renderizarRadarOffline(); }
+        await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
     }
 });
 
