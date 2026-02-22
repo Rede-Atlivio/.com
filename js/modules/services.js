@@ -254,8 +254,8 @@ function renderizarCards(servicos, container) {
                                 <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
                                 <span class="text-[8px] font-bold text-gray-400 uppercase">${statusText}</span>
                             </div>
-                            <button onclick="${clickActionSolicitar}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold shadow hover:bg-slate-800 flex-1 transition transform active:scale-95">
-                                SOLICITAR
+                            <button onclick="${clickActionSolicitar}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[9px] font-black shadow hover:bg-slate-800 flex-1 transition transform active:scale-95 uppercase tracking-tighter">
+                                VER E SOLICITAR
                             </button>
                         </div>
                     </div>
