@@ -1357,7 +1357,7 @@ window.confirmarEncerramentoChat = async (orderId) => {
         // 2. Atualiza o banco
         const { doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         await updateDoc(doc(window.db, "orders", orderId), { 
-            status: 'negotiation_closed', 
+            status: 'negotiation_closed'.toLowerCase(),
             closed_at: serverTimestamp(),
             chat_lifecycle_status: 'expired'
         });
