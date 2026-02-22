@@ -33,7 +33,8 @@ let mem_SelectedServiceTitle = "";
 // Memória de Sessão para Radar V22
 window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
-
+// Gerenciador de Áudio Único (Estilo Uber)
+window.audioRadarAtivo = null;
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
