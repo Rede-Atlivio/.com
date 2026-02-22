@@ -1162,7 +1162,7 @@ window.encerrarNegociacao = async (orderId) => {
 
     try {
         await updateDoc(doc(db, "orders", orderId), {
-            status: 'negotiation_closed', // Status específico para "não deu certo"
+            status: 'negotiation_closed'.toLowerCase(),
             closed_by: auth.currentUser.uid,
             closed_at: serverTimestamp(),
             system_step: 0 // Zera etapas
