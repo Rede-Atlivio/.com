@@ -16,7 +16,8 @@ export async function carregarDadosPerfil() {
     // Header (Foto pequena no menu)
     const imgHeader = document.getElementById('header-profile-img');
     if(imgHeader) {
-        imgHeader.src = user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=0D8ABC&color=fff`;
+        const fallback = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Usuario')}&background=0D8ABC&color=fff`;
+        imgHeader.src = user.photoURL || fallback;
     }
 
     const docRef = doc(db, "usuarios", user.uid);
