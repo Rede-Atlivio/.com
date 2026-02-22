@@ -614,14 +614,18 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     setTimeout(() => { 
         const el = document.getElementById(`req-${pedido.id}`);
         if(el) {
-            // Se for card azul e não for pílula, estaciona na lista de espera
             if(!isBlocked && !el.classList.contains('atlivio-pill')) {
-                el.remove();
-                window.ESTACIONADOS_SESSAO.add(pedido.id);
-                const waitList = document.getElementById('radar-wait-list');
-                createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+                // ESTACIONAMENTO: Remove do topo e marca para o motor colocar na wait-list
+                el.classList.add('removing');
+                setTimeout(() => {
+                    el.remove();
+                    window.ESTACIONADOS_SESSAO.add(pedido.id);
+                    // O motor do onSnapshot cuidará de renderizar na pílula na próxima atualização
+                    // ou forçamos a chamada aqui:
+                    const waitList = document.getElementById('radar-wait-list');
+                    createRequestCard(pedido, false, waitList || document.getElementById('radar-container'));
+                }, 300);
             } else {
-                // Se for vermelho ou já for pílula, remove permanentemente após o tempo
                 removeRequestCard(pedido.id);
             }
         }
