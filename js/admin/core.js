@@ -437,3 +437,21 @@ window.reembolsarManualmente = async (orderId) => {
         alert("Erro no Refund: " + e);
     }
 };
+
+// ☢️ COMANDO MASTER: DISPARAR LIMPEZA GLOBAL (FORCE UPDATE NOS USUÁRIOS)
+window.dispararLimpezaGlobal = async function() {
+    if (!confirm("⚠️ ATENÇÃO: Isso forçará TODOS os usuários logados no app a limparem o cache e recarregarem agora. Confirmar?")) return;
+    
+    try {
+        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await setDoc(doc(window.db, "settings", "deploy"), {
+            force_reset_timestamp: serverTimestamp(),
+            reason: "Limpeza de Sistema e Cache V22",
+            admin_by: "Gil Borges"
+        }, { merge: true });
+        
+        alert("🚀 COMANDO DE LIMPEZA ENVIADO! Os usuários serão resetados em tempo real.");
+    } catch (e) {
+        alert("Erro ao disparar limpeza: " + e.message);
+    }
+};
