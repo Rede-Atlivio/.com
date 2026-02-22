@@ -75,8 +75,8 @@ function garantirContainerRadar() {
     } else {
         // Se já tem cards, garante que o container esteja visível e a antena suma
         if (container) container.classList.remove('hidden');
-        const antena = document.getElementById('radar-empty-state');
-        if (antena) antena.remove();
+        const antenaNoPalco = document.getElementById('radar-empty-state');
+        if (antenaNoPalco) antenaNoPalco.remove();
     }
     
     pararSomRadarSeNecessario();
