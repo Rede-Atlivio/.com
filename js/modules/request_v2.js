@@ -656,7 +656,12 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     }
 
    // Insere sempre no topo do Porto de Emergência
-    container.prepend(card);
+   // Se for para o topo, usa prepend. Se for para o radar, segue a lógica do container alvo.
+    if (isBlocked) {
+        container.prepend(card);
+    } else {
+        container.appendChild(card);
+    }
     if (document.getElementById('radar-empty-state')) document.getElementById('radar-empty-state').remove();
 
     // Força os 10 minutos (600.000ms) se for um card vermelho/bloqueado
