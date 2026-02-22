@@ -810,7 +810,11 @@ export async function aceitarPedidoRadar(orderId) {
 }
 export async function recusarPedidoReq(orderId) {
     removeRequestCard(orderId);
-    try { await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true }); } catch(e) { console.error(e); }
+    try { 
+        await setDoc(doc(db, "orders", orderId), { status: 'rejected' }, { merge: true });
+        // Se o radar estiver instável (bug do vazio), força cura
+        setTimeout(() => garantirContainerRadar(), 500);
+    } catch(e) { console.error(e); }
 }
 
 // ============================================================================
