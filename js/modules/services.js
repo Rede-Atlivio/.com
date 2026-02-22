@@ -365,19 +365,6 @@ export async function carregarPedidosAtivos() {
         });
         if (ativos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
         ativos.forEach(p => {
-            window.traduzirStatus = (s) => {
-                const mapa = {
-                    'pending': '⏳ Novo Pedido',
-                    'accepted': '✅ Aceito / Em Chat',
-                    'confirmed_hold': '🔒 Acordo Fechado',
-                    'in_progress': '🛠️ Em Execução',
-                    'completed': '✨ Concluído',
-                    'cancelled': '❌ Cancelado',
-                    'negotiation_closed': '🤝 Encerrado',
-                    'expired': '⏲️ Expirado'
-                };
-                return mapa[s?.toLowerCase()] || 'Analisando...';
-            };
             const statusPT = window.traduzirStatus(p.status);
             container.innerHTML += `<div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
                 <div><h3 class="font-bold text-gray-800 text-sm">${p.provider_name || 'Prestador'}</h3><p class="text-[10px] text-gray-500 uppercase">R$ ${p.offer_value} • ${statusPT}</p></div><span>💬</span></div>`;
