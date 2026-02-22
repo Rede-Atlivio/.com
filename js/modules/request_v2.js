@@ -644,7 +644,11 @@ export async function aceitarPedidoRadar(orderId) {
             if (saldoTotalParaAceite < valorReserva) {
                 // Transforma o card em Vermelho antes de avisar
                 document.getElementById(`req-${orderId}`)?.remove();
-                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true);
+                // Remove da lista de estacionados para garantir que ele nasça como CARD GRANDE e não como pílula
+                window.ESTACIONADOS_SESSAO.delete(orderId);
+                
+                createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true, document.getElementById('radar-container'));
+                
                 return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
             }
         }
