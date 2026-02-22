@@ -60,20 +60,18 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    const cardsAtivos = container.querySelectorAll('.request-card, .atlivio-pill');
-    const temCards = cardsAtivos.length > 0;
+    // 🔍 Captura real de cards (incluindo os que estão sendo criados)
+    const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
 
     if (temCards) {
+        // Se tem card, o container TEM que aparecer e o radar (empty) sumir
         container.classList.remove('hidden');
+        container.style.display = "block"; 
         if(emptyState) emptyState.classList.add('hidden');
     } else {
-        // 🚀 RESET TOTAL: Garante que o container volte ao estado original de radar
+        // Só esconde o container se ele estiver vazio de fato
         container.classList.add('hidden');
-        container.style.display = "none"; // Mata qualquer resíduo de 'block' ou 'flex' do modo alerta
-        if(emptyState) {
-            emptyState.classList.remove('hidden');
-            emptyState.style.display = "flex"; // Força a imagem a reaparecer
-        }
+        if(emptyState) emptyState.classList.remove('hidden');
     }
 // Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
