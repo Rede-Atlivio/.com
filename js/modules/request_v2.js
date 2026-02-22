@@ -855,7 +855,9 @@ window.recuperarPedidoRadar = async (orderId) => {
 window.REJEITADOS_SESSAO = new Set();
 
 window.rejeitarPermanente = async (orderId) => {
-    // 1. Remove visualmente da tela imediatamente
+    // 1. Mata o som imediatamente
+    window.pararSomRadar();
+    // 2. Remove visualmente da tela
     removeRequestCard(orderId);
     
     // 2. Salva na memória da sessão
