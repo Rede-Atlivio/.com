@@ -648,6 +648,8 @@ window.atualizarMinimo = (select) => {
 
 export async function salvarServicoPrestador() {
     const user = auth.currentUser;
+    // 🛡️ TRAVA DE IDENTIDADE: Impede salvamento se os dados do Google não estiverem prontos
+    if (!user || !user.displayName) return alert("⚠️ Identidade não sincronizada. Aguarde um instante e tente novamente.");
     const select = document.getElementById('prov-cat');
     const priceInput = document.getElementById('prov-price');
     const titleInput = document.getElementById('prov-title');
