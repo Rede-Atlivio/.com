@@ -69,9 +69,12 @@ function garantirContainerRadar() {
         container.style.display = "block"; 
         if(emptyState) emptyState.classList.add('hidden');
     } else {
-        // Só esconde o container se ele estiver vazio de fato
+        // 🚀 VOLTA AO NORMAL: Se não há cards, garante que a imagem do radar apareça
         container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
+        if(emptyState) {
+            emptyState.classList.remove('hidden');
+            emptyState.style.display = "flex"; 
+        }
     }
 // Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
