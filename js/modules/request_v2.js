@@ -39,30 +39,44 @@ window.audioRadarAtivo = null;
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
+    const parent = document.getElementById('pview-radar');
     const container = document.getElementById('radar-container');
     const emptyState = document.getElementById('radar-empty-state');
     const offlineState = document.getElementById('radar-offline-state');
     const toggle = document.getElementById('online-toggle');
 
-    if (!container) return null;
+    if (!parent || !container) return null;
 
     const isOnline = toggle ? toggle.checked : false;
 
     if (!isOnline) {
         // MODO OFFLINE
-        if(offlineState) {
-            offlineState.classList.remove('hidden');
-            offlineState.style.display = "flex"; // 👈 ADICIONE ISSO
-        }
+        if(offlineState) offlineState.classList.remove('hidden');
         container.classList.add('hidden');
-        container.style.display = "none"; // 👈 ADICIONE ISSO
-        
-        if(emptyState) {
-            emptyState.classList.add('hidden');
-            emptyState.style.display = "none"; // 👈 ADICIONE ISSO: Garante que a antena suma
-        }
+        if(emptyState) emptyState.classList.add('hidden');
         return container;
+    } 
+
+    // MODO ONLINE
+    if(offlineState) offlineState.classList.add('hidden');
+    
+    const temCards = container.querySelectorAll('.request-card').length > 0;
+    if (temCards) {
+        container.classList.remove('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
     }
+// Para o som se não houver mais cards de alerta na tela
+    const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
+    if (!temAlertaAtivo && window.audioRadarAtivo) {
+        window.audioRadarAtivo.pause();
+        window.audioRadarAtivo.currentTime = 0;
+        window.audioRadarAtivo = null;
+    }
+    return container;
+}
     
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
@@ -822,10 +836,6 @@ window.rejeitarPermanente = async (orderId) => {
     } catch (e) {
         console.warn("Erro ao registrar rejeição:", e);
     }
-    // 🚀 CHAMA AUTO-CURA IMEDIATA: Garante que o radar volte se este era o último card
-    setTimeout(() => {
-        if (typeof garantirContainerRadar === 'function') garantirContainerRadar();
-    }, 400);
 };
 
 // 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
