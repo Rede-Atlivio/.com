@@ -49,14 +49,19 @@ function garantirContainerRadar() {
 
     const isOnline = toggle ? toggle.checked : false;
 
-    if (!isOnline) {
-        // MODO OFFLINE
-        if(offlineState) offlineState.classList.remove('hidden');
+   if (!isOnline) {
+        // MODO OFFLINE: Mata o display flex para a antena sumir de verdade
+        if(offlineState) {
+            offlineState.classList.remove('hidden');
+            offlineState.style.display = "flex";
+        }
         container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
+        if(emptyState) {
+            emptyState.classList.add('hidden');
+            emptyState.style.display = "none";
+        }
         return container;
-    } 
-
+    }
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
