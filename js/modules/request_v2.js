@@ -843,6 +843,10 @@ window.rejeitarPermanente = async (orderId) => {
     } catch (e) {
         console.warn("Erro ao registrar rejeição:", e);
     }
+    // 🚀 CHAMA AUTO-CURA IMEDIATA: Garante que o radar volte se este era o último card
+    setTimeout(() => {
+        if (typeof garantirContainerRadar === 'function') garantirContainerRadar();
+    }, 400);
 };
 
 // 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
