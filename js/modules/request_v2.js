@@ -68,7 +68,13 @@ function garantirContainerRadar() {
         container.classList.add('hidden');
         if(emptyState) emptyState.classList.remove('hidden');
     }
-
+// Para o som se não houver mais cards de alerta na tela
+    const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
+    if (!temAlertaAtivo && window.audioRadarAtivo) {
+        window.audioRadarAtivo.pause();
+        window.audioRadarAtivo.currentTime = 0;
+        window.audioRadarAtivo = null;
+    }
     return container;
 }
     
