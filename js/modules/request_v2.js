@@ -595,7 +595,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
                 </button>
             </div>
             <div class="h-1.5 bg-slate-800 w-full relative z-10">
-                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-green-500 to-yellow-400 w-full transition-all duration-[30000ms] ease-linear"></div>
+                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-orange-500 to-red-600 w-full transition-all duration-[30000ms] ease-linear"></div>
             </div>
         `;
     }
