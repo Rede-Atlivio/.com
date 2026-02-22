@@ -10,7 +10,8 @@ import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/fireba
 // ============================================================================
 export async function carregarDadosPerfil() {
     const user = auth.currentUser;
-    if (!user) return;
+    // 🛡️ BLINDAGEM: Interrompe se o usuário for nulo ou se o Google ainda não entregou o nome
+    if (!user || !user.displayName) return;
 
     // Header (Foto pequena no menu)
     const imgHeader = document.getElementById('header-profile-img');
