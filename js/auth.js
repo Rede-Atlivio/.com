@@ -452,27 +452,20 @@ async function verificarStatusERadar(uid) {
     } catch(e) {}
 }
 
-function renderizarRadarOffline() {
-    // 🛡️ BLOQUEIO DE VANDALISMO: Não apagamos mais o innerHTML.
-    // O controle visual agora é feito via classes pelo request_v2.js
-    if (window.garantirContainerRadar) window.garantirContainerRadar();
-    console.log("💤 [AUTH] Solicitando visual offline com segurança.");
-}
+// 🔐 SEGURANÇA DE STATUS: O Auth apenas valida permissões no banco. PONTO CRÍTICO - TENTATIVA DE SOLUÇÃO DO BUG NO RADAR
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
-        const novoStatus = e.target.checked;
         const uid = auth.currentUser?.uid;
         if(!uid) return;
         const snap = await getDoc(doc(db, "active_providers", uid));
         if(snap.exists()) {
             const st = snap.data().status;
-            if(st === 'em_analise') { e.target.checked = false; return alert("⏳ Seu perfil está em análise."); }
-            if(st === 'banido') { e.target.checked = false; return alert("⛔ Você foi banido."); }
-            if(st === 'suspenso') { e.target.checked = false; return alert("⚠️ CONTA SUSPENSA."); }
+            if(['em_analise', 'banido', 'suspenso'].includes(st)) {
+                e.target.checked = false;
+                return alert("⚠️ Acesso negado: Perfil " + st.replace('_', ' '));
+            }
         }
-        if (novoStatus) { iniciarRadarPrestador(uid); document.getElementById('online-sound')?.play().catch(()=>{}); } 
-        else { renderizarRadarOffline(); }
-        await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
+        await updateDoc(doc(db, "active_providers", uid), { is_online: e.target.checked });
     }
 });
 
