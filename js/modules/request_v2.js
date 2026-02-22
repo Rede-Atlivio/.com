@@ -296,7 +296,7 @@ export async function enviarPropostaAgora() {
             provider_name: mem_ProviderName,
             service_title: mem_SelectedServiceTitle,
             status: 'pending', 
-            offer_value: mem_CurrentOffer,
+            offer_value: Number(mem_CurrentOffer),
             location: document.getElementById('req-local')?.value || "A combinar",
             data: dataServico,
             hora: horaServico,
