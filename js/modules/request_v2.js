@@ -68,10 +68,10 @@ function garantirContainerRadar() {
         container.classList.remove('hidden');
         container.style.display = "block"; 
         if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // 🚀 VOLTA AO NORMAL: Se não há cards, garante que a imagem do radar apareça
+   } else {
+        // 🚀 VOLTA AO NORMAL: A antena só tem permissão de aparecer se estiver Online
         container.classList.add('hidden');
-        if(emptyState) {
+        if(emptyState && isOnline) {
             emptyState.classList.remove('hidden');
             emptyState.style.display = "flex"; 
         }
