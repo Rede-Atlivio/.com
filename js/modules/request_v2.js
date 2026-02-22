@@ -60,13 +60,20 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    const temCards = container.querySelectorAll('.request-card').length > 0;
+    const cardsAtivos = container.querySelectorAll('.request-card, .atlivio-pill');
+    const temCards = cardsAtivos.length > 0;
+
     if (temCards) {
         container.classList.remove('hidden');
         if(emptyState) emptyState.classList.add('hidden');
     } else {
+        // 🚀 RESET TOTAL: Garante que o container volte ao estado original de radar
         container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
+        container.style.display = "none"; // Mata qualquer resíduo de 'block' ou 'flex' do modo alerta
+        if(emptyState) {
+            emptyState.classList.remove('hidden');
+            emptyState.style.display = "flex"; // Força a imagem a reaparecer
+        }
     }
 // Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
