@@ -38,7 +38,10 @@ export async function carregarDadosPerfil() {
 
         // Foto nas Configurações
         const imgSet = document.getElementById('settings-pic');
-        if(imgSet) imgSet.src = data.foto_perfil || user.photoURL;
+        if(imgSet) {
+            const fallbackPic = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}&background=random`;
+            imgSet.src = data.foto_perfil || user.photoURL || fallbackPic;
+        }
 
         // Capa
         const bannerPreview = document.getElementById('banner-preview');
