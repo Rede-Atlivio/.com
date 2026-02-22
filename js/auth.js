@@ -195,8 +195,9 @@ onAuthStateChanged(auth, async (user) => {
                         window.presencaRegistrada = true;
                     }
 
-                    userProfile = data; 
-                    window.userProfile = data;
+                    // Garante que o status de prestador seja respeitado mesmo sem e-mail
+                    userProfile = { ...data, uid: user.uid }; 
+                    window.userProfile = userProfile;
                     
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
