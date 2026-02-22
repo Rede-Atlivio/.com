@@ -490,8 +490,8 @@ async function initDashboard() {
 
 // Desativa o gerador manual antigo
 window.runMassGenerator = () => { alert("Use o NOVO Painel do Robô acima! ☝️"); };
-// ☢️ COMANDO MASTER: FORÇAR ATUALIZAÇÃO EM TODOS OS USUÁRIOS
-window.dispararUpdateGlobal = async function() {
+// ☢️ COMANDO MASTER: DISPARAR LIMPEZA GLOBAL
+window.dispararLimpezaGlobal = async function() {
     if (!confirm("⚠️ ATENÇÃO: Isso forçará TODOS os usuários logados a recarregarem o app e limparem o cache. Confirmar?")) return;
     
     try {
