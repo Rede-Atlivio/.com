@@ -39,48 +39,57 @@ window.audioRadarAtivo = null;
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const parent = document.getElementById('pview-radar');
-    const container = document.getElementById('radar-container');
-    const emptyState = document.getElementById('radar-empty-state');
-    const offlineState = document.getElementById('radar-offline-state');
+    const stage = document.getElementById('radar-stage');
     const toggle = document.getElementById('online-toggle');
-
-    if (!parent || !container) return null;
+    if (!stage) return null;
 
     const isOnline = toggle ? toggle.checked : false;
 
+    // 1. ESTADO OFFLINE
     if (!isOnline) {
-        // MODO OFFLINE
-        if(offlineState) offlineState.classList.remove('hidden');
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
-
-    // MODO ONLINE
-    if(offlineState) offlineState.classList.add('hidden');
-    
-    // 🔍 Captura real de cards (incluindo os que estão sendo criados)
-    const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
-
-    if (temCards) {
-        // Se tem card, o container TEM que aparecer e o radar (empty) sumir
-        container.classList.remove('hidden');
-        container.style.display = "block"; 
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // Só esconde o container se ele estiver vazio de fato
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
+        stage.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl opacity-50 grayscale">💤</div>
+                <p class="text-xs font-black text-gray-500 uppercase tracking-widest mt-4">Você está Offline</p>
+            </div>`;
+        pararSomRadarSeNecessario();
+        return stage;
     }
-// Para o som se não houver mais cards de alerta na tela
+
+    // 2. ESTADO ONLINE (BUSCANDO OU COM CARDS)
+    // Verifica se já existe um container de cards no palco
+    let container = document.getElementById('radar-container');
+    const temCardsNoDOM = container ? container.querySelectorAll('.request-card, .atlivio-pill').length > 0 : false;
+
+    if (!temCardsNoDOM) {
+        // Renderiza Antena se estiver vazio
+        stage.innerHTML = `
+            <div id="radar-empty-state" class="flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div class="relative flex h-24 w-24 items-center justify-center mb-4">
+                    <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
+                    <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
+                </div>
+                <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse text-center">Procurando clientes...</p>
+            </div>
+            <div id="radar-container" class="hidden flex flex-col items-center w-full max-w-[400px] space-y-4"></div>`;
+    } else {
+        // Se já tem cards, garante que o container esteja visível e a antena suma
+        if (container) container.classList.remove('hidden');
+        const antena = document.getElementById('radar-empty-state');
+        if (antena) antena.remove();
+    }
+    
+    pararSomRadarSeNecessario();
+    return document.getElementById('radar-container');
+}
+
+function pararSomRadarSeNecessario() {
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
     if (!temAlertaAtivo && window.audioRadarAtivo) {
         window.audioRadarAtivo.pause();
         window.audioRadarAtivo.currentTime = 0;
         window.audioRadarAtivo = null;
     }
-    return container;
 }
     
 // ============================================================================
