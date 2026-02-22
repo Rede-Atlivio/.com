@@ -1,5 +1,20 @@
 import { db, auth } from '../config.js';
-import { collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🌍 TRADUTOR GLOBAL ATLIVIO (INJEÇÃO IMEDIATA)
+window.traduzirStatus = (s) => {
+    const mapa = {
+        'pending': '⏳ Novo Pedido',
+        'accepted': '✅ Aceito / Em Chat',
+        'confirmed_hold': '🔒 Acordo Fechado',
+        'in_progress': '🛠️ Em Execução',
+        'completed': '✨ Concluído',
+        'cancelled': '❌ Cancelado',
+        'negotiation_closed': '🤝 Encerrado',
+        'expired': '⏲️ Expirado'
+    };
+    return mapa[s?.toLowerCase()] || 'Analisando...';
+};
 // ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
