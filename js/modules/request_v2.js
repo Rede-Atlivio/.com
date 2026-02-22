@@ -894,6 +894,7 @@ window.pararRadarFisico = function() {
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
+        window.pararSomRadar(); // Força silêncio ao desligar
         console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
 
         if (precisaLimpar) {
