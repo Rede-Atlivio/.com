@@ -443,8 +443,8 @@ function removeRequestCard(orderId) {
 // ============================================================================
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
 // ============================================================================
-export function createRequestCard(pedido, forceRed = false) {
-    const container = document.getElementById('radar-container');
+export function createRequestCard(pedido, forceRed = false, targetContainer = null) {
+    const container = targetContainer || document.getElementById('radar-container');
     if (!container || document.getElementById(`req-${pedido.id}`)) return;
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
