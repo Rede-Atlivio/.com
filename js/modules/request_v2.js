@@ -766,8 +766,10 @@ export async function aceitarPedidoRadar(orderId) {
                 createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true, containerAlvo);
 
                 // 3. Notificação final
+                // 🚀 GATILHO AUTO-EXTERMINADOR: Limpa o cache e reinicia para evitar o bug do radar travado
                 setTimeout(() => {
-                    alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
+                    alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.\n\nO sistema será atualizado para garantir sua conexão.`);
+                    executarLimpezaNuclear();
                 }, 100);
                 return;
             }
