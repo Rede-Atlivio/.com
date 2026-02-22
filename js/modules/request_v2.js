@@ -783,8 +783,8 @@ export async function aceitarPedidoRadar(orderId) {
             }
         }
        // EXECUÇÃO DO ACEITE (Padronizado para Filtros Blindados)
-        await updateDoc(orderRef, { 
-            status: 'accepted', 
+       await updateDoc(orderRef, { 
+            status: 'accepted'.toLowerCase(),
             accepted_at: serverTimestamp(),
             last_interaction_at: serverTimestamp(), // Reseta cronômetro Lazarus no aceite
             system_step: 1,
