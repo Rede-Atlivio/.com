@@ -165,8 +165,13 @@ function renderizarCards(servicos, container) {
 
     servicos.forEach(user => {
         try {
-            const temServicos = user.services && Array.isArray(user.services) && user.services.length > 0;
-            const mainService = temServicos ? user.services[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
+            const servicosLista = user.services || [];
+            const temServicos = servicosLista.length > 0;
+            const mainService = temServicos ? servicosLista[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
+            
+            // 🏷️ LOGICA MULTI-SERVIÇOS:
+            const totalOutros = servicosLista.length - 1;
+            const badgeMulti = totalOutros > 0 ? `<span class="bg-blue-100 text-blue-600 text-[7px] font-black px-1.5 py-0.5 rounded-md ml-1">+${totalOutros} OPÇÕES</span>` : "";
             
             const nomeProf = user.nome_profissional || user.nome || "Prestador";
             const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
