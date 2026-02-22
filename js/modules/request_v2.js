@@ -547,8 +547,11 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
                     <div class="flex items-center gap-2 text-gray-300"><span class="text-lg">🛠️</span><p class="text-xs font-medium text-red-300 uppercase">${pedido.service_title || 'Serviço Geral'}</p></div>
                 </div>
             </div>
-            <div class="p-4 relative z-10 flex flex-col gap-2">
-                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-lg animate-bounce-subtle transition flex items-center justify-center gap-2 border border-red-400/30">
+            <div class="p-4 pt-1 relative z-10 flex flex-col">
+                <div id="countdown-${pedido.id}" class="text-center text-white font-black text-xl mb-1 tracking-tighter drop-shadow-md animate-pulse">
+                    10:00
+                </div>
+                <button onclick="window.switchTab('ganhar')" class="w-full bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white py-4 rounded-xl font-black text-sm uppercase shadow-2xl animate-bounce-subtle border border-red-400/30 transition flex items-center justify-center gap-2">
                     RECARREGUE AGORA 💳
                 </button>
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition underline">Ignorar pedido</button>
