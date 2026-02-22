@@ -35,6 +35,8 @@ window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
+// Rastro de segurança para o Auto-Exterminador
+window.HOUVE_BLOQUEIO_SESSAO = false;
 // ☢️ PROTOCOLO AUTO-EXTERMINADOR (LIMPEZA AUTOMÁTICA DE CACHE CORROMPIDO)
 window.executarLimpezaNuclear = async function() {
     console.log("☢️ STATUS CRÍTICO DETECTADO: INICIANDO AUTO-LIMPEZA...");
