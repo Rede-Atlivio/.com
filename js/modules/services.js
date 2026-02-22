@@ -409,8 +409,9 @@ export async function carregarPedidosPrestador() {
                 cont++;
                 // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático no Radar
                 if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...o});
-                const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700";
-                const txt = o.status === 'in_progress' ? 'Em Andamento' : o.status === 'confirmed_hold' ? 'Acordo Fechado' : o.status === 'accepted' ? 'Aceito' : 'Pendente';
+                const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : (o.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700");
+                const mapaStatusProv = { 'pending': 'Novo Pedido', 'accepted': 'Em Chat', 'confirmed_hold': 'Acordo Fechado', 'in_progress': 'Em Execução' };
+                const txt = mapaStatusProv[o.status] || 'Pendente';
                 container.innerHTML += `<div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 animate-fadeIn">
                     <div><h3 class="font-bold text-xs text-gray-800">${o.client_name || 'Cliente'}</h3><p class="text-[10px] text-gray-500">${o.location || 'Local a combinar'}</p></div>
                     <div class="text-right"><span class="block font-black text-green-600 text-xs">R$ ${o.offer_value}</span><span class="text-[8px] px-2 py-0.5 rounded-full ${color} uppercase font-bold">${txt}</span></div></div>`;
