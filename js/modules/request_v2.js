@@ -546,7 +546,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
             </div>
         `;
     } else if (isBlocked) {
-        card.className = "request-card is-red-alert relative mb-6 bg-red-900 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/50 overflow-hidden animate-slideInDown";
+        card.className = "request-card is-red-alert fixed inset-x-4 top-24 z-[9999] bg-red-900 rounded-3xl shadow-[0_0_80px_rgba(220,38,38,0.8)] border-2 border-red-400 overflow-hidden animate-slideInDown";
         card.style.width = "100%";
         card.style.flexShrink = "0";
         card.innerHTML = `
