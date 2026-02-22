@@ -1170,7 +1170,7 @@ window.encerrarNegociacao = async (orderId) => {
 
         // Avisa no chat (última mensagem)
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: `✋ NEGOCIAÇÃO ENCERRADA. Este chat foi arquivado.`,
+            text: `✋ NEGOCIAÇÃO ENCERRADA: O chat foi movido para o arquivo.`,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
