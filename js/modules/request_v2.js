@@ -49,19 +49,14 @@ function garantirContainerRadar() {
 
     const isOnline = toggle ? toggle.checked : false;
 
-   if (!isOnline) {
-        // MODO OFFLINE: Mata o display flex para a antena sumir de verdade
-        if(offlineState) {
-            offlineState.classList.remove('hidden');
-            offlineState.style.display = "flex";
-        }
+    if (!isOnline) {
+        // MODO OFFLINE
+        if(offlineState) offlineState.classList.remove('hidden');
         container.classList.add('hidden');
-        if(emptyState) {
-            emptyState.classList.add('hidden');
-            emptyState.style.display = "none";
-        }
+        if(emptyState) emptyState.classList.add('hidden');
         return container;
-    }
+    } 
+
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
@@ -73,13 +68,10 @@ function garantirContainerRadar() {
         container.classList.remove('hidden');
         container.style.display = "block"; 
         if(emptyState) emptyState.classList.add('hidden');
-   } else {
-        // 🚀 VOLTA AO NORMAL: A antena só tem permissão de aparecer se estiver Online
+    } else {
+        // Só esconde o container se ele estiver vazio de fato
         container.classList.add('hidden');
-        if(emptyState && isOnline) {
-            emptyState.classList.remove('hidden');
-            emptyState.style.display = "flex"; 
-        }
+        if(emptyState) emptyState.classList.remove('hidden');
     }
 // Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
