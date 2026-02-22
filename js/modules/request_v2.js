@@ -563,7 +563,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
         `;
     } else {
         card.className = "request-card relative mb-6 bg-slate-900 rounded-3xl shadow-[0_0_50px_rgba(37,99,235,0.6)] border border-blue-500/40 overflow-hidden animate-slideInDown";
-        card.style.maxWidth = "100%";
+        card.style.width = "100%";
+        card.style.flexShrink = "0";
         card.innerHTML = `
             <div class="p-6 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 w-full h-full bg-blue-600/30 animate-pulse z-0"></div>
