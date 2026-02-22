@@ -504,12 +504,12 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
 
-    // 🔓 DESTRAVA VISUAL: Garante que o container apareça antes do áudio ou do card
+    // 🔓 DESTRAVA VISUAL: Limpa o palco para entrar o container de cards
+    const stage = document.getElementById('radar-stage');
+    const antena = document.getElementById('radar-empty-state');
+    if (antena) antena.remove();
     container.classList.remove('hidden');
-    container.style.display = "block";
-    const emptyState = document.getElementById('radar-empty-state');
-    if(emptyState) emptyState.classList.add('hidden');
-
+    
     // 🔊 LÓGICA DE ÁUDIO ÚNICO EM LOOP (ESTILO UBER/99)
     try {
         // Só inicia se não houver nenhum som tocando agora
