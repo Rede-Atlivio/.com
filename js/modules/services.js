@@ -1,5 +1,5 @@
 import { db, auth } from '../config.js';
-import { collection, query, where, getDocs, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, query, where, getDocs, onSnapshot, doc, getDoc, updateDoc, setDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🌍 TRADUTOR GLOBAL ATLIVIO (INJEÇÃO IMEDIATA)
 window.traduzirStatus = (s) => {
