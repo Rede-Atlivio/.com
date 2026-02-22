@@ -396,13 +396,41 @@ export async function iniciarRadarPrestador(uidManual = null) {
         window.radarIniciado = true; 
         garantirContainerRadar();
 
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const pedido = { id: change.doc.id, ...change.doc.data() };
-                const isPendente = pedido.is_blocked_by_wallet === true;
-                // Se o pedido estiver bloqueado por saldo, ele nasce como "Foco" (Grande/Vermelho)
-                createRequestCard(pedido, isPendente);
+       // 1. Captura todos os pedidos pendentes do snapshot
+        const pedidosVivos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+            .filter(p => !window.REJEITADOS_SESSAO.has(p.id));
+
+        // 2. MOTOR DE PRIORIDADE: Bloqueados primeiro, depois maior valor
+        const ordenados = pedidosVivos.sort((a, b) => {
+            if (a.is_blocked_by_wallet && !b.is_blocked_by_wallet) return -1;
+            if (!a.is_blocked_by_wallet && b.is_blocked_by_wallet) return 1;
+            return (parseFloat(b.offer_value) || 0) - (parseFloat(a.offer_value) || 0);
+        });
+
+        const container = document.getElementById('radar-container');
+        const waitContainer = document.getElementById('radar-wait-list');
+
+        // Limpa visualmente para reordenar (opcional, dependendo da sua frequência de atualização)
+        // Se preferir manter os cards vivos, ignore a limpeza e use prepend/append inteligente
+        
+        ordenados.forEach((pedido, index) => {
+            const isPendente = pedido.is_blocked_by_wallet === true;
+            const jaEstacionou = window.ESTACIONADOS_SESSAO.has(pedido.id);
+            
+            // O FOCO (Card Grande Azul) é o primeiro que não estacionou e não é vermelho
+            const isFoco = (index === 0 && !jaEstacionou && !isPendente);
+
+            if (isFoco) {
+                // Card Grande Azul no topo
+                createRequestCard(pedido, false, container);
+            } else {
+                // Pílula ou Card Vermelho no container de espera
+                createRequestCard(pedido, isPendente, waitContainer || container);
             }
+        });
+
+        // 3. Trata remoções
+        snapshot.docChanges().forEach((change) => {
             if (change.type === "removed") removeRequestCard(change.doc.id);
         });
 
