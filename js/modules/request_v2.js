@@ -633,7 +633,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
             }
         }
     }, tempoExposicao);
-}
+
 // 🤖 MOTOR DO RELÓGIO (SINCRONIZADO COM A BARRA) - PONTO CRTÍTICO MOTOR DO CRONOMETRO DO CARD VERMELHO
     if (isBlocked) {
         let segundosRestantes = 600; // 10 Minutos
@@ -658,6 +658,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
                 removeRequestCard(pedido.id);
             }
         }, 1000);
+      }
     }
 // ============================================================================
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
