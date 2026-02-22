@@ -856,7 +856,8 @@ window.rejeitarPermanente = async (orderId) => {
     // 2. Salva na memória da sessão
     window.REJEITADOS_SESSAO.add(orderId);
 
-    // 3. Registra rejeição no banco
+    // 3. Registra rejeição no banco e marca rastro para limpeza preventiva
+    window.HOUVE_BLOQUEIO_SESSAO = true; 
     try {
         const orderRef = doc(db, "orders", orderId);
         const uid = auth.currentUser.uid;
