@@ -467,7 +467,30 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     const card = document.createElement('div');
     card.id = `req-${pedido.id}`;
 
-    if (isBlocked) {
+    if (window.ESTACIONADOS_SESSAO.has(pedido.id)) {
+        const classePilula = isBlocked ? "atlivio-pill is-red" : "atlivio-pill";
+        card.className = `${classePilula} animate-fadeIn mb-2 flex items-center gap-3 bg-slate-800/80 backdrop-blur-md p-2 rounded-2xl border border-white/10 shadow-lg`;
+        card.innerHTML = `
+            <div class="flex items-center justify-center w-9 h-9 rounded-full ${isBlocked ? 'bg-red-500/20 border-red-500/40' : 'bg-green-500/20 border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.3)]'} border text-sm transition-all">
+                ${isBlocked ? '🔴' : '💵'}
+            </div>
+            <div class="flex flex-col min-w-0 flex-1 leading-tight">
+                <span class="text-[7px] text-orange-400 font-black uppercase tracking-widest animate-pulse">🔥 OPORTUNIDADE DISPUTADA</span>
+                <span class="text-white font-black text-[11px] uppercase tracking-tighter truncate">R$ ${valorTotal.toFixed(0)} • ${pedido.client_name}</span>
+                <span class="text-gray-400 text-[8px] uppercase font-bold italic truncate opacity-70">${pedido.service_title || 'Serviço Geral'} • ${horaDisplay}</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="hidden xs:flex flex-col items-end mr-1 text-[8px] font-bold text-green-400 uppercase leading-none">
+                    <span>Lucro</span>
+                    <span>R$ ${lucroLiquido.toFixed(2)}</span>
+                </div>
+                <button onclick="window.aceitarPedidoRadar('${pedido.id}')" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-[10px] font-black text-white shadow-lg transition-all active:scale-95">
+                    ACEITAR
+                </button>
+                <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 text-gray-500 hover:text-red-400 transition-colors">×</button>
+            </div>
+        `;
+    } else if (isBlocked) {
         card.className = "request-card is-red-alert relative mb-6 bg-red-900 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/50 overflow-hidden animate-slideInDown";
         card.style.maxWidth = "100%";
         card.innerHTML = `
