@@ -605,7 +605,11 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
         `;
     }
 
-    container.prepend(card);
+    if (targetContainer && targetContainer.id === 'radar-wait-list') {
+        targetContainer.appendChild(card);
+    } else {
+        container.prepend(card);
+    }
     const antena = document.getElementById('radar-empty-state');
     if (antena) antena.classList.add('hidden');
 
