@@ -73,7 +73,7 @@ function garantirContainerRadar() {
                 </div>
                 <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse text-center">Procurando clientes...</p>
             </div>
-            <div id="radar-container" class="hidden flex flex-col items-center w-full max-w-[400px] space-y-4"></div>`;
+            <div id="radar-container" class="flex flex-col items-center w-full max-w-[400px] space-y-4"></div>`;
     } else {
         // Se já tem cards, garante que o container esteja visível e a antena suma
         if (container) container.classList.remove('hidden');
