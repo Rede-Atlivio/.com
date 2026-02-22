@@ -558,7 +558,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
                 <button onclick="window.rejeitarPermanente('${pedido.id}')" class="w-full text-red-300/50 text-[10px] font-bold uppercase hover:text-red-300 transition underline">Ignorar pedido</button>
             </div>
             <div class="h-1.5 bg-slate-800 w-full relative z-10">
-                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-orange-600 to-red-700 w-full transition-all duration-[600000ms] ease-linear"></div>
+                <div id="timer-${pedido.id}" class="h-full bg-gradient-to-r from-orange-600 to-red-700 w-full transition-[width] duration-[600000ms] ease-linear"></div>
             </div>
         `;
     } else {
