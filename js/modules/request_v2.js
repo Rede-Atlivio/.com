@@ -414,14 +414,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
         
         if (toggle && !toggle.checked) {
             window.pararRadarFisico();
-            garantirContainerRadar(); 
-            
-            // 🚀 GATILHO INTELIGENTE: Se ele ficou offline e havia um card vermelho (bloqueio), extermina o cache.
-            const temBloqueio = snapshot.docs.some(d => d.data().is_blocked_by_wallet === true);
-            if (temBloqueio) {
-                console.warn("⚠️ Bloqueio detectado no desligamento. Limpando cache para evitar tela branca no retorno.");
-                setTimeout(() => executarLimpezaNuclear(), 1000); 
-            }
+            garantirContainerRadar();
             return;
         }
 
