@@ -39,51 +39,30 @@ window.audioRadarAtivo = null;
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const parent = document.getElementById('pview-radar');
     const container = document.getElementById('radar-container');
     const emptyState = document.getElementById('radar-empty-state');
     const offlineState = document.getElementById('radar-offline-state');
     const toggle = document.getElementById('online-toggle');
 
-    if (!parent || !container) return null;
+    if (!container) return null;
 
     const isOnline = toggle ? toggle.checked : false;
 
     if (!isOnline) {
         // MODO OFFLINE
-        if(offlineState) offlineState.classList.remove('hidden');
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
-
-    // MODO ONLINE
-    if(offlineState) offlineState.classList.add('hidden');
-    
-    const cardsAtivos = container.querySelectorAll('.request-card, .atlivio-pill');
-    const temCards = cardsAtivos.length > 0;
-
-    if (temCards) {
-        container.classList.remove('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // 🚀 RESET TOTAL: Garante que o container volte ao estado original de radar
-        container.classList.add('hidden');
-        container.style.display = "none"; // Mata qualquer resíduo de 'block' ou 'flex' do modo alerta
-        if(emptyState) {
-            emptyState.classList.remove('hidden');
-            emptyState.style.display = "flex"; // Força a imagem a reaparecer
+        if(offlineState) {
+            offlineState.classList.remove('hidden');
+            offlineState.style.display = "flex"; // 👈 ADICIONE ISSO
         }
+        container.classList.add('hidden');
+        container.style.display = "none"; // 👈 ADICIONE ISSO
+        
+        if(emptyState) {
+            emptyState.classList.add('hidden');
+            emptyState.style.display = "none"; // 👈 ADICIONE ISSO: Garante que a antena suma
+        }
+        return container;
     }
-// Para o som se não houver mais cards de alerta na tela
-    const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
-    if (!temAlertaAtivo && window.audioRadarAtivo) {
-        window.audioRadarAtivo.pause();
-        window.audioRadarAtivo.currentTime = 0;
-        window.audioRadarAtivo = null;
-    }
-    return container;
-}
     
 // ============================================================================
 // 1. MODAL DE SOLICITAÇÃO (CLIENTE)
