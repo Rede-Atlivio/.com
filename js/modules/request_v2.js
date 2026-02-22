@@ -35,19 +35,6 @@ window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
-// ☢️ PROTOCOLO AUTO-EXTERMINADOR (LIMPEZA AUTOMÁTICA DE CACHE CORROMPIDO)
-async function executarLimpezaNuclear() {
-    console.log("☢️ BLOQUEIO DETECTADO: INICIANDO AUTO-LIMPEZA...");
-    if (navigator.serviceWorker) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let r of registrations) await r.unregister();
-    }
-    if (window.caches) {
-        const keys = await caches.keys();
-        for (let k of keys) await caches.delete(k);
-    }
-    window.location.reload(true);
-}
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
@@ -766,10 +753,8 @@ export async function aceitarPedidoRadar(orderId) {
                 createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true, containerAlvo);
 
                 // 3. Notificação final
-                // 🚀 GATILHO AUTO-EXTERMINADOR: Limpa o cache e reinicia para evitar o bug do radar travado
                 setTimeout(() => {
-                    alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.\n\nO sistema será atualizado para garantir sua conexão.`);
-                    executarLimpezaNuclear();
+                    alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
                 }, 100);
                 return;
             }
