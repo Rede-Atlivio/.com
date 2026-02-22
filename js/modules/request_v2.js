@@ -35,6 +35,14 @@ window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
+
+// ⚓ Porto de Emergência: Região Neutra no topo para evitar atropelamento do Radar
+if (!document.getElementById('regiao-emergencia-atlivio')) {
+    const porto = document.createElement('div');
+    porto.id = 'regiao-emergencia-atlivio';
+    porto.className = "fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[10000] pointer-events-none";
+    document.body.appendChild(porto);
+}
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
