@@ -35,71 +35,52 @@ window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
-
-// ⚓ Porto de Emergência: Região Neutra no topo para evitar atropelamento do Radar
-if (!document.getElementById('regiao-emergencia-atlivio')) {
-    const porto = document.createElement('div');
-    porto.id = 'regiao-emergencia-atlivio';
-    porto.className = "fixed top-4 left-1/2 -translate-x-1/2 w-[92%] max-w-md z-[10000] pointer-events-none";
-    document.body.appendChild(porto);
-}
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const stage = document.getElementById('radar-stage');
+    const parent = document.getElementById('pview-radar');
+    const container = document.getElementById('radar-container');
+    const emptyState = document.getElementById('radar-empty-state');
+    const offlineState = document.getElementById('radar-offline-state');
     const toggle = document.getElementById('online-toggle');
-    if (!stage) return null;
+
+    if (!parent || !container) return null;
 
     const isOnline = toggle ? toggle.checked : false;
 
-   // 🛡️ TRAVA DE SOBERANIA: Se desligou, mata a conexão e blinda o palco contra o Firebase
     if (!isOnline) {
-        if (radarUnsubscribe) { radarUnsubscribe(); radarUnsubscribe = null; }
-        window.radarIniciado = false;
-        stage.innerHTML = `
-            <div class="flex flex-col items-center justify-center py-20 animate-fadeIn">
-                <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl opacity-50 grayscale">💤</div>
-                <p class="text-xs font-black text-gray-500 uppercase tracking-widest mt-4">Você está Offline</p>
-            </div>`;
-        pararSomRadarSeNecessario();
-        return null; // Aborta qualquer tentativa de renderização posterior
-    }
+        // MODO OFFLINE
+        if(offlineState) offlineState.classList.remove('hidden');
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.add('hidden');
+        return container;
+    } 
 
-    // 2. ESTADO ONLINE (BUSCANDO OU COM CARDS)
-    // Verifica se já existe um container de cards no palco
-    let container = document.getElementById('radar-container');
-    const temCardsNoDOM = container ? container.querySelectorAll('.request-card, .atlivio-pill').length > 0 : false;
-
-    if (!temCardsNoDOM) {
-        // Renderiza Antena se estiver vazio
-        stage.innerHTML = `
-            <div id="radar-empty-state" class="flex flex-col items-center justify-center py-20 animate-fadeIn">
-                <div class="relative flex h-24 w-24 items-center justify-center mb-4">
-                    <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
-                    <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
-                </div>
-                <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse text-center">Procurando clientes...</p>
-            </div>
-            <div id="radar-container" class="flex flex-col items-center w-full max-w-[400px] space-y-4"></div>`;
-    } else {
-        // Se já tem cards, garante que o container esteja visível e a antena suma
-        if (container) container.classList.remove('hidden');
-        const antenaNoPalco = document.getElementById('radar-empty-state');
-        if (antenaNoPalco) antenaNoPalco.remove();
-    }
+    // MODO ONLINE
+    if(offlineState) offlineState.classList.add('hidden');
     
-    pararSomRadarSeNecessario();
-    return document.getElementById('radar-container');
-}
+    // 🔍 Captura real de cards (incluindo os que estão sendo criados)
+    const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
 
-function pararSomRadarSeNecessario() {
+    if (temCards) {
+        // Se tem card, o container TEM que aparecer e o radar (empty) sumir
+        container.classList.remove('hidden');
+        container.style.display = "block"; 
+        if(emptyState) emptyState.classList.add('hidden');
+    } else {
+        // Só esconde o container se ele estiver vazio de fato
+        container.classList.add('hidden');
+        if(emptyState) emptyState.classList.remove('hidden');
+    }
+// Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
     if (!temAlertaAtivo && window.audioRadarAtivo) {
         window.audioRadarAtivo.pause();
         window.audioRadarAtivo.currentTime = 0;
         window.audioRadarAtivo = null;
     }
+    return container;
 }
     
 // ============================================================================
@@ -509,21 +490,17 @@ function removeRequestCard(orderId) {
 // 3. CARD DE SOLICITAÇÃO (ESTILO UBER/99 - VERSÃO PREMIUM GLOW)
 // ============================================================================
 export function createRequestCard(pedido, forceRed = false, targetContainer = null) {
-    const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
-    
-    // 🛡️ FILTRO DE SOBERANIA: 
-    // Card Vermelho (Erro/Saldo) -> Sobe para o Porto (Topo) para não ser apagado.
-    // Card Azul (Pedido Real) -> Fica no Radar (Centro) onde já funcionava.
-    const container = isBlocked 
-        ? document.getElementById('regiao-emergencia-atlivio') 
-        : (targetContainer || document.getElementById('radar-container'));
-    
+    const container = targetContainer || document.getElementById('radar-container');
     if (!container || document.getElementById(`req-${pedido.id}`)) return;
-    // 🔓 DESTRAVA VISUAL: Limpa o palco para entrar o container de cards
-    const antenaExistente = document.getElementById('radar-empty-state');
-    if (antenaExistente) antenaExistente.remove();
+
+    const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
+
+    // 🔓 DESTRAVA VISUAL: Garante que o container apareça antes do áudio ou do card
     container.classList.remove('hidden');
-    
+    container.style.display = "block";
+    const emptyState = document.getElementById('radar-empty-state');
+    if(emptyState) emptyState.classList.add('hidden');
+
     // 🔊 LÓGICA DE ÁUDIO ÚNICO EM LOOP (ESTILO UBER/99)
     try {
         // Só inicia se não houver nenhum som tocando agora
@@ -569,7 +546,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
             </div>
         `;
     } else if (isBlocked) {
-        card.className = "request-card is-red-alert relative mb-6 bg-red-600 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.5)] border-2 border-white/20 overflow-hidden animate-slideDown pointer-events-auto";
+        card.className = "request-card is-red-alert relative mb-6 bg-red-900 rounded-3xl shadow-[0_0_50px_rgba(220,38,38,0.5)] border border-red-500/50 overflow-hidden animate-slideInDown";
         card.style.width = "100%";
         card.style.flexShrink = "0";
         card.innerHTML = `
@@ -655,14 +632,14 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
         `;
     }
 
-   // Insere sempre no topo do Porto de Emergência
-   // Se for para o topo, usa prepend. Se for para o radar, segue a lógica do container alvo.
-    if (isBlocked) {
+   // 🚀 RESTAURAÇÃO: Cards vermelhos ou novos pedidos sempre assumem o topo absoluto
+    if (isBlocked || !targetContainer || targetContainer.id === 'radar-container') {
         container.prepend(card);
     } else {
-        container.appendChild(card);
+        targetContainer.appendChild(card);
     }
-    if (document.getElementById('radar-empty-state')) document.getElementById('radar-empty-state').remove();
+    const antena = document.getElementById('radar-empty-state');
+    if (antena) antena.classList.add('hidden');
 
     // Força os 10 minutos (600.000ms) se for um card vermelho/bloqueado
     const tempoExposicao = (pedido.is_blocked_by_wallet || forceRed) ? 600000 : 30000;
@@ -769,8 +746,7 @@ export async function aceitarPedidoRadar(orderId) {
                 // 2. CRIAÇÃO PRIORITÁRIA (Antes do alert)
                 const containerAlvo = document.getElementById('radar-container');
                 if (containerAlvo) {
-                    containerAlvo.style.display = "flex";
-                    containerAlvo.classList.remove('hidden');
+                    containerAlvo.classList.remove('hidden');
                     containerAlvo.style.display = "block";
                 }
                 
