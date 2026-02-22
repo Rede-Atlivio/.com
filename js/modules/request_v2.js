@@ -423,12 +423,15 @@ export async function iniciarRadarPrestador(uidManual = null) {
             // O FOCO (Card Grande Azul) é o primeiro que não estacionou e não é vermelho
             const isFoco = (index === 0 && !jaEstacionou && !isPendente);
 
-            if (isFoco) {
-                // Card Grande Azul no topo
+            if (isPendente) {
+                // 🚀 FORÇA: Card Vermelho sempre no Container Principal (Topo)
+                createRequestCard(pedido, true, container);
+            } else if (isFoco) {
+                // Card Grande Azul (Destaque)
                 createRequestCard(pedido, false, container);
             } else {
-                // Pílula ou Card Vermelho no container de espera
-                createRequestCard(pedido, isPendente, waitContainer || container);
+                // Pílulas (Lista de espera)
+                createRequestCard(pedido, false, waitContainer || container);
             }
         });
 
