@@ -755,7 +755,8 @@ export async function aceitarPedidoRadar(orderId) {
                 // 2. CRIAÇÃO PRIORITÁRIA (Antes do alert)
                 const containerAlvo = document.getElementById('radar-container');
                 if (containerAlvo) {
-                    containerAlvo.classList.remove('hidden');
+                    containerAlvo.style.display = "flex";
+                    containerAlvo.classList.remove('hidden');
                     containerAlvo.style.display = "block";
                 }
                 
