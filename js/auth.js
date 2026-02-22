@@ -81,9 +81,14 @@ getRedirectResult(auth).then(async (result) => {
                 dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
             }
 
-            // Cria perfil inicial (o resto vem no onAuthStateChanged)
+            // Cria perfil inicial completo para evitar resets visuais
             await setDoc(userRef, {
-                uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
+                uid: user.uid, 
+                email: user.email, 
+                displayName: user.displayName, 
+                photoURL: user.photoURL,
+                created_at: serverTimestamp(), 
+                ...dadosIndicacao
             }, { merge: true });
         }
         sessionStorage.removeItem("pending_ref");
