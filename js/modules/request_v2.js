@@ -719,6 +719,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
 export async function aceitarPedidoRadar(orderId) {
+    // Mata o som imediatamente ao clicar
+    window.pararSomRadar(); 
     try {
         const orderRef = doc(db, "orders", orderId);
         // Se ele tentou aceitar, desarmamos o exterminador para esta ação
