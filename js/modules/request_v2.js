@@ -717,10 +717,10 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 // 4. LÓGICA DE ACEITE (BLOQUEIO PRESTADOR: LIMITE + RESERVA ACEITE)
 // ============================================================================
 export async function aceitarPedidoRadar(orderId) {
-    const orderRef = doc(db, "orders", orderId);
-    // Se ele conseguiu aceitar, o bloqueio foi resolvido, limpamos o rastro
-        window.HOUVE_BLOQUEIO_SESSAO = false;
     try {
+        const orderRef = doc(db, "orders", orderId);
+        // Se ele tentou aceitar, desarmamos o exterminador para esta ação
+        window.HOUVE_BLOQUEIO_SESSAO = false;
         const orderSnap = await getDoc(orderRef);
         if (!orderSnap.exists()) {
             removeRequestCard(orderId);
