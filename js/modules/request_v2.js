@@ -605,10 +605,11 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
         `;
     }
 
-    if (targetContainer && targetContainer.id === 'radar-wait-list') {
-        targetContainer.appendChild(card);
-    } else {
+   // 🚀 RESTAURAÇÃO: Cards vermelhos ou novos pedidos sempre assumem o topo absoluto
+    if (isBlocked || !targetContainer || targetContainer.id === 'radar-container') {
         container.prepend(card);
+    } else {
+        targetContainer.appendChild(card);
     }
     const antena = document.getElementById('radar-empty-state');
     if (antena) antena.classList.add('hidden');
