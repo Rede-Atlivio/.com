@@ -60,11 +60,16 @@ function garantirContainerRadar() {
     // MODO ONLINE
     if(offlineState) offlineState.classList.add('hidden');
     
-    const temCards = container.querySelectorAll('.request-card').length > 0;
+    // 🔍 Captura real de cards (incluindo os que estão sendo criados)
+    const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
+
     if (temCards) {
+        // Se tem card, o container TEM que aparecer e o radar (empty) sumir
         container.classList.remove('hidden');
+        container.style.display = "block"; 
         if(emptyState) emptyState.classList.add('hidden');
     } else {
+        // Só esconde o container se ele estiver vazio de fato
         container.classList.add('hidden');
         if(emptyState) emptyState.classList.remove('hidden');
     }
@@ -490,6 +495,12 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
 
+    // 🔓 DESTRAVA VISUAL: Garante que o container apareça antes do áudio ou do card
+    container.classList.remove('hidden');
+    container.style.display = "block";
+    const emptyState = document.getElementById('radar-empty-state');
+    if(emptyState) emptyState.classList.add('hidden');
+
     // 🔊 LÓGICA DE ÁUDIO ÚNICO EM LOOP (ESTILO UBER/99)
     try {
         // Só inicia se não houver nenhum som tocando agora
@@ -836,6 +847,10 @@ window.rejeitarPermanente = async (orderId) => {
     } catch (e) {
         console.warn("Erro ao registrar rejeição:", e);
     }
+    // 🚀 CHAMA AUTO-CURA IMEDIATA: Garante que o radar volte se este era o último card
+    setTimeout(() => {
+        if (typeof garantirContainerRadar === 'function') garantirContainerRadar();
+    }, 400);
 };
 
 // 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
