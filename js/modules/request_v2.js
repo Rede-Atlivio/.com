@@ -511,8 +511,13 @@ function removeRequestCard(orderId) {
 export function createRequestCard(pedido, forceRed = false, targetContainer = null) {
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
     
-    // ⚓ SOBERANIA DO PORTO: Todo card de radar agora nasce no topo para evitar sumiço.
-    const container = document.getElementById('regiao-emergencia-atlivio');
+    // 🛡️ FILTRO DE SOBERANIA: 
+    // Card Vermelho (Erro/Saldo) -> Sobe para o Porto (Topo) para não ser apagado.
+    // Card Azul (Pedido Real) -> Fica no Radar (Centro) onde já funcionava.
+    const container = isBlocked 
+        ? document.getElementById('regiao-emergencia-atlivio') 
+        : (targetContainer || document.getElementById('radar-container'));
+    
     if (!container || document.getElementById(`req-${pedido.id}`)) return;
     // 🔓 DESTRAVA VISUAL: Limpa o palco para entrar o container de cards
     const antenaExistente = document.getElementById('radar-empty-state');
