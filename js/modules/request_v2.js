@@ -710,14 +710,19 @@ export async function aceitarPedidoRadar(orderId) {
         if (pctReservaPrestador > 0) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoTotalParaAceite < valorReserva) {
-                // Transforma o card em Vermelho antes de avisar
-                document.getElementById(`req-${orderId}`)?.remove();
-                // Remove da lista de estacionados para garantir que ele nasça como CARD GRANDE e não como pílula
+                // 1. Remove o card azul atual
+                const cardAntigo = document.getElementById(`req-${orderId}`);
+                if (cardAntigo) cardAntigo.remove();
+
+                // 2. Limpa da memória de pílulas para ele nascer como Card Vermelho Grande
                 window.ESTACIONADOS_SESSAO.delete(orderId);
                 
+                // 3. CRIAÇÃO EFETIVA: Agora o card é criado ANTES do alerta travar o sistema
                 createRequestCard({ ...pedidoData, id: orderId, is_blocked_by_wallet: true }, true, document.getElementById('radar-container'));
                 
-                return alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
+                // 4. Exibe o aviso (O card já estará no HTML neste momento)
+                alert(`⛔ SALDO INSUFICIENTE\n\nReserva de Aceite necessária: R$ ${valorReserva.toFixed(2)}.`);
+                return; 
             }
         }
        // EXECUÇÃO DO ACEITE (Padronizado para Filtros Blindados)
