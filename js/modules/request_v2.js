@@ -39,39 +39,32 @@ window.audioRadarAtivo = null;
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
 function garantirContainerRadar() {
-    const parent = document.getElementById('pview-radar');
-    const container = document.getElementById('radar-container');
-    const emptyState = document.getElementById('radar-empty-state');
-    const offlineState = document.getElementById('radar-offline-state');
+    const stage = document.getElementById('radar-stage') || document.getElementById('pview-radar');
     const toggle = document.getElementById('online-toggle');
-
-    if (!parent || !container) return null;
+    if (!stage) return null;
 
     const isOnline = toggle ? toggle.checked : false;
 
     if (!isOnline) {
-        // MODO OFFLINE
-        if(offlineState) offlineState.classList.remove('hidden');
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
-        return container;
-    } 
+        stage.innerHTML = `<div class="flex flex-col items-center justify-center py-20 opacity-50 grayscale">
+            <div class="bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl">💤</div>
+            <p class="text-xs font-black text-gray-500 uppercase mt-4">Você está Offline</p>
+        </div>`;
+        return null;
+    }
 
-    // MODO ONLINE
-    if(offlineState) offlineState.classList.add('hidden');
-    
-    // 🔍 Captura real de cards (incluindo os que estão sendo criados)
-    const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
-
-    if (temCards) {
-        // Se tem card, o container TEM que aparecer e o radar (empty) sumir
-        container.classList.remove('hidden');
-        container.style.display = "block"; 
-        if(emptyState) emptyState.classList.add('hidden');
-    } else {
-        // Só esconde o container se ele estiver vazio de fato
-        container.classList.add('hidden');
-        if(emptyState) emptyState.classList.remove('hidden');
+    let container = document.getElementById('radar-container');
+    if (!container) {
+        stage.innerHTML = `
+            <div id="radar-empty-state" class="flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div class="relative flex h-24 w-24 items-center justify-center mb-4">
+                    <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
+                    <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
+                </div>
+                <p class="text-xs font-black text-blue-900 uppercase animate-pulse">Procurando clientes...</p>
+            </div>
+            <div id="radar-container" class="flex flex-col items-center w-full space-y-4"></div>`;
+        container = document.getElementById('radar-container');
     }
 // Para o som se não houver mais cards de alerta na tela
     const temAlertaAtivo = document.querySelectorAll('.request-card').length > 0;
