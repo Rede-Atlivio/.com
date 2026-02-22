@@ -84,8 +84,8 @@ getRedirectResult(auth).then(async (result) => {
             // Cria perfil inicial completo para evitar resets visuais
             await setDoc(userRef, {
                 uid: user.uid, 
-                email: user.email, 
-                displayName: user.displayName, 
+                email: user.email || "sem@email.com", 
+                phone: user.phoneNumber || data?.whatsapp || "",
                 photoURL: user.photoURL,
                 created_at: serverTimestamp(), 
                 ...dadosIndicacao
