@@ -650,12 +650,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
         `;
     }
 
-   // 🚀 RESTAURAÇÃO: Cards vermelhos ou novos pedidos sempre assumem o topo absoluto
-    if (isBlocked || !targetContainer || targetContainer.id === 'radar-container') {
-        container.prepend(card);
-    } else {
-        targetContainer.appendChild(card);
-    }
+   // Insere sempre no topo do Porto de Emergência
+    container.prepend(card);
     if (document.getElementById('radar-empty-state')) document.getElementById('radar-empty-state').remove();
 
     // Força os 10 minutos (600.000ms) se for um card vermelho/bloqueado
