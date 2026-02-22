@@ -718,7 +718,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 // ============================================================================
 export async function aceitarPedidoRadar(orderId) {
     const orderRef = doc(db, "orders", orderId);
-    
+    // Se ele conseguiu aceitar, o bloqueio foi resolvido, limpamos o rastro
+        window.HOUVE_BLOQUEIO_SESSAO = false;
     try {
         const orderSnap = await getDoc(orderRef);
         if (!orderSnap.exists()) {
