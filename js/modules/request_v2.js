@@ -879,9 +879,8 @@ window.rejeitarPermanente = async (orderId) => {
 window.garantirContainerRadar = garantirContainerRadar;
 window.pararRadarFisico = function() {
     if (radarUnsubscribe) {
-        // 🚀 VERIFICAÇÃO DE EMERGÊNCIA: Antes de desligar, vê se tem card vermelho na tela
-        const temCardBloqueado = document.querySelector('.is-red-alert') || document.querySelector('.is-red');
-        
+        // 🚀 VERIFICAÇÃO DE EMERGÊNCIA: Checa se houve bloqueio nesta sessão, mesmo que o card tenha sido ignorado
+        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert');
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
