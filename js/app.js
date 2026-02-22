@@ -1,3 +1,28 @@
+// ============================================================================
+// 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
+// ============================================================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            console.log('📡 Monitorando versões do sistema...');
+
+            // Se o sistema detectar uma mudança no sw.js do servidor
+            reg.addEventListener('updatefound', () => {
+                const novoWorker = reg.installing;
+                novoWorker.addEventListener('statechange', () => {
+                    if (novoWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // 🚀 GATILHO DE ATUALIZAÇÃO IMEDIATA
+                        console.log("✨ Nova versão detectada!");
+                        if (confirm("🚀 Uma nova atualização da Atlivio está pronta. Atualizar agora para garantir o funcionamento?")) {
+                            window.location.reload();
+                        }
+                    }
+                });
+            });
+        }).catch(err => console.error('❌ Erro no Registro PWA:', err));
+    });
+}
+// ============================================================================
 import { app, auth, db, storage, provider } from './config.js';
 
 // ============================================================================
@@ -112,22 +137,29 @@ window.carregarInterface = async (user) => {
         toggle.parentNode.replaceChild(novoToggle, toggle);
 
         novoToggle.addEventListener('change', (e) => {
-            if (e.target.checked) {
+         if (e.target.checked) {
                 console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
-                // Reseta a memória para garantir que a função rode
                 window.radarIniciado = false; 
                 if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
             } else {
                 console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
                 if (window.pararRadarFisico) window.pararRadarFisico();
-            }
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            }   
         });
 
-        // Inicializa estado atual
-        if (novoToggle.checked) {
+       // Inicializa estado atual
+      if (novoToggle.checked) {
             setTimeout(() => {
                 if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-            }, 1000);
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            }, 800);
+        } else {
+            setTimeout(() => {
+                if (window.pararRadarFisico) window.pararRadarFisico();
+                if (window.garantirContainerRadar) window.garantirContainerRadar();
+            }, 400);
         }
     }
     // ----------------------------------------------------
