@@ -250,7 +250,9 @@ function renderizarCards(servicos, container) {
                         </div>
                         
                         <div class="mb-3">
-                             <p class="text-[10px] font-bold text-blue-900 uppercase truncate">${tituloServico}</p>
+                             <p class="text-[10px] font-bold text-blue-900 uppercase truncate flex items-center">
+                                ${tituloServico} ${badgeMulti}
+                             </p>
                              <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível para serviços.'}</p>
                         </div>
 
