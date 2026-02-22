@@ -338,7 +338,7 @@ export async function carregarPedidosAtivos() {
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress'];
+       const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress', 'negotiation_closed', 'expired'];
         let ativos = [];
         snap.forEach(d => { 
             const p = d.data();
