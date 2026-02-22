@@ -1563,7 +1563,7 @@ window.verificarVidaUtilChat = async (pedido) => {
 
             // Injeta mensagem do sistema no chat
             // 📢 INJEÇÃO DE AVISO V3 (Garantia de visibilidade)
-            const msgAlerta = "⏳ ESTA NEGOCIAÇÃO ESTÁ PARADA. Deseja continuar? Se não houver interação em 12h, o chat será arquivado.";
+            const msgAlerta = "⏳ NEGOCIAÇÃO PARADA: O chat será encerrado automaticamente em 12h por inatividade. Deseja continuar?";
             await addDoc(collection(window.db, "chats", pedido.id, "messages"), {
                 text: msgAlerta,
                 sender_id: 'system',
