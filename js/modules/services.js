@@ -214,11 +214,16 @@ function renderizarCards(servicos, container) {
 
             const clickActionSolicitar = isDemo 
                 ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
-                : `(async () => { 
+                : `(async (btn) => { 
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = 'Aguarde...';
+                    btn.disabled = true;
                     window.lastOpenedOrderId = null; 
                     if(window.unsubscribeChat) { window.unsubscribeChat(); window.unsubscribeChat = null; }
-                    window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}');
-                })()`;
+                    await window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                })(this)`;
 
             // --- HTML DO CARD ---
             container.innerHTML += `
