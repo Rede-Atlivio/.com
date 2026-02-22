@@ -155,6 +155,11 @@
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.4); border-radius: 10px; }
         #radar-container { scrollbar-gutter: stable; }
+
+        /* 🚀 GAMBIARRA PARA TENTAR RESOLVER BUG DO RADAR QUE SOME: FORÇA BRUTA: Garante que o Radar apareça sempre que não estiver hidden */
+        #radar-empty-state:not(.hidden) {
+            display: flex !important;
+        }
     </style>
 
     <script>
