@@ -156,10 +156,10 @@ onAuthStateChanged(auth, async (user) => {
                 if (!docSnap.exists()) {
                     // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    const novoPerfil = { 
-                        email: user.email, 
-                        phone: user.phoneNumber, 
-                        displayName: user.displayName || "Usuário", 
+                   const novoPerfil = { 
+                        email: user.email || "login-via-sms", 
+                        phone: user.phoneNumber || "S/N", 
+                        displayName: user.displayName || user.phoneNumber || "Usuário",
                         photoURL: user.photoURL, 
                         tenant_id: DEFAULT_TENANT, 
                         perfil_completo: false, 
