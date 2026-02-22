@@ -132,9 +132,11 @@ window.alternarPerfil = async () => {
 
 // --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
 onAuthStateChanged(auth, async (user) => {
-    // 🛡️ TRAVA ANTI-FANTASMA: Impede que o sistema processe contas incompletas do Google
-    if (user && !user.displayName) return console.warn("⏳ Sincronizando dados do Google...");
-
+    // 🛡️ TRAVA ANTI-RESET: Se os dados essenciais sumirem, tenta recuperar do objeto Auth
+    if (user && !user.displayName && !user.email) {
+        console.warn("⏳ Dados voláteis detectados. Tentando estabilizar sessão...");
+        return; 
+    }
     const transitionOverlay = document.getElementById('transition-overlay');
     const isToggling = sessionStorage.getItem('is_toggling_profile'); // 🆕 LÊ A FLAG
 
