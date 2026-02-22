@@ -484,13 +484,16 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
 
-    // 🔊 RESTAURAÇÃO DO SOM ORIGINAL (PROTEGIDO)
+    // 🔊 LÓGICA DE ÁUDIO ÚNICO EM LOOP (ESTILO UBER/99)
     try {
-        const audio = new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg');
-        audio.volume = 1.0;
-        audio.play().catch(e => console.log("Áudio bloqueado pelo navegador (interaja primeiro)."));
-    } catch(e) { console.warn("Erro ao tocar som"); }
-
+        // Só inicia se não houver nenhum som tocando agora
+        if (!window.audioRadarAtivo || window.audioRadarAtivo.paused) {
+            window.audioRadarAtivo = new Audio('https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg');
+            window.audioRadarAtivo.loop = true; // Faz o áudio repetir enquanto houver card
+            window.audioRadarAtivo.volume = 1.0;
+            window.audioRadarAtivo.play().catch(e => console.log("🔊 Aguardando interação para liberar som..."));
+        }
+    } catch(e) { console.warn("Erro no motor de áudio"); }
     const regras = window.CONFIG_FINANCEIRA || { taxa: 0, limite: 0 };
     const valorTotal = parseFloat(pedido.offer_value || 0);
     const taxaValor = valorTotal * regras.taxa;
