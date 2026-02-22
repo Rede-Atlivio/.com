@@ -646,8 +646,7 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
     } else {
         targetContainer.appendChild(card);
     }
-    const antena = document.getElementById('radar-empty-state');
-    if (antena) antena.classList.add('hidden');
+    if (document.getElementById('radar-empty-state')) document.getElementById('radar-empty-state').remove();
 
     // Força os 10 minutos (600.000ms) se for um card vermelho/bloqueado
     const tempoExposicao = (pedido.is_blocked_by_wallet || forceRed) ? 600000 : 30000;
