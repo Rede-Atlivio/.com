@@ -1498,7 +1498,7 @@ window.encerrarNegociacaoSilenciosa = async (orderId) => {
             closed_at: serverTimestamp()
         });
         await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: `🚨 NEGOCIAÇÃO ENCERRADA: O tempo do ultimato expirou sem resposta.`,
+            text: `🤝 NEGOCIAÇÃO ENCERRADA: O prazo de resposta expirou.`,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
