@@ -149,9 +149,11 @@ window.carregarInterface = async (user) => {
             }   
         });
 
-       // 🚀 INICIALIZAÇÃO INTELIGENTE V23
+       // 🚀 INICIALIZAÇÃO INTELIGENTE V23: Sem timeouts que atropelam o services.js
         if (novoToggle.checked && window.iniciarRadarPrestador) {
              window.iniciarRadarPrestador(user.uid);
+        } else if (!novoToggle.checked && window.pararRadarFisico) {
+             window.pararRadarFisico();
         }
     }
     // ----------------------------------------------------
