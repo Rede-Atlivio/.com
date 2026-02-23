@@ -389,7 +389,7 @@ export async function carregarPedidosAtivos() {
         });
     });
 }
-
+//VISÃO CLIENTE: HISTÓRICO  
 export async function carregarHistorico() {
     const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
     if(!container) return;
@@ -401,6 +401,9 @@ export async function carregarHistorico() {
         const statusHist = ['completed', 'archived', 'negotiation_closed', 'cancelled', 'expired'];
         let cont = 0;
         snap.forEach(d => {
+            const o = d.data();
+            const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusHist.includes(statusBanco)) {
             const o = d.data();
             if (statusHist.includes(o.status)) {
                 cont++;
