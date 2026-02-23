@@ -836,6 +836,7 @@ window.iniciarRadarPrestador = iniciarRadarPrestador;
 window.createRequestCard = createRequestCard;
 window.irParaChatComSucesso = irParaChatComSucesso;
 window.pararRadarFisico = pararRadarFisico;
+window.executarLimpezaNuclear = executarLimpezaNuclear;
 
 
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
