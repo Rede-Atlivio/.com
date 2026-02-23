@@ -1144,30 +1144,6 @@ window.cancelarServico = async (orderId) => {
     }
 };
 
-// ✋ AÇÃO 12: ENCERRAR NEGOCIAÇÃO (Sem Punição - Apenas Arquiva)
-window.encerrarNegociacao = async (orderId) => {
-    if(!confirm("✋ ENCERRAR NEGOCIAÇÃO?\n\nO chat será fechado e ninguém poderá mais enviar mensagens.\nComo o acordo ainda não foi fechado, NÃO haverá penalidade.\n\nConfirmar?")) return;
-
-    try {
-        await updateDoc(doc(db, "orders", orderId), {
-            status: 'negotiation_closed'.toLowerCase(),
-            closed_by: auth.currentUser.uid,
-            closed_at: serverTimestamp(),
-            system_step: 0 // Zera etapas
-        });
-
-        // Avisa no chat (última mensagem)
-        await addDoc(collection(db, `chats/${orderId}/messages`), {
-            text: `✋ NEGOCIAÇÃO ENCERRADA: O chat foi movido para o arquivo.`,
-            sender_id: 'system',
-            timestamp: serverTimestamp()
-        });
-
-        alert("Negociação encerrada.");
-        window.voltarParaListaPedidos();
-
-    } catch(e) { console.error(e); }
-};
 
 // 🚑 RESTAURAÇÃO: FUNÇÃO DE DESCREVER SERVIÇO (Muda o Título)
 window.novoDescreverServico = async (orderId) => {
