@@ -199,3 +199,8 @@ auth.onAuthStateChanged(async (user) => {
         if (window.pararRadarFisico) window.pararRadarFisico();
     }
 });
+// 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
+window.switchTab = switchTab;
+window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
+window.carregarInterface = carregarInterface;
