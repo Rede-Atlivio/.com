@@ -774,3 +774,9 @@ window.carregarPedidosPrestador = carregarPedidosPrestador; // Nome padrão para
 window.carregarHistoricoPrestador = carregarHistoricoPrestador; // Habilita o histórico do prestador
 window.iniciarMonitoramentoPedidos = carregarPedidosPrestador; // Mantém compatibilidade
 window.salvarCapaPrestador = salvarCapaPrestador;
+// 🌍 EXPOSIÇÃO GLOBAL V24 (PARA O CONSOLE E APP.JS VEREM AS FUNÇÕES)
+window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
+window.carregarPedidosAtivos = carregarPedidosAtivos;
+window.carregarHistorico = carregarHistorico;
+console.log("%c✅ SERVICES.JS: Funções expostas e gatilhos V24 ativos!", "color: #10b981; font-weight: bold;");
