@@ -48,7 +48,7 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
-window.switchTab = function(tabName) {
+function switchTab(tabName) {
     console.log("👉 Trocando para aba:", tabName);
 
     // 1. Esconde todas as seções (V24 - Blindagem de Sub-abas)
