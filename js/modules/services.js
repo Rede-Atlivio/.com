@@ -351,8 +351,15 @@ export function switchProviderSubTab(tabName) {
     if(targetView) targetView.classList.remove('hidden');
     if(targetBtn) targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
 
-    if(tabName === 'ativos') carregarPedidosPrestador();
-    if(tabName === 'historico') carregarHistoricoPrestador();
+    // 🔥 GATILHO DE CARGA PRESTADOR V23.1
+    if (tabName === 'ativos') {
+        console.log("📡 Buscando Pedidos Ativos...");
+        window.carregarPedidosPrestador();
+    }
+    if (tabName === 'historico') {
+        console.log("📜 Buscando Histórico Profissional...");
+        window.carregarHistoricoPrestador();
+    }
 }
 
 // ============================================================================
