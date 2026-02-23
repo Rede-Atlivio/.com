@@ -4,21 +4,27 @@ import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateCha
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 3. FUNÇÃO DE AUTOMAÇÃO (V23.1 - CORRIGIDA)
+// 3. FUNÇÃO DE AUTOMAÇÃO (V23.2 - LÓGICA DE ADMIN RESPEITADA)
 async function concederBonusSeAtivo(userUid) {
     try {
-        const userRef = doc(db, "usuarios", userUid); // 🎯 DEFINIÇÃO QUE FALTAVA
+        const userRef = doc(db, "usuarios", userUid);
+        const userSnap = await getDoc(userRef);
+        
+        // Se o usuário já recebeu o bônus alguma vez, para aqui.
+        if (userSnap.exists() && userSnap.data().bonus_inicial_ok) return;
+
         const configSnap = await getDoc(doc(db, "settings", "global"));
         const config = configSnap.data();
 
+        // Só concede se estiver ATIVO no Admin
         if (config?.bonus_boas_vindas_ativo) {
-            await setDoc(userRef, {
+            await updateDoc(userRef, {
                 wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
                 bonus_inicial_ok: true
-            }, { merge: true });
-            console.log("🎁 Bônus verificado com sucesso!");
+            });
+            console.log("🎁 Bônus inicial concedido via Admin.");
         }
-    } catch(e) { console.error("Erro ao dar bônus:", e); }
+    } catch(e) { console.warn("🎁 Bônus: Regra de Admin ignorada ou usuário novo."); }
 }
 const storage = getStorage();
 const ADMIN_EMAILS = ["contatogilborges@gmail.com"];
