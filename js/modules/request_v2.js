@@ -880,21 +880,4 @@ export function pararRadarFisico() {
         setTimeout(() => { if(window.garantirContainerRadar) window.garantirContainerRadar(); }, 200);
     }
 }
-// ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
-(function() {
-    const tempoAberturaApp = Date.now();
-    setTimeout(() => {
-        onSnapshot(doc(db, "settings", "deploy"), (snap) => {
-            if (snap.exists()) {
-                const data = snap.data();
-                const dataUpdate = data.force_reset_timestamp?.toDate().getTime();
-                
-               if (dataUpdate && dataUpdate > tempoAberturaApp) {
-                    console.warn("☢️ ORDEM RECEBIDA: Forçando reload por ordem do Admin...");
-                    // Aqui usamos reload direto, pois a limpezaNuclear agora não reseta a página
-                    window.location.reload(true);
-                }
-            }
-        });
-    }, 5000); 
-})();
+
