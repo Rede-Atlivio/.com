@@ -324,11 +324,13 @@ export function switchServiceSubTab(tabName) {
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
 
-    // 🔥 GATILHO DE CARGA REALTIME V23
-    if (tabName === 'andamento' && typeof window.carregarPedidosAtivos === 'function') {
+    // 🔥 GATILHO DE CARGA REALTIME V24 (PÓS-SANEAMENTO)
+    if (tabName === 'andamento') {
+        console.log("⏳ Iniciando escuta de pedidos ativos...");
         window.carregarPedidosAtivos();
     }
-    if (tabName === 'historico' && typeof window.carregarHistorico === 'function') {
+    if (tabName === 'historico') {
+        console.log("📜 Recuperando histórico purificado...");
         window.carregarHistorico();
     }
 }
