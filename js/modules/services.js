@@ -353,8 +353,13 @@ export function switchProviderSubTab(tabName) {
 
 // --- VISÃO DO CLIENTE (QUEM CONTRATA) ---
 export async function carregarPedidosAtivos() {
-    const container = document.getElementById('meus-pedidos-andamento') || document.getElementById('view-andamento');
-    if (!container) return;
+    const view = document.getElementById('view-andamento');
+    const container = document.getElementById('meus-pedidos-andamento');
+    if (!container || !view) return;
+    
+    // Força a remoção de qualquer bloqueio visual
+    view.style.display = 'block';
+    view.classList.remove('hidden');
     if (!auth.currentUser) { setTimeout(carregarPedidosAtivos, 500); return; }
     
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
