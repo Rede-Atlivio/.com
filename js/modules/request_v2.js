@@ -888,7 +888,9 @@ window.rejeitarPermanente = async (orderId) => {
 export function pararRadarFisico() {
     if (radarUnsubscribe) {
         // 🚀 GATILHO MESTRE RESTAURADO (V22)
-        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert') || document.querySelector('.is-red');
+        // Só limpa se houver erro visual na tela AGORA ou se houve bloqueio real
+        const temErroNaTela = document.querySelector('.is-red-alert, .is-red, .request-card.is-red-alert');
+        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || temErroNaTela;
         
         radarUnsubscribe();
         radarUnsubscribe = null;
