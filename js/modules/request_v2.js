@@ -379,11 +379,13 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const uid = uidManual || auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Resetável via Window)
+    // 🛡️ TRAVA DE SEGURANÇA V12.1 (Reset de rastro ao iniciar)
     if (window.radarIniciado) {
         console.log("🛰️ [SISTEMA] Radar já está operando.");
         return;
     }
+    // Mata o rastro antigo para permitir ligar/desligar livremente
+    window.HOUVE_BLOQUEIO_SESSAO = false;
   if (radarUnsubscribe) radarUnsubscribe();
 
     const configRef = doc(db, "settings", "financeiro");
