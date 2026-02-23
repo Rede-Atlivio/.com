@@ -512,18 +512,6 @@ export async function enviarMensagemChat(orderId, step) {
         return;
     }
     
-    if ((encontrouPalavra || temTelefone) && step < 3) {
-        // 📈 CAMADA 4: EVOLUÇÃO DO RISK SCORE (CONTROLE DE EVASÃO)
-        let riskScoreAtual = (window.meuPerfil?.risk_score || 0) + 3;
-        window.atualizarRiscoUsuario(auth.currentUser.uid, riskScoreAtual);
-
-        let msgAlerta = "⚠️ Por segurança, a troca de contatos só é permitida após o fechamento do acordo.";
-        if (riskScoreAtual > 10) msgAlerta = "🚨 ATENÇÃO: Tentativas repetidas de burlar a plataforma geram bloqueio da conta.";
-        
-        alert(msgAlerta);
-        input.value = "";
-        return;
-    }
 
     try {
         const orderRef = doc(db, "orders", orderId);
