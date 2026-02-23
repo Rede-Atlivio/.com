@@ -824,33 +824,17 @@
     });
 </script>          
           
-<script>
-    // 🚀 CARREGADOR INTELIGENTE ATLIVIO - V31
-    // Gera uma versão baseada no dia e hora (muda a cada minuto)
-    const agora = new Date();
-    const VERSAO_SISTEMA = agora.getFullYear() + "" + (agora.getMonth() + 1) + "" + agora.getDate() + "_" + agora.getHours() + agora.getMinutes();
-
-    const scriptsModulos = [
-        "./js/app.js",
-        "./js/auth.js",
-        "./js/modules/missions.js",
-        "./js/modules/opportunities.js",
-        "./js/modules/services.js",
-        "./js/modules/products.js",
-        "./js/modules/request_v2.js",
-        "./js/modules/jobs.js",
-        "./js/modules/chat.js",
-        "./js/modules/wallet.js",
-        "./js/modules/reviews.js"
-    ];
-
-    scriptsModulos.forEach(src => {
+<script type="module">
+    const VERSAO = "2026223_V24";
+    const caminhos = ["./js/app.js", "./js/auth.js"];
+    
+    caminhos.forEach(src => {
         const s = document.createElement('script');
         s.type = 'module';
-        s.src = `${src}?v=${VERSAO_SISTEMA}`;
+        s.src = `${src}?v=${VERSAO}`;
         document.head.appendChild(s);
     });
-    console.log("🛰️ Módulos sincronizados na versão: " + VERSAO_SISTEMA);
+    console.log("🛰️ Interface V24 sincronizada via Index.");
 </script>
 
 <script type="module">
