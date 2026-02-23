@@ -462,10 +462,17 @@ export async function carregarPedidosPrestador() {
         if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos no radar.</p>`;
     });
 }
-//VISÃO DO PRESTADOR HISTÓRICO
+// VISÃO DO PRESTADOR HISTÓRICO (V24 - ESTABILIZADO)
 export async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
     if(!container) return;
+
+    // 🛡️ SINAL DE NÃO PERTURBE
+    if (container.offsetParent === null) { 
+        setTimeout(carregarHistoricoPrestador, 50); 
+        return; 
+    }
+
     if (!auth.currentUser) { setTimeout(carregarHistoricoPrestador, 500); return; }
 
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
