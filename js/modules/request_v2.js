@@ -873,8 +873,7 @@ window.rejeitarPermanente = async (orderId) => {
 };
 
 // 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
-window.garantirContainerRadar = garantirContainerRadar;
-window.pararRadarFisico = function() {
+function pararRadarFisico() {
     if (radarUnsubscribe) {
         radarUnsubscribe();
         radarUnsubscribe = null;
@@ -882,10 +881,11 @@ window.pararRadarFisico = function() {
         window.pararSomRadar();
         console.log("🛑 [SISTEMA] Radar desligado fisicamente. UI preservada.");
         
-        // Auto-cura apenas o estado do radar, sem tocar em outras abas
-        setTimeout(() => { if(typeof garantirContainerRadar === 'function') garantirContainerRadar(); }, 200);
+        setTimeout(() => { 
+            if(typeof window.garantirContainerRadar === 'function') window.garantirContainerRadar(); 
+        }, 200);
     }
-};
+}
 
 // ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
 (function() {
