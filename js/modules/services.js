@@ -371,8 +371,8 @@ export async function carregarPedidosAtivos() {
         let ativos = [];
         snap.forEach(d => { 
             const p = d.data();
-            const statusBanco = p.status ? p.status.toString().toLowerCase().trim() : '';
-            if(statusVivos.includes(statusBanco)) {
+            const sB = p.status ? p.status.toString().toLowerCase().trim() : '';
+            if(statusVivos.includes(sB)) {
                 ativos.push({id: d.id, ...p});
                 if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...p});
             }
