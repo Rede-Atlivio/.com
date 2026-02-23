@@ -924,61 +924,62 @@
     carregarConfiguracoesIniciais();
 </script>
     
-    <div id="modal-onboarding" class="fixed inset-0 z-[60] bg-slate-900 hidden flex-col items-center justify-center p-6 animate-fade">
-        <div class="w-full max-w-sm bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl p-6 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
-            
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-black text-white mb-2">Bem-vindo à ATLIVIO 👋</h2>
-                <p class="text-gray-400 text-xs leading-relaxed">
-                    O primeiro Marketplace Híbrido do Mundo, uma plataforma que conecta serviços reais a clientes reais.
-                </p>
-            </div>
-
-            <form id="form-onboarding" class="space-y-4">
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Como devemos te chamar?</label>
-                    <input type="text" id="inp-onboard-name" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-bold focus:border-blue-500 focus:outline-none transition" placeholder="Seu Nome e Sobrenome" required minlength="3">
-                </div>
-
-                <div>
-                    <label class="text-[10px] uppercase font-bold text-gray-500 ml-1">Seu WhatsApp</label>
-                    <input type="tel" id="inp-onboard-phone" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white font-mono focus:border-green-500 focus:outline-none transition" placeholder="(00) 00000-0000" required>
-                </div>
-
-                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700/50 flex items-start gap-3">
-                    <input type="checkbox" id="chk-terms" class="mt-1 w-4 h-4 accent-blue-600" required>
-                    <label for="chk-terms" class="text-xs text-gray-400 leading-tight">
-                        Declaro que li e aceito os <button type="button" onclick="window.openTerms('termos')" class="text-blue-400 underline font-bold">Termos de Uso</button> e a <button type="button" onclick="window.openTerms('privacidade')" class="text-blue-400 underline font-bold">Política de Privacidade</button> da Atlivio.
-                    </label>
-                </div>
-
-                <button type="submit" id="btn-onboard-submit" class="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2">
-                    👉 Entrar gratuitamente
-                </button>
-            </form>
-        </div>
+    <div id="modal-onboarding" class="fixed inset-0 z-[150] bg-slate-900 hidden flex-col overflow-y-auto custom-scrollbar">
         
-        <p class="text-center text-gray-600 text-[10px] mt-6 max-w-xs">
-            Seus dados estão protegidos. Ambiente seguro SSL.
-        </p>
-    </div>
-
-    <div id="modal-terms" class="fixed inset-0 bg-black/95 hidden items-center justify-center p-4 animate-fadeIn" style="display: none; z-index: 999999 !important;">
-        <div class="w-full max-w-lg bg-slate-800 rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
-            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900">
-                <h3 class="text-white font-black uppercase italic tracking-widest text-xs" id="term-title">Documentos Legais</h3>
-                <button onclick="document.getElementById('modal-terms').style.display='none'; document.getElementById('modal-terms').classList.add('hidden')" class="text-slate-400 hover:text-white text-3xl font-bold transition">&times;</button>
+        <div class="min-h-[40vh] bg-gradient-atlivio relative flex flex-col items-center justify-center p-10 text-center shrink-0">
+            <div class="absolute top-4 right-4">
+                <span class="bg-white/10 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full border border-white/20">PREMIUM ✨</span>
             </div>
             
-            <div class="p-8 overflow-y-auto text-slate-300 text-[11px] space-y-4 leading-relaxed custom-scrollbar" id="term-content" style="white-space: pre-wrap;">
+            <div class="w-24 h-24 bg-white/10 backdrop-blur-2xl rounded-[2.5rem] mb-6 flex items-center justify-center border border-white/30 shadow-2xl relative">
+                <span class="text-5xl animate-bounce-subtle">💎</span>
+                <div class="absolute -bottom-1 -right-1 bg-blue-500 w-6 h-6 rounded-full border-4 border-slate-900 flex items-center justify-center text-[10px]">✔</div>
+            </div>
+
+            <h1 class="text-3xl font-black text-white italic uppercase tracking-tighter mb-1">Crie sua Conta</h1>
+            <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">Você está a um passo do futuro</p>
+        </div>
+
+        <div class="flex-1 bg-slate-900 rounded-t-[3rem] -mt-12 p-8 pt-10 relative z-10 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/5">
+            
+            <div class="max-w-md mx-auto">
+                <div class="text-left mb-8">
+                    <h2 class="text-2xl font-black text-white italic leading-tight">Bem-vindo(a) à ATLIVIO.</h2>
+                    <p class="text-slate-400 text-xs font-medium mt-1">Complete seus dados para liberar seu acesso e receber seu bônus de entrada.</p>
                 </div>
 
-            <div class="p-6 border-t border-slate-700 bg-slate-900">
-                <button onclick="document.getElementById('modal-terms').style.display='none'; document.getElementById('modal-terms').classList.add('hidden')" 
-                        class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg transition transform active:scale-95">
-                    CONCORDO E VOLTAR
-                </button>
+                <form id="form-onboarding" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-slate-500 ml-1 tracking-widest">Nome Completo</label>
+                        <input type="text" id="inp-onboard-name" 
+                               class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-white font-bold focus:border-blue-500 outline-none transition-all shadow-inner" 
+                               placeholder="Ex: João Silva" required minlength="3">
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-slate-500 ml-1 tracking-widest">Seu WhatsApp</label>
+                        <input type="tel" id="inp-onboard-phone" 
+                               class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-white font-mono font-bold focus:border-green-500 outline-none transition-all shadow-inner" 
+                               placeholder="(00) 00000-0000" required>
+                    </div>
+
+                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex items-start gap-4 transition-colors hover:bg-slate-800">
+                        <input type="checkbox" id="chk-terms" class="mt-1 w-5 h-5 accent-blue-600 shrink-0" required>
+                        <label for="chk-terms" class="text-[11px] text-slate-400 leading-relaxed">
+                            Declaro que li e aceito as 
+                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('termos');" class="text-blue-500 font-black underline decoration-2">Regras de Uso</button> e 
+                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('privacidade');" class="text-blue-500 font-black underline decoration-2">Privacidade</button>.
+                        </label>
+                    </div>
+
+                    <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black uppercase py-5 rounded-2xl hover:bg-blue-500 transition-all shadow-[0_10px_30px_rgba(37,99,235,0.3)] transform active:scale-95 text-sm tracking-widest">
+                        Entrar Gratuitamente 🚀
+                    </button>
+                </form>
+
+                <p class="text-center text-slate-600 text-[10px] mt-8 font-bold uppercase tracking-tighter">
+                    🛡️ Ambiente Seguro & Dados Criptografados
+                </p>
             </div>
         </div>
     </div>
