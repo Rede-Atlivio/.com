@@ -178,59 +178,72 @@
     <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
     <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
 
-    <div id="auth-container" class="hidden min-h-screen flex items-center justify-center p-4">
-        <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl w-full max-w-md text-white text-center border border-slate-700 relative overflow-hidden">
-            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 font-black"></div>
-            <div class="mb-8">
-                <span class="bg-blue-500/10 text-blue-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-[0.2em] mb-4 inline-block border border-blue-500/20">Bem-vindo(a) à Evolução</span>
-                <h2 class="text-5xl font-black text-white italic uppercase tracking-tighter leading-none mb-2">Atlivio</h2>
-                <p class="text-slate-400 text-[9px] font-bold uppercase tracking-[0.2em]">O Primeiro Marketplace Híbrido do Mundo</p>
+    <div id="auth-container" class="hidden min-h-screen bg-slate-900 flex flex-col">
+        
+        <div class="h-[40vh] bg-gradient-atlivio relative flex flex-col items-center justify-center p-6 text-center">
+            <div class="absolute top-4 right-4">
+                <span class="bg-white/10 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full border border-white/20">BRA 🇧🇷</span>
             </div>
             
-            <div id="login-step-phone" class="space-y-4">
-                <div class="relative">
-                    <span class="absolute left-3 top-3.5 text-gray-400 font-bold text-lg">🇧🇷 +55</span>
-                   <input type="tel" 
+            <div class="w-32 h-32 bg-white/10 backdrop-blur-xl rounded-[2.5rem] mb-6 flex items-center justify-center border border-white/20 shadow-2xl overflow-hidden">
+                <span class="text-5xl">🚀</span>
+            </div>
+
+            <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-1">Atlivio</h1>
+            <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">O Primeiro Marketplace Híbrido do Mundo</p>
+        </div>
+
+        <div class="flex-1 bg-slate-900 rounded-t-[3rem] -mt-12 p-8 pt-10 relative z-10 login-card-up shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/5">
+            
+            <div id="login-step-phone" class="max-w-md mx-auto space-y-6">
+                <div class="text-left mb-8">
+                    <h2 class="text-2xl font-black text-white italic">Um jeito inteligente de trabalhar.</h2>
+                    <p class="text-slate-400 text-xs font-medium mt-1">Digite seu WhatsApp para acessar sua conta e gerenciar seus lucros.</p>
+                </div>
+
+                <div class="relative group">
+                    <span class="absolute left-4 top-5 text-slate-500 font-black text-sm tracking-tighter">BR +55</span>
+                    <input type="tel" 
                            id="login-phone" 
                            oninput="window.mascaraTelefone(this)" 
                            placeholder="(00) 00000-0000" 
-                           class="w-full bg-slate-900 border border-slate-600 rounded-2xl p-4 pl-20 text-white text-lg font-bold focus:border-blue-500 outline-none transition shadow-inner">
+                           class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 pl-20 text-white text-lg font-black focus:border-blue-500 outline-none transition-all shadow-inner group-hover:border-slate-600">
                 </div>
                 
-                <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-4 rounded-xl hover:bg-blue-700 transition shadow-lg transform active:scale-95">
-                    RECEBER CÓDIGO SMS 📲
+                <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-5 rounded-2xl hover:bg-blue-500 transition-all shadow-[0_10px_30px_rgba(37,99,235,0.3)] transform active:scale-95 text-sm tracking-widest">
+                    Receber Código SMS 📲
                 </button>
 
-                <div class="relative py-4">
-                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-                    <div class="relative flex justify-center text-[10px] uppercase"><span class="bg-white px-2 text-gray-400 font-bold tracking-tighter">Acesso Seguro via Google</span></div>
+                <div class="relative py-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/5"></div></div>
+                    <div class="relative flex justify-center text-[9px] uppercase"><span class="bg-slate-900 px-4 text-slate-500 font-black tracking-widest">ou acesso rápido</span></div>
                 </div>
 
-                <button onclick="alert('🚀 SEGURANÇA MÁXIMA\n\nEstamos homologando o Login Google para garantir total proteção à sua carteira.\n\nPor enquanto, use o Login via SMS: é rápido, seguro e dispensa senhas!')" 
-                        class="w-full bg-slate-900/50 border border-slate-700 text-slate-300 font-bold py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-700 transition shadow-sm active:scale-95">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
-    Entrar com Google
+                <button onclick="alert('🚀 SEGURANÇA ATLIVIO: Login Google em homologação.')" 
+                        class="w-full bg-slate-800 border-2 border-slate-700 text-slate-300 font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-700 transition active:scale-95">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
+                    ENTRAR COM GOOGLE
                 </button>
 
-                <div class="mt-6 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                    <p class="text-[10px] text-gray-500 leading-relaxed font-medium">
-                        🔒 <strong>Login Blindado:</strong> Ao entrar, você concorda com nossas 
-                        <button onclick="window.openTerms('termos')" class="text-blue-600 font-black underline decoration-2 underline-offset-2">Regras de Uso</button> e 
-                        <button onclick="window.openTerms('privacidade')" class="text-blue-600 font-black underline decoration-2 underline-offset-2">Políticas</button>.
+                <div class="pt-4">
+                    <p class="text-[10px] text-slate-500 text-center leading-relaxed">
+                        Ao continuar, você concorda com nossas<br>
+                        <span onclick="window.openTerms('termos')" class="text-blue-500 font-black underline cursor-pointer">Regras de Uso</span> e 
+                        <span onclick="window.openTerms('privacidade')" class="text-blue-500 font-black underline cursor-pointer">Privacidade</span>.
                     </p>
                 </div>
             </div>
 
-            <div id="login-step-code" class="hidden space-y-4 animate-fadeIn">
-                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-2">
-                    <p class="text-xs text-blue-800">SMS enviado para <span id="lbl-login-phone" class="font-bold">...</span></p>
+            <div id="login-step-code" class="hidden max-w-md mx-auto space-y-6 animate-fadeIn">
+                <div class="text-center bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20">
+                    <p class="text-xs text-blue-400 font-bold">Enviamos o SMS para <span id="lbl-login-phone" class="text-white">...</span></p>
                 </div>
-                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-gray-900 text-2xl tracking-[0.5em] text-center font-bold focus:border-blue-500 outline-none transition">
+                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 text-white text-3xl tracking-[0.6em] text-center font-black focus:border-green-500 outline-none transition">
                 
-                <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-4 rounded-xl hover:bg-green-700 transition shadow-lg transform active:scale-95">
-                    ENTRAR AGORA 🚀
+                <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-5 rounded-2xl shadow-lg transform active:scale-95">
+                    Entrar Agora 🚀
                 </button>
-                <button onclick="location.reload()" class="text-xs text-gray-400 underline mt-2 hover:text-blue-600">Corrigir número</button>
+                <button onclick="location.reload()" class="w-full text-[10px] text-slate-500 font-black uppercase tracking-widest hover:text-white transition">← Corrigir Número</button>
             </div>
 
             <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
