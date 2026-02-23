@@ -754,10 +754,11 @@ export async function aceitarPedidoRadar(orderId) {
         if (pctReservaPrestador > 0) {
             const valorReserva = valorServico * (pctReservaPrestador / 100);
             if (saldoTotalParaAceite < valorReserva) {
-                // 1. Limpeza física e de memória
+               // 1. Limpeza física e marcação de rastro crítico
                 const cardAntigo = document.getElementById(`req-${orderId}`);
                 if (cardAntigo) cardAntigo.remove();
                 window.ESTACIONADOS_SESSAO.delete(orderId);
+                window.HOUVE_BLOQUEIO_SESSAO = true;
 
                 // 2. CRIAÇÃO PRIORITÁRIA (Antes do alert)
                 const containerAlvo = document.getElementById('radar-container');
