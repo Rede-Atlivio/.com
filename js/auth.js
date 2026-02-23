@@ -592,3 +592,7 @@ async function verificarSentenca(uid) {
         console.warn("Silenciando aviso global (sem permissão ou erro de rede).");
     });
 })();
+// 🌍 EXPOSIÇÃO GLOBAL V23 (PARA O CONSOLE E APP.JS VEREM AS FUNÇÕES)
+window.renderizarRadarOffline = renderizarRadarOffline;
+window.concederBonusSeAtivo = concederBonusSeAtivo;
+console.log("%c✅ AUTH.JS: Funções expostas com sucesso!", "color: #10b981; font-weight: bold;");
