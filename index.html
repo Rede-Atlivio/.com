@@ -1189,5 +1189,23 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         </div>
     </div>
 </div>
+            <div id="modal-terms" class="hidden fixed inset-0 bg-black/95 items-center justify-center p-4 animate-fadeIn" style="display: none; z-index: 999999 !important;">
+        <div class="w-full max-w-lg bg-slate-800 rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+                <h3 class="text-white font-black uppercase italic tracking-widest text-xs" id="term-title">Documentos Legais</h3>
+                <button onclick="document.getElementById('modal-terms').style.setProperty('display', 'none', 'important');" class="text-slate-400 hover:text-white text-3xl font-bold transition">&times;</button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto text-slate-300 text-[11px] space-y-4 leading-relaxed custom-scrollbar" id="term-content" style="white-space: pre-wrap;">
+                </div>
+
+            <div class="p-6 border-t border-slate-700 bg-slate-900">
+                <button onclick="document.getElementById('modal-terms').style.setProperty('display', 'none', 'important');" 
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg transition transform active:scale-95">
+                    CONCORDO E VOLTAR
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
