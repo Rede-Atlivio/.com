@@ -361,7 +361,7 @@ export async function carregarPedidosAtivos() {
     if (!container || !view) return;
     
     // Força a remoção de qualquer bloqueio visual
-    view.style.display = 'block';
+    view.style.setProperty('display', 'block', 'important');
     view.classList.remove('hidden');
     if (!auth.currentUser) { setTimeout(carregarPedidosAtivos, 500); return; }
     
