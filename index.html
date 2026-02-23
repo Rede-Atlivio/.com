@@ -952,8 +952,13 @@
                 <button onclick="document.getElementById('modal-terms').classList.add('hidden')" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-xs">ENTENDI E VOLTAR</button>
             </div>
         </div>
-    </div>
-document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
+       </div>
+            
+<script type="module">
+    import { auth, db } from './js/config.js';
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-onboard-submit');
         const name = document.getElementById('inp-onboard-name').value;
