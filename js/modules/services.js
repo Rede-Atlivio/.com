@@ -674,8 +674,8 @@ window.atualizarMinimo = (select) => {
     }
 
     const msg = document.getElementById('msg-min-price');
-    document.getElementById('prov-price').placeholder = `Mínimo: R$ ${min}`;
-    msg.innerText = `⚠️ Valor Base: R$ ${min},00`;
+    document.getElementById('prov-price').placeholder = `Mínimo: R$ ${Number(min).toFixed(2).replace('.', ',')}`;
+    msg.innerText = `⚠️ Valor Mínimo: R$ ${Number(min).toFixed(2).replace('.', ',')}`;
     msg.classList.remove('hidden');
 };
 
