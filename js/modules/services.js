@@ -370,7 +370,10 @@ export async function carregarPedidosAtivos() {
         container.innerHTML = "";
        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress', 'negotiation_closed', 'expired', 'completed'];
         let ativos = [];
-        snap.forEach(d => { 
+       snap.forEach(d => { 
+            const p = d.data();
+            const statusBanco = p.status ? p.status.toString().toLowerCase().trim() : '';
+            if(statusVivos.includes(statusBanco)) {
             const p = d.data();
             if(statusVivos.includes(p.status)) {
                 ativos.push({id: d.id, ...p});
