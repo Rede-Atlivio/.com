@@ -89,7 +89,7 @@ window.switchTab = function(tabName) {
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
 };
 
-window.switchServiceSubTab = function(subTab) {
+function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const el = document.getElementById(`view-${t}`);
@@ -100,10 +100,9 @@ window.switchServiceSubTab = function(subTab) {
     const target = document.getElementById(`view-${subTab}`);
     if(target) target.classList.remove('hidden');
     
-    // Chama a carga no services.js se as funções existirem
     if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
     if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
-};
+}
 
 window.switchProviderSubTab = function(subTab) {
     console.log("🔍 Sub-aba Prestador:", subTab);
