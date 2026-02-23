@@ -910,3 +910,24 @@ export function pararRadarFisico() {
         }
     }
 }
+})();
+
+// ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
+(function() {
+    const tempoAberturaApp = Date.now();
+    setTimeout(() => {
+        onSnapshot(doc(db, "settings", "deploy"), (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                const dataUpdate = data.force_reset_timestamp?.toDate().getTime();
+                
+                if (dataUpdate && dataUpdate > tempoAberturaApp) {
+                    console.warn("☢️ ORDEM RECEBIDA: Limpando sistema por ordem do Admin...");
+                    if (typeof window.executarLimpezaNuclear === 'function') {
+                        window.executarLimpezaNuclear();
+                    }
+                }
+            }
+        });
+    }, 5000); 
+})();
