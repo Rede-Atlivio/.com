@@ -938,46 +938,9 @@
         </div>
        </div>
             
-<script type="module">
-    import { auth, db } from './js/config.js';
-    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+</div>
+</div>
 
-    document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btn-onboard-submit');
-        const name = document.getElementById('inp-onboard-name').value;
-        const phone = document.getElementById('inp-onboard-phone').value;
-
-        btn.disabled = true;
-        btn.innerText = "Sincronizando perfil... ⏳";
-
-        try {
-            const user = auth.currentUser;
-            if (!user) throw new Error("Usuário não autenticado.");
-
-            // Salva na coleção consolidada 'usuarios'
-            await setDoc(doc(db, "usuarios", user.uid), {
-                nome: name,
-                whatsapp: phone,
-                uid: user.uid,
-                status_onboarding: 'concluido',
-                wallet_balance: 0,
-                created_at: serverTimestamp()
-            }, { merge: true });
-
-            document.getElementById('modal-onboarding').classList.add('hidden');
-            console.log("✅ Onboarding finalizado com sucesso!");
-            
-            // Recarrega a interface principal após o cadastro
-            if (window.carregarInterface) window.carregarInterface(user);
-            
-        } catch (error) {
-            console.error("Erro no onboarding:", error);
-            alert("Erro ao salvar perfil. Tente novamente.");
-            btn.disabled = false;
-            btn.innerText = "👉 Entrar gratuitamente";
-        }
-    });
 <script type="module">
     import { db, auth } from './js/config.js';
     import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
