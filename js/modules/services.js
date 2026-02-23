@@ -399,8 +399,8 @@ export async function carregarHistorico() {
         let cont = 0;
         snap.forEach(d => {
             const o = d.data();
-            const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
-            if (statusHist.includes(statusBanco)) {
+            const sB = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusHist.includes(sB)) {
                 cont++;
                 const dataObj = o.completed_at || o.created_at;
                 const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
