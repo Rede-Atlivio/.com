@@ -4,22 +4,19 @@ import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateCha
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 3. FUNÇÃO DE AUTOMAÇÃO
+// 3. FUNÇÃO DE AUTOMAÇÃO (V23.1 - CORRIGIDA)
 async function concederBonusSeAtivo(userUid) {
     try {
+        const userRef = doc(db, "usuarios", userUid); // 🎯 DEFINIÇÃO QUE FALTAVA
         const configSnap = await getDoc(doc(db, "settings", "global"));
         const config = configSnap.data();
 
         if (config?.bonus_boas_vindas_ativo) {
-            // Usa updateDoc, mas se falhar (doc não existe), usa setDoc
-            //SOLUÇÃO BONUS NA RAIZ - ANTES LINHAS 16 A 20 DEPOIS 16 A 20
             await setDoc(userRef, {
                 wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
-                // Campo 'saldo' removido para evitar duplicidade fantasma
                 bonus_inicial_ok: true
             }, { merge: true });
-            
-            console.log("🎁 Bônus de R$ 20 concedido automaticamente!");
+            console.log("🎁 Bônus verificado com sucesso!");
         }
     } catch(e) { console.error("Erro ao dar bônus:", e); }
 }
