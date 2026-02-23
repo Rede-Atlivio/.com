@@ -6,6 +6,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 // 🌍 TRADUTOR GLOBAL ATLIVIO (INJEÇÃO IMEDIATA)
 window.traduzirStatus = (s) => {
+    if (!s) return '---';
     const mapa = {
         'pending': '⏳ Novo Pedido',
         'accepted': '✅ Aceito / Em Chat',
@@ -18,7 +19,8 @@ window.traduzirStatus = (s) => {
         'ativo': 'Ativo',
         'rascunho': 'Rascunho'
     };
-    return mapa[s?.toLowerCase()] || s;
+    const statusLimpo = s.toString().toLowerCase().trim();
+    return mapa[statusLimpo] || s;
 };
 // ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
