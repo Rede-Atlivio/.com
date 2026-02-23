@@ -830,7 +830,7 @@ window.ativarInputPersonalizado = ativarInputPersonalizado;
 window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
-window._iniciarRadarReal = iniciarRadarPrestador; // Link para o Wrapper do topo
+window._iniciarRadarReal = iniciarRadarPrestador;
 window.createRequestCard = createRequestCard;
 window.irParaChatComSucesso = irParaChatComSucesso;
 window.pararRadarFisico = pararRadarFisico;
@@ -840,7 +840,6 @@ if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alte
 if(typeof garantirContainerRadar !== 'undefined') window.garantirContainerRadar = garantirContainerRadar;
 
 console.log("%c✅ REQUEST.JS: Estabilidade V24.2 confirmada. UI preservada.", "color: #10b981; font-weight: bold;");
-
 /**
  * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
  */
