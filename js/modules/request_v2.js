@@ -917,11 +917,10 @@ window.pararRadarFisico = function() {
                 const data = snap.data();
                 const dataUpdate = data.force_reset_timestamp?.toDate().getTime();
                 
-                if (dataUpdate && dataUpdate > tempoAberturaApp) {
-                    console.warn("☢️ ORDEM RECEBIDA: Limpando sistema por ordem do Admin...");
-                    if (typeof window.executarLimpezaNuclear === 'function') {
-                        window.executarLimpezaNuclear();
-                    }
+               if (dataUpdate && dataUpdate > tempoAberturaApp) {
+                    console.warn("☢️ ORDEM RECEBIDA: Forçando reload por ordem do Admin...");
+                    // Aqui usamos reload direto, pois a limpezaNuclear agora não reseta a página
+                    window.location.reload(true);
                 }
             }
         });
