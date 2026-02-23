@@ -823,14 +823,14 @@ export async function recusarPedidoReq(orderId) {
 // EXPOSIÇÃO GLOBAL E LIMPEZA
 // ============================================================================
 
-// 🌍 EXPOSIÇÃO GLOBAL V24.1 (ESTABILIDADE TOTAL)
+// 🌍 EXPOSIÇÃO GLOBAL V24.2 (ESTABILIDADE TOTAL)
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
 window.validarOferta = validarOferta;
 window.aceitarPedidoRadar = aceitarPedidoRadar;
 window.recusarPedidoReq = recusarPedidoReq;
-window.iniciarRadarPrestador = iniciarRadarPrestador;
+window._iniciarRadarReal = iniciarRadarPrestador; // Link para o Wrapper do topo
 window.createRequestCard = createRequestCard;
 window.irParaChatComSucesso = irParaChatComSucesso;
 window.pararRadarFisico = pararRadarFisico;
@@ -839,7 +839,7 @@ window.executarLimpezaNuclear = executarLimpezaNuclear;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
 if(typeof garantirContainerRadar !== 'undefined') window.garantirContainerRadar = garantirContainerRadar;
 
-console.log("%c✅ REQUEST.JS: Sistema V24.1 blindado e exportado!", "color: #10b981; font-weight: bold;");
+console.log("%c✅ REQUEST.JS: Estabilidade V24.2 confirmada. UI preservada.", "color: #10b981; font-weight: bold;");
 
 /**
  * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
