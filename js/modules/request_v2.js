@@ -869,7 +869,17 @@ window.rejeitarPermanente = async (orderId) => {
     }, 400);
 };
 
-
+// 🛰️ INTERRUPTOR BÁSICO
+export function pararRadarFisico() {
+    if (radarUnsubscribe) {
+        radarUnsubscribe();
+        radarUnsubscribe = null;
+        window.radarIniciado = false;
+        if(window.pararSomRadar) window.pararSomRadar();
+        console.log("🛑 [SISTEMA] Radar desligado.");
+        setTimeout(() => { if(window.garantirContainerRadar) window.garantirContainerRadar(); }, 200);
+    }
+}
 // ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
 (function() {
     const tempoAberturaApp = Date.now();
