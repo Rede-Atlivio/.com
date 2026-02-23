@@ -232,10 +232,10 @@
 
                 <div class="pt-4 flex flex-col items-center gap-1">
                     <p class="text-[10px] text-slate-500">Ao continuar, você concorda com as nossas</p>
-                    <div class="flex gap-2">
-                        <button type="button" onclick="window.openTerms('termos')" class="text-blue-500 text-[10px] font-black underline decoration-2">Regras de Uso</button>
+                    <div class="flex gap-2 mt-1">
+                        <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('termos');" class="text-blue-500 text-[10px] font-black underline decoration-2">Regras de Uso</a>
                         <span class="text-slate-600 text-[10px]">e</span>
-                        <button type="button" onclick="window.openTerms('privacidade')" class="text-blue-500 text-[10px] font-black underline decoration-2">Privacidade</button>
+                        <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('privacidade');" class="text-blue-500 text-[10px] font-black underline decoration-2">Privacidade</a>
                     </div>
                 </div>
             </div>
