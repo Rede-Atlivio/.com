@@ -20,12 +20,13 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🌍 WRAPPER DE ACESSO V24 (Evita ReferenceError)
+// 🌍 WRAPPER DE ACESSO V24.2 (Garante execução pós-carregamento)
 window.iniciarRadarPrestador = function(uid) { 
-    if(typeof iniciarRadarPrestador === 'function') {
-        return iniciarRadarPrestador(uid);
+    if(typeof window._iniciarRadarReal === 'function') {
+        return window._iniciarRadarReal(uid);
     } else {
-        console.warn("⏳ Aguardando módulo de Radar...");
+        console.warn("⏳ Radar em aquecimento... Tentando reconectar.");
+        setTimeout(() => window.iniciarRadarPrestador(uid), 1000);
     }
 };
 
