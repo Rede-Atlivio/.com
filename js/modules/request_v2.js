@@ -883,22 +883,33 @@ window.rejeitarPermanente = async (orderId) => {
 };
 
 // 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
-function pararRadarFisico() {
+window.garantirContainerRadar = garantirContainerRadar;
+window.pararRadarFisico = function() {
     if (radarUnsubscribe) {
+        // 🚀 GATILHO MESTRE RESTAURADO: Checa rastro na memória OU presença visual de erro na tela
+        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert') || document.querySelector('.is-red');
+        
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
-        window.pararSomRadar();
-        console.log("🛑 [SISTEMA] Radar desligado fisicamente. UI preservada.");
-        
-        if (window.HOUVE_BLOQUEIO_SESSAO) {
-            console.warn("⚠️ Rastro detectado. Resetando...");
-            setTimeout(() => window.executarLimpezaNuclear(), 500);
+        window.pararSomRadar(); // Força silêncio ao desligar
+        console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
+
+        if (precisaLimpar) {
+            console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza nuclear...");
+            setTimeout(() => {
+                if(typeof window.executarLimpezaNuclear === 'function') {
+                    window.executarLimpezaNuclear();
+                }
+            }, 500);
         } else {
-            setTimeout(() => { if(typeof garantirContainerRadar === 'function') garantirContainerRadar(); }, 200);
+            // Se estiver limpo, apenas atualiza a UI sem reload
+            setTimeout(() => {
+                if(typeof garantirContainerRadar === 'function') garantirContainerRadar();
+            }, 200);
         }
     }
-}
+};
 
 // ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
 (function() {
