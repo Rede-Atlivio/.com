@@ -816,7 +816,7 @@ export async function recusarPedidoReq(orderId) {
 // EXPOSIÇÃO GLOBAL E LIMPEZA
 // ============================================================================
 
-// Bindings Globais (Sistema de Exposição V22)
+// 🌍 EXPOSIÇÃO GLOBAL V24.1 (ESTABILIDADE TOTAL)
 window.abrirModalSolicitacao = abrirModalSolicitacao;
 window.selecionarDesconto = selecionarDesconto;
 window.ativarInputPersonalizado = ativarInputPersonalizado;
@@ -826,9 +826,8 @@ window.recusarPedidoReq = recusarPedidoReq;
 window.iniciarRadarPrestador = iniciarRadarPrestador;
 window.createRequestCard = createRequestCard;
 window.irParaChatComSucesso = irParaChatComSucesso;
-
-// Garantias de acesso
-if(typeof createRequestCard !== 'undefined') window.createRequestCard = createRequestCard;
+window.pararRadarFisico = pararRadarFisico;
+window.executarLimpezaNuclear = executarLimpezaNuclear;
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
 
 /**
