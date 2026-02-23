@@ -404,8 +404,6 @@ export async function carregarHistorico() {
             const o = d.data();
             const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
             if (statusHist.includes(statusBanco)) {
-            const o = d.data();
-            if (statusHist.includes(o.status)) {
                 cont++;
                 const dataObj = o.completed_at || o.created_at;
                 const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
