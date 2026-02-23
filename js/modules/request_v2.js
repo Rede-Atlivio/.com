@@ -911,7 +911,7 @@ export function pararRadarFisico() {
         }
     }
 }
-})();
+
 
 // ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
 (function() {
