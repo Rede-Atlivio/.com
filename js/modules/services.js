@@ -462,6 +462,9 @@ export async function carregarHistoricoPrestador() {
         let cont = 0;
         snap.forEach(d => {
             const o = d.data();
+            const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusFinal.includes(statusBanco)) {
+            const o = d.data();
             if (statusFinal.includes(o.status)) {
                 cont++;
                 const dataObj = o.completed_at || o.created_at;
