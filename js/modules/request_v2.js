@@ -507,8 +507,8 @@ export function createRequestCard(pedido, forceRed = false, targetContainer = nu
 
     const isBlocked = pedido.is_blocked_by_wallet === true || forceRed === true;
     
-    // 🛡️ SINALIZADOR DE RASTRO: Só ativa se o bloqueio for real e financeiro
-    if (pedido.is_blocked_by_wallet === true) {
+    // 🛡️ SINALIZADOR: Só marca rastro se o bloqueio for real de carteira vindo do banco
+    if (pedido.is_blocked_by_wallet === true || pedido.status_bloqueio === 'active') {
         window.HOUVE_BLOQUEIO_SESSAO = true;
     }
 
