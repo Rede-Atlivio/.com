@@ -149,17 +149,9 @@ window.carregarInterface = async (user) => {
             }   
         });
 
-       // Inicializa estado atual
-      if (novoToggle.checked) {
-            setTimeout(() => {
-                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }, 800);
-        } else {
-            setTimeout(() => {
-                if (window.pararRadarFisico) window.pararRadarFisico();
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }, 400);
+       // 🚀 INICIALIZAÇÃO INTELIGENTE V23
+        if (novoToggle.checked && window.iniciarRadarPrestador) {
+             window.iniciarRadarPrestador(user.uid);
         }
     }
     // ----------------------------------------------------
