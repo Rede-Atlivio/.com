@@ -1037,11 +1037,16 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         const modal = document.getElementById('modal-terms');
         const title = document.getElementById('term-title');
         const content = document.getElementById('term-content');
-        if(!modal || !title || !content) return;
+        if(!modal) return console.error("Modal de termos não encontrado!");
+
+        // Injeta o conteúdo
+        if(title) title.innerText = type === 'termos' ? "Termos de Uso ATLIVIO" : "Política de Privacidade";
+        if(content) content.innerText = TEXTOS[type] || "Conteúdo não disponível.";
+
+        // Força a exibição ignorando qualquer bloqueio de classe
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        title.innerText = type === 'termos' ? "Termos de Uso da Plataforma" : "Política de Privacidade";
-        content.innerText = TEXTOS[type];
+        modal.style.setProperty('display', 'flex', 'important');
+        console.log("🔓 Abrindo documento:", type);
     };
 
     // --- 🎁 MOTOR DE CADASTRO E BÔNUS DE R$ 20,00 ---
