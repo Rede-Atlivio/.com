@@ -324,8 +324,13 @@ export function switchServiceSubTab(tabName) {
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
     }
 
-    if(tabName === 'andamento') carregarPedidosAtivos();
-    if(tabName === 'historico') carregarHistorico();
+    // 🔥 GATILHO DE CARGA REALTIME V23
+    if (tabName === 'andamento' && typeof window.carregarPedidosAtivos === 'function') {
+        window.carregarPedidosAtivos();
+    }
+    if (tabName === 'historico' && typeof window.carregarHistorico === 'function') {
+        window.carregarHistorico();
+    }
 }
 
 // ============================================================================
