@@ -25,7 +25,7 @@ window.iniciarRadarPrestador = function(uid) {
     if(typeof window._iniciarRadarReal === 'function') {
         return window._iniciarRadarReal(uid);
     } else {
-        console.warn("⏳ Radar em aquecimento... Tentando reconectar.");
+        console.warn("⏳ Radar V2 em aquecimento...");
         setTimeout(() => window.iniciarRadarPrestador(uid), 1000);
     }
 };
