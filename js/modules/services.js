@@ -421,7 +421,7 @@ export async function carregarPedidosPrestador() {
     const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        const statusAtivos = ["pending", "accepted", "confirmed_hold", "in_progress"];
+        const statusAtivos = ["pending", "accepted", "confirmed_hold", "in_progress", "negotiation_closed"];
         let cont = 0;
         snap.forEach(d => {
             const o = d.data();
