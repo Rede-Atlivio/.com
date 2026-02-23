@@ -69,19 +69,23 @@ function garantirContainerRadar() {
     const isOnline = toggle ? toggle.checked : false;
 
     if (!isOnline) {
-        if(offlineState) offlineState.classList.remove('hidden');
+        offlineState.classList.remove('hidden');
+        emptyState.classList.add('hidden');
         container.classList.add('hidden');
         return container;
     } 
 
-    if(offlineState) offlineState.classList.add('hidden');
+    offlineState.classList.add('hidden');
     const temCards = container.querySelectorAll('.request-card, .atlivio-pill').length > 0;
 
     if (temCards) {
         container.classList.remove('hidden');
-        if(emptyState) emptyState.classList.add('hidden');
+        container.style.display = "block"; 
+        emptyState.classList.add('hidden');
     } else {
-        if(emptyState) emptyState.classList.remove('hidden');
+        container.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        emptyState.style.display = "flex"; 
     }
 // 🔊 COMANDO MASTER PARA PARAR ÁUDIO
 window.pararSomRadar = function() {
