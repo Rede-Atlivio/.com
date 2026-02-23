@@ -317,7 +317,7 @@ export function switchServiceSubTab(tabName) {
     
     if(targetView) {
         targetView.classList.remove('hidden');
-        targetView.style.display = 'block';
+        targetView.style.setProperty('display', 'block', 'important');
     }
     if(targetBtn) {
         targetBtn.classList.remove('text-gray-400');
