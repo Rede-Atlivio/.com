@@ -888,9 +888,12 @@ function pararRadarFisico() {
         window.pararSomRadar();
         console.log("🛑 [SISTEMA] Radar desligado fisicamente. UI preservada.");
         
-        setTimeout(() => { 
-            if(typeof window.garantirContainerRadar === 'function') window.garantirContainerRadar(); 
-        }, 200);
+        if (window.HOUVE_BLOQUEIO_SESSAO) {
+            console.warn("⚠️ Rastro detectado. Resetando...");
+            setTimeout(() => window.executarLimpezaNuclear(), 500);
+        } else {
+            setTimeout(() => { if(typeof garantirContainerRadar === 'function') garantirContainerRadar(); }, 200);
+        }
     }
 }
 
