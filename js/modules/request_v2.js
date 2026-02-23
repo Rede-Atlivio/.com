@@ -869,34 +869,6 @@ window.rejeitarPermanente = async (orderId) => {
     }, 400);
 };
 
-// 🛰️ EXPOSIÇÃO DE INTERFACE (Abertura de Escopo V28)
-export function pararRadarFisico() {
-    if (radarUnsubscribe) {
-        // 🚀 GATILHO MESTRE RESTAURADO (V22)
-        // Só limpa se houver erro visual na tela AGORA ou se houve bloqueio real
-        const temErroNaTela = document.querySelector('.is-red-alert, .is-red, .request-card.is-red-alert');
-        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || temErroNaTela;
-        
-        radarUnsubscribe();
-        radarUnsubscribe = null;
-        window.radarIniciado = false;
-        if(typeof window.pararSomRadar === 'function') window.pararSomRadar();
-        
-        console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
-
-        if (precisaLimpar) {
-            console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza...");
-            setTimeout(() => {
-                if(typeof window.executarLimpezaNuclear === 'function') window.executarLimpezaNuclear();
-            }, 500);
-        } else {
-            setTimeout(() => {
-                if(typeof garantirContainerRadar === 'function') garantirContainerRadar();
-            }, 200);
-        }
-    }
-}
-window.pararRadarFisico = pararRadarFisico;
 
 // ☢️ ESCUTA DE LIMPEZA GLOBAL (Sincronizado com Admin)
 (function() {
