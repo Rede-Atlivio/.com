@@ -470,8 +470,14 @@ document.addEventListener('change', async (e) => {
             if(st === 'banido') { e.target.checked = false; return alert("⛔ Você foi banido."); }
             if(st === 'suspenso') { e.target.checked = false; return alert("⚠️ CONTA SUSPENSA."); }
         }
-        if (novoStatus) { iniciarRadarPrestador(uid); document.getElementById('online-sound')?.play().catch(()=>{}); } 
-        else { renderizarRadarOffline(); }
+        if (novoStatus) { 
+            iniciarRadarPrestador(uid); 
+            document.getElementById('online-sound')?.play().catch(()=>{}); 
+        } else { 
+            // 🧹 Chama a limpeza interna do Radar sem matar o estado global
+            if (window.executarLimpezaNuclear) window.executarLimpezaNuclear();
+            renderizarRadarOffline(); 
+        }
         await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
     }
 });
