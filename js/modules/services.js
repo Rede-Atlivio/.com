@@ -400,10 +400,17 @@ export async function carregarPedidosAtivos() {
     });
 }
 
-// VISÃO CLIENTE: HISTÓRICO
+// VISÃO CLIENTE: HISTÓRICO (V24 - ESTABILIZADO)
 export async function carregarHistorico() {
     const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
     if(!container) return;
+    
+    // 🛡️ SINAL DE NÃO PERTURBE: Aguarda a UI estabilizar antes de renderizar
+    if (container.offsetParent === null) { 
+        setTimeout(carregarHistorico, 50); 
+        return; 
+    }
+
     if (!auth.currentUser) { setTimeout(carregarHistorico, 500); return; }
 
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
