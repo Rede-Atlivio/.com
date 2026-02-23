@@ -431,6 +431,9 @@ export async function carregarPedidosPrestador() {
         let cont = 0;
         snap.forEach(d => {
             const o = d.data();
+            const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusAtivos.includes(statusBanco)) {
+            const o = d.data();
             if (statusAtivos.includes(o.status)) {
                 cont++;
                 // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático no Radar
