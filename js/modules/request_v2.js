@@ -37,18 +37,17 @@ window.REJEITADOS_SESSAO = new Set();
 window.audioRadarAtivo = null;
 // Rastro de segurança para o Auto-Exterminador
 window.HOUVE_BLOQUEIO_SESSAO = false;
-// ☢️ PROTOCOLO AUTO-EXTERMINADOR (LIMPEZA AUTOMÁTICA DE CACHE CORROMPIDO)
+
+// 🧹 PROTOCOLO DE LIMPEZA SELETIVA (SANEAMENTO DE RADAR SEM RELOAD)
 window.executarLimpezaNuclear = async function() {
-    console.log("☢️ STATUS CRÍTICO DETECTADO: INICIANDO AUTO-LIMPEZA...");
-    if (navigator.serviceWorker) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let r of registrations) await r.unregister();
-    }
-    if (window.caches) {
-        const keys = await caches.keys();
-        for (let k of keys) await caches.delete(k);
-    }
-    window.location.reload(true);
+    console.log("🧹 INICIANDO SANEAMENTO DE MEMÓRIA DO RADAR...");
+    // Reseta flags de bloqueio e para sons para destravar a interface
+    window.HOUVE_BLOQUEIO_SESSAO = false;
+    window.ESTACIONADOS_SESSAO = new Set();
+    if(window.pararSomRadar) window.pararSomRadar();
+    
+    // Auto-cura o container para garantir que o estado "Vazio" apareça corretamente
+    if(typeof garantirContainerRadar === 'function') garantirContainerRadar();
 };
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
