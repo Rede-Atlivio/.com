@@ -351,7 +351,7 @@ export function switchProviderSubTab(tabName) {
 }
 
 // ============================================================================
-// 2. PEDIDOS E HISTÓRICO (VERSÃO BLINDADA V12.1)
+// 2. PEDIDOS E HISTÓRICO (VERSÃO BLINDADA V13.0)
 // ============================================================================
 
 // --- VISÃO DO CLIENTE (QUEM CONTRATA) ---
@@ -360,7 +360,6 @@ export async function carregarPedidosAtivos() {
     const container = document.getElementById('meus-pedidos-andamento');
     if (!container || !view) return;
     
-    // Força a remoção de qualquer bloqueio visual
     view.style.setProperty('display', 'block', 'important');
     view.classList.remove('hidden');
     if (!auth.currentUser) { setTimeout(carregarPedidosAtivos, 500); return; }
@@ -368,16 +367,13 @@ export async function carregarPedidosAtivos() {
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-       const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress', 'negotiation_closed', 'expired', 'completed'];
+        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress', 'negotiation_closed', 'expired', 'completed'];
         let ativos = [];
-       snap.forEach(d => { 
+        snap.forEach(d => { 
             const p = d.data();
             const statusBanco = p.status ? p.status.toString().toLowerCase().trim() : '';
             if(statusVivos.includes(statusBanco)) {
-            const p = d.data();
-            if(statusVivos.includes(p.status)) {
                 ativos.push({id: d.id, ...p});
-                // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático
                 if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...p});
             }
         });
@@ -389,7 +385,8 @@ export async function carregarPedidosAtivos() {
         });
     });
 }
-//VISÃO CLIENTE: HISTÓRICO  
+
+// VISÃO CLIENTE: HISTÓRICO
 export async function carregarHistorico() {
     const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
     if(!container) return;
@@ -416,7 +413,7 @@ export async function carregarHistorico() {
     });
 }
 
-// --- VISÃO DO PRESTADOR (USUÁRIO QUE TRABALHA) ---
+// --- VISÃO DO PRESTADOR ---
 export async function carregarPedidosPrestador() {
     const container = document.getElementById('lista-chamados-ativos');
     if(!container) return;
@@ -431,10 +428,7 @@ export async function carregarPedidosPrestador() {
             const o = d.data();
             const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
             if (statusAtivos.includes(statusBanco)) {
-            const o = d.data();
-            if (statusAtivos.includes(o.status)) {
                 cont++;
-                // 🚀 GOLPE DE MISERICÓRDIA: Scanner Lazarus automático no Radar
                 if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...o});
                 const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : (o.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700");
                 const mapaStatusProv = { 'pending': 'Novo Pedido', 'accepted': 'Em Chat', 'confirmed_hold': 'Acordo Fechado', 'in_progress': 'Em Execução' };
@@ -447,7 +441,7 @@ export async function carregarPedidosPrestador() {
         if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos no radar.</p>`;
     });
 }
-
+//VISÃO DO PRESTADOR HISTÓRICO
 export async function carregarHistoricoPrestador() {
     const container = document.getElementById('lista-chamados-historico');
     if(!container) return;
@@ -462,8 +456,6 @@ export async function carregarHistoricoPrestador() {
             const o = d.data();
             const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
             if (statusFinal.includes(statusBanco)) {
-            const o = d.data();
-            if (statusFinal.includes(o.status)) {
                 cont++;
                 const dataObj = o.completed_at || o.created_at;
                 const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
