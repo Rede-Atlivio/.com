@@ -159,6 +159,8 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.4); border-radius: 10px; }
         #radar-container { scrollbar-gutter: stable; }
 
+        /* Garante que o modal de termos sempre fique por cima de tudo */
+        #modal-terms { z-index: 999999 !important; }
         /* 🛡️ TRAVA DE SOBERANIA: Impede que Antena e Offline apareçam juntos */
         #radar-offline-state:not(.hidden) ~ #radar-empty-state,
         #radar-offline-state:not(.hidden) ~ #radar-container {
