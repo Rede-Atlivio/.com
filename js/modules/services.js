@@ -315,7 +315,10 @@ export function switchServiceSubTab(tabName) {
     const targetView = document.getElementById(`view-${tabName}`);
     const targetBtn = document.getElementById(`subtab-${tabName}-btn`);
     
-    if(targetView) targetView.classList.remove('hidden');
+    if(targetView) {
+        targetView.classList.remove('hidden');
+        targetView.style.display = 'block';
+    }
     if(targetBtn) {
         targetBtn.classList.remove('text-gray-400');
         targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
