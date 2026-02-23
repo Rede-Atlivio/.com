@@ -395,7 +395,7 @@ export async function carregarHistorico() {
     const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
     onSnapshot(q, (snap) => {
         container.innerHTML = "";
-        const statusHist = ['completed', 'archived', 'negotiation_closed', 'cancelled'];
+        const statusHist = ['completed', 'archived', 'negotiation_closed', 'cancelled', 'expired'];
         let cont = 0;
         snap.forEach(d => {
             const o = d.data();
