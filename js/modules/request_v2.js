@@ -900,7 +900,8 @@ window.pararRadarFisico = function() {
             console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza nuclear...");
             setTimeout(() => {
                 if(typeof window.executarLimpezaNuclear === 'function') {
-                    window.executarLimpezaNuclear();
+                    // Se a ordem vem do Admin, aqui ainda permitimos o reload para deploy
+                        window.location.reload(true);
                 }
             }, 500);
         }
