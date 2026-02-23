@@ -424,10 +424,10 @@ export async function carregarPedidosPrestador() {
         container.innerHTML = "";
         const statusAtivos = ["pending", "accepted", "confirmed_hold", "in_progress", "negotiation_closed"];
         let cont = 0;
-        snap.forEach(d => {
+       snap.forEach(d => {
             const o = d.data();
-            const statusBanco = o.status ? o.status.toString().toLowerCase().trim() : '';
-            if (statusAtivos.includes(statusBanco)) {
+            const sB = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusAtivos.includes(sB)) {
                 cont++;
                 if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...o});
                 const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : (o.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700");
