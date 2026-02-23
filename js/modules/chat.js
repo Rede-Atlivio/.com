@@ -290,7 +290,7 @@ async function renderizarEstruturaChat(container, pedido, isProvider, orderId, s
                 </div>
             </div>
 
-           ${!['completed', 'cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
+          ${!['cancelled', 'negotiation_closed', 'dispute'].includes(pedido.status) ? `
             <div class="bg-white border-t z-40 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                 <button onclick="window.toggleFerramentasChat()" class="w-full py-1.5 bg-gray-50 border-b flex items-center justify-center gap-2 text-[9px] font-black text-gray-400 uppercase tracking-widest hover:text-blue-600 transition">
                     <span id="icon-ferramentas">➕</span> <span id="txt-ferramentas">Mais Opções</span>
