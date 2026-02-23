@@ -512,6 +512,18 @@ export async function enviarMensagemChat(orderId, step) {
         return;
     }
     
+    if ((encontrouPalavra || temTelefone) && step < 3) {
+        // 📈 CAMADA 4: EVOLUÇÃO DO RISK SCORE (CONTROLE DE EVASÃO)
+        let riskScoreAtual = (window.meuPerfil?.risk_score || 0) + 3;
+        window.atualizarRiscoUsuario(auth.currentUser.uid, riskScoreAtual);
+
+        let msgAlerta = "⚠️ Por segurança, a troca de contatos só é permitida após o fechamento do acordo.";
+        if (riskScoreAtual > 10) msgAlerta = "🚨 ATENÇÃO: Tentativas repetidas de burlar a plataforma geram bloqueio da conta.";
+        
+        alert(msgAlerta);
+        input.value = "";
+        return;
+    }
 
     try {
         const orderRef = doc(db, "orders", orderId);
@@ -1144,6 +1156,30 @@ window.cancelarServico = async (orderId) => {
     }
 };
 
+// ✋ AÇÃO 12: ENCERRAR NEGOCIAÇÃO (Sem Punição - Apenas Arquiva)
+window.encerrarNegociacao = async (orderId) => {
+    if(!confirm("✋ ENCERRAR NEGOCIAÇÃO?\n\nO chat será fechado e ninguém poderá mais enviar mensagens.\nComo o acordo ainda não foi fechado, NÃO haverá penalidade.\n\nConfirmar?")) return;
+
+    try {
+        await updateDoc(doc(db, "orders", orderId), {
+            status: 'negotiation_closed'.toLowerCase(),
+            closed_by: auth.currentUser.uid,
+            closed_at: serverTimestamp(),
+            system_step: 0 // Zera etapas
+        });
+
+        // Avisa no chat (última mensagem)
+        await addDoc(collection(db, `chats/${orderId}/messages`), {
+            text: `✋ NEGOCIAÇÃO ENCERRADA: O chat foi movido para o arquivo.`,
+            sender_id: 'system',
+            timestamp: serverTimestamp()
+        });
+
+        alert("Negociação encerrada.");
+        window.voltarParaListaPedidos();
+
+    } catch(e) { console.error(e); }
+};
 
 // 🚑 RESTAURAÇÃO: FUNÇÃO DE DESCREVER SERVIÇO (Muda o Título)
 window.novoDescreverServico = async (orderId) => {
@@ -1557,4 +1593,3 @@ setTimeout(async () => {
         console.log(`🤖 Lazarus: Varredura de inicialização concluída (${snap.size} verificados).`);
     } catch (e) { console.error("❌ Erro no despertador Lazarus:", e); }
 }, 8000); // Aumentado para 8s para garantir que o login e o banco estejam 100% online
-
