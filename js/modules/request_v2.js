@@ -20,8 +20,14 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🌍 INJEÇÃO DE EMERGÊNCIA V24 (Posição Segura)
-window.iniciarRadarPrestador = (uid) => iniciarRadarPrestador(uid);
+// 🌍 WRAPPER DE ACESSO V24 (Evita ReferenceError)
+window.iniciarRadarPrestador = function(uid) { 
+    if(typeof iniciarRadarPrestador === 'function') {
+        return iniciarRadarPrestador(uid);
+    } else {
+        console.warn("⏳ Aguardando módulo de Radar...");
+    }
+};
 
 // ⚡ GARANTIA DE ESCOPO GLOBAL: Evita erros de 'undefined' em execuções rápidas
 if (typeof window.updateDoc === 'undefined') window.updateDoc = updateDoc;
