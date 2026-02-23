@@ -90,16 +90,19 @@ window.switchTab = function(tabName) {
 };
 
 window.switchServiceSubTab = function(subTab) {
+    console.log("🔍 Sub-aba Cliente:", subTab);
     ['contratar', 'andamento', 'historico'].forEach(t => {
         const el = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`subtab-${t}-btn`);
-        if(el) el.classList.add('hidden');
-        if(btn) btn.classList.remove('active');
+        if(el && t !== subTab) el.classList.add('hidden');
+        if(btn) btn.classList.toggle('active', t === subTab);
     });
     const target = document.getElementById(`view-${subTab}`);
-    const targetBtn = document.getElementById(`subtab-${subTab}-btn`);
     if(target) target.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
+    
+    // Chama a carga no services.js se as funções existirem
+    if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
+    if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
 };
 
 window.switchProviderSubTab = function(subTab) {
