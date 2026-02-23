@@ -828,7 +828,11 @@ window.createRequestCard = createRequestCard;
 window.irParaChatComSucesso = irParaChatComSucesso;
 window.pararRadarFisico = pararRadarFisico;
 window.executarLimpezaNuclear = executarLimpezaNuclear;
+
 if(typeof alternarMinimizacao !== 'undefined') window.alternarMinimizacao = alternarMinimizacao;
+if(typeof garantirContainerRadar !== 'undefined') window.garantirContainerRadar = garantirContainerRadar;
+
+console.log("%c✅ REQUEST.JS: Sistema V24.1 blindado e exportado!", "color: #10b981; font-weight: bold;");
 
 /**
  * 🛠️ RECUPERAÇÃO DE PEDIDO (AÇÃO AUDITORIA)
