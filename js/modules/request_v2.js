@@ -886,15 +886,27 @@ window.rejeitarPermanente = async (orderId) => {
     }, 400);
 };
 
-// 🛰️ INTERRUPTOR BÁSICO
+// 🛰️ INTERRUPTOR FÍSICO COM AUTO-LIMPEZA
 export function pararRadarFisico() {
     if (radarUnsubscribe) {
+        // 🚀 GATILHO MESTRE: Checa rastro de bloqueio ou cards de alerta remanescentes
+        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert') || document.querySelector('.is-red');
+        
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
         if(window.pararSomRadar) window.pararSomRadar();
-        console.log("🛑 [SISTEMA] Radar desligado.");
-        setTimeout(() => { if(window.garantirContainerRadar) window.garantirContainerRadar(); }, 200);
+        console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
+
+        if (precisaLimpar) {
+            console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza nuclear...");
+            setTimeout(() => {
+                if(typeof window.executarLimpezaNuclear === 'function') {
+                    window.executarLimpezaNuclear();
+                }
+            }, 500);
+        } else {
+            setTimeout(() => { if(window.garantirContainerRadar) window.garantirContainerRadar(); }, 200);
+        }
     }
 }
-
