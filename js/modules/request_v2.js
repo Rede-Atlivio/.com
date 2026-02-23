@@ -876,24 +876,14 @@ window.rejeitarPermanente = async (orderId) => {
 window.garantirContainerRadar = garantirContainerRadar;
 window.pararRadarFisico = function() {
     if (radarUnsubscribe) {
-        // 🚀 GATILHO MESTRE: Checa se houve bloqueio na memória OU se o card ainda está na tela
-        const precisaLimpar = window.HOUVE_BLOQUEIO_SESSAO || document.querySelector('.is-red-alert') || document.querySelector('.is-red');
-        
         radarUnsubscribe();
         radarUnsubscribe = null;
         window.radarIniciado = false;
-        window.pararSomRadar(); // Força silêncio ao desligar
-        console.log("🛑 [SISTEMA] Radar desligado fisicamente.");
-
-        if (precisaLimpar) {
-            console.warn("⚠️ Rastro de bloqueio detectado. Executando auto-limpeza nuclear...");
-            setTimeout(() => {
-                if(typeof window.executarLimpezaNuclear === 'function') {
-                    // Se a ordem vem do Admin, aqui ainda permitimos o reload para deploy
-                        window.location.reload(true);
-                }
-            }, 500);
-        }
+        window.pararSomRadar();
+        console.log("🛑 [SISTEMA] Radar desligado fisicamente. UI preservada.");
+        
+        // Auto-cura apenas o estado do radar, sem tocar em outras abas
+        setTimeout(() => { if(typeof garantirContainerRadar === 'function') garantirContainerRadar(); }, 200);
     }
 };
 
