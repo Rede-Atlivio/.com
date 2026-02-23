@@ -775,22 +775,17 @@ try {
     }
 }
 
-// EXPORTAÇÕES GLOBAIS
+// 🌍 EXPOSIÇÃO GLOBAL V24.1 (ESTABILIZADA)
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
 window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
 window.carregarPedidosAtivos = carregarPedidosAtivos;
 window.carregarHistorico = carregarHistorico;
-window.switchProviderSubTab = switchProviderSubTab;
+window.carregarPedidosPrestador = carregarPedidosPrestador;
+window.carregarHistoricoPrestador = carregarHistoricoPrestador;
 window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
-window.carregarPedidosPrestador = carregarPedidosPrestador; // Nome padrão para o app.js
-window.carregarHistoricoPrestador = carregarHistoricoPrestador; // Habilita o histórico do prestador
-window.iniciarMonitoramentoPedidos = carregarPedidosPrestador; // Mantém compatibilidade
 window.salvarCapaPrestador = salvarCapaPrestador;
-// 🌍 EXPOSIÇÃO GLOBAL V24 (PARA O CONSOLE E APP.JS VEREM AS FUNÇÕES)
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.carregarPedidosAtivos = carregarPedidosAtivos;
-window.carregarHistorico = carregarHistorico;
-console.log("%c✅ SERVICES.JS: Funções expostas e gatilhos V24 ativos!", "color: #10b981; font-weight: bold;");
+
+console.log("%c✅ SERVICES.JS: Funções expostas e estabilização V24 ativa!", "color: #10b981; font-weight: bold;");
