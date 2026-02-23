@@ -38,22 +38,7 @@ window.ESTACIONADOS_SESSAO = new Set();
 window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
-// Rastro de segurança para o Auto-Exterminador
-window.HOUVE_BLOQUEIO_SESSAO = false;
 
-// ☢️ PROTOCOLO AUTO-EXTERMINADOR (LIMPEZA COM RELOAD FORÇADO)
-window.executarLimpezaNuclear = async function() {
-    console.log("☢️ STATUS CRÍTICO: EXECUTANDO AUTO-LIMPEZA NUCLEAR...");
-    if (navigator.serviceWorker) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let r of registrations) await r.unregister();
-    }
-    if (window.caches) {
-        const keys = await caches.keys();
-        for (let k of keys) await caches.delete(k);
-    }
-    window.location.reload(true);
-};
 // ============================================================================
 // 0. FUNÇÃO DE AUTO-CURA DO HTML (CORRIGIDA V2 - FORÇA VISIBILIDADE)
 // ============================================================================
