@@ -158,21 +158,6 @@
     </style>
 
     <script>
-    
-            const targetView = document.getElementById(`pview-${subTab}`);
-            const targetBtn = document.getElementById(`ptab-${subTab}-btn`);
-            
-            if(targetView) targetView.classList.remove('hidden');
-            if(targetBtn) targetBtn.classList.add('active');
-
-            // Lógica de desligamento físico do Radar para economizar processamento
-            if(subTab !== 'radar' && window.pararRadarFisico) {
-                window.pararRadarFisico();
-            } else if(subTab === 'radar' && window.iniciarRadarPrestador) {
-                const toggle = document.getElementById('online-toggle');
-                if(toggle && toggle.checked) window.iniciarRadarPrestador();
-            }
-        };
         window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
     </script>
 </head>
