@@ -104,7 +104,7 @@ function switchServiceSubTab(subTab) {
     if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
 }
 
-window.switchProviderSubTab = function(subTab) {
+function switchProviderSubTab(subTab) {
     console.log("🔍 Sub-aba Prestador:", subTab);
     ['radar', 'ativos', 'historico'].forEach(t => {
         const el = document.getElementById(`pview-${t}`);
@@ -117,7 +117,7 @@ window.switchProviderSubTab = function(subTab) {
 
     if(subTab === 'ativos' && window.carregarPedidosPrestador) window.carregarPedidosPrestador();
     if(subTab === 'historico' && window.carregarHistoricoPrestador) window.carregarHistoricoPrestador();
-};
+}
 console.log("✅ App Carregado: Sistema Híbrido Online.");
 
 // ============================================================================
