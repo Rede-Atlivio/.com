@@ -159,23 +159,6 @@
 
     <script>
     
-        window.switchServiceSubTab = function(subTab) {
-            ['contratar', 'andamento', 'historico'].forEach(t => {
-                document.getElementById(`view-${t}`).classList.add('hidden');
-                document.getElementById(`subtab-${t}-btn`).classList.remove('active');
-            });
-            document.getElementById(`view-${subTab}`).classList.remove('hidden');
-            document.getElementById(`subtab-${subTab}-btn`).classList.add('active');
-        };
-
-       window.switchProviderSubTab = function(subTab) {
-            ['radar', 'ativos', 'historico'].forEach(t => {
-                const view = document.getElementById(`pview-${t}`);
-                const btn = document.getElementById(`ptab-${t}-btn`);
-                if(view) view.classList.add('hidden');
-                if(btn) btn.classList.remove('active');
-            });
-
             const targetView = document.getElementById(`pview-${subTab}`);
             const targetBtn = document.getElementById(`ptab-${subTab}-btn`);
             
