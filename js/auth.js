@@ -477,8 +477,8 @@ document.addEventListener('change', async (e) => {
             iniciarRadarPrestador(uid); 
             document.getElementById('online-sound')?.play().catch(()=>{}); 
         } else { 
-            // 🧹 Chama a limpeza interna do Radar sem matar o estado global
-            if (window.executarLimpezaNuclear) window.executarLimpezaNuclear();
+            // 🛰️ Deixa o request_v2.js decidir se precisa de reload ou não
+            if (window.pararRadarFisico) window.pararRadarFisico();
             renderizarRadarOffline(); 
         }
         await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
