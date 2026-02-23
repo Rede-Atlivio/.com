@@ -21,7 +21,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🌍 INJEÇÃO DE EMERGÊNCIA V24.3
-window.iniciarRadarPrestador = (uid) => iniciarRadarPrestador(uid);
+window.iniciarRadarPrestador = async (uid) => await iniciarRadarPrestador(uid);
 
 // ⚡ GARANTIA DE ESCOPO GLOBAL: Evita erros de 'undefined' em execuções rápidas
 if (typeof window.updateDoc === 'undefined') window.updateDoc = updateDoc;
