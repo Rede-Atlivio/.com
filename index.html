@@ -227,12 +227,13 @@
                     ENTRAR COM GOOGLE
                 </button>
 
-                <div class="pt-4">
-                    <p class="text-[10px] text-slate-500 text-center leading-relaxed">
-                        Ao continuar, você concorda com nossas<br>
-                        <span onclick="window.openTerms('termos')" class="text-blue-500 font-black underline cursor-pointer">Regras de Uso</span> e 
-                        <span onclick="window.openTerms('privacidade')" class="text-blue-500 font-black underline cursor-pointer">Privacidade</span>.
-                    </p>
+                <div class="pt-4 flex flex-col items-center gap-1">
+                    <p class="text-[10px] text-slate-500">Ao continuar, você concorda com as nossas</p>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="window.openTerms('termos')" class="text-blue-500 text-[10px] font-black underline decoration-2">Regras de Uso</button>
+                        <span class="text-slate-600 text-[10px]">e</span>
+                        <button type="button" onclick="window.openTerms('privacidade')" class="text-blue-500 text-[10px] font-black underline decoration-2">Privacidade</button>
+                    </div>
                 </div>
             </div>
 
