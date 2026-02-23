@@ -1047,9 +1047,11 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         if(title) title.innerText = type === 'termos' ? "Termos de Uso ATLIVIO" : "Política de Privacidade";
         if(content) content.innerText = TEXTOS[type] || "Conteúdo não disponível.";
 
-        // Força a exibição ignorando qualquer bloqueio de classe
+        // Força a exibição e move para o topo da hierarquia do corpo
         modal.classList.remove('hidden');
         modal.style.setProperty('display', 'flex', 'important');
+        document.body.appendChild(modal); 
+        
         console.log("🔓 Abrindo documento:", type);
     };
 
