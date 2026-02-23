@@ -20,15 +20,8 @@ import {
     runTransaction
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🌍 WRAPPER DE ACESSO V24.2 (Garante execução pós-carregamento)
-window.iniciarRadarPrestador = function(uid) { 
-    if(typeof window._iniciarRadarReal === 'function') {
-        return window._iniciarRadarReal(uid);
-    } else {
-        console.warn("⏳ Radar V2 em aquecimento...");
-        setTimeout(() => window.iniciarRadarPrestador(uid), 1000);
-    }
-};
+// 🌍 INJEÇÃO DE EMERGÊNCIA V24.3
+window.iniciarRadarPrestador = (uid) => iniciarRadarPrestador(uid);
 
 // ⚡ GARANTIA DE ESCOPO GLOBAL: Evita erros de 'undefined' em execuções rápidas
 if (typeof window.updateDoc === 'undefined') window.updateDoc = updateDoc;
