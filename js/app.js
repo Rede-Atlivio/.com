@@ -51,11 +51,10 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 window.switchTab = function(tabName) {
     console.log("👉 Trocando para aba:", tabName);
 
-    // 1. Esconde todas as seções
+    // 1. Esconde todas as seções (V24 - Blindagem de Sub-abas)
     document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
+        if (el.id !== `sec-${tabName}`) el.classList.add('hidden');
     });
-
     // 2. Mostra a seção alvo
     const alvo = document.getElementById(`sec-${tabName}`);
     if(alvo) {
