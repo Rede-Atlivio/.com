@@ -5,6 +5,8 @@
 import { db, auth } from '../config.js'; 
 import { podeTrabalhar } from './wallet.js'; 
 import { 
+    // 🌍 INJEÇÃO DE EMERGÊNCIA V24
+window.iniciarRadarPrestador = iniciarRadarPrestador;
     collection, 
     addDoc, 
     serverTimestamp, 
