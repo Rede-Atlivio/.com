@@ -14,9 +14,11 @@ window.traduzirStatus = (s) => {
         'completed': '✨ Concluído',
         'cancelled': '❌ Cancelado',
         'negotiation_closed': '🤝 Encerrado',
-        'expired': '⏲️ Expirado'
+        'expired': '⏲️ Expirado',
+        'ativo': 'Ativo',
+        'rascunho': 'Rascunho'
     };
-    return mapa[s?.toLowerCase()] || 'Analisando...';
+    return mapa[s?.toLowerCase()] || s;
 };
 // ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
