@@ -124,7 +124,7 @@ console.log("✅ App Carregado: Sistema Híbrido Online.");
 // 6. MONITORAMENTO DE LOGIN E CONTROLE DO RADAR (CORREÇÃO VITAL)
 // ============================================================================
 
-window.carregarInterface = async (user) => {
+async function carregarInterface(user) {
     console.log("🚀 Inicializando Interface V12 para:", user.uid);
     
     // Alterna visibilidade das telas principais
