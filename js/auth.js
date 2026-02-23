@@ -453,10 +453,10 @@ async function verificarStatusERadar(uid) {
 }
 
 function renderizarRadarOffline() {
-    // 🛡️ BLOQUEIO DE VANDALISMO: Não apagamos mais o innerHTML.
-    // O controle visual agora é feito via classes pelo request_v2.js
+    // 🛡️ DESACOPLAMENTO V23: Apenas sinaliza o desligamento do Radar
+    // Sem interferir na visibilidade das outras abas (Andamento/Histórico)
     if (window.garantirContainerRadar) window.garantirContainerRadar();
-    console.log("💤 [AUTH] Solicitando visual offline com segurança.");
+    console.log("📡 [SISTEMA] Radar em modo espera (Offline).");
 }
 document.addEventListener('change', async (e) => {
     if (e.target && e.target.id === 'online-toggle') {
