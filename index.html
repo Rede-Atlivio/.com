@@ -424,9 +424,13 @@
                 <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-blue-600/10 rounded-full blur-2xl"></div>
                 
                 <div class="relative z-10 flex items-center gap-6">
-                    <div>
+                    <div class="flex flex-col cursor-pointer" onclick="window.definirMetaDiaria()">
                         <p id="label-ganhos-home" class="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Ganhos</p>
                         <h2 id="user-earnings-home" class="text-xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
+                        <div class="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-1.5 border border-white/5">
+                            <div id="meta-progress-bar" class="bg-blue-500 h-full transition-all duration-700 shadow-[0_0_8px_rgba(59,130,246,0.5)]" style="width: 0%"></div>
+                        </div>
+                        <p id="meta-text-home" class="text-[7px] text-gray-500 font-bold uppercase mt-1 tracking-tighter">Meta: R$ 0,00</p>
                     </div>
 
                     <div class="h-8 w-[1px] bg-white/10"></div>
