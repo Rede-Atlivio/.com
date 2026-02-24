@@ -112,7 +112,7 @@ window.alternarPerfil = async () => {
     if(overlay) overlay.classList.remove('hidden');
 
     const btn = document.getElementById('btn-trocar-perfil');
-    if(btn) { btn.innerText = "🔄 ..."; btn.disabled = true; }
+    if(btn) { btn.innerHTML = "🔄 Aguarde..."; btn.disabled = true; }
 
     try { 
         // 🔒 SET FLAG: Avisa o sistema que é uma troca de perfil, não um logout
