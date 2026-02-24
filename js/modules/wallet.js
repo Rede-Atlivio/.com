@@ -120,10 +120,15 @@ export function iniciarMonitoramentoCarteira() {
             atualizarInterfaceCarteira(saldoExibicao);
             atualizarInterfaceHeader(saldoExibicao);
             atualizarInterfaceGanhar(saldoExibicao);
-            // Sincroniza o novo Card de Ganhos da Home V24
-            const elHome = document.getElementById('user-earnings-home');
-            if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
-                elHome.innerText = `R$ ${window.userProfile.wallet_earnings.toFixed(2).replace('.', ',')}`;
+            // 💰 Sincroniza o Card de Ganhos e Saldo da Home V24
+            const elEarningsHome = document.getElementById('user-earnings-home');
+            const elBalanceHome = document.getElementById('user-balance-home');
+
+            if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
+                elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
+            }
+            if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
+                elBalanceHome.innerText = `R$ ${powerCalculado.toFixed(2).replace('.', ',')}`;
             }
             carregarHistoricoCarteira(uid);
         }
