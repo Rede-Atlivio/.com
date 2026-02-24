@@ -57,11 +57,14 @@
         .is-red-alert h2 { color: #fee2e2 !important; text-shadow: 0 0 20px rgba(239, 68, 68, 0.9); }
         .is-red-alert .bg-blue-600 { background-color: #dc2626 !important; } /* Ajusta badge de oportunidade */
 
-        /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
+        /* ✅ PADRONIZAÇÃO DARK PREMIUM */
         input, textarea, select {
-            color: #1f2937 !important; /* Cinza Escuro */
-            background-color: #f9fafb !important; /* Fundo Claro */
+            color: white !important;
+            background-color: #1e293b !important; /* Slate-800 */
+            border: 1px solid #334155 !important;
         }
+        .bg-card-premium { background-color: #1e293b; border: 1px solid #334155; }
+        .text-premium-gold { color: #fbbf24; }
 
         /* ✅ EXCEÇÃO: ONBOARDING (LETRA BRANCA) */
         #modal-onboarding input { 
