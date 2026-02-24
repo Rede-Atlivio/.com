@@ -387,25 +387,24 @@
     <div id="category-filters" class="hidden"></div>
 
     <div id="servicos-cliente" class="hidden">
-        <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+        <div id="user-header-services" class="bg-slate-800/50 p-4 rounded-[1.5rem] mb-4 border border-white/5 flex justify-between items-center hidden animate-fadeIn backdrop-blur-sm">
             <div class="flex items-center gap-3">
                 <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
-                    <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                    <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                    <img id="header-user-pic" src="" class="w-10 h-10 rounded-xl border-2 border-blue-500/30 object-cover shadow-lg" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                    <div class="absolute inset-0 bg-blue-600/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[10px]">📷</span></div>
                 </div>
                 <div>
-                    <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
-                    <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                    <h3 class="font-black text-xs text-white uppercase tracking-tight" id="header-user-name">Carregando...</h3>
+                    <p class="text-[8px] text-blue-400 font-bold uppercase mt-1 cursor-pointer hover:text-blue-300" onclick="document.getElementById('profile-upload').click()">Alterar Foto</p>
                 </div>
             </div>
         </div>
 
-        <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
-            <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
-            <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
-            <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+        <div class="flex border border-white/5 mb-6 justify-between bg-slate-800/40 rounded-2xl p-1 backdrop-blur-md">
+            <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-3 text-[9px] font-black uppercase text-center transition-all">Contratar 🔍</button>
+            <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-3 text-[9px] font-black uppercase text-center transition-all">Andamento ⏳</button>
+            <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-3 text-[9px] font-black uppercase text-center transition-all">Histórico 📜</button>
         </div>
-
         <div id="view-contratar">
             <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3 pb-24"></div>
         </div>
