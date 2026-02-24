@@ -528,9 +528,9 @@ window.filtrarGanhos = async (periodo) => {
         elEarnings.innerText = "0,00";
     }
 };
-window.definirMetaDiaria = async () => {
+async function definirMetaDiaria() {
     const novaMeta = prompt("Qual sua meta de ganhos para hoje (R$)?", "100.00");
-    if (novaMeta !== null && !isNaN(novaMeta)) {
+    if (novaMeta && !isNaN(novaMeta.replace(',', '.'))) {
         const valor = parseFloat(novaMeta.replace(',', '.'));
         try {
             const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
@@ -541,4 +541,4 @@ window.definirMetaDiaria = async () => {
             console.error("Erro ao salvar meta:", e);
         }
     }
-};
+}
