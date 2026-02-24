@@ -420,8 +420,9 @@ window.registrarMovimentacao = async (valor, tipo, descricao) => {
         });
     } catch (e) { console.error("Erro ao gravar Ledger:", e); }
 };
+
 // ============================================================================
-// EXPORTAÇÕES GLOBAIS
+// EXPORTAÇÕES GLOBAIS (V25 - ORDEM CORRIGIDA)
 // ============================================================================
 window.carregarCarteira = carregarCarteira;
 window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
