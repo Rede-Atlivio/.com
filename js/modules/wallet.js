@@ -428,6 +428,7 @@ window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
+window.definirMetaDiaria = definirMetaDiaria;
 // 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS VINDAS - PONTO CRÍTICO SOLUÇÃO BÔNUS -  LINHAS ANTES 302 A 306 DEPOIS 302 A 305
 function verificarFaixaBonus(valorBonus) {
     const jaFechou = localStorage.getItem('atlivio_bonus_visto'); 
