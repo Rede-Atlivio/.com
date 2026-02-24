@@ -403,7 +403,7 @@ function iniciarAppLogado(user) {
     if (isAdmin) document.getElementById('tab-admin')?.classList.remove('hidden');
 
     if (userProfile.is_provider) {
-        if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-blue-600">PRESTADOR</span> 🔄`;
+        if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="perfil-prestador-tag">PRESTADOR</span> 🔄`;
         const tabServ = document.getElementById('tab-servicos');
         if (tabServ) tabServ.innerText = "Serviços 🛠️";
         
