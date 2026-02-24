@@ -121,15 +121,26 @@ export function iniciarMonitoramentoCarteira() {
             atualizarInterfaceCarteira(saldoExibicao);
             atualizarInterfaceHeader(saldoExibicao);
             atualizarInterfaceGanhar(saldoExibicao);
-            // 💰 Sincroniza o Card de Ganhos e Saldo da Home V24
+           // 💰 Sincroniza Ganhos, Saldo e Meta Home V25
             const elEarningsHome = document.getElementById('user-earnings-home');
             const elBalanceHome = document.getElementById('user-balance-home');
+            const barMeta = document.getElementById('meta-progress-bar');
+            const txtMeta = document.getElementById('meta-text-home');
+            const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
 
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
                 elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
                 elBalanceHome.innerText = `R$ ${powerCalculado.toFixed(2).replace('.', ',')}`;
+            }
+
+            // Cálculo da Barra de Meta
+            if (barMeta && txtMeta) {
+                txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
+                const porcentagem = metaDefinida > 0 ? Math.min((sEarnings / metaDefinida) * 100, 100) : 0;
+                barMeta.style.width = `${porcentagem}%`;
+                barMeta.className = porcentagem >= 100 ? "bg-emerald-500 h-full transition-all duration-700" : "bg-blue-500 h-full transition-all duration-700";
             }
             carregarHistoricoCarteira(uid);
         }
