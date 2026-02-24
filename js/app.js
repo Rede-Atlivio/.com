@@ -90,15 +90,34 @@ function switchTab(tabName) {
 
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
-    ['contratar', 'andamento', 'historico'].forEach(t => {
+    
+    // 🛡️ LISTA DE SEGURANÇA: Esconde tudo antes de mostrar a nova
+    const views = ['contratar', 'andamento', 'historico'];
+    const subContainers = ['meus-pedidos-andamento', 'meus-pedidos-historico'];
+
+    views.forEach(t => {
         const el = document.getElementById(`view-${t}`);
         const btn = document.getElementById(`subtab-${t}-btn`);
-        if(el && t !== subTab) el.classList.add('hidden');
-        if(btn) btn.classList.toggle('active', t === subTab);
+        if(el) el.classList.add('hidden');
+        if(btn) btn.classList.remove('active');
     });
+
+    // Mostra apenas o alvo
     const target = document.getElementById(`view-${subTab}`);
+    const targetBtn = document.getElementById(`subtab-${subTab}-btn`);
     if(target) target.classList.remove('hidden');
+    if(targetBtn) targetBtn.classList.add('active');
     
+    // 🧹 LIMPEZA DE VAZAMENTO: Se não for a aba dela, garante que o container interno suma
+    subContainers.forEach(id => {
+        const container = document.getElementById(id);
+        if(container) {
+            // Se a aba atual NÃO for a dona do container, esconde o conteúdo interno
+            const dono = id.includes(subTab);
+            container.style.display = dono ? 'block' : 'none';
+        }
+    });
+
     if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
     if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
 }
