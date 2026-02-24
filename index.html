@@ -419,6 +419,25 @@
 
     <div id="servicos-prestador" class="hidden">
         <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+            <div class="px-2 mb-4 animate-fadeIn">
+            <div class="bg-[#0f172a] rounded-2xl p-5 shadow-xl border border-white/5 flex justify-between items-center relative overflow-hidden">
+                <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-blue-600/10 rounded-full blur-2xl"></div>
+                
+                <div class="relative z-10">
+                    <p id="label-ganhos-home" class="text-[9px] font-black text-blue-400 uppercase tracking-[0.15em] mb-1">Ganhos de Hoje</p>
+                    <div class="flex items-center gap-3">
+                        <h2 id="user-earnings-home" class="text-2xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
+                        <button onclick="window.togglePrivacyHome()" class="text-gray-500 hover:text-white transition-all transform active:scale-125">
+                            <span id="eye-icon-home" class="text-base">👁️</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button onclick="window.switchTab('ganhar')" class="relative z-10 bg-blue-600/20 text-blue-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all shadow-lg">
+                    DETALHES 💰
+                </button>
+            </div>
+        </div>
             <div class="flex items-center gap-3">
                 <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
                     <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
