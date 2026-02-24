@@ -1100,92 +1100,88 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
     if(ref) localStorage.setItem("traffic_source", ref);
 </script>
     
-<div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
-    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-        
-        <div class="bg-slate-900 p-4 rounded-t-2xl flex justify-between items-center shrink-0">
-            <h3 class="text-white font-black uppercase italic flex items-center gap-2">
-                ⚙️ Minha Conta
-            </h3>
-            <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
-        </div>
-
-        <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
+<div id="modal-settings" class="fixed inset-0 z-[160] bg-black/95 hidden items-center justify-center p-4 animate-fadeIn">
+        <div class="bg-slate-800 w-full max-w-sm rounded-[2rem] border border-slate-700 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             
-            <div class="space-y-3">
-                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b pb-1">Identidade</p>
-                
-                <div class="flex flex-col items-center mb-4">
-                    <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
-                        <img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <span class="text-xs text-white font-bold">ALTERAR</span>
-                        </div>
-                    </div>
-                    <p class="text-[9px] text-blue-500 mt-1 cursor-pointer hover:underline" onclick="document.getElementById('profile-upload').click()">Trocar Foto</p>
-                </div>
-
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label>
-                    <input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition">
-                </div>
-                
-                <div>
-                    <label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label>
-                    <input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled title="Fale com o suporte para alterar">
-                </div>
+            <div class="bg-slate-900 p-5 flex justify-between items-center border-b border-slate-700 shrink-0">
+                <h3 class="text-white font-black uppercase italic flex items-center gap-2 tracking-tighter">⚙️ Minha Conta</h3>
+                <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-slate-400 hover:text-white text-3xl font-bold">&times;</button>
             </div>
 
-            <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
-                <div class="flex justify-between items-center border-b border-green-200 pb-2">
-                    <p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p>
-                    <span class="text-lg">🤑</span>
-                </div>
+            <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
                 
-                <div class="space-y-3">
-                    <div>
-                        <label class="text-[10px] text-gray-500 font-bold">Chave PIX</label>
-                        <input type="text" id="set-pix-chave" placeholder="CPF, Email ou Aleatória" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-green-500">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[10px] text-gray-500 font-bold">Banco</label>
-                            <input type="text" id="set-pix-banco" placeholder="Ex: Nubank" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                <div class="space-y-4">
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] border-b border-slate-700 pb-1">Identidade</p>
+                    
+                    <div class="flex flex-col items-center">
+                        <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
+                            <img id="settings-pic" src="" class="w-20 h-20 rounded-[1.5rem] border-4 border-slate-700 object-cover shadow-2xl" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                            <div class="absolute inset-0 bg-blue-600/40 rounded-[1.5rem] flex items-center justify-center opacity-0 group-hover:opacity-100 transition backdrop-blur-sm">
+                                <span class="text-[8px] text-white font-black">ALTERAR</span>
+                            </div>
                         </div>
-                        <div>
-                            <label class="text-[10px] text-gray-500 font-bold">CPF Titular</label>
-                            <input type="text" id="set-pix-cpf" placeholder="000..." class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
-                        </div>
+                        <p class="text-[9px] text-blue-400 mt-2 font-bold cursor-pointer hover:underline" onclick="document.getElementById('profile-upload').click()">Trocar Foto de Perfil</p>
                     </div>
 
                     <div>
-                        <label class="text-[10px] text-gray-500 font-bold">Nome do Titular</label>
-                        <input type="text" id="set-pix-nome" placeholder="Nome igual no banco" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Nome Completo</label>
+                        <input type="text" id="set-nome" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl text-sm font-bold text-white focus:border-blue-500 outline-none transition shadow-inner">
                     </div>
                     
-                    <p class="text-[9px] text-red-600 font-bold mt-1 bg-red-50 p-2 rounded border border-red-100">
-                        ⚠️ Atenção: A conta bancária deve ser do mesmo titular do perfil.
-                    </p>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">WhatsApp</label>
+                        <input type="tel" id="set-phone" class="w-full bg-slate-700 border border-slate-600 p-3 rounded-xl text-sm font-mono text-slate-400 cursor-not-allowed" disabled title="Fale com o suporte para alterar">
+                    </div>
                 </div>
-            </div>
 
-            <div class="space-y-2 pt-2">
-                <button onclick="window.copiarLinkAfiliado()" class="w-full border border-blue-200 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-100 transition">
+                <div class="bg-slate-900/50 p-4 rounded-2xl border border-slate-700 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <p class="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Dados de Recebimento</p>
+                        <span class="text-lg">🤑</span>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Chave PIX</label>
+                            <input type="text" id="set-pix-chave" placeholder="CPF, Email ou Aleatória" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-emerald-500 transition">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Banco</label>
+                                <input type="text" id="set-pix-banco" placeholder="Ex: Nubank" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white outline-none">
+                            </div>
+                            <div>
+                                <label class="text-[9px] text-slate-500 font-black uppercase tracking-widest">CPF Titular</label>
+                                <input type="text" id="set-pix-cpf" placeholder="000..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white outline-none">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-[9px] text-slate-500 font-black uppercase tracking-widest">Nome do Titular</label>
+                            <input type="text" id="set-pix-nome" placeholder="Nome igual no banco" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm font-bold text-white outline-none">
+                        </div>
+                        
+                        <p class="text-[9px] text-red-400 font-black mt-1 bg-red-900/10 p-2 rounded-lg border border-red-900/20 italic">
+                            ⚠️ A conta bancária deve ser do mesmo titular do perfil.
+                        </p>
+                    </div>
+                </div>
+
+                <button onclick="window.copiarLinkAfiliado()" class="w-full bg-blue-600/10 border border-blue-500/20 text-blue-400 py-4 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-600/20 transition">
                     🔗 Copiar Meu Link de Indicação
                 </button>
+
             </div>
 
-        </div>
-
-        <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
-            <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
-            <button onclick="window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">
-                SALVAR ALTERAÇÕES
-            </button>
+            <div class="p-5 bg-slate-900 border-t border-slate-700 flex justify-between items-center shrink-0">
+                <span class="text-[9px] font-black text-slate-600">ID: <span id="set-uid" class="font-mono">...</span></span>
+                <button onclick="window.salvarConfiguracoes()" id="btn-save-settings" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:bg-blue-500 transition transform active:scale-95">
+                    SALVAR ALTERAÇÕES
+                </button>
+            </div>
         </div>
     </div>
-</div>
     <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
         <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
