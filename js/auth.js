@@ -434,12 +434,15 @@ function iniciarAppLogado(user) {
             document.getElementById(id)?.classList.add('hidden');
         });
         
-        setTimeout(() => { 
+       setTimeout(() => { 
             const tab = document.getElementById('tab-servicos'); 
-            if (tab) tab.click(); else if (window.carregarServicos) window.carregarServicos();
+            if (window.switchTab) window.switchTab('servicos');
+            else if (tab) tab.click();
+            
+            if (window.carregarServicos) window.carregarServicos();
             if (window.carregarVagas) window.carregarVagas(); 
             if (window.carregarOportunidades) window.carregarOportunidades();
-        }, 1000); 
+        }, 1500);
     }
 }
 
