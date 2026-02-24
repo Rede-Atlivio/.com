@@ -423,19 +423,27 @@
             <div class="bg-[#0f172a] rounded-2xl p-5 shadow-xl border border-white/5 flex justify-between items-center relative overflow-hidden">
                 <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-blue-600/10 rounded-full blur-2xl"></div>
                 
-                <div class="relative z-10">
-                    <p id="label-ganhos-home" class="text-[9px] font-black text-blue-400 uppercase tracking-[0.15em] mb-1">Meus Ganhos</p>
-                    <div class="flex items-center gap-3">
-                        <h2 id="user-earnings-home" class="text-2xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
-                        <button onclick="window.togglePrivacyHome()" class="text-gray-400 hover:text-white transition-all transform active:scale-110">
-                           <span id="eye-icon-home" class="flex items-center justify-center w-5 h-5 opacity-60 transition-all">
-    <svg id="svg-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-white">
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-        <line x1="1" y1="1" x2="23" y2="23"></line>
-    </svg>
-</span>
-                        </button>
+                <div class="relative z-10 flex items-center gap-6">
+                    <div>
+                        <p id="label-ganhos-home" class="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Ganhos</p>
+                        <h2 id="user-earnings-home" class="text-xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
                     </div>
+
+                    <div class="h-8 w-[1px] bg-white/10"></div>
+
+                    <div>
+                        <p class="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">Saldo</p>
+                        <h2 id="user-balance-home" class="text-xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
+                    </div>
+
+                    <button onclick="window.togglePrivacyHome()" class="text-gray-500 hover:text-white transition-all transform active:scale-110 ml-2">
+                        <span id="eye-icon-home" class="flex items-center justify-center w-4 h-4 opacity-60 transition-all">
+                            <svg id="svg-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-white">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </span>
+                    </button>
                 </div>
 
                 <button onclick="window.switchTab('ganhar')" class="relative z-10 bg-blue-600/10 text-blue-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all">
