@@ -177,7 +177,7 @@ onAuthStateChanged(auth, async (user) => {
                     
                     if (data.status === 'banido') console.warn("🚫 Usuário Banido.");
                     if (data.status === 'suspenso' && data.is_online) {
-                        updateDoc(doc(db, "active_providers", user.uid), { is_online: false });
+                        setDoc(doc(db, "active_providers", user.uid), { is_online: false }, { merge: true });
                     }
                     
                     // 💰 BLINDAGEM DE SALDO V13: Leitura exclusiva do campo oficial - PONTO CRÍTICO SOLUÇÃO BÔNUS
