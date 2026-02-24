@@ -481,7 +481,10 @@ document.addEventListener('change', async (e) => {
             if (window.pararRadarFisico) window.pararRadarFisico();
             renderizarRadarOffline(); 
         }
-        await updateDoc(doc(db, "active_providers", uid), { is_online: novoStatus });
+        await setDoc(doc(db, "active_providers", uid), { 
+    is_online: novoStatus,
+    last_update: serverTimestamp() 
+}, { merge: true });
     }
 });
 
