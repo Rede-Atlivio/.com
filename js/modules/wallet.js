@@ -492,9 +492,17 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
+        const valorFormatado = soma.toFixed(2).replace('.', ',');
         elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos nos últimos ${periodo} dias`;
-        elEarnings.innerText = soma.toFixed(2).replace('.', ',');
+        elEarnings.innerText = valorFormatado;
 
+        // Atualiza o Card da Home em tempo real se ele estiver visível
+        const elHome = document.getElementById('user-earnings-home');
+        const lbHome = document.getElementById('label-ganhos-home');
+        if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
+            elHome.innerText = `R$ ${valorFormatado}`;
+            if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos: ${periodo}D`;
+        }
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
         elEarnings.innerText = "0,00";
