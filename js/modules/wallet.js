@@ -526,3 +526,17 @@ window.filtrarGanhos = async (periodo) => {
         elEarnings.innerText = "0,00";
     }
 };
+window.definirMetaDiaria = async () => {
+    const novaMeta = prompt("Qual sua meta de ganhos para hoje (R$)?", "100.00");
+    if (novaMeta !== null && !isNaN(novaMeta)) {
+        const valor = parseFloat(novaMeta.replace(',', '.'));
+        try {
+            const { db, auth } = window.firebaseApp;
+            await window.firebaseFirestore.updateDoc(window.firebaseFirestore.doc(db, "usuarios", auth.currentUser.uid), {
+                wallet_daily_goal: valor
+            });
+        } catch (e) {
+            console.error("Erro ao salvar meta:", e);
+        }
+    }
+};
