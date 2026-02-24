@@ -421,15 +421,6 @@ window.registrarMovimentacao = async (valor, tipo, descricao) => {
     } catch (e) { console.error("Erro ao gravar Ledger:", e); }
 };
 
-// ============================================================================
-// EXPORTAÇÕES GLOBAIS (V25 - ORDEM CORRIGIDA)
-// ============================================================================
-window.carregarCarteira = carregarCarteira;
-window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
-window.podeTrabalhar = podeTrabalhar;
-window.processarCobrancaTaxa = processarCobrancaTaxa;
-window.atualizarCarteira = carregarCarteira;
-window.definirMetaDiaria = definirMetaDiaria;
 // 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS VINDAS - PONTO CRÍTICO SOLUÇÃO BÔNUS -  LINHAS ANTES 302 A 306 DEPOIS 302 A 305
 function verificarFaixaBonus(valorBonus) {
     const jaFechou = localStorage.getItem('atlivio_bonus_visto'); 
@@ -542,3 +533,13 @@ async function definirMetaDiaria() {
         }
     }
 }
+// ============================================================================
+// 🚀 EXPORTAÇÕES GLOBAIS (FINAL DO ARQUIVO - V25.1)
+// ============================================================================
+window.carregarCarteira = carregarCarteira;
+window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
+window.podeTrabalhar = podeTrabalhar;
+window.processarCobrancaTaxa = processarCobrancaTaxa;
+window.atualizarCarteira = carregarCarteira;
+window.definirMetaDiaria = definirMetaDiaria;
+window.filtrarGanhos = filtrarGanhos;
