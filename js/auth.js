@@ -413,7 +413,14 @@ function iniciarAppLogado(user) {
         });
         document.getElementById('servicos-cliente')?.classList.add('hidden');
         
-        setTimeout(() => { document.getElementById('tab-servicos')?.click(); }, 1000);
+        setTimeout(() => { 
+            const tabServ = document.getElementById('tab-servicos');
+            if (window.switchTab) {
+                window.switchTab('servicos');
+            } else if (tabServ) {
+                tabServ.click();
+            }
+        }, 1500);
     } else {
         if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="perfil-cliente-tag">CLIENTE</span> 🔄`;
         const tabServ = document.getElementById('tab-servicos');
