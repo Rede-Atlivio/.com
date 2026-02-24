@@ -501,12 +501,13 @@ window.filtrarGanhos = async (periodo) => {
         elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos nos últimos ${periodo} dias`;
         elEarnings.innerText = valorFormatado;
 
-        // Atualiza o Card da Home em tempo real se ele estiver visível
-        const elHome = document.getElementById('user-earnings-home');
+        // Atualiza o Card da Home em tempo real (Ganhos filtrados)
+        const elEarningsHome = document.getElementById('user-earnings-home');
         const lbHome = document.getElementById('label-ganhos-home');
-        if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
-            elHome.innerText = `R$ ${valorFormatado}`;
-            if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos: ${periodo}D`;
+        
+        if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
+            elEarningsHome.innerText = `R$ ${valorFormatado}`;
+            if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
         }
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
