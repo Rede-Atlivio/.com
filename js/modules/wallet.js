@@ -532,8 +532,8 @@ window.definirMetaDiaria = async () => {
     if (novaMeta !== null && !isNaN(novaMeta)) {
         const valor = parseFloat(novaMeta.replace(',', '.'));
         try {
-            const { db, auth } = window.firebaseApp;
-            await window.firebaseFirestore.updateDoc(window.firebaseFirestore.doc(db, "usuarios", auth.currentUser.uid), {
+            const { updateDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            await updateDoc(doc(db, "usuarios", auth.currentUser.uid), {
                 wallet_daily_goal: valor
             });
         } catch (e) {
