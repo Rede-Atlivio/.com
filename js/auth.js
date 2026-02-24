@@ -415,7 +415,7 @@ function iniciarAppLogado(user) {
         
         setTimeout(() => { document.getElementById('tab-servicos')?.click(); }, 1000);
     } else {
-        if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="text-green-600">CLIENTE</span> 🔄`;
+        if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="perfil-cliente-tag">CLIENTE</span> 🔄`;
         const tabServ = document.getElementById('tab-servicos');
         if (tabServ) tabServ.innerText = "Contratar 🛠️";
         
