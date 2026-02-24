@@ -61,15 +61,14 @@ function switchTab(tabName) {
         alvo.classList.remove('hidden');
     }
 
-    // 3. Atualiza os botões do menu (Visual)
+    // 3. Atualiza os botões do menu (Visual Sincronizado V24)
     document.querySelectorAll('nav button').forEach(btn => {
-        btn.classList.remove('border-blue-600', 'text-blue-900', 'active');
-        btn.classList.add('border-transparent', 'text-gray-400');
+        btn.classList.remove('active');
     });
 
     const activeBtn = document.getElementById(`tab-${tabName}`);
     if(activeBtn) {
-        activeBtn.classList.add('border-blue-600', 'text-blue-900', 'active');
+        activeBtn.classList.add('active');
     }
 
     // 4. 🔥 GATILHOS DE CARREGAMENTO (Saneados)
