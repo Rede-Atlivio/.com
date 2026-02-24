@@ -714,9 +714,19 @@ window.atualizarMinimo = (select) => {
     }
 
     const msg = document.getElementById('msg-min-price');
-    document.getElementById('prov-price').placeholder = `Mínimo: R$ ${Number(min).toFixed(2).replace('.', ',')}`;
-    msg.innerText = `⚠️ Valor Mínimo: R$ ${Number(min).toFixed(2).replace('.', ',')}`;
-    msg.classList.remove('hidden');
+    const inputPreco = document.getElementById('prov-price');
+
+    // 🛡️ TRAVA ANTI-NAN: Garante que 'min' seja número e nunca vazio
+    const valorMinSeguro = parseFloat(min || 0); 
+
+    if (inputPreco) {
+        inputPreco.placeholder = `Mínimo: R$ ${valorMinSeguro.toFixed(2).replace('.', ',')}`;
+    }
+
+    if (msg) {
+        msg.innerText = `⚠️ Valor Mínimo: R$ ${valorMinSeguro.toFixed(2).replace('.', ',')}`;
+        msg.classList.remove('hidden');
+    }
 };
 
 export async function salvarServicoPrestador() {
