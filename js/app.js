@@ -202,3 +202,21 @@ window.switchTab = switchTab;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
+// 🔒 PRIVACIDADE DE GANHOS (ESTILO BANCÁRIO)
+window.togglePrivacyHome = () => {
+    const el = document.getElementById('user-earnings-home');
+    const eye = document.getElementById('eye-icon-home');
+    const isHidden = el.getAttribute('data-hidden') === 'true';
+
+    if (isHidden) {
+        // Recupera o valor que está no perfil global
+        const valorReal = (window.userProfile?.wallet_earnings_today || 0).toFixed(2).replace('.', ',');
+        el.innerText = `R$ ${valorReal}`;
+        el.setAttribute('data-hidden', 'false');
+        eye.innerText = '👁️';
+    } else {
+        el.innerText = 'R$ •••••';
+        el.setAttribute('data-hidden', 'true');
+        eye.innerText = '🙈';
+    }
+};
