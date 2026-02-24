@@ -103,6 +103,7 @@ export function iniciarMonitoramentoCarteira() {
             // 🛡️ SINCRONIA V12: Poder de Compra (Real + Bônus)
             const sReal = parseFloat(data.wallet_balance || 0);
             const sBonus = parseFloat(data.wallet_bonus || 0);
+            const sEarnings = parseFloat(data.wallet_earnings || 0); // ✅ Adicionado para a Home
             const powerCalculado = sReal + sBonus;
 
             // Alinha o perfil global com o campo reflexo do banco
