@@ -203,8 +203,9 @@ onAuthStateChanged(auth, async (user) => {
                         if (userProfile.is_provider) {
                             verificarStatusERadar(user.uid);
                         }
-                    }
-            } catch (err) { 
+                    } // Fecha o else (Carregamento de perfil)
+                } // Fecha o if (!docSnap.exists())
+            } catch (err) {
                 console.error("Erro perfil:", err); 
                 iniciarAppLogado(user); 
             }
