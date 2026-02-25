@@ -184,7 +184,12 @@ async function carregarInterface(user) {
              window.pararRadarFisico();
         }
     }
-    // ----------------------------------------------------
+
+    // 🎯 GATILHO MAESTRO: Direciona o usuário para a vitrine principal UMA única vez.
+    if (window.switchTab) {
+        console.log("🎯 [Maestro] Direcionando usuário para Serviços...");
+        window.switchTab('servicos', true); 
+    }
 };
 
 auth.onAuthStateChanged(async (user) => {
