@@ -50,9 +50,11 @@ window.atlivioBootConcluido = false;
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
-function switchTab(tabName) {
-    console.log("👉 Trocando para aba:", tabName);
+function switchTab(tabName, isAutoBoot = false) {
+    // ✋ Válvula de Retenção: Se for disparado pelo sistema e já tiver inicializado, aborta.
+    if (isAutoBoot && window.atlivioBootConcluido) return;
 
+    console.log("👉 Trocando para aba:", tabName);
     // 1. Esconde todas as seções (V24 - Blindagem de Sub-abas)
     document.querySelectorAll('main > section').forEach(el => {
         if (el.id !== `sec-${tabName}`) el.classList.add('hidden');
