@@ -397,21 +397,24 @@ export async function iniciarRadarPrestador(uidManual = null) {
     window.HOUVE_BLOQUEIO_SESSAO = false;
   if (radarUnsubscribe) radarUnsubscribe();
 
-    const configRef = doc(db, "settings", "financeiro");
-    
-    getDoc(configRef).then(s => { 
-        if(s.exists()) {
-            const data = s.data();
-            let taxaPlataforma = parseFloat(data.taxa_plataforma || 0);
-            if (taxaPlataforma > 1) taxaPlataforma = taxaPlataforma / 100;
+    // 🛡️ VÁLVULA FINANCEIRA V26: Só consulta o banco se o cache local estiver vazio
+    if (!window.taxasSincronizadasRadar) {
+        const configRef = doc(db, "settings", "financeiro");
+        getDoc(configRef).then(s => { 
+            if(s.exists()) {
+                const data = s.data();
+                let taxaPlataforma = parseFloat(data.taxa_plataforma || 0);
+                if (taxaPlataforma > 1) taxaPlataforma = taxaPlataforma / 100;
 
-            window.CONFIG_FINANCEIRA = {
-                taxa: taxaPlataforma, // Taxa para exibição de lucro no card
-                limite: parseFloat(data.limite_divida || 0)
-            };
-            console.log("💰 [RADAR] Configurações financeiras sincronizadas.");
-        }
-    });
+                window.CONFIG_FINANCEIRA = {
+                    taxa: taxaPlataforma,
+                    limite: parseFloat(data.limite_divida || 0)
+                };
+                window.taxasSincronizadasRadar = true;
+                console.log("💰 [ESCALA] Taxas sincronizadas com sucesso.");
+            }
+        }).catch(() => { window.taxasSincronizadasRadar = false; });
+    }
 
     garantirContainerRadar();
 
