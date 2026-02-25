@@ -145,10 +145,10 @@ onAuthStateChanged(auth, async (user) => {
 
         const userRef = doc(db, "usuarios", user.uid);
         
-        // 2. Monitoramento Real-time do Perfil
-        onSnapshot(userRef, async (docSnap) => {
-            try {
-                if (!docSnap.exists()) {
+        // 2. Monitoramento Real-time do Perfil (V25 Blindada)
+        onSnapshot(userRef, async (docSnap) => {
+            try {
+                if (!docSnap.exists()) {
                     // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
                     const trafficSource = localStorage.getItem("traffic_source") || "direct";
                     const novoPerfil = { 
