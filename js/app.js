@@ -45,6 +45,8 @@ import './modules/user_notifications.js';
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
+// 🛡️ MAESTRO V25: Flag de controle para impedir loops de inicialização
+window.atlivioBootConcluido = false;
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
