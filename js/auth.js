@@ -427,15 +427,7 @@ function iniciarAppLogado(user) {
             document.getElementById(id)?.classList.add('hidden');
         });
         
-       setTimeout(() => { 
-            const tab = document.getElementById('tab-servicos'); 
-            if (window.switchTab) window.switchTab('servicos');
-            else if (tab) tab.click();
-            
-            if (window.carregarServicos) window.carregarServicos();
-            if (window.carregarVagas) window.carregarVagas(); 
-            if (window.carregarOportunidades) window.carregarOportunidades();
-        }, 1500);
+       // 🛡️ Sincronização Maestro: A interface cliente será estabilizada pelo carregamento único.
     }
 }
 
