@@ -147,7 +147,11 @@ console.log("✅ App Carregado: Sistema Híbrido Online.");
 // ============================================================================
 
 async function carregarInterface(user) {
-    console.log("🚀 Inicializando Interface V12 para:", user.uid);
+    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Evita as 6 chamadas)
+    if (window.atlivioBootConcluido) return;
+    window.atlivioBootConcluido = true;
+
+    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
     
     // Alterna visibilidade das telas principais
     document.getElementById('auth-container')?.classList.add('hidden');
