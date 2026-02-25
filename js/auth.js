@@ -201,12 +201,9 @@ onAuthStateChanged(auth, async (user) => {
                         iniciarAppLogado(user); 
                         
                         if (userProfile.is_provider) {
-                            
-                        if (userProfile.is_provider) {
                             verificarStatusERadar(user.uid);
                         }
                     }
-                }
             } catch (err) { 
                 console.error("Erro perfil:", err); 
                 iniciarAppLogado(user); 
