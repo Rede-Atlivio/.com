@@ -212,8 +212,10 @@ auth.onAuthStateChanged(async (user) => {
             iniciarMonitoramentoCarteira();
         }
         
-        // 🖥️ Montagem da Interface
-        window.carregarInterface(user);
+       // 🖥️ Montagem da Interface (Chamada única controlada)
+        if (!window.atlivioBootConcluido) {
+            window.carregarInterface(user);
+        }
 
     } else {
         console.log("🚪 Usuário Desconectado.");
