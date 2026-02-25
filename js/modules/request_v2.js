@@ -39,6 +39,9 @@ window.REJEITADOS_SESSAO = new Set();
 // Gerenciador de Áudio Único (Estilo Uber)
 window.audioRadarAtivo = null;
 
+// 🛡️ ESCALA V26: Impede leituras redundantes de taxas financeiras (Economia de 80%)
+window.taxasSincronizadasRadar = false;
+
 // Rastro de segurança para o Auto-Exterminador
 window.HOUVE_BLOQUEIO_SESSAO = false;
 
