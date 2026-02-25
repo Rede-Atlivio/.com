@@ -421,7 +421,10 @@ export async function iniciarRadarPrestador(uidManual = null) {
     const q = query(collection(db, "orders"), where("provider_id", "==", uid), where("status", "==", "pending"));
     
     radarUnsubscribe = onSnapshot(q, (snapshot) => {
-        const toggle = document.getElementById('online-toggle');
+        // ✋ Bloqueio de Segurança: Impede processamento se o radar foi desligado no meio da viagem
+        if (!radarUnsubscribe) return;
+
+        const toggle = document.getElementById('online-toggle');
         
        if (toggle && !toggle.checked) {
             window.pararRadarFisico();
