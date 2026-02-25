@@ -397,8 +397,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
     window.HOUVE_BLOQUEIO_SESSAO = false;
   if (radarUnsubscribe) radarUnsubscribe();
 
-    // 🛡️ VÁLVULA FINANCEIRA V26: Só consulta o banco se o cache local estiver vazio
-    if (!window.taxasSincronizadasRadar) {
+    // 🛡️ VÁLVULA DE BLOQUEIO IMEDIATO: Impede as 4 chamadas no boot
+    if (window.taxasSincronizadasRadar === false) {
+        window.taxasSincronizadasRadar = 'loading'; // Tranca a porta instantaneamente
         const configRef = doc(db, "settings", "financeiro");
         getDoc(configRef).then(s => { 
             if(s.exists()) {
@@ -411,7 +412,7 @@ export async function iniciarRadarPrestador(uidManual = null) {
                     limite: parseFloat(data.limite_divida || 0)
                 };
                 window.taxasSincronizadasRadar = true;
-                console.log("💰 [ESCALA] Taxas sincronizadas com sucesso.");
+                console.log("💰 [ESCALA] Sincronia única realizada.");
             }
         }).catch(() => { window.taxasSincronizadasRadar = false; });
     }
