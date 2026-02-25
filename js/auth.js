@@ -413,14 +413,7 @@ function iniciarAppLogado(user) {
         });
         document.getElementById('servicos-cliente')?.classList.add('hidden');
         
-        setTimeout(() => { 
-            const tabServ = document.getElementById('tab-servicos');
-            if (window.switchTab) {
-                window.switchTab('servicos');
-            } else if (tabServ) {
-                tabServ.click();
-            }
-        }, 1500);
+        // 🛡️ Sincronização Maestro: A aba será aberta pelo app.js uma única vez.
     } else {
         if (btnPerfil) btnPerfil.innerHTML = isAdmin ? `🛡️ ADMIN` : `Sou: <span class="perfil-cliente-tag">CLIENTE</span> 🔄`;
         const tabServ = document.getElementById('tab-servicos');
