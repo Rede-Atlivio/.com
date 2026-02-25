@@ -188,7 +188,9 @@ async function carregarInterface(user) {
     // 🎯 GATILHO MAESTRO: Direciona o usuário para a vitrine principal UMA única vez.
     if (window.switchTab) {
         console.log("🎯 [Maestro] Direcionando usuário para Serviços...");
-        window.switchTab('servicos', true); 
+       setTimeout(() => {
+    if (window.switchTab) window.switchTab('servicos', true);
+}, 300); // 300ms é o tempo suficiente para o DOM estabilizar
     }
 };
 
