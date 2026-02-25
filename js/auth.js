@@ -201,10 +201,10 @@ onAuthStateChanged(auth, async (user) => {
                         iniciarAppLogado(user); 
                         
                         if (userProfile.is_provider) {
-    verificarStatusERadar(user.uid);
-    // Auto-disparo desativado para não irritar o usuário. 
-    // Ele só abre se clicar no botão "MEUS SERVIÇOS".
-}
+                            
+                        if (userProfile.is_provider) {
+                            verificarStatusERadar(user.uid);
+                        }
                     }
                 }
             } catch (err) { 
