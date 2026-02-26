@@ -341,6 +341,7 @@ auth.onAuthStateChanged(async (user) => {
 // 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
 // 🌍 EXPOSIÇÃO GLOBAL MAESTRO V28 (Garantia de Navegação)
 window.switchTab = switchTab;
+window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
