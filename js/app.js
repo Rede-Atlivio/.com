@@ -216,40 +216,54 @@ window.renderizarTourBoasVindas = function() {
 
     container.innerHTML = `
         <div class="animate-fadeIn p-6 space-y-8 w-full max-w-sm mx-auto">
-            <div class="space-y-2">
-                <h2 class="text-3xl font-black text-blue-900 italic tracking-tighter uppercase">👋 Olá!</h2>
-                <p class="text-gray-500 font-bold text-sm uppercase tracking-widest leading-tight">Escolha como quer usar a Atlivio hoje:</p>
+            <div class="space-y-2 text-center">
+                <h2 class="text-4xl font-black text-blue-900 italic tracking-tighter uppercase">Atlívio</h2>
+                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+                <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">Ecossistema de Oportunidades</p>
             </div>
 
             <div class="grid gap-4">
-                <button onclick="window.salvarIntencaoMaestro('servicos')" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-500 transition-all shadow-sm active:scale-95 group text-left">
-                    <span class="text-3xl group-hover:scale-110 transition">🛠️</span>
+                <button onclick="window.finalizarTourMusculado('servicos', ['cliente_final', 'contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-600 transition-all shadow-md active:scale-95 group text-left">
+                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">🛠️</div>
                     <div>
-                        <p class="font-black text-blue-900 uppercase text-xs">Contratar Serviço</p>
-                        <p class="text-[9px] text-gray-400 font-bold">Preciso de um profissional agora</p>
+                        <p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p>
+                        <p class="text-[9px] text-gray-400 font-bold">Serviços rápidos e profissionais</p>
                     </div>
                 </button>
 
-                <button onclick="window.salvarIntencaoMaestro('ganhar')" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-500 transition-all shadow-sm active:scale-95 group text-left">
-                    <span class="text-3xl group-hover:scale-110 transition">⚡</span>
+                <button onclick="window.finalizarTourMusculado('ganhar', ['prestador', 'renda_extra', 'micro_tarefas'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-600 transition-all shadow-md active:scale-95 group text-left">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">⚡</div>
                     <div>
-                        <p class="font-black text-emerald-700 uppercase text-xs">Ganhar Renda Extra</p>
-                        <p class="text-[9px] text-gray-400 font-bold">Quero trabalhar e cumprir missões</p>
+                        <p class="font-black text-emerald-700 uppercase text-xs">Quero Ganhar Renda</p>
+                        <p class="text-[9px] text-gray-400 font-bold">Missões, tarefas e serviços</p>
                     </div>
                 </button>
 
-                <button onclick="window.salvarIntencaoMaestro('empregos')" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 hover:border-orange-500 transition-all shadow-sm active:scale-95 group text-left">
-                    <span class="text-3xl group-hover:scale-110 transition">💼</span>
+                <button onclick="window.finalizarTourMusculado('empregos', ['clt', 'carreira', 'vagas_fixas'])" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 hover:border-orange-600 transition-all shadow-md active:scale-95 group text-left">
+                    <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-orange-600 group-hover:text-white transition">💼</div>
                     <div>
-                        <p class="font-black text-orange-700 uppercase text-xs">Procurar Emprego</p>
+                        <p class="font-black text-orange-700 uppercase text-xs">Buscar Emprego</p>
                         <p class="text-[9px] text-gray-400 font-bold">Vagas fixas e oportunidades CLT</p>
                     </div>
                 </button>
-
-                <button onclick="window.switchTab('servicos')" class="text-[10px] font-black text-gray-400 uppercase underline mt-4 hover:text-blue-500 transition">Só dar uma olhada por enquanto</button>
             </div>
+
+            <p class="text-[9px] text-center text-gray-400 font-bold px-4 uppercase leading-relaxed">
+                Ao escolher, seu perfil será otimizado para os melhores anunciantes e vagas.
+            </p>
         </div>
     `;
+};
+
+// ⚡ FUNÇÃO DE FINALIZAÇÃO (Ponte entre UI e Ad-Engine)
+window.finalizarTourMusculado = (escolha, tags) => {
+    console.log("🎯 Finalizando Tour Musculado para:", escolha);
+    window.registrarEventoMaestro({ 
+        tipo: "tour_final", 
+        escolha: escolha, 
+        tags: tags 
+    });
+    window.switchTab(escolha);
 };
 
 // 🛰️ DISPATCHER AD-ENGINE V35 (CONTROLE DE ESCALA)
