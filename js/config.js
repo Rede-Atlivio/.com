@@ -23,7 +23,8 @@ const db = getFirestore(app);
 const storage = getStorage(app); 
 const provider = new GoogleAuthProvider();
 
-// 3. EXPOSIÇÃO GLOBAL (Para seus testes no console funcionarem)
+// 3. EXPOSIÇÃO GLOBAL
+window.app = app; // <--- ADICIONE ESTA LINHA
 window.auth = auth;
 window.db = db;
 window.storage = storage;
