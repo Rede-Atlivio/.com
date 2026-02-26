@@ -85,7 +85,6 @@ function switchTab(tabName, isAutoBoot = false) {
   }
 
 function switchServiceSubTab(subTab) {
-function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
     
     // 🛡️ LISTA DE SEGURANÇA: Esconde tudo antes de mostrar a nova
