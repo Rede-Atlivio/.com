@@ -219,46 +219,44 @@ async function carregarInterface(user) {
         }
     }
 
-// ============================================================================
-// 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
-// ============================================================================
-if (window.switchTab) {
-    console.log("🎯 [Maestro] Analisando intenção do usuário...");
-    
-    // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
- setTimeout(() => {
-        // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
-        window.switchTab('home', true); 
+    // ============================================================================
+    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
+    // ============================================================================
+    if (window.switchTab) {
+        console.log("🎯 [Maestro] Analisando intenção do usuário...");
+        
+        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
+        setTimeout(() => {
+            // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
+            window.switchTab('home', true); 
 
-        const userIntent = window.userProfile?.user_intent || "";
+            const userIntent = window.userProfile?.user_intent || "";
 
-        if (userIntent && userIntent !== "") {
-            console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
-            
-            // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
-            setTimeout(() => {
-                // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
-                const mapaFiel = {
-                    'ganhar': 'missoes', 
-                    'loja': 'loja',      
-                    'produtos': 'loja',  // Redireciona lixo para o ID oficial
-                    'servicos': 'servicos'
-                };
+            if (userIntent && userIntent !== "") {
+                console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
                 
-                const destinoOficial = mapaFiel[userIntent] || userIntent;
-                window.switchTab(destinoOficial);
-            }, 800); 
+                // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
+                setTimeout(() => {
+                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
+                    const mapaFiel = {
+                        'ganhar': 'missoes', 
+                        'loja': 'loja',      
+                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
+                        'servicos': 'servicos'
+                    };
+                    
+                    const destinoOficial = mapaFiel[userIntent] || userIntent;
+                    window.switchTab(destinoOficial);
+                }, 800); 
 
-       } else {
-                    console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-                    window.switchTab('home');
-                    window.renderizarTourBoasVindas(); 
-                }
-            }, 800); 
-        }
-    }, 600); 
-}
-
+            } else {
+                console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
+                window.switchTab('home');
+                window.renderizarTourBoasVindas(); 
+            }
+        }, 600); // Fecha o setTimeout principal de 600ms
+    }
+} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
