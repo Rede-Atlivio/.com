@@ -310,10 +310,16 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 // 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
+// 🌍 EXPOSIÇÃO GLOBAL MAESTRO V28 (Garantia de Navegação)
 window.switchTab = switchTab;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
+
+// 🧭 NOVAS FUNÇÕES DO TOUR
+if (typeof renderizarTourBoasVindas === 'function') {
+    window.renderizarTourBoasVindas = renderizarTourBoasVindas;
+}
 // 🔒 PRIVACIDADE DE GANHOS (ESTILO BANCÁRIO)
 window.togglePrivacyHome = () => {
     const elEarnings = document.getElementById('user-earnings-home');
