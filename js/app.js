@@ -177,9 +177,19 @@ async function carregarInterface(user) {
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
-    // Alterna visibilidade das telas principais
+    // 🚀 [Maestro] DESTRAVAMENTO VISUAL: Mata o loader e libera o container
+    const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
+    if(loader) {
+        loader.classList.add('hidden');
+        loader.style.display = 'none';
+    }
+
     document.getElementById('auth-container')?.classList.add('hidden');
-    document.getElementById('app-container')?.classList.remove('hidden');
+    const mainApp = document.getElementById('app-container');
+    if(mainApp) {
+        mainApp.classList.remove('hidden');
+        mainApp.style.display = 'block';
+    }
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
     const toggle = document.getElementById('online-toggle');
