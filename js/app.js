@@ -66,21 +66,26 @@ window.addEventListener('userProfileLoaded', (e) => {
 function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
-    console.log("👉 [Navegação] Aba:", tabName);
-    window.abaAtual = tabName; 
+    // 🗺️ MAPA DE TRADUÇÃO: Garante que IDs antigos/duplicados caiam na seção certa
+    const mapa = { 'ganhar': 'missoes', 'produtos': 'loja', 'loja': 'loja' };
+    const nomeLimpo = mapa[tabName] || tabName;
 
-    // 🧹 LIMPEZA TOTAL: Esconde absolutamente todas as seções, incluindo duplicatas
+    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
+    window.abaAtual = nomeLimpo; 
+
+    // 🧹 LIMPEZA TOTAL: Esconde todas as seções e mata duplicatas
     document.querySelectorAll('main > section').forEach(el => {
         el.classList.add('hidden');
-        el.style.display = 'none'; // Reforço físico
+        el.style.display = 'none';
     });
 
-    const alvo = document.getElementById(`sec-${tabName}`);
+    const alvo = document.getElementById(`sec-${nomeLimpo}`);
     if(alvo) {
         alvo.classList.remove('hidden');
         alvo.style.display = 'block';
+    } else {
+        console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
     }
-
     document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(`tab-${tabName}`);
     if(activeBtn) activeBtn.classList.add('active');
