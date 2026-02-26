@@ -49,9 +49,24 @@ import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "h
         // Se não houver nada novo, encerra aqui
         if (snap.empty) return;
 
-        // Pega a mais recente e mostra a barra
+        // 🧠 FILTRO INTELIGENTE V28: Não interrompe o usuário se ele já estiver no lugar certo
         const notif = snap.docs[0];
-        mostrarBarraNotificacao(notif.id, notif.data());
+        const dados = notif.data();
+        const abaAtual = window.abaAtual || 'servicos';
+
+        // Mapeamento de silêncio: Se a notificação é de chat e estou no chat, silencie.
+        const jaEstaNoLugar = (dados.action === 'chat' && abaAtual === 'chat') || 
+                              (dados.action === 'wallet' && abaAtual === 'ganhar') ||
+                              (dados.action === 'services' && abaAtual === 'servicos');
+
+        if (jaEstaNoLugar) {
+            console.log(`🔕 Notificação de ${dados.action} silenciada: Usuário já está na aba.`);
+            // Opcional: Marcar como lido automaticamente se quiser limpar o banco
+            // window.fecharNotificacao(notif.id); 
+            return;
+        }
+
+        mostrarBarraNotificacao(notif.id, dados);
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
