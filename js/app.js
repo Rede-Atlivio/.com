@@ -269,8 +269,8 @@ window.registrarEventoMaestro = async function(dadosEvento) {
 
         if (dadosEvento.tipo === "retencao") {
             const peso = Math.min(dadosEvento.segundos / 5, 10);
-            payload[`behavior.${dadosEvento.aba}.score`] = increment(peso);
-            payload[`behavior.${dadosEvento.aba}.tempo_total`] = increment(dadosEvento.segundos);
+            payload[`behavior.${dadosEvento.aba}.score`] = modules.increment(peso);
+            payload[`behavior.${dadosEvento.aba}.tempo_total`] = modules.increment(dadosEvento.segundos);
         }
 
         if (dadosEvento.tipo === "navegacao") {
