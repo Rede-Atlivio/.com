@@ -374,6 +374,12 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 // 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
+// 🩹 POLYFILL DE COMPATIBILIDADE (Evita quebras em módulos reprovados para edição)
+if (window.userProfile) {
+    Object.defineProperty(window.userProfile, 'saldo', {
+        get: function() { return this.wallet_balance || 0; }
+    });
+}
 // 🌍 EXPOSIÇÃO GLOBAL MAESTRO V28 (Garantia de Navegação)
 window.switchTab = switchTab;
 window.registrarEventoMaestro = registrarEventoMaestro;
