@@ -259,7 +259,7 @@ window.registrarEventoMaestro = async function(dadosEvento) {
     if (agora - lastEventTime < 2000 && dadosEvento.tipo !== 'tour_final') return; 
     lastEventTime = agora;
 
-    const uid = auth.currentUser?.uid;
+    const uid = window.auth?.currentUser?.uid;
     if (!uid) return;
 
     try {
