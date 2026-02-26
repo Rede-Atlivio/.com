@@ -143,8 +143,11 @@ window.acaoNotificacao = async (id, action) => {
         if(tab) tab.click();
     }
     else if(action === 'jobs') {
-        const tab = document.getElementById('tab-vagas'); // Se existir botão direto
+        const tab = document.getElementById('tab-vagas'); 
         if(tab) tab.click();
         else if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
+    }
+    else if(action === 'chat') {
+        if(window.switchTab) window.switchTab('chat');
     }
 };
