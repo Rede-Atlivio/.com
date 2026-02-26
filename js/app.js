@@ -191,23 +191,29 @@ if (window.switchTab) {
     console.log("🎯 [Maestro] Analisando intenção do usuário...");
     
     // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
-   setTimeout(() => {
-    // 🛡️ PROTEÇÃO: Garante que o Loader suma mesmo se o banco demorar
-    window.switchTab('home', true); 
+ setTimeout(() => {
+        // 🛡️ PROTEÇÃO: Garante que o Loader suma mesmo se o banco demorar
+        window.switchTab('home', true); 
 
-    const userIntent = window.userProfile?.user_intent || "";
+        const userIntent = window.userProfile?.user_intent || "";
 
-    if (userIntent && userIntent !== "") {
-        console.log(`🚀 [Maestro] Redirecionando para: ${userIntent}`);
-        
-        // ⏱️ AUMENTO DE DELAY (Essencial para sincronia dos módulos .js)
-        setTimeout(() => {
-            // Normalização: Se o banco diz 'ganhar', o Maestro abre 'missoes'
-            const destinoReal = userIntent === 'ganhar' ? 'missoes' : userIntent;
-            window.switchTab(destinoReal);
-        }, 350); 
+        if (userIntent && userIntent !== "") {
+            console.log(`🚀 [Maestro] Redirecionando para: ${userIntent}`);
+            
+            // ⏱️ DELAY DE SANEAMENTO V26: 800ms para garantir que wallet e services injetaram no window
+            setTimeout(() => {
+                // 🗺️ DICIONÁRIO DE INTENÇÕES (Normalização de IDs)
+                const mapaIntent = {
+                    'ganhar': 'missoes', // Redireciona intenção do banco para o ID da seção
+                    'loja': 'loja',      // Já corrigido para bater com sec-loja
+                    'servicos': 'servicos'
+                };
+                
+                const destinoReal = mapaIntent[userIntent] || userIntent;
+                window.switchTab(destinoReal);
+            }, 800); 
 
-    } else {
+        } else {
         console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
         // Se a intenção for vazia, limpamos o loader e mostramos o Tour
         document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
