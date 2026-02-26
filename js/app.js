@@ -252,38 +252,52 @@ window.renderizarTourBoasVindas = function() {
     `;
 };
 
-// 💾 SALVAMENTO DE INTENÇÃO (VERSÃO CORRIGIDA V30)
-window.salvarIntencaoMaestro = async function(escolha) {
+// 🛰️ DISPATCHER AD-ENGINE V35 (CONTROLE DE ESCALA)
+let lastEventTime = 0;
+window.registrarEventoMaestro = async function(dadosEvento) {
+    const agora = Date.now();
+    if (agora - lastEventTime < 2000 && dadosEvento.tipo !== 'tour_final') return; 
+    lastEventTime = agora;
+
     const uid = auth.currentUser?.uid;
-    if (!uid) {
-        console.warn("❌ [Maestro] Nenhum usuário autenticado para salvar intenção.");
-        return;
-    }
+    if (!uid) return;
 
     try {
-        // Usa os módulos que você já preparou no config.js
-        const { doc, updateDoc } = window.firebaseModules;
-        
-        if (!doc || !updateDoc) {
-            throw new Error("Módulos do Firebase não encontrados no window.firebaseModules");
+        const { doc, updateDoc, increment, addDoc, collection } = window.firebaseModules;
+        const userRef = doc(db, "usuarios", uid);
+        const payload = { "updated_at": new Date() };
+
+        if (dadosEvento.tipo === "retencao") {
+            const peso = Math.min(dadosEvento.segundos / 5, 10);
+            payload[`behavior.${dadosEvento.aba}.score`] = increment(peso);
+            payload[`behavior.${dadosEvento.aba}.tempo_total`] = increment(dadosEvento.segundos);
         }
 
-        console.log(`📡 [Maestro] Tentando salvar intenção: ${escolha}...`);
+        if (dadosEvento.tipo === "navegacao") {
+            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
+            payload.user_intent = dadosEvento.aba;
+        }
 
-        await updateDoc(doc(db, "usuarios", uid), {
-            user_intent: escolha,
-            tour_complete: true,
-            last_access_at: new Date() 
+        if (dadosEvento.tipo === "tour_final") {
+            payload.user_intent = dadosEvento.escolha;
+            payload.tour_complete = true;
+        }
+
+        await updateDoc(userRef, payload);
+        // Gravação em Log Bruto para Auditoria Nível 1000
+        await addDoc(collection(db, "events"), { 
+            uid, tipo: dadosEvento.tipo, aba: dadosEvento.aba || dadosEvento.escolha, timestamp: new Date() 
         });
-        
-        console.log(`✅ [Maestro] Intenção '${escolha}' gravada com sucesso no Firestore!`);
-        window.switchTab(escolha);
 
     } catch (e) {
-        console.error("❌ [Maestro] Erro crítico ao salvar no Firestore:", e.message);
-        // Mesmo se falhar o banco, ele troca a aba para não travar o usuário
-        window.switchTab(escolha);
+        console.warn("⚠️ Falha na Telemetria:", e.message);
     }
+};
+
+// Válvula de compatibilidade para o Tour
+window.salvarIntencaoMaestro = (escolha) => {
+    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
+    window.switchTab(escolha);
 };
 auth.onAuthStateChanged(async (user) => {
     if (user) {
