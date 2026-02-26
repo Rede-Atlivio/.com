@@ -136,6 +136,7 @@ window.switchView = async function(viewName) {
     else if (viewName === 'opportunities') { moduleFile = './opportunities.js'; containerId = 'view-list'; }
     else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-list'; } // <--- LINHA NOVA AQUI!
     else if (viewName === 'automation') { moduleFile = './automation.js'; containerId = 'view-automation'; }
+    else if (viewName === 'maestro') { moduleFile = './automation.js'; containerId = 'view-maestro'; }
     else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
     else if (viewName === 'settings') { 
         moduleFile = './settings.js'; 
