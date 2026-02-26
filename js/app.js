@@ -82,7 +82,9 @@ function switchTab(tabName, isAutoBoot = false) {
     if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-} // <--- CHAVE DE FECHAMENTO RECUPERADA AQUI
+  }
+
+function switchServiceSubTab(subTab) {
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
     
