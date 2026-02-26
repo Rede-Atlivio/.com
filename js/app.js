@@ -191,27 +191,32 @@ if (window.switchTab) {
     console.log("🎯 [Maestro] Analisando intenção do usuário...");
     
     // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
-    setTimeout(() => {
-        // 1. Força a limpeza visual do estado de "Sincronizando"
-        window.switchTab('home', true);
+   setTimeout(() => {
+    // 🛡️ PROTEÇÃO: Garante que o Loader suma mesmo se o banco demorar
+    window.switchTab('home', true); 
 
-        // 2. Busca a intenção (Prioriza o que veio do banco, mas aceita memória)
-        const userIntent = window.userProfile?.user_intent || "";
+    const userIntent = window.userProfile?.user_intent || "";
 
-        if (userIntent && userIntent !== "") {
-            console.log(`🚀 Usuário recorrente: Direcionando para ${userIntent}`);
-            
-            // 🔄 Pequeno delay adicional para garantir que os módulos (jobs.js, services.js) 
-            // já registraram suas funções de carregamento no objeto window.
-            setTimeout(() => {
-                window.switchTab(userIntent);
-            }, 150); 
+    if (userIntent && userIntent !== "") {
+        console.log(`🚀 [Maestro] Redirecionando para: ${userIntent}`);
+        
+        // ⏱️ AUMENTO DE DELAY (Essencial para sincronia dos módulos .js)
+        setTimeout(() => {
+            // Normalização: Se o banco diz 'ganhar', o Maestro abre 'missoes'
+            const destinoReal = userIntent === 'ganhar' ? 'missoes' : userIntent;
+            window.switchTab(destinoReal);
+        }, 350); 
 
-        } else {
-            console.log("🆕 Novo usuário ou preferência zerada: Renderizando Tour.");
-            window.renderizarTourBoasVindas(); 
-        }
-    }, 500); // Aumentado para 500ms para garantir estabilidade do Firestore
+    } else {
+        console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
+        // Se a intenção for vazia, limpamos o loader e mostramos o Tour
+        document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+        const homeSec = document.getElementById('sec-home');
+        if(homeSec) homeSec.classList.remove('hidden');
+        
+        window.renderizarTourBoasVindas(); 
+    }
+}, 600); // Tempo otimizado para o Firestore South America
   }
 }
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
