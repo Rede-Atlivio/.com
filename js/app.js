@@ -255,10 +255,10 @@ if (window.switchTab) {
             window.renderizarTourBoasVindas(); 
         }
     }, 800); 
-}
+  }
 }, 600); // Tempo otimizado para o Firestore South America
   }
-}
+
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
