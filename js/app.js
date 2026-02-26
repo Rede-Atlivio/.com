@@ -399,12 +399,18 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 // 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
-// 🩹 POLYFILL DE COMPATIBILIDADE (Evita quebras em módulos reprovados para edição)
-if (window.userProfile) {
-    Object.defineProperty(window.userProfile, 'saldo', {
-        get: function() { return this.wallet_balance || 0; }
-    });
-}
+// 🩹 PROTEÇÃO FINANCEIRA: Garante que 'saldo' sempre aponte para 'wallet_balance'
+// Funciona mesmo se o userProfile for carregado depois.
+window.addEventListener('load', () => {
+    if (!window.userProfile) window.userProfile = {};
+    if (!('saldo' in window.userProfile)) {
+        Object.defineProperty(window.userProfile, 'saldo', {
+            get: function() { return this.wallet_balance || 0; },
+            set: function(val) { this.wallet_balance = val; },
+            configurable: true
+        });
+    }
+});
 // 🌍 EXPOSIÇÃO GLOBAL MAESTRO V28 (Garantia de Navegação)
 window.switchTab = switchTab;
 window.registrarEventoMaestro = registrarEventoMaestro;
