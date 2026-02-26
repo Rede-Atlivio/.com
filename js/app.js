@@ -249,13 +249,13 @@ if (window.switchTab) {
                 window.switchTab(destinoOficial);
             }, 800); 
 
-        } else {
-        console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-        // 🆕 [Maestro] RESET DE NAVEGAÇÃO: Garante que a Home apareça no primeiro acesso
-        window.switchTab('home');
-            
-        window.renderizarTourBoasVindas(); 
-    }
+       } else {
+            console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
+            window.switchTab('home');
+            window.renderizarTourBoasVindas(); 
+        }
+    }, 800); 
+}
 }, 600); // Tempo otimizado para o Firestore South America
   }
 }
