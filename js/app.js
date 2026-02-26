@@ -263,7 +263,7 @@ window.registrarEventoMaestro = async function(dadosEvento) {
     if (!uid) return;
 
     try {
-        const { doc, updateDoc, increment, addDoc, collection } = window.firebaseModules;
+        const modules = window.firebaseModules;
         const userRef = doc(db, "usuarios", uid);
         const payload = { "updated_at": new Date() };
 
