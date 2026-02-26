@@ -251,11 +251,9 @@ if (window.switchTab) {
 
         } else {
         console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-        // Se a intenção for vazia, limpamos o loader e mostramos o Tour
-        document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
-        const homeSec = document.getElementById('sec-home');
-        if(homeSec) homeSec.classList.remove('hidden');
-        
+        // 🆕 [Maestro] RESET DE NAVEGAÇÃO: Garante que a Home apareça no primeiro acesso
+        window.switchTab('home');
+            
         window.renderizarTourBoasVindas(); 
     }
 }, 600); // Tempo otimizado para o Firestore South America
