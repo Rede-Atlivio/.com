@@ -78,7 +78,8 @@ function switchTab(tabName, isAutoBoot = false) {
         if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     }
     if(tabName === 'loja') {
-        if(window.carregarProdutos) window.carregarProdutos(); // Carrega produtos da aba loja
+        // 🛒 Sincronia de ID: Mapeia para a seção 'loja' mas carrega o módulo 'produtos'
+        if(window.carregarProdutos) window.carregarProdutos(); 
     }
     if(tabName === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
