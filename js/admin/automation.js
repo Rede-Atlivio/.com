@@ -320,3 +320,129 @@ window.executarVarreduraDeInativos = async () => {
         console.error("❌ Erro técnico no motor:", e);
     }
 };
+// ============================================================================
+// 🎼 MÓDULO MAESTRO: CONTROLE DE EXPERIÊNCIA E FLUXO
+// ============================================================================
+window.carregarMaestro = async function() {
+    const container = document.getElementById('view-maestro');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="max-w-5xl mx-auto space-y-6 animate-fade">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter">🎼 Maestro: Controle de Fluxo</h2>
+                <span class="bg-blue-600/20 text-blue-400 text-[10px] font-black px-3 py-1 rounded-full border border-blue-500/30">V28 - ESTÁVEL</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                        <i data-lucide="megaphone" class="text-blue-500"></i>
+                        <h3 class="text-sm font-black text-white uppercase">Sininho: Disparo Manual</h3>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">ID do Usuário (UID)</label>
+                        <input type="text" id="maestro-uid" placeholder="Cole o UID do usuário alvo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Mensagem do Guia</label>
+                        <textarea id="maestro-msg" rows="3" placeholder="Ex: Ei! Você tem uma negociação pendente no chat..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Tipo</label>
+                            <select id="maestro-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none">
+                                <option value="chat">💬 Chat / Negociação</option>
+                                <option value="gift">🎁 Bônus / Presente</option>
+                                <option value="order">🛠️ Pedido / Serviço</option>
+                                <option value="wallet">💰 Financeiro</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Ação</label>
+                            <select id="maestro-action" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none">
+                                <option value="chat">Ir para Chat</option>
+                                <option value="wallet">Ir para Carteira</option>
+                                <option value="services">Ir para Serviços</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="window.dispararNotificacaoMaestro()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg transition transform active:scale-95 uppercase text-xs tracking-widest">
+                        Enviar Notificação Agora ⚡
+                    </button>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
+                        <div class="flex items-center gap-3 border-b border-slate-800 pb-4 mb-4">
+                            <i data-lucide="compass" class="text-emerald-500"></i>
+                            <h3 class="text-sm font-black text-white uppercase">Gestor do Tour (Onboarding)</h3>
+                        </div>
+                        <p class="text-[11px] text-gray-400 mb-4">Use para forçar o usuário a ver o Tour de boas-vindas novamente.</p>
+                        <button onclick="window.resetarTourUsuario()" class="w-full bg-slate-800 hover:bg-red-900/30 text-gray-300 hover:text-red-400 border border-slate-700 py-4 rounded-2xl font-bold text-xs transition uppercase">
+                            Resetar Tour do Usuário 🔄
+                        </button>
+                    </div>
+
+                    <div class="bg-emerald-600/10 border border-emerald-500/20 rounded-3xl p-6">
+                         <h4 class="text-emerald-400 font-black text-[10px] uppercase mb-1">Dica Maestro</h4>
+                         <p class="text-[11px] text-emerald-200/70 leading-relaxed italic">"O Guia Inteligente não aparece se o usuário já estiver na aba de destino da ação. Isso evita inconveniência."</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// --- LÓGICA DE DISPARO ---
+window.dispararNotificacaoMaestro = async function() {
+    const uid = document.getElementById('maestro-uid').value.trim();
+    const msg = document.getElementById('maestro-msg').value.trim();
+    const type = document.getElementById('maestro-type').value;
+    const action = document.getElementById('maestro-action').value;
+
+    if (!uid || !msg) return alert("❌ Preencha o UID e a Mensagem!");
+
+    try {
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const { db } = await import('./config.js');
+
+        await addDoc(collection(db, "user_notifications"), {
+            userId: uid,
+            type: type,
+            message: msg,
+            action: action,
+            read: false,
+            created_at: serverTimestamp()
+        });
+
+        alert("✅ Guia enviado com sucesso ao usuário!");
+        document.getElementById('maestro-msg').value = "";
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erro ao enviar: " + e.message);
+    }
+};
+
+window.resetarTourUsuario = async function() {
+    const uid = document.getElementById('maestro-uid').value.trim();
+    if (!uid) return alert("❌ Informe o UID para resetar o Tour!");
+
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const { db } = await import('./config.js');
+
+        await updateDoc(doc(db, "usuarios", uid), {
+            tour_complete: false
+        });
+
+        alert("✅ Tour resetado! O usuário verá as boas-vindas no próximo login.");
+    } catch (e) {
+        alert("❌ Erro ao resetar: " + e.message);
+    }
+};
