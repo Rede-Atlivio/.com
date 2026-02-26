@@ -207,6 +207,7 @@ if (window.switchTab) {
             window.renderizarTourBoasVindas(); 
         }
     }, 500); // Aumentado para 500ms para garantir estabilidade do Firestore
+  }
 }
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
