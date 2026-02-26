@@ -165,6 +165,11 @@ window.switchView = async function(viewName) {
         try {
             const module = await import(`${moduleFile}?v=${Date.now()}`);
             if (module.init) await module.init(viewName);
+            
+            // 🚀 GATILHO MAESTRO: Executa a interface se a rota for maestro
+            if (viewName === 'maestro' && window.carregarMaestro) {
+                await window.carregarMaestro();
+            }
         } catch (e) {
             console.warn(`⚠️ Módulo ${viewName} falhou ou não existe: ${e.message}`);
         }
