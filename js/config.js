@@ -29,16 +29,17 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
-// 🚨 CORREÇÃO V35: Inclusão de INCREMENT para o Ad-Engine
+// 🛡️ CORREÇÃO V36: Inclusão de arrayUnion e increment para Ad-Engine
 import { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
-    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, increment 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
+    increment, arrayUnion 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion // Adicionado arrayUnion para as Tags
+    increment, arrayUnion 
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
