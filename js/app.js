@@ -406,9 +406,15 @@ auth.onAuthStateChanged(async (user) => {
         if (window.pararRadarFisico) window.pararRadarFisico();
     }
 });
-// 🌍 EXPOSIÇÃO GLOBAL V24 (Garantia de Navegação)
-// 🩹 Blindagem financeira processada via evento userProfileLoaded no topo.
-// 🌍 EXPOSIÇÃO GLOBAL MAESTRO V28 (Garantia de Navegação)
+// 🩹 PROTEÇÃO FINANCEIRA: Blindagem imediata para evitar quebra de módulos antigos
+if (!window.userProfile) window.userProfile = {};
+if (!Object.getOwnPropertyDescriptor(window.userProfile, 'saldo')) {
+    Object.defineProperty(window.userProfile, 'saldo', {
+        get: function() { return this.wallet_balance || 0; },
+        set: function(val) { this.wallet_balance = val; },
+        configurable: true
+    });
+}
 window.switchTab = switchTab;
 window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
