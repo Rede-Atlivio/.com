@@ -53,36 +53,41 @@ window.abaAtual = 'servicos';
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
-    // ✋ Válvula de Retenção
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
-    console.log("👉 Trocando para aba:", tabName);
+    console.log("👉 [Navegação] Aba:", tabName);
     window.abaAtual = tabName; 
 
-    // 1. Esconde seções
-    document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
-    });
-
-    // 2. Mostra alvo
+    document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
     const alvo = document.getElementById(`sec-${tabName}`);
     if(alvo) alvo.classList.remove('hidden');
 
-    // 3. Botões do Menu
     document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(`tab-${tabName}`);
     if(activeBtn) activeBtn.classList.add('active');
 
-    // 4. Gatilhos
+    // 🛰️ GATILHOS DE INTELIGÊNCIA (Ad-Engine)
+    // Isso garante que cada troca de aba alimente o Score do Usuário
+    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
+
+    // ⚡ CARREGAMENTO ESPECÍFICO DE MÓDULOS
     if(tabName === 'servicos') {
         if(window.carregarServicos) window.carregarServicos();
-        const toggle = document.getElementById('online-toggle');
-        if(toggle?.checked && !window.radarIniciado && window.iniciarRadarPrestador) window.iniciarRadarPrestador();
     }
-    if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-    if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
-    if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-  }
+    if(tabName === 'empregos') {
+        if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
+    }
+    if(tabName === 'loja') {
+        if(window.carregarProdutos) window.carregarProdutos(); // Carrega produtos da aba loja
+    }
+    if(tabName === 'ganhar') {
+        if(window.carregarCarteira) window.carregarCarteira();
+        if(window.carregarMissoes) window.carregarMissoes(); // Chama missões/micro-tarefas
+    }
+    if(tabName === 'oportunidades') {
+        if(window.carregarOportunidades) window.carregarOportunidades();
+    }
+}
 
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
