@@ -252,26 +252,39 @@ window.renderizarTourBoasVindas = function() {
     `;
 };
 
-// 💾 SALVAMENTO DE INTENÇÃO
+// 💾 SALVAMENTO DE INTENÇÃO (VERSÃO CORRIGIDA V30)
 window.salvarIntencaoMaestro = async function(escolha) {
     const uid = auth.currentUser?.uid;
-    if (!uid) return;
+    if (!uid) {
+        console.warn("❌ [Maestro] Nenhum usuário autenticado para salvar intenção.");
+        return;
+    }
 
     try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        // Usa os módulos que você já preparou no config.js
+        const { doc, updateDoc } = window.firebaseModules;
+        
+        if (!doc || !updateDoc) {
+            throw new Error("Módulos do Firebase não encontrados no window.firebaseModules");
+        }
+
+        console.log(`📡 [Maestro] Tentando salvar intenção: ${escolha}...`);
+
         await updateDoc(doc(db, "usuarios", uid), {
             user_intent: escolha,
             tour_complete: true,
-            last_access_at: new Date()
+            last_access_at: new Date() 
         });
         
-        console.log(`🎯 Intenção ${escolha} salva! Redirecionando...`);
+        console.log(`✅ [Maestro] Intenção '${escolha}' gravada com sucesso no Firestore!`);
         window.switchTab(escolha);
+
     } catch (e) {
+        console.error("❌ [Maestro] Erro crítico ao salvar no Firestore:", e.message);
+        // Mesmo se falhar o banco, ele troca a aba para não travar o usuário
         window.switchTab(escolha);
     }
 };
-
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         console.log("🔐 Autenticado com Sucesso V12");
