@@ -194,8 +194,8 @@ async function carregarInterface(user) {
                 window.renderizarTourBoasVindas(); // Chama a interface de escolha
             }
         }, 300);
-    }
-
+     }
+   }
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
