@@ -190,13 +190,82 @@ async function carregarInterface(user) {
         }
     }
 
-    // 🎯 GATILHO MAESTRO V28: Direciona para a Home Inteligente
+    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas
     if (window.switchTab) {
-        console.log("🎯 [Maestro] Iniciando fluxo de entrada...");
+        console.log("🎯 [Maestro] Analisando intenção do usuário...");
         setTimeout(() => {
-            if (window.switchTab) window.switchTab('home', true);
-        }, 200); 
+            window.switchTab('home', true);
+            const userIntent = window.userProfile?.user_intent;
+            
+            if (userIntent) {
+                console.log(`🚀 Usuário recorrente: Direcionando para ${userIntent}`);
+                window.switchTab(userIntent);
+            } else {
+                renderizarTourBoasVindas();
+            }
+        }, 300);
     }
+
+function renderizarTourBoasVindas() {
+    const container = document.getElementById('home-content');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="animate-fadeIn p-6 space-y-8 w-full max-w-sm">
+            <div class="space-y-2">
+                <h2 class="text-3xl font-black text-blue-900 italic tracking-tighter uppercase">👋 Olá!</h2>
+                <p class="text-gray-500 font-bold text-sm uppercase tracking-widest">O que você quer fazer na Atlivio hoje?</p>
+            </div>
+
+            <div class="grid gap-4">
+                <button onclick="window.salvarIntencaoMaestro('servicos')" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-500 transition-all shadow-sm active:scale-95 group">
+                    <span class="text-3xl group-hover:scale-110 transition">🛠️</span>
+                    <div class="text-left">
+                        <p class="font-black text-blue-900 uppercase text-xs">Contratar Serviço</p>
+                        <p class="text-[9px] text-gray-400 font-bold">Preciso de um profissional agora</p>
+                    </div>
+                </button>
+
+                <button onclick="window.salvarIntencaoMaestro('ganhar')" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-500 transition-all shadow-sm active:scale-95 group">
+                    <span class="text-3xl group-hover:scale-110 transition">⚡</span>
+                    <div class="text-left">
+                        <p class="font-black text-emerald-700 uppercase text-xs">Ganhar Renda Extra</p>
+                        <p class="text-[9px] text-gray-400 font-bold">Quero trabalhar e cumprir missões</p>
+                    </div>
+                </button>
+
+                <button onclick="window.salvarIntencaoMaestro('empregos')" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 hover:border-orange-500 transition-all shadow-sm active:scale-95 group">
+                    <span class="text-3xl group-hover:scale-110 transition">💼</span>
+                    <div class="text-left">
+                        <p class="font-black text-orange-700 uppercase text-xs">Procurar Emprego</p>
+                        <p class="text-[9px] text-gray-400 font-bold">Vagas fixas e oportunidades CLT</p>
+                    </div>
+                </button>
+
+                <button onclick="window.switchTab('servicos')" class="text-[10px] font-black text-gray-400 uppercase underline mt-4 hover:text-blue-500 transition">Só dar uma olhada por enquanto</button>
+            </div>
+        </div>
+    `;
+}
+
+window.salvarIntencaoMaestro = async function(escolha) {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await updateDoc(doc(db, "usuarios", uid), {
+            user_intent: escolha,
+            tour_complete: true,
+            last_access_at: new Date()
+        });
+        
+        console.log(`🎯 Intenção ${escolha} salva com sucesso!`);
+        window.switchTab(escolha);
+    } catch (e) {
+        window.switchTab(escolha); // Fallback visual se o banco falhar
+    }
+};
 };
 
 auth.onAuthStateChanged(async (user) => {
