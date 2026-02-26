@@ -438,7 +438,8 @@ window.resetarTourUsuario = async function() {
         const { db } = await import('./config.js');
 
         await updateDoc(doc(db, "usuarios", uid), {
-            tour_complete: false
+            tour_complete: false,
+            user_intent: "" // Limpa a intenção para forçar o Tour no app
         });
 
         alert("✅ Tour resetado! O usuário verá as boas-vindas no próximo login.");
