@@ -53,48 +53,36 @@ window.abaAtual = 'servicos';
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
-    // ✋ Válvula de Retenção: Se for disparado pelo sistema e já tiver inicializado, aborta.
+    // ✋ Válvula de Retenção
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
-    console.log("👉 Trocando para aba:", tabName);
-    window.abaAtual = tabName; // Atualiza o cérebro do Guia Inteligente
-    // 1. Esconde todas as seções (V24 - Blindagem de Sub-abas)
+    console.log("👉 Trocando para aba:", tabName);
+    window.abaAtual = tabName; 
+
+    // 1. Esconde seções
     document.querySelectorAll('main > section').forEach(el => {
-        if (el.id !== `sec-${tabName}`) el.classList.add('hidden');
+        el.classList.add('hidden');
     });
-    // 2. Mostra a seção alvo
+
+    // 2. Mostra alvo
     const alvo = document.getElementById(`sec-${tabName}`);
-    if(alvo) {
-        alvo.classList.remove('hidden');
-    }
+    if(alvo) alvo.classList.remove('hidden');
 
-    // 3. Atualiza os botões do menu (Visual Sincronizado V24)
-    document.querySelectorAll('nav button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
+    // 3. Botões do Menu
+    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(`tab-${tabName}`);
-    if(activeBtn) {
-        activeBtn.classList.add('active');
-    }
+    if(activeBtn) activeBtn.classList.add('active');
 
-    // 4. 🔥 GATILHOS DE CARREGAMENTO (Saneados)
+    // 4. Gatilhos
     if(tabName === 'servicos') {
         if(window.carregarServicos) window.carregarServicos();
-        
-        // Proteção do Radar V12
         const toggle = document.getElementById('online-toggle');
-        // Apenas religa se estiver marcado E a memória disser que está desligado
-        if(toggle && toggle.checked && !window.radarIniciado && window.iniciarRadarPrestador) {
-            window.iniciarRadarPrestador();
-        }
+        if(toggle?.checked && !window.radarIniciado && window.iniciarRadarPrestador) window.iniciarRadarPrestador();
     }
-    
     if(tabName === 'empregos' && window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     if(tabName === 'loja' && window.carregarProdutos) window.carregarProdutos();
     if(tabName === 'ganhar' && window.carregarCarteira) window.carregarCarteira();
-};
-
+} // <--- CHAVE DE FECHAMENTO RECUPERADA AQUI
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
     
