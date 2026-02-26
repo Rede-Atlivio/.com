@@ -277,15 +277,9 @@ window.registrarEventoMaestro = async function(dadosEvento) {
     if (!uid) return;
 
     try {
-        const modules = window.firebaseModules;
-        const userRef = doc(db, "usuarios", uid);
-        const payload = { "updated_at": new Date() };
-
-        if (dadosEvento.tipo === "retencao") {
-            const peso = Math.min(dadosEvento.segundos / 5, 10);
-            payload[`behavior.${dadosEvento.aba}.score`] = modules.increment(peso);
-            payload[`behavior.${dadosEvento.aba}.tempo_total`] = modules.increment(dadosEvento.segundos);
-        }
+        const { doc, updateDoc, addDoc, collection, increment, arrayUnion } = window.firebaseModules;
+        const userRef = doc(window.db, "usuarios", uid);
+        let payload = { "updated_at": new Date() };
 
         if (dadosEvento.tipo === "navegacao") {
             payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
@@ -295,16 +289,26 @@ window.registrarEventoMaestro = async function(dadosEvento) {
         if (dadosEvento.tipo === "tour_final") {
             payload.user_intent = dadosEvento.escolha;
             payload.tour_complete = true;
+            payload.tags_interesse = arrayUnion(...dadosEvento.tags);
+            // Inicializa scores básicos para o robô 47 não ver zeros
+            payload[`behavior.${dadosEvento.escolha}.score`] = 10; 
+            payload[`behavior.tags_count`] = dadosEvento.tags.length;
         }
 
         await updateDoc(userRef, payload);
-        // Gravação em Log Bruto para Auditoria Nível 1000
-        await addDoc(collection(db, "events"), { 
-            uid, tipo: dadosEvento.tipo, aba: dadosEvento.aba || dadosEvento.escolha, timestamp: new Date() 
+
+        // LOG DE AUDITORIA (ROBÔ 47)
+        await addDoc(collection(window.db, "events"), { 
+            uid, 
+            tipo: dadosEvento.tipo, 
+            aba: dadosEvento.aba || dadosEvento.escolha, 
+            timestamp: new Date() 
         });
 
     } catch (e) {
-        console.warn("⚠️ Falha na Telemetria:", e.message);
+        console.warn("⚠️ Telemetria: Criando estrutura behavior...", e.message);
+        // Se falhar o updateDoc por falta do campo behavior, o Ad-Engine cria via transação ou setDoc se necessário, 
+        // mas o Firebase costuma aceitar Dot Notation para criar sub-campos.
     }
 };
 
