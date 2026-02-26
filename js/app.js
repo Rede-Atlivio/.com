@@ -47,6 +47,8 @@ window.abrirConfiguracoes = abrirConfiguracoes;
 
 // 🛡️ MAESTRO V25: Flag de controle para impedir loops de inicialização
 window.atlivioBootConcluido = false;
+// 🧭 CONTEXTO V28: Rastreia a aba ativa para o Guia Inteligente não ser inconveniente
+window.abaAtual = 'servicos';
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
