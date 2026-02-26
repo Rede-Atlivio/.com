@@ -29,15 +29,15 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
-// 🚨 CORREÇÃO V12: Expondo TODOS os módulos necessários para o Cronômetro e Chat
+// 🚨 CORREÇÃO V35: Inclusão de INCREMENT para o Ad-Engine
 import { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
-    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, increment 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
-    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, increment 
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
