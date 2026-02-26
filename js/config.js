@@ -37,7 +37,8 @@ import {
 
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
-    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, increment 
+    updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
+    increment, arrayUnion // Adicionado arrayUnion para as Tags
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
