@@ -437,12 +437,13 @@ window.resetarTourUsuario = async function() {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         const { db } = await import('./config.js');
 
+        // 🧹 LIMPEZA TOTAL: Reseta o estado e a intenção para o Tour reaparecer
         await updateDoc(doc(db, "usuarios", uid), {
             tour_complete: false,
-            user_intent: "" // Limpa a intenção para forçar o Tour no app
+            user_intent: "" 
         });
 
-        alert("✅ Tour resetado! O usuário verá as boas-vindas no próximo login.");
+        alert("✅ Tour e Intenção resetados! O usuário verá a tela de escolha no próximo login.");
     } catch (e) {
         alert("❌ Erro ao resetar: " + e.message);
     }
