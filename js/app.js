@@ -45,10 +45,21 @@ import './modules/user_notifications.js';
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
-// 🛡️ MAESTRO V25: Flag de controle para impedir loops de inicialização
+// 🛡️ MAESTRO V25: Flag de controle
 window.atlivioBootConcluido = false;
-// 🧭 CONTEXTO V28: Rastreia a aba ativa para o Guia Inteligente não ser inconveniente
-window.abaAtual = 'servicos';
+window.abaAtual = 'home';
+
+// 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
+window.addEventListener('userProfileLoaded', (e) => {
+    window.userProfile = e.detail;
+    if (window.userProfile) {
+        Object.defineProperty(window.userProfile, 'saldo', {
+            get: function() { return this.wallet_balance || 0; },
+            configurable: true
+        });
+        console.log("✅ Polyfill de Saldo injetado via Evento.");
+    }
+});
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
