@@ -190,12 +190,12 @@ async function carregarInterface(user) {
         }
     }
 
-    // 🎯 GATILHO MAESTRO: Direciona o usuário para a vitrine principal UMA única vez.
+    // 🎯 GATILHO MAESTRO V28: Direciona para a Home Inteligente
     if (window.switchTab) {
-        console.log("🎯 [Maestro] Direcionando usuário para Serviços...");
-       setTimeout(() => {
-    if (window.switchTab) window.switchTab('servicos', true);
-}, 300); // 300ms é o tempo suficiente para o DOM estabilizar
+        console.log("🎯 [Maestro] Iniciando fluxo de entrada...");
+        setTimeout(() => {
+            if (window.switchTab) window.switchTab('home', true);
+        }, 200); 
     }
 };
 
