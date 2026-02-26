@@ -155,6 +155,8 @@ async function carregarInterface(user) {
     window.atlivioBootConcluido = true;
 
     console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
+    // Identifica perfil para o Guia Inteligente
+    if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
     // Alterna visibilidade das telas principais
     document.getElementById('auth-container')?.classList.add('hidden');
