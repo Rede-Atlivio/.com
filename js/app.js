@@ -193,25 +193,26 @@ if (window.switchTab) {
     
     // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
  setTimeout(() => {
-        // 🛡️ PROTEÇÃO: Garante que o Loader suma mesmo se o banco demorar
+        // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
         window.switchTab('home', true); 
 
         const userIntent = window.userProfile?.user_intent || "";
 
         if (userIntent && userIntent !== "") {
-            console.log(`🚀 [Maestro] Redirecionando para: ${userIntent}`);
+            console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
             
-            // ⏱️ DELAY DE SANEAMENTO V26: 800ms para garantir que wallet e services injetaram no window
+            // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
             setTimeout(() => {
-                // 🗺️ DICIONÁRIO DE INTENÇÕES (Normalização de IDs)
-                const mapaIntent = {
-                    'ganhar': 'missoes', // Redireciona intenção do banco para o ID da seção
-                    'loja': 'loja',      // Já corrigido para bater com sec-loja
+                // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
+                const mapaFiel = {
+                    'ganhar': 'missoes', 
+                    'loja': 'loja',      
+                    'produtos': 'loja',  // Redireciona lixo para o ID oficial
                     'servicos': 'servicos'
                 };
                 
-                const destinoReal = mapaIntent[userIntent] || userIntent;
-                window.switchTab(destinoReal);
+                const destinoOficial = mapaFiel[userIntent] || userIntent;
+                window.switchTab(destinoOficial);
             }, 800); 
 
         } else {
