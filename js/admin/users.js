@@ -274,3 +274,24 @@ async function enviarMassaConfirmado() {
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
 function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
+// 🧭 MAESTRO: RESET DIRETO PELA TABELA
+window.resetarTourDireto = async function(uid, nome) {
+    if (!confirm(`⚠️ RESET MAESTRO: Deseja forçar o usuário [${nome}] a ver o Tour e escolher perfil novamente?`)) return;
+
+    try {
+        const { db } = window; // Usa o db global exposto pelo core.js
+        const userRef = doc(db, "usuarios", uid);
+
+        // 🧹 Limpeza cirúrgica sem precisar digitar ID
+        await updateDoc(userRef, {
+            tour_complete: false,
+            user_intent: "",
+            last_maestro_reset: serverTimestamp()
+        });
+
+        alert(`✅ SUCESSO: O tour de ${nome} foi resetado. No próximo login ele verá a tela de escolha.`);
+    } catch (e) {
+        console.error("Erro no Reset Direto:", e);
+        alert("❌ Erro técnico: " + e.message);
+    }
+};
