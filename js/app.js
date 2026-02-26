@@ -340,4 +340,3 @@ window.togglePrivacyHome = () => {
         eye.classList.add('opacity-60');
     }
 };
-}
