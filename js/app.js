@@ -179,23 +179,35 @@ async function carregarInterface(user) {
         }
     }
 
-    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas
-    if (window.switchTab) {
-        console.log("🎯 [Maestro] Analisando intenção do usuário...");
-        setTimeout(() => {
-            window.switchTab('home', true);
-            // Tenta pegar a intenção salva na memória global ou no perfil
-            const userIntent = window.userProfile?.user_intent;
+// ============================================================================
+// 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
+// ============================================================================
+if (window.switchTab) {
+    console.log("🎯 [Maestro] Analisando intenção do usuário...");
+    
+    // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
+    setTimeout(() => {
+        // 1. Força a limpeza visual do estado de "Sincronizando"
+        window.switchTab('home', true);
+
+        // 2. Busca a intenção (Prioriza o que veio do banco, mas aceita memória)
+        const userIntent = window.userProfile?.user_intent || "";
+
+        if (userIntent && userIntent !== "") {
+            console.log(`🚀 Usuário recorrente: Direcionando para ${userIntent}`);
             
-            if (userIntent && userIntent !== "") {
-                console.log(`🚀 Usuário recorrente: Direcionando para ${userIntent}`);
+            // 🔄 Pequeno delay adicional para garantir que os módulos (jobs.js, services.js) 
+            // já registraram suas funções de carregamento no objeto window.
+            setTimeout(() => {
                 window.switchTab(userIntent);
-            } else {
-                window.renderizarTourBoasVindas(); // Chama a interface de escolha
-            }
-        }, 300);
-     }
-   }
+            }, 150); 
+
+        } else {
+            console.log("🆕 Novo usuário ou preferência zerada: Renderizando Tour.");
+            window.renderizarTourBoasVindas(); 
+        }
+    }, 500); // Aumentado para 500ms para garantir estabilidade do Firestore
+}
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
