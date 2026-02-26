@@ -448,3 +448,4 @@ window.togglePrivacyHome = () => {
         eye.classList.add('opacity-60');
     }
 };
+// --- FIM DO MAESTRO ---
