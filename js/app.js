@@ -58,9 +58,17 @@ function switchTab(tabName, isAutoBoot = false) {
     console.log("👉 [Navegação] Aba:", tabName);
     window.abaAtual = tabName; 
 
-    document.querySelectorAll('main > section').forEach(el => el.classList.add('hidden'));
+    // 🧹 LIMPEZA TOTAL: Esconde absolutamente todas as seções, incluindo duplicatas
+    document.querySelectorAll('main > section').forEach(el => {
+        el.classList.add('hidden');
+        el.style.display = 'none'; // Reforço físico
+    });
+
     const alvo = document.getElementById(`sec-${tabName}`);
-    if(alvo) alvo.classList.remove('hidden');
+    if(alvo) {
+        alvo.classList.remove('hidden');
+        alvo.style.display = 'block';
+    }
 
     document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
     const activeBtn = document.getElementById(`tab-${tabName}`);
