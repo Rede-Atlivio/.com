@@ -57,6 +57,7 @@ function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
     console.log("👉 Trocando para aba:", tabName);
+    window.abaAtual = tabName; // Atualiza o cérebro do Guia Inteligente
     // 1. Esconde todas as seções (V24 - Blindagem de Sub-abas)
     document.querySelectorAll('main > section').forEach(el => {
         if (el.id !== `sec-${tabName}`) el.classList.add('hidden');
