@@ -45,14 +45,8 @@ export async function init(viewType) {
         searchInput.parentNode.replaceChild(newSearch, searchInput);
         newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
     }
-    
-    const btnBulk = document.getElementById('btn-bulk-delete');
-    if(btnBulk) {
-        btnBulk.innerHTML = `<i data-lucide="zap"></i> AÇÕES EM MASSA`;
-        btnBulk.onclick = abrirModalMassa;
-    }
 
-    setTimeout(() => {
+    setTimeout(() => {
         const chkAll = document.getElementById('check-users-all');
         if(chkAll) chkAll.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
     }, 500);
