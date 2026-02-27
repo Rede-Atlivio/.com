@@ -150,7 +150,7 @@ window.acaoNotificacao = async (id, action) => {
         if(window.switchTab) window.switchTab('oportunidades');
     }
     else if(action === 'produtos') {
-        if(window.switchTab) window.switchTab('produtos');
+        if(window.switchTab) window.switchTab('produtosRecomendados');
     }
     else if(action === 'chat') {
         if(window.switchTab) window.switchTab('chat');
