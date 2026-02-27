@@ -20,44 +20,6 @@ export async function init(viewType) {
         if(btnAdd) { btnAdd.innerHTML = "+ NOVO PRESTADOR"; btnAdd.onclick = () => window.openEditor('active_providers', null); }
     }
 
-   // ✅ RESTAURADO: Exportações Globais essenciais
-    window.openEditor = openEditor;
-    window.saveAction = saveAction;
-    window.saveServiceAction = saveServiceAction;
-    window.filtrarPorIntencao = function(intencao) {
-        selectedUsers.clear(); 
-        const chkAll = document.getElementById('check-users-all');
-        if(chkAll) chkAll.checked = false;
-        
-        if (!intencao) {
-            renderTable(allLoadedUsers);
-        } else {
-            const filtrados = allLoadedUsers.filter(u => u.user_intent === intencao);
-            renderTable(filtrados);
-        }
-        updateUserBulkUI();
-    };
-
-    if(searchInput) {
-        const containerBusca = searchInput.parentElement;
-        
-        // Injeta o Select de Filtro de Intenções para organização
-        if(!document.getElementById('crm-intent-filter') && viewType === 'users') {
-            const selectHTML = `
-            <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
-                <option value="">🎯 Todas as Intenções</option>
-                <option value="servicos">🛠️ Serviços (Contratantes)</option>
-                <option value="missoes">⚡ Missões (Renda Extra)</option>
-                <option value="empregos">💼 Empregos (CLT)</option>
-            </select>`;
-            containerBusca.insertAdjacentHTML('afterend', selectHTML);
-        }
-
-        const newSearch = searchInput.cloneNode(true);
-        searchInput.parentNode.replaceChild(newSearch, searchInput);
-        newSearch.addEventListener('input', (e) => window.filtrarListaLocal(e.target.value.toLowerCase()));
-    }
-
     setTimeout(() => {
         const chkAll = document.getElementById('check-users-all');
         if(chkAll) chkAll.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
