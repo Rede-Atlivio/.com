@@ -321,9 +321,11 @@ async function carregarInterface(user) {
                 window.switchTab('home');
                 window.renderizarTourBoasVindas(); 
             }
-        }, 600); // Fecha o setTimeout principal de 600ms
+        }, 600); 
+        // 🏁 FINALIZAÇÃO: O Maestro entrega as chaves para o SwitchTab e encerra o boot
+        window.atlivioBootConcluido = true;
     }
-} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
+} // ✅ CORREÇÃO VITAL: Fecha a função de montagem de interface
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
