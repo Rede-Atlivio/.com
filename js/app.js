@@ -83,9 +83,10 @@ function switchTab(tabName, isAutoBoot = false) {
     const isPrestador = perfil?.is_provider || false;
 
 // 🛡️ MATRIZ MAESTRO V40: Proteção de Identidade Baseada na Tabela de Intenção
-    // Define as zonas baseadas estritamente no que o usuário clicou (tabName)
-    const zonaTrabalho = ['servicos', 'empregos', 'extra', 'missoes'].includes(tabName); 
-    const zonaCompra = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
+    // Verifica se a aba solicitada pertence à área de prestação de serviços (Trabalho)
+    const zonaTrabalho = ['servicos', 'empregos', 'extra', 'missoes', 'ganhar'].includes(nomeLimpo); 
+    // Verifica se a aba solicitada pertence à área de contratação ou consumo (Cliente)
+    const zonaCompra = ['contratar', 'vaga', 'loja', 'produtos', 'oportunidades'].includes(tabName);
 
     let bloqueado = false;
     let alvo = "";
