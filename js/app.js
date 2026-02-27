@@ -86,14 +86,26 @@ function switchTab(tabName, isAutoBoot = false) {
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-    if (requerPrestador && !isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
+   if (requerPrestador && !isPrestador) {
+        console.warn("🚫 Bloqueio: Cliente em área de Prestador.");
+        // Força a abertura do modal de seleção que já existe no seu Index
+        const modalRole = document.getElementById('role-selection');
+        if (modalRole) {
+            modalRole.classList.remove('hidden');
+            return;
+        }
+        return alert("Ação exclusiva para Prestadores!");
     }
 
     if (requerCliente && isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
+        console.warn("🚫 Bloqueio: Prestador em área de Cliente.");
+        // Força a abertura do modal de seleção que já existe no seu Index
+        const modalRole = document.getElementById('role-selection');
+        if (modalRole) {
+            modalRole.classList.remove('hidden');
+            return;
+        }
+        return alert("Ação exclusiva para Clientes!");
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
