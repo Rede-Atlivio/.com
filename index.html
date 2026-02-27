@@ -1280,5 +1280,24 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
             </div>
         </div>
     </div>
+            <div id="modal-troca-identidade" class="hidden fixed inset-0 z-[10000] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border-t-8 border-blue-600 animate-fadeIn">
+        <div class="text-4xl mb-4">🔄</div>
+        <h3 class="text-xl font-black text-blue-900 uppercase italic mb-2">Alternar Perfil?</h3>
+        <p class="text-gray-500 text-[10px] font-bold uppercase mb-6 leading-relaxed">
+            Para acessar esta área, você precisa mudar sua identidade de <br>
+            <span id="txt-perfil-atual" class="text-blue-600 bg-blue-50 px-2 py-1 rounded">...</span>
+        </p>
+        
+        <div class="grid gap-3">
+            <button onclick="alternarPerfil()" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition text-xs uppercase tracking-widest">
+                Sim, Alternar Agora 🚀
+            </button>
+            <button onclick="document.getElementById('modal-troca-identidade').classList.add('hidden')" class="w-full text-gray-400 font-black text-[10px] uppercase underline tracking-tighter">
+                Agora não, voltar
+            </button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
