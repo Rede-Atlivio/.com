@@ -285,17 +285,33 @@ window.aplicarAcaoEmMassa = async (tipoAcao) => {
     if (!confirm(`Deseja aplicar ${tipoAcao.toUpperCase()} em ${selectedUsers.size} usuários?`)) return;
     
     const col = currentType === 'services' ? 'active_providers' : 'usuarios';
+    const btn = event.target;
+    const txtOriginal = btn.innerText;
     
-    for (let uid of selectedUsers) {
-        if (tipoAcao === 'resetar') {
-            await window.resetarTourDireto(uid, 'Massa');
-        } else {
-            // Reutiliza o saveAction (aprovar, banir, suspenso) que você já tem
-            await window.saveAction(col, uid, tipoAcao);
+    try {
+        btn.innerText = "⏳ PROCESSANDO...";
+        btn.disabled = true;
+
+        for (let uid of selectedUsers) {
+            if (tipoAcao === 'resetar') {
+                // Chama o reset individual que você já validou
+                await window.resetarTourDireto(uid, 'Massa');
+            } else {
+                // Chama o saveAction individual (agora sem fechar o modal no meio)
+                await window.saveAction(col, uid, tipoAcao);
+            }
         }
+
+        alert(`✅ SUCESSO: Ação aplicada a ${selectedUsers.size} registros.`);
+    } catch (e) {
+        alert("❌ Erro no processamento: " + e.message);
+    } finally {
+        btn.innerText = txtOriginal;
+        btn.disabled = false;
+        document.getElementById('modal-editor').classList.add('hidden');
+        selectedUsers.clear();
+        loadList();
     }
-    selectedUsers.clear();
-    loadList();
 };
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
