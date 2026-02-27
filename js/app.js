@@ -83,23 +83,17 @@ function switchTab(tabName, isAutoBoot = false) {
     const isPrestador = perfil?.is_provider || false;
 
     // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(nomeLimpo) && !['contratar', 'vaga'].includes(tabName);
+    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-   // 🛡️ TRAVA DE SEGURANÇA COM MODAL MAESTRO
-    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        const modalTrava = document.getElementById('modal-trava-perfil');
-        const labelAlvo = document.getElementById('perfil-alvo');
-        
-        if (modalTrava && labelAlvo) {
-            // Define o nome do perfil necessário dinamicamente
-            labelAlvo.innerText = requerPrestador ? "PRESTADOR" : "CLIENTE";
-            
-            // Abre o modal na tela
-            modalTrava.classList.remove('hidden');
-            console.log("🚩 Modal de Trava acionado para:", labelAlvo.innerText);
-            return; // Impede a navegação
-        }
+    if (requerPrestador && !isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
+    }
+
+    if (requerCliente && isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
@@ -266,16 +260,10 @@ async function carregarInterface(user) {
             // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
             window.switchTab('home', true); 
 
-            // 🛡️ LIMPEZA DE LOOP: Se trocou de perfil, mata a intenção antiga
-            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
-            let userIntent = window.userProfile?.user_intent || "";
-
-            if (isToggling) {
-                userIntent = ""; 
-                sessionStorage.removeItem('is_toggling_profile');
-                if (window.registrarEventoMaestro) window.registrarEventoMaestro({ tipo: "navegacao", aba: "home" });
-            }
-            if (userIntent === "home") userIntent = "";
+            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
+            let userIntent = window.userProfile?.user_intent || "";
+            if (userIntent === "home" || isToggling) userIntent = ""; 
+            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
             if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
@@ -455,7 +443,6 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
-window.fecharModalTrava = () => document.getElementById('modal-trava-perfil').classList.add('hidden');
 
 // 🧭 NOVAS FUNÇÕES DO TOUR
 if (typeof renderizarTourBoasVindas === 'function') {
