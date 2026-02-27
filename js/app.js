@@ -63,6 +63,8 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
+// 📍 REGISTRO CONTEXTUAL: Informa ao sistema a aba ativa para o Sininho não ser inconveniente
+    window.abaAtual = tabName;
 function switchTab(tabName, isAutoBoot = false) {
 // 📺 PRIORIDADE CANAL: Se o usuário clicou para conhecer a Atlivio, ignore travas de boot
    // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos atropelem o sistema já ligado
