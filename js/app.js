@@ -65,11 +65,7 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
-    // 🏠 BYPASS DE EMERGÊNCIA: Se clicou na Home, não processa regra nenhuma, apenas vai.
-    if (tabName === 'home') {
-        console.log("🏠 [Maestro] Retornando à base com prioridade máxima.");
-        isAutoBoot = false; // Garante que não ignore o comando
-    }
+
     // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
     const mapa = { 
         'home': 'home',
@@ -86,63 +82,33 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-// 🛡️ MATRIZ MAESTRO V40: Proteção por Zona de Destino (Escalável)
-    // 1. ZONA PRESTADOR: Áreas onde o usuário vai trabalhar/ganhar.
-    const isZonaTrabalho = ['servicos', 'empregos', 'missoes'].includes(nomeLimpo);
-    
-    // 2. ZONA CLIENTE: Áreas onde o usuário vai contratar/comprar.
-    // O 'contratar' é a única exceção que permite entrar na zona física de serviços.
-    const isZonaCompra = (tabName === 'contratar' || tabName === 'vaga' || nomeLimpo === 'loja');
+    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
+    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
+    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-    let bloqueado = false;
-    let perfilAlvo = "";
-
-    // 🛡️ ZONA DE EXCLUSÃO DA HOME: Se o destino for 'home', o Maestro é proibido de bloquear.
-    if (nomeLimpo === 'home' || isAutoBoot) {
-        bloqueado = false; 
-    } 
-    // Regra: Se a zona é de TRABALHO e o perfil NÃO é Prestador...
-    else if (isZonaTrabalho && !isPrestador) {
-        
-        // 🛡️ LÓGICA PURA: Se a zona é de trabalho e o usuário NÃO é prestador, a única saída é o botão contratar
-        // 🏠 REGRA DE OURO DA HOME: Botões de ação da home (contratar/vaga) nunca sofrem bloqueio do Maestro
-        const botoesHome = ['contratar', 'vaga', 'loja'];
-        if (!botoesHome.includes(tabName)) {
-            bloqueado = true;
-            perfilAlvo = "PRESTADOR";
-        }
-    } 
-    // Regra: Se a zona é de COMPRA e o perfil É Prestador...
-    else if (isZonaCompra && isPrestador) {
-        bloqueado = true;
-        perfilAlvo = "CLIENTE";
+    if (requerPrestador && !isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
     }
 
-   // 🛡️ SEGURANÇA SILENCIOSA: O Maestro apenas nega a entrada se houver incompatibilidade
-    if (bloqueado) {
-        console.warn(`🚨 [Maestro] Bloqueio Passivo: ${tabName} interrompido por falta de perfil ${perfilAlvo}`);
-        return; // Apenas mata a execução sem subir o modal desgraçado
+    if (requerCliente && isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
     }
 
-    // 🚀 EXECUÇÃO PRIORITÁRIA: Muda a aba primeiro, pergunta depois (Garante o clique da Home)
-    console.log("👉 [Navegação] Movendo para:", nomeLimpo);
+    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
     window.abaAtual = nomeLimpo; 
 
-    // 🧹 LIMPEZA DE PALCO: Esconde todas as seções para a nova entrar
-    const secoes = document.querySelectorAll('main > section');
-    secoes.forEach(secao => {
-        secao.classList.add('hidden');
-        secao.style.display = 'none';
+    // 🧹 LIMPEZA TOTAL
+    document.querySelectorAll('main > section').forEach(el => {
+        el.classList.add('hidden');
+        el.style.display = 'none';
     });
 
-    // 🔓 DESBLOQUEIO VISUAL: Se por acaso o modal de trava estiver aberto, a Home o mata
-    if (nomeLimpo === 'home') window.fecharModalTrava();
-
-    // Seleciona o elemento da seção correspondente ao nome limpo da aba
-    const secaoAlvo = document.getElementById(`sec-${nomeLimpo}`); 
-    if(secaoAlvo) {
-        secaoAlvo.classList.remove('hidden'); // Remove a classe que esconde o conteúdo
-        secaoAlvo.style.display = 'block'; // Garante que a seção fique visível na tela
+    const alvo = document.getElementById(`sec-${nomeLimpo}`);
+    if(alvo) {
+        alvo.classList.remove('hidden');
+        alvo.style.display = 'block';
     } else {
         console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
     }
@@ -151,8 +117,7 @@ function switchTab(tabName, isAutoBoot = false) {
     const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
     if(activeBtn) activeBtn.classList.add('active');
 
-    // Envia o nome da aba e o nome original do botão para auditoria do Ad-Engine
-    window.registrarEventoMaestro({ tipo: "navegacao", aba: nomeLimpo, abaOriginal: tabName });
+    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
 
     // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
     if(nomeLimpo === 'home') {
@@ -175,13 +140,7 @@ function switchTab(tabName, isAutoBoot = false) {
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
-        // Importa o módulo do canal apenas quando necessário para economizar memória do servidor
-        import('./modules/canal.js?v=' + Date.now())
-            .then(m => { if(m.init) m.init(); }) // Inicializa o canal se o arquivo carregar com sucesso
-            .catch(e => { 
-                console.error("Erro ao carregar módulo do Canal:", e);
-                alert("Falha ao carregar o canal. Verifique sua conexão."); 
-            });
+        import('./modules/canal.js?v=' + Date.now()).then(m => { if(m.init) m.init(); }).catch(e => console.error(e));
     }
 }
 
@@ -293,11 +252,10 @@ async function carregarInterface(user) {
     // ============================================================================
     // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
     // ============================================================================
-    // 🎯 PROTOCOLO DE BOOT V45: O Maestro inicia o sistema e depois entrega o controle
-    if (window.switchTab && !window.atlivioBootConcluido) {
-        console.log("🎯 [Maestro] Iniciando sequência de entrada...");
+    if (window.switchTab) {
+        console.log("🎯 [Maestro] Analisando intenção do usuário...");
         
-        // ⏳ Aguarda a estabilização do Firebase e do DOM
+        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
         setTimeout(() => {
             // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
             window.switchTab('home', true); 
@@ -312,18 +270,16 @@ async function carregarInterface(user) {
                 
                 // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
                 setTimeout(() => {
-                    // 🗺️ Mapa de Redirecionamento Inteligente: Mantém a 'intenção' original para não ativar a trava de segurança
+                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
                     const mapaFiel = {
                         'ganhar': 'missoes', 
                         'loja': 'loja',      
-                        'produtos': 'loja',  
-                        'contratar': 'contratar', // ──▶ Mantém 'contratar' para o switchTab entender que é um Cliente
-                        'servicos': 'servicos' 
+                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
+                        'servicos': 'servicos'
                     };
                     
-                    // Define para onde o sistema vai levar o usuário após o login
                     const destinoOficial = mapaFiel[userIntent] || userIntent;
-                    window.switchTab(destinoOficial); // ──▶ Dispara a navegação com a farda correta
+                    window.switchTab(destinoOficial);
                 }, 800); 
 
             } else {
@@ -331,11 +287,9 @@ async function carregarInterface(user) {
                 window.switchTab('home');
                 window.renderizarTourBoasVindas(); 
             }
-        }, 600); 
-        // 🏁 FINALIZAÇÃO: O Maestro entrega as chaves para o SwitchTab e encerra o boot
-        window.atlivioBootConcluido = true;
+        }, 600); // Fecha o setTimeout principal de 600ms
     }
-} // ✅ CORREÇÃO VITAL: Fecha a função de montagem de interface
+} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 window.renderizarTourBoasVindas = function() {
     const container = document.getElementById('home-content');
@@ -410,8 +364,7 @@ window.registrarEventoMaestro = async function(dadosEvento) {
 
        if (dadosEvento.tipo === "navegacao") {
             payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-           // Salva a intenção real (tabName) para evitar bloqueios no retorno do usuário
-            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.abaOriginal || dadosEvento.aba;
+            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
         }
 
         if (dadosEvento.tipo === "tour_final") {
@@ -441,11 +394,8 @@ window.registrarEventoMaestro = async function(dadosEvento) {
 };
 
 // Válvula de compatibilidade para o Tour
-// ⚡ Válvula de Compatibilidade: Salva a escolha e as tags (perfil) do usuário no Firebase
-window.salvarIntencaoMaestro = (escolha, tags = []) => {
-    // Registra no Ad-Engine se o usuário é Cliente ou Prestador para o Robô 47
-    window.registrarEventoMaestro({ tipo: "tour_final", escolha: escolha, tags: tags });
-    // Executa a troca de aba imediata
+window.salvarIntencaoMaestro = (escolha) => {
+    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
     window.switchTab(escolha);
 };
 auth.onAuthStateChanged(async (user) => {
@@ -493,8 +443,6 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
-// Função simples para esconder o modal de trava adicionando a classe 'hidden' novamente
-window.fecharModalTrava = () => document.getElementById('modal-trava-perfil')?.classList.add('hidden');
 
 // 🧭 NOVAS FUNÇÕES DO TOUR
 if (typeof renderizarTourBoasVindas === 'function') {
@@ -526,22 +474,9 @@ window.togglePrivacyHome = () => {
         elEarnings.innerText = 'R$ ••••';
         elBalance.innerText = 'R$ ••••';
         
-        // 🔒 Oculta os valores e salva a preferência de privacidade no Firebase
         elEarnings.setAttribute('data-hidden', 'true');
         svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
         eye.classList.add('opacity-60');
-        // Avisa o servidor que o usuário prefere manter o saldo escondido
-        window.registrarEventoMaestro({ tipo: "privacidade_update", status: "hidden" });
     }
 };
 // --- FIM DO MAESTRO ---
-// 🤖 ROBÔ SENTINELA DE INTERFACE (Independente do Maestro)
-window.verificarEExibirTrava = (perfilNecessario) => {
-    const modal = document.getElementById('modal-trava-perfil');
-    const txtLabel = document.getElementById('perfil-alvo');
-    if (modal && txtLabel) {
-        txtLabel.innerText = perfilNecessario; // Injeta PRESTADOR ou CLIENTE
-        modal.classList.remove('hidden'); // Abre a parede visual
-        console.log(`🛠️ Sentinela: Modal exibido manualmente para perfil ${perfilNecessario}`);
-    }
-};
