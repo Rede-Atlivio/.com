@@ -394,7 +394,8 @@ window.registrarEventoMaestro = async function(dadosEvento) {
 
        if (dadosEvento.tipo === "navegacao") {
             payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
+           // Salva a intenção real (tabName) para evitar bloqueios no retorno do usuário
+            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.abaOriginal || dadosEvento.aba;
         }
 
         if (dadosEvento.tipo === "tour_final") {
