@@ -101,7 +101,9 @@ function switchTab(tabName, isAutoBoot = false) {
     else if (isZonaTrabalho && !isPrestador) {
         
         // 🛡️ LÓGICA PURA: Se a zona é de trabalho e o usuário NÃO é prestador, a única saída é o botão contratar
-        if (tabName !== 'contratar') {
+        // 🏠 REGRA DE OURO DA HOME: Botões de ação da home (contratar/vaga) nunca sofrem bloqueio do Maestro
+        const botoesHome = ['contratar', 'vaga', 'loja'];
+        if (!botoesHome.includes(tabName)) {
             bloqueado = true;
             perfilAlvo = "PRESTADOR";
         }
