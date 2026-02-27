@@ -86,26 +86,14 @@ function switchTab(tabName, isAutoBoot = false) {
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-   if (requerPrestador && !isPrestador) {
-        console.warn("🚫 Bloqueio: Cliente em área de Prestador.");
-        // Força a abertura do modal de seleção que já existe no seu Index
-        const modalRole = document.getElementById('role-selection');
-        if (modalRole) {
-            modalRole.classList.remove('hidden');
-            return;
-        }
-        return alert("Ação exclusiva para Prestadores!");
+    if (requerPrestador && !isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
     }
 
     if (requerCliente && isPrestador) {
-        console.warn("🚫 Bloqueio: Prestador em área de Cliente.");
-        // Força a abertura do modal de seleção que já existe no seu Index
-        const modalRole = document.getElementById('role-selection');
-        if (modalRole) {
-            modalRole.classList.remove('hidden');
-            return;
-        }
-        return alert("Ação exclusiva para Clientes!");
+        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
@@ -316,7 +304,7 @@ window.renderizarTourBoasVindas = function() {
             </div>
 
             <div class="grid gap-4">
-               <button onclick="window.finalizarTourMusculado('contratar', ['cliente_final', 'contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-600 transition-all shadow-md active:scale-95 group text-left">
+                <button onclick="window.finalizarTourMusculado('servicos', ['cliente_final', 'contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-600 transition-all shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">🛠️</div>
                     <div>
                         <p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p>
@@ -324,7 +312,7 @@ window.renderizarTourBoasVindas = function() {
                     </div>
                 </button>
 
-               <button onclick="window.finalizarTourMusculado('extra', ['prestador', 'renda_extra', 'micro_tarefas'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-600 transition-all shadow-md active:scale-95 group text-left">
+               <button onclick="window.finalizarTourMusculado('missoes', ['prestador', 'renda_extra', 'micro_tarefas'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-600 transition-all shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">⚡</div>
                     <div>
                         <p class="font-black text-emerald-700 uppercase text-xs">Renda Extra</p>
