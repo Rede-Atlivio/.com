@@ -84,7 +84,8 @@ function switchTab(tabName, isAutoBoot = false) {
 
     // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
+    // 🛍️ EXPLORAÇÃO LIVRE: 'loja' e 'produtos' foram removidos da trava para acesso universal
+    const requerCliente = ['contratar', 'vaga'].includes(tabName);
 
     if (requerPrestador && !isPrestador) {
         console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
