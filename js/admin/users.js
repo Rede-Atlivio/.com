@@ -17,10 +17,16 @@ export async function init(viewType) {
     } else {
         headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
     }
-    // ✅ RESTAURADO: Exportações Globais essenciais
+   // ✅ RESTAURADO: Exportações Globais essenciais
     window.openEditor = openEditor;
     window.saveAction = saveAction;
     window.saveServiceAction = saveServiceAction;
+    window.filtrarPorIntencao = (intencao) => {
+        selectedUsers.clear(); 
+        if(document.getElementById('check-users-all')) document.getElementById('check-users-all').checked = false;
+        renderTable(intencao ? allLoadedUsers.filter(u => u.user_intent === intencao) : allLoadedUsers);
+        updateUserBulkUI();
+    };
 
     if(searchInput) {
         const newSearch = searchInput.cloneNode(true);
