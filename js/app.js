@@ -486,3 +486,12 @@ window.togglePrivacyHome = () => {
     }
 };
 // --- FIM DO MAESTRO ---
+// 🩹 GESTÃO DE MODAL INFORMATIVO
+window.fecharModalTrava = () => {
+    const modal = document.getElementById('modal-trava-perfil');
+    if (modal) {
+        modal.classList.add('hidden');
+        // Ao fechar, garantimos que o usuário volte para a Home para não ver abas técnicas vazias
+        window.switchTab('home');
+    }
+};
