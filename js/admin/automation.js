@@ -411,9 +411,11 @@ window.carregarMaestro = async function() {
                         <div>
                             <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Ação</label>
                             <select id="maestro-action" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none">
-                                <option value="chat">Ir para Chat</option>
-                                <option value="wallet">Ir para Carteira</option>
-                                <option value="services">Ir para Serviços</option>
+                                <option value="chat">💬 Ir para Chat</option>
+                                <option value="wallet">💰 Ir para Carteira</option>
+                                <option value="services">🛠️ Ir para Serviços</option>
+                                <option value="missoes">⚡ Ir para Missões</option>
+                                <option value="jobs">💼 Ir para Vagas</option>
                             </select>
                         </div>
                         <div class="flex items-end">
