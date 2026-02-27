@@ -92,7 +92,6 @@ function switchTab(tabName, isAutoBoot = false) {
         if (window.alternarPerfil) return window.alternarPerfil();
         return alert("Por favor, alterne seu perfil no menu superior.");
       }
-    }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
     window.abaAtual = nomeLimpo; 
