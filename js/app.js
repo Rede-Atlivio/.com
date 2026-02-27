@@ -95,9 +95,16 @@ function switchTab(tabName, isAutoBoot = false) {
     window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
 
     // ⚡ CARREGAMENTO ESPECÍFICO DE MÓDULOS
-    if(tabName === 'servicos') {
-        if(window.carregarServicos) window.carregarServicos();
-    }
+    if(tabName === 'home') {
+        const homeContent = document.getElementById('home-content');
+        // Se a tela ainda for o esqueleto de carregamento, renderiza o Tour
+        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
+            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
+        }
+    }
+    if(tabName === 'servicos') {
+        if(window.carregarServicos) window.carregarServicos();
+    }
     if(tabName === 'empregos') {
         if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     }
