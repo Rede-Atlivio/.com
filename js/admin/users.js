@@ -195,7 +195,9 @@ async function saveAction(col, id, action) {
     if(action === 'aprovar') { updates.status = 'aprovado'; updates.is_online = true; msg = "Perfil aprovado!"; }
     await updateDoc(doc(window.db, col, id), updates);
     if(msg) await addDoc(collection(window.db, "notifications"), { uid: id, message: msg, type: action==='aprovar'?'success':'alert', read: false, created_at: serverTimestamp() });
-    console.log(`✅ Ação ${action} aplicada ao UID: ${id}`);
+    alert("✅ Salvo!");
+    document.getElementById('modal-editor').classList.add('hidden');
+    loadList();
 }
 
 // ✅ RESTAURADO: Ações em Massa
@@ -208,10 +210,10 @@ function abrirModalMassa() {
        <div class="space-y-4">
             <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">📢 Gestão em Massa (${selectedUsers.size})</h3>
             
-          <div class="grid grid-cols-1 gap-2">
-                <button id="btn-massa-exec" onclick="window.aplicarAcaoEmMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">✅ Aprovar Todos</button>
-                <button onclick="this.id='btn-massa-exec'; window.aplicarAcaoEmMassa('banir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🚫 Banir Todos</button>
-                <button onclick="this.id='btn-massa-exec'; window.aplicarAcaoEmMassa('resetar')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🧭 Resetar Tour em Massa</button>
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">✅ Aprovar Selecionados</button>
+                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🚫 Banir / Suspender</button>
+                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🗑️ Excluir Definitivamente</button>
             </div>
 
             <div class="h-px bg-white/10 my-4"></div>
@@ -279,40 +281,39 @@ async function enviarMassaConfirmado() {
     }
 }
 
-// 🔥 REPLICANDO FUNÇÕES EXISTENTES PARA MASSA
-window.aplicarAcaoEmMassa = async (tipoAcao) => {
-    if (selectedUsers.size === 0) return alert("Selecione os usuários.");
-    if (!confirm(`Confirmar ${tipoAcao.toUpperCase()} em ${selectedUsers.size} registros?`)) return;
-    
-    const col = currentType === 'services' ? 'active_providers' : 'usuarios';
-    const btn = document.getElementById('btn-massa-exec'); // ID fixo e seguro
-    const txtOriginal = btn.innerText;
-    
+// ⚡ MOTOR DE EXECUÇÃO EM MASSA (Aprovar, Banir, Excluir)
+window.executarAcaoMassa = async (acao) => {
+    if (selectedUsers.size === 0) return alert("Selecione usuários primeiro.");
+    if (!confirm(`Confirmar [${acao.toUpperCase()}] em ${selectedUsers.size} registros?`)) return;
+
     try {
-        btn.innerText = "⏳ PROCESSANDO...";
-        btn.disabled = true;
+        const batch = writeBatch(window.db);
+        const col = currentType === 'services' ? 'active_providers' : 'usuarios';
 
-        for (let uid of selectedUsers) {
-            if (tipoAcao === 'resetar') {
-                // Chama o reset individual que você já validou
-                await window.resetarTourDireto(uid, 'Massa');
+        selectedUsers.forEach(uid => {
+            const ref = doc(window.db, col, uid);
+            if (acao === 'excluir') {
+                batch.delete(ref);
+                // Se for usuário, tenta deletar também o perfil de prestador vinculado
+                if (currentType === 'users') batch.delete(doc(window.db, "active_providers", uid));
             } else {
-                // Chama o saveAction individual (agora sem fechar o modal no meio)
-                await window.saveAction(col, uid, tipoAcao);
+                batch.update(ref, { 
+                    status: acao === 'aprovar' ? 'aprovado' : 'banido',
+                    updated_at: serverTimestamp() 
+                });
             }
-        }
+        });
 
-        alert(`✅ SUCESSO: Ação aplicada a ${selectedUsers.size} registros.`);
-    } catch (e) {
-        alert("❌ Erro no processamento: " + e.message);
-    } finally {
-        btn.innerText = txtOriginal;
-        btn.disabled = false;
+        await batch.commit();
+        alert(`✅ Operação [${acao.toUpperCase()}] concluída!`);
         document.getElementById('modal-editor').classList.add('hidden');
         selectedUsers.clear();
         loadList();
+    } catch (e) {
+        alert("Erro na execução: " + e.message);
     }
 };
+
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
 function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
