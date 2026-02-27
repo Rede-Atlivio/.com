@@ -444,25 +444,84 @@ window.carregarMaestro = async function() {
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // 🚀 BUSCADOR AUTOMÁTICO DE USUÁRIOS
-    setTimeout(async () => {
-        try {
-            const { collection, getDocs, query, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const snap = await getDocs(query(collection(window.db, "usuarios"), limit(3000))); // Limite de segurança de memória
-            const selectUID = document.getElementById('maestro-uid');
-            
-            if(selectUID) {
-                selectUID.innerHTML = '<option value="">-- Selecione um usuário --</option>';
-                snap.forEach(d => {
-                    const u = d.data();
-                    const nome = u.nome || u.displayName || u.nome_profissional || 'Desconhecido';
-                    selectUID.innerHTML += `<option value="${d.id}">${nome} (${u.email || d.id.substring(0,6)})</option>`;
-                });
-            }
-        } catch(e) { console.error("Erro ao puxar usuários para o select:", e); }
-    }, 200);
+   };
+
+// 🚀 MOTOR DE BUSCA AVANÇADA DE USUÁRIOS (MEMÓRIA CACHEADA)
+window.buscarUsuarioMaestro = async (termo) => {
+    termo = termo.toLowerCase().trim();
+    const resBox = document.getElementById('maestro-search-results');
+    
+    // Só pesquisa se digitar 2 letras ou mais
+    if (termo.length < 2) { 
+        resBox.classList.add('hidden'); 
+        return; 
+    }
+
+    // Carrega o cache do banco de dados na PRIMEIRA digitação (Economiza Firestore)
+    if (!window.maestroUserCache) {
+        document.getElementById('maestro-user-search').placeholder = "Sincronizando banco...";
+        const { collection, getDocs, limit, query } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const snap = await getDocs(query(collection(window.db, "usuarios"), limit(5000)));
+        window.maestroUserCache = [];
+        snap.forEach(d => {
+            const u = d.data();
+            window.maestroUserCache.push({
+                id: d.id,
+                nome: (u.nome || u.displayName || u.nome_profissional || '').toLowerCase(),
+                email: (u.email || '').toLowerCase(),
+                telefone: (u.telefone || u.phone || '').replace(/\D/g, ''),
+                cpf: (u.cpf || '').replace(/\D/g, ''),
+                display: u.nome || u.displayName || u.nome_profissional || 'Desconhecido',
+                displayEmail: u.email || 'Sem email'
+            });
+        });
+        document.getElementById('maestro-user-search').placeholder = "Digite para buscar...";
+    }
+
+    const apenasNumeros = termo.replace(/\D/g, '');
+    
+    // Filtro instantâneo na Memória Cache
+    const filtrados = window.maestroUserCache.filter(u => {
+        return u.nome.includes(termo) || 
+               u.email.includes(termo) || 
+               (apenasNumeros.length > 3 && u.telefone.includes(apenasNumeros)) || 
+               (apenasNumeros.length > 3 && u.cpf.includes(apenasNumeros)) ||
+               u.id.toLowerCase() === termo;
+    }).slice(0, 8); // Limita a 8 resultados visuais para não poluir
+
+    // Renderiza os resultados
+    if (filtrados.length > 0) {
+        resBox.innerHTML = filtrados.map(u => `
+            <div onclick="window.selecionarUsuarioMaestro('${u.id}', '${u.display}')" class="p-3 border-b border-slate-700 hover:bg-slate-700 cursor-pointer transition">
+                <p class="text-xs font-black text-white">${u.display}</p>
+                <p class="text-[10px] text-gray-400 font-mono mt-0.5">${u.displayEmail} | Tel: ${u.telefone || 'N/A'}</p>
+            </div>
+        `).join('');
+        resBox.classList.remove('hidden');
+    } else {
+        resBox.innerHTML = `<div class="p-4 text-[10px] font-bold text-gray-500 text-center uppercase tracking-widest">Nenhum usuário encontrado.</div>`;
+        resBox.classList.remove('hidden');
+    }
 };
 
+// Quando clica no resultado da busca
+window.selecionarUsuarioMaestro = (uid, nome) => {
+    document.getElementById('maestro-uid').value = uid; // Salva o ID oculto para o disparo
+    document.getElementById('maestro-search-results').classList.add('hidden');
+    document.getElementById('maestro-search-container').classList.add('hidden');
+    document.getElementById('maestro-selected-user').classList.remove('hidden');
+    document.getElementById('maestro-selected-name').innerText = `👤 ${nome}`;
+};
+
+// Quando clica em "Trocar"
+window.limparSelecaoMaestro = () => {
+    document.getElementById('maestro-uid').value = "";
+    document.getElementById('maestro-selected-user').classList.add('hidden');
+    document.getElementById('maestro-search-container').classList.remove('hidden');
+    const input = document.getElementById('maestro-user-search');
+    input.value = "";
+    input.focus();
+};
 // ============================================================================
 // 🚀 MOTOR DE DISPARO EM MASSA DO MAESTRO
 // ============================================================================
