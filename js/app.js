@@ -82,25 +82,40 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-// 🛡️ MATRIZ MAESTRO V40: Proteção de Identidade Baseada na Tabela de Intenção
-    // Verifica se a aba solicitada pertence à área de prestação de serviços (Trabalho)
-    const zonaTrabalho = ['servicos', 'empregos', 'extra', 'missoes', 'ganhar'].includes(nomeLimpo); 
-    // Verifica se a aba solicitada pertence à área de contratação ou consumo (Cliente)
-    const zonaCompra = ['contratar', 'vaga', 'loja', 'produtos', 'oportunidades'].includes(tabName);
+// 🛡️ MATRIZ MAESTRO V50: Inteligência de Intenção vs. Identidade
+    // Aqui usamos o tabName (o que o usuário CLICOU) e não o nomeLimpo (onde ele vai CAIR)
+    
+    // Lista de botões que só quem quer TRABALHAR clica
+    const botoesParaTrabalhadores = ['servicos', 'empregos', 'extra', 'missoes'];
+    // Lista de botões que só quem quer CONTRATAR/COMPRAR clica
+    const botoesParaClientes = ['contratar', 'vaga', 'loja', 'produtos'];
 
     let bloqueado = false;
-    let alvo = "";
+    let perfilNecessario = "";
 
-    // Lógica Incorruptível: Só bloqueia se houver incompatibilidade entre farda e área
-    if (zonaTrabalho && !isPrestador) { 
-        bloqueado = true; 
-        alvo = "PRESTADOR"; 
-    } else if (zonaCompra && isPrestador) { 
-        bloqueado = true; 
-        alvo = "CLIENTE"; 
+    // Se ele clicou em botão de trabalho mas NÃO é prestador -> BLOQUEIA
+    if (botoesParaTrabalhadores.includes(tabName) && !isPrestador) {
+        bloqueado = true;
+        perfilNecessario = "PRESTADOR";
+    } 
+    // Se ele clicou em botão de compra mas É prestador -> BLOQUEIA
+    else if (botoesParaClientes.includes(tabName) && isPrestador) {
+        bloqueado = true;
+        perfilNecessario = "CLIENTE";
     }
 
     if (bloqueado) {
+        // Busca o modal único na tela (Reutilização de componente para milhões de usuários)
+        const modal = document.getElementById('modal-trava-perfil');
+        const txtAlvo = document.getElementById('perfil-alvo');
+        
+        if (modal && txtAlvo) {
+            txtAlvo.innerText = perfilNecessario; // Escreve dinamicamente qual perfil falta
+            modal.classList.remove('hidden'); // Mostra o aviso
+            console.warn(`🚫 Bloqueio: O botão '${tabName}' é exclusivo para ${perfilNecessario}`);
+            return; // Mata a função aqui: não troca de aba, não gasta processamento
+        }
+    }
         const modal = document.getElementById('modal-trava-perfil');
         const txt = document.getElementById('perfil-alvo');
         if (modal && txt) {
