@@ -19,7 +19,16 @@ export async function init(viewType) {
         headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         if(btnAdd) { btnAdd.innerHTML = "+ NOVO PRESTADOR"; btnAdd.onclick = () => window.openEditor('active_providers', null); }
     }
+    // ✅ RESTAURADO: Exportações Globais essenciais
+    window.openEditor = openEditor;
+    window.saveAction = saveAction;
+    window.saveServiceAction = saveServiceAction;
 
+    if(searchInput) {
+        const newSearch = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearch, searchInput);
+        newSearch.addEventListener('input', (e) => window.filtrarListaLocal(e.target.value.toLowerCase()));
+    }
     setTimeout(() => {
         const chkAll = document.getElementById('check-users-all');
         if(chkAll) chkAll.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
