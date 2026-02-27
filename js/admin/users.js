@@ -12,43 +12,56 @@ export async function init(viewType) {
     const searchInput = document.getElementById('list-search'); 
     
     const checkHeader = `<th class="p-3 w-10"><input type="checkbox" id="check-users-all" class="chk-custom"></th>`;
-    if (viewType === 'users') {
-        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">STATUS / SALDO</th><th class="p-3 text-right">AÇÕES</th>`;
-    } else {
-        headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
-    }
-   // ✅ RESTAURADO: Exportações Globais essenciais
+    if (viewType === 'users') {
+        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">STATUS / SALDO</th><th class="p-3 text-right">AÇÕES</th>`;
+        if(btnAdd) { btnAdd.innerHTML = "+ NOVO USUÁRIO"; btnAdd.onclick = () => window.openEditor('usuarios', null); }
+    } else {
+        headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+        if(btnAdd) { btnAdd.innerHTML = "+ NOVO PRESTADOR"; btnAdd.onclick = () => window.openEditor('active_providers', null); }
+    }
+
+    // ✅ RESTAURADO: Exportações Globais essenciais
     window.openEditor = openEditor;
     window.saveAction = saveAction;
     window.saveServiceAction = saveServiceAction;
-    window.filtrarPorIntencao = (intencao) => {
-        selectedUsers.clear(); 
-        if(document.getElementById('check-users-all')) document.getElementById('check-users-all').checked = false;
-        renderTable(intencao ? allLoadedUsers.filter(u => u.user_intent === intencao) : allLoadedUsers);
-        updateUserBulkUI();
-    };
+    window.abrirModalMassa = abrirModalMassa;
+    window.enviarMassaConfirmado = enviarMassaConfirmado;
+    window.filtrarPorIntencao = filtrarPorIntencao;
 
-   if(searchInput) {
+    if(searchInput) {
+        const containerBusca = searchInput.parentElement;
+        
+        // Injeta o Select CRM ao lado da busca, se ainda não existir
         if(!document.getElementById('crm-intent-filter') && viewType === 'users') {
-            searchInput.parentElement.insertAdjacentHTML('afterend', `
-                <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
-                    <option value="">🎯 Todas as Intenções</option>
-                    <option value="servicos">🛠️ Serviços</option>
-                    <option value="missoes">⚡ Missões</option>
-                    <option value="empregos">💼 Empregos</option>
-                </select>`);
+            const selectHTML = `
+            <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
+                <option value="">🎯 Todas as Intenções</option>
+                <option value="servicos">🛠️ Serviços (Contratantes)</option>
+                <option value="missoes">⚡ Missões (Renda Extra)</option>
+                <option value="empregos">💼 Empregos (CLT)</option>
+            </select>`;
+            containerBusca.insertAdjacentHTML('afterend', selectHTML);
         }
+
         const newSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearch, searchInput);
-        newSearch.addEventListener('input', (e) => window.filtrarListaLocal(e.target.value.toLowerCase()));
+        newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
     }
-    setTimeout(() => {
-        const chkAll = document.getElementById('check-users-all');
-        if(chkAll) chkAll.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
-    }, 500);
+    
+    const btnBulk = document.getElementById('btn-bulk-delete');
+    if(btnBulk) {
+        btnBulk.innerHTML = `<i data-lucide="zap"></i> AÇÕES EM MASSA`;
+        btnBulk.onclick = abrirModalMassa;
+    }
 
-    await loadList();
+    setTimeout(() => {
+        const chkAll = document.getElementById('check-users-all');
+        if(chkAll) chkAll.addEventListener('change', (e) => toggleUserSelectAll(e.target.checked));
+    }, 500);
+
+    await loadList();
 }
+
 async function loadList() {
     const tbody = document.getElementById('list-body');
     const countEl = document.getElementById('list-count');
@@ -90,18 +103,16 @@ function renderTable(lista) {
             const intentBadge = data.user_intent ? `<span class="bg-blue-900/30 text-blue-400 border border-blue-800/50 px-2 py-0.5 rounded text-[10px]">${userIntent}</span>` : `<span class="text-[10px] text-gray-600">Sem rastro</span>`;
 
             tbody.innerHTML += `
-                <tr class="border-b border-white/5 hover:bg-white/5 transition group h-1">
+                <tr class="border-b border-white/5 hover:bg-white/5 transition group">
                     ${checkbox}
-                    <td class="p-3 py-2"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
-                    <td class="p-3 py-2 text-gray-400 text-xs uppercase font-bold tracking-wider">${intentBadge}</td>
-                   <td class="p-3 py-2"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
-                    <td class="p-3 py-2 text-right">
-                        <div class="flex items-center justify-end gap-2">
-                            <button onclick="window.resetarTourDireto('${data.id}', '${data._displayName}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white p-1.5 rounded-lg text-[10px] transition-all" title="Resetar Tour/Intenção">🧭</button>
-                            <button onclick="window.openEditor('usuarios','${data.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-tighter">Editar</button>
-                        </div>
-                    </td>
-                </tr>`;
+                    <td class="p-3"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
+                    <td class="p-3 text-gray-400 text-xs uppercase font-bold tracking-wider">${intentBadge}</td>
+                   <td class="p-3"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
+                    <td class="p-3 text-right flex items-center justify-end gap-1">
+                        <button onclick="window.resetarTourDireto('${data.id}', '${data._displayName}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white p-1.5 rounded-lg text-[10px] transition-all" title="Resetar Tour/Intenção">🧭</button>
+                        <button onclick="window.openEditor('usuarios','${data.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-tighter">Editar</button>
+                    </td>
+                </tr>`;
         } else {
             let statusIcon = data.status === 'aprovado' ? "🟢" : (data.status === 'em_analise' ? "🟡" : "🔴");
             tbody.innerHTML += `
@@ -209,9 +220,95 @@ async function saveAction(col, id, action) {
     loadList();
 }
 
+// ✅ RESTAURADO: Ações em Massa
+function abrirModalMassa() {
+    if(selectedUsers.size === 0) return alert("Selecione usuários primeiro.");
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    modal.classList.remove('hidden');
+    content.innerHTML = `
+        <div class="space-y-4">
+            <h3 class="text-xl font-black text-white">📢 Ação em Massa (${selectedUsers.size})</h3>
+            <div><label class="text-[10px] text-gray-400 font-bold uppercase">Mensagem</label><textarea id="massa-msg" class="w-full p-3 rounded bg-white text-black" rows="3"></textarea></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[10px] text-gray-400 font-bold uppercase">Cor</label><select id="massa-tipo" class="w-full p-3 rounded bg-white text-black"><option value="success">Verde</option><option value="alert">Amarelo</option></select></div>
+                <div><label class="text-[10px] text-gray-400 font-bold uppercase">Dar Crédito</label><input type="number" id="massa-credito" class="w-full p-3 rounded bg-white text-black"></div>
+            </div>
+            <button onclick="window.enviarMassaConfirmado()" class="w-full bg-purple-600 text-white py-4 rounded-xl font-bold uppercase">🚀 DISPARAR</button>
+        </div>`;
+}
+
+async function enviarMassaConfirmado() {
+    const msg = document.getElementById('massa-msg').value;
+    const tipo = document.getElementById('massa-tipo').value;
+    const credito = parseFloat(document.getElementById('massa-credito').value) || 0;
+    
+    if(!msg && credito === 0) return alert("Preencha a mensagem ou o valor do crédito.");
+    if(!confirm(`Deseja aplicar esta ação para ${selectedUsers.size} usuários?`)) return;
+    
+    try {
+        const batch = writeBatch(window.db);
+        selectedUsers.forEach(uid => {
+            if(msg) {
+                const refNotif = doc(collection(window.db, "notifications"));
+                batch.set(refNotif, { 
+                    uid: uid, 
+                    message: msg, 
+                    type: tipo, 
+                    read: false, 
+                    created_at: serverTimestamp() 
+                });
+            }
+        });
+        
+        await batch.commit();
+
+        if(credito !== 0) {
+            for (let uid of selectedUsers) {
+                const ref = doc(window.db, "usuarios", uid);
+                const snap = await getDoc(ref);
+                if(snap.exists()) {
+                    const data = snap.data();
+                    const saldoAtual = parseFloat(data.wallet_balance || data.saldo || 0);
+                    const novoSaldo = saldoAtual + credito;
+                    
+                    await updateDoc(ref, { 
+                        wallet_balance: Number(novoSaldo),
+                        saldo: Number(novoSaldo),
+                        updated_at: serverTimestamp()
+                    });
+                }
+            }
+        }
+
+        alert("✅ Processo concluído com sucesso!");
+        document.getElementById('modal-editor').classList.add('hidden');
+        selectedUsers.clear();
+        loadList();
+    } catch (e) {
+        console.error("Erro na ação em massa:", e);
+        alert("Falha ao processar ação em massa.");
+    }
+}
+
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
-window.filtrarListaLocal = function(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
+function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
+
+// 🎯 FILTRO CRM: Redefine a tabela apenas com quem tem a intenção escolhida
+function filtrarPorIntencao(intencao) {
+    // Desmarca todos antes de filtrar para evitar bônus acidental
+    selectedUsers.clear(); 
+    document.getElementById('check-users-all').checked = false;
+    
+    if (!intencao) {
+        renderTable(allLoadedUsers); // Traz todos de volta
+    } else {
+        const filtrados = allLoadedUsers.filter(u => u.user_intent === intencao);
+        renderTable(filtrados);
+    }
+    updateUserBulkUI();
+}
 
 // 🧭 MAESTRO: RESET DIRETO PELA TABELA
 window.resetarTourDireto = async function(uid, nome) {
