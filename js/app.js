@@ -521,9 +521,11 @@ window.addEventListener('click', (e) => {
     // 🏷️ Áreas que apenas quem é PRESTADOR pode acessar. 
     // Se um CLIENTE clicar aqui, o Vigilante barra.
     const exclusivasPrestador = ['missoes', 'radar', 'ativos'];
-    const exclusivasCliente = ['loja', 'contratar'];
+   // 🏷️ Áreas que apenas quem é CLIENTE pode acessar.
+    // Se um PRESTADOR clicar em 'loja' ou 'servicos' (Contratar), o Vigilante barra.
+    const exclusivasCliente = ['loja', 'contratar', 'servicos'];
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
+    const bloqueioPrestador = (isCliente && exclusivasCliente.includes(abaAlvo));
 
     if (bloqueioCliente || bloqueioPrestador) {
         // ⛔ INTERCEPTAÇÃO SOBERANA
