@@ -93,8 +93,12 @@ function switchTab(tabName, isAutoBoot = false) {
     let bloqueado = false;
     let perfilAlvo = "";
 
+    // 🛡️ ZONA DE EXCLUSÃO DA HOME: Se o destino for 'home', o Maestro é proibido de bloquear.
+    if (nomeLimpo === 'home' || isAutoBoot) {
+        bloqueado = false; 
+    } 
     // Regra: Se a zona é de TRABALHO e o perfil NÃO é Prestador...
-    if (isZonaTrabalho && !isPrestador) {
+    else if (isZonaTrabalho && !isPrestador) {
         
         // 🛡️ LÓGICA PURA: Se a zona é de trabalho e o usuário NÃO é prestador, a única saída é o botão contratar
         if (tabName !== 'contratar') {
