@@ -77,12 +77,29 @@ function switchTab(tabName, isAutoBoot = false) {
         'canal': 'canal', 'tutorials': 'canal',
         'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
     };
+
     const nomeLimpo = mapa[tabName] || tabName;
+    const perfil = window.userProfile;
+    const isPrestador = perfil?.is_provider || false;
+
+    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
+    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
+    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
+
+    if (requerPrestador && !isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
+    }
+
+    if (requerCliente && isPrestador) {
+        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
+        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
+    }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
     window.abaAtual = nomeLimpo; 
 
-    // 🧹 LIMPEZA TOTAL: Esconde todas as seções e mata duplicatas
+    // 🧹 LIMPEZA TOTAL
     document.querySelectorAll('main > section').forEach(el => {
         el.classList.add('hidden');
         el.style.display = 'none';
@@ -95,44 +112,35 @@ function switchTab(tabName, isAutoBoot = false) {
     } else {
         console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
     }
+
     document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`tab-${tabName}`);
+    const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
     if(activeBtn) activeBtn.classList.add('active');
 
-    // 🛰️ GATILHOS DE INTELIGÊNCIA (Ad-Engine)
-    // Isso garante que cada troca de aba alimente o Score do Usuário
     window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
 
-    // ⚡ CARREGAMENTO ESPECÍFICO DE MÓDULOS
-    if(tabName === 'home') {
-        const homeContent = document.getElementById('home-content');
-        // Se a tela ainda for o esqueleto de carregamento, renderiza o Tour
-        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
-            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
-        }
-    }
-    if(tabName === 'servicos') {
-        if(window.carregarServicos) window.carregarServicos();
-    }
-    if(tabName === 'empregos') {
+    // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
+    if(nomeLimpo === 'home') {
+        const homeContent = document.getElementById('home-content');
+        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
+            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
+        }
+    }
+    if(nomeLimpo === 'servicos') {
+        if(window.carregarServicos) window.carregarServicos();
+        if(tabName === 'contratar') setTimeout(() => { if(window.switchServiceSubTab) window.switchServiceSubTab('contratar'); }, 100);
+    }
+    if(nomeLimpo === 'empregos') {
         if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
     }
-    if(tabName === 'loja') {
-        // 🛒 Sincronia de ID: Mapeia para a seção 'loja' mas carrega o módulo 'produtos'
-        if(window.carregarProdutos) window.carregarProdutos(); 
-    }
-    if(tabName === 'ganhar') {
+    if(nomeLimpo === 'loja' && window.carregarProdutos) window.carregarProdutos();
+    if(nomeLimpo === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
-        if(window.carregarMissoes) window.carregarMissoes(); // Chama missões/micro-tarefas
+        if(window.carregarMissoes) window.carregarMissoes();
     }
-   if(tabName === 'oportunidades') {
-        if(window.carregarOportunidades) window.carregarOportunidades();
-    }
-    if(tabName === 'canal') {
-        // Carrega o módulo de conteúdo dinamicamente para economizar memória (Escalabilidade)
-        import('./modules/canal.js?v=' + Date.now()).then(m => {
-            if(m.init) m.init();
-        }).catch(e => console.error("Erro ao carregar o Canal:", e));
+    if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
+    if(nomeLimpo === 'canal') {
+        import('./modules/canal.js?v=' + Date.now()).then(m => { if(m.init) m.init(); }).catch(e => console.error(e));
     }
 }
 
