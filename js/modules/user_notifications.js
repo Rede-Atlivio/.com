@@ -156,6 +156,9 @@ window.acaoNotificacao = async (id, action) => {
         if(window.switchTab) window.switchTab('produtosRecomendados');
     }
     else if(action === 'chat') {
-        if(window.switchTab) window.switchTab('chat');
-    }
+        if(window.switchTab) window.switchTab('chat');
+    }
+    else if(action === 'canal') {
+        if(window.switchTab) window.switchTab('canal');
+    }
 };
