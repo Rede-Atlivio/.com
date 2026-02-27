@@ -145,7 +145,8 @@ function switchTab(tabName, isAutoBoot = false) {
         import('./modules/canal.js?v=' + Date.now())
             .then(m => { if(m.init) m.init(); })
             .catch(e => console.error("Erro ao carregar módulo canal:", e));
-    }
+         }
+       }
 
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
