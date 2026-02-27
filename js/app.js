@@ -66,7 +66,14 @@ window.addEventListener('userProfileLoaded', (e) => {
 function switchTab(tabName, isAutoBoot = false) {
     // 📍 REGISTRO CONTEXTUAL: Informa ao sistema (e ao Sininho) qual aba está visível agora.
     // Isso impede que o sistema mande alertas de algo que o usuário já está vendo.
+    // 📍 REGISTRO CONTEXTUAL: Atualiza a aba ativa e limpa o Sininho se necessário
     window.abaAtual = tabName;
+    
+    // ✨ LIMPEZA AUTOMÁTICA: Se o usuário entrou na aba de notificações, esconda o ponto vermelho
+    if (tabName === 'notificacoes') {
+        const badge = document.getElementById('badge-notificacao');
+        if (badge) badge.classList.add('hidden');
+    }
 
     // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
     if (isAutoBoot && window.atlivioBootConcluido) return;
