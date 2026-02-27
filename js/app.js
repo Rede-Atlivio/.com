@@ -266,10 +266,19 @@ async function carregarInterface(user) {
             // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
             window.switchTab('home', true); 
 
-            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
-            let userIntent = window.userProfile?.user_intent || "";
-            if (userIntent === "home" || isToggling) userIntent = ""; 
-            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
+            // 🛡️ LIMPEZA DE LOOP: Se trocou de perfil, mata a intenção antiga
+            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
+            let userIntent = window.userProfile?.user_intent || "";
+            
+            if (isToggling) {
+                console.log("🧼 Limpando rastro de perfil antigo...");
+                userIntent = ""; // Força cair no Onboarding/Home
+                sessionStorage.removeItem('is_toggling_profile');
+                // Se a sua função de salvar no banco estiver disponível, limpamos lá também
+                if (window.registrarEventoMaestro) window.registrarEventoMaestro({ tipo: "navegacao", aba: "home" });
+            }
+
+            if (userIntent === "home") userIntent = "";
 
             if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
