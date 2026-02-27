@@ -282,10 +282,10 @@ async function enviarMassaConfirmado() {
 // 🔥 REPLICANDO FUNÇÕES EXISTENTES PARA MASSA
 window.aplicarAcaoEmMassa = async (tipoAcao) => {
     if (selectedUsers.size === 0) return alert("Selecione os usuários.");
-    if (!confirm(`Deseja aplicar ${tipoAcao.toUpperCase()} em ${selectedUsers.size} usuários?`)) return;
+    if (!confirm(`Confirmar ${tipoAcao.toUpperCase()} em ${selectedUsers.size} registros?`)) return;
     
     const col = currentType === 'services' ? 'active_providers' : 'usuarios';
-    const btn = event.target;
+    const btn = document.getElementById('btn-massa-exec'); // ID fixo e seguro
     const txtOriginal = btn.innerText;
     
     try {
