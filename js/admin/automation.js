@@ -522,18 +522,18 @@ window.dispararMaestroEmMassa = async function() {
 
 // --- LÓGICA DE DISPARO ---
 window.dispararNotificacaoMaestro = async function() {
-    const uid = document.getElementById('maestro-uid').value.trim();
-    const msg = document.getElementById('maestro-msg').value.trim();
-    const type = document.getElementById('maestro-type').value;
-    const action = document.getElementById('maestro-action').value;
+    const uid = document.getElementById('maestro-uid').value.trim();
+    const msg = document.getElementById('maestro-msg').value.trim();
+    const type = document.getElementById('maestro-type').value;
+    const action = document.getElementById('maestro-action').value;
 
-    if (!uid || !msg) return alert("❌ Preencha o UID e a Mensagem!");
+    if (!uid || !msg) return alert("❌ Preencha o UID e a Mensagem!");
 
-    try {
-        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const { db } = await import('./config.js');
+    try {
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const db = window.db; // 💎 Usa a instância global já autenticada do Admin
 
-        await addDoc(collection(db, "user_notifications"), {
+        await addDoc(collection(db, "user_notifications"), {
             userId: uid,
             type: type,
             message: msg,
