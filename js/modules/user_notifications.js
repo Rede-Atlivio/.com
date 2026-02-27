@@ -118,9 +118,10 @@ function gerarTextoBotao(action) {
     if(action === 'services') return "VER SERVIÇOS ➔";
     if(action === 'jobs') return "VER VAGAS ➔";
     if(action === 'missoes') return "VER AGORA ➔";
+    if(action === 'oportunidades') return "APROVEITAR ➔";
+    if(action === 'produtos') return "VER PRODUTO ➔";
     return "OK, ENTENDI";
 }
-
 // Ações Globais
 window.fecharNotificacao = async (id) => {
     document.getElementById('user-alert-bar').remove();
