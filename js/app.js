@@ -455,6 +455,7 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
+window.fecharModalTrava = () => document.getElementById('modal-trava-perfil').classList.add('hidden');
 
 // 🧭 NOVAS FUNÇÕES DO TOUR
 if (typeof renderizarTourBoasVindas === 'function') {
