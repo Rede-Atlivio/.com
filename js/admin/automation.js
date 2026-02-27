@@ -575,9 +575,9 @@ window.dispararMaestroEmMassa = async function() {
         snap.forEach(d => {
             const uid = d.id;
             const refNotif = doc(collection(db, "user_notifications"));
-            batch.set(refNotif, {
+           batch.set(refNotif, {
                 userId: uid,
-                type: "gift", 
+                type: action === 'canal' ? "canal" : "gift", 
                 message: msg,
                 action: action,
                 read: false,
