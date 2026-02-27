@@ -119,10 +119,11 @@ function switchTab(tabName, isAutoBoot = false) {
         el.style.display = 'none';
     });
 
-    const alvo = document.getElementById(`sec-${nomeLimpo}`);
-    if(alvo) {
-        alvo.classList.remove('hidden');
-        alvo.style.display = 'block';
+    // Seleciona o elemento da seção correspondente ao nome limpo da aba
+    const secaoAlvo = document.getElementById(`sec-${nomeLimpo}`); 
+    if(secaoAlvo) {
+        secaoAlvo.classList.remove('hidden'); // Remove a classe que esconde o conteúdo
+        secaoAlvo.style.display = 'block'; // Garante que a seção fique visível na tela
     } else {
         console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
     }
