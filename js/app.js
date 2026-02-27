@@ -493,7 +493,12 @@ window.fecharModalTrava = () => {
     const modal = document.getElementById('modal-trava-perfil');
     if (modal) {
         modal.classList.add('hidden');
-        // Ao fechar, garantimos que o usuário volte para a Home para não ver abas técnicas vazias
-        window.switchTab('home');
+        // REMOVA OU COMENTE A LINHA ABAIXO:
+        // window.switchTab('home'); 
+        
+        // Use esta lógica segura:
+        if (window.abaAtual === 'home') {
+            console.log("Modal fechado, mantendo na home.");
+        }
     }
 };
