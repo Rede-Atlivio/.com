@@ -63,6 +63,7 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
+function switchTab(tabName, isAutoBoot = false) {
 // 📺 PRIORIDADE CANAL: Se o usuário clicou para conhecer a Atlivio, ignore travas de boot
     if (tabName === 'canal') {
         isAutoBoot = false; 
