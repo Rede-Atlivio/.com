@@ -156,7 +156,13 @@ function switchTab(tabName, isAutoBoot = false) {
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
-        import('./modules/canal.js?v=' + Date.now()).then(m => { if(m.init) m.init(); }).catch(e => console.error(e));
+        // Importa o módulo do canal apenas quando necessário para economizar memória do servidor
+        import('./modules/canal.js?v=' + Date.now())
+            .then(m => { if(m.init) m.init(); }) // Inicializa o canal se o arquivo carregar com sucesso
+            .catch(e => { 
+                console.error("Erro ao carregar módulo do Canal:", e);
+                alert("Falha ao carregar o canal. Verifique sua conexão."); 
+            });
     }
 }
 
