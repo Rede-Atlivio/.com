@@ -3,13 +3,16 @@ import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTime
 export async function init() {
     const container = document.getElementById('view-tutorials');
     container.innerHTML = `
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-white">Tutoriais & Ajuda</h2>
-            <button onclick="window.addTutorial()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow flex items-center gap-2">
-                📹 Adicionar Vídeo
+        <div class="flex justify-between items-center mb-6 animate-fade">
+            <div>
+                <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter">📺 Canal ATLIVIO</h2>
+                <p class="text-xs text-gray-500 font-bold uppercase tracking-widest">Central de Educação e Retenção</p>
+            </div>
+            <button onclick="window.addTutorial()" class="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl font-black shadow-lg flex items-center gap-2 text-xs uppercase transition active:scale-95">
+                <i data-lucide="video"></i> NOVO CONTEÚDO
             </button>
         </div>
-        <div id="tutorials-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div id="tutorials-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <p class="text-gray-500">Carregando vídeos...</p>
         </div>
     `;
