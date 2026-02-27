@@ -86,14 +86,12 @@ function switchTab(tabName, isAutoBoot = false) {
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-   // 🛡️ GATILHO DE IDENTIDADE: Se o perfil não bate, oferece a troca removendo o 'hidden'
+    // 🛡️ GATILHO DE IDENTIDADE: Se o perfil não bate, dispara sua função de troca
     if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        console.log("⚠️ Perfil incompatível. Sugerindo troca de Identidade...");
-        const modalRole = document.getElementById('role-selection');
-        if (modalRole) {
-            modalRole.classList.remove('hidden');
-            // Removemos o 'return' para que o sistema não trave o carregamento de fundo
-        }
+        console.log("⚠️ Perfil incompatível. Disparando alternarPerfil()...");
+        if (window.alternarPerfil) return window.alternarPerfil();
+        return alert("Por favor, alterne seu perfil no menu superior.");
+    }
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
