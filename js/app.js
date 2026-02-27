@@ -91,7 +91,7 @@ function switchTab(tabName, isAutoBoot = false) {
         console.log("⚠️ Perfil incompatível. Disparando alternarPerfil()...");
         if (window.alternarPerfil) return window.alternarPerfil();
         return alert("Por favor, alterne seu perfil no menu superior.");
-    }
+      }
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
