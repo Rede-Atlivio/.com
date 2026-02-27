@@ -537,7 +537,6 @@ window.addEventListener('click', (e) => {
     const bloqueioPrestador = (isPrestador && (exclusivasCliente.includes(abaAlvo) || textoBotao.includes("CONTRATAR")));
 
     if (bloqueioCliente || bloqueioPrestador) {
-    if (bloqueioCliente || bloqueioPrestador) {
         // ⛔ INTERCEPTAÇÃO SOBERANA
         e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
         e.preventDefault();
