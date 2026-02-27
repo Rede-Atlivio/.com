@@ -228,11 +228,14 @@ async function carregarInterface(user) {
         // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
         setTimeout(() => {
             // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
-            window.switchTab('home', true); 
+            window.switchTab('home', true); 
 
-            const userIntent = window.userProfile?.user_intent || "";
+            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
+            let userIntent = window.userProfile?.user_intent || "";
+            if (userIntent === "home" || isToggling) userIntent = ""; 
+            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
-            if (userIntent && userIntent !== "") {
+            if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
                 
                 // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
