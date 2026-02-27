@@ -518,14 +518,18 @@ window.addEventListener('click', (e) => {
     const isPrestador = window.userProfile?.is_provider === true;
     
     // Suas regras de negócio exatas:
-    // 🏷️ Áreas que apenas quem é PRESTADOR pode acessar. 
-    // Se um CLIENTE clicar aqui, o Vigilante barra.
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos'];
-   // 🏷️ Áreas que apenas quem é CLIENTE pode acessar.
-    // Se um PRESTADOR clicar em 'loja' ou 'servicos' (Contratar), o Vigilante barra.
-    const exclusivasCliente = ['loja', 'contratar', 'servicos'];
+    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente)
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
+    
+    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
+    const exclusivasCliente = ['loja', 'contratar'];
+
+    // 🧠 Lógica de Sentinela:
+    // Bloqueia se NÃO for prestador e tentar área de trabalho
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    const bloqueioPrestador = (isCliente && exclusivasCliente.includes(abaAlvo));
+    
+    // Bloqueia se FOR prestador e tentar Loja, Contratar ou a aba genérica de Serviços
+    const bloqueioPrestador = (isPrestador && (exclusivasCliente.includes(abaAlvo) || abaAlvo === 'servicos'));
 
     if (bloqueioCliente || bloqueioPrestador) {
         // ⛔ INTERCEPTAÇÃO SOBERANA
