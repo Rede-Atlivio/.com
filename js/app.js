@@ -86,14 +86,20 @@ function switchTab(tabName, isAutoBoot = false) {
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-    if (requerPrestador && !isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
-    }
-
-    if (requerCliente && isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
+   // 🛡️ TRAVA DE SEGURANÇA COM MODAL MAESTRO
+    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
+        const modalTrava = document.getElementById('modal-trava-perfil');
+        const labelAlvo = document.getElementById('perfil-alvo');
+        
+        if (modalTrava && labelAlvo) {
+            // Define o nome do perfil necessário dinamicamente
+            labelAlvo.innerText = requerPrestador ? "PRESTADOR" : "CLIENTE";
+            
+            // Abre o modal na tela
+            modalTrava.classList.remove('hidden');
+            console.log("🚩 Modal de Trava acionado para:", labelAlvo.innerText);
+            return; // Impede a navegação
+        }
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
