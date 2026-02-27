@@ -493,70 +493,58 @@ window.togglePrivacyHome = () => {
     }
 };
 // --- FIM DO MAESTRO ---
-// 🩹 GESTÃO DE MODAL INFORMATIVO
-window.fecharModalTrava = () => {
-    const modal = document.getElementById('modal-trava-perfil');
-    if (modal) {
-        modal.classList.add('hidden');
-        // REMOVA OU COMENTE A LINHA ABAIXO:
-        // window.switchTab('home'); 
-        
-        // Use esta lógica segura:
-        if (window.abaAtual === 'home') {
-            console.log("Modal fechado, mantendo na home.");
-        }
-    }
-};
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 (Nível Industrial - Milhões de Cliques)
-// Esta variável fica fora da função para servir como um "Disjuntor" global
+// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 TURBO (Escala Global)
 let disjuntorVigilante = false; 
 
-document.addEventListener('click', (e) => {
-    // ⚡ FILTRO 0: Se o disjuntor estiver armado, o clique morre em nanosegundos
+// Usamos window para garantir que a proteção seja soberana
+window.addEventListener('click', (e) => {
+    // ⚡ FILTRO ATÔMICO: Se o disjuntor estiver ativo, mata o clique na hora
     if (disjuntorVigilante) {
+        e.stopImmediatePropagation(); // 🛑 Comando mais forte do JS: impede que qualquer outro script ouça o clique
         e.preventDefault();
-        e.stopPropagation();
-        return; 
+        return;
     }
 
-    // ⚡ FILTRO 1: Identifica se é um botão de navegação
+    // ⚡ LOCALIZADOR: Acha o botão de switchTab
     const btn = e.target.closest('button[onclick*="switchTab"]');
     if (!btn) return;
 
-    // ⚡ FILTRO 2: Extração rápida da intenção
-    const cmd = btn.getAttribute('onclick') || "";
-    const match = cmd.match(/'([^']+)'/);
+    // ⚡ ANALISADOR: Extrai a aba alvo
+    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
     if (!match) return;
     const abaAlvo = match[1];
 
-    // ⚡ FILTRO 3: Regras de Perfil (Is Provider?)
+    // ⚡ IDENTIFICADOR: Quem é o usuário?
     const isPrestador = window.userProfile?.is_provider === true;
-    const restritasPrestador = ['missoes', 'radar', 'ativos', 'servicos'];
-    const restritasCliente = ['loja', 'contratar'];
+    
+    // Suas regras de negócio exatas:
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'servicos']; 
+    const exclusivasCliente = ['loja', 'contratar'];
 
-    const erroAcesso = (!isPrestador && restritasPrestador.includes(abaAlvo)) || 
-                       (isPrestador && restritasCliente.includes(abaAlvo));
+    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
+    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
 
-    if (erroAcesso) {
-        // ⛔ INTERCEPTAÇÃO TOTAL: O clique é destruído antes de chegar ao Maestro
+    if (bloqueioCliente || bloqueioPrestador) {
+        // ⛔ INTERCEPTAÇÃO SOBERANA
+        e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
         e.preventDefault();
-        e.stopPropagation();
 
-        // 🛡️ ARMANDO O DISJUNTOR: Bloqueia qualquer novo clique por 400ms
-        disjuntorVigilante = true;
-        setTimeout(() => { disjuntorVigilante = false; }, 400);
-
-        // 🏗️ Interface de Orientação (Modal)
+        // 🏗️ DISPARO DO MODAL
         const modal = document.getElementById('modal-troca-identidade');
         const txt = document.getElementById('txt-perfil-atual');
         
         if (modal && txt) {
-            // Se o modal já estiver visível, não faz nada (evita re-renderização inútil)
+            // Só mexe no texto se o modal estiver fechado
             if (modal.classList.contains('hidden')) {
                 txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
                 modal.classList.remove('hidden');
             }
         }
-        console.warn(`[🛡️ Vigilante] Bloqueio em massa ativo para: ${abaAlvo}`);
+
+        // 🛡️ TRAVA ANTI-SPAM (400ms)
+        disjuntorVigilante = true;
+        setTimeout(() => { disjuntorVigilante = false; }, 400);
+        
+        console.warn(`[🛡️ Vigilante V3] Clique em ${abaAlvo} bloqueado com sucesso.`);
     }
-}, { capture: true, passive: false }); // 'capture: true' faz o Vigilante ser o primeiro a ver o clique
+}, { capture: true }); // O segredo da velocidade está no 'capture: true'
