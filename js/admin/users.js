@@ -207,14 +207,24 @@ function abrirModalMassa() {
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
     content.innerHTML = `
-        <div class="space-y-4">
-            <h3 class="text-xl font-black text-white">📢 Ação em Massa (${selectedUsers.size})</h3>
-            <div><label class="text-[10px] text-gray-400 font-bold uppercase">Mensagem</label><textarea id="massa-msg" class="w-full p-3 rounded bg-white text-black" rows="3"></textarea></div>
-            <div class="grid grid-cols-2 gap-4">
-                <div><label class="text-[10px] text-gray-400 font-bold uppercase">Cor</label><select id="massa-tipo" class="w-full p-3 rounded bg-white text-black"><option value="success">Verde</option><option value="alert">Amarelo</option></select></div>
-                <div><label class="text-[10px] text-gray-400 font-bold uppercase">Dar Crédito</label><input type="number" id="massa-credito" class="w-full p-3 rounded bg-white text-black"></div>
+       <div class="space-y-4">
+            <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">📢 Gestão em Massa (${selectedUsers.size})</h3>
+            
+            <div class="grid grid-cols-1 gap-2">
+                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">✅ Aprovar Selecionados</button>
+                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🚫 Banir / Suspender</button>
+                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🗑️ Excluir Definitivamente</button>
             </div>
-            <button onclick="window.enviarMassaConfirmado()" class="w-full bg-purple-600 text-white py-4 rounded-xl font-bold uppercase">🚀 DISPARAR</button>
+
+            <div class="h-px bg-white/10 my-4"></div>
+
+            <p class="text-[10px] text-gray-400 font-bold uppercase mb-2">Marketing & Créditos</p>
+            <div><label class="text-[9px] text-gray-500 font-bold uppercase">Mensagem Push</label><textarea id="massa-msg" class="w-full p-2 rounded bg-white text-black text-xs" rows="2"></textarea></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-[9px] text-gray-500 font-bold uppercase">Cor</label><select id="massa-tipo" class="w-full p-2 rounded bg-white text-black text-xs"><option value="success">Verde</option><option value="alert">Amarelo</option></select></div>
+                <div><label class="text-[9px] text-gray-500 font-bold uppercase">Dar R$</label><input type="number" id="massa-credito" class="w-full p-2 rounded bg-white text-black text-xs"></div>
+            </div>
+            <button onclick="window.enviarMassaConfirmado()" class="w-full bg-purple-600 text-white py-4 rounded-xl font-bold uppercase text-xs mt-2">🚀 Disparar Mensagem / Crédito</button>
         </div>`;
 }
 
