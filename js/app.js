@@ -518,7 +518,9 @@ window.addEventListener('click', (e) => {
     const isPrestador = window.userProfile?.is_provider === true;
     
     // Suas regras de negócio exatas:
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'servicos']; 
+    // 🏷️ Áreas que apenas quem é PRESTADOR pode acessar. 
+    // Se um CLIENTE clicar aqui, o Vigilante barra.
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos'];
     const exclusivasCliente = ['loja', 'contratar'];
 
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
