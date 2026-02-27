@@ -138,10 +138,14 @@ function switchTab(tabName, isAutoBoot = false) {
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
-        if(window.fecharModalTrava) window.fecharModalTrava(); // 📺 Limpa a tela para o vídeo
-        import('./modules/canal.js?v=' + Date.now()).then(m => { if(m.init) m.init(); }).catch(e => console.error(e));
+        // Apenas esconde o modal, sem disparar switchTab novamente
+        const modal = document.getElementById('modal-trava-perfil');
+        if (modal) modal.classList.add('hidden'); 
+        
+        import('./modules/canal.js?v=' + Date.now())
+            .then(m => { if(m.init) m.init(); })
+            .catch(e => console.error("Erro ao carregar módulo canal:", e));
     }
-}
 
 function switchServiceSubTab(subTab) {
     console.log("🔍 Sub-aba Cliente:", subTab);
