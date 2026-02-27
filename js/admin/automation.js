@@ -380,11 +380,21 @@ window.carregarMaestro = async function() {
                         <h3 class="text-sm font-black text-white uppercase">Sininho: Teste Individual</h3>
                     </div>
                     
-                    <div>
-                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Selecione o Usuário</label>
-                        <select id="maestro-uid" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition">
-                            <option value="">⏳ Carregando usuários...</option>
-                        </select>
+                    <div class="relative">
+                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Buscar Usuário (Nome, Email, CPF, Tel)</label>
+                        <div id="maestro-search-container" class="relative">
+                            <input type="text" id="maestro-user-search" placeholder="Digite para buscar..." oninput="window.buscarUsuarioMaestro(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition pr-10">
+                            <i data-lucide="search" class="absolute right-3 top-3 w-4 h-4 text-gray-500"></i>
+                        </div>
+                        
+                        <div id="maestro-search-results" class="absolute z-50 w-full bg-slate-800 border border-slate-700 rounded-xl mt-1 hidden max-h-48 overflow-y-auto custom-scrollbar shadow-2xl"></div>
+                        
+                        <input type="hidden" id="maestro-uid">
+                        
+                        <div id="maestro-selected-user" class="hidden mt-2 flex justify-between items-center bg-blue-900/20 border border-blue-800/50 p-3 rounded-xl">
+                            <span id="maestro-selected-name" class="text-xs font-bold text-blue-400"></span>
+                            <button onclick="window.limparSelecaoMaestro()" class="text-red-400 hover:text-red-300 text-[10px] font-black uppercase tracking-widest px-2 transition">✕ Trocar</button>
+                        </div>
                     </div>
 
                     <div>
