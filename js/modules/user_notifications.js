@@ -134,50 +134,59 @@ window.fecharNotificacao = async (id) => {
 };
 
 // 🚀 AÇÃO DE NOTIFICAÇÃO COM VIGILANTE INTEGRADO (V3.1)
-window.acaoNotificacao = async (id, action) => {
-    // 1. Marca como lida no Firebase para sumir o Badge
-    await window.fecharNotificacao(id); 
-
-    // 2. Identifica o perfil atual do usuário
-    const isPrestador = window.userProfile?.is_provider === true;
+// 📜 MOTOR DE RENDERIZAÇÃO DO HISTÓRICO (V1.0)
+window.carregarHistoricoNotificacoes = async () => {
+    const lista = document.getElementById('lista-historico-notificacoes');
+    const uid = auth.currentUser?.uid;
     
-    // 🏷️ Regras de Ouro da Atlivio (Sincronizadas com o app.js)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
-    const exclusivasCliente = ['loja', 'contratar'];
+    if (!lista || !uid) return;
 
-    // 🛡️ O VIGILANTE ANALISA A ORDEM DO ADMIN
-    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(action));
-    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(action));
+    // Sinaliza que está carregando
+    lista.innerHTML = '<p class="text-center text-gray-400 text-xs animate-pulse py-10">Buscando mensagens no arquivo...</p>';
 
-    if (bloqueioCliente || bloqueioPrestador) {
-        console.warn(`🚩 [Vigilante] Bloqueando ação de notificação: ${action} é incompatível com o perfil.`);
+    try {
+        const { collection, getDocs, query, where, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // Em vez de navegar, abre o Modal de Troca de Identidade
-        const modal = document.getElementById('modal-troca-identidade');
-        const txt = document.getElementById('txt-perfil-atual');
-        if (modal && txt) {
-            txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-            modal.classList.remove('hidden');
+        // Busca as últimas 20 notificações do usuário
+        const q = query(
+            collection(db, "user_notifications"),
+            where("userId", "==", uid),
+            orderBy("created_at", "desc"),
+            limit(20)
+        );
+
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            lista.innerHTML = '<p class="text-center text-gray-400 text-xs italic py-10">Nenhuma mensagem encontrada.</p>';
+            return;
         }
-        return; // Mata a execução aqui
-    }
 
-    // ✅ SE PASSOU NO FILTRO, O MAESTRO EXECUTA A NAVEGAÇÃO
-    const mapaAbas = {
-        'wallet': 'ganhar',
-        'services': 'servicos',
-        'jobs': 'empregos',
-        'missoes': 'missoes',
-        'oportunidades': 'oportunidades',
-        'produtos': 'loja',
-        'chat': 'chat',
-        'canal': 'canal'
-    };
+        const iconMap = { 'gift': '🎁', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'canal': '📺' };
 
-    const abaDestino = mapaAbas[action] || action;
-    
-    if (window.switchTab) {
-        console.log(`🚀 Maestro seguindo ordem do Admin para aba: ${abaDestino}`);
-        window.switchTab(abaDestino);
+        lista.innerHTML = snap.docs.map(doc => {
+            const d = doc.data();
+            const dataFormatada = d.created_at?.toDate().toLocaleDateString('pt-BR') || 'Recente';
+            
+            return `
+                <div class="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-start gap-4">
+                    <div class="text-2xl">${iconMap[d.type] || '🔔'}</div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <p class="text-[10px] font-black text-blue-600 uppercase">${d.type}</p>
+                            <p class="text-[8px] text-gray-400 font-bold">${dataFormatada}</p>
+                        </div>
+                        <p class="text-xs text-gray-700 font-medium mt-1">${d.message}</p>
+                        <button onclick="window.switchTab('${d.action}')" class="mt-3 text-[9px] font-black text-blue-500 uppercase tracking-widest hover:underline">
+                            Ver detalhes ➔
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error("Erro ao carregar histórico:", e);
+        lista.innerHTML = '<p class="text-center text-red-400 text-xs py-10">Erro ao carregar mensagens.</p>';
     }
 };
