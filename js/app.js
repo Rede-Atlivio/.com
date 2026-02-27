@@ -507,3 +507,41 @@ window.fecharModalTrava = () => {
         }
     }
 };
+// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V1.0 (Camada de Proteção Externa)
+document.addEventListener('click', (e) => {
+    // 1. Localiza se o clique foi em um botão de aba
+    const btn = e.target.closest('button[onclick*="switchTab"]');
+    if (!btn) return;
+
+    // 2. Extrai o nome da aba (ex: 'missoes', 'loja') do comando onclick
+    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
+    if (!match) return;
+    const abaAlvo = match[1];
+
+    // 3. Verifica quem é o usuário agora
+    const isPrestador = window.userProfile?.is_provider === true;
+
+    // 4. Mapeamento de Regras (Baseado na sua lista)
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'servicos']; 
+    const exclusivasCliente = ['loja', 'contratar'];
+
+    // 5. Lógica de Interceptação
+    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
+    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
+
+    if (bloqueioCliente || bloqueioPrestador) {
+        // ⛔ CANCELAMENTO TOTAL: O clique morre aqui e não chega no Maestro
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 🏗️ Exibe o Modal de Orientação
+        const modal = document.getElementById('modal-troca-identidade');
+        const txt = document.getElementById('txt-perfil-atual');
+        
+        if (modal && txt) {
+            txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
+            modal.classList.remove('hidden');
+        }
+        console.warn(`🛡️ Vigilante: Acesso à aba [${abaAlvo}] bloqueado. Perfil incompatível.`);
+    }
+}, true); // O 'true' é o segredo: ele captura o clique na "descida", antes da execução
