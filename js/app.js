@@ -96,7 +96,8 @@ function switchTab(tabName, isAutoBoot = false) {
     // Regra: Se a zona é de TRABALHO e o perfil NÃO é Prestador...
     if (isZonaTrabalho && !isPrestador) {
         // EXCEÇÃO: Se ele clicou especificamente em 'contratar', ele entra como Cliente.
-        if (tabName !== 'contratar') {
+        // Se não for clique em contratar e o banco não indicar intenção de serviço, bloqueia.
+        if (tabName !== 'contratar' && window.userProfile?.user_intent !== 'servicos') {
             bloqueado = true;
             perfilAlvo = "PRESTADOR";
         }
