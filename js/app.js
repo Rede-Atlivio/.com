@@ -522,7 +522,6 @@ window.addEventListener('click', (e) => {
     // Se um CLIENTE clicar aqui, o Vigilante barra.
     const exclusivasPrestador = ['missoes', 'radar', 'ativos'];
     const exclusivasCliente = ['loja', 'contratar'];
-
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
     const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
 
