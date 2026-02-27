@@ -122,6 +122,7 @@ function gerarTextoBotao(action) {
     if(action === 'missoes') return "VER AGORA ➔";
     if(action === 'oportunidades') return "VER AGORA ➔";
     if(action === 'produtos') return "VER AGORA ➔";
+    if(action === 'canal') return "ASSISTIR AGORA 📺";
     return "OK, ENTENDI";
 }
 // Ações Globais
