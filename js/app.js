@@ -507,34 +507,42 @@ window.fecharModalTrava = () => {
         }
     }
 };
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V1.0 (Camada de Proteção Externa)
+// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V2.0 (High Performance & Scale)
+let lockVigilante = false; // Trava de segurança contra cliques múltiplos
+
 document.addEventListener('click', (e) => {
-    // 1. Localiza se o clique foi em um botão de aba
+    // 1. Filtro ultra-rápido: se clicar fora de botão ou a trava estiver ativa, ignora
+    if (lockVigilante) return;
     const btn = e.target.closest('button[onclick*="switchTab"]');
     if (!btn) return;
 
-    // 2. Extrai o nome da aba (ex: 'missoes', 'loja') do comando onclick
-    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
+    // 2. Extração segura da aba alvo
+    const cmd = btn.getAttribute('onclick') || "";
+    const match = cmd.match(/'([^']+)'/);
     if (!match) return;
     const abaAlvo = match[1];
 
-    // 3. Verifica quem é o usuário agora
+    // 3. Identificação de perfil (is_provider)
     const isPrestador = window.userProfile?.is_provider === true;
 
-    // 4. Mapeamento de Regras (Baseado na sua lista)
+    // 4. Mapeamento de Regras de Negócio
     const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'servicos']; 
     const exclusivasCliente = ['loja', 'contratar'];
 
-    // 5. Lógica de Interceptação
+    // 5. Verificação de conflito
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
     const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
 
     if (bloqueioCliente || bloqueioPrestador) {
-        // ⛔ CANCELAMENTO TOTAL: O clique morre aqui e não chega no Maestro
+        // ⛔ INTERCEPTAÇÃO: Bloqueia a propagação para o Maestro
         e.preventDefault();
         e.stopPropagation();
 
-        // 🏗️ Exibe o Modal de Orientação
+        // Ativa trava de segurança por 500ms (Evita lag visual em milhões de acessos)
+        lockVigilante = true;
+        setTimeout(() => { lockVigilante = false; }, 500);
+
+        // 🏗️ Interface de Orientação
         const modal = document.getElementById('modal-troca-identidade');
         const txt = document.getElementById('txt-perfil-atual');
         
@@ -542,6 +550,5 @@ document.addEventListener('click', (e) => {
             txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
             modal.classList.remove('hidden');
         }
-        console.warn(`🛡️ Vigilante: Acesso à aba [${abaAlvo}] bloqueado. Perfil incompatível.`);
     }
-}, true); // O 'true' é o segredo: ele captura o clique na "descida", antes da execução
+}, true); // Prioridade máxima no fluxo de eventos do navegador
