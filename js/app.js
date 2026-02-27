@@ -269,15 +269,12 @@ async function carregarInterface(user) {
             // 🛡️ LIMPEZA DE LOOP: Se trocou de perfil, mata a intenção antiga
             const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
             let userIntent = window.userProfile?.user_intent || "";
-            
+
             if (isToggling) {
-                console.log("🧼 Limpando rastro de perfil antigo...");
-                userIntent = ""; // Força cair no Onboarding/Home
+                userIntent = ""; 
                 sessionStorage.removeItem('is_toggling_profile');
-                // Se a sua função de salvar no banco estiver disponível, limpamos lá também
                 if (window.registrarEventoMaestro) window.registrarEventoMaestro({ tipo: "navegacao", aba: "home" });
             }
-
             if (userIntent === "home") userIntent = "";
 
             if (userIntent && userIntent !== "") {
