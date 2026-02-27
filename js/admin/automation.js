@@ -418,6 +418,8 @@ window.carregarMaestro = async function() {
                                 <option value="services">🛠️ Ir para Serviços</option>
                                 <option value="missoes">⚡ Ir para Missões</option>
                                 <option value="jobs">💼 Ir para Vagas</option>
+                                <option value="oportunidades">🏷️ Ir para Oportunidades</option>
+                                <option value="produtos">🛍️ Ir para Produtos</option>
                             </select>
                         </div>
                         <div class="flex items-end">
