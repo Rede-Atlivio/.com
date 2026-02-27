@@ -65,7 +65,11 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
-
+    // 🏠 BYPASS DE EMERGÊNCIA: Se clicou na Home, não processa regra nenhuma, apenas vai.
+    if (tabName === 'home') {
+        console.log("🏠 [Maestro] Retornando à base com prioridade máxima.");
+        isAutoBoot = false; // Garante que não ignore o comando
+    }
     // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
     const mapa = { 
         'home': 'home',
