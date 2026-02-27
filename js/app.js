@@ -108,15 +108,10 @@ function switchTab(tabName, isAutoBoot = false) {
         perfilAlvo = "CLIENTE";
     }
 
+   // 🛡️ SEGURANÇA SILENCIOSA: O Maestro apenas nega a entrada se houver incompatibilidade
     if (bloqueado) {
-        const modal = document.getElementById('modal-trava-perfil');
-        const txtLabel = document.getElementById('perfil-alvo');
-        if (modal && txtLabel) {
-            txtLabel.innerText = perfilAlvo; // Define o texto: PRESTADOR ou CLIENTE
-            modal.classList.remove('hidden'); // Ativa o blackout visual
-            console.warn(`🚫 [V40] Bloqueio: Acesso à zona '${nomeLimpo}' requer perfil ${perfilAlvo}`);
-            return; // Interrompe a navegação para proteger os dados
-        }
+        console.warn(`🚨 [Maestro] Bloqueio Passivo: ${tabName} interrompido por falta de perfil ${perfilAlvo}`);
+        return; // Apenas mata a execução sem subir o modal desgraçado
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
