@@ -522,15 +522,21 @@ window.addEventListener('click', (e) => {
     const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
     
     // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
+    // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
     const exclusivasCliente = ['loja', 'contratar'];
 
-    // 🧠 Lógica de Sentinela:
-    // Bloqueia se NÃO for prestador e tentar área de trabalho
+    // 🔍 Identifica o texto do botão para não travar a aba errada
+    const textoBotao = btn.innerText.toUpperCase();
+
+    // 🧠 Lógica de Sentinela Ultra-Focada:
+    
+    // 1. Barra Cliente em áreas de trabalho
     const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
     
-    // Bloqueia se FOR prestador e tentar Loja, Contratar ou a aba genérica de Serviços
-    const bloqueioPrestador = (isPrestador && (exclusivasCliente.includes(abaAlvo) || abaAlvo === 'servicos'));
+    // 2. Barra Prestador apenas em Loja, Contratar ou se o botão da Home disser "CONTRATAR"
+    const bloqueioPrestador = (isPrestador && (exclusivasCliente.includes(abaAlvo) || textoBotao.includes("CONTRATAR")));
 
+    if (bloqueioCliente || bloqueioPrestador) {
     if (bloqueioCliente || bloqueioPrestador) {
         // ⛔ INTERCEPTAÇÃO SOBERANA
         e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
