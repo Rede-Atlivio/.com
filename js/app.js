@@ -332,10 +332,10 @@ window.registrarEventoMaestro = async function(dadosEvento) {
         const userRef = doc(window.db, "usuarios", uid);
         let payload = { "updated_at": new Date() };
 
-        if (dadosEvento.tipo === "navegacao") {
-            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-            payload.user_intent = dadosEvento.aba;
-        }
+       if (dadosEvento.tipo === "navegacao") {
+            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
+            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
+        }
 
         if (dadosEvento.tipo === "tour_final") {
             payload.user_intent = dadosEvento.escolha;
