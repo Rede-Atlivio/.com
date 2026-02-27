@@ -340,7 +340,7 @@ window.renderizarTourBoasVindas = function() {
             </div>
 
             <div class="grid gap-4">
-                <button onclick="window.finalizarTourMusculado('contratar', ['cliente_final', 'contratante'])"
+                <button onclick="window.finalizarTourMusculado('servicos', ['cliente_final', 'contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 hover:border-blue-600 transition-all shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-blue-600 group-hover:text-white transition">🛠️</div>
                     <div>
                         <p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p>
