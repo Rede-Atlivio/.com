@@ -21,32 +21,17 @@ export async function init(viewType) {
     }
 
     // ✅ RESTAURADO: Exportações Globais essenciais
-    window.openEditor = openEditor;
-    window.saveAction = saveAction;
-    window.saveServiceAction = saveServiceAction;
-    window.abrirModalMassa = abrirModalMassa;
-    window.enviarMassaConfirmado = enviarMassaConfirmado;
-    window.filtrarPorIntencao = filtrarPorIntencao;
+    window.openEditor = openEditor;
+    window.saveAction = saveAction;
+    window.saveServiceAction = saveServiceAction;
+    window.abrirModalMassa = abrirModalMassa;
+    window.enviarMassaConfirmado = enviarMassaConfirmado;
 
-    if(searchInput) {
-        const containerBusca = searchInput.parentElement;
-        
-        // Injeta o Select CRM ao lado da busca, se ainda não existir
-        if(!document.getElementById('crm-intent-filter') && viewType === 'users') {
-            const selectHTML = `
-            <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
-                <option value="">🎯 Todas as Intenções</option>
-                <option value="servicos">🛠️ Serviços (Contratantes)</option>
-                <option value="missoes">⚡ Missões (Renda Extra)</option>
-                <option value="empregos">💼 Empregos (CLT)</option>
-            </select>`;
-            containerBusca.insertAdjacentHTML('afterend', selectHTML);
-        }
-
-        const newSearch = searchInput.cloneNode(true);
-        searchInput.parentNode.replaceChild(newSearch, searchInput);
-        newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
-    }
+    if(searchInput) {
+        const newSearch = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearch, searchInput);
+        newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
+    }
     
     const btnBulk = document.getElementById('btn-bulk-delete');
     if(btnBulk) {
@@ -97,17 +82,12 @@ function renderTable(lista) {
             if(data.status === 'suspenso') statusBadge = `<span class="bg-yellow-900 text-yellow-400 border border-yellow-800 px-2 py-0.5 rounded text-[9px] uppercase">⚠️ SUSPENSO</span>`;
             if(data.status === 'banido') statusBadge = `<span class="bg-red-900 text-red-400 border border-red-800 px-2 py-0.5 rounded text-[9px] uppercase">🚫 BANIDO</span>`;
 
-            // Mapa visual para intenções do CRM
-            const intentMap = { 'servicos': '🛠️ Serviços', 'missoes': '⚡ Missões', 'empregos': '💼 Empregos' };
-            const userIntent = data.user_intent ? intentMap[data.user_intent] || data.user_intent : 'Indefinido';
-            const intentBadge = data.user_intent ? `<span class="bg-blue-900/30 text-blue-400 border border-blue-800/50 px-2 py-0.5 rounded text-[10px]">${userIntent}</span>` : `<span class="text-[10px] text-gray-600">Sem rastro</span>`;
-
-            tbody.innerHTML += `
-                <tr class="border-b border-white/5 hover:bg-white/5 transition group">
-                    ${checkbox}
-                    <td class="p-3"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
-                    <td class="p-3 text-gray-400 text-xs uppercase font-bold tracking-wider">${intentBadge}</td>
-                   <td class="p-3"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
+            tbody.innerHTML += `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition group">
+                    ${checkbox}
+                    <td class="p-3"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
+                    <td class="p-3 text-gray-400 text-xs uppercase font-bold tracking-wider">${data.tipo || 'comum'}</td>
+                   <td class="p-3"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
                         <button onclick="window.resetarTourDireto('${data.id}', '${data._displayName}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white p-1.5 rounded-lg text-[10px] transition-all" title="Resetar Tour/Intenção">🧭</button>
                         <button onclick="window.openEditor('usuarios','${data.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-tighter">Editar</button>
@@ -294,22 +274,6 @@ async function enviarMassaConfirmado() {
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
 function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
-
-// 🎯 FILTRO CRM: Redefine a tabela apenas com quem tem a intenção escolhida
-function filtrarPorIntencao(intencao) {
-    // Desmarca todos antes de filtrar para evitar bônus acidental
-    selectedUsers.clear(); 
-    document.getElementById('check-users-all').checked = false;
-    
-    if (!intencao) {
-        renderTable(allLoadedUsers); // Traz todos de volta
-    } else {
-        const filtrados = allLoadedUsers.filter(u => u.user_intent === intencao);
-        renderTable(filtrados);
-    }
-    updateUserBulkUI();
-}
-
 // 🧭 MAESTRO: RESET DIRETO PELA TABELA
 window.resetarTourDireto = async function(uid, nome) {
     if (!confirm(`⚠️ RESET MAESTRO: Deseja forçar o usuário [${nome}] a ver o Tour e escolher perfil novamente?`)) return;
