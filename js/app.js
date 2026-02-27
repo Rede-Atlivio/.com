@@ -82,18 +82,22 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
+    // 🛡️ TRAVA MAESTRO V30: Define quem pode entrar em qual aba
+    const requerPrestador = ['servicos', 'empregos', 'extra'].includes(tabName); // Abas de trabalho
+    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName); // Abas de contratação/consumo
 
-    if (requerPrestador && !isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
-    }
-
-    if (requerCliente && isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
+    // Verifica se há conflito entre a aba clicada e o perfil atual do usuário
+    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
+        const modalTrava = document.getElementById('modal-trava-perfil'); // Localiza o modal no HTML
+        const labelAlvo = document.getElementById('perfil-alvo'); // Localiza o texto que vamos mudar
+        
+        if (modalTrava && labelAlvo) {
+            // Injeta o nome do perfil necessário (Cliente ou Prestador) de forma dinâmica
+            labelAlvo.innerText = requerPrestador ? "PRESTADOR" : "CLIENTE";
+            modalTrava.classList.remove('hidden'); // Remove a trava visual e mostra o modal
+            console.warn("🚩 [Maestro] Acesso bloqueado: Requer perfil " + labelAlvo.innerText);
+            return; // Interrompe a navegação imediatamente para proteger o sistema
+        }
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
