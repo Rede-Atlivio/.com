@@ -66,8 +66,17 @@ window.addEventListener('userProfileLoaded', (e) => {
 function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
-    // 🗺️ MAPA DE TRADUÇÃO: Garante que IDs antigos/duplicados caiam na seção certa
-    const mapa = { 'ganhar': 'ganhar', 'produtos': 'loja', 'loja': 'loja', 'tutorials': 'canal' };
+    // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
+    const mapa = { 
+        'home': 'home',
+        'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
+        'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
+        'extra': 'missoes', 'missoes': 'missoes',
+        'oportunidades': 'oportunidades',
+        'produtos': 'loja', 'loja': 'loja',
+        'canal': 'canal', 'tutorials': 'canal',
+        'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
+    };
     const nomeLimpo = mapa[tabName] || tabName;
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
