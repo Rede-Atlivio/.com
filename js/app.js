@@ -61,13 +61,14 @@ window.addEventListener('userProfileLoaded', (e) => {
     }
 });
 // ============================================================================
-// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
+// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
 // ============================================================================
-// 📍 REGISTRO CONTEXTUAL: Informa ao sistema a aba ativa para o Sininho não ser inconveniente
-    window.abaAtual = tabName;
 function switchTab(tabName, isAutoBoot = false) {
-// 📺 PRIORIDADE CANAL: Se o usuário clicou para conhecer a Atlivio, ignore travas de boot
-   // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos atropelem o sistema já ligado
+    // 📍 REGISTRO CONTEXTUAL: Informa ao sistema (e ao Sininho) qual aba está visível agora.
+    // Isso impede que o sistema mande alertas de algo que o usuário já está vendo.
+    window.abaAtual = tabName;
+
+    // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
     // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
