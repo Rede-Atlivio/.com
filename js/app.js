@@ -507,48 +507,56 @@ window.fecharModalTrava = () => {
         }
     }
 };
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V2.0 (High Performance & Scale)
-let lockVigilante = false; // Trava de segurança contra cliques múltiplos
+// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 (Nível Industrial - Milhões de Cliques)
+// Esta variável fica fora da função para servir como um "Disjuntor" global
+let disjuntorVigilante = false; 
 
 document.addEventListener('click', (e) => {
-    // 1. Filtro ultra-rápido: se clicar fora de botão ou a trava estiver ativa, ignora
-    if (lockVigilante) return;
+    // ⚡ FILTRO 0: Se o disjuntor estiver armado, o clique morre em nanosegundos
+    if (disjuntorVigilante) {
+        e.preventDefault();
+        e.stopPropagation();
+        return; 
+    }
+
+    // ⚡ FILTRO 1: Identifica se é um botão de navegação
     const btn = e.target.closest('button[onclick*="switchTab"]');
     if (!btn) return;
 
-    // 2. Extração segura da aba alvo
+    // ⚡ FILTRO 2: Extração rápida da intenção
     const cmd = btn.getAttribute('onclick') || "";
     const match = cmd.match(/'([^']+)'/);
     if (!match) return;
     const abaAlvo = match[1];
 
-    // 3. Identificação de perfil (is_provider)
+    // ⚡ FILTRO 3: Regras de Perfil (Is Provider?)
     const isPrestador = window.userProfile?.is_provider === true;
+    const restritasPrestador = ['missoes', 'radar', 'ativos', 'servicos'];
+    const restritasCliente = ['loja', 'contratar'];
 
-    // 4. Mapeamento de Regras de Negócio
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'servicos']; 
-    const exclusivasCliente = ['loja', 'contratar'];
+    const erroAcesso = (!isPrestador && restritasPrestador.includes(abaAlvo)) || 
+                       (isPrestador && restritasCliente.includes(abaAlvo));
 
-    // 5. Verificação de conflito
-    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(abaAlvo));
-
-    if (bloqueioCliente || bloqueioPrestador) {
-        // ⛔ INTERCEPTAÇÃO: Bloqueia a propagação para o Maestro
+    if (erroAcesso) {
+        // ⛔ INTERCEPTAÇÃO TOTAL: O clique é destruído antes de chegar ao Maestro
         e.preventDefault();
         e.stopPropagation();
 
-        // Ativa trava de segurança por 500ms (Evita lag visual em milhões de acessos)
-        lockVigilante = true;
-        setTimeout(() => { lockVigilante = false; }, 500);
+        // 🛡️ ARMANDO O DISJUNTOR: Bloqueia qualquer novo clique por 400ms
+        disjuntorVigilante = true;
+        setTimeout(() => { disjuntorVigilante = false; }, 400);
 
-        // 🏗️ Interface de Orientação
+        // 🏗️ Interface de Orientação (Modal)
         const modal = document.getElementById('modal-troca-identidade');
         const txt = document.getElementById('txt-perfil-atual');
         
         if (modal && txt) {
-            txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-            modal.classList.remove('hidden');
+            // Se o modal já estiver visível, não faz nada (evita re-renderização inútil)
+            if (modal.classList.contains('hidden')) {
+                txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
+                modal.classList.remove('hidden');
+            }
         }
+        console.warn(`[🛡️ Vigilante] Bloqueio em massa ativo para: ${abaAlvo}`);
     }
-}, true); // Prioridade máxima no fluxo de eventos do navegador
+}, { capture: true, passive: false }); // 'capture: true' faz o Vigilante ser o primeiro a ver o clique
