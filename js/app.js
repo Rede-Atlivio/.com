@@ -65,10 +65,8 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
 // 📺 PRIORIDADE CANAL: Se o usuário clicou para conhecer a Atlivio, ignore travas de boot
-    if (tabName === 'canal') {
-        isAutoBoot = false; 
-        console.log("📺 [Maestro] Abrindo Canal Oficial...");
-    }
+   // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos atropelem o sistema já ligado
+    if (isAutoBoot && window.atlivioBootConcluido) return;
 
     // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
     const mapa = { 
