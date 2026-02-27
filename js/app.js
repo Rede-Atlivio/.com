@@ -428,8 +428,11 @@ window.registrarEventoMaestro = async function(dadosEvento) {
 };
 
 // Válvula de compatibilidade para o Tour
-window.salvarIntencaoMaestro = (escolha) => {
-    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
+// ⚡ Válvula de Compatibilidade: Salva a escolha e as tags (perfil) do usuário no Firebase
+window.salvarIntencaoMaestro = (escolha, tags = []) => {
+    // Registra no Ad-Engine se o usuário é Cliente ou Prestador para o Robô 47
+    window.registrarEventoMaestro({ tipo: "tour_final", escolha: escolha, tags: tags });
+    // Executa a troca de aba imediata
     window.switchTab(escolha);
 };
 auth.onAuthStateChanged(async (user) => {
