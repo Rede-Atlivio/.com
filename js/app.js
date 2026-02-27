@@ -82,21 +82,34 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-    // 🛡️ TRAVA MAESTRO V30: Define quem pode entrar em qual aba
-    const requerPrestador = ['servicos', 'empregos', 'extra'].includes(tabName); // Abas de trabalho
-    const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName); // Abas de contratação/consumo
+    // 🛡️ MATRIZ MAESTRO V40: Proteção de Identidade Baseada no Banco (is_provider)
+    // Gatilhos que só Prestadores podem acessar
+    const zonaProibidaParaCliente = ['servicos', 'empregos', 'extra', 'missoes'].includes(tabName);
+    // Gatilhos que só Clientes podem acessar
+    const zonaProibidaParaPrestador = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-    // Verifica se há conflito entre a aba clicada e o perfil atual do usuário
-    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        const modalTrava = document.getElementById('modal-trava-perfil'); // Localiza o modal no HTML
-        const labelAlvo = document.getElementById('perfil-alvo'); // Localiza o texto que vamos mudar
-        
+    let deveBloquear = false;
+    let perfilNecessario = "";
+
+    // Lógica Incorruptível: Se o banco diz que NÃO é prestador, barra nas zonas de trabalho
+    if (zonaProibidaParaCliente && !isPrestador) {
+        deveBloquear = true;
+        perfilNecessario = "PRESTADOR";
+    } 
+    // Se o banco diz que É prestador, barra nas zonas de compra/contratação
+    else if (zonaProibidaParaPrestador && isPrestador) {
+        deveBloquear = true;
+        perfilNecessario = "CLIENTE";
+    }
+
+    if (deveBloquear) {
+        const modalTrava = document.getElementById('modal-trava-perfil');
+        const labelAlvo = document.getElementById('perfil-alvo');
         if (modalTrava && labelAlvo) {
-            // Injeta o nome do perfil necessário (Cliente ou Prestador) de forma dinâmica
-            labelAlvo.innerText = requerPrestador ? "PRESTADOR" : "CLIENTE";
-            modalTrava.classList.remove('hidden'); // Remove a trava visual e mostra o modal
-            console.warn("🚩 [Maestro] Acesso bloqueado: Requer perfil " + labelAlvo.innerText);
-            return; // Interrompe a navegação imediatamente para proteger o sistema
+            labelAlvo.innerText = perfilNecessario; // Injeta o perfil que falta
+            modalTrava.classList.remove('hidden'); // Sobe o bloqueio visual
+            console.warn(`🚫 [V40] Bloqueio: Aba ${tabName} exige perfil ${perfilNecessario}`);
+            return; // Mata a execução aqui. Nada vaza.
         }
     }
 
