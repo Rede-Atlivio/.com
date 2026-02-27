@@ -231,7 +231,7 @@ window.runMassGenerator = async () => {
             if(tipo === 'jobs') { data.titulo = modelo.t; data.descricao = modelo.d; data.salario = String(modelo.s); data.empresa = "Atlivio Jobs"; data.status = "ativo"; } 
             else if(tipo === 'services') { data.nome_profissional = modelo.t; data.bio = "Profissional Verificado"; data.services = [{category: modelo.cat, price: Number(modelo.p)}]; data.is_online = true; data.status = "aprovado"; data.balance = 0; }
             else if(tipo === 'missions') { data.titulo = modelo.t; data.descricao = modelo.d; data.valor = modelo.p; data.status = "disponivel"; }
-            else if(tipo === 'opps') { data.titulo = modelo.t; data.descricao = modelo.d; data.link = modelo.link; data.tipo = "alerta"; }
+            else if(tipo === 'opps') { data.titulo = modelo.t; data.descricao = modelo.d; data.link = modelo.link; data.tipo = "alerta"; data.action = "oportunidades"; }
 
             batch.set(docRef, data);
         }
