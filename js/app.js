@@ -283,10 +283,11 @@ async function carregarInterface(user) {
     // ============================================================================
     // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
     // ============================================================================
-    if (window.switchTab) {
-        console.log("🎯 [Maestro] Analisando intenção do usuário...");
+    // 🎯 PROTOCOLO DE BOOT V45: O Maestro inicia o sistema e depois entrega o controle
+    if (window.switchTab && !window.atlivioBootConcluido) {
+        console.log("🎯 [Maestro] Iniciando sequência de entrada...");
         
-        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
+        // ⏳ Aguarda a estabilização do Firebase e do DOM
         setTimeout(() => {
             // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
             window.switchTab('home', true); 
