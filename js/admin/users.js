@@ -20,14 +20,12 @@ export async function init(viewType) {
         if(btnAdd) { btnAdd.innerHTML = "+ NOVO PRESTADOR"; btnAdd.onclick = () => window.openEditor('active_providers', null); }
     }
 
-    // ✅ RESTAURADO: Exportações Globais essenciais
+   // ✅ RESTAURADO: Exportações Globais essenciais
     window.openEditor = openEditor;
     window.saveAction = saveAction;
     window.saveServiceAction = saveServiceAction;
-    window.abrirModalMassa = abrirModalMassa;
-    window.enviarMassaConfirmado = enviarMassaConfirmado;
     window.filtrarPorIntencao = filtrarPorIntencao;
-
+    
     if(searchInput) {
         const containerBusca = searchInput.parentElement;
         
