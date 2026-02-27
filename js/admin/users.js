@@ -281,39 +281,24 @@ async function enviarMassaConfirmado() {
     }
 }
 
-// ⚡ MOTOR DE EXECUÇÃO EM MASSA (Aprovar, Banir, Excluir)
-window.executarAcaoMassa = async (acao) => {
-    if (selectedUsers.size === 0) return alert("Selecione usuários primeiro.");
-    if (!confirm(`Confirmar [${acao.toUpperCase()}] em ${selectedUsers.size} registros?`)) return;
-
-    try {
-        const batch = writeBatch(window.db);
-        const col = currentType === 'services' ? 'active_providers' : 'usuarios';
-
-        selectedUsers.forEach(uid => {
-            const ref = doc(window.db, col, uid);
-            if (acao === 'excluir') {
-                batch.delete(ref);
-                // Se for usuário, tenta deletar também o perfil de prestador vinculado
-                if (currentType === 'users') batch.delete(doc(window.db, "active_providers", uid));
-            } else {
-                batch.update(ref, { 
-                    status: acao === 'aprovar' ? 'aprovado' : 'banido',
-                    updated_at: serverTimestamp() 
-                });
-            }
-        });
-
-        await batch.commit();
-        alert(`✅ Operação [${acao.toUpperCase()}] concluída!`);
-        document.getElementById('modal-editor').classList.add('hidden');
-        selectedUsers.clear();
-        loadList();
-    } catch (e) {
-        alert("Erro na execução: " + e.message);
+// 🔥 REPLICANDO FUNÇÕES EXISTENTES PARA MASSA
+window.aplicarAcaoEmMassa = async (tipoAcao) => {
+    if (selectedUsers.size === 0) return alert("Selecione os usuários.");
+    if (!confirm(`Deseja aplicar ${tipoAcao.toUpperCase()} em ${selectedUsers.size} usuários?`)) return;
+    
+    const col = currentType === 'services' ? 'active_providers' : 'usuarios';
+    
+    for (let uid of selectedUsers) {
+        if (tipoAcao === 'resetar') {
+            await window.resetarTourDireto(uid, 'Massa');
+        } else {
+            // Reutiliza o saveAction (aprovar, banir, suspenso) que você já tem
+            await window.saveAction(col, uid, tipoAcao);
+        }
     }
+    selectedUsers.clear();
+    loadList();
 };
-
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
 function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
