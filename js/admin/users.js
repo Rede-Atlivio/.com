@@ -201,22 +201,7 @@ async function saveAction(col, id, action) {
 
 function toggleUserSelectAll(checked) { document.querySelectorAll('.chk-user').forEach(c => { c.checked = checked; if(checked) selectedUsers.add(c.dataset.id); else selectedUsers.delete(c.dataset.id); }); updateUserBulkUI(); }
 function updateUserBulkUI() { const bar = document.getElementById('bulk-actions'); if(selectedUsers.size > 0) bar.classList.remove('invisible', 'translate-y-[200%]'); else bar.classList.add('invisible', 'translate-y-[200%]'); document.getElementById('bulk-count').innerText = selectedUsers.size; }
-function filtrarListaLocal(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
-
-// 🎯 FILTRO CRM: Redefine a tabela apenas com quem tem a intenção escolhida
-function filtrarPorIntencao(intencao) {
-    // Desmarca todos antes de filtrar para evitar bônus acidental
-    selectedUsers.clear(); 
-    document.getElementById('check-users-all').checked = false;
-    
-    if (!intencao) {
-        renderTable(allLoadedUsers); // Traz todos de volta
-    } else {
-        const filtrados = allLoadedUsers.filter(u => u.user_intent === intencao);
-        renderTable(filtrados);
-    }
-    updateUserBulkUI();
-}
+window.filtrarListaLocal = function(termo) { const filtrados = allLoadedUsers.filter(u => JSON.stringify(u).toLowerCase().includes(termo)); renderTable(filtrados); }
 
 // 🧭 MAESTRO: RESET DIRETO PELA TABELA
 window.resetarTourDireto = async function(uid, nome) {
