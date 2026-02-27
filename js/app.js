@@ -82,47 +82,39 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-// 🛡️ MATRIZ MAESTRO V50: Inteligência de Intenção vs. Identidade
-    // Aqui usamos o tabName (o que o usuário CLICOU) e não o nomeLimpo (onde ele vai CAIR)
+// 🛡️ MATRIZ MAESTRO V40: Proteção por Zona de Destino (Escalável)
+    // 1. ZONA PRESTADOR: Áreas onde o usuário vai trabalhar/ganhar.
+    const isZonaTrabalho = ['servicos', 'empregos', 'missoes'].includes(nomeLimpo);
     
-    // Lista de botões que só quem quer TRABALHAR clica
-    const botoesParaTrabalhadores = ['servicos', 'empregos', 'extra', 'missoes'];
-    // Lista de botões que só quem quer CONTRATAR/COMPRAR clica
-    const botoesParaClientes = ['contratar', 'vaga', 'loja', 'produtos'];
+    // 2. ZONA CLIENTE: Áreas onde o usuário vai contratar/comprar.
+    // O 'contratar' é a única exceção que permite entrar na zona física de serviços.
+    const isZonaCompra = (tabName === 'contratar' || tabName === 'vaga' || nomeLimpo === 'loja');
 
     let bloqueado = false;
-    let perfilNecessario = "";
+    let perfilAlvo = "";
 
-    // Se ele clicou em botão de trabalho mas NÃO é prestador -> BLOQUEIA
-    if (botoesParaTrabalhadores.includes(tabName) && !isPrestador) {
-        bloqueado = true;
-        perfilNecessario = "PRESTADOR";
+    // Regra: Se a zona é de TRABALHO e o perfil NÃO é Prestador...
+    if (isZonaTrabalho && !isPrestador) {
+        // EXCEÇÃO: Se ele clicou especificamente em 'contratar', ele entra como Cliente.
+        if (tabName !== 'contratar') {
+            bloqueado = true;
+            perfilAlvo = "PRESTADOR";
+        }
     } 
-    // Se ele clicou em botão de compra mas É prestador -> BLOQUEIA
-    else if (botoesParaClientes.includes(tabName) && isPrestador) {
+    // Regra: Se a zona é de COMPRA e o perfil É Prestador...
+    else if (isZonaCompra && isPrestador) {
         bloqueado = true;
-        perfilNecessario = "CLIENTE";
+        perfilAlvo = "CLIENTE";
     }
 
     if (bloqueado) {
-        // Busca o modal único na tela (Reutilização de componente para milhões de usuários)
         const modal = document.getElementById('modal-trava-perfil');
-        const txtAlvo = document.getElementById('perfil-alvo');
-        
-        if (modal && txtAlvo) {
-            txtAlvo.innerText = perfilNecessario; // Escreve dinamicamente qual perfil falta
-            modal.classList.remove('hidden'); // Mostra o aviso
-            console.warn(`🚫 Bloqueio: O botão '${tabName}' é exclusivo para ${perfilNecessario}`);
-            return; // Mata a função aqui: não troca de aba, não gasta processamento
-        }
-    }
-        const modal = document.getElementById('modal-trava-perfil');
-        const txt = document.getElementById('perfil-alvo');
-        if (modal && txt) {
-            txt.innerText = alvo; // Avisa qual farda ele precisa vestir no perfil-alvo
-            modal.classList.remove('hidden'); // Sobe a parede visual (Blur/Blackout)
-            console.warn(`🚫 [V40] Bloqueio: Intenção '${tabName}' requer perfil ${alvo}`);
-            return; // Aborta qualquer carregamento de dados para o navegador
+        const txtLabel = document.getElementById('perfil-alvo');
+        if (modal && txtLabel) {
+            txtLabel.innerText = perfilAlvo; // Define o texto: PRESTADOR ou CLIENTE
+            modal.classList.remove('hidden'); // Ativa o blackout visual
+            console.warn(`🚫 [V40] Bloqueio: Acesso à zona '${nomeLimpo}' requer perfil ${perfilAlvo}`);
+            return; // Interrompe a navegação para proteger os dados
         }
     }
 
