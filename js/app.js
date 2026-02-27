@@ -82,34 +82,31 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-    // 🛡️ MATRIZ MAESTRO V40: Proteção de Identidade Baseada no Banco (is_provider)
-    // Gatilhos que só Prestadores podem acessar
-    const zonaProibidaParaCliente = ['servicos', 'empregos', 'extra', 'missoes'].includes(tabName);
-    // Gatilhos que só Clientes podem acessar
-    const zonaProibidaParaPrestador = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
+// 🛡️ MATRIZ MAESTRO V40: Proteção de Identidade Baseada na Tabela de Intenção
+    // Define as zonas baseadas estritamente no que o usuário clicou (tabName)
+    const zonaTrabalho = ['servicos', 'empregos', 'extra', 'missoes'].includes(tabName); 
+    const zonaCompra = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
-    let deveBloquear = false;
-    let perfilNecessario = "";
+    let bloqueado = false;
+    let alvo = "";
 
-    // Lógica Incorruptível: Se o banco diz que NÃO é prestador, barra nas zonas de trabalho
-    if (zonaProibidaParaCliente && !isPrestador) {
-        deveBloquear = true;
-        perfilNecessario = "PRESTADOR";
-    } 
-    // Se o banco diz que É prestador, barra nas zonas de compra/contratação
-    else if (zonaProibidaParaPrestador && isPrestador) {
-        deveBloquear = true;
-        perfilNecessario = "CLIENTE";
+    // Lógica Incorruptível: Só bloqueia se houver incompatibilidade entre farda e área
+    if (zonaTrabalho && !isPrestador) { 
+        bloqueado = true; 
+        alvo = "PRESTADOR"; 
+    } else if (zonaCompra && isPrestador) { 
+        bloqueado = true; 
+        alvo = "CLIENTE"; 
     }
 
-    if (deveBloquear) {
-        const modalTrava = document.getElementById('modal-trava-perfil');
-        const labelAlvo = document.getElementById('perfil-alvo');
-        if (modalTrava && labelAlvo) {
-            labelAlvo.innerText = perfilNecessario; // Injeta o perfil que falta
-            modalTrava.classList.remove('hidden'); // Sobe o bloqueio visual
-            console.warn(`🚫 [V40] Bloqueio: Aba ${tabName} exige perfil ${perfilNecessario}`);
-            return; // Mata a execução aqui. Nada vaza.
+    if (bloqueado) {
+        const modal = document.getElementById('modal-trava-perfil');
+        const txt = document.getElementById('perfil-alvo');
+        if (modal && txt) {
+            txt.innerText = alvo; // Avisa qual farda ele precisa vestir no perfil-alvo
+            modal.classList.remove('hidden'); // Sobe a parede visual (Blur/Blackout)
+            console.warn(`🚫 [V40] Bloqueio: Intenção '${tabName}' requer perfil ${alvo}`);
+            return; // Aborta qualquer carregamento de dados para o navegador
         }
     }
 
