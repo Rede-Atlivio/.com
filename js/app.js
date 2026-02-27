@@ -69,18 +69,15 @@ function switchTab(tabName, isAutoBoot = false) {
     // 📍 REGISTRO CONTEXTUAL: Atualiza a aba ativa e limpa o Sininho se necessário
     window.abaAtual = tabName;
     
-    // ✨ SINCRONIA DE HISTÓRICO: Carrega os dados reais ao entrar na aba
+    // ✨ SINCRONIA DE HISTÓRICO: Carrega as notificações salvas quando o usuário abre o Sino
     if (tabName === 'notificacoes') {
         const badge = document.getElementById('badge-notificacao');
-        if (badge) badge.classList.add('hidden');
+        if (badge) badge.classList.add('hidden'); // Esconde o ponto vermelho (notificação lida)
         
-        // Chama o motor de renderização se ele existir
+        // Dispara a busca de mensagens no Firebase se o módulo estiver pronto
         if (window.carregarHistoricoNotificacoes) {
             window.carregarHistoricoNotificacoes();
         }
-    }
-        const badge = document.getElementById('badge-notificacao');
-        if (badge) badge.classList.add('hidden');
     }
 
     // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
