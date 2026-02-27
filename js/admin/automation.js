@@ -328,38 +328,73 @@ window.carregarMaestro = async function() {
     if (!container) return;
 
     container.innerHTML = `
-        <div class="max-w-5xl mx-auto space-y-6 animate-fade">
+        <div class="max-w-5xl mx-auto space-y-6 animate-fade pb-10">
             <div class="flex justify-between items-center mb-2">
                 <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter">🎼 Maestro: Controle de Fluxo</h2>
-                <span class="bg-blue-600/20 text-blue-400 text-[10px] font-black px-3 py-1 rounded-full border border-blue-500/30">V28 - ESTÁVEL</span>
+                <span class="bg-purple-600/20 text-purple-400 text-[10px] font-black px-3 py-1 rounded-full border border-purple-500/30">V29 - MARKETING ESCALÁVEL</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                <div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-purple-500/20 rounded-full blur-3xl"></div>
+                <div class="flex items-center gap-3 border-b border-purple-500/30 pb-4 mb-4 relative z-10">
+                    <h3 class="text-sm font-black text-white uppercase tracking-widest">🚀 Disparo em Massa (Público-Alvo)</h3>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative z-10">
+                    <div class="md:col-span-1">
+                        <label class="block text-[9px] font-black text-purple-300 uppercase mb-1">Filtrar Público</label>
+                        <select id="maestro-mass-intent" class="w-full bg-slate-950 border border-purple-500/30 rounded-xl p-3 text-white text-xs outline-none focus:border-purple-400 transition">
+                            <option value="todos">🌍 Todos os Usuários</option>
+                            <option value="servicos">🛠️ Intenção: Serviços</option>
+                            <option value="missoes">⚡ Intenção: Missões</option>
+                            <option value="empregos">💼 Intenção: Empregos</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-[9px] font-black text-purple-300 uppercase mb-1">Mensagem do Guia (Bônus/Oferta)</label>
+                        <input type="text" id="maestro-mass-msg" placeholder="Ex: Ganhe R$ 20 agora cumprindo uma missão rápida!" class="w-full bg-slate-950 border border-purple-500/30 rounded-xl p-3 text-white text-xs outline-none focus:border-purple-400 transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 relative z-10">
+                    <div>
+                        <label class="block text-[9px] font-black text-purple-300 uppercase mb-1">Ação ao Clicar</label>
+                        <select id="maestro-mass-action" class="w-full bg-slate-950 border border-purple-500/30 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-purple-400 transition">
+                            <option value="wallet">💰 Ir para Carteira</option>
+                            <option value="services">🛠️ Ir para Serviços</option>
+                            <option value="chat">💬 Ir para Chat</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2 flex items-end">
+                        <button onclick="window.dispararMaestroEmMassa()" id="btn-mass-fire" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black py-3 rounded-xl shadow-lg transition transform active:scale-95 uppercase text-xs tracking-widest flex items-center justify-center gap-2">
+                            Disparar para Público Alvo 🔥
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                 <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
                     <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
                         <i data-lucide="megaphone" class="text-blue-500"></i>
-                        <h3 class="text-sm font-black text-white uppercase">Sininho: Disparo Manual</h3>
+                        <h3 class="text-sm font-black text-white uppercase">Sininho: Teste Individual</h3>
                     </div>
                     
                     <div>
-                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">ID do Usuário (UID)</label>
-                        <input type="text" id="maestro-uid" placeholder="Cole o UID do usuário alvo..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition">
+                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Selecione o Usuário</label>
+                        <select id="maestro-uid" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition">
+                            <option value="">⏳ Carregando usuários...</option>
+                        </select>
                     </div>
 
                     <div>
-                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Mensagem do Guia</label>
-                        <textarea id="maestro-msg" rows="3" placeholder="Ex: Ei! Você tem uma negociação pendente no chat..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
+                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Mensagem do Teste</label>
+                        <textarea id="maestro-msg" rows="2" placeholder="Ex: Aviso direto para teste..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Tipo</label>
-                            <select id="maestro-type" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none">
-                                <option value="chat">💬 Chat / Negociação</option>
-                                <option value="gift">🎁 Bônus / Presente</option>
-                                <option value="order">🛠️ Pedido / Serviço</option>
-                                <option value="wallet">💰 Financeiro</option>
-                            </select>
+                        <div class="hidden">
+                             <input type="hidden" id="maestro-type" value="gift">
                         </div>
                         <div>
                             <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Ação</label>
@@ -369,34 +404,120 @@ window.carregarMaestro = async function() {
                                 <option value="services">Ir para Serviços</option>
                             </select>
                         </div>
+                        <div class="flex items-end">
+                            <button onclick="window.dispararNotificacaoMaestro()" class="w-full bg-slate-700 hover:bg-blue-600 text-white font-black py-3 rounded-xl transition uppercase text-[10px] tracking-widest">
+                                Enviar Teste
+                            </button>
+                        </div>
                     </div>
-
-                    <button onclick="window.dispararNotificacaoMaestro()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl shadow-lg transition transform active:scale-95 uppercase text-xs tracking-widest">
-                        Enviar Notificação Agora ⚡
-                    </button>
                 </div>
 
                 <div class="space-y-6">
                     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
                         <div class="flex items-center gap-3 border-b border-slate-800 pb-4 mb-4">
                             <i data-lucide="compass" class="text-emerald-500"></i>
-                            <h3 class="text-sm font-black text-white uppercase">Gestor do Tour (Onboarding)</h3>
+                            <h3 class="text-sm font-black text-white uppercase">Gestor do Tour</h3>
                         </div>
-                        <p class="text-[11px] text-gray-400 mb-4">Use para forçar o usuário a ver o Tour de boas-vindas novamente.</p>
-                        <button onclick="window.resetarTourUsuario()" class="w-full bg-slate-800 hover:bg-red-900/30 text-gray-300 hover:text-red-400 border border-slate-700 py-4 rounded-2xl font-bold text-xs transition uppercase">
+                        <p class="text-[11px] text-gray-400 mb-4">Reseta o onboarding do usuário selecionado no menu do Sininho.</p>
+                        <button onclick="window.resetarTourUsuario()" class="w-full bg-slate-800 hover:bg-red-900/30 text-gray-300 hover:text-red-400 border border-slate-700 py-3 rounded-xl font-bold text-xs transition uppercase">
                             Resetar Tour do Usuário 🔄
                         </button>
                     </div>
 
                     <div class="bg-emerald-600/10 border border-emerald-500/20 rounded-3xl p-6">
-                         <h4 class="text-emerald-400 font-black text-[10px] uppercase mb-1">Dica Maestro</h4>
-                         <p class="text-[11px] text-emerald-200/70 leading-relaxed italic">"O Guia Inteligente não aparece se o usuário já estiver na aba de destino da ação. Isso evita inconveniência."</p>
+                         <h4 class="text-emerald-400 font-black text-[10px] uppercase mb-1">Dica de Conversão</h4>
+                         <p class="text-[11px] text-emerald-200/70 leading-relaxed italic">"Envie bônus contextualizados. Para clientes que buscam serviços, ofereça desconto; para prestadores, ofereça cashback de taxa."</p>
                     </div>
                 </div>
             </div>
         </div>
     `;
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // 🚀 BUSCADOR AUTOMÁTICO DE USUÁRIOS
+    setTimeout(async () => {
+        try {
+            const { collection, getDocs, query, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const snap = await getDocs(query(collection(window.db, "usuarios"), limit(3000))); // Limite de segurança de memória
+            const selectUID = document.getElementById('maestro-uid');
+            
+            if(selectUID) {
+                selectUID.innerHTML = '<option value="">-- Selecione um usuário --</option>';
+                snap.forEach(d => {
+                    const u = d.data();
+                    const nome = u.nome || u.displayName || u.nome_profissional || 'Desconhecido';
+                    selectUID.innerHTML += `<option value="${d.id}">${nome} (${u.email || d.id.substring(0,6)})</option>`;
+                });
+            }
+        } catch(e) { console.error("Erro ao puxar usuários para o select:", e); }
+    }, 200);
+};
+
+// ============================================================================
+// 🚀 MOTOR DE DISPARO EM MASSA DO MAESTRO
+// ============================================================================
+window.dispararMaestroEmMassa = async function() {
+    const intencao = document.getElementById('maestro-mass-intent').value;
+    const msg = document.getElementById('maestro-mass-msg').value.trim();
+    const action = document.getElementById('maestro-mass-action').value;
+    const btn = document.getElementById('btn-mass-fire');
+
+    if (!msg) return alert("❌ Digite a mensagem da oferta/guia!");
+    
+    let txtPublico = intencao === 'todos' ? 'TODOS OS USUÁRIOS DA PLATAFORMA' : `todos os usuários de: ${intencao.toUpperCase()}`;
+    if (!confirm(`🔥 AÇÃO DE MARKETING: Você vai disparar um alerta Push Inteligente para ${txtPublico}!\n\nConfirmar disparo?`)) return;
+
+    btn.innerHTML = "⏳ Enviando Lote...";
+    btn.disabled = true;
+
+    try {
+        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const db = window.db;
+
+        // Monta a Query 
+        let q;
+        if (intencao === 'todos') {
+            q = collection(db, "usuarios");
+        } else {
+            q = query(collection(db, "usuarios"), where("user_intent", "==", intencao));
+        }
+
+        const snap = await getDocs(q);
+        if (snap.empty) {
+            alert("Nenhum usuário ativo neste público alvo.");
+            btn.innerHTML = "Disparar para Público Alvo 🔥";
+            btn.disabled = false;
+            return;
+        }
+
+        const batch = writeBatch(db);
+        let contador = 0;
+
+        snap.forEach(d => {
+            const uid = d.id;
+            const refNotif = doc(collection(db, "user_notifications"));
+            batch.set(refNotif, {
+                userId: uid,
+                type: "gift", 
+                message: msg,
+                action: action,
+                read: false,
+                created_at: serverTimestamp()
+            });
+            contador++;
+        });
+
+        await batch.commit();
+
+        alert(`✅ MARKETING ENVIADO!\nGuia disparado para ${contador} usuários na hora.`);
+        document.getElementById('maestro-mass-msg').value = "";
+    } catch (e) {
+        console.error("Erro no disparo em massa:", e);
+        alert("❌ Erro no disparo: " + e.message);
+    } finally {
+        btn.innerHTML = "Disparar para Público Alvo 🔥";
+        btn.disabled = false;
+    }
 };
 
 // --- LÓGICA DE DISPARO ---
