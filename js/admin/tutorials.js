@@ -22,11 +22,17 @@ export async function init() {
         const url = prompt("Link do YouTube (Embed ou Watch):");
         if(!title || !url) return;
         
-        let embedUrl = url;
-        if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/");
+       let embedUrl = url;
+        if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/").split("&")[0];
         if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "www.youtube.com/embed/");
+        if(url.includes("shorts/")) embedUrl = url.replace("shorts/", "embed/");
 
-        await addDoc(collection(window.db, "tutorials"), { title, url: embedUrl, created_at: serverTimestamp() });
+        await addDoc(collection(window.db, "tutorials"), { 
+            title, 
+            url: embedUrl, 
+            type: "canal_atlivio", 
+            created_at: serverTimestamp() 
+        });
         loadTutorials();
     };
 
