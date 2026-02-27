@@ -133,32 +133,51 @@ window.fecharNotificacao = async (id) => {
     } catch(e) { console.error(e); }
 };
 
+// 🚀 AÇÃO DE NOTIFICAÇÃO COM VIGILANTE INTEGRADO (V3.1)
 window.acaoNotificacao = async (id, action) => {
-    await window.fecharNotificacao(id); // Marca como lido primeiro
-    
-    // Redirecionamento Integrado ao Maestro V10
-    if(action === 'wallet') {
-        if(window.switchTab) window.switchTab('ganhar'); // Redireciona para o nome real da aba Carteira/Ganhar
-    }
-    else if(action === 'services') {
-        if(window.switchTab) window.switchTab('servicos');
-    }
-    else if(action === 'jobs') {
-        if(window.switchTab) window.switchTab('empregos');
+    // 1. Marca como lida no Firebase para sumir o Badge
+    await window.fecharNotificacao(id); 
+
+    // 2. Identifica o perfil atual do usuário
+    const isPrestador = window.userProfile?.is_provider === true;
+    
+    // 🏷️ Regras de Ouro da Atlivio (Sincronizadas com o app.js)
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
+    const exclusivasCliente = ['loja', 'contratar'];
+
+    // 🛡️ O VIGILANTE ANALISA A ORDEM DO ADMIN
+    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(action));
+    const bloqueioPrestador = (isPrestador && exclusivasCliente.includes(action));
+
+    if (bloqueioCliente || bloqueioPrestador) {
+        console.warn(`🚩 [Vigilante] Bloqueando ação de notificação: ${action} é incompatível com o perfil.`);
+        
+        // Em vez de navegar, abre o Modal de Troca de Identidade
+        const modal = document.getElementById('modal-troca-identidade');
+        const txt = document.getElementById('txt-perfil-atual');
+        if (modal && txt) {
+            txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
+            modal.classList.remove('hidden');
+        }
+        return; // Mata a execução aqui
     }
-    else if(action === 'missoes') {
-        if(window.switchTab) window.switchTab('missoes');
-    }
-    else if(action === 'oportunidades') {
-        if(window.switchTab) window.switchTab('oportunidades');
-    }
-    else if(action === 'produtos') {
-        if(window.switchTab) window.switchTab('produtosRecomendados');
-    }
-    else if(action === 'chat') {
-        if(window.switchTab) window.switchTab('chat');
-    }
-    else if(action === 'canal') {
-        if(window.switchTab) window.switchTab('canal');
+
+    // ✅ SE PASSOU NO FILTRO, O MAESTRO EXECUTA A NAVEGAÇÃO
+    const mapaAbas = {
+        'wallet': 'ganhar',
+        'services': 'servicos',
+        'jobs': 'empregos',
+        'missoes': 'missoes',
+        'oportunidades': 'oportunidades',
+        'produtos': 'loja',
+        'chat': 'chat',
+        'canal': 'canal'
+    };
+
+    const abaDestino = mapaAbas[action] || action;
+    
+    if (window.switchTab) {
+        console.log(`🚀 Maestro seguindo ordem do Admin para aba: ${abaDestino}`);
+        window.switchTab(abaDestino);
     }
 };
