@@ -129,25 +129,19 @@ window.fecharNotificacao = async (id) => {
 };
 
 window.acaoNotificacao = async (id, action) => {
-    await window.fecharNotificacao(id); // Marca como lido primeiro
-    
-    // Redirecionamento
-    if(action === 'wallet') {
-        // Tenta abrir perfil ou carteira
-        const tabPerfil = document.getElementById('tab-perfil');
-        if(tabPerfil) tabPerfil.click();
-        else alert("Vá para sua carteira.");
-    }
-    else if(action === 'services') {
-        const tab = document.getElementById('tab-servicos');
-        if(tab) tab.click();
-    }
-    else if(action === 'jobs') {
-        const tab = document.getElementById('tab-vagas'); 
-        if(tab) tab.click();
-        else if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-    }
-    else if(action === 'chat') {
-        if(window.switchTab) window.switchTab('chat');
-    }
+    await window.fecharNotificacao(id); // Marca como lido primeiro
+    
+    // Redirecionamento Integrado ao Maestro V10
+    if(action === 'wallet') {
+        if(window.switchTab) window.switchTab('ganhar'); // Redireciona para o nome real da aba Carteira/Ganhar
+    }
+    else if(action === 'services') {
+        if(window.switchTab) window.switchTab('servicos');
+    }
+    else if(action === 'jobs') {
+        if(window.switchTab) window.switchTab('empregos');
+    }
+    else if(action === 'chat') {
+        if(window.switchTab) window.switchTab('chat');
+    }
 };
