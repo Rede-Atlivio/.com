@@ -92,6 +92,12 @@ function unlockAdmin() {
         }
     });
     switchView('dashboard');
+    // 📡 GATILHO AUTOMÁTICO: Tenta ligar o Vigia de Chat se o módulo automation estiver carregado
+    setTimeout(() => {
+        if (window.ativarGatilhoChatRealtime) {
+            window.ativarGatilhoChatRealtime();
+        }
+    }, 2000); // Aguarda 2 segundos para os módulos carregarem
 }
 
 function lockAdmin() {
