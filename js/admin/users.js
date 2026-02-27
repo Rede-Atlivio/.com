@@ -24,26 +24,11 @@ export async function init(viewType) {
     window.openEditor = openEditor;
     window.saveAction = saveAction;
     window.saveServiceAction = saveServiceAction;
-    window.filtrarPorIntencao = filtrarPorIntencao;
-    
-    if(searchInput) {
-        const containerBusca = searchInput.parentElement;
-        
-        // Injeta o Select CRM ao lado da busca, se ainda não existir
-        if(!document.getElementById('crm-intent-filter') && viewType === 'users') {
-            const selectHTML = `
-            <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
-                <option value="">🎯 Todas as Intenções</option>
-                <option value="servicos">🛠️ Serviços (Contratantes)</option>
-                <option value="missoes">⚡ Missões (Renda Extra)</option>
-                <option value="empregos">💼 Empregos (CLT)</option>
-            </select>`;
-            containerBusca.insertAdjacentHTML('afterend', selectHTML);
-        }
 
+    if(searchInput) {
         const newSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearch, searchInput);
-        newSearch.addEventListener('input', (e) => filtrarListaLocal(e.target.value.toLowerCase()));
+        newSearch.addEventListener('input', (e) => window.filtrarListaLocal(e.target.value.toLowerCase()));
     }
 
     setTimeout(() => {
