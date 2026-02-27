@@ -312,7 +312,7 @@ window.renderizarTourBoasVindas = function() {
                     </div>
                 </button>
 
-               <button onclick="window.finalizarTourMusculado('missoes', ['prestador', 'renda_extra', 'micro_tarefas'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-600 transition-all shadow-md active:scale-95 group text-left">
+               <button onclick="window.finalizarTourMusculado('extra', ['prestador', 'renda_extra', 'micro_tarefas'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 hover:border-emerald-600 transition-all shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl group-hover:bg-emerald-600 group-hover:text-white transition">⚡</div>
                     <div>
                         <p class="font-black text-emerald-700 uppercase text-xs">Renda Extra</p>
