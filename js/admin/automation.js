@@ -362,6 +362,8 @@ window.carregarMaestro = async function() {
                         <select id="maestro-mass-action" class="w-full bg-slate-950 border border-purple-500/30 rounded-xl p-3 text-white text-xs font-bold outline-none focus:border-purple-400 transition">
                             <option value="wallet">💰 Ir para Carteira</option>
                             <option value="services">🛠️ Ir para Serviços</option>
+                            <option value="missoes">⚡ Ir para Missões</option>
+                            <option value="jobs">💼 Ir para Vagas</option>
                             <option value="chat">💬 Ir para Chat</option>
                         </select>
                     </div>
