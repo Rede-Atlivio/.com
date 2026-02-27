@@ -97,12 +97,17 @@ function renderTable(lista) {
             if(data.status === 'suspenso') statusBadge = `<span class="bg-yellow-900 text-yellow-400 border border-yellow-800 px-2 py-0.5 rounded text-[9px] uppercase">⚠️ SUSPENSO</span>`;
             if(data.status === 'banido') statusBadge = `<span class="bg-red-900 text-red-400 border border-red-800 px-2 py-0.5 rounded text-[9px] uppercase">🚫 BANIDO</span>`;
 
-            tbody.innerHTML += `
-                <tr class="border-b border-white/5 hover:bg-white/5 transition group">
-                    ${checkbox}
-                    <td class="p-3"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
-                    <td class="p-3 text-gray-400 text-xs uppercase font-bold tracking-wider">${data.tipo || 'comum'}</td>
-                   <td class="p-3"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
+            // Mapa visual para intenções do CRM
+            const intentMap = { 'servicos': '🛠️ Serviços', 'missoes': '⚡ Missões', 'empregos': '💼 Empregos' };
+            const userIntent = data.user_intent ? intentMap[data.user_intent] || data.user_intent : 'Indefinido';
+            const intentBadge = data.user_intent ? `<span class="bg-blue-900/30 text-blue-400 border border-blue-800/50 px-2 py-0.5 rounded text-[10px]">${userIntent}</span>` : `<span class="text-[10px] text-gray-600">Sem rastro</span>`;
+
+            tbody.innerHTML += `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition group">
+                    ${checkbox}
+                    <td class="p-3"><div class="flex items-center gap-3"><img src="${avatar}" class="w-8 h-8 rounded-full object-cover border border-white/10"><div><div class="font-bold text-white text-sm">${data._displayName}</div><div class="text-[10px] text-gray-500 font-mono">${data.email || '...'}</div></div></div></td>
+                    <td class="p-3 text-gray-400 text-xs uppercase font-bold tracking-wider">${intentBadge}</td>
+                   <td class="p-3"><div class="flex items-center gap-2">${statusBadge}<span class="text-emerald-400 font-mono text-xs">R$ ${Number(data.wallet_balance ?? data.saldo ?? 0).toFixed(2)}</span></div></td>
                     <td class="p-3 text-right flex items-center justify-end gap-1">
                         <button onclick="window.resetarTourDireto('${data.id}', '${data._displayName}')" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white p-1.5 rounded-lg text-[10px] transition-all" title="Resetar Tour/Intenção">🧭</button>
                         <button onclick="window.openEditor('usuarios','${data.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-tighter">Editar</button>
