@@ -520,3 +520,13 @@ window.togglePrivacyHome = () => {
     }
 };
 // --- FIM DO MAESTRO ---
+// 🤖 ROBÔ SENTINELA DE INTERFACE (Independente do Maestro)
+window.verificarEExibirTrava = (perfilNecessario) => {
+    const modal = document.getElementById('modal-trava-perfil');
+    const txtLabel = document.getElementById('perfil-alvo');
+    if (modal && txtLabel) {
+        txtLabel.innerText = perfilNecessario; // Injeta PRESTADOR ou CLIENTE
+        modal.classList.remove('hidden'); // Abre a parede visual
+        console.log(`🛠️ Sentinela: Modal exibido manualmente para perfil ${perfilNecessario}`);
+    }
+};
