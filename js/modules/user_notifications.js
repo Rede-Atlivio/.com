@@ -117,6 +117,7 @@ function gerarTextoBotao(action) {
     if(action === 'wallet') return "VER CARTEIRA ➔";
     if(action === 'services') return "VER SERVIÇOS ➔";
     if(action === 'jobs') return "VER VAGAS ➔";
+    if(action === 'missoes') return "VER AGORA ➔";
     return "OK, ENTENDI";
 }
 
