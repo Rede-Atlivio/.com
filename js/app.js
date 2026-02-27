@@ -116,8 +116,14 @@ function switchTab(tabName, isAutoBoot = false) {
         if(window.carregarCarteira) window.carregarCarteira();
         if(window.carregarMissoes) window.carregarMissoes(); // Chama missões/micro-tarefas
     }
-    if(tabName === 'oportunidades') {
+   if(tabName === 'oportunidades') {
         if(window.carregarOportunidades) window.carregarOportunidades();
+    }
+    if(tabName === 'canal') {
+        // Carrega o módulo de conteúdo dinamicamente para economizar memória (Escalabilidade)
+        import('./modules/canal.js?v=' + Date.now()).then(m => {
+            if(m.init) m.init();
+        }).catch(e => console.error("Erro ao carregar o Canal:", e));
     }
 }
 
