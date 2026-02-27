@@ -348,6 +348,9 @@ window.carregarMaestro = async function() {
                             <option value="servicos">🛠️ Intenção: Serviços</option>
                             <option value="missoes">⚡ Intenção: Missões</option>
                             <option value="empregos">💼 Intenção: Empregos</option>
+                            <option value="oportunidades">🏷️ Intenção: Oportunidades</option>
+                            <option value="loja">🛍️ Intenção: Compras/Produtos</option>
+                            <option value="canal">📺 Intenção: Conteúdo/Canal</option>
                         </select>
                     </div>
                     <div class="md:col-span-3">
