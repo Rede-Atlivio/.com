@@ -146,6 +146,12 @@ window.acaoNotificacao = async (id, action) => {
     else if(action === 'missoes') {
         if(window.switchTab) window.switchTab('missoes');
     }
+    else if(action === 'oportunidades') {
+        if(window.switchTab) window.switchTab('oportunidades');
+    }
+    else if(action === 'produtos') {
+        if(window.switchTab) window.switchTab('produtos');
+    }
     else if(action === 'chat') {
         if(window.switchTab) window.switchTab('chat');
     }
