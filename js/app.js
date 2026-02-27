@@ -447,6 +447,8 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.switchServiceSubTab = switchServiceSubTab;
 window.switchProviderSubTab = switchProviderSubTab;
 window.carregarInterface = carregarInterface;
+// Função simples para esconder o modal de trava adicionando a classe 'hidden' novamente
+window.fecharModalTrava = () => document.getElementById('modal-trava-perfil')?.classList.add('hidden');
 
 // 🧭 NOVAS FUNÇÕES DO TOUR
 if (typeof renderizarTourBoasVindas === 'function') {
