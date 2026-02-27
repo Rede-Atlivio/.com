@@ -63,8 +63,11 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - A PEÇA QUE FALTA)
 // ============================================================================
-function switchTab(tabName, isAutoBoot = false) {
-    if (isAutoBoot && window.atlivioBootConcluido) return;
+// 📺 PRIORIDADE CANAL: Se o usuário clicou para conhecer a Atlivio, ignore travas de boot
+    if (tabName === 'canal') {
+        isAutoBoot = false; 
+        console.log("📺 [Maestro] Abrindo Canal Oficial...");
+    }
 
     // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
     const mapa = { 
