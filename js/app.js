@@ -87,14 +87,9 @@ function switchTab(tabName, isAutoBoot = false) {
     // 🛍️ EXPLORAÇÃO LIVRE: 'loja' e 'produtos' foram removidos da trava para acesso universal
     const requerCliente = ['contratar', 'vaga'].includes(tabName);
 
-    if (requerPrestador && !isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Cliente tentando acessar área de Prestador.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Prestador.");
-    }
-
-    if (requerCliente && isPrestador) {
-        console.warn("🚫 Acesso negado: Perfil Prestador tentando acessar área de Cliente.");
-        return window.alternarPerfil ? window.alternarPerfil() : alert("Mude para o perfil Cliente.");
+   // 🛡️ NAVEGAÇÃO LIVRE: O Maestro agora permite a transição entre abas sem forçar troca de perfil.
+    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
+        console.log("ℹ️ [Maestro] Navegação cross-profile permitida.");
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
