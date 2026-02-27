@@ -64,10 +64,7 @@ window.addEventListener('userProfileLoaded', (e) => {
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
-    // 📍 REGISTRO CONTEXTUAL: Informa ao sistema (e ao Sininho) qual aba está visível agora.
-    // Isso impede que o sistema mande alertas de algo que o usuário já está vendo.
-    // 📍 REGISTRO CONTEXTUAL: Atualiza a aba ativa e limpa o Sininho se necessário
-    window.abaAtual = tabName;
+   
     
     // ✨ SINCRONIA DE HISTÓRICO: Carrega as notificações salvas quando o usuário abre o Sino
     if (tabName === 'notificacoes') {
