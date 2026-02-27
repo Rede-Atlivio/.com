@@ -28,7 +28,16 @@ export async function init(viewType) {
         updateUserBulkUI();
     };
 
-    if(searchInput) {
+   if(searchInput) {
+        if(!document.getElementById('crm-intent-filter') && viewType === 'users') {
+            searchInput.parentElement.insertAdjacentHTML('afterend', `
+                <select id="crm-intent-filter" onchange="window.filtrarPorIntencao(this.value)" class="ml-4 bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-gray-400 font-bold outline-none cursor-pointer focus:border-blue-500 transition">
+                    <option value="">🎯 Todas as Intenções</option>
+                    <option value="servicos">🛠️ Serviços</option>
+                    <option value="missoes">⚡ Missões</option>
+                    <option value="empregos">💼 Empregos</option>
+                </select>`);
+        }
         const newSearch = searchInput.cloneNode(true);
         searchInput.parentNode.replaceChild(newSearch, searchInput);
         newSearch.addEventListener('input', (e) => window.filtrarListaLocal(e.target.value.toLowerCase()));
