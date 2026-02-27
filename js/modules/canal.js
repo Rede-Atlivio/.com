@@ -1,7 +1,7 @@
 import { collection, getDocs, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function init() {
-    const container = document.getElementById('view-missoes'); // Ajuste o ID conforme seu index.html
+    const container = document.getElementById('sec-canal');
     if (!container) return;
 
     // Estrutura Principal do Canal
