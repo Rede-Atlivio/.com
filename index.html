@@ -306,28 +306,27 @@
             </div>
         </div>
     </div>
-   <div id="modal-trava-perfil" class="hidden fixed inset-0 z-[250] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
+    <div id="modal-trava-perfil" class="hidden fixed inset-0 z-[250] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
         <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-sm text-center border-t-8 border-blue-600">
             <div class="w-20 h-20 bg-blue-50 rounded-3xl mx-auto mb-6 flex items-center justify-center text-4xl shadow-inner">
-                💡
+                ⚠️
             </div>
             
             <h2 class="text-2xl font-black text-blue-900 uppercase italic leading-tight mb-2">
-                Área de <span id="perfil-alvo" class="text-blue-600">...</span>
+                Acesso Restrito
             </h2>
             
-           <p class="text-gray-500 text-xs font-bold uppercase tracking-tighter mb-8 leading-relaxed px-2">
-                A Atlivio é um ecossistema híbrido. <br>
-                Para acessar as ferramentas de <span class="text-blue-500">ganhos ou contratação</span> desta aba, ative sua identidade abaixo:
+           <p class="text-gray-500 text-xs font-bold uppercase tracking-tighter mb-8 leading-relaxed">
+                Esta aba é exclusiva para o perfil <span id="perfil-alvo" class="text-blue-600">...</span>. <br>Deseja alternar sua identidade agora?
             </p>
 
             <div class="grid gap-3">
                 <button onclick="alternarPerfil()" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition transform active:scale-95 text-xs uppercase tracking-widest">
-                    Ativar Agora 🔄
+                    Sim, Alternar Agora 🔄
                 </button>
                 
                 <button onclick="window.fecharModalTrava()" class="w-full bg-gray-100 text-gray-400 font-black py-4 rounded-2xl hover:bg-gray-200 transition text-[10px] uppercase">
-                    Voltar para o Início
+                    Agora não, Voltar
                 </button>
             </div>
         </div>
