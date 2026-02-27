@@ -141,7 +141,8 @@ function switchTab(tabName, isAutoBoot = false) {
     const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
     if(activeBtn) activeBtn.classList.add('active');
 
-    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
+    // Envia o nome da aba e o nome original do botão para auditoria do Ad-Engine
+    window.registrarEventoMaestro({ tipo: "navegacao", aba: nomeLimpo, abaOriginal: tabName });
 
     // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
     if(nomeLimpo === 'home') {
