@@ -195,9 +195,7 @@ async function saveAction(col, id, action) {
     if(action === 'aprovar') { updates.status = 'aprovado'; updates.is_online = true; msg = "Perfil aprovado!"; }
     await updateDoc(doc(window.db, col, id), updates);
     if(msg) await addDoc(collection(window.db, "notifications"), { uid: id, message: msg, type: action==='aprovar'?'success':'alert', read: false, created_at: serverTimestamp() });
-    alert("✅ Salvo!");
-    document.getElementById('modal-editor').classList.add('hidden');
-    loadList();
+    console.log(`✅ Ação ${action} aplicada ao UID: ${id}`);
 }
 
 // ✅ RESTAURADO: Ações em Massa
