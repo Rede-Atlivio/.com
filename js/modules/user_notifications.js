@@ -76,13 +76,15 @@ window.mostrarBarraNotificacao = (id, data) => {
         'gift': 'bg-green-600',
         'order': 'bg-blue-700',
         'chat': 'bg-indigo-600',
-        'wallet': 'bg-emerald-600'
+        'wallet': 'bg-emerald-600',
+        'canal': 'bg-red-600'
     };
     const iconMap = {
         'gift': '🎁',
         'order': '🛠️',
         'chat': '💬',
-        'wallet': '💰'
+        'wallet': '💰',
+        'canal': '📺'
     };
 
     const bgColor = bgColorMap[data.type] || 'bg-slate-800';
