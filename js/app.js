@@ -506,7 +506,8 @@ window.addEventListener('click', (e) => {
     }
 
     // ⚡ LOCALIZADOR: Acha o botão de switchTab
-    const btn = e.target.closest('button[onclick*="switchTab"]');
+    // 🕵️ O Vigilante agora vigia os dois tipos de botões de navegação do sistema
+    const btn = e.target.closest('button[onclick*="switchTab"], button[onclick*="finalizarTourMusculado"]');
     if (!btn) return;
 
     // ⚡ ANALISADOR: Extrai a aba alvo
