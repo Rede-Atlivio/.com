@@ -107,7 +107,8 @@ function switchTab(tabName, isAutoBoot = false) {
     }
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
-    window.abaAtual = nomeLimpo; 
+    // 📍 REGISTRO CONTEXTUAL FINAL: Memoriza a aba ativa saneada para o sistema de notificações
+    window.abaAtual = nomeLimpo;
 
     // 🧹 LIMPEZA TOTAL
     document.querySelectorAll('main > section').forEach(el => {
