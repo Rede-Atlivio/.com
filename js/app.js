@@ -83,7 +83,7 @@ function switchTab(tabName, isAutoBoot = false) {
     const isPrestador = perfil?.is_provider || false;
 
     // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
+    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(nomeLimpo) && !['contratar', 'vaga'].includes(tabName);
     const requerCliente = ['contratar', 'vaga', 'loja', 'produtos'].includes(tabName);
 
    // 🛡️ TRAVA DE SEGURANÇA COM MODAL MAESTRO
