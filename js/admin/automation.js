@@ -366,6 +366,7 @@ window.carregarMaestro = async function() {
                             <option value="jobs">💼 Ir para Vagas</option>
                             <option value="oportunidades">🏷️ Ir para Oportunidades</option>
                             <option value="produtos">🛍️ Ir para Produtos</option>
+                            <option value="canal">📺 Ir para Canal ATLIVIO</option>
                             <option value="chat">💬 Ir para Chat</option>
                         </select>
                     </div>
