@@ -93,7 +93,7 @@ function switchTab(tabName, isAutoBoot = false) {
         
         if (modalTrava && labelAlvo) {
             // Define o nome do perfil necessário dinamicamente
-            labelAlvo.innerText = "CLIENTE";
+            labelAlvo.innerText = requerPrestador ? "PRESTADOR" : "CLIENTE";
             
             // Abre o modal na tela
             modalTrava.classList.remove('hidden');
