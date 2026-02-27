@@ -67,7 +67,7 @@ function switchTab(tabName, isAutoBoot = false) {
     if (isAutoBoot && window.atlivioBootConcluido) return;
 
     // 🗺️ MAPA DE TRADUÇÃO: Garante que IDs antigos/duplicados caiam na seção certa
-    const mapa = { 'ganhar': 'missoes', 'produtos': 'loja', 'loja': 'loja', 'tutorials': 'canal' };
+    const mapa = { 'ganhar': 'ganhar', 'produtos': 'loja', 'loja': 'loja', 'tutorials': 'canal' };
     const nomeLimpo = mapa[tabName] || tabName;
 
     console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
