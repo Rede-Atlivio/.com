@@ -134,6 +134,49 @@ window.fecharNotificacao = async (id) => {
 };
 
 // 🚀 AÇÃO DE NOTIFICAÇÃO COM VIGILANTE INTEGRADO (V3.1)
+window.acaoNotificacao = async (id, action) => {
+    console.log(`🎯 [Vigilante] Processando ação: ${action}`);
+    
+    // 1. Marca como lida no Firebase para o badge sumir
+    await window.fecharNotificacao(id); 
+
+    // 2. Identifica o perfil atual para aplicar a trava de segurança
+    const isPrestador = window.userProfile?.is_provider === true;
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
+    const exclusivasCliente = ['loja', 'contratar'];
+
+    // 🛡️ ANALISADOR DE INTENÇÃO: Verifica se a ordem do Admin é compatível com o perfil atual
+    const bloqueio = (isPrestador && exclusivasCliente.includes(action)) || 
+                     (!isPrestador && exclusivasPrestador.includes(action));
+
+    if (bloqueio) {
+        console.warn(`🚩 [Vigilante] Bloqueando ação incompatível: ${action}`);
+        
+        // Abre o Modal de Troca de Identidade que já temos no HTML
+        const modal = document.getElementById('modal-troca-identidade');
+        const txt = document.getElementById('txt-perfil-atual');
+        if (modal && txt) {
+            txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
+            modal.classList.remove('hidden');
+        }
+        return; 
+    }
+
+    // ✅ MAPEAMENTO: Traduz os termos do Admin para os IDs de abas que o Maestro entende
+    const mapaAbas = { 
+        'wallet': 'ganhar', 
+        'services': 'servicos', 
+        'jobs': 'empregos', 
+        'produtos': 'loja' 
+    };
+    
+    const abaDestino = mapaAbas[action] || action;
+    
+    // 🎼 MAESTRO: Executa a navegação final
+    if (window.switchTab) {
+        window.switchTab(abaDestino);
+    }
+};
 // 📜 MOTOR DE RENDERIZAÇÃO DO HISTÓRICO (V1.0)
 window.carregarHistoricoNotificacoes = async () => {
     const lista = document.getElementById('lista-historico-notificacoes');
