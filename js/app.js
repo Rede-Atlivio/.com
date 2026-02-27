@@ -69,8 +69,16 @@ function switchTab(tabName, isAutoBoot = false) {
     // 📍 REGISTRO CONTEXTUAL: Atualiza a aba ativa e limpa o Sininho se necessário
     window.abaAtual = tabName;
     
-    // ✨ LIMPEZA AUTOMÁTICA: Se o usuário entrou na aba de notificações, esconda o ponto vermelho
+    // ✨ SINCRONIA DE HISTÓRICO: Carrega os dados reais ao entrar na aba
     if (tabName === 'notificacoes') {
+        const badge = document.getElementById('badge-notificacao');
+        if (badge) badge.classList.add('hidden');
+        
+        // Chama o motor de renderização se ele existir
+        if (window.carregarHistoricoNotificacoes) {
+            window.carregarHistoricoNotificacoes();
+        }
+    }
         const badge = document.getElementById('badge-notificacao');
         if (badge) badge.classList.add('hidden');
     }
