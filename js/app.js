@@ -120,14 +120,19 @@ function switchTab(tabName, isAutoBoot = false) {
         return; // Apenas mata a execução sem subir o modal desgraçado
     }
 
-    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
+    // 🚀 EXECUÇÃO PRIORITÁRIA: Muda a aba primeiro, pergunta depois (Garante o clique da Home)
+    console.log("👉 [Navegação] Movendo para:", nomeLimpo);
     window.abaAtual = nomeLimpo; 
 
-    // 🧹 LIMPEZA TOTAL
-    document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
-        el.style.display = 'none';
+    // 🧹 LIMPEZA DE PALCO: Esconde todas as seções para a nova entrar
+    const secoes = document.querySelectorAll('main > section');
+    secoes.forEach(secao => {
+        secao.classList.add('hidden');
+        secao.style.display = 'none';
     });
+
+    // 🔓 DESBLOQUEIO VISUAL: Se por acaso o modal de trava estiver aberto, a Home o mata
+    if (nomeLimpo === 'home') window.fecharModalTrava();
 
     // Seleciona o elemento da seção correspondente ao nome limpo da aba
     const secaoAlvo = document.getElementById(`sec-${nomeLimpo}`); 
