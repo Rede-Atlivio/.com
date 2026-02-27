@@ -301,16 +301,18 @@ async function carregarInterface(user) {
                 
                 // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
                 setTimeout(() => {
-                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
+                    // 🗺️ Mapa de Redirecionamento Inteligente: Mantém a 'intenção' original para não ativar a trava de segurança
                     const mapaFiel = {
                         'ganhar': 'missoes', 
                         'loja': 'loja',      
-                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
-                        'servicos': 'servicos'
+                        'produtos': 'loja',  
+                        'contratar': 'contratar', // ──▶ Mantém 'contratar' para o switchTab entender que é um Cliente
+                        'servicos': 'servicos' 
                     };
                     
+                    // Define para onde o sistema vai levar o usuário após o login
                     const destinoOficial = mapaFiel[userIntent] || userIntent;
-                    window.switchTab(destinoOficial);
+                    window.switchTab(destinoOficial); // ──▶ Dispara a navegação com a farda correta
                 }, 800); 
 
             } else {
