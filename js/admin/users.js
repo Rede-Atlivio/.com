@@ -12,13 +12,11 @@ export async function init(viewType) {
     const searchInput = document.getElementById('list-search'); 
     
     const checkHeader = `<th class="p-3 w-10"><input type="checkbox" id="check-users-all" class="chk-custom"></th>`;
-    if (viewType === 'users') {
-        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">STATUS / SALDO</th><th class="p-3 text-right">AÇÕES</th>`;
-        if(btnAdd) { btnAdd.innerHTML = "+ NOVO USUÁRIO"; btnAdd.onclick = () => window.openEditor('usuarios', null); }
-    } else {
-        headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
-        if(btnAdd) { btnAdd.innerHTML = "+ NOVO PRESTADOR"; btnAdd.onclick = () => window.openEditor('active_providers', null); }
-    }
+    if (viewType === 'users') {
+        headers.innerHTML = `${checkHeader}<th class="p-3">IDENTIFICAÇÃO</th><th class="p-3">TIPO</th><th class="p-3">STATUS / SALDO</th><th class="p-3 text-right">AÇÕES</th>`;
+    } else {
+        headers.innerHTML = `${checkHeader}<th class="p-3">PRESTADOR</th><th class="p-3">CATEGORIA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+    }
     // ✅ RESTAURADO: Exportações Globais essenciais
     window.openEditor = openEditor;
     window.saveAction = saveAction;
