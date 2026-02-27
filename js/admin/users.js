@@ -210,10 +210,10 @@ function abrirModalMassa() {
        <div class="space-y-4">
             <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">📢 Gestão em Massa (${selectedUsers.size})</h3>
             
-            <div class="grid grid-cols-1 gap-2">
-                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">✅ Aprovar Selecionados</button>
-                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🚫 Banir / Suspender</button>
-                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🗑️ Excluir Definitivamente</button>
+           <div class="grid grid-cols-1 gap-2">
+                <button onclick="window.aplicarAcaoEmMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">✅ Aprovar Todos</button>
+                <button onclick="window.aplicarAcaoEmMassa('banir')" class="bg-red-600 hover:bg-red-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🚫 Banir Todos</button>
+                <button onclick="window.aplicarAcaoEmMassa('resetar')" class="bg-amber-600 hover:bg-amber-500 text-white py-3 rounded-lg font-bold uppercase text-xs transition">🧭 Resetar Tour em Massa</button>
             </div>
 
             <div class="h-px bg-white/10 my-4"></div>
