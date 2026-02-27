@@ -57,11 +57,18 @@ async function loadTutorials() {
     snap.forEach(d => {
         const data = d.data();
         grid.innerHTML += `
-            <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg relative group">
-                <iframe class="w-full h-48" src="${data.url}" frameborder="0" allowfullscreen></iframe>
-                <div class="p-4 flex justify-between items-center">
-                    <h3 class="font-bold text-white">${data.title}</h3>
-                    <button onclick="window.deleteTutorial('${d.id}')" class="text-red-500 hover:text-red-400 font-bold">🗑️</button>
+            <div class="bg-slate-900/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative group hover:border-red-500/30 transition-all duration-500">
+                <div class="relative pt-[56.25%]">
+                    <iframe class="absolute inset-0 w-full h-full" src="${data.url}" frameborder="0" allowfullscreen></iframe>
+                </div>
+                <div class="p-5 flex justify-between items-start">
+                    <div>
+                        <span class="text-[9px] font-black text-red-500 uppercase tracking-widest">Conteúdo Oficial</span>
+                        <h3 class="font-black text-white text-sm leading-tight mt-1 uppercase italic">${data.title}</h3>
+                    </div>
+                    <button onclick="window.deleteTutorial('${d.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white p-2 rounded-xl transition-all">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
         `;
