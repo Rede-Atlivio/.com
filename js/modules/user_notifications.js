@@ -189,13 +189,11 @@ window.fecharNotificacao = async (id) => {
     const alerta = document.getElementById('user-alert-bar');
     if(alerta) alerta.remove(); 
     
-    // Se o ID for de um teste (começa com auto_), não precisamos avisar o banco
-    if (id.includes('auto_')) return;
-
+    
     try {
         // 2. Usamos a blindagem global para garantir que o comando chegue ao Google
         const { doc, updateDoc } = window.firebaseModules;
-        const notifRef = doc(window.db, "user_notifications", id);
+        
         
         // 3. Marca como lido. O onSnapshot vai detectar isso e não criará loop porque o filtro é (read == false)
         await updateDoc(notifRef, { 
