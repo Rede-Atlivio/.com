@@ -2,13 +2,12 @@
 import { app, auth, db, provider } from './config.js';
 import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// 🛰️ FERRAMENTAS MAESTRO: Captura de Endereço Digital (Push)
 /* 🛰️ FERRAMENTAS MAESTRO: Captura de Endereço Digital (Push) V26 */
 import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
-// Importação segura com Fallback para evitar Uncaught SyntaxError
-import * as Config from './config.js';
-const VAPID_KEY = Config.VAPID_KEY || "BD-A9Z_YvJ0zI0S4P5_x_N-qT0R0W0E0R0T0Y0U0I0O0P0A0S0D0F0G0H0J0K0L";
+// 🚀 CORREÇÃO DE DIRETÓRIO: Como o auth.js já está na pasta /js, o './config.js' deveria funcionar,
+// mas forçamos a leitura da VAPID_KEY diretamente para evitar erros de undefined.
+import { VAPID_KEY } from './config.js';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
