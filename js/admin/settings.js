@@ -23,8 +23,43 @@ export async function init() {
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade">
             
-            <div class="glass-panel p-6 border border-blue-500/30">
-                <h2 class="text-xl font-bold text-white mb-2">📢 Comunicação Global</h2>
+           <div class="glass-panel p-6 border border-blue-500/30">
+    <h2 class="text-xl font-bold text-white mb-2 italic">📢 Central de Mensagens Atlivio</h2>
+    <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Aviso de Topo + Marketing Maestro (V25)</p>
+    
+    <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-6">
+        <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Aviso de Topo (Texto Simples)</label>
+        <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-3" placeholder="Ex: Manutenção hoje às 20h...">
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="conf-msg-active" class="chk-custom">
+            <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Exibir este aviso no topo?</label>
+        </div>
+    </div>
+
+    <div class="h-px bg-white/10 my-6"></div>
+
+    <div class="bg-blue-600/5 p-4 rounded-xl border border-blue-500/10 mb-6">
+        <label class="text-[9px] font-black text-blue-400 uppercase block mb-1 tracking-widest">Frase do Balão Maestro (Conversão)</label>
+        <input type="text" id="conf-marketing-msg" class="inp-editor h-10 text-white mb-3" placeholder="Ex: Ganhe R$ 20 agora cumprindo missões!">
+        
+        <label class="text-[9px] font-black text-blue-400 uppercase block mb-1 mt-3">Aba de Destino ao clicar</label>
+        <select id="conf-marketing-aba" class="inp-editor h-10 text-white mb-3 bg-slate-900">
+            <option value="loja">🛍️ Loja (Produtos)</option>
+            <option value="missoes">⚡ Missões (Renda Extra)</option>
+            <option value="ganhar">💰 Carteira</option>
+            <option value="servicos">🛠️ Serviços</option>
+            <option value="canal">📺 Canal Atlivio</option>
+        </select>
+
+        <div class="flex items-center gap-2">
+            <input type="checkbox" id="conf-marketing-active" class="chk-custom">
+            <label for="conf-marketing-active" class="text-xs text-emerald-400 font-bold cursor-pointer italic">Ligar Piloto Automático de Marketing?</label>
+        </div>
+    </div>
+
+    <button onclick="window.saveAppSettingsUnificado()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition transform active:scale-95">
+        💾 SALVAR TODAS AS COMUNICAÇÕES
+    </button>
                 <p class="text-xs text-gray-400 mb-6">Esta mensagem aparecerá no topo do aplicativo para todos os usuários.</p>
                 
                 <label class="inp-label">MENSAGEM DE AVISO</label>
