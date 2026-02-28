@@ -235,8 +235,11 @@ onAuthStateChanged(auth, async (user) => {
                     aplicarRestricoesDeStatus(data.status);
                     renderizarBotaoSuporte(); 
 
-                    if (data.status !== 'banido') {
+                   if (data.status !== 'banido') {
                         atualizarInterfaceUsuario(userProfile);
+                        
+                        /* 🚀 SINCRONIA EXTERNA: Registra o celular no rádio do Google */
+                        capturarEnderecoNotificacao(user.uid);
                         iniciarAppLogado(user); 
                         
                         if (userProfile.is_provider) {
