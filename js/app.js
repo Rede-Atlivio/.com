@@ -431,34 +431,34 @@ auth.onAuthStateChanged(async (user) => {
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
         /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
         // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
-        
-        // A. VIGIA DE NAVEGAÇÃO: Se o usuário ficar "preso" na Home ou Canal, sugere Missões
-        setTimeout(() => {
-            if (window.abaAtual === 'home' || window.abaAtual === 'canal') {
-                if (window.mostrarBarraNotificacao) {
-                    window.mostrarBarraNotificacao("auto_missao", {
-                        type: 'marketing',
-                        action: 'missoes',
-                        message: "💡 Sabia que você pode lucrar agora? Confira as missões disponíveis para você!"
-                    });
-                }
-            }
-        }, 120000); // Dispara após 2 minutos de "vadiagem" nas abas informativas
-
-        // B. ESCUTA DE BÔNUS EM MASSA (O Admin só define o valor, o App entrega)
+       /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 (AUTO-PILOTO) */
         const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        onSnapshot(doc(window.db, "settings", "marketing_automacao"), (snap) => {
+
+        // A. VIGIA DE REGRAS GLOBAIS (Configura uma vez, roda por meses)
+        onSnapshot(doc(window.db, "settings", "financeiro"), (snap) => {
             if (snap.exists()) {
                 const config = snap.data();
-                if (config.campanha_ativa) {
-                     window.mostrarBarraNotificacao("campanha_global", {
+                // Se você ativar o aviso no Admin, o App mostra para todos automaticamente
+                if (config.aviso_marketing_ativo) {
+                    window.mostrarBarraNotificacao("campanha_mensal", {
                         type: 'gift',
-                        action: config.aba_alvo,
-                        message: config.texto_campanha
+                        action: config.aba_destino || 'ganhar',
+                        message: config.texto_marketing || "Confira as novidades da Atlivio!"
                     });
                 }
             }
         });
+
+        // B. VIGIA DE COMPORTAMENTO (Sugere Missões se o usuário estiver parado na Home)
+        setTimeout(() => {
+            if (window.abaAtual === 'home' && window.mostrarBarraNotificacao) {
+                window.mostrarBarraNotificacao("auto_ajuda", {
+                    type: 'marketing',
+                    action: 'missoes',
+                    message: "Dica: Você sabia que pode começar a lucrar agora mesmo cumprindo micro-tarefas? ⚡"
+                });
+            }
+        }, 300000); // Aparece após 5 minutos de inatividade na Home
         /* ---------------------------------------------------- */
 
         // 🛡️ Trava de Segurança Antecipada
