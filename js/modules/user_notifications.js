@@ -194,7 +194,8 @@ window.fecharNotificacao = async (id) => {
         // 2. Usamos a blindagem global para garantir que o comando chegue ao Google
         const { doc, updateDoc } = window.firebaseModules;
         
-        
+        // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código ──▶
+    if (id && id.toString().includes('auto_')) return;
         // 3. Marca como lido. O onSnapshot vai detectar isso e não criará loop porque o filtro é (read == false)
         await updateDoc(notifRef, { 
             read: true,
