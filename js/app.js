@@ -101,10 +101,14 @@ function switchTab(tabName, isAutoBoot = false) {
         const badge = document.getElementById('notif-badge');
         if (badge) badge.remove(); 
 
-        // Dispara a faxina no banco de dados
-        if (window.carregarHistoricoNotificacoes) {
-            console.log("🧹 Maestro: Iniciando limpeza de banco solicitada pelo usuário...");
+        // 🧹 FAXINA REAL V42: Além de carregar, garante que o banco seja zerado ──▶
+        if (typeof window.carregarHistoricoNotificacoes === 'function') {
+            console.log("🧹 Maestro: Executando limpeza e sincronia de histórico...");
             window.carregarHistoricoNotificacoes();
+            
+            // 🔥 O TIRO DE MISERICÓRDIA: Força o zeramento do badge visual no ato ──▶
+            const b = document.getElementById('notif-badge');
+            if(b) b.classList.add('hidden');
         }
     }
 
