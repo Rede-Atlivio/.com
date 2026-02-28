@@ -429,20 +429,32 @@ auth.onAuthStateChanged(async (user) => {
         console.log("🔐 Autenticado com Sucesso V12");
 
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
-        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
+        // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
         
-        // Fica ouvindo ordens diretas do Admin para este usuário específico
-        onSnapshot(doc(window.db, "maestro_commands", user.uid), (snap) => {
-            if (snap.exists()) {
-                const comando = snap.data();
-                console.log("🎯 Maestro disparou:", comando.titulo || "Campanha Ativa");
-
-                // Chama o balão Slate-900 que instalamos no módulo anterior
+        // A. VIGIA DE NAVEGAÇÃO: Se o usuário ficar "preso" na Home ou Canal, sugere Missões
+        setTimeout(() => {
+            if (window.abaAtual === 'home' || window.abaAtual === 'canal') {
                 if (window.mostrarBarraNotificacao) {
-                    window.mostrarBarraNotificacao(user.uid, {
+                    window.mostrarBarraNotificacao("auto_missao", {
                         type: 'marketing',
-                        action: comando.aba, // Ex: 'loja', 'empregos', 'servicos'
-                        message: comando.msg
+                        action: 'missoes',
+                        message: "💡 Sabia que você pode lucrar agora? Confira as missões disponíveis para você!"
+                    });
+                }
+            }
+        }, 120000); // Dispara após 2 minutos de "vadiagem" nas abas informativas
+
+        // B. ESCUTA DE BÔNUS EM MASSA (O Admin só define o valor, o App entrega)
+        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        onSnapshot(doc(window.db, "settings", "marketing_automacao"), (snap) => {
+            if (snap.exists()) {
+                const config = snap.data();
+                if (config.campanha_ativa) {
+                     window.mostrarBarraNotificacao("campanha_global", {
+                        type: 'gift',
+                        action: config.aba_alvo,
+                        message: config.texto_campanha
                     });
                 }
             }
