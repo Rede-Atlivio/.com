@@ -70,12 +70,13 @@ import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "h
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
-/* 💎 MOTOR DE EXIBIÇÃO MAESTRO V25 - DESIGN PREMIUM SLATE */
+/* 💎 MOTOR DE EXIBIÇÃO MAESTRO V26 - DESIGN SLATE-900 REFINADO */
 window.mostrarBarraNotificacao = (id, data) => {
-    // Remove qualquer alerta anterior para não empilhar lixo na tela
+    // Limpeza de cache visual para evitar sobreposição
     const existingAlert = document.getElementById('user-alert-bar');
     if(existingAlert) existingAlert.remove();
 
+    // Mapeamento de Ícones e Identidade Visual Atlivio
     const iconMap = { 'gift': '🎁', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'canal': '📺', 'marketing': '🚀' };
     const icon = iconMap[data.type] || '🔔';
     const btnText = gerarTextoBotao(data.action);
@@ -83,23 +84,27 @@ window.mostrarBarraNotificacao = (id, data) => {
     const div = document.createElement('div');
     div.id = 'user-alert-bar';
     
-    // Classes: Slate Premium, Borda Azul, Sombras Pesadas e Posicionamento Fixo no Topo Central
-    div.className = `fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-slate-premium border-blue-atlivio border text-white p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-maestro animate-fade-down flex flex-col gap-3`;
+    // Classes: Slate-900 (Quase Preto), Borda Fina Azul, Sombra Soft 50%, Posicionamento Centralizado
+    div.className = `fixed top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[380px] bg-[#0f172a] border border-blue-500/40 text-white p-5 rounded-[24px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] z-[999999] animate-fade-down flex flex-col gap-4`;
 
     div.innerHTML = `
-        <div class="flex items-start gap-3">
-            <div class="bg-blue-600/20 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-blue-500/30">
+        <div class="flex items-start gap-4">
+            <div class="bg-blue-600 w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
                 <span class="text-xl">${icon}</span>
             </div>
-            <div class="flex-1">
-                <p class="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">Notificação Atlivio</p>
-                <p class="text-xs font-bold leading-snug text-slate-100">${data.message}</p>
-                ${data.credit_val > 0 ? `<p class="text-[9px] text-emerald-400 font-black mt-1">💰 + R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
+            <div class="flex-1 min-w-0">
+                <div class="flex justify-between items-start">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-[0.15em] mb-1">Notificação Oficial</p>
+                    <button onclick="window.fecharNotificacao('${id}')" class="text-slate-500 hover:text-white transition-colors p-1 -mt-1 -mr-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <p class="text-[13px] font-bold leading-tight text-slate-100 break-words">${data.message}</p>
+                ${data.credit_val > 0 ? `<p class="text-[10px] text-emerald-400 font-black mt-1.5 flex items-center gap-1">💰 R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
             </div>
-            <button onclick="window.fecharNotificacao('${id}')" class="text-slate-500 hover:text-white transition">✕</button>
         </div>
-        <div class="flex gap-2 mt-1">
-            <button onclick="window.acaoNotificacao('${id}', '${data.action}')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black py-2.5 rounded-xl transition shadow-lg uppercase tracking-wider">
+        <div class="flex gap-2">
+            <button onclick="window.acaoNotificacao('${id}', '${data.action}')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black py-3 rounded-xl transition-all shadow-lg uppercase tracking-widest active:scale-[0.98]">
                 ${btnText}
             </button>
         </div>
@@ -107,9 +112,12 @@ window.mostrarBarraNotificacao = (id, data) => {
     
     document.body.appendChild(div);
 
-    // Toca o som de notificação que já existe no seu index.html
+    // Sistema de Alerta Sonoro Híbrido
     const som = document.getElementById('notification-sound');
-    if(som) som.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
+    if(som) {
+        som.volume = 0.5;
+        som.play().catch(() => console.log("🔇 Áudio aguardando interação do usuário."));
+    }
 }
 
 function gerarTextoBotao(action) {
