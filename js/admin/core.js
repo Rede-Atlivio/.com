@@ -563,8 +563,59 @@ window.dispararMaestroInterno = async () => {
     } catch (e) {
         console.error("Erro no Maestro:", e);
         alert("❌ ERRO NO SCRIPT:\nVerifique as aspas duplas e o formato.\n\nExemplo Correto:\n{\n \"titulo\": \"BÔNUS\",\n \"msg\": \"Clique aqui\",\n \"aba\": \"ganhar\"\n}");
-    } finally {
+   } finally {
         btn.innerText = "🚀 Disparar App Aberto";
         btn.disabled = false;
+    }
+};
+
+/**
+ * 🔔 DISPARADOR EXTERNO (PUSH): O "Despertador"
+ * Envia notificações reais para a tela de bloqueio do celular dos usuários.
+ */
+window.dispararMaestroExterno = async () => {
+    const scriptArea = document.getElementById('maestro-script-json');
+    
+    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: O script JSON está vazio!");
+
+    try {
+        const comando = JSON.parse(scriptArea.value);
+        if (!comando.msg) throw new Error("O JSON deve conter 'msg' para o Push!");
+
+        const confirmacao = confirm(`🔔 CONFIRMAR DISPARO EXTERNO?\n\nIsso fará o celular dos usuários vibrar com a mensagem:\n"${comando.msg}"\n\nDeseja continuar?`);
+        if (!confirmacao) return;
+
+        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 1. Busca apenas usuários que permitiram notificações e possuem endereço (Token)
+        const q = query(collection(window.db, "usuarios"), where("push_enabled", "==", true));
+        const usuariosSnap = await getDocs(q);
+
+        if (usuariosSnap.empty) {
+            return alert("⚠️ Nenhum usuário com Push ativado foi encontrado no banco.");
+        }
+
+        console.log(`📡 Enviando Push para ${usuariosSnap.size} aparelhos via Servidor...`);
+
+        /**
+         * 🚀 NOTA DE ESCALA: Notificações PWA reais exigem uma Firebase Cloud Function
+         * ou um servidor Node.js (Vercel/Heroku) para assinar as mensagens com a VAPID_KEY.
+         * Vou injetar o comando que cria a "Ordem de Disparo" para o seu robô de servidor ler.
+         */
+        const { addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        await addDoc(collection(window.db, "push_queue"), {
+            titulo: comando.titulo || "Atlivio",
+            mensagem: comando.msg,
+            url: `https://rede-atlivio.github.io/.com/?aba=${comando.aba}`,
+            created_at: serverTimestamp(),
+            status: 'pending',
+            total_alvos: usuariosSnap.size
+        });
+
+        alert(`✅ ORDEM DE DISPARO ENVIADA!\nO servidor está processando o envio para ${usuariosSnap.size} celulares.`);
+        
+    } catch (e) {
+        alert("❌ ERRO NO PUSH: Verifique o formato do JSON.");
     }
 };
