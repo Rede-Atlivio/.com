@@ -244,34 +244,44 @@ async function loadSettings() {
 
 // 💾 SALVAR AVISO GLOBAL
 /* 💾 SALVAMENTO UNIFICADO: AVISO GLOBAL + MAESTRO */
+// 💾 SALVAMENTO UNIFICADO V38: Sincronização em massa (Alta Performance)
 window.saveAppSettingsUnificado = async () => {
     const btn = document.querySelector('button[onclick="window.saveAppSettingsUnificado()"]');
-    btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
+    btn.innerText = "⏳ SINCRONIZANDO..."; 
+    btn.disabled = true; // Trava o botão para o Admin não clicar duas vezes
 
     try {
-        const db = window.db;
-        
-        // 1. Salva o Aviso de Topo (Estrutura Antiga Mantida)
-        await setDoc(doc(db, "configuracoes", "global"), {
-            top_message: document.getElementById('conf-global-msg').value,
+        const batch = writeBatch(window.db); // Prepara o envio em lote (lógica profissional)
+
+        // 1. Pega os valores da tela limpando espaços inúteis
+        const msgBanner = document.getElementById('conf-global-msg').value.trim();
+        const msgBalao = document.getElementById('conf-marketing-msg').value.trim();
+
+        // 2. Prepara a gravação do Banner Amarelo (Legado)
+        batch.set(doc(window.db, "configuracoes", "global"), {
+            top_message: msgBanner,
             show_msg: document.getElementById('conf-msg-active').checked,
             updated_at: new Date()
-        }, {merge: true});
+        }, { merge: true });
 
-        // 2. Salva a Automação Maestro (Piloto Automático)
-        await setDoc(doc(db, "settings", "financeiro"), {
-            texto_marketing: document.getElementById('conf-marketing-msg').value,
+        // 3. Prepara a gravação do Balão Maestro (Novo Marketing)
+        batch.set(doc(window.db, "settings", "financeiro"), {
+            texto_marketing: msgBalao,
             aba_destino: document.getElementById('conf-marketing-aba').value,
             aviso_marketing_ativo: document.getElementById('conf-marketing-active').checked,
             updated_at: new Date()
-        }, {merge: true});
+        }, { merge: true });
 
-        alert("✅ SUCESSO!\nAs comunicações globais e o marketing automático foram atualizados.");
-    } catch(e) { 
-        alert("❌ Erro ao salvar: " + e.message); 
-    } finally { 
-        btn.innerText = "💾 SALVAR TODAS AS COMUNICAÇÕES"; 
-        btn.disabled = false; 
+        // 4. Dispara tudo para o banco em uma única conexão
+        await batch.commit();
+        
+        alert("✅ SISTEMA ATUALIZADO!\nBanner e Marketing Automático sincronizados com sucesso.");
+    } catch (e) {
+        console.error("Erro no batch save:", e);
+        alert("❌ FALHA TÉCNICA: " + e.message);
+    } finally {
+        btn.innerText = "💾 SALVAR COMUNICAÇÕES";
+        btn.disabled = false; // Devolve o controle ao Admin
     }
 };
 
