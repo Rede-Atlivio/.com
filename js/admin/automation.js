@@ -94,9 +94,9 @@ export async function init() {
                     <button onclick="window.dispararMaestroInterno()" class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition shadow-lg active:scale-95 flex items-center justify-center gap-2">
                         🚀 Disparar App Aberto
                     </button>
-                    <button onclick="alert('🔧 Etapa de Notificações Externas (Push) em implementação no core.js...')" class="bg-slate-800 text-gray-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest cursor-not-allowed border border-slate-700">
-                        🔔 Notificação Push (Externo)
-                    </button>
+                   <button onclick="window.dispararMaestroExterno()" class="bg-slate-800 hover:bg-slate-700 text-blue-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-blue-500/20 transition shadow-lg active:scale-95">
+                   🔔 Notificação Push (Externo)
+                   </button>
                 </div>
                 <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/10">
                     <p class="text-[9px] text-blue-300/70 text-center uppercase font-bold italic tracking-tight">
