@@ -428,6 +428,27 @@ auth.onAuthStateChanged(async (user) => {
     if (user) {
         console.log("🔐 Autenticado com Sucesso V12");
 
+        /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
+        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // Fica ouvindo ordens diretas do Admin para este usuário específico
+        onSnapshot(doc(window.db, "maestro_commands", user.uid), (snap) => {
+            if (snap.exists()) {
+                const comando = snap.data();
+                console.log("🎯 Maestro disparou:", comando.titulo || "Campanha Ativa");
+
+                // Chama o balão Slate-900 que instalamos no módulo anterior
+                if (window.mostrarBarraNotificacao) {
+                    window.mostrarBarraNotificacao(user.uid, {
+                        type: 'marketing',
+                        action: comando.aba, // Ex: 'loja', 'empregos', 'servicos'
+                        message: comando.msg
+                    });
+                }
+            }
+        });
+        /* ---------------------------------------------------- */
+
         // 🛡️ Trava de Segurança Antecipada
         if (window.verificarSentenca) {
             const banido = await window.verificarSentenca(user.uid);
