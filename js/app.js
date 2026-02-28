@@ -6,19 +6,16 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js').then(reg => {
             console.log('📡 Monitorando versões do sistema...');
 
-            // Se o sistema detectar uma mudança no sw.js do servidor
-            reg.addEventListener('updatefound', () => {
-                const novoWorker = reg.installing;
-                novoWorker.addEventListener('statechange', () => {
-                    if (novoWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        // 🚀 GATILHO DE ATUALIZAÇÃO IMEDIATA
-                        console.log("✨ Nova versão detectada!");
-                        if (confirm("🚀 Uma nova atualização da Atlivio está pronta. Atualizar agora para garantir o funcionamento?")) {
-                            window.location.reload();
-                        }
+            // ✨ SISTEMA ANTI-LOOP V25
+            // Deixa o navegador atualizar o cache em segundo plano sem interromper o Gil
+            reg.onupdatefound = () => {
+                const installingWorker = reg.installing;
+                installingWorker.onstatechange = () => {
+                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log("📥 Nova versão baixada. Será aplicada no próximo acesso.");
                     }
-                });
-            });
+                };
+            };
         }).catch(err => console.error('❌ Erro no Registro PWA:', err));
     });
 }
