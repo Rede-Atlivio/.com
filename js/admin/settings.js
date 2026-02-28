@@ -224,46 +224,47 @@ async function loadSettings() {
 // 💾 SALVAR AVISO GLOBAL
 /* 💾 SALVAMENTO UNIFICADO: AVISO GLOBAL + MAESTRO */
 // 💾 SALVAMENTO UNIFICADO V38: Sincronização em massa (Alta Performance)
+// 💾 FUNÇÃO 01: Salva apenas o Banner Emergencial (Manutenção)
 window.saveAppSettingsUnificado = async () => {
     const btn = document.querySelector('button[onclick="window.saveAppSettingsUnificado()"]');
-    btn.innerText = "⏳ SINCRONIZANDO..."; 
-    btn.disabled = true; // Trava o botão para o Admin não clicar duas vezes
-
+    btn.innerText = "⏳ SALVANDO BANNER...";
+    
     try {
-        const batch = writeBatch(window.db); // Prepara o envio em lote (lógica profissional)
-
-        // 1. Pega os valores da tela limpando espaços inúteis
-        const msgBanner = document.getElementById('conf-global-msg').value.trim();
-        const msgBalao = document.getElementById('conf-marketing-msg').value.trim();
-
-        // 2. Prepara a gravação do Banner Amarelo (Legado)
-        batch.set(doc(window.db, "configuracoes", "global"), {
-            top_message: msgBanner,
+        await setDoc(doc(window.db, "configuracoes", "global"), {
+            top_message: document.getElementById('conf-global-msg').value,
             show_msg: document.getElementById('conf-msg-active').checked,
             updated_at: new Date()
         }, { merge: true });
-
-        // 3. Prepara a gravação do Balão Maestro (Novo Marketing)
-        batch.set(doc(window.db, "settings", "financeiro"), {
-            texto_marketing: msgBalao,
-            aba_destino: document.getElementById('conf-marketing-aba').value,
-            aviso_marketing_ativo: document.getElementById('conf-marketing-active').checked,
-            updated_at: new Date()
-        }, { merge: true });
-
-        // 4. Dispara tudo para o banco em uma única conexão
-        await batch.commit();
-        
-        alert("✅ SISTEMA ATUALIZADO!\nBanner e Marketing Automático sincronizados com sucesso.");
-    } catch (e) {
-        console.error("Erro no batch save:", e);
-        alert("❌ FALHA TÉCNICA: " + e.message);
-    } finally {
-        btn.innerText = "💾 SALVAR COMUNICAÇÕES";
-        btn.disabled = false; // Devolve o controle ao Admin
-    }
+        alert("✅ BANNER ATUALIZADO!\nA faixa de aviso foi sincronizada na rede.");
+    } catch(e) { alert("Erro: " + e.message); }
+    finally { btn.innerText = "💾 SALVAR E SINCRONIZAR REDE"; }
 };
 
+// 📅 FUNÇÃO 02: Salva o Script JSON e Agenda a Automação para Meses
+window.agendarFluxoMensal = async () => {
+    const campo = document.getElementById('conf-maestro-json');
+    const btn = document.querySelector('button[onclick="window.agendarFluxoMensal()"]');
+    
+    try {
+        // Valida se o que você colou é um JSON válido antes de salvar
+        const scriptValidado = JSON.parse(campo.value);
+        
+        btn.innerText = "🚀 AGENDANDO...";
+        
+        await setDoc(doc(window.db, "settings", "maestro_flow"), {
+            script: scriptValidado,
+            ultimo_agendamento: new Date(),
+            admin_responsavel: "Gil Borges"
+        }, { merge: true });
+
+        alert("✅ FLUXO AGENDADO COM SUCESSO!\nO robô Maestro assumiu o controle das mensagens.");
+    } catch (e) {
+        alert("❌ ERRO NO SCRIPT: Verifique se o JSON está correto (vírgulas e aspas).");
+        console.error(e);
+    } finally {
+        btn.innerText = "📅 AGENDAR MESES";
+    }
+};
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
 //Agora, garantimos que quando você clicar em "Salvar", a taxa do cliente também vá para o Firebase.
 window.saveBusinessRules = async () => {
