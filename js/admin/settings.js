@@ -57,27 +57,14 @@ export async function init() {
         </div>
     </div>
 
-    <button onclick="window.saveAppSettingsUnificado()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition transform active:scale-95">
-        💾 SALVAR TODAS AS COMUNICAÇÕES
-    </button>
-                <p class="text-xs text-gray-400 mb-6">Esta mensagem aparecerá no topo do aplicativo para todos os usuários.</p>
-                
-                <label class="inp-label">MENSAGEM DE AVISO</label>
-                <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-4" placeholder="Ex: Manutenção programada...">
-                
-                <div class="flex items-center gap-2 mb-6">
-                    <input type="checkbox" id="conf-msg-active" class="chk-custom">
-                    <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Mostrar Aviso?</label>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-                    <button onclick="window.saveAppSettings()" class="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-[10px] uppercase shadow-lg transition">
-                        💾 SALVAR AVISO GLOBAL
-                    </button>
-                    <button onclick="window.solicitarPermissaoPushAdmin()" class="bg-slate-800 hover:bg-slate-700 text-blue-400 py-3 rounded-lg font-bold text-[10px] uppercase border border-blue-500/20 transition">
-                        🔔 ATIVAR PUSH NESTE PC
-                    </button>
-                </div>
+   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+        <button onclick="window.saveAppSettingsUnificado()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition transform active:scale-95">
+            💾 SALVAR COMUNICAÇÕES
+        </button>
+        <button onclick="window.solicitarPermissaoPushAdmin()" class="bg-slate-800 hover:bg-slate-700 text-blue-400 py-4 rounded-xl font-black text-[10px] uppercase border border-blue-500/20 transition">
+            🔔 ATIVAR PUSH NESTE PC
+        </button>
+    </div>
 
                 <div class="mt-8 pt-8 border-t border-white/10">
                     <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
