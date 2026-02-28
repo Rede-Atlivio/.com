@@ -271,7 +271,7 @@ window.carregarHistoricoNotificacoes = async () => {
         
         // Busca as últimas 20 notificações do usuário
         const q = query(
-            collection(db, "user_notifications"),
+            collection(window.db, "user_notifications"), // 🛡️ Correção: Usa o banco global para não dar erro de referência nula ──▶
             where("userId", "==", uid),
             orderBy("created_at", "desc"),
             limit(20)
