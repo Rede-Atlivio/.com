@@ -106,9 +106,9 @@ export async function init() {
     try {
         const db = window.db;
 
-      // A Assistente já está no topo do HTML. Apenas atualizamos a mensagem se necessário.
-        const msgEl = document.getElementById('assistant-msg');
-        if (msgEl) msgEl.innerText = "Boa noite, Chefe. Sistema operando em modo Realtime.";
+      // 🚀 RESTAURANDO A ALMA DA SECRETÁRIA: 
+        // Ela vai morar no topo fixo que criamos no admin.html
+        renderAssistant('dash-assistant-area');
 
         // =================================================================================
         // CARREGAMENTO DOS DADOS (CÓDIGO ANTERIOR MANTIDO IGUAL)
