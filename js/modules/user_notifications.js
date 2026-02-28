@@ -123,11 +123,18 @@ function gerarTextoBotao(action) {
     return "OK, ENTENDI";
 }
 // Ações Globais
+/* 🧼 FAXINA MAESTRO: Remove o balão e marca como lido no Firebase */
 window.fecharNotificacao = async (id) => {
-    document.getElementById('user-alert-bar').remove();
+    const alerta = document.getElementById('user-alert-bar');
+    if(alerta) alerta.remove(); // Remove o balão da tela na hora para o usuário sentir rapidez
+    
     try {
-        await updateDoc(doc(db, "user_notifications", id), { read: true });
-    } catch(e) { console.error(e); }
+        // Busca a referência correta do documento na coleção que vimos no seu banco
+        const notifRef = doc(db, "user_notifications", id);
+        await updateDoc(notifRef, { read: true });
+    } catch(e) { 
+        console.error("Erro ao limpar notificação:", e); 
+    }
 };
 
 // 🚀 AÇÃO DE NOTIFICAÇÃO COM VIGILANTE INTEGRADO (V3.1)
