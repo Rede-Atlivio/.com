@@ -183,16 +183,29 @@ function gerarTextoBotao(action) {
 }
 // Ações Globais
 /* 🧼 FAXINA MAESTRO: Remove o balão e marca como lido no Firebase */
+// 🧼 FAXINA MAESTRO V40: Remove o balão e garante a baixa no Firebase usando módulos globais
 window.fecharNotificacao = async (id) => {
+    // 1. Remove o alerta da tela IMEDIATAMENTE (Sensação de velocidade para o Gil)
     const alerta = document.getElementById('user-alert-bar');
-    if(alerta) alerta.remove(); // Remove o balão da tela na hora para o usuário sentir rapidez
+    if(alerta) alerta.remove(); 
     
+    // Se o ID for de um teste (começa com auto_), não precisamos avisar o banco
+    if (id.includes('auto_')) return;
+
     try {
-        // Busca a referência correta do documento na coleção que vimos no seu banco
-        const notifRef = doc(db, "user_notifications", id);
-        await updateDoc(notifRef, { read: true });
+        // 2. Usamos a blindagem global para garantir que o comando chegue ao Google
+        const { doc, updateDoc } = window.firebaseModules;
+        const notifRef = doc(window.db, "user_notifications", id);
+        
+        // 3. Marca como lido. O onSnapshot vai detectar isso e não criará loop porque o filtro é (read == false)
+        await updateDoc(notifRef, { 
+            read: true,
+            atendido_em: new Date() 
+        });
+        
+        console.log(`✅ [Maestro] Notificação ${id} baixada no banco de dados.`);
     } catch(e) { 
-        console.error("Erro ao limpar notificação:", e); 
+        console.error("❌ Erro ao dar baixa na notificação:", e); 
     }
 };
 
