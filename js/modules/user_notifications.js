@@ -70,49 +70,46 @@ import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "h
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
+/* 💎 MOTOR DE EXIBIÇÃO MAESTRO V25 - DESIGN PREMIUM SLATE */
 window.mostrarBarraNotificacao = (id, data) => {
-    // 🛡️ CORES E ÍCONES DINÂMICOS (Inclusão de Pedidos e Chat)
-    const bgColorMap = {
-        'gift': 'bg-green-600',
-        'order': 'bg-blue-700',
-        'chat': 'bg-indigo-600',
-        'wallet': 'bg-emerald-600',
-        'canal': 'bg-red-600'
-    };
-    const iconMap = {
-        'gift': '🎁',
-        'order': '🛠️',
-        'chat': '💬',
-        'wallet': '💰',
-        'canal': '📺'
-    };
+    // Remove qualquer alerta anterior para não empilhar lixo na tela
+    const existingAlert = document.getElementById('user-alert-bar');
+    if(existingAlert) existingAlert.remove();
 
-    const bgColor = bgColorMap[data.type] || 'bg-slate-800';
+    const iconMap = { 'gift': '🎁', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'canal': '📺', 'marketing': '🚀' };
     const icon = iconMap[data.type] || '🔔';
     const btnText = gerarTextoBotao(data.action);
+
     const div = document.createElement('div');
     div.id = 'user-alert-bar';
-    div.className = `${bgColor} text-white px-4 py-3 shadow-lg flex items-center justify-between fixed top-0 w-full z-[100] animate-fadeIn`;
-    div.style.marginTop = "60px"; // Ajuste para não ficar em cima do Header do site se tiver
+    
+    // Classes: Slate Premium, Borda Azul, Sombras Pesadas e Posicionamento Fixo no Topo Central
+    div.className = `fixed top-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-slate-premium border-blue-atlivio border text-white p-4 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-maestro animate-fade-down flex flex-col gap-3`;
 
     div.innerHTML = `
-        <div class="flex items-center gap-3 flex-1">
-            <span class="text-2xl animate-bounce">${icon}</span>
-            <div>
-                <p class="font-bold text-sm uppercase text-white/90">Nova Mensagem</p>
-                <p class="text-xs font-medium">${data.message}</p>
-                ${data.credit_val > 0 ? `<p class="text-[10px] bg-white/20 inline-block px-1 rounded mt-1">💰 + R$ ${data.credit_val} Recebidos</p>` : ''}
+        <div class="flex items-start gap-3">
+            <div class="bg-blue-600/20 w-10 h-10 rounded-full flex items-center justify-center shrink-0 border border-blue-500/30">
+                <span class="text-xl">${icon}</span>
             </div>
+            <div class="flex-1">
+                <p class="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-0.5">Notificação Atlivio</p>
+                <p class="text-xs font-bold leading-snug text-slate-100">${data.message}</p>
+                ${data.credit_val > 0 ? `<p class="text-[9px] text-emerald-400 font-black mt-1">💰 + R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
+            </div>
+            <button onclick="window.fecharNotificacao('${id}')" class="text-slate-500 hover:text-white transition">✕</button>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="window.acaoNotificacao('${id}', '${data.action}')" class="bg-white text-gray-900 text-[10px] font-bold px-3 py-2 rounded-lg shadow hover:bg-gray-100 whitespace-nowrap">
+        <div class="flex gap-2 mt-1">
+            <button onclick="window.acaoNotificacao('${id}', '${data.action}')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black py-2.5 rounded-xl transition shadow-lg uppercase tracking-wider">
                 ${btnText}
             </button>
-            <button onclick="window.fecharNotificacao('${id}')" class="text-white/70 hover:text-white px-2">✕</button>
         </div>
     `;
     
     document.body.appendChild(div);
+
+    // Toca o som de notificação que já existe no seu index.html
+    const som = document.getElementById('notification-sound');
+    if(som) som.play().catch(e => console.log("Áudio bloqueado pelo navegador"));
 }
 
 function gerarTextoBotao(action) {
