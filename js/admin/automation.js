@@ -651,3 +651,80 @@ window.resetarTourUsuario = async function() {
         alert("❌ Erro ao resetar: " + e.message);
     }
 };
+// ============================================================================
+// 🛰️ SENTINELA REALTIME: Monitora conversas e alimenta o Painel Maestro
+// ============================================================================
+window.unsubscribeGatilhoChat = null;
+let contadorLocalAlertas = 0;
+
+window.ativarGatilhoChatRealtime = async () => {
+    // 🛡️ Previne duplicidade de conexão
+    if (window.unsubscribeGatilhoChat) {
+        alert("📡 O Sentinela já está em órbita monitorando a rede.");
+        return;
+    }
+
+    const { collection, query, where, onSnapshot, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.db;
+
+    // 🟢 Atualiza a Interface Visual (LED e Texto)
+    const led = document.getElementById('status-robo-led');
+    const txt = document.getElementById('status-robo-txt');
+    if (led) led.className = "w-4 h-4 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]";
+    if (txt) txt.innerText = "SISTEMA ATIVO";
+
+    // 🕵️ Ouve chats com mensagens não lidas
+    const q = query(collection(db, "chats"), where("last_message_read", "==", false));
+
+    window.unsubscribeGatilhoChat = onSnapshot(q, (snap) => {
+        // Atualiza card de "Usuários em Chat" no painel
+        const countAtivos = document.getElementById('count-ativos');
+        if (countAtivos) countAtivos.innerText = snap.size;
+
+        snap.docChanges().forEach(async (change) => {
+            if (change.type === "added" || change.type === "modified") {
+                const d = change.doc.data();
+                const target = d.last_message_to;
+
+                if (target) {
+                    // 1. DISPARA NOTIFICAÇÃO PARA O CELULAR DO USUÁRIO
+                    await addDoc(collection(db, "user_notifications"), {
+                        userId: target,
+                        type: 'chat',
+                        message: "Nova proposta recebida no chat! 💬",
+                        action: 'chat',
+                        read: false,
+                        created_at: serverTimestamp()
+                    });
+
+                    // 2. ESCREVE NO LOG VISUAL DO ADMIN
+                    contadorLocalAlertas++;
+                    const countEl = document.getElementById('count-alertas');
+                    if (countEl) countEl.innerText = contadorLocalAlertas;
+
+                    const logArea = document.getElementById('maestro-live-logs');
+                    if (logArea) {
+                        const time = new Date().toLocaleTimeString();
+                        const linhaLog = `
+                            <div class="text-blue-400 border-l-2 border-blue-500 pl-3 py-1 mb-2 bg-blue-500/5 animate-fade font-mono">
+                                <span class="text-gray-500">[${time}]</span> 
+                                <span class="font-black text-white">CHAT EVENT</span> ──▶ 
+                                <span class="text-blue-300">Target: ${target.slice(0,8)}...</span>
+                                <span class="ml-2 text-[9px] bg-green-600/20 text-green-400 px-1 rounded font-bold">PUSH SENT ✔</span>
+                            </div>
+                        `;
+                        // Remove a mensagem de "Aguardando..." se for a primeira linha
+                        if (contadorLocalAlertas === 1) logArea.innerHTML = "";
+                        logArea.innerHTML = linhaLog + logArea.innerHTML;
+                    }
+                }
+            }
+        });
+    }, (error) => {
+        console.error("❌ Erro no Sentinela:", error);
+        if (led) led.className = "w-4 h-4 rounded-full bg-red-600 animate-pulse";
+        if (txt) txt.innerText = "OFFLINE (ERRO)";
+    });
+
+    console.log("🛰️ Sentinela Atlivio V3.5 Online.");
+};
