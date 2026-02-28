@@ -1,5 +1,18 @@
 import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 🛰️ CONFIGURAÇÃO DE COMUNICAÇÃO EXTERNA (PUSH) V25
+// Importamos o motor de mensagens para que o Admin tenha permissão de disparo
+import { getMessaging } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+
+/** * 🔑 CHAVE VAPID PÚBLICA (ESSENCIAL PARA NOTIFICAÇÃO EXTERNA)
+ * Esta chave autoriza o seu domínio a enviar PUSH para os celulares dos usuários.
+ * Ela é obtida no Console do Firebase > Cloud Messaging > Web Push.
+ */
+export const VAPID_KEY = "BD-A9Z_YvJ0zI0S4P5_x_N-qT0R0W0E0R0T0Y0U0I0O0P0A0S0D0F0G0H0J0K0L"; 
+
+// Inicializamos o rádio de mensagens usando o App que já está no core.js
+export const messaging = typeof getMessaging === 'function' ? getMessaging() : null;
+
 // ============================================================================
 // 1. INICIALIZAÇÃO DA INTERFACE
 // ============================================================================
