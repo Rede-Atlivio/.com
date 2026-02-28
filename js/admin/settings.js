@@ -66,10 +66,9 @@ export async function init() {
         </button>
     </div>
 
-                <div class="mt-8 pt-8 border-t border-white/10">
-                    <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
-                    <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Incentivos de Cadastro e Retenção</p>
-                    
+    <div class="mt-8 pt-8 border-t border-white/10">
+        <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
+        <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Incentivos de Cadastro e Retenção</p>
                     <div class="space-y-6">
                         <div class="bg-black/20 p-4 rounded-xl border border-white/5">
                             <div class="flex items-center justify-between mb-4">
