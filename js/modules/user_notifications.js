@@ -4,11 +4,19 @@ import { db, auth } from '../config.js';
 
 import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    window.iniciarSistemaNotificacoes = () => {
-    auth.onAuthStateChanged(user => {
+   // 🛰️ INICIALIZADOR MAESTRO V35: Inicia as notificações reais e o fluxo automático (JSON)
+window.iniciarSistemaNotificacoes = () => {
+    auth.onAuthStateChanged(async user => {
         if (user) {
-            console.log("🔔 Iniciando escuta de notificações pessoais...");
+            console.log("🔔 Maestro: Iniciando escuta de notificações e processamento de fluxo...");
+            
+            // 1. Inicia a escuta de notificações em tempo real (Chat, Pedidos, etc)
             window.escutarNotificacoes(user.uid);
+
+            // 2. Dispara o processador de roteiro automático (O robô que trabalha sozinho)
+            if (window.processarFluxoAutomatico) {
+                window.processarFluxoAutomatico(user);
+            }
         }
     });
 };
