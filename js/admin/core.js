@@ -496,3 +496,75 @@ window.dispararLimpezaGlobal = async function() {
         alert("Erro ao disparar limpeza: " + e.message);
     }
 };
+
+// ============================================================================
+// 🎼 MOTOR DISPARADOR MAESTRO (MARKETING INTERNO V25)
+// ============================================================================
+
+/**
+ * 🚀 DISPARADOR EM MASSA: O "Tiro de Canhão"
+ * Envia uma ordem para todos os usuários cadastrados no banco.
+ */
+window.dispararMaestroInterno = async () => {
+    const scriptArea = document.getElementById('maestro-script-json');
+    const btn = document.querySelector('button[onclick="window.dispararMaestroInterno()"]');
+    
+    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: O script JSON está vazio!");
+
+    try {
+        // 1. Traduz o texto para um comando que o computador entende
+        const comando = JSON.parse(scriptArea.value);
+        
+        if (!comando.msg || !comando.aba) {
+            throw new Error("O JSON deve conter obrigatoriamente 'msg' e 'aba'!");
+        }
+
+        const msgConfirm = `🔥 CONFIRMAR DISPARO EM MASSA?\n\nIsso enviará a mensagem: "${comando.msg}"\nPara o destino: Aba ${comando.aba.toUpperCase()}`;
+        if (!confirm(msgConfirm)) return;
+
+        btn.innerText = "⏳ PROCESSANDO LOTE...";
+        btn.disabled = true;
+
+        const { collection, getDocs, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+        // 2. Coleta todos os alvos (Usuários)
+        // Nota: Para milhões de usuários, o Firebase limita o lote (batch) a 500 operações por vez.
+        const usuariosSnap = await getDocs(collection(window.db, "usuarios"));
+        let batch = writeBatch(window.db);
+        let contagem = 0;
+        let lotesEnviados = 0;
+
+        for (const uDoc of usuariosSnap.docs) {
+            const commandRef = doc(window.db, "maestro_commands", uDoc.id);
+            
+            batch.set(commandRef, {
+                titulo: comando.titulo || "Informativo Atlivio",
+                msg: comando.msg,
+                aba: comando.aba,
+                timestamp: serverTimestamp()
+            });
+
+            contagem++;
+            
+            // 🛡️ TRAVA DE ESCALA: Se chegar em 500, envia o lote e começa um novo (Limitação Firebase)
+            if (contagem % 500 === 0) {
+                await batch.commit();
+                batch = writeBatch(window.db);
+                lotesEnviados++;
+            }
+        }
+
+        // Envia o último lote (o que sobrou)
+        await batch.commit();
+
+        alert(`✅ SUCESSO ABSOLUTO!\n\n${contagem} usuários foram impactados pelo Maestro.`);
+        scriptArea.value = ""; // Limpa o painel para segurança
+
+    } catch (e) {
+        console.error("Erro no Maestro:", e);
+        alert("❌ ERRO NO SCRIPT:\nVerifique as aspas duplas e o formato.\n\nExemplo Correto:\n{\n \"titulo\": \"BÔNUS\",\n \"msg\": \"Clique aqui\",\n \"aba\": \"ganhar\"\n}");
+    } finally {
+        btn.innerText = "🚀 Disparar App Aberto";
+        btn.disabled = false;
+    }
+};
