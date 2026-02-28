@@ -541,18 +541,24 @@ export async function enviarMensagemChat(orderId, step) {
 
     input.value = "";
     try {
-        // 🚀 AÇÃO LAZARUS: Salva mensagem e reseta cronômetro de vida útil do chat
+        try {
+        // 🚀 AÇÃO SINCRONIZADA: Mensagem + Atualização de Sinal para o Admin
         const batchMsg = [
             addDoc(collection(db, `chats/${orderId}/messages`), { 
                 text: textoOriginal, sender_id: auth.currentUser.uid, timestamp: serverTimestamp() 
             }),
             updateDoc(doc(db, "orders", orderId), { 
                 last_interaction_at: serverTimestamp(),
-                chat_lifecycle_status: 'active' // Reseta para ativo se estava em aviso
+                chat_lifecycle_status: 'active'
+            }),
+            // 📡 O GATILHO: Avisa ao Admin que há algo novo. O Admin buscará o destinatário na coleção 'orders'
+            updateDoc(doc(db, "chats", orderId), {
+                last_message_read: false, 
+                updated_at: serverTimestamp()
             })
         ];
         await Promise.all(batchMsg);
-    } catch (e) { console.error("Erro Lazarus Passo 1:", e); }
+    } catch (e) { console.error("Erro no sinalizador de chat:", e); }
 }
 
 export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CRÍTICO remove o "lixo" do arquivo e coloca as leituras de saldo no lugar certo.
