@@ -101,21 +101,37 @@ export function iniciarMonitoramentoCarteira() {
             //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 101 A 115 DEPOIS 102 A 118
             // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
             // 🛡️ SINCRONIA V12: Poder de Compra (Real + Bônus)
+            // 💰 ESTRUTURA HÍBRIDA V25 (COM GATILHO DE MARKETING EM MASSA)
             const sReal = parseFloat(data.wallet_balance || 0);
             const sBonus = parseFloat(data.wallet_bonus || 0);
-            const sEarnings = parseFloat(data.wallet_earnings || 0); // ✅ Adicionado para a Home
+            const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-            // Alinha o perfil global com o campo reflexo do banco
+            // 🚀 GATILHO MAESTRO: Detecta se o saldo subiu para oferecer a Loja
+            // Comparamos o sReal atual com o que estava salvo na memória global (window.ultimoSaldoConhecido)
+            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
+                console.log("🪙 LUCRO DETECTADO! Chamando Maestro para converter em Produtos.");
+                if (window.mostrarBarraNotificacao) {
+                    window.mostrarBarraNotificacao("lucro_atlivio", {
+                        type: 'wallet',
+                        action: 'produtos', // Alvo: Aba Loja
+                        message: "Seu saldo subiu! 🔥 Que tal usar seu lucro para investir em destaque na Loja?"
+                    });
+                }
+            }
+            // Guarda o saldo atual para a próxima comparação
+            window.ultimoSaldoConhecido = sReal;
+
+            // Alinha o perfil global (Essencial para milhões de usuários)
             window.userProfile = window.userProfile || {};
             window.userProfile.uid = uid;
             window.userProfile.wallet_balance = sReal;
             window.userProfile.wallet_bonus = sBonus;
-           window.userProfile.wallet_total_power = powerCalculado;
+            window.userProfile.wallet_total_power = powerCalculado;
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
-            window.userProfile.wallet_earnings = parseFloat(data.wallet_earnings || 0);
+            window.userProfile.wallet_earnings = sEarnings;
             
-            const saldoExibicao = window.userProfile.wallet_total_power;
+            const saldoExibicao = powerCalculado;
             // ✅ Interfaces usam agora o campo oficial de Poder de Compra
             verificarFaixaBonus(sBonus); 
             atualizarInterfaceCarteira(saldoExibicao);
