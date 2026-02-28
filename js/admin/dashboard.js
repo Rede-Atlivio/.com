@@ -17,7 +17,8 @@ window.toggleFeed = (uid) => {
 };
 
 export async function init() {
-    const container = document.getElementById('view-dashboard');
+    // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
+    const container = document.getElementById('dashboard-main-content');
     
     // 1. ESTRUTURA VISUAL (COM ÁREA DA SECRETÁRIA)
     container.innerHTML = `
