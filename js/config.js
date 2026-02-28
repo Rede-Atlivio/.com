@@ -30,16 +30,17 @@ window.db = db;
 window.storage = storage;
 
 // 🛡️ CORREÇÃO V36: Inclusão de arrayUnion e increment para Ad-Engine
+// 🛡️ CORREÇÃO V37: Inclusão do writeBatch para limpeza em massa
 import { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion 
+    increment, arrayUnion, writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion 
+    increment, arrayUnion, writeBatch 
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
