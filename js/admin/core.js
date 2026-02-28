@@ -94,14 +94,17 @@ function unlockAdmin() {
     // Direciona para o Dashboard assim que o Admin desbloqueia
     switchView('dashboard');
 
-    // 📡 VIGILÂNCIA IMEDIATA: Ativa o Radar Sentinela automaticamente no login
-    setTimeout(() => {
-        // Verifica se a função de ativação existe antes de chamar para não dar erro
-        if (typeof window.ativarGatilhoChatRealtime === 'function') {
-            window.ativarGatilhoChatRealtime();
-            console.log("🛡️ Sentinela: Vigilância iniciada automaticamente.");
-        }
-    }, 1500); // Reduzido para 1.5s para agilizar a proteção
+    // 📡 CARGA FORÇADA: Importa o arquivo de automação imediatamente no login para o radar funcionar
+    import('./automation.js?v=' + Date.now()).then(() => {
+        console.log("🛰️ Módulo de Automação injetado com sucesso.");
+        // Após carregar o arquivo, aguarda 1 segundo para ligar o radar automaticamente
+        setTimeout(() => {
+            if (typeof window.ativarGatilhoChatRealtime === 'function') {
+                window.ativarGatilhoChatRealtime();
+                console.log("🛡️ Sentinela: Vigilância iniciada.");
+            }
+        }, 1000);
+    }).catch(e => console.error("❌ Falha ao carregar motor de automação no login:", e));
 }
 
 function lockAdmin() {
