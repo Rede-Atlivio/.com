@@ -23,36 +23,36 @@ if ('serviceWorker' in navigator) {
 import { app, auth, db, storage, provider } from './config.js';
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🛰️ MONITOR MAESTRO: Vigia ordens de limpeza global do Admin
-// Se o Gil mudar a versão no Admin, todos os usuários limpam o cache e reiniciam na hora.
-onSnapshot(doc(db, "settings", "sistema"), (snap) => {
+// 🛰️ MONITOR DE DEPLOY: Vigia ordens de limpeza global via documento real 'deploy'
+onSnapshot(doc(db, "settings", "deploy"), (snap) => {
     if (snap.exists()) {
         const data = snap.data();
-        const versaoServidor = data.versao;
-        const versaoLocal = localStorage.getItem('app_version');
+        // Converte o timestamp do Firebase para milissegundos para comparação precisa
+        const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
+        const ordemLocal = localStorage.getItem('last_force_reset') || 0;
 
-        if (versaoLocal && versaoServidor !== versaoLocal) {
-            console.log("🧹 ORDEM DO ADMIN: Executando limpeza global de cache...");
-            localStorage.setItem('app_version', versaoServidor);
+        // 🔥 GATILHO DE FAXINA: Se o Admin mandou um novo sinal, reseta tudo.
+        if (ultimaOrdem > ordemLocal) {
+            console.log("🧹 ORDEM DO ADMIN: Iniciando limpeza global de cache...");
+            localStorage.setItem('last_force_reset', ultimaOrdem);
             
-            // 1. Desinstala o rádio antigo
+            // 1. Desinstala Service Workers travados
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(regs => {
                     for(let reg of regs) reg.unregister();
                 });
             }
             
-            // 2. Explode o cache de arquivos e recarrega a página limpa
+            // 2. Limpa o armazenamento físico e recarrega a página limpa
             caches.keys().then(names => {
                 for (let name of names) caches.delete(name);
             }).then(() => {
+                console.log("🚀 Sistema limpo. Reiniciando...");
                 location.reload(true);
             });
-        } else if (!versaoLocal) {
-            localStorage.setItem('app_version', versaoServidor);
         }
     }
-}, (err) => console.warn("🛰️ Radar de Versão: Aguardando conexão..."));
+}, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
 
 // ============================================================================
 
