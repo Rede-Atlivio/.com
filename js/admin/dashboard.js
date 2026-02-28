@@ -106,8 +106,9 @@ export async function init() {
     try {
         const db = window.db;
 
-        // 🚀 CHAMA A SECRETÁRIA PARA TRABALHAR
-        renderAssistant('admin-assistant-widget');
+      // A Assistente já está no topo do HTML. Apenas atualizamos a mensagem se necessário.
+        const msgEl = document.getElementById('assistant-msg');
+        if (msgEl) msgEl.innerText = "Boa noite, Chefe. Sistema operando em modo Realtime.";
 
         // =================================================================================
         // CARREGAMENTO DOS DADOS (CÓDIGO ANTERIOR MANTIDO IGUAL)
