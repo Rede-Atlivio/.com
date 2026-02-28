@@ -114,29 +114,42 @@
 
         <div class="flex-1 overflow-hidden relative">
             <div id="view-dashboard" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden">
-    <div class="flex flex-wrap gap-4 mb-8">
-        <div class="bg-slate-900 border border-blue-500/20 px-4 py-3 rounded-2xl flex items-center gap-4 shadow-xl">
-            <div id="status-robo-led" class="w-3 h-3 rounded-full bg-red-600 animate-pulse"></div>
-            <div class="flex flex-col">
-                <span id="status-robo-txt" class="text-[10px] font-black text-white uppercase italic leading-none">Radar Offline</span>
-                <span class="text-[8px] text-gray-500 font-bold uppercase mt-1">Proteção de Chat</span>
+                <div class="flex flex-col gap-6 animate-fade">
+                    <div class="flex flex-wrap gap-3">
+                        <div class="bg-slate-900 border border-blue-500/20 px-4 py-2.5 rounded-xl flex items-center gap-4 shadow-lg">
+                            <div id="status-robo-led" class="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></div>
+                            <span id="status-robo-txt" class="text-[10px] font-black text-white uppercase italic">Radar Offline</span>
+                            <button onclick="window.ativarGatilhoChatRealtime()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase transition ml-2">Ligar 📡</button>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 px-5 py-2.5 rounded-xl flex items-center gap-2">
+                            <span class="text-[8px] font-bold text-gray-500 uppercase">Alertas:</span>
+                            <span id="count-alertas" class="text-sm font-black text-white italic">0</span>
+                        </div>
+                        <div class="bg-slate-900 border border-slate-800 px-5 py-2.5 rounded-xl flex items-center gap-2">
+                            <span class="text-[8px] font-bold text-emerald-500 uppercase">Vivas:</span>
+                            <span id="count-ativos" class="text-sm font-black text-white italic">0</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <div id="dashboard-content-real" class="bg-slate-900/30 border border-slate-800 border-dashed rounded-3xl p-20 text-center text-gray-600 text-[10px] uppercase font-black tracking-[0.3em]">
+                                Aguardando Módulos de Estatísticas...
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950 rounded-3xl border border-slate-800 flex flex-col overflow-hidden shadow-2xl h-fit">
+                            <div class="p-3.5 bg-slate-900 border-b border-slate-800 flex justify-between items-center">
+                                <span class="text-[9px] font-black text-blue-400 uppercase italic">🛰️ Radar de Tráfego</span>
+                                <span class="text-[7px] text-blue-500 animate-ping">LIVE Feed</span>
+                            </div>
+                            <div id="maestro-live-logs" class="max-h-[450px] overflow-y-auto p-4 space-y-2 font-mono text-[9px] custom-scrollbar bg-black/20">
+                                <p class="text-gray-700 italic">Ouvindo sinais da rede Atlivio...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <button onclick="window.ativarGatilhoChatRealtime()" class="ml-4 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition">Ligar 📡</button>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex flex-col justify-center">
-            <span class="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Alertas Hoje</span>
-            <span id="count-alertas" class="text-xl font-black text-white italic">0</span>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 px-6 py-3 rounded-2xl flex flex-col justify-center">
-            <span class="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Negociações Vivas</span>
-            <span id="count-ativos" class="text-xl font-black text-white italic">0</span>
-        </div>
-    </div>
-
-    <div id="dashboard-content-real"></div>
-</div>
             
             <div id="view-list" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden">
                 <div class="flex justify-between items-center mb-6">
