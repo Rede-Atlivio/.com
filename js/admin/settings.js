@@ -48,14 +48,20 @@ export async function init() {
                     <p class="text-[8px] text-gray-600 mt-2 italic text-center">Cole o script da IA para ativar o robô automático dia e noite.</p>
                 </div>
 
-   <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-        <button onclick="window.saveAppSettingsUnificado()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition transform active:scale-95">
-            💾 SALVAR COMUNICAÇÕES
-        </button>
-        <button onclick="window.solicitarPermissaoPushAdmin()" class="bg-slate-800 hover:bg-slate-700 text-blue-400 py-4 rounded-xl font-black text-[10px] uppercase border border-blue-500/20 transition">
-            🔔 ATIVAR PUSH NESTE PC
-        </button>
-    </div>
+  <div class="grid grid-cols-1 gap-2">
+                    <button onclick="window.saveAppSettingsUnificado()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition active:scale-95">
+                        💾 SALVAR E SINCRONIZAR REDE
+                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="window.solicitarPermissaoPushAdmin()" class="bg-slate-800 text-blue-400 py-3 rounded-xl font-black text-[9px] uppercase border border-blue-500/20">
+                            🔔 ATIVAR PUSH
+                        </button>
+                        <button onclick="window.agendarFluxoMensal()" class="bg-emerald-600/20 text-emerald-400 py-3 rounded-xl font-black text-[9px] uppercase border border-emerald-500/20">
+                            📅 AGENDAR MESES
+                        </button>
+                    </div>
+                </div>
+            </div> 
 
     <div class="mt-8 pt-8 border-t border-white/10">
         <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
