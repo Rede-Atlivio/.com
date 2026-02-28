@@ -1,6 +1,10 @@
 // 1. AJUSTE NOS IMPORTS (Importe 'app' e 'getAuth')
 import { app, auth, db, provider } from './config.js';
 import { getAuth, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// 🛰️ FERRAMENTAS MAESTRO: Captura de Endereço Digital (Push)
+import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { VAPID_KEY } from './config.js'; // Puxa a chave mestra do seu config
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, where, addDoc, serverTimestamp, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
