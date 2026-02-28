@@ -23,39 +23,30 @@ export async function init() {
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade">
             
-           <div class="glass-panel p-6 border border-blue-500/30">
-    <h2 class="text-xl font-bold text-white mb-2 italic">📢 Central de Mensagens Atlivio</h2>
-    <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Aviso de Topo + Marketing Maestro (V25)</p>
-    
-    <div class="bg-black/20 p-4 rounded-xl border border-white/5 mb-6">
-        <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Aviso de Topo (Texto Simples)</label>
-        <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-3" placeholder="Ex: Manutenção hoje às 20h...">
-        <div class="flex items-center gap-2">
-            <input type="checkbox" id="conf-msg-active" class="chk-custom">
-            <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Exibir este aviso no topo?</label>
-        </div>
-    </div>
+           <div class="glass-panel p-6 border border-blue-500/40 bg-slate-900/50">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-xl font-black text-white italic tracking-tighter">🎼 MAESTRO FLOW</h2>
+                        <p class="text-[9px] text-blue-400 font-bold uppercase">Injeção de Marketing e Automação de Meses</p>
+                    </div>
+                    <span class="bg-emerald-600 text-[8px] font-black px-2 py-1 rounded-md text-white animate-pulse">TERMINAL ATIVO</span>
+                </div>
+                
+                <div class="bg-black/40 p-4 rounded-xl border border-white/5 mb-6">
+                    <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Aviso de Topo (Emergencial)</label>
+                    <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-2" placeholder="Ex: Manutenção hoje às 20h...">
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="conf-msg-active" class="chk-custom">
+                        <label for="conf-msg-active" class="text-xs text-gray-300">Mostrar Banner?</label>
+                    </div>
+                </div>
 
-    <div class="h-px bg-white/10 my-6"></div>
-
-    <div class="bg-blue-600/5 p-4 rounded-xl border border-blue-500/10 mb-6">
-        <label class="text-[9px] font-black text-blue-400 uppercase block mb-1 tracking-widest">Frase do Balão Maestro (Conversão)</label>
-        <input type="text" id="conf-marketing-msg" class="inp-editor h-10 text-white mb-3" placeholder="Ex: Ganhe R$ 20 agora cumprindo missões!">
-        
-        <label class="text-[9px] font-black text-blue-400 uppercase block mb-1 mt-3">Aba de Destino ao clicar</label>
-        <select id="conf-marketing-aba" class="inp-editor h-10 text-white mb-3 bg-slate-900">
-            <option value="loja">🛍️ Loja (Produtos)</option>
-            <option value="missoes">⚡ Missões (Renda Extra)</option>
-            <option value="ganhar">💰 Carteira</option>
-            <option value="servicos">🛠️ Serviços</option>
-            <option value="canal">📺 Canal Atlivio</option>
-        </select>
-
-        <div class="flex items-center gap-2">
-            <input type="checkbox" id="conf-marketing-active" class="chk-custom">
-            <label for="conf-marketing-active" class="text-xs text-emerald-400 font-bold cursor-pointer italic">Ligar Piloto Automático de Marketing?</label>
-        </div>
-    </div>
+                <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 mb-6">
+                    <label class="text-[10px] font-black text-emerald-500 uppercase block mb-2 tracking-widest text-center">Configuração de Campanha (Script JSON)</label>
+                    <textarea id="conf-maestro-json" class="w-full h-40 bg-transparent text-emerald-400 font-mono text-[11px] p-2 outline-none resize-none" 
+                        placeholder='{ "campanha": "Atlivio2026", "fluxo": [...] }'></textarea>
+                    <p class="text-[8px] text-gray-600 mt-2 italic text-center">Cole o script da IA para ativar o robô automático dia e noite.</p>
+                </div>
 
    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
         <button onclick="window.saveAppSettingsUnificado()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition transform active:scale-95">
