@@ -78,6 +78,48 @@ window.iniciarSistemaNotificacoes = () => {
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
+// 🧠 PROCESSADOR DE ROTEIRO MAESTRO (O Robô que não dorme)
+window.processarFluxoAutomatico = async (user) => {
+    try {
+        // Passo 1: Busca o "Livro de Ordens" (JSON) que o Gil salvou no Admin
+        const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const snapMaestro = await getDoc(doc(db, "settings", "maestro_flow"));
+        
+        if (!snapMaestro.exists()) return console.log("ℹ️ Maestro: Nenhum roteiro agendado no momento.");
+
+        const roteiro = snapMaestro.data().script; // O conteúdo do JSON
+        if (!roteiro || !roteiro.fluxo) return;
+
+        // Passo 2: Calcula há quantos dias o usuário está na plataforma
+        const dataCadastro = user.metadata.creationTime;
+        const dataHoje = new Date();
+        const diferencaTempo = dataHoje - new Date(dataCadastro);
+        const diaAtualDoUsuario = Math.floor(diferencaTempo / (1000 * 60 * 60 * 24)) + 1;
+
+        console.log(`📊 Maestro: Usuário está no DIA ${diaAtualDoUsuario} de jornada.`);
+
+        // Passo 3: Procura no JSON se existe uma ordem para o dia de hoje
+        const ordemDeHoje = roteiro.fluxo.find(f => f.dia === diaAtualDoUsuario);
+
+        if (ordemDeHoje) {
+            console.log("🎯 Maestro: Ordem encontrada! Disparando balão automático...");
+            
+            // Passo 4: Constrói os dados para o balão visual (Slate-900)
+            const dadosNotif = {
+                title: roteiro.campanha || "Aviso Atlivio",
+                message: ordemDeHoje.mensagem,
+                action: ordemDeHoje.destino,
+                type: 'marketing'
+            };
+
+            // Mostra o balão na tela do usuário sem ele precisar clicar em nada
+            window.mostrarBarraNotificacao(`auto_${diaAtualDoUsuario}`, dadosNotif);
+        }
+
+    } catch (e) {
+        console.error("❌ Maestro: Erro ao processar fluxo automático:", e);
+    }
+};
 /* 💎 MOTOR DE EXIBIÇÃO MAESTRO V30 - DESIGN RESILIENTE REFINADO */
 window.mostrarBarraNotificacao = (id, data) => {
     // 1. Limpeza de sobreposição
