@@ -95,15 +95,15 @@ window.addEventListener('userProfileLoaded', (e) => {
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
-   
-    
-    // ✨ SINCRONIA DE HISTÓRICO: Carrega as notificações salvas quando o usuário abre o Sino
+  // ✨ SINCRONIA DE HISTÓRICO: Gatilho de Limpeza Maestro V31
     if (tabName === 'notificacoes') {
-        const badge = document.getElementById('badge-notificacao');
-        if (badge) badge.classList.add('hidden'); // Esconde o ponto vermelho (notificação lida)
-        
-        // Dispara a busca de mensagens no Firebase se o módulo estiver pronto
+        // Usa o ID CORRETO definido no user_notifications.js
+        const badge = document.getElementById('notif-badge');
+        if (badge) badge.remove(); 
+
+        // Dispara a faxina no banco de dados
         if (window.carregarHistoricoNotificacoes) {
+            console.log("🧹 Maestro: Iniciando limpeza de banco solicitada pelo usuário...");
             window.carregarHistoricoNotificacoes();
         }
     }
