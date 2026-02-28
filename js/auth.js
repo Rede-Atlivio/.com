@@ -124,8 +124,12 @@ window.definirPerfil = async (tipo) => {
  * 🔔 COLETOR DE ENDEREÇO DIGITAL (FCM TOKEN) V26.1
  * Centralizado para evitar conflito de escopo no GitHub Pages.
  */
+// 🛡️ TRAVA ANTI-LOOP V31: Impede que o rádio tente sincronizar repetitivamente no mesmo acesso
+let travaSincroniaAtiva = false;
+
 async function capturarEnderecoNotificacao(uid) {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator) || travaSincroniaAtiva) return;
+    travaSincroniaAtiva = true; // Bloqueia novas tentativas imediatas
 
     try {
         console.log("🛰️ Maestro: Sincronizando rádio de mensagens...");
