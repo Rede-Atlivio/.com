@@ -540,7 +540,6 @@ export async function enviarMensagemChat(orderId, step) {
     } catch(e) { console.error(e); }
 
     input.value = "";
-    try {
         try {
         // 🚀 AÇÃO SINCRONIZADA: Mensagem + Atualização de Sinal para o Admin
         const batchMsg = [
