@@ -21,6 +21,40 @@ if ('serviceWorker' in navigator) {
 }
 // ============================================================================
 import { app, auth, db, storage, provider } from './config.js';
+import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 🛰️ MONITOR MAESTRO: Vigia ordens de limpeza global do Admin
+// Se o Gil mudar a versão no Admin, todos os usuários limpam o cache e reiniciam na hora.
+onSnapshot(doc(db, "settings", "sistema"), (snap) => {
+    if (snap.exists()) {
+        const data = snap.data();
+        const versaoServidor = data.versao;
+        const versaoLocal = localStorage.getItem('app_version');
+
+        if (versaoLocal && versaoServidor !== versaoLocal) {
+            console.log("🧹 ORDEM DO ADMIN: Executando limpeza global de cache...");
+            localStorage.setItem('app_version', versaoServidor);
+            
+            // 1. Desinstala o rádio antigo
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(regs => {
+                    for(let reg of regs) reg.unregister();
+                });
+            }
+            
+            // 2. Explode o cache de arquivos e recarrega a página limpa
+            caches.keys().then(names => {
+                for (let name of names) caches.delete(name);
+            }).then(() => {
+                location.reload(true);
+            });
+        } else if (!versaoLocal) {
+            localStorage.setItem('app_version', versaoServidor);
+        }
+    }
+}, (err) => console.warn("🛰️ Radar de Versão: Aguardando conexão..."));
+
+// ============================================================================
 
 // ============================================================================
 // 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
