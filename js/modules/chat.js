@@ -1554,30 +1554,25 @@ window.verificarVidaUtilChat = async (pedido) => {
         return;
     }
 
-    // 🟡 ESTADO 2: AVISO DE MORTE IMINENTE
-    if (horasPassadas >= limiteAviso && pedido.chat_lifecycle_status !== 'warning') {
-        console.log(`⚠️ Lazarus: Enviando aviso para ${pedido.id}`);
+    // 🟡 ESTADO 2: O RESGATE DO MAESTRO (Aviso Premium após 15 min)
+    if (minutosPassados >= limiteAviso && pedido.chat_lifecycle_status !== 'warning') {
+        console.log(`🛰️ Maestro: Resgatando usuário no pedido ${pedido.id}`);
         
         try {
-            const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const db = window.db;
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            
+            // Marca no banco que o aviso foi disparado para não travar o celular do usuário com spam
+            await updateDoc(doc(window.db, "orders", pedido.id), { chat_lifecycle_status: 'warning' });
 
-            // Marca que o aviso já foi dado para não repetir
-            await updateDoc(doc(db, "orders", pedido.id), { 
-                chat_lifecycle_status: 'warning' 
-            });
-
-            // Injeta mensagem do sistema no chat
-            // 📢 INJEÇÃO DE AVISO V3 (Garantia de visibilidade)
-            const msgAlerta = "⏳ NEGOCIAÇÃO PARADA: O chat será encerrado automaticamente em 12h por inatividade. Deseja continuar?";
-            await addDoc(collection(window.db, "chats", pedido.id, "messages"), {
-                text: msgAlerta,
-                sender_id: 'system',
-                timestamp: serverTimestamp(),
-                type: 'warning'
-            });
-            console.log("✅ Mensagem de aviso enviada para o Firestore.");
-        } catch (e) { console.error("Erro Lazarus:", e); }
+            // 💎 CHAMA O BALÃO PREMIUM (Slate-900) QUE CRIAMOS NO INDEX
+            if (window.mostrarBarraNotificacao) {
+                window.mostrarBarraNotificacao(pedido.id, {
+                    type: 'chat',
+                    action: 'services', // Se o chat parou, sugere voltar para ver outros serviços
+                    message: "A negociação parou? ⏳ Não perca tempo, veja outros profissionais ativos agora!"
+                });
+            }
+        } catch (e) { console.error("Erro no resgate Maestro:", e); }
     }
 };
 // 🚀 ATIVAÇÃO AUTOMÁTICA LAZARUS (Vigilante de Ciclo de Vida)
