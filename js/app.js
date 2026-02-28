@@ -3,8 +3,8 @@
 // ============================================================================
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            console.log('📡 Monitorando versões do sistema...');
+       navigator.serviceWorker.register('./sw.js').then(reg => {
+            // Monitoramento silencioso ativado
 
             // ✨ SISTEMA ANTI-LOOP V25
             // Deixa o navegador atualizar o cache em segundo plano sem interromper o Gil
