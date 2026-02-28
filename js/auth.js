@@ -120,13 +120,17 @@ window.definirPerfil = async (tipo) => {
  * 🔔 COLETOR DE ENDEREÇO DIGITAL (FCM TOKEN) V26
  * Corrige o escopo do GitHub Pages e evita erros de applicationServerKey.
  */
+/**
+ * 🔔 COLETOR DE ENDEREÇO DIGITAL (FCM TOKEN) V26.1
+ * Centralizado para evitar conflito de escopo no GitHub Pages.
+ */
 async function capturarEnderecoNotificacao(uid) {
     if (!('serviceWorker' in navigator)) return;
 
     try {
-        console.log("🛰️ Maestro: Iniciando registro de Push em escopo /.com/");
+        console.log("🛰️ Maestro: Sincronizando rádio de mensagens...");
         
-        // Registro manual para garantir que o Firebase não busque na raiz errada
+        // 1. Localiza o Service Worker na pasta correta do servidor
         const registration = await navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
             scope: '/.com/'
         });
@@ -135,13 +139,14 @@ async function capturarEnderecoNotificacao(uid) {
         const permissao = await Notification.requestPermission();
         
         if (permissao === 'granted') {
+            // 2. Tenta obter o Token usando a chave carregada do config.js
             const tokenAtual = await getToken(messaging, { 
                 vapidKey: VAPID_KEY,
                 serviceWorkerRegistration: registration 
             });
             
             if (tokenAtual) {
-                console.log("✅ Endereço Push registrado com sucesso.");
+                console.log("✅ Celular grampeado para notificações com sucesso.");
                 await updateDoc(doc(db, "usuarios", uid), {
                     fcm_token: tokenAtual,
                     push_enabled: true,
@@ -150,10 +155,9 @@ async function capturarEnderecoNotificacao(uid) {
             }
         }
     } catch (error) {
-        console.warn("⚠️ Sistema Push em espera:", error.message);
+        console.warn("⚠️ Push em espera:", error.message);
     }
 }
-
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
