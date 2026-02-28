@@ -183,6 +183,7 @@
         /* 🛡️ TRAVA DE SOBERANIA: Impede que Antena e Offline apareçam juntos */
         #radar-offline-state:not(.hidden) ~ #radar-empty-state,
         #radar-offline-state:not(.hidden) ~ #radar-container { display: none !important; }
+        .z-maestro { z-index: 9999999 !important; } /* Garante que o alerta fique no topo absoluto da tela */
     </style>
 
     <script>
