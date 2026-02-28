@@ -121,7 +121,7 @@ window.switchView = async function(viewName) {
     const allViews = [
         'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
         'view-settings', 'view-support', 'view-audit', 'view-tutorials',
-        'view-missions', 'view-opportunities', 'view-maestro' 
+        'view-missions', 'view-opportunities', 'view-maestro', 'view-products' 
     ];
 
     allViews.forEach(id => {
