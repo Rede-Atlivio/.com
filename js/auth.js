@@ -117,51 +117,41 @@ window.definirPerfil = async (tipo) => {
  * Esta função pede permissão ao usuário e salva o endereço do celular dele no banco.
  * Essencial para o Admin conseguir disparar notificações com o app FECHADO.
  */
+/**
+ * 🔔 COLETOR DE ENDEREÇO DIGITAL (FCM TOKEN) V26
+ * Corrige o escopo do GitHub Pages e evita erros de applicationServerKey.
+ */
 async function capturarEnderecoNotificacao(uid) {
-    try {
-        console.log("🛰️ Maestro: Verificando permissão de Notificação Externa...");
-        const messaging = getMessaging(app);
+    if (!('serviceWorker' in navigator)) return;
 
-// 🚀 CORREÇÃO PARA GITHUB PAGES: Aponta para a subpasta do repositório
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
-        scope: '/.com/'
-    }).then((registration) => {
-        console.log("🛰️ Service Worker de Mensagens registrado com sucesso!");
-    }).catch((err) => {
-        console.error("❌ Falha ao registrar Service Worker do Push:", err);
-    });
-}
+    try {
+        console.log("🛰️ Maestro: Iniciando registro de Push em escopo /.com/");
         
-        // 1. Pede licença ao navegador do usuário (Aparece o balão do Chrome)
+        // Registro manual para garantir que o Firebase não busque na raiz errada
+        const registration = await navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
+            scope: '/.com/'
+        });
+
+        const messaging = getMessaging(app);
         const permissao = await Notification.requestPermission();
         
         if (permissao === 'granted') {
-            // 🚀 CORREÇÃO CIRÚRGICA: Força o Firebase a usar o Service Worker da subpasta /.com/
-            const registration = await navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
-                scope: '/.com/'
-            });
-
             const tokenAtual = await getToken(messaging, { 
                 vapidKey: VAPID_KEY,
-                serviceWorkerRegistration: registration // 💎 O SEGREDO: Conecta o Token ao seu arquivo real
+                serviceWorkerRegistration: registration 
             });
             
             if (tokenAtual) {
-                console.log("✅ Endereço Push capturado para o UID:", uid);
-                
-                // 3. Salva no perfil do usuário para o Admin saber onde entregar o Push
+                console.log("✅ Endereço Push registrado com sucesso.");
                 await updateDoc(doc(db, "usuarios", uid), {
-                    fcm_token: tokenAtual, // O endereço digital do celular
-                    push_enabled: true,    // Marca que o usuário aceitou
-                    last_token_update: serverTimestamp() // Carimbo de tempo
+                    fcm_token: tokenAtual,
+                    push_enabled: true,
+                    last_token_update: serverTimestamp()
                 });
             }
-        } else {
-            console.warn("⚠️ Usuário negou ou fechou o pedido de Notificações.");
         }
     } catch (error) {
-        console.warn("⚠️ Falha ao registrar rádio de mensagens:", error);
+        console.warn("⚠️ Sistema Push em espera:", error.message);
     }
 }
 
