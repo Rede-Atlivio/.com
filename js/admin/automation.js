@@ -73,6 +73,39 @@ export async function init() {
     const container = document.getElementById('view-automation');
     
     container.innerHTML = `
+        <div class="mb-8 bg-slate-900 p-6 rounded-3xl border-2 border-blue-500/30 shadow-2xl animate-fade">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(37,99,235,0.4)]">🛰️</div>
+                <div>
+                    <h2 class="text-white font-black uppercase italic text-lg leading-tight tracking-tighter">Central Maestro</h2>
+                    <p class="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">Injeção de Marketing e Fluxo em Massa</p>
+                </div>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="text-[9px] font-black text-gray-500 uppercase ml-1 tracking-widest">Configuração da Campanha (Script JSON)</label>
+                    <textarea id="maestro-script-json" rows="4" 
+                        class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-4 text-emerald-400 font-mono text-xs focus:border-blue-500 outline-none transition-all shadow-inner mt-1"
+                        placeholder='{ "titulo": "PROMOÇÃO", "msg": "Ganhe bônus na Loja agora!", "aba": "loja" }'></textarea>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button onclick="window.dispararMaestroInterno()" class="bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                        🚀 Disparar App Aberto
+                    </button>
+                    <button onclick="alert('🔧 Etapa de Notificações Externas (Push) em implementação no core.js...')" class="bg-slate-800 text-gray-500 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest cursor-not-allowed border border-slate-700">
+                        🔔 Notificação Push (Externo)
+                    </button>
+                </div>
+                <div class="bg-blue-900/10 p-3 rounded-xl border border-blue-500/10">
+                    <p class="text-[9px] text-blue-300/70 text-center uppercase font-bold italic tracking-tight">
+                        O disparo interno usa o rádio Firestore e afeta usuários logados instantaneamente.
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade">
             
             <div class="glass-panel p-6 border border-emerald-500/50 bg-emerald-900/10">
