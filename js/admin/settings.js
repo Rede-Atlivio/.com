@@ -353,3 +353,28 @@ window.saveMarketingRules = async () => {
         btn.disabled = false;
     }
 };
+
+/**
+ * 📡 SOLICITADOR DE ACESSO PUSH (ADMIN)
+ * Faz o seu navegador pedir autorização para gerenciar notificações.
+ * Essencial para o Admin conseguir disparar alertas externos.
+ */
+window.solicitarPermissaoPushAdmin = async () => {
+    console.log("🔔 Solicitando permissão de Notificações...");
+    
+    try {
+        const permissao = await Notification.requestPermission();
+        
+        if (permissao === "granted") {
+            alert("✅ SUCESSO!\nSeu navegador Admin agora está autorizado a gerenciar notificações externas.");
+            console.log("🛰️ Permissão Push concedida.");
+        } else if (permissao === "denied") {
+            alert("❌ BLOQUEADO:\nVocê negou a permissão. Clique no cadeado ao lado da URL e reative as notificações.");
+        } else {
+            alert("⚠️ AVISO:\nA permissão foi fechada sem escolha. Tente clicar novamente.");
+        }
+    } catch (e) {
+        console.error("Erro técnico na solicitação PUSH:", e);
+        alert("❌ Erro ao solicitar permissão. Verifique o console.");
+    }
+};
