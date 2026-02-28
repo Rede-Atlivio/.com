@@ -37,10 +37,11 @@ import {
     increment, arrayUnion, writeBatch 
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 🛡️ CONFIGURAÇÃO V39: Expondo writeBatch para o Maestro Flow suportar milhões de usuários
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion, writeBatch 
+    increment, arrayUnion, writeBatch // 🚀 A chave para o salvamento em massa
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
