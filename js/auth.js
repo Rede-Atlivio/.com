@@ -116,7 +116,18 @@ window.definirPerfil = async (tipo) => {
 async function capturarEnderecoNotificacao(uid) {
     try {
         console.log("🛰️ Maestro: Verificando permissão de Notificação Externa...");
-        const messaging = getMessaging(app); // Inicializa o rádio de mensagens
+        const messaging = getMessaging(app);
+
+// 🚀 CORREÇÃO PARA GITHUB PAGES: Aponta para a subpasta do repositório
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
+        scope: '/.com/'
+    }).then((registration) => {
+        console.log("🛰️ Service Worker de Mensagens registrado com sucesso!");
+    }).catch((err) => {
+        console.error("❌ Falha ao registrar Service Worker do Push:", err);
+    });
+}
         
         // 1. Pede licença ao navegador do usuário (Aparece o balão do Chrome)
         const permissao = await Notification.requestPermission();
