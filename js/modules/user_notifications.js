@@ -189,13 +189,14 @@ window.fecharNotificacao = async (id) => {
     const alerta = document.getElementById('user-alert-bar');
     if(alerta) alerta.remove(); 
     
-    
+   // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código ──▶
+    if (id && id.toString().includes('auto_')) return; 
     try {
         // 2. Usamos a blindagem global para garantir que o comando chegue ao Google
         const { doc, updateDoc } = window.firebaseModules;
+        // 🛡️ Blindagem: Forçamos o ID a ser String pura para o Google não dar erro 400 ──▶
+        const notifRef = doc(window.db, "user_notifications", id.toString());
         
-        // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código ──▶
-    if (id && id.toString().includes('auto_')) return;
         // 3. Marca como lido. O onSnapshot vai detectar isso e não criará loop porque o filtro é (read == false)
         await updateDoc(notifRef, { 
             read: true,
