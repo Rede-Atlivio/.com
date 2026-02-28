@@ -22,7 +22,8 @@ export async function init() {
     
     // Se o container de dados estiver vazio, inicializa a estrutura interna de widgets
     if (!container.innerHTML.includes('admin-assistant-widget')) {
-        container.innerHTML = `<div id="admin-assistant-widget"></div>`;
+       // O container de dados inicia limpo, pois a Assistente agora é fixa no admin.html
+        container.innerHTML = "";
     }
 
        // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
