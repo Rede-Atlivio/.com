@@ -264,8 +264,8 @@ window.carregarHistoricoNotificacoes = async () => {
     lista.innerHTML = '<p class="text-center text-gray-400 text-xs animate-pulse py-10">Buscando mensagens no arquivo...</p>';
 
     try {
-        // 🚀 IMPORTAÇÃO EXPANDIDA: Adicionado writeBatch para limpeza em massa
-        const { collection, getDocs, query, where, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        // 🛡️ UNIFICAÇÃO: Usamos os módulos já carregados na blindagem global para evitar conflitos ──▶
+        const { collection, getDocs, query, where, orderBy, limit } = window.firebaseModules;
         
         // 🛡️ MODO SEGURO: Faxina automática removida para evitar loop de processos.
         
