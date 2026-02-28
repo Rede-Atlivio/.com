@@ -44,8 +44,8 @@ export async function init() {
                 <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 mb-6">
                     <label class="text-[10px] font-black text-emerald-500 uppercase block mb-2 tracking-widest text-center">Configuração de Campanha (Script JSON)</label>
                     <textarea id="conf-maestro-json" class="w-full h-40 bg-transparent text-emerald-400 font-mono text-[11px] p-2 outline-none resize-none" 
-                        placeholder='{ "campanha": "Atlivio2026", "fluxo": [...] }'></textarea>
-                    <p class="text-[8px] text-gray-600 mt-2 italic text-center">Cole o script da IA para ativar o robô automático dia e noite.</p>
+                        placeholder='{ "campanha": "Atlivio-Mestre", "fluxo": [] }'></textarea>
+                    <p class="text-[8px] text-gray-600 mt-2 italic text-center">Cole aqui o script JSON que eu te fornecer para automatizar as campanhas.</p>
                 </div>
 
   <div class="grid grid-cols-1 gap-2">
