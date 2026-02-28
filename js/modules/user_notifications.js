@@ -201,7 +201,7 @@ window.carregarHistoricoNotificacoes = async () => {
 
     try {
         // 🚀 IMPORTAÇÃO EXPANDIDA: Adicionado writeBatch para limpeza em massa
-        const { collection, getDocs, query, where, orderBy, limit, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const { collection, getDocs, query, where, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
         // 🛡️ MODO SEGURO: Faxina automática removida para evitar loop de processos.
         
