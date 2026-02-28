@@ -182,59 +182,41 @@ export async function init() {
 // ============================================================================
 // 2. LÓGICA DE CARREGAMENTO (LOAD) - V11.0 UNIFICADA
 // ============================================================================
+// 📥 CARREGAMENTO INTELIGENTE V35: Sincroniza o Script JSON e o Banner
 async function loadSettings() {
     try {
         const db = window.db;
 
-        // 1. Carrega Aviso Global
-        const dGlobal = await getDoc(doc(db, "configuracoes", "global"));
-        if(dGlobal.exists()) {
-            const data = dGlobal.data();
-            // Campos de Aviso
-            // Campos de Aviso (Legado)
-            document.getElementById('conf-global-msg').value = data.top_message || "";
-            document.getElementById('conf-msg-active').checked = data.show_msg || false;
+        // 1. Busca os dados do Banner de Manutenção e do Script Maestro
+        const [snapGlobal, snapMaestro] = await Promise.all([
+            getDoc(doc(db, "configuracoes", "global")),
+            getDoc(doc(db, "settings", "maestro_flow")) // Local onde o JSON será guardado
+        ]);
+
+        // 2. Preenche o Banner (Se existir no banco)
+        if (snapGlobal.exists()) {
+            const data = snapGlobal.data();
+            const campoMsg = document.getElementById('conf-global-msg');
+            const campoAtivo = document.getElementById('conf-msg-active');
             
-            // Campos de Marketing (Maestro) - Buscamos do settings/financeiro
-            const dMaestro = await getDoc(doc(db, "settings", "financeiro"));
-            if(dMaestro.exists()) {
-                const mData = dMaestro.data();
-                document.getElementById('conf-marketing-msg').value = mData.texto_marketing || "";
-                document.getElementById('conf-marketing-aba').value = mData.aba_destino || "loja";
-                document.getElementById('conf-marketing-active').checked = mData.aviso_marketing_ativo || false;
-            }
-            
-            // Campos de Bônus (Marketing)
-            document.getElementById('conf-bonus-ativo').checked = data.bonus_boas_vindas_ativo || false;
-            document.getElementById('conf-val-bonus-promo').value = data.valor_bonus_promocional || 20;
-            document.getElementById('conf-bonus-7dias').value = data.bonus_recuperacao_7d || 0;
-            document.getElementById('conf-bonus-15dias').value = data.bonus_recuperacao_15d || 0;
+            if (campoMsg) campoMsg.value = data.top_message || "";
+            if (campoAtivo) campoAtivo.checked = data.show_msg || false;
         }
 
-        // 2. 🔥 Carrega Cérebro Financeiro (Lê o Novo e busca fallback no Legado)
-        const dFin = await getDoc(doc(db, "settings", "financeiro"));
-        const dLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
-        
-        const data = dFin.exists() ? dFin.data() : {};
-        const legado = dLegado.exists() ? dLegado.data() : {};
+        // 3. Preenche o Terminal JSON (Se existir no banco)
+        if (snapMaestro.exists()) {
+            const data = snapMaestro.data();
+            const campoJSON = document.getElementById('conf-maestro-json');
+            if (campoJSON) {
+                // Transforma o dado do banco de volta em texto bonito para você ler
+                campoJSON.value = JSON.stringify(data.script, null, 2);
+            }
+        }
 
-       // Sincroniza a Interface com os dados REAIS do Banco
-        document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma ?? 0.20;
-        document.getElementById('conf-taxa-cliente').value = data.taxa_cliente ?? 0.05;
-        document.getElementById('conf-limite-divida').value = data.limite_divida ?? -60.00;
-        
-        // Ponto 3 e 4: Mapeia as porcentagens específicas e Modo de Liquidação
-        document.getElementById('conf-pct-reserva-prestador').value = data.porcentagem_reserva ?? legado.porcentagem_reserva ?? 20;
-        document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
-        document.getElementById('conf-completar-pagamento').checked = data.completar_valor_total ?? true;
-
-        // 3. Parâmetros Operacionais (Lê do Master com Fallback no Legado)
-        document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
-        document.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
-
-    } catch(e) { console.error("Erro ao carregar settings", e); }
+    } catch(e) { 
+        console.error("❌ Erro ao sincronizar Terminal Maestro:", e); 
+    }
 }
-
 // ============================================================================
 // 3. FUNÇÕES DOS BOTÕES (RESTAURADAS E BLINDADAS)
 // ============================================================================
