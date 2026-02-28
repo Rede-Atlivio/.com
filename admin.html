@@ -172,65 +172,7 @@
 
             <div id="view-finance" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
             <div id="view-automation" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
-            <div id="view-maestro" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden animate-fade">
-                <div class="max-w-6xl mx-auto space-y-6">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-slate-900 border border-blue-500/30 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-2 opacity-10"><i data-lucide="zap" class="w-12 h-12 text-blue-400"></i></div>
-                            <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-2">Motor de Automação</p>
-                            <div class="flex items-center gap-4">
-                                <div id="status-robo-led" class="w-4 h-4 rounded-full bg-red-600 shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse"></div>
-                                <h3 id="status-robo-txt" class="text-2xl font-black text-white italic tracking-tighter uppercase">Offline</h3>
-                            </div>
-                            <button onclick="window.ativarGatilhoChatRealtime()" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg transition transform active:scale-95">
-                                Ligar Sentinela 📡
-                            </button>
-                        </div>
-
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Alertas Disparados</p>
-                            <div class="flex items-baseline gap-2">
-                                <h3 id="count-alertas" class="text-4xl font-black text-white italic">0</h3>
-                                <span class="text-[10px] font-bold text-gray-600 uppercase">Hoje</span>
-                            </div>
-                            <div class="mt-4 flex items-center gap-2 text-emerald-400">
-                                <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                <span class="text-[9px] font-black uppercase italic">Engajamento em alta</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                            <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-2">Usuários em Chat</p>
-                            <div class="flex items-baseline gap-2">
-                                <h3 id="count-ativos" class="text-4xl font-black text-white italic">0</h3>
-                                <span class="text-[10px] font-bold text-gray-600 uppercase">Ativos</span>
-                            </div>
-                            <p class="mt-4 text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Vigiando negociações em tempo real</p>
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-900 rounded-[2rem] border border-slate-800 overflow-hidden shadow-2xl">
-                        <div class="p-5 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
-                            <div class="flex items-center gap-3">
-                                <i data-lucide="terminal" class="text-blue-500 w-4 h-4"></i>
-                                <h4 class="text-xs font-black text-white uppercase tracking-widest italic">🛰️ Feed de Eventos do Maestro</h4>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="flex h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
-                                <span class="text-[9px] text-blue-400 font-black uppercase tracking-widest">Live Sync Ativo</span>
-                            </div>
-                        </div>
-                        <div id="maestro-live-logs" class="h-80 overflow-y-auto p-6 space-y-3 font-mono text-[11px] custom-scrollbar bg-black/30">
-                            <div class="flex items-center gap-2 text-gray-600 italic">
-                                <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>
-                                Aguardando inicialização do Sentinela...
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
+            
             <div id="view-settings" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden">
     <div class="max-w-4xl mx-auto space-y-6">
         <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter mb-6">⚙️ Configurações do Sistema</h2>
