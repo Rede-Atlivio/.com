@@ -91,13 +91,17 @@ function unlockAdmin() {
             else el.classList.remove('hidden');
         }
     });
+    // Direciona para o Dashboard assim que o Admin desbloqueia
     switchView('dashboard');
-    // 📡 GATILHO AUTOMÁTICO: Tenta ligar o Vigia de Chat se o módulo automation estiver carregado
-    setTimeout(() => {
-        if (window.ativarGatilhoChatRealtime) {
-            window.ativarGatilhoChatRealtime();
-        }
-    }, 2000); // Aguarda 2 segundos para os módulos carregarem
+
+    // 📡 VIGILÂNCIA IMEDIATA: Ativa o Radar Sentinela automaticamente no login
+    setTimeout(() => {
+        // Verifica se a função de ativação existe antes de chamar para não dar erro
+        if (typeof window.ativarGatilhoChatRealtime === 'function') {
+            window.ativarGatilhoChatRealtime();
+            console.log("🛡️ Sentinela: Vigilância iniciada automaticamente.");
+        }
+    }, 1500); // Reduzido para 1.5s para agilizar a proteção
 }
 
 function lockAdmin() {
