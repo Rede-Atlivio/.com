@@ -130,10 +130,8 @@ async function capturarEnderecoNotificacao(uid) {
     try {
         console.log("🛰️ Maestro: Sincronizando rádio de mensagens...");
         
-        // 1. Localiza o Service Worker na pasta correta do servidor
-        const registration = await navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
-            scope: '/.com/'
-        });
+        // 1. Usa o registro de rádio já ativo para evitar loops de atualização
+        const registration = await navigator.serviceWorker.ready;
 
         const messaging = getMessaging(app);
         const permissao = await Notification.requestPermission();
