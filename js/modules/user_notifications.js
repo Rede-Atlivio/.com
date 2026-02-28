@@ -70,55 +70,56 @@ import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "h
     }); // <--- ISSO FECHA O ONSNAPSHOT
 } // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
 
-/* 💎 MOTOR DE EXIBIÇÃO MAESTRO V26 - DESIGN SLATE-900 REFINADO */
+/* 💎 MOTOR DE EXIBIÇÃO MAESTRO V30 - DESIGN RESILIENTE REFINADO */
 window.mostrarBarraNotificacao = (id, data) => {
-    // Limpeza de cache visual para evitar sobreposição
+    // 1. Limpeza de sobreposição
     const existingAlert = document.getElementById('user-alert-bar');
     if(existingAlert) existingAlert.remove();
 
-    // Mapeamento de Ícones e Identidade Visual Atlivio
-    const iconMap = { 'gift': '🎁', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'canal': '📺', 'marketing': '🚀' };
+    // 2. Mapeamento de Identidade
+    const iconMap = { 'gift': '⚡', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'marketing': '🚀' };
     const icon = iconMap[data.type] || '🔔';
-    const btnText = gerarTextoBotao(data.action);
+    const titulo = data.title || "Notificação Oficial";
 
     const div = document.createElement('div');
     div.id = 'user-alert-bar';
     
-    // Classes: Slate-900 (Quase Preto), Borda Fina Azul, Sombra Soft 50%, Posicionamento Centralizado
-    div.className = `fixed top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-[380px] bg-[#0f172a] border border-blue-500/40 text-white p-5 rounded-[24px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] z-[999999] animate-fade-down flex flex-col gap-4`;
-
+    // 🎨 ESTILO RESILIENTE: Fundo Slate-900, Borda Azul Transparente, Animação Suave
+    div.style.cssText = "position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:999999; width:90%; max-width:350px; background:#0f172a; border:1px solid #3b82f680; border-radius:16px; padding:16px; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5); transition: all 0.5s ease; opacity:0;";
+    
     div.innerHTML = `
-        <div class="flex items-start gap-4">
-            <div class="bg-blue-600 w-11 h-11 rounded-full flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(37,99,235,0.4)]">
-                <span class="text-xl">${icon}</span>
+        <div onclick="window.acaoNotificacao('${id}', '${data.action}')" style="display:flex; align-items:center; gap:12px; cursor:pointer;">
+            <div style="width:40px; height:40px; background:#2563eb; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: 0 0 15px rgba(37,99,235,0.4);">
+                <span style="color:white; font-size:20px;">${icon}</span>
             </div>
-            <div class="flex-1 min-w-0">
-                <div class="flex justify-between items-start">
-                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-[0.15em] mb-1">Notificação Oficial</p>
-                    <button onclick="window.fecharNotificacao('${id}')" class="text-slate-500 hover:text-white transition-colors p-1 -mt-1 -mr-1">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                <p class="text-[13px] font-bold leading-tight text-slate-100 break-words">${data.message}</p>
-                ${data.credit_val > 0 ? `<p class="text-[10px] text-emerald-400 font-black mt-1.5 flex items-center gap-1">💰 R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
+            <div style="flex:1; min-width:0;">
+                <h4 style="margin:0; font-size:10px; color:#60a5fa; text-transform:uppercase; font-weight:900; letter-spacing:0.1em;">${titulo}</h4>
+                <p style="margin:2px 0 0; font-size:12px; color:white; font-weight:bold; line-height:1.2;">${data.message}</p>
+                ${data.credit_val > 0 ? `<p style="margin:4px 0 0; font-size:10px; color:#34d399; font-weight:900;">💰 R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
             </div>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="window.acaoNotificacao('${id}', '${data.action}')" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-black py-3 rounded-xl transition-all shadow-lg uppercase tracking-widest active:scale-[0.98]">
-                ${btnText}
-            </button>
         </div>
     `;
     
     document.body.appendChild(div);
+    
+    // Efeito de entrada
+    setTimeout(() => { div.style.opacity = "1"; }, 100);
 
-    // Sistema de Alerta Sonoro Híbrido
+    // Sistema de Áudio
     const som = document.getElementById('notification-sound');
     if(som) {
-        som.volume = 0.5;
-        som.play().catch(() => console.log("🔇 Áudio aguardando interação do usuário."));
+        som.volume = 0.4;
+        som.play().catch(() => console.log("🔇 Áudio em espera."));
     }
-}
+
+    // Auto-destruição após 8 segundos para não poluir a tela
+    setTimeout(() => {
+        if(div) {
+            div.style.opacity = "0";
+            setTimeout(() => div.remove(), 500);
+        }
+    }, 8000);
+};
 
 function gerarTextoBotao(action) {
     if(action === 'wallet') return "VER CARTEIRA ➔";
