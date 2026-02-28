@@ -208,8 +208,18 @@ async function loadSettings() {
         if(dGlobal.exists()) {
             const data = dGlobal.data();
             // Campos de Aviso
+            // Campos de Aviso (Legado)
             document.getElementById('conf-global-msg').value = data.top_message || "";
             document.getElementById('conf-msg-active').checked = data.show_msg || false;
+            
+            // Campos de Marketing (Maestro) - Buscamos do settings/financeiro
+            const dMaestro = await getDoc(doc(db, "settings", "financeiro"));
+            if(dMaestro.exists()) {
+                const mData = dMaestro.data();
+                document.getElementById('conf-marketing-msg').value = mData.texto_marketing || "";
+                document.getElementById('conf-marketing-aba').value = mData.aba_destino || "loja";
+                document.getElementById('conf-marketing-active').checked = mData.aviso_marketing_ativo || false;
+            }
             
             // Campos de Bônus (Marketing)
             document.getElementById('conf-bonus-ativo').checked = data.bonus_boas_vindas_ativo || false;
