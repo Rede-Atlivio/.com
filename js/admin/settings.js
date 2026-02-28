@@ -247,23 +247,36 @@ async function loadSettings() {
 // ============================================================================
 
 // 💾 SALVAR AVISO GLOBAL
-window.saveAppSettings = async () => {
-    const msg = document.getElementById('conf-global-msg').value;
-    const active = document.getElementById('conf-msg-active').checked;
-    
-    const btn = document.querySelector('button[onclick="window.saveAppSettings()"]');
-    const txtOriginal = btn.innerText;
+/* 💾 SALVAMENTO UNIFICADO: AVISO GLOBAL + MAESTRO */
+window.saveAppSettingsUnificado = async () => {
+    const btn = document.querySelector('button[onclick="window.saveAppSettingsUnificado()"]');
     btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
 
     try {
-        await setDoc(doc(window.db, "configuracoes", "global"), {
-            top_message: msg,
-            show_msg: active,
+        const db = window.db;
+        
+        // 1. Salva o Aviso de Topo (Estrutura Antiga Mantida)
+        await setDoc(doc(db, "configuracoes", "global"), {
+            top_message: document.getElementById('conf-global-msg').value,
+            show_msg: document.getElementById('conf-msg-active').checked,
             updated_at: new Date()
-        }, {merge:true});
-        alert("✅ Aviso Global atualizado com sucesso!");
-    } catch(e) { alert("❌ Erro ao salvar aviso: " + e.message); }
-    finally { btn.innerText = txtOriginal; btn.disabled = false; }
+        }, {merge: true});
+
+        // 2. Salva a Automação Maestro (Piloto Automático)
+        await setDoc(doc(db, "settings", "financeiro"), {
+            texto_marketing: document.getElementById('conf-marketing-msg').value,
+            aba_destino: document.getElementById('conf-marketing-aba').value,
+            aviso_marketing_ativo: document.getElementById('conf-marketing-active').checked,
+            updated_at: new Date()
+        }, {merge: true});
+
+        alert("✅ SUCESSO!\nAs comunicações globais e o marketing automático foram atualizados.");
+    } catch(e) { 
+        alert("❌ Erro ao salvar: " + e.message); 
+    } finally { 
+        btn.innerText = "💾 SALVAR TODAS AS COMUNICAÇÕES"; 
+        btn.disabled = false; 
+    }
 };
 
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
