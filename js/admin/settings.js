@@ -413,3 +413,17 @@ window.solicitarPermissaoPushAdmin = async () => {
         alert("❌ Erro ao solicitar permissão. Verifique o console.");
     }
 };
+/* 🎼 SALVAMENTO DO PILOTO AUTOMÁTICO MAESTRO */
+window.saveMarketingAutoRules = async () => {
+    const payload = {
+        texto_marketing: document.getElementById('conf-marketing-msg').value,
+        aba_destino: document.getElementById('conf-marketing-aba').value,
+        aviso_marketing_ativo: document.getElementById('conf-marketing-active').checked,
+        updated_at: new Date()
+    };
+
+    try {
+        await setDoc(doc(window.db, "settings", "financeiro"), payload, { merge: true });
+        alert("🤖 PILOTO AUTOMÁTICO ATUALIZADO!\nO app agora cuidará do marketing sozinho.");
+    } catch(e) { alert("Erro ao salvar: " + e.message); }
+};
