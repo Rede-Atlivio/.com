@@ -25,7 +25,7 @@ export async function init() {
         container.innerHTML = `<div id="admin-assistant-widget"></div>`;
     }
 
-       <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+       container.innerHTML += ` <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6"> `;
             <div class="glass-panel p-4 border-l-2 border-blue-500">
                 <p class="text-[9px] uppercase font-bold text-gray-400">👥 Usuários</p>
                 <h3 class="text-xl font-black text-white" id="kpi-users">--</h3>
