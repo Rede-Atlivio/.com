@@ -20,9 +20,10 @@ export async function init() {
     // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
     const container = document.getElementById('dashboard-main-content');
     
-    // 1. ESTRUTURA VISUAL (COM ÁREA DA SECRETÁRIA)
-    container.innerHTML = `
-        <div id="admin-assistant-widget"></div>
+    // Se o container de dados estiver vazio, inicializa a estrutura interna de widgets
+    if (!container.innerHTML.includes('admin-assistant-widget')) {
+        container.innerHTML = `<div id="admin-assistant-widget"></div>`;
+    }
 
        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <div class="glass-panel p-4 border-l-2 border-blue-500">
