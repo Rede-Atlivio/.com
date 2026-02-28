@@ -1537,15 +1537,16 @@ window.verificarVidaUtilChat = async (pedido) => {
         (pedido.created_at && pedido.created_at.toMillis ? pedido.created_at.toMillis() : Date.now());
     const horasPassadas = (agora - ultimaInteracao) / (1000 * 60 * 60);
 
-    // 🧠 LÓGICA DE TIERS: Modelo Ideal Atlivio
-    let limiteMorte = 48; // Tier 1: Apenas conversa
-    if (pedido.offer_value > 0) limiteMorte = 72; // Tier 2: Proposta enviada
-    if (pedido.system_step >= 2.5) limiteMorte = 96; // Tier 3: Negociação avançada
+    // 🧠 LÓGICA DE TIERS ACELERADA V25 (Minutos em vez de Horas)
+    const minutosPassados = (agora - ultimaInteracao) / (1000 * 60);
+    
+    let limiteMorte = 30; // Tier 1: Mata o chat em 30 minutos de silêncio total
+    if (pedido.offer_value > 0) limiteMorte = 60; // Tier 2: Se tiver proposta, dá 1 hora
+    
+    const limiteAviso = 15; // Dispara aviso com 15 minutos de silêncio
 
-    const limiteAviso = limiteMorte - 12; // Dispara aviso 12h antes do fim
-
-    // 🔴 ESTADO 3: ENCERRAMENTO POR INATIVIDADE
-    if (horasPassadas >= limiteMorte) {
+    // 🔴 ESTADO 3: ENCERRAMENTO POR INATIVIDADE (Morte do Chat)
+    if (minutosPassados >= limiteMorte) {
         console.warn(`💀 Lazarus: Pedido ${pedido.id} expirou.`);
         if (window.encerrarNegociacaoSilenciosa) {
             window.encerrarNegociacaoSilenciosa(pedido.id, "Encerrado por inatividade");
