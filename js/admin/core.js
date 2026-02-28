@@ -135,7 +135,8 @@ window.switchView = async function(viewName) {
     let moduleFile, containerId;
     
     // 2. DEFINIR ROTA (AGORA COM PRODUTOS)
-    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
+    // No Dashboard, o container alvo agora é o 'dashboard-main-content' para não apagar o Sentinela que fica no 'view-dashboard'
+    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
     else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
