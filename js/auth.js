@@ -133,8 +133,15 @@ if ('serviceWorker' in navigator) {
         const permissao = await Notification.requestPermission();
         
         if (permissao === 'granted') {
-            // 2. Pega o "Endereço Único" (Token) do aparelho
-            const tokenAtual = await getToken(messaging, { vapidKey: VAPID_KEY });
+            // 🚀 CORREÇÃO CIRÚRGICA: Força o Firebase a usar o Service Worker da subpasta /.com/
+            const registration = await navigator.serviceWorker.register('/.com/firebase-messaging-sw.js', {
+                scope: '/.com/'
+            });
+
+            const tokenAtual = await getToken(messaging, { 
+                vapidKey: VAPID_KEY,
+                serviceWorkerRegistration: registration // 💎 O SEGREDO: Conecta o Token ao seu arquivo real
+            });
             
             if (tokenAtual) {
                 console.log("✅ Endereço Push capturado para o UID:", uid);
