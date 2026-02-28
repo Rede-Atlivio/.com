@@ -196,11 +196,26 @@ window.carregarHistoricoNotificacoes = async () => {
     
     if (!lista || !uid) return;
 
-    // Sinaliza que está carregando
+   // Sinaliza que está carregando
     lista.innerHTML = '<p class="text-center text-gray-400 text-xs animate-pulse py-10">Buscando mensagens no arquivo...</p>';
 
     try {
-        const { collection, getDocs, query, where, orderBy, limit } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        // 🚀 IMPORTAÇÃO EXPANDIDA: Adicionado writeBatch para limpeza em massa
+        const { collection, getDocs, query, where, orderBy, limit, writeBatch } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // --- 🧹 INÍCIO DA FAXINA MAESTRO (ZERAR SININHO) ---
+        const qNaoLidas = query(collection(db, "user_notifications"), where("userId", "==", uid), where("read", "==", false));
+        const snapNaoLidas = await getDocs(qNaoLidas);
+
+        if (!snapNaoLidas.empty) {
+            const batch = writeBatch(db); // Cria uma ordem de serviço em lote
+            snapNaoLidas.forEach((doc) => {
+                batch.update(doc.ref, { read: true }); // Marca cada uma como lida
+            });
+            await batch.commit(); // Executa tudo de uma vez no servidor
+            console.log(`✅ FAXINA: ${snapNaoLidas.size} mensagens marcadas como lidas.`);
+        }
+        // --- FIM DA FAXINA ---
         
         // Busca as últimas 20 notificações do usuário
         const q = query(
