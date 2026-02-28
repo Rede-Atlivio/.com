@@ -1,8 +1,8 @@
 // js/modules/user_notifications.js
-// 1. IMPORTAÇÃO DO MOTOR CENTRAL
-import { db, auth } from '../config.js'; 
-
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 🛰️ MOTOR UNIFICADO V41: Usa a blindagem global para garantir sincronia em escala ──▶
+const { db, auth, firebaseModules } = window;
+const { collection, query, where, onSnapshot, orderBy, doc, updateDoc, getDoc } = window.firebaseModules;
+// 🛡️ Comentário: Removemos os imports externos para evitar conflitos de versão no navegador.
 
    // 🛰️ INICIALIZADOR MAESTRO V35: Inicia as notificações reais e o fluxo automático (JSON)
 window.iniciarSistemaNotificacoes = () => {
