@@ -46,3 +46,4 @@ window.firebaseModules = {
 export { app, auth, db, storage, provider };
 // Mata qualquer tentativa de arquivos antigos recriarem o radar antigo
 window.SERVICOS_PADRAO = window.SERVICOS_PADRAO || [];
+export const VAPID_KEY = "BD-A9Z_YvJ0zI0S4P5_x_N-qT0R0W0E0R0T0Y0U0I0O0P0A0S0D0F0G0H0J0K0L";
