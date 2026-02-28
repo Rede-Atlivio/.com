@@ -108,6 +108,41 @@ window.definirPerfil = async (tipo) => {
     try { await updateDoc(doc(db, "usuarios", auth.currentUser.uid), { is_provider: tipo === 'prestador', perfil_completo: true }); location.reload(); } catch(e) { alert("Erro: " + e.message); }
 };
 
+/**
+ * 🔔 COLETOR DE ENDEREÇO DIGITAL (FCM TOKEN)
+ * Esta função pede permissão ao usuário e salva o endereço do celular dele no banco.
+ * Essencial para o Admin conseguir disparar notificações com o app FECHADO.
+ */
+async function capturarEnderecoNotificacao(uid) {
+    try {
+        console.log("🛰️ Maestro: Verificando permissão de Notificação Externa...");
+        const messaging = getMessaging(app); // Inicializa o rádio de mensagens
+        
+        // 1. Pede licença ao navegador do usuário (Aparece o balão do Chrome)
+        const permissao = await Notification.requestPermission();
+        
+        if (permissao === 'granted') {
+            // 2. Pega o "Endereço Único" (Token) do aparelho
+            const tokenAtual = await getToken(messaging, { vapidKey: VAPID_KEY });
+            
+            if (tokenAtual) {
+                console.log("✅ Endereço Push capturado para o UID:", uid);
+                
+                // 3. Salva no perfil do usuário para o Admin saber onde entregar o Push
+                await updateDoc(doc(db, "usuarios", uid), {
+                    fcm_token: tokenAtual, // O endereço digital do celular
+                    push_enabled: true,    // Marca que o usuário aceitou
+                    last_token_update: serverTimestamp() // Carimbo de tempo
+                });
+            }
+        } else {
+            console.warn("⚠️ Usuário negou ou fechou o pedido de Notificações.");
+        }
+    } catch (error) {
+        console.warn("⚠️ Falha ao registrar rádio de mensagens:", error);
+    }
+}
+
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
