@@ -545,54 +545,39 @@ window.dispararMaestroInterno = async () => {
 }; // <-- AQUI FECHA A FUNÇÃO INTERNA CORRETAMENTE
 
 // 🔔 MOTOR 2: DISPARO EXTERNO (PADRÃO GOOGLE V1)
+// 🔔 NOVO MOTOR EXTERNO (CONECTADO AO DESPACHANTE GOOGLE V1)
 window.dispararMaestroExterno = async () => {
-    // Busca o texto da mensagem e o destino (aba) nos elementos da tela
     const scriptArea = document.getElementById('maestro-mass-msg');
-    const actionAba = document.getElementById('maestro-mass-action');
-    
-    // Validação de segurança: Não envia se a mensagem estiver vazia
     if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
 
     try {
-        // Confirmação dupla para evitar disparos acidentais para milhares de pessoas
-        if (!confirm("🔔 Enviar notificação oficial via Google FCM V1?")) return;
+        if (!confirm("🔔 Enviar notificação oficial via Motor de Nuvem?")) return;
 
-        // Importa funções do banco de dados apenas quando necessário (otimização de memória)
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        // Busca no banco apenas usuários que autorizaram notificações (filtro push_enabled)
-        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
+        const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js");
 
+        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
         if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo no banco.");
 
-        // Usa a credencial de segurança do Admin logado para autorizar o envio ao Google
-        const tokenAdmin = window.auth.currentUser.accessToken;
+        // LIGAÇÃO COM O MOTOR QUE SUBIMOS NO TERMINAL
+        const functions = getFunctions(app);
+        const enviarNotificacaoV1 = httpsCallable(functions, 'enviarNotificacaoV1');
 
-        // Loop que percorre cada usuário encontrado e envia a notificação individualmente
+        let totalEnviado = 0;
         for (const uDoc of snap.docs) {
             const user = uDoc.data();
-            // Verifica se o aparelho do usuário registrou um "fcm_token" (endereço de entrega)
             if (user.fcm_token) {
-                fetch(`https://fcm.googleapis.com/v1/projects/atlivio-oficial-a1a29/messages:send`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${tokenAdmin}` // Token do Admin como chave de acesso
-                    },
-                    body: JSON.stringify({
-                        "message": {
-                            "token": user.fcm_token, // Destinatário específico
-                            "notification": { "title": "Atlivio Oficial", "body": scriptArea.value },
-                            "data": { "url": "/?aba=" + (actionAba ? actionAba.value : "dashboard") } // Link de destino
-                        }
-                    })
+                // Chama o motor seguro passando os dados
+                await enviarNotificacaoV1({
+                    titulo: "Atlivio Oficial",
+                    mensagem: scriptArea.value,
+                    tokenDispositivo: user.fcm_token
                 });
+                totalEnviado++;
             }
         }
-        // Feedback final informando quantos dispositivos foram atingidos
-        alert(`✅ PROCESSO INICIADO!\nSinal enviado para ${snap.size} aparelhos.`);
+        alert(`✅ SUCESSO!\nO motor disparou ${totalEnviado} notificações.`);
     } catch (e) {
-        // Captura e exibe qualquer erro técnico para o Admin
-        alert("❌ Erro no motor V1: " + e.message);
+        alert("❌ Erro no motor externo: " + e.message);
     }
-}; // Fim da função dispararMaestroExterno
+};
