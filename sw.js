@@ -13,7 +13,8 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
+// 🛰️ USAMOS 'VAR' PARA EVITAR CONFLITO DE REDECLARAÇÃO NO NAVEGADOR ──▶
+var messaging = firebase.messaging();
 
 // 🔔 ESCUTA DE SINAL EXTERNO (O QUE FAZ O CELULAR APITAR FORA) ──▶
 messaging.onBackgroundMessage((payload) => {
