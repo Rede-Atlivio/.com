@@ -1,5 +1,33 @@
-// 🚀 SW PRODUÇÃO ATLIVIO - V2.0 (ESTRATÉGIA SOBERANIA DE REDE)
-const CACHE_NAME = 'atlivio-cache-v2.0'; 
+// 🚀 SW PRODUÇÃO ATLIVIO - V50 (HÍBRIDO: SOBERANIA DE REDE + MAESTRO PUSH) ──▶
+importScripts('https://www.gstatic.com/firebasejs/9.2.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.2.0/firebase-messaging-compat.js');
+
+const CACHE_NAME = 'atlivio-cache-v50'; 
+
+// 🛰️ INICIALIZAÇÃO FIREBASE (Dentro do Cérebro Único) ──▶
+firebase.initializeApp({
+    apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
+    authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
+    projectId: "atlivio-oficial-a1a29",
+    storageBucket: "atlivio-oficial-a1a29.firebasestorage.app",
+    messagingSenderId: "887430049204",
+    appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
+});
+
+const messaging = firebase.messaging();
+
+// 🔔 RECEPTOR DE PUSH EXTERNO (MAESTRO FLOW) ──▶
+messaging.onBackgroundMessage((payload) => {
+    console.log('📬 Mensagem recebida em background:', payload);
+    const notificationTitle = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
+    const notificationOptions = {
+        body: payload.data?.message || payload.notification?.body || "Confira as novidades no App!",
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        data: { url: payload.data?.url || '/' }
+    };
+    self.registration.showNotification(notificationTitle, notificationOptions);
+});
 
 // Arquivos que NUNCA devem ir para o cache (Sempre frescos)
 const NEVER_CACHE = [
