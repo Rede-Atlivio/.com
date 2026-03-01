@@ -143,7 +143,8 @@ window.processarFluxoAutomatico = async (user) => {
 };
 /* 💎 MOTOR DE EXIBIÇÃO MAESTRO V30 - DESIGN RESILIENTE REFINADO */
 // 🌍 Expõe a função para o nível global para que Robôs e o Maestro Flow consigam disparar o balão azul ──▶
-window.mostrarBarraNotificacao = window.exibirNotificacaoMaestro = (id, data) => {
+// 🌍 EXPOSIÇÃO GLOBAL: Garante que qualquer parte do sistema consiga chamar o balão
+window.mostrarBarraNotificacao = (id, data) => {
     // 1. Limpeza de sobreposição
     const existingAlert = document.getElementById('user-alert-bar');
     if(existingAlert) existingAlert.remove();
