@@ -86,7 +86,14 @@ function setDataMode(mode) {
     switchView(window.activeView);
 }
 
-async function loginAdmin() { try { await signInWithPopup(auth, provider); } catch (e) { alert(e.message); } }
+// 🔑 LOGIN MESTRE: Exposto globalmente para o botão do HTML
+window.loginAdmin = async () => { 
+    try { 
+        await signInWithPopup(auth, provider); 
+    } catch (e) { 
+        console.error("Erro no login:", e.message); 
+    } 
+};
 function logoutAdmin() { signOut(auth).then(() => location.reload()); }
 
 function unlockAdmin() {
