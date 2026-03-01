@@ -24,7 +24,7 @@ window.iniciarSistemaNotificacoes = () => {
     window.escutarNotificacoes = (uid) => {
     // Busca notificações NÃO LIDAS (read == false)
     const q = query(
-        collection(db, "user_notifications"), 
+        collection(window.db, "user_notifications"), // 🛡️ Correção: Usa o banco global blindado ──▶
         where("userId", "==", uid), 
         where("read", "==", false),
         orderBy("created_at", "desc")
