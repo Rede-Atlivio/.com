@@ -506,116 +506,68 @@ window.dispararLimpezaGlobal = async function() {
  * Envia uma ordem para todos os usuários cadastrados no banco.
  */
 window.dispararMaestroInterno = async () => {
-    const scriptArea = document.getElementById('maestro-script-json');
-    const btn = document.querySelector('button[onclick="window.dispararMaestroInterno()"]');
-    
-    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: O script JSON está vazio!");
-
-    try {
-        // 1. Traduz o texto para um comando que o computador entende
-        const comando = JSON.parse(scriptArea.value);
-        
-        if (!comando.msg || !comando.aba) {
-            throw new Error("O JSON deve conter obrigatoriamente 'msg' e 'aba'!");
-        }
-
-        const msgConfirm = `🔥 CONFIRMAR DISPARO EM MASSA?\n\nIsso enviará a mensagem: "${comando.msg}"\nPara o destino: Aba ${comando.aba.toUpperCase()}`;
-        if (!confirm(msgConfirm)) return;
-
-        btn.innerText = "⏳ PROCESSANDO LOTE...";
-        btn.disabled = true;
-
-        const { collection, getDocs, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-        // 2. Coleta todos os alvos (Usuários)
-        // Nota: Para milhões de usuários, o Firebase limita o lote (batch) a 500 operações por vez.
-        const usuariosSnap = await getDocs(collection(window.db, "usuarios"));
-        let batch = writeBatch(window.db);
-        let contagem = 0;
-        let lotesEnviados = 0;
-
-        for (const uDoc of usuariosSnap.docs) {
-            const commandRef = doc(window.db, "maestro_commands", uDoc.id);
-            
-            batch.set(commandRef, {
-                titulo: comando.titulo || "Informativo Atlivio",
-                msg: comando.msg,
-                aba: comando.aba,
-                timestamp: serverTimestamp()
-            });
-
-            contagem++;
-            
-            // 🛡️ TRAVA DE ESCALA: Se chegar em 500, envia o lote e começa um novo (Limitação Firebase)
-            if (contagem % 500 === 0) {
-                await batch.commit();
-                batch = writeBatch(window.db);
-                lotesEnviados++;
-            }
-        }
-
-        // Envia o último lote (o que sobrou)
-        await batch.commit();
-
-        alert(`✅ SUCESSO ABSOLUTO!\n\n${contagem} usuários foram impactados pelo Maestro.`);
-        scriptArea.value = ""; // Limpa o painel para segurança
-
-    } catch (e) {
-        console.error("Erro no Maestro:", e);
-        alert("❌ ERRO NO SCRIPT:\nVerifique as aspas duplas e o formato.\n\nExemplo Correto:\n{\n \"titulo\": \"BÔNUS\",\n \"msg\": \"Clique aqui\",\n \"aba\": \"ganhar\"\n}");
-   } finally {
-        btn.innerText = "🚀 Disparar App Aberto";
-        btn.disabled = false;
-    }
-};
-
-/**
- * 🔔 DISPARADOR EXTERNO (PUSH): O "Despertador"
- * Envia notificações reais para a tela de bloqueio do celular dos usuários.
+    /**
+ * 🔔 DISPARADOR EXTERNO (PUSH) V60: O "Canhão de Sinal"
+ * Envia notificações em tempo real direto do Admin para os celulares.
  */
 window.dispararMaestroExterno = async () => {
+    // 1. Busca o conteúdo que você digitou no campo de texto (JSON)
     const scriptArea = document.getElementById('maestro-script-json');
-    
-    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: O script JSON está vazio!");
+    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: Script vazio!");
+
+    // 🔑 CHAVE MESTRA: Cole aqui a Server Key do seu Firebase Console
+    const SERVER_KEY = "COLE_AQUI_SUA_CHAVE_SERVER_KEY";
 
     try {
         const comando = JSON.parse(scriptArea.value);
-        if (!comando.msg) throw new Error("O JSON deve conter 'msg' para o Push!");
+        if (!comando.msg) throw new Error("O JSON precisa do campo 'msg'!");
 
-        const confirmacao = confirm(`🔔 CONFIRMAR DISPARO EXTERNO?\n\nIsso fará o celular dos usuários vibrar com a mensagem:\n"${comando.msg}"\n\nDeseja continuar?`);
-        if (!confirmacao) return;
+        const confirm = confirm(`🔔 DISPARAR AGORA PARA TODOS?\n\nMensagem: "${comando.msg}"`);
+        if (!confirm) return;
 
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 1. Busca apenas usuários que permitiram notificações e possuem endereço (Token)
+        // 2. Localiza todos os usuários que aceitaram receber notificações
         const q = query(collection(window.db, "usuarios"), where("push_enabled", "==", true));
-        const usuariosSnap = await getDocs(q);
+        const snap = await getDocs(q);
 
-        if (usuariosSnap.empty) {
-            return alert("⚠️ Nenhum usuário com Push ativado foi encontrado no banco.");
-        }
+        if (snap.empty) return alert("⚠️ Nenhum usuário disponível para receber Push.");
 
-        console.log(`📡 Enviando Push para ${usuariosSnap.size} aparelhos via Servidor...`);
+        console.log(`📡 Iniciando transmissão para ${snap.size} dispositivos...`);
 
-        /**
-         * 🚀 NOTA DE ESCALA: Notificações PWA reais exigem uma Firebase Cloud Function
-         * ou um servidor Node.js (Vercel/Heroku) para assinar as mensagens com a VAPID_KEY.
-         * Vou injetar o comando que cria a "Ordem de Disparo" para o seu robô de servidor ler.
-         */
-        const { addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        await addDoc(collection(window.db, "push_queue"), {
-            titulo: comando.titulo || "Atlivio",
-            mensagem: comando.msg,
-            url: `https://rede-atlivio.github.io/.com/?aba=${comando.aba}`,
-            created_at: serverTimestamp(),
-            status: 'pending',
-            total_alvos: usuariosSnap.size
+        // 3. LOOP DE ESCALA: Percorre a lista de usuários e envia o sinal de rádio para o Google
+        snap.forEach(async (uDoc) => {
+            const user = uDoc.data();
+            // Se o usuário tem um endereço de entrega (Token), o Google envia a mensagem
+            if (user.fcm_token) {
+                await fetch('https://fcm.googleapis.com/fcm/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'key=' + SERVER_KEY
+                    },
+                    body: JSON.stringify({
+                        to: user.fcm_token,
+                        notification: {
+                            title: comando.titulo || "Informativo Atlivio",
+                            body: comando.msg,
+                            icon: "/favicon.ico",
+                            click_action: "https://rede-atlivio.github.io/.com/"
+                        },
+                        data: { // Dados extras para o Maestro no App ler ao abrir
+                            url: "/?aba=" + (comando.aba || "dashboard")
+                        }
+                    })
+                });
+            }
         });
 
-        alert(`✅ ORDEM DE DISPARO ENVIADA!\nO servidor está processando o envio para ${usuariosSnap.size} celulares.`);
+        alert(`🚀 SINAL ENVIADO!\nTransmissão concluída para ${snap.size} aparelhos.`);
         
     } catch (e) {
-        alert("❌ ERRO NO PUSH: Verifique o formato do JSON.");
+        alert("❌ ERRO NO DISPARO: Verifique se a Server Key está correta.");
     }
 };
+// 🌍 EXPORTAÇÃO PARA O PAINEL: Torna as funções de marketing acessíveis ao HTML
+window.dispararMaestroExterno = dispararMaestroExterno;
+window.dispararMaestroInterno = dispararMaestroInterno;
