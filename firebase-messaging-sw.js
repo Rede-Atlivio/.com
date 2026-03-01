@@ -18,7 +18,8 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('📬 Mensagem recebida em background:', payload);
   
-  const notificationTitle = payload.notification.title;
+  // 🛰️ CAPTAÇÃO INTELIGENTE: Tenta ler o título da área 'data' (Maestro) ou da área 'notification' (Padrão) ──▶
+  const notificationTitle = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
   const notificationOptions = {
     body: payload.notification.body,
     icon: '/favicon.ico', // Caminho do seu ícone
