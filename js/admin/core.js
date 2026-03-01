@@ -8,6 +8,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+// 🚀 AJUSTE CELULAR: Força o Google a sempre perguntar qual conta usar
+provider.setCustomParameters({ prompt: 'select_account' });
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
 // EXPOR GLOBAIS
