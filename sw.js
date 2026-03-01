@@ -1,6 +1,40 @@
-// 🚀 SW PRODUÇÃO ATLIVIO - V50 (HÍBRIDO: SOBERANIA DE REDE + MAESTRO PUSH) ──▶
+// 🚀 SW PRODUÇÃO ATLIVIO - V60 (HÍBRIDO: CACHE + PUSH MAESTRO) ──▶
 importScripts('https://www.gstatic.com/firebasejs/9.2.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.2.0/firebase-messaging-compat.js');
+
+// 🛰️ CONFIGURAÇÃO DE AUTONOMIA DO RECEPTOR ──▶
+const firebaseConfig = {
+    apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
+    authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
+    projectId: "atlivio-oficial-a1a29",
+    storageBucket: "atlivio-oficial-a1a29.firebasestorage.app",
+    messagingSenderId: "887430049204",
+    appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// 🔔 ESCUTA DE SINAL EXTERNO (O QUE FAZ O CELULAR APITAR FORA) ──▶
+messaging.onBackgroundMessage((payload) => {
+    console.log('📬 [Maestro] Sinal recebido fora do App:', payload);
+    
+    // Captura inteligente para garantir que a mensagem apareça independente do formato
+    const title = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
+    const body = payload.data?.message || payload.notification?.body || "Novidades na sua conta!";
+    
+    const options = {
+        body: body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        vibrate: [200, 100, 200],
+        data: { url: payload.data?.url || '/' }
+    };
+
+    return self.registration.showNotification(title, options);
+});
+
+// ──▶ ABAIXO DAQUI SEGUE O SEU CÓDIGO DE CACHE (NEVER_CACHE, FETCH, ETC)
 
 const CACHE_NAME = 'atlivio-cache-v50'; 
 
