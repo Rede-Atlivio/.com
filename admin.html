@@ -302,7 +302,10 @@
     </div>
 
     <script type="module">
-        import './js/admin/core.js?v=final2';
-        setTimeout(() => { lucide.createIcons(); }, 500);
+        import './js/admin/core.js?v=2026_V60';
+        // Aguarda um pouco para os ícones serem desenhados na tela
+        setTimeout(() => { 
+            if (typeof lucide !== 'undefined') lucide.createIcons(); 
+        }, 500);
     </script>
 </body>
