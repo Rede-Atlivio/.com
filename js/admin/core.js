@@ -585,33 +585,11 @@ window.dispararMaestroExterno = async () => {
     }
 };
 
-        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
+  // 🚀 FINALIZAÇÃO: Alerta de sucesso após disparar as requisições para o Google
+        alert(`✅ PROCESSO INICIADO!\nSinal enviado para ${snap.size} aparelhos.`);
 
-        if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo.");
-
-        snap.forEach(async (uDoc) => {
-            const user = uDoc.data();
-            if (user.fcm_token) {
-                await fetch('https://fcm.googleapis.com/fcm/send', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'key=' + SERVER_KEY
-                    },
-                    body: JSON.stringify({
-                        to: user.fcm_token,
-                        notification: {
-                            title: "Informativo Atlivio",
-                            body: scriptArea.value,
-                            icon: "/favicon.ico",
-                            click_action: "https://rede-atlivio.github.io/.com/"
-                        },
-                        data: { url: "/?aba=" + document.getElementById('maestro-mass-action').value }
-                    })
-                });
-            }
-        });
-        alert("🚀 Sinal enviado para " + snap.size + " aparelhos!");
-    } catch (e) { alert("Erro no Push: " + e.message); }
-}; // <-- AQUI FECHA A FUNÇÃO EXTERNA CORRETAMENTE
+    } catch (e) {
+        // 🛡️ SEGURANÇA: Captura erros de rede ou de permissão do Admin
+        alert("❌ Erro no motor V1: " + e.message);
+    }
+}; // 🏁 FIM REAL DO ARQUIVO: Sem códigos sobrando fora das funções.     
