@@ -75,9 +75,8 @@ window.iniciarSistemaNotificacoes = () => {
         }
 
         mostrarBarraNotificacao(notif.id, dados);
-    }); // <--- ISSO FECHA O ONSNAPSHOT
-} // <--- ISSO FECHA A FUNÇÃO ESCUTARNOTIFICACOES
-
+    }); // Fechamento correto do OnSnapshot (escuta em tempo real)
+}; // Fechamento correto da função escutarNotificacoes
 // 🧠 PROCESSADOR DE ROTEIRO MAESTRO (O Robô que não dorme)
 window.processarFluxoAutomatico = async (user) => {
     try {
