@@ -7,7 +7,9 @@ const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", auth
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// 🚀 MOTOR DE LOGIN: Configurado para sempre perguntar a conta (Ideal para celular)
 const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
 // 🚀 AJUSTE CELULAR: Força o Google a sempre perguntar qual conta usar
 provider.setCustomParameters({ prompt: 'select_account' });
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
