@@ -265,7 +265,8 @@ window.carregarHistoricoNotificacoes = async () => {
 
     try {
         // 🛡️ UNIFICAÇÃO: Usamos os módulos já carregados na blindagem global para evitar conflitos ──▶
-        const { collection, getDocs, query, where, orderBy, limit } = window.firebaseModules;
+        // 🛡️ UNIFICAÇÃO: Adicionado writeBatch para faxina em massa de milhões de registros ──▶
+        const { collection, getDocs, query, where, orderBy, limit, writeBatch } = window.firebaseModules;
         
         // 🛡️ MODO SEGURO: Faxina automática removida para evitar loop de processos.
         
