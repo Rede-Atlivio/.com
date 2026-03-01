@@ -1,18 +1,5 @@
 import { doc, getDoc, setDoc, writeBatch, collection, query, where, getDocs, getCountFromServer, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🛰️ CONFIGURAÇÃO DE COMUNICAÇÃO EXTERNA (PUSH) V25
-// Importamos o motor de mensagens para que o Admin tenha permissão de disparo
-import { getMessaging } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
-
-/** * 🔑 CHAVE VAPID PÚBLICA (ESSENCIAL PARA NOTIFICAÇÃO EXTERNA)
- * Esta chave autoriza o seu domínio a enviar PUSH para os celulares dos usuários.
- * Ela é obtida no Console do Firebase > Cloud Messaging > Web Push.
- */
-export const VAPID_KEY = "BD-A9Z_YvJ0zI0S4P5_x_N-qT0R0W0E0R0T0Y0U0I0O0P0A0S0D0F0G0H0J0K0L"; 
-
-// Inicializamos o rádio de mensagens usando o App que já está no core.js
-export const messaging = typeof getMessaging === 'function' ? getMessaging() : null;
-
 // ============================================================================
 // 1. INICIALIZAÇÃO DA INTERFACE
 // ============================================================================
@@ -23,49 +10,26 @@ export async function init() {
     container.innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade">
             
-           <div class="glass-panel p-6 border border-blue-500/40 bg-slate-900/50">
-                <div class="flex justify-between items-start mb-4">
-                    <div>
-                        <h2 class="text-xl font-black text-white italic tracking-tighter">🎼 MAESTRO FLOW</h2>
-                        <p class="text-[9px] text-blue-400 font-bold uppercase">Injeção de Marketing e Automação de Meses</p>
-                    </div>
-                    <span class="bg-emerald-600 text-[8px] font-black px-2 py-1 rounded-md text-white animate-pulse">TERMINAL ATIVO</span>
-                </div>
+            <div class="glass-panel p-6 border border-blue-500/30">
+                <h2 class="text-xl font-bold text-white mb-2">📢 Comunicação Global</h2>
+                <p class="text-xs text-gray-400 mb-6">Esta mensagem aparecerá no topo do aplicativo para todos os usuários.</p>
                 
-                <div class="bg-black/40 p-4 rounded-xl border border-white/5 mb-6">
-                    <label class="text-[9px] font-black text-gray-400 uppercase block mb-1">Aviso de Topo (Emergencial)</label>
-                    <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-2" placeholder="Ex: Manutenção hoje às 20h...">
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" id="conf-msg-active" class="chk-custom">
-                        <label for="conf-msg-active" class="text-xs text-gray-300">Mostrar Banner?</label>
-                    </div>
+                <label class="inp-label">MENSAGEM DE AVISO</label>
+                <input type="text" id="conf-global-msg" class="inp-editor h-10 text-white mb-4" placeholder="Ex: Manutenção programada...">
+                
+                <div class="flex items-center gap-2 mb-6">
+                    <input type="checkbox" id="conf-msg-active" class="chk-custom">
+                    <label for="conf-msg-active" class="text-xs text-gray-300 cursor-pointer">Mostrar Aviso?</label>
                 </div>
 
-                <div class="bg-slate-950 p-4 rounded-2xl border border-emerald-500/20 mb-6">
-                    <label class="text-[10px] font-black text-emerald-500 uppercase block mb-2 tracking-widest text-center">Configuração de Campanha (Script JSON)</label>
-                    <textarea id="conf-maestro-json" class="w-full h-40 bg-transparent text-emerald-400 font-mono text-[11px] p-2 outline-none resize-none" 
-                        placeholder='{ "campanha": "Atlivio-Mestre", "fluxo": [] }'></textarea>
-                    <p class="text-[8px] text-gray-600 mt-2 italic text-center">Cole aqui o script JSON que eu te fornecer para automatizar as campanhas.</p>
-                </div>
+                <button onclick="window.saveAppSettings()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs uppercase shadow-lg transition mb-8">
+                    💾 SALVAR AVISO GLOBAL
+                </button>
 
-  <div class="grid grid-cols-1 gap-2">
-                    <button onclick="window.saveAppSettingsUnificado()" class="bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black text-[10px] uppercase shadow-lg transition active:scale-95">
-                        💾 SALVAR E SINCRONIZAR REDE
-                    </button>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="window.solicitarPermissaoPushAdmin()" class="bg-slate-800 text-blue-400 py-3 rounded-xl font-black text-[9px] uppercase border border-blue-500/20">
-                            🔔 ATIVAR PUSH
-                        </button>
-                        <button onclick="window.agendarFluxoMensal()" class="bg-emerald-600/20 text-emerald-400 py-3 rounded-xl font-black text-[9px] uppercase border border-emerald-500/20">
-                            📅 AGENDAR MESES
-                        </button>
-                    </div>
-                </div>
-            </div> 
-
-    <div class="mt-8 pt-8 border-t border-white/10">
-        <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
-        <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Incentivos de Cadastro e Retenção</p>
+                <div class="mt-8 pt-8 border-t border-white/10">
+                    <h2 class="text-xl font-bold text-purple-400 mb-2 italic flex items-center gap-2"><span>🎁</span> Gestão de Bônus</h2>
+                    <p class="text-[10px] text-gray-500 mb-6 uppercase font-bold tracking-widest">Incentivos de Cadastro e Retenção</p>
+                    
                     <div class="space-y-6">
                         <div class="bg-black/20 p-4 rounded-xl border border-white/5">
                             <div class="flex items-center justify-between mb-4">
@@ -182,89 +146,73 @@ export async function init() {
 // ============================================================================
 // 2. LÓGICA DE CARREGAMENTO (LOAD) - V11.0 UNIFICADA
 // ============================================================================
-// 📥 CARREGAMENTO INTELIGENTE V35: Sincroniza o Script JSON e o Banner
 async function loadSettings() {
     try {
         const db = window.db;
 
-        // 1. Busca os dados do Banner de Manutenção e do Script Maestro
-        const [snapGlobal, snapMaestro] = await Promise.all([
-            getDoc(doc(db, "configuracoes", "global")),
-            getDoc(doc(db, "settings", "maestro_flow")) // Local onde o JSON será guardado
-        ]);
-
-        // 2. Preenche o Banner (Se existir no banco)
-        if (snapGlobal.exists()) {
-            const data = snapGlobal.data();
-            const campoMsg = document.getElementById('conf-global-msg');
-            const campoAtivo = document.getElementById('conf-msg-active');
+        // 1. Carrega Aviso Global
+        const dGlobal = await getDoc(doc(db, "configuracoes", "global"));
+        if(dGlobal.exists()) {
+            const data = dGlobal.data();
+            // Campos de Aviso
+            document.getElementById('conf-global-msg').value = data.top_message || "";
+            document.getElementById('conf-msg-active').checked = data.show_msg || false;
             
-            if (campoMsg) campoMsg.value = data.top_message || "";
-            if (campoAtivo) campoAtivo.checked = data.show_msg || false;
+            // Campos de Bônus (Marketing)
+            document.getElementById('conf-bonus-ativo').checked = data.bonus_boas_vindas_ativo || false;
+            document.getElementById('conf-val-bonus-promo').value = data.valor_bonus_promocional || 20;
+            document.getElementById('conf-bonus-7dias').value = data.bonus_recuperacao_7d || 0;
+            document.getElementById('conf-bonus-15dias').value = data.bonus_recuperacao_15d || 0;
         }
 
-        // 3. Preenche o Terminal JSON (Se existir no banco)
-        if (snapMaestro.exists()) {
-            const data = snapMaestro.data();
-            const campoJSON = document.getElementById('conf-maestro-json');
-            if (campoJSON) {
-                // Transforma o dado do banco de volta em texto bonito para você ler
-                campoJSON.value = JSON.stringify(data.script, null, 2);
-            }
-        }
+        // 2. 🔥 Carrega Cérebro Financeiro (Lê o Novo e busca fallback no Legado)
+        const dFin = await getDoc(doc(db, "settings", "financeiro"));
+        const dLegado = await getDoc(doc(db, "configuracoes", "financeiro"));
+        
+        const data = dFin.exists() ? dFin.data() : {};
+        const legado = dLegado.exists() ? dLegado.data() : {};
 
-    } catch(e) { 
-        console.error("❌ Erro ao sincronizar Terminal Maestro:", e); 
-    }
+       // Sincroniza a Interface com os dados REAIS do Banco
+        document.getElementById('conf-taxa-plataforma').value = data.taxa_plataforma ?? 0.20;
+        document.getElementById('conf-taxa-cliente').value = data.taxa_cliente ?? 0.05;
+        document.getElementById('conf-limite-divida').value = data.limite_divida ?? -60.00;
+        
+        // Ponto 3 e 4: Mapeia as porcentagens específicas e Modo de Liquidação
+        document.getElementById('conf-pct-reserva-prestador').value = data.porcentagem_reserva ?? legado.porcentagem_reserva ?? 20;
+        document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
+        document.getElementById('conf-completar-pagamento').checked = data.completar_valor_total ?? true;
+
+        // 3. Parâmetros Operacionais (Lê do Master com Fallback no Legado)
+        document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
+        document.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
+
+    } catch(e) { console.error("Erro ao carregar settings", e); }
 }
+
 // ============================================================================
 // 3. FUNÇÕES DOS BOTÕES (RESTAURADAS E BLINDADAS)
 // ============================================================================
 
 // 💾 SALVAR AVISO GLOBAL
-/* 💾 SALVAMENTO UNIFICADO: AVISO GLOBAL + MAESTRO */
-// 💾 SALVAMENTO UNIFICADO V38: Sincronização em massa (Alta Performance)
-// 💾 FUNÇÃO 01: Salva apenas o Banner Emergencial (Manutenção)
-window.saveAppSettingsUnificado = async () => {
-    const btn = document.querySelector('button[onclick="window.saveAppSettingsUnificado()"]');
-    btn.innerText = "⏳ SALVANDO BANNER...";
+window.saveAppSettings = async () => {
+    const msg = document.getElementById('conf-global-msg').value;
+    const active = document.getElementById('conf-msg-active').checked;
     
+    const btn = document.querySelector('button[onclick="window.saveAppSettings()"]');
+    const txtOriginal = btn.innerText;
+    btn.innerText = "⏳ SALVANDO..."; btn.disabled = true;
+
     try {
         await setDoc(doc(window.db, "configuracoes", "global"), {
-            top_message: document.getElementById('conf-global-msg').value,
-            show_msg: document.getElementById('conf-msg-active').checked,
+            top_message: msg,
+            show_msg: active,
             updated_at: new Date()
-        }, { merge: true });
-        alert("✅ BANNER ATUALIZADO!\nA faixa de aviso foi sincronizada na rede.");
-    } catch(e) { alert("Erro: " + e.message); }
-    finally { btn.innerText = "💾 SALVAR E SINCRONIZAR REDE"; }
+        }, {merge:true});
+        alert("✅ Aviso Global atualizado com sucesso!");
+    } catch(e) { alert("❌ Erro ao salvar aviso: " + e.message); }
+    finally { btn.innerText = txtOriginal; btn.disabled = false; }
 };
 
-// 📅 FUNÇÃO 02: Salva o Script JSON e Agenda a Automação para Meses
-window.agendarFluxoMensal = async () => {
-    const campo = document.getElementById('conf-maestro-json');
-    const btn = document.querySelector('button[onclick="window.agendarFluxoMensal()"]');
-    
-    try {
-        // Valida se o que você colou é um JSON válido antes de salvar
-        const scriptValidado = JSON.parse(campo.value);
-        
-        btn.innerText = "🚀 AGENDANDO...";
-        
-        await setDoc(doc(window.db, "settings", "maestro_flow"), {
-            script: scriptValidado,
-            ultimo_agendamento: new Date(),
-            admin_responsavel: "Gil Borges"
-        }, { merge: true });
-
-        alert("✅ FLUXO AGENDADO COM SUCESSO!\nO robô Maestro assumiu o controle das mensagens.");
-    } catch (e) {
-        alert("❌ ERRO NO SCRIPT: Verifique se o JSON está correto (vírgulas e aspas).");
-        console.error(e);
-    } finally {
-        btn.innerText = "📅 AGENDAR MESES";
-    }
-};
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
 //Agora, garantimos que quando você clicar em "Salvar", a taxa do cliente também vá para o Firebase.
 window.saveBusinessRules = async () => {
@@ -386,43 +334,4 @@ window.saveMarketingRules = async () => {
         btn.innerText = originalText;
         btn.disabled = false;
     }
-};
-
-/**
- * 📡 SOLICITADOR DE ACESSO PUSH (ADMIN)
- * Faz o seu navegador pedir autorização para gerenciar notificações.
- * Essencial para o Admin conseguir disparar alertas externos.
- */
-window.solicitarPermissaoPushAdmin = async () => {
-    console.log("🔔 Solicitando permissão de Notificações...");
-    
-    try {
-        const permissao = await Notification.requestPermission();
-        
-        if (permissao === "granted") {
-            alert("✅ SUCESSO!\nSeu navegador Admin agora está autorizado a gerenciar notificações externas.");
-            console.log("🛰️ Permissão Push concedida.");
-        } else if (permissao === "denied") {
-            alert("❌ BLOQUEADO:\nVocê negou a permissão. Clique no cadeado ao lado da URL e reative as notificações.");
-        } else {
-            alert("⚠️ AVISO:\nA permissão foi fechada sem escolha. Tente clicar novamente.");
-        }
-    } catch (e) {
-        console.error("Erro técnico na solicitação PUSH:", e);
-        alert("❌ Erro ao solicitar permissão. Verifique o console.");
-    }
-};
-/* 🎼 SALVAMENTO DO PILOTO AUTOMÁTICO MAESTRO */
-window.saveMarketingAutoRules = async () => {
-    const payload = {
-        texto_marketing: document.getElementById('conf-marketing-msg').value,
-        aba_destino: document.getElementById('conf-marketing-aba').value,
-        aviso_marketing_ativo: document.getElementById('conf-marketing-active').checked,
-        updated_at: new Date()
-    };
-
-    try {
-        await setDoc(doc(window.db, "settings", "financeiro"), payload, { merge: true });
-        alert("🤖 PILOTO AUTOMÁTICO ATUALIZADO!\nO app agora cuidará do marketing sozinho.");
-    } catch(e) { alert("Erro ao salvar: " + e.message); }
 };
