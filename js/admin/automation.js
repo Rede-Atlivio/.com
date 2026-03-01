@@ -857,3 +857,28 @@ window.agendarFluxoMensal = async function() {
 
     alert("📅 AGENDAMENTO CONCLUÍDO!\nA automação de meses agora está vigiando a rede.");
 };
+// 📥 FUNÇÃO DE RESGATE MAESTRO: Busca o último JSON salvo para evitar perda de dados ──▶
+window.resgatarRoteiroDoBanco = async function() {
+    console.log("🔍 [Maestro] Iniciando resgate de roteiro...");
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    try {
+        const snap = await getDoc(doc(window.db, "settings", "maestro_flow"));
+
+        if (snap.exists()) {
+            const dados = snap.data();
+            const campoJson = document.getElementById('maestro-flow-json');
+            
+            if (campoJson && dados.script) {
+                // Injeta o JSON formatado com 2 espaços para ficar bonito na tela ──▶
+                campoJson.value = JSON.stringify(dados.script, null, 2);
+                alert("✅ ROTEIRO RESGATADO!\nO seu último script salvo foi carregado no campo.");
+            }
+        } else {
+            alert("⚠️ Nenhum roteiro encontrado no servidor.");
+        }
+    } catch (e) {
+        console.error("❌ Erro no resgate:", e);
+        alert("Erro técnico ao buscar dados.");
+    }
+};
