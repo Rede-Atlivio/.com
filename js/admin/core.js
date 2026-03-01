@@ -529,16 +529,61 @@ window.dispararMaestroInterno = async () => {
 }; // <-- AQUI FECHA A FUNÇÃO INTERNA CORRETAMENTE
 
 // 🔔 MOTOR 2: DISPARO EXTERNO (Notificação PUSH na tela de bloqueio)
+// 🔔 MOTOR 2: DISPARO EXTERNO (PADRÃO GOOGLE V1 - SEM CHAVE AAAA)
 window.dispararMaestroExterno = async () => {
+    // 1. Pega os elementos da tela do Admin
     const scriptArea = document.getElementById('maestro-mass-msg');
+    const actionAba = document.getElementById('maestro-mass-action');
+    
     if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
 
-    // 🔑 CHAVE MESTRA: Substitua pelo código AAAA... do seu Firebase
-    const SERVER_KEY = "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg";
-
     try {
-        const confirmacao = confirm("🔔 Enviar notificação real para os celulares?");
-        if (!confirmacao) return;
+        if (!confirm("🔔 Enviar notificação oficial via Google FCM V1?")) return;
+
+        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 2. Busca os usuários que aceitam notificação
+        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
+
+        if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo no banco.");
+
+        // 🚀 O SEGREDO: Em vez de usar SERVER_KEY, usamos o seu TOKEN de Admin logado
+        const tokenAdmin = window.auth.currentUser.accessToken;
+
+        console.log(`📡 Disparando para ${snap.size} dispositivos via API V1...`);
+
+        for (const uDoc of snap.docs) {
+            const user = uDoc.data();
+            if (user.fcm_token) {
+                // Chamada oficial para o servidor do Google
+                fetch(`https://fcm.googleapis.com/v1/projects/atlivio-oficial-a1a29/messages:send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokenAdmin}` // Sua autorização de Admin
+                    },
+                    body: JSON.stringify({
+                        "message": {
+                            "token": user.fcm_token,
+                            "notification": {
+                                "title": "Atlivio Oficial",
+                                "body": scriptArea.value
+                            },
+                            "data": {
+                                "url": "/?aba=" + (actionAba ? actionAba.value : "dashboard")
+                            }
+                        }
+                    })
+                });
+            }
+        }
+
+        alert(`✅ PROCESSO INICIADO!\nSinal enviado para ${snap.size} aparelhos.`);
+
+    } catch (e) {
+        alert("❌ Erro no motor V1: " + e.message);
+    }
+};
 
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
