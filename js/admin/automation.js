@@ -333,33 +333,61 @@ window.carregarMaestro = async function() {
 
     container.innerHTML = `
         <div class="max-w-5xl mx-auto space-y-6 animate-fade pb-10">
-            <div class="bg-slate-900 border-2 border-purple-500/40 rounded-3xl p-6 shadow-2xl mb-8 relative overflow-hidden">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(147,51,234,0.3)]">🎼</div>
-                    <div>
-                        <h2 class="text-white font-black uppercase italic text-lg leading-tight tracking-tighter">Maestro Flow</h2>
-                        <p class="text-purple-400 text-[10px] font-bold uppercase tracking-[0.2em]">Injeção de Marketing e Automação de Meses</p>
+            <div class="bg-slate-900 border-2 border-purple-500/40 rounded-[2rem] p-8 shadow-2xl mb-10 relative overflow-hidden">
+                
+                <div class="flex justify-between items-start mb-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-purple-500/20">🎼</div>
+                        <div>
+                            <h2 class="text-white font-black uppercase italic text-xl tracking-tighter">Maestro Flow</h2>
+                            <p class="text-purple-400 text-[10px] font-black uppercase tracking-[0.3em]">Gestão de Jornada do Usuário</p>
+                        </div>
+                    </div>
+                    <div class="bg-black/40 px-4 py-2 rounded-xl border border-white/5">
+                        <span class="text-[8px] text-gray-500 block uppercase font-black">Status da Rede</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span class="text-emerald-400 text-[10px] font-bold uppercase">Sincronizada</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="space-y-4">
-                    <div>
-                        <label class="text-[9px] font-black text-gray-500 uppercase ml-1 tracking-widest">Configuração de Campanha (Script JSON)</label>
-                        <textarea id="maestro-flow-json" rows="6" 
-                            class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-4 text-purple-400 font-mono text-xs focus:border-purple-500 outline-none transition-all mt-1"
-                            placeholder='Cole aqui o script JSON de meses...'></textarea>
+                <div class="space-y-6">
+                    <div class="relative">
+                        <div class="absolute -left-3 top-0 w-1 h-full bg-purple-500/20 rounded-full"></div>
+                        <label class="text-[10px] font-black text-purple-300 uppercase tracking-widest flex items-center gap-2 mb-2">
+                            <span class="w-5 h-5 bg-purple-500 text-white rounded-full flex items-center justify-center text-[10px]">1</span> 
+                            Configurar Roteiro da Campanha (JSON)
+                        </label>
+                        <textarea id="maestro-flow-json" rows="5" 
+                            class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 text-emerald-400 font-mono text-xs focus:border-purple-500 outline-none transition-all shadow-inner"
+                            placeholder='{"dia": 1, "msg": "Bem-vindo!"}'></textarea>
+                        <p class="text-[9px] text-gray-500 mt-2 italic px-1">O robô lerá este código para saber o que falar com o usuário em cada dia de uso.</p>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <button onclick="window.salvarESincronizarRede()" class="bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition shadow-lg active:scale-95 flex items-center justify-center gap-2">
-                            💾 SALVAR E SINCRONIZAR REDE
-                        </button>
-                        <button onclick="window.ativarGatilhoPush()" class="bg-slate-800 hover:bg-slate-700 text-purple-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-purple-500/20 transition shadow-lg active:scale-95">
-                            🔔 ATIVAR PUSH
-                        </button>
-                        <button onclick="window.agendarFluxoMensal()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-emerald-500/20 transition shadow-lg active:scale-95">
-                            📅 AGENDAR MESES
-                        </button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                        
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-gray-500 uppercase tracking-widest pl-1">Passo 2: Gravar</label>
+                            <button onclick="window.salvarESincronizarRede()" class="w-full bg-white text-slate-900 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-purple-50 transition shadow-xl active:scale-95 flex items-center justify-center gap-2">
+                                💾 SALVAR NA REDE
+                            </button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-gray-500 uppercase tracking-widest pl-1">Passo 3: Notificar</label>
+                            <button onclick="window.ativarGatilhoPush()" class="w-full bg-slate-800 text-purple-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border-2 border-purple-500/20 hover:border-purple-500/50 transition shadow-lg active:scale-95">
+                                🔔 DISPARAR PUSH
+                            </button>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-gray-500 uppercase tracking-widest pl-1">Passo 4: Escalar</label>
+                            <button onclick="window.agendarFluxoMensal()" class="w-full bg-slate-800 text-emerald-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border-2 border-emerald-500/20 hover:border-emerald-500/50 transition shadow-lg active:scale-95">
+                                📅 AGENDAR MESES
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>
