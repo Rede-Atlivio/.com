@@ -534,7 +534,7 @@ window.dispararMaestroExterno = async () => {
     if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
 
     // 🔑 CHAVE MESTRA: Substitua pelo código AAAA... do seu Firebase
-    const SERVER_KEY = "COLE_AQUI_SUA_SERVER_KEY";
+    const SERVER_KEY = "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg";
 
     try {
         const confirmacao = confirm("🔔 Enviar notificação real para os celulares?");
