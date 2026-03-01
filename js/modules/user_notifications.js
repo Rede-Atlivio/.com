@@ -238,12 +238,13 @@ window.acaoNotificacao = async (id, action) => {
         return; 
     }
 
-    // ✅ MAPEAMENTO: Traduz os termos do Admin para os IDs de abas que o Maestro entende
+    // 🗺️ MAPA MAESTRO V44: Redirecionamento de segurança para evitar tela branca ──▶
     const mapaAbas = { 
         'wallet': 'ganhar', 
         'services': 'servicos', 
         'jobs': 'empregos', 
-        'produtos': 'loja' 
+        'produtos': 'loja',
+        'chat': 'servicos' // 🛡️ Segurançca: Em vez de abrir sec-chat (vazia), leva para Serviços ──▶
     };
     
     const abaDestino = mapaAbas[action] || action;
