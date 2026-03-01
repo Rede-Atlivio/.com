@@ -333,9 +333,39 @@ window.carregarMaestro = async function() {
 
     container.innerHTML = `
         <div class="max-w-5xl mx-auto space-y-6 animate-fade pb-10">
-            <div class="flex justify-between items-center mb-2">
-                <h2 class="text-2xl font-black text-white uppercase italic tracking-tighter">🎼 Maestro: Controle de Fluxo</h2>
-                <span class="bg-purple-600/20 text-purple-400 text-[10px] font-black px-3 py-1 rounded-full border border-purple-500/30">V29 - MARKETING ESCALÁVEL</span>
+            <div class="bg-slate-900 border-2 border-purple-500/40 rounded-3xl p-6 shadow-2xl mb-8 relative overflow-hidden">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-12 h-12 bg-purple-600 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(147,51,234,0.3)]">🎼</div>
+                    <div>
+                        <h2 class="text-white font-black uppercase italic text-lg leading-tight tracking-tighter">Maestro Flow</h2>
+                        <p class="text-purple-400 text-[10px] font-bold uppercase tracking-[0.2em]">Injeção de Marketing e Automação de Meses</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[9px] font-black text-gray-500 uppercase ml-1 tracking-widest">Configuração de Campanha (Script JSON)</label>
+                        <textarea id="maestro-flow-json" rows="6" 
+                            class="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-4 text-purple-400 font-mono text-xs focus:border-purple-500 outline-none transition-all mt-1"
+                            placeholder='Cole aqui o script JSON de meses...'></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="window.salvarESincronizarRede()" class="bg-purple-600 hover:bg-purple-500 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest transition shadow-lg active:scale-95 flex items-center justify-center gap-2">
+                            💾 SALVAR E SINCRONIZAR REDE
+                        </button>
+                        <button onclick="window.ativarGatilhoPush()" class="bg-slate-800 hover:bg-slate-700 text-purple-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-purple-500/20 transition shadow-lg active:scale-95">
+                            🔔 ATIVAR PUSH
+                        </button>
+                        <button onclick="window.agendarFluxoMensal()" class="bg-slate-800 hover:bg-slate-700 text-emerald-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border border-emerald-500/20 transition shadow-lg active:scale-95">
+                            📅 AGENDAR MESES
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center mb-2 pt-4 border-t border-white/5">
+                <h2 class="text-sm font-black text-gray-400 uppercase tracking-tighter">🚀 Disparo Imediato (Público-Alvo)</h2>
             </div>
 
             <div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/50 rounded-3xl p-6 shadow-2xl relative overflow-hidden">
