@@ -528,68 +528,55 @@ window.dispararMaestroInterno = async () => {
     } catch (e) { alert("Erro: " + e.message); }
 }; // <-- AQUI FECHA A FUNÇÃO INTERNA CORRETAMENTE
 
-// 🔔 MOTOR 2: DISPARO EXTERNO (Notificação PUSH na tela de bloqueio)
-// 🔔 MOTOR 2: DISPARO EXTERNO (PADRÃO GOOGLE V1 - SEM CHAVE AAAA)
+// 🔔 MOTOR 2: DISPARO EXTERNO (PADRÃO GOOGLE V1)
 window.dispararMaestroExterno = async () => {
-    // 1. Pega os elementos da tela do Admin
+    // Busca o texto da mensagem e o destino (aba) nos elementos da tela
     const scriptArea = document.getElementById('maestro-mass-msg');
     const actionAba = document.getElementById('maestro-mass-action');
     
+    // Validação de segurança: Não envia se a mensagem estiver vazia
     if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
 
     try {
+        // Confirmação dupla para evitar disparos acidentais para milhares de pessoas
         if (!confirm("🔔 Enviar notificação oficial via Google FCM V1?")) return;
 
+        // Importa funções do banco de dados apenas quando necessário (otimização de memória)
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 2. Busca os usuários que aceitam notificação
+        // Busca no banco apenas usuários que autorizaram notificações (filtro push_enabled)
         const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
 
         if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo no banco.");
 
-        // 🚀 O SEGREDO: Em vez de usar SERVER_KEY, usamos o seu TOKEN de Admin logado
+        // Usa a credencial de segurança do Admin logado para autorizar o envio ao Google
         const tokenAdmin = window.auth.currentUser.accessToken;
 
-        console.log(`📡 Disparando para ${snap.size} dispositivos via API V1...`);
-
+        // Loop que percorre cada usuário encontrado e envia a notificação individualmente
         for (const uDoc of snap.docs) {
             const user = uDoc.data();
+            // Verifica se o aparelho do usuário registrou um "fcm_token" (endereço de entrega)
             if (user.fcm_token) {
-                // Chamada oficial para o servidor do Google
                 fetch(`https://fcm.googleapis.com/v1/projects/atlivio-oficial-a1a29/messages:send`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${tokenAdmin}` // Sua autorização de Admin
+                        'Authorization': `Bearer ${tokenAdmin}` // Token do Admin como chave de acesso
                     },
                     body: JSON.stringify({
                         "message": {
-                            "token": user.fcm_token,
-                            "notification": {
-                                "title": "Atlivio Oficial",
-                                "body": scriptArea.value
-                            },
-                            "data": {
-                                "url": "/?aba=" + (actionAba ? actionAba.value : "dashboard")
-                            }
+                            "token": user.fcm_token, // Destinatário específico
+                            "notification": { "title": "Atlivio Oficial", "body": scriptArea.value },
+                            "data": { "url": "/?aba=" + (actionAba ? actionAba.value : "dashboard") } // Link de destino
                         }
                     })
                 });
             }
         }
-
+        // Feedback final informando quantos dispositivos foram atingidos
         alert(`✅ PROCESSO INICIADO!\nSinal enviado para ${snap.size} aparelhos.`);
-
     } catch (e) {
+        // Captura e exibe qualquer erro técnico para o Admin
         alert("❌ Erro no motor V1: " + e.message);
     }
-};
-
-  // 🚀 FINALIZAÇÃO: Alerta de sucesso após disparar as requisições para o Google
-        alert(`✅ PROCESSO INICIADO!\nSinal enviado para ${snap.size} aparelhos.`);
-
-    } catch (e) {
-        // 🛡️ SEGURANÇA: Captura erros de rede ou de permissão do Admin
-        alert("❌ Erro no motor V1: " + e.message);
-    }
-}; // 🏁 FIM REAL DO ARQUIVO: Sem códigos sobrando fora das funções.     
+}; // Fim da função dispararMaestroExterno
