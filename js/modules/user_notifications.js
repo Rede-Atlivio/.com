@@ -78,6 +78,25 @@ window.iniciarSistemaNotificacoes = () => {
     }); // Fechamento correto do OnSnapshot (escuta em tempo real)
 }; // Fechamento correto da função escutarNotificacoes
 // 🧠 PROCESSADOR DE ROTEIRO MAESTRO (O Robô que não dorme)
+
+// 📡 RADAR MAESTRO: Escuta comandos diretos do Admin (Robô 67/68)
+window.escutarComandosMaestro = (uid) => {
+    const { doc, onSnapshot } = window.firebaseModules;
+    
+    // Fica vigiando o documento do usuário na coleção de comandos
+    onSnapshot(doc(window.db, "maestro_commands", uid), (snap) => {
+        if (snap.exists()) {
+            const comando = snap.data();
+            console.log("🛰️ Maestro: Novo comando recebido via Banco Direto!");
+            
+            // Dispara o balão azul na tela com os dados do comando
+            if (window.mostrarBarraNotificacao) {
+                window.mostrarBarraNotificacao(snap.id, comando);
+            }
+        }
+    });
+};
+
 window.processarFluxoAutomatico = async (user) => {
     try {
         // Passo 1: Busca o "Livro de Ordens" (JSON) que o Gil salvou no Admin
