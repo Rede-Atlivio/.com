@@ -48,7 +48,8 @@ firebase.initializeApp({
     appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
 });
 
-const messaging = firebase.messaging();
+// 🛰️ DEFINIÇÃO ÚNICA: Usamos var para garantir que não haja conflito de identificador ──▶
+var messaging = firebase.messaging();
 
 // 🔔 RECEPTOR DE PUSH EXTERNO (MAESTRO FLOW) ──▶
 messaging.onBackgroundMessage((payload) => {
