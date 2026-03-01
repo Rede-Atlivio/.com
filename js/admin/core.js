@@ -28,7 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     safeListener('btn-login', 'click', loginAdmin);
-    safeListener('btn-logout', 'click', logoutAdmin);
+    // 🚪 LOGOUT COMPLETO: Limpa a sessão e recarrega a página para o Login Gate
+    safeListener('btn-logout', 'click', () => {
+    if(confirm("Deseja realmente sair do sistema?")) {
+        logoutAdmin();
+    }
+});
     safeListener('mode-real', 'click', () => setDataMode('real'));
     safeListener('mode-demo', 'click', () => setDataMode('demo'));
     safeListener('btn-refresh', 'click', () => switchView(window.activeView));
