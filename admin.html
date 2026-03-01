@@ -286,7 +286,9 @@
 
     <div id="login-gate" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center hidden">
         <h1 class="text-3xl font-black text-white italic tracking-tighter mb-2">ATLIVIO <span class="text-blue-600">ADMIN</span></h1>
-        <button id="btn-login" class="bg-white text-slate-900 px-8 py-3 rounded-xl font-bold uppercase hover:bg-gray-200 transition shadow-xl">Entrar com Google</button>
+        <button id="btn-login" onclick="window.loginAdmin()" class="bg-white text-slate-900 px-8 py-3 rounded-xl font-bold uppercase hover:bg-gray-200 transition shadow-xl flex items-center gap-2">
+    <i data-lucide="log-in" class="w-4 h-4 text-blue-600"></i> Entrar com Google
+</button>
     </div>
 
     <div id="modal-editor" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm hidden flex items-center justify-center p-4 animate-fade">
