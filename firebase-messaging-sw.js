@@ -21,7 +21,8 @@ messaging.onBackgroundMessage((payload) => {
   // 🛰️ CAPTAÇÃO INTELIGENTE: Tenta ler o título da área 'data' (Maestro) ou da área 'notification' (Padrão) ──▶
   const notificationTitle = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
   const notificationOptions = {
-    body: payload.notification.body,
+    // 📝 CORPO DA MENSAGEM: Busca o texto da oferta ou guia enviado pelo Admin ou pelo fluxo automático ──▶
+    body: payload.data?.message || payload.notification?.body || "Confira as novidades no App!",
     icon: '/favicon.ico', // Caminho do seu ícone
     data: { url: payload.data.url } // Link para onde o usuário vai ao clicar
   };
