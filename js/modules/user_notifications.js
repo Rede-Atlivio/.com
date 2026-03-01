@@ -10,8 +10,11 @@ window.iniciarSistemaNotificacoes = () => {
         if (user) {
             console.log("🔔 Maestro: Iniciando escuta de notificações e processamento de fluxo...");
             
-            // 1. Inicia a escuta de notificações em tempo real (Chat, Pedidos, etc)
+            // 1. Inicia a escuta de alertas comuns (Chat, Pedidos)
             window.escutarNotificacoes(user.uid);
+
+            // 2. Inicia o Radar Maestro (Comandos do Admin/Robô)
+            window.escutarComandosMaestro(user.uid);
 
             // 2. Dispara o processador de roteiro automático (O robô que trabalha sozinho)
             if (window.processarFluxoAutomatico) {
