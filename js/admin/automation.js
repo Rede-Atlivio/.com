@@ -380,14 +380,7 @@ window.carregarMaestro = async function() {
                                 🔔 DISPARAR PUSH
                             </button>
                         </div>
-
-                        <div class="space-y-2">
-                            <label class="text-[8px] font-black text-blue-500 uppercase tracking-widest pl-1">Utilidade: Recuperar</label>
-                            <button onclick="window.resgatarRoteiroDoBanco()" class="w-full bg-blue-900/30 text-blue-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border-2 border-blue-500/20 hover:border-blue-500/50 transition shadow-lg active:scale-95">
-                                📥 RESGATAR DO BANCO
-                            </button>
-                        </div>
-
+                        
                         <div class="space-y-2">
                             <label class="text-[8px] font-black text-gray-500 uppercase tracking-widest pl-1">Passo 4: Escalar</label>
                             <button onclick="window.agendarFluxoMensal()" class="w-full bg-slate-800 text-emerald-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border-2 border-emerald-500/20 hover:border-emerald-500/50 transition shadow-lg active:scale-95">
@@ -395,6 +388,13 @@ window.carregarMaestro = async function() {
                             </button>
                         </div>
 
+                        <div class="space-y-2">
+                            <label class="text-[8px] font-black text-blue-500 uppercase tracking-widest pl-1">Utilidade: Recuperar</label>
+                            <button onclick="window.resgatarRoteiroDoBanco()" class="w-full bg-blue-900/30 text-blue-400 font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest border-2 border-blue-500/20 hover:border-blue-500/50 transition shadow-lg active:scale-95">
+                                📥 RESGATAR DO BANCO
+                            </button>
+                        </div>
+                        
                     </div>
                 </div>
             </div>
