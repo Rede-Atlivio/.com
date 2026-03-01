@@ -606,7 +606,8 @@ window.addEventListener('click', (e) => {
     
     // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
     // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
-    const exclusivasCliente = ['loja', 'contratar'];
+    // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
+    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
 
     // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
     const textoBotao = btn.innerText.toUpperCase();
