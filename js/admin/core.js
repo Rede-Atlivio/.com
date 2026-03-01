@@ -501,44 +501,52 @@ window.dispararLimpezaGlobal = async function() {
 // 🎼 MOTOR DISPARADOR MAESTRO (MARKETING INTERNO V25)
 // ============================================================================
 
-/**
- * 🚀 DISPARADOR EM MASSA: O "Tiro de Canhão"
- * Envia uma ordem para todos os usuários cadastrados no banco.
- */
+// 🚀 MOTOR 1: DISPARO INTERNO (Aparece apenas com o App aberto)
 window.dispararMaestroInterno = async () => {
-    /**
- * 🔔 DISPARADOR EXTERNO (PUSH) V60: O "Canhão de Sinal"
- * Envia notificações em tempo real direto do Admin para os celulares.
- */
-window.dispararMaestroExterno = async () => {
     // 1. Busca o conteúdo que você digitou no campo de texto (JSON)
-    const scriptArea = document.getElementById('maestro-script-json');
-    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Erro: Script vazio!");
-
-    // 🔑 CHAVE MESTRA: Cole aqui a Server Key do seu Firebase Console
-    const SERVER_KEY = "COLE_AQUI_SUA_CHAVE_SERVER_KEY";
+    const scriptArea = document.getElementById('maestro-mass-msg'); 
+    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
 
     try {
-        const comando = JSON.parse(scriptArea.value);
-        if (!comando.msg) throw new Error("O JSON precisa do campo 'msg'!");
+        const confirmacao = confirm("🔥 Disparar comando interno para todos?");
+        if (!confirmacao) return;
 
-        const confirm = confirm(`🔔 DISPARAR AGORA PARA TODOS?\n\nMensagem: "${comando.msg}"`);
-        if (!confirm) return;
+        const { collection, getDocs, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const usuariosSnap = await getDocs(collection(window.db, "usuarios"));
+        let batch = writeBatch(window.db);
+
+        usuariosSnap.forEach((uDoc) => {
+            batch.set(doc(window.db, "maestro_commands", uDoc.id), {
+                msg: scriptArea.value,
+                aba: document.getElementById('maestro-mass-action').value,
+                timestamp: serverTimestamp()
+            });
+        });
+
+        await batch.commit();
+        alert("✅ Disparo Interno realizado!");
+    } catch (e) { alert("Erro: " + e.message); }
+}; // <-- AQUI FECHA A FUNÇÃO INTERNA CORRETAMENTE
+
+// 🔔 MOTOR 2: DISPARO EXTERNO (Notificação PUSH na tela de bloqueio)
+window.dispararMaestroExterno = async () => {
+    const scriptArea = document.getElementById('maestro-mass-msg');
+    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
+
+    // 🔑 CHAVE MESTRA: Substitua pelo código AAAA... do seu Firebase
+    const SERVER_KEY = "COLE_AQUI_SUA_SERVER_KEY";
+
+    try {
+        const confirmacao = confirm("🔔 Enviar notificação real para os celulares?");
+        if (!confirmacao) return;
 
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        // 2. Localiza todos os usuários que aceitaram receber notificações
-        const q = query(collection(window.db, "usuarios"), where("push_enabled", "==", true));
-        const snap = await getDocs(q);
+        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
 
-        if (snap.empty) return alert("⚠️ Nenhum usuário disponível para receber Push.");
+        if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo.");
 
-        console.log(`📡 Iniciando transmissão para ${snap.size} dispositivos...`);
-
-        // 3. LOOP DE ESCALA: Percorre a lista de usuários e envia o sinal de rádio para o Google
         snap.forEach(async (uDoc) => {
             const user = uDoc.data();
-            // Se o usuário tem um endereço de entrega (Token), o Google envia a mensagem
             if (user.fcm_token) {
                 await fetch('https://fcm.googleapis.com/fcm/send', {
                     method: 'POST',
@@ -549,25 +557,16 @@ window.dispararMaestroExterno = async () => {
                     body: JSON.stringify({
                         to: user.fcm_token,
                         notification: {
-                            title: comando.titulo || "Informativo Atlivio",
-                            body: comando.msg,
+                            title: "Informativo Atlivio",
+                            body: scriptArea.value,
                             icon: "/favicon.ico",
                             click_action: "https://rede-atlivio.github.io/.com/"
                         },
-                        data: { // Dados extras para o Maestro no App ler ao abrir
-                            url: "/?aba=" + (comando.aba || "dashboard")
-                        }
+                        data: { url: "/?aba=" + document.getElementById('maestro-mass-action').value }
                     })
                 });
             }
         });
-
-        alert(`🚀 SINAL ENVIADO!\nTransmissão concluída para ${snap.size} aparelhos.`);
-        
-    } catch (e) {
-        alert("❌ ERRO NO DISPARO: Verifique se a Server Key está correta.");
-    }
-};
-// 🌍 EXPORTAÇÃO PARA O PAINEL: Torna as funções de marketing acessíveis ao HTML
-window.dispararMaestroExterno = dispararMaestroExterno;
-window.dispararMaestroInterno = dispararMaestroInterno;
+        alert("🚀 Sinal enviado para " + snap.size + " aparelhos!");
+    } catch (e) { alert("Erro no Push: " + e.message); }
+}; // <-- AQUI FECHA A FUNÇÃO EXTERNA CORRETAMENTE
