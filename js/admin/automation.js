@@ -790,3 +790,63 @@ window.ativarGatilhoChatRealtime = async () => {
 
     console.log("🛰️ Sentinela Atlivio V3.5 Online.");
 };
+// ============================================================================
+// 🎼 LÓGICA MESTRA: MAESTRO FLOW V50 (O QUE FALTAVA) ──▶
+// ============================================================================
+
+// 💾 PASSO 2: SALVAR E SINCRONIZAR ──▶
+window.salvarESincronizarRede = async function() {
+    const jsonArea = document.getElementById('maestro-flow-json');
+    if (!jsonArea || !jsonArea.value.trim()) return alert("❌ Digite o Script JSON antes de salvar!");
+
+    try {
+        const scriptValido = JSON.parse(jsonArea.value);
+        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+        // 🛡️ GRAVAÇÃO DE ESCALA: Salva o roteiro central para milhões de usuários lerem ──▶
+        await setDoc(doc(window.db, "settings", "maestro_flow"), {
+            script: scriptValido,
+            versao: "V50",
+            updated_at: serverTimestamp()
+        });
+
+        alert("💾 REDE SINCRONIZADA!\nO sinal foi propagado para o banco de dados.");
+    } catch (e) {
+        alert("❌ ERRO NO SCRIPT: Verifique se esqueceu alguma vírgula ou aspas.");
+    }
+};
+
+// 🔔 PASSO 3: DISPARAR PUSH (A ANTENA DO GOOGLE) ──▶
+window.ativarGatilhoPush = async function() {
+    // 🛡️ CHAVE VAPID REAL QUE VOCÊ ME ENVIOU ──▶
+    const VAPID_KEY = "BCw5YpjLvlm9UPEJOQNGocnpXdllamtPomsgoxVBbSlw68tu32THnvt6daIVsg8hBUtjS4pPn2FrxBXtN9-Ebv8";
+    
+    try {
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🚀 ORDEM DE DISPARO EXTERNO: Avisa o servidor para fazer o celular apitar ──▶
+        await addDoc(collection(window.db, "push_queue"), {
+            titulo: "Informativo Maestro",
+            mensagem: "Sua jornada de hoje começou! Confira os novos bônus.",
+            status: "pending",
+            created_at: serverTimestamp()
+        });
+
+        alert("🔔 PUSH ATIVADO!\nO sinal foi enviado para as torres de transmissão do Google.");
+    } catch (e) {
+        alert("❌ Falha no gatilho: " + e.message);
+    }
+};
+
+// 📅 PASSO 4: AGENDAR MESES ──▶
+window.agendarFluxoMensal = async function() {
+    const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    
+    // ⚙️ PILOTO AUTOMÁTICO: Liga a verificação diária de jornada ──▶
+    await updateDoc(doc(window.db, "settings", "global"), {
+        maestro_auto_pilot: true,
+        last_schedule: new Date()
+    });
+
+    alert("📅 AGENDAMENTO CONCLUÍDO!\nA automação de meses agora está vigiando a rede.");
+};
