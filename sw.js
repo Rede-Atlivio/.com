@@ -39,18 +39,7 @@ messaging.onBackgroundMessage((payload) => {
 
 const CACHE_NAME = 'atlivio-cache-v50'; 
 
-// 🛰️ INICIALIZAÇÃO FIREBASE (Dentro do Cérebro Único) ──▶
-firebase.initializeApp({
-    apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg",
-    authDomain: "atlivio-oficial-a1a29.firebaseapp.com",
-    projectId: "atlivio-oficial-a1a29",
-    storageBucket: "atlivio-oficial-a1a29.firebasestorage.app",
-    messagingSenderId: "887430049204",
-    appId: "1:887430049204:web:d205864a4b42d6799dd6e1"
-});
 
-// 🛰️ DEFINIÇÃO ÚNICA: Usamos var para garantir que não haja conflito de identificador ──▶
-var messaging = firebase.messaging();
 
 // 🔔 RECEPTOR DE PUSH EXTERNO (MAESTRO FLOW) ──▶
 messaging.onBackgroundMessage((payload) => {
