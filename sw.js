@@ -39,21 +39,6 @@ messaging.onBackgroundMessage((payload) => {
 
 const CACHE_NAME = 'atlivio-cache-v50'; 
 
-
-
-// 🔔 RECEPTOR DE PUSH EXTERNO (MAESTRO FLOW) ──▶
-messaging.onBackgroundMessage((payload) => {
-    console.log('📬 Mensagem recebida em background:', payload);
-    const notificationTitle = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
-    const notificationOptions = {
-        body: payload.data?.message || payload.notification?.body || "Confira as novidades no App!",
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        data: { url: payload.data?.url || '/' }
-    };
-    self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
 // Arquivos que NUNCA devem ir para o cache (Sempre frescos)
 const NEVER_CACHE = [
     'request.js',
