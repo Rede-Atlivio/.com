@@ -122,7 +122,8 @@ function switchTab(tabName, isAutoBoot = false) {
         'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
         'extra': 'missoes', 'missoes': 'missoes',
         'oportunidades': 'oportunidades',
-        'produtos': 'loja', 'loja': 'loja',
+        'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
+        'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
         'canal': 'canal', 'tutorials': 'canal',
         'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
     };
