@@ -214,18 +214,23 @@ window.fecharNotificacao = async (id) => {
    // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código ──▶
     if (id && id.toString().includes('auto_')) return; 
     try {
-        // 2. Usamos a blindagem global para garantir que o comando chegue ao Google
+        // 🛡️ FILTRO DE SEGURANÇA: Se a notificação for do sistema automático (auto_) ou de teste, não tenta apagar no banco
+        if (id && (id.toString().includes('auto_') || id.toString().includes('TESTE'))) {
+            console.log("ℹ️ [Maestro] Notificação local/automática removida da tela.");
+            return;
+        }
+
         const { doc, updateDoc } = window.firebaseModules;
-        // 🛡️ Blindagem: Forçamos o ID a ser String pura para o Google não dar erro 400 ──▶
+        
+        // 🎯 AJUSTE DE MIRA: Só tenta atualizar se o ID for um documento real do Firestore
         const notifRef = doc(window.db, "user_notifications", id.toString());
         
-        // 3. Marca como lido. O onSnapshot vai detectar isso e não criará loop porque o filtro é (read == false)
         await updateDoc(notifRef, { 
             read: true,
             atendido_em: new Date() 
         });
         
-        console.log(`✅ [Maestro] Notificação ${id} baixada no banco de dados.`);
+        console.log(`✅ [Maestro] Notificação ${id} baixada no banco.`);
     } catch(e) { 
         console.error("❌ Erro ao dar baixa na notificação:", e); 
     }
