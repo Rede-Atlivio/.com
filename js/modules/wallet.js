@@ -348,33 +348,26 @@ window.abrirCheckoutPix = async function(valor) {
     const user = auth.currentUser;
     if (!user) return alert("Por favor, faça login para recarregar.");
 
-    console.log(`🚀 Iniciando automação de recarga: R$ ${valor}`);
-
-    // Configuração baseada na documentação que você localizou
-    const payload = {
-        "handle": "atlivio-servicos", 
-        "order_nsu": user.uid, // O segredo da automação: rastreia o usuário
-        "itens": [
-            {
-                "quantity": 1,
-                "price": valor * 100, // InfinitePay usa centavos (Ex: 2000 = R$ 20)
-                "description": `Recarga de Saldo - Atlivio`
-            }
-        ]
-    };
-
-    // No Estágio 02 real, faremos um fetch para o seu Firebase Function aqui.
-    // 🌍 GPS FINANCEIRO: Define para onde a InfinitePay deve avisar que o dinheiro caiu
+    // 🌍 GPS FINANCEIRO: O endereço do seu Robô Verde no Google Cloud
     const webhookOficial = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
     
-    // 🔗 LINK DINÂMICO 2026: Monta a URL com Valor, ID do Usuário e o Webhook de destino
-    const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+    // 🤖 LÓGICA DE INTELIGÊNCIA: Decide qual link usar baseado no valor
+    let linkFinal = "";
     
-    // 🚀 EXECUÇÃO: Registra no console para auditoria e abre o checkout para o cliente
-    console.log("🔗 Link com Webhook Gerado:", linkDinamico);
-    window.open(linkDinamico, '_blank');
-};
+    if (valor == 20) {
+        // Usa o checkout fixo que você acabou de criar para R$ 20
+        linkFinal = `https://checkout.infinitepay.io/atlivio-servicos/2SUGlcd2Mz?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+    } else {
+        // 🚀 MODO ESCALÁVEL: Para 50, 100, 200... usa o link de valor aberto da sua conta
+        // Importante: No painel InfinitePay, seu link 'atlivio-servicos' deve estar como 'valor aberto'
+        linkFinal = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+    }
 
+    console.log(`💰 Processando Recarga de R$ ${valor}`);
+    console.log("🔗 Link Gerado:", linkFinal);
+    
+    window.open(linkFinal, '_blank');
+};
 //PONTO CRÍTICO: LEDGER IMUTÁVEL APÓS NOVA INTERFACE: LINHAS 270 A 333
 /**
  * 📖 CARREGAR HISTÓRICO (FASE 8.5 - LEDGER IMUTÁVEL)
