@@ -364,11 +364,14 @@ window.abrirCheckoutPix = async function(valor) {
     };
 
     // No Estágio 02 real, faremos um fetch para o seu Firebase Function aqui.
-    // Para resolver seu erro 404 AGORA e manter a automação:
-    // A VERSÃO BLINDADA COM GPS INTEGRADO:
-const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=https://receber-pix-infinitepay-887430049204.us-central1.run.app`;
+    // 🌍 GPS FINANCEIRO: Define para onde a InfinitePay deve avisar que o dinheiro caiu
+    const webhookOficial = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
     
-    console.log("🔗 Link Automático Gerado:", linkDinamico);
+    // 🔗 LINK DINÂMICO 2026: Monta a URL com Valor, ID do Usuário e o Webhook de destino
+    const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+    
+    // 🚀 EXECUÇÃO: Registra no console para auditoria e abre o checkout para o cliente
+    console.log("🔗 Link com Webhook Gerado:", linkDinamico);
     window.open(linkDinamico, '_blank');
 };
 
