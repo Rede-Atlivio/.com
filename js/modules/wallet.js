@@ -359,7 +359,8 @@ window.abrirCheckoutPix = async function(valor) {
         // Este formato força a InfinitePay a usar a sua Tag Global, que aceita qualquer valor.
         // 🔨 ROTA MARTELO: Esta URL ignora o "produto" e vai direto para a sua TAG de recebimento PIX
     // Usamos 'atlivio-servicos' (Sua Tag) + valor (em reais) + os seus rastros de Webhook
-    linkFinal = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+    // 🔗 FORMATO DE COMPATIBILIDADE: Tenta forçar a InfinitePay a aceitar o valor via parâmetro 'amount'
+    linkFinal = `https://pay.infinitepay.io/atlivio-servicos?amount=${valor}&order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
     }
 
     console.log(`💰 Gerando Pagamento: R$ ${valor}`);
