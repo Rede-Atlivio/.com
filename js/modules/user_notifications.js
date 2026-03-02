@@ -122,19 +122,18 @@ window.processarFluxoAutomatico = async (user) => {
         // Passo 3: Procura no JSON se existe uma ordem para o dia de hoje
         const ordemDeHoje = roteiro.fluxo.find(f => f.dia === diaAtualDoUsuario);
 
+       
+       // 🎯 LOGICA DE DISPARO INTELIGENTE: Se houver ordem para hoje, avisa o robô externo
         if (ordemDeHoje) {
-            console.log("🎯 Maestro: Ordem encontrada! Disparando balão automático...");
+            console.log("🎯 Maestro: Ordem de roteiro encontrada! Acionando transmissor externo...");
             
-            // Passo 4: Constrói os dados para o balão visual (Slate-900)
-            const dadosNotif = {
-                title: roteiro.campanha || "Aviso Atlivio",
-                message: ordemDeHoje.mensagem,
-                action: ordemDeHoje.destino,
-                type: 'marketing'
-            };
-
-            // Mostra o balão na tela do usuário sem ele precisar clicar em nada
-            window.mostrarBarraNotificacao(`auto_${diaAtualDoUsuario}`, dadosNotif);
+            // Em vez de só mostrar na tela, usamos a nova função para garantir que o Google Cloud registre a mensagem
+            window.dispararNotificacaoExterna(
+                user.uid, 
+                roteiro.campanha || "Aviso Atlivio", 
+                ordemDeHoje.mensagem, 
+                'marketing'
+            );
         }
 
     } catch (e) {
