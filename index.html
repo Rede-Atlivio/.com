@@ -704,20 +704,19 @@
             const select = document.getElementById('select-recarga');
             if (!select) return;
 
-            const option = select.options[select.selectedIndex];
-            const link = option.getAttribute('data-link');
             const valor = parseInt(select.value);
 
-            // --- A TRAVA INVISÍVEL 🛡️ ---
+            // --- 🛡️ TRAVA DE SEGURANÇA PARA MILHÕES DE USUÁRIOS ---
             if (valor > 500 && !USUARIO_VERIFICADO) {
-                alert("🔒 SEGURANÇA:\n\nPara fazer recargas acima de R$ 500,00, você precisa completar pelo menos 1 serviço ou verificar sua identidade.\n\nPor favor, escolha um valor menor para começar.");
+                alert("🔒 SEGURANÇA:\n\nPara recargas acima de R$ 500,00, é necessária verificação de conta.\n\nEscolha um valor menor para começar.");
                 return;
             }
 
-            if (link && link.startsWith('http')) {
-                window.open(link, '_blank');
+            // 🚀 DISPARO DO MOTOR DINÂMICO: Chama a função blindada do seu wallet.js
+            if (window.abrirCheckoutPix) {
+                window.abrirCheckoutPix(valor);
             } else {
-                alert("⚠️ Link de pagamento indisponível no momento.");
+                alert("⚠️ Erro: O Motor Financeiro ainda não carregou. Tente novamente em 2 segundos.");
             }
         }
     </script>
