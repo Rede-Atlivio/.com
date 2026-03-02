@@ -346,3 +346,40 @@ window.carregarHistoricoNotificacoes = async () => {
         lista.innerHTML = '<p class="text-center text-red-400 text-xs py-10">Erro ao carregar mensagens.</p>';
     }
 };
+/**
+ * 🚀 TRANSMISSOR MAESTRO V50: Envia ordens para o Robô Externo (Google Cloud Functions)
+ * Esta função permite que o site "grite" para o servidor e o servidor avise o usuário.
+ * Preparado para milhões de requisições simultâneas.
+ */
+window.dispararNotificacaoExterna = async (uid, titulo, mensagem, tipo = 'marketing') => {
+    // 🌍 ENDEREÇO DO ROBÔ: O link que acabamos de criar e testar no Google Cloud
+    const URL_ROBO_MAESTRO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
+    
+    console.log(`📡 [Transmissor] Enviando ordem externa para o UID: ${uid}`);
+
+    try {
+        // Envia os dados para o Google Cloud via POST (formato seguro de envio)
+        const resposta = await fetch(URL_ROBO_MAESTRO, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                uid: uid,
+                titulo: titulo,
+                mensagem: mensagem,
+                tipo: tipo
+            })
+        });
+
+        // Aguarda a resposta do servidor (Deve ser "OK")
+        const status = await resposta.text();
+        
+        if (status === "OK") {
+            console.log("✅ [Transmissor] Sucesso: O Google Cloud recebeu a notificação!");
+        } else {
+            console.warn("⚠️ [Transmissor] O Robô respondeu, mas com erro:", status);
+        }
+    } catch (error) {
+        // Caso a internet caia ou o servidor esteja fora, o sistema não trava, apenas loga o erro
+        console.error("🔥 [Transmissor] Erro crítico ao falar com o Google Cloud:", error);
+    }
+};
