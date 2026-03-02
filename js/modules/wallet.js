@@ -346,24 +346,25 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
 // 🩹 CORREÇÃO GHOSTBUSTER: Uso de 'async function' para evitar falso positivo
 window.abrirCheckoutPix = async function(valor) {
     const user = auth.currentUser;
-    if (!user) return alert("Por favor, faça login!");
+    if (!user) return alert("Faça login!");
 
-    const webhookOficial = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
-    let linkFinal = "";
-    
+    const webhook = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
+    let linkBase = "";
+
+    // 🎯 MAPEAMENTO DOS SEUS LINKS FIXOS
     if (valor == 20) {
-        // ✅ LINK HOMOLOGADO: O que você criou manualmente e já funciona.
-        linkFinal = `https://checkout.infinitepay.io/atlivio-servicos/2SUGlcd2Mz?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/2SUGlcd2Mz";
+    } else if (valor == 50) {
+        // TROQUE PELO LINK QUE VOCÊ VAI CRIAR AGORA
+        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/COLE_AQUI"; 
     } else {
-        // 🚀 LINK COBRANÇA DIRETA: Mudamos de 'checkout' para 'pay' e removemos a subpasta.
-        // Este formato força a InfinitePay a usar a sua Tag Global, que aceita qualquer valor.
-        // 🔨 ROTA MARTELO: Esta URL ignora o "produto" e vai direto para a sua TAG de recebimento PIX
-    // Usamos 'atlivio-servicos' (Sua Tag) + valor (em reais) + os seus rastros de Webhook
-    // 🔗 FORMATO DE COMPATIBILIDADE: Tenta forçar a InfinitePay a aceitar o valor via parâmetro 'amount'
-    linkFinal = `https://pay.infinitepay.io/atlivio-servicos?amount=${valor}&order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+        return alert("Use o valor de R$ 20 para testar o sistema agora.");
     }
 
-    console.log(`💰 Gerando Pagamento: R$ ${valor}`);
+    // 🚀 O SEGREDO DA VITÓRIA: Adiciona o ID do usuário no link oficial
+    const linkFinal = `${linkBase}?order_nsu=${user.uid}&webhook_url=${webhook}`;
+
+    console.log("💰 Abrindo link oficial com rastreio:", linkFinal);
     window.open(linkFinal, '_blank');
 };
 //PONTO CRÍTICO: LEDGER IMUTÁVEL APÓS NOVA INTERFACE: LINHAS 270 A 333
