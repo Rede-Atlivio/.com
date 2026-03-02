@@ -348,41 +348,29 @@ window.abrirCheckoutPix = async function(valor) {
     const user = auth.currentUser;
     if (!user) return alert("Por favor, faça login!");
 
-    // 🌍 GPS FINANCEIRO (Google Cloud)
+   // 🌍 ENDEREÇO DO ROBÔ (O cérebro que você ressuscitou no Google Cloud)
     const webhook = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
     let linkBase = "";
 
-    // 🎯 MAPEAMENTO DOS LINKS REAIS QUE VOCÊ CRIOU
-    // Cada valor agora aponta exatamente para o link oficial da InfinitePay
-    if (valor == 20) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/1TUi45d4Th";
-    } else if (valor == 50) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/jkLCOttPD";
-    } else if (valor == 100) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/99GfJyoq3";
-    } else if (valor == 200) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/2SUU4yP26N";
-    } else if (valor == 300) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/2SUUGOmtPL";
-    } else if (valor == 500) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/jkLd3nQM5";
-    } else if (valor == 1000) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/1TUhOdZ8ad";
-    } else if (valor == 2000) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/2SUVAIvQMP";
-    } else if (valor == 3000) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/7NTWVWSBU7";
-    } else if (valor == 4000) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/3gjlUFObIZ";
-    } else if (valor == 5000) {
-        linkBase = "https://checkout.infinitepay.io/atlivio-servicos/7NTXamCMWX";
-    } else {
-        return alert("Valor de recarga não mapeado. Escolha um valor padrão do site.");
+    // 🎯 DICIONÁRIO DE LINKS: Mapeia o valor escolhido para o link oficial da InfinitePay
+    const mapaLinks = {
+        20: "1TUi45d4Th", 50: "jkLCOttPD", 100: "99GfJyoq3", 
+        200: "2SUU4yP26N", 300: "2SUUGOmtPL", 500: "jkLd3nQM5", 
+        1000: "1TUhOdZ8ad", 2000: "2SUVAIvQMP", 3000: "7NTWVWSBU7", 
+        4000: "3gjlUFObIZ", 5000: "7NTXamCMWX"
+    };
+
+    const codigoProduto = mapaLinks[valor];
+
+    if (!codigoProduto) {
+        return alert("⚠️ Valor não mapeado. Por favor, escolha um valor sugerido na tela.");
     }
 
-    // 🚀 A BLINDAGEM FINAL:
-    // Pegamos o link oficial e "espetamos" o seu ID e o Webhook. 
-    // Isso garante que a InfinitePay avise seu Robô QUEM pagou.
+    linkBase = `https://checkout.infinitepay.io/atlivio-servicos/${codigoProduto}`;
+
+    // 🚀 SINCRONIA DE IDENTIDADE: 
+    // Anexamos o UID do usuário (order_nsu) e o Webhook do Robô (webhook_url).
+    // Sem isso, o dinheiro entra mas o saldo não sobe automaticamente.
     const linkFinal = `${linkBase}?order_nsu=${user.uid}&webhook_url=${webhook}`;
 
     console.log(`💰 Abrindo Recarga de R$ ${valor} para o usuário ${user.uid}`);
