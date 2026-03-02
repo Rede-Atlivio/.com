@@ -346,26 +346,21 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
 // 🩹 CORREÇÃO GHOSTBUSTER: Uso de 'async function' para evitar falso positivo
 window.abrirCheckoutPix = async function(valor) {
     const user = auth.currentUser;
-    if (!user) return alert("Por favor, faça login para recarregar.");
+    if (!user) return alert("Por favor, faça login!");
 
-    // 🌍 GPS FINANCEIRO: O endereço do seu Robô Verde no Google Cloud
     const webhookOficial = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
-    
-    // 🤖 LÓGICA DE INTELIGÊNCIA: Decide qual link usar baseado no valor
     let linkFinal = "";
     
     if (valor == 20) {
-        // Usa o checkout fixo que você acabou de criar para R$ 20
+        // ✅ LINK HOMOLOGADO: O que você criou manualmente e já funciona.
         linkFinal = `https://checkout.infinitepay.io/atlivio-servicos/2SUGlcd2Mz?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
     } else {
-        // 🚀 MODO ESCALÁVEL: Para 50, 100, 200... usa o link de valor aberto da sua conta
-        // Importante: No painel InfinitePay, seu link 'atlivio-servicos' deve estar como 'valor aberto'
-        linkFinal = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
+        // 🚀 LINK COBRANÇA DIRETA: Mudamos de 'checkout' para 'pay' e removemos a subpasta.
+        // Este formato força a InfinitePay a usar a sua Tag Global, que aceita qualquer valor.
+        linkFinal = `https://pay.infinitepay.io/atlivio-servicos?amount=${valor * 100}&order_nsu=${user.uid}&webhook_url=${webhookOficial}`;
     }
 
-    console.log(`💰 Processando Recarga de R$ ${valor}`);
-    console.log("🔗 Link Gerado:", linkFinal);
-    
+    console.log(`💰 Gerando Pagamento: R$ ${valor}`);
     window.open(linkFinal, '_blank');
 };
 //PONTO CRÍTICO: LEDGER IMUTÁVEL APÓS NOVA INTERFACE: LINHAS 270 A 333
