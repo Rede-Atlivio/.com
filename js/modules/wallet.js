@@ -365,7 +365,8 @@ window.abrirCheckoutPix = async function(valor) {
 
     // No Estágio 02 real, faremos um fetch para o seu Firebase Function aqui.
     // Para resolver seu erro 404 AGORA e manter a automação:
-    const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}`;
+    // A VERSÃO BLINDADA COM GPS INTEGRADO:
+const linkDinamico = `https://pay.infinitepay.io/atlivio-servicos/${valor}?order_nsu=${user.uid}&webhook_url=https://receber-pix-infinitepay-887430049204.us-central1.run.app`;
     
     console.log("🔗 Link Automático Gerado:", linkDinamico);
     window.open(linkDinamico, '_blank');
