@@ -107,18 +107,12 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-            // 🚀 GATILHO MAESTRO: Detecta se o saldo subiu para oferecer a Loja
-            // Comparamos o sReal atual com o que estava salvo na memória global (window.ultimoSaldoConhecido)
-            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-                console.log("🪙 LUCRO DETECTADO! Chamando Maestro para converter em Produtos.");
-                if (window.mostrarBarraNotificacao) {
-                    window.mostrarBarraNotificacao("lucro_atlivio", {
-                        type: 'wallet',
-                        action: 'produtos', // Alvo: Aba Loja
-                        message: "Seu saldo subiu! 🔥 Que tal usar seu lucro para investir em destaque na Loja?"
-                    });
-                }
-            }
+          // 🚀 MAESTRO SENSORIAL: Detecta aumento de saldo (PIX ou Ganhos)
+            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
+                console.log("🪙 MOVIMENTAÇÃO POSITIVA: Atualizando interfaces e silenciando avisos duplicados.");
+                // Aqui não disparamos 'mostrarBarraNotificacao' manualmente porque o Robô de PIX (Cloud Run) já vai fazer isso via Maestro. 
+                // Evitamos que o usuário receba duas mensagens iguais ao mesmo tempo.
+            }
             // Guarda o saldo atual para a próxima comparação
             window.ultimoSaldoConhecido = sReal;
 
