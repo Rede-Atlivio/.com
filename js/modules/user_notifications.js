@@ -297,10 +297,9 @@ window.carregarHistoricoNotificacoes = async () => {
         
         // 🛡️ MODO SEGURO: Faxina automática removida para evitar loop de processos.
         
-        // Busca as últimas 20 notificações do usuário
+        // 🎯 SINCRONIA: Busca o histórico real de notificações dentro da pasta do usuário
         const q = query(
-            collection(window.db, "user_notifications"), // 🛡️ Correção: Usa o banco global para não dar erro de referência nula ──▶
-            where("userId", "==", uid),
+            collection(window.db, "usuarios", uid, "notificacoes"),
             orderBy("created_at", "desc"),
             limit(20)
         );
