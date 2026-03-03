@@ -221,12 +221,12 @@ window.fecharNotificacao = async (id) => {
 
         const { doc, updateDoc } = window.firebaseModules;
         
-        // 🎯 AJUSTE DE MIRA: Só tenta atualizar se o ID for um documento real do Firestore
-        const notifRef = doc(window.db, "user_notifications", id.toString());
+        // 🎯 AJUSTE DE MIRA: Aponta para a subcoleção correta para dar baixa no alerta
+        const notifRef = doc(window.db, "usuarios", window.auth.currentUser.uid, "notificacoes", id.toString());
         
         await updateDoc(notifRef, { 
-            read: true,
-            atendido_em: new Date() 
+            read: true, // Marca como lida para sumir do badge e da tela
+            atendido_em: new Date() // Registra o momento que o usuário clicou
         });
         
         console.log(`✅ [Maestro] Notificação ${id} baixada no banco.`);
