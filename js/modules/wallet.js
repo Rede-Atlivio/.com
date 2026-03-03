@@ -318,9 +318,9 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
                 updated_at: serverTimestamp()
             });
 
-            // Sincroniza com o espelho do radar
-            const provDoc = await transaction.get(providerRef);
-            if(provDoc.exists()) transaction.update(providerRef, { wallet_balance: novoSaldo });
+            // 🎯 SINCRONIA TOTAL: O Radar usa 'balance'. Garantimos que o Cobrador fale a mesma língua do Robô de PIX.
+            const provDoc = await transaction.get(providerRef);
+            if(provDoc.exists()) transaction.update(providerRef, { balance: novoSaldo });
 
             const newHistRef = doc(collection(db, "transactions")); 
             transaction.set(newHistRef, {
