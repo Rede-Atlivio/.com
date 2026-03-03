@@ -222,7 +222,15 @@ window.fecharNotificacao = async (id) => {
         const { doc, updateDoc } = window.firebaseModules;
         
         // 🎯 AJUSTE DE MIRA: Aponta para a subcoleção correta para dar baixa no alerta
-        const notifRef = doc(window.db, "usuarios", window.auth.currentUser.uid, "notificacoes", id.toString());
+        // 🛡️ Trava Maestro: Verifica se o ID recebido é o próprio UID (erro de clique) ou o ID real da mensagem
+const idReal = id.toString() === window.auth.currentUser.uid ? null : id.toString();
+
+if (!idReal) {
+    console.warn("⚠️ [Maestro] Tentativa de baixar notificação sem ID válido. Ignorando...");
+    return;
+}
+
+const notifRef = doc(window.db, "usuarios", window.auth.currentUser.uid, "notificacoes", idReal);
         
         await updateDoc(notifRef, { 
             read: true, // Marca como lida para sumir do badge e da tela
