@@ -205,39 +205,40 @@ function gerarTextoBotao(action) {
 // Ações Globais
 /* 🧼 FAXINA MAESTRO: Remove o balão e marca como lido no Firebase */
 // 🧼 FAXINA MAESTRO V40: Remove o balão e garante a baixa no Firebase usando módulos globais
+// 🧼 FAXINA MAESTRO V40: Remove o balão e garante a baixa no Firebase usando módulos globais
 window.fecharNotificacao = async (id) => {
     // 1. Remove o alerta da tela IMEDIATAMENTE (Sensação de velocidade para o Gil)
     const alerta = document.getElementById('user-alert-bar');
     if(alerta) alerta.remove(); 
+
+    // 🛡️ BLINDAGEM V40.1: Se não houver ID ou ele for indefinido, encerra aqui sem erro
+    if (!id || id === 'undefined' || id === null) {
+        console.warn("⚠️ [Maestro] Tentativa de baixar notificação sem ID válido. Ignorando...");
+        return;
+    }
     
-   // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código ──▶
-    if (id && id.toString().includes('auto_')) return; 
+    // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código
+    const idString = id.toString();
+    
+    // 🛡️ FILTRO DE SEGURANÇA: Se a notificação for do sistema automático (auto_) ou de teste, não tenta apagar no banco
+    if (idString.includes('auto_') || idString.includes('TESTE')) {
+        console.log("ℹ️ [Maestro] Notificação local/automática removida da tela.");
+        return;
+    }
+
     try {
-        // 🛡️ FILTRO DE SEGURANÇA: Se a notificação for do sistema automático (auto_) ou de teste, não tenta apagar no banco
-        if (id && (id.toString().includes('auto_') || id.toString().includes('TESTE'))) {
-            console.log("ℹ️ [Maestro] Notificação local/automática removida da tela.");
-            return;
-        }
-
         const { doc, updateDoc } = window.firebaseModules;
+        if (!window.db) throw "Banco de dados não carregado.";
         
-        // 🎯 AJUSTE DE MIRA: Aponta para a subcoleção correta para dar baixa no alerta
-        // 🛡️ Trava Maestro: Verifica se o ID recebido é o próprio UID (erro de clique) ou o ID real da mensagem
-const idReal = id.toString() === window.auth.currentUser.uid ? null : id.toString();
-
-if (!idReal) {
-    console.warn("⚠️ [Maestro] Tentativa de baixar notificação sem ID válido. Ignorando...");
-    return;
-}
-
-const notifRef = doc(window.db, "usuarios", window.auth.currentUser.uid, "notificacoes", idReal);
+        // 🎯 AJUSTE DE MIRA: Aponta para o documento correto na coleção antiga (até migrarmos)
+        const notifRef = doc(window.db, "user_notifications", idString);
         
         await updateDoc(notifRef, { 
-            read: true, // Marca como lida para sumir do badge e da tela
-            atendido_em: new Date() // Registra o momento que o usuário clicou
+            read: true,
+            atendido_em: new Date() 
         });
         
-        console.log(`✅ [Maestro] Notificação ${id} baixada no banco.`);
+        console.log(`✅ [Maestro] Notificação ${idString} baixada no banco.`);
     } catch(e) { 
         console.error("❌ Erro ao dar baixa na notificação:", e); 
     }
