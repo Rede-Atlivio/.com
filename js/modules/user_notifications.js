@@ -25,12 +25,11 @@ window.iniciarSistemaNotificacoes = () => {
 };
 
     window.escutarNotificacoes = (uid) => {
-    // Busca notificações NÃO LIDAS (read == false)
+    // 🎯 AJUSTE DE MIRA: Agora vigia a subcoleção correta dentro do usuário
     const q = query(
-        collection(window.db, "user_notifications"), // 🛡️ Correção: Usa o banco global blindado ──▶
-        where("userId", "==", uid), 
-        where("read", "==", false),
-        orderBy("created_at", "desc")
+        collection(window.db, "usuarios", uid, "notificacoes"), 
+        where("read", "==", false), // Só traz o que o usuário ainda não viu
+        orderBy("created_at", "desc") // As mais novas aparecem primeiro
     );
 
     onSnapshot(q, (snap) => {
