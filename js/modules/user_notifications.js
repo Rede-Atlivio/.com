@@ -69,11 +69,22 @@ window.iniciarSistemaNotificacoes = () => {
                               (dados.action === 'wallet' && abaAtual === 'ganhar') ||
                               (dados.action === 'services' && abaAtual === 'servicos');
 
+        // 🛡️ Blindagem V50: Se o usuário já estiver na aba, silenciamos o alerta visual, mas FORÇAMOS a atualização dos dados
         if (jaEstaNoLugar) {
-            console.log(`🔕 Notificação de ${dados.action} silenciada: Usuário já está na aba.`);
-            // Opcional: Marcar como lido automaticamente se quiser limpar o banco
-            // window.fecharNotificacao(notif.id); 
-            return;
+            console.log(`🔕 Maestro: Notificação de ${dados.action} silenciada, mas sincronizando dados em segundo plano...`);
+
+            // 💰 Independência Financeira: Se a ação for saldo (wallet), chama a carteira mesmo em silêncio
+            if ((dados.action === 'wallet' || dados.action === 'ganhar') && typeof window.iniciarMonitoramentoCarteira === 'function') {
+                console.log("🪙 Maestro: Gatilho de saldo detectado. Atualizando interface...");
+                window.iniciarMonitoramentoCarteira(); // Acorda o saldo imediatamente
+            }
+
+            // ✅ Baixa Automática: Marca como lida no banco para não ficar repetindo erro de "No document to update"
+            if (typeof window.fecharNotificacao === 'function') {
+                window.fecharNotificacao(notif.id); 
+            }
+            
+            return; // Sai da função sem mostrar a barra azul, mas com o saldo já atualizado
         }
 
         mostrarBarraNotificacao(notif.id, dados);
