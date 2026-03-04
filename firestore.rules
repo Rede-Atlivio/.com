@@ -29,7 +29,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isOwner(userId);
       // Admin pode tudo (regra global). Usuário só edita dados não-sensíveis.
       allow update: if isAuthenticated() && isOwner(userId) 
-                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['saldo', 'is_pro', 'is_demo'])); 
+
+    // 🛡️ TRAVA DE SEGURANÇA MESTRE: Impede que o usuário comum altere seu próprio saldo ou status.
+                    // Somente o Admin (seu robô) tem permissão para gravar nestes campos sensíveis.
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet_balance', 'wallet_reserved', 'wallet_earnings', 'is_pro', 'is_demo', 'saldo']));
     }
 
     // 2. PRESTADORES ONLINE
