@@ -461,8 +461,14 @@ window.salvarIntencaoMaestro = (escolha) => {
     window.switchTab(escolha);
 };
 auth.onAuthStateChanged(async (user) => {
-    if (user) {
+   if (user) {
         console.log("🔐 Autenticado com Sucesso V12");
+
+        // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
+        // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
+        if (window.carregarConfiguracoesIniciais) {
+            window.carregarConfiguracoesIniciais();
+        }
 
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
         /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
