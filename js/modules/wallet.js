@@ -566,36 +566,41 @@ window.filtrarGanhos = filtrarGanhos;
  * 🚀 Ativador do Botão de Recarga
  * Esta função identifica o clique no botão "GERAR PIX AGORA" e chama o robô vendedor.
  */
+/**
+ * 🚀 Ativador de Recarga V1.2 (Valores Fixos)
+ * Esta função captura o valor da lista de opções e dispara o checkout mapeado.
+ */
 document.addEventListener('click', async (e) => {
-    // 🔍 Verifica se o clique foi exatamente no botão de recarga do modal
+    // 🔍 Identifica o clique no botão principal de confirmação
     if (e.target && e.target.id === 'btn-fazer-recarga') {
         const btn = e.target;
-        const inputValor = document.getElementById('valor-recarga');
-        const valor = parseFloat(inputValor?.value || 0);
+        
+        // 📥 CAPTURA: Tenta ler de um select ou de botões de opção marcados
+        // Se o seu HTML usa um <select id="valor-recarga-lista">
+        const lista = document.getElementById('valor-recarga-lista');
+        let valorSelecionado = lista ? lista.value : "20"; // Padrão 20 se não achar nada
 
-        // 🛡️ VALIDAÇÃO DE SEGURANÇA: Mínimo configurado na plataforma
-        if (isNaN(valor) || valor < 5) {
-            return alert("⚠️ O valor mínimo para recarga é R$ 5,00.");
+        // 🧹 LIMPEZA: Remove R$, pontos e converte vírgula em ponto para o JS entender
+        const valorNumerico = parseFloat(valorSelecionado.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.'));
+
+        if (isNaN(valorNumerico) || valorNumerico < 20) {
+            return alert("⚠️ Selecione um valor a partir de R$ 20,00.");
         }
 
-        // 🔄 FEEDBACK VISUAL: Trava o botão para evitar múltiplas cobranças acidentais
         const textoOriginal = btn.innerText;
         btn.innerText = "⏳ GERANDO PIX...";
         btn.disabled = true;
 
         try {
-            // 📡 CHAMA O MOTOR NO AUTH.JS: A função global injetada pelo auth.js
+            // 📡 CONEXÃO: Envia o valor puro para o dicionário de links no auth.js
             if (typeof window.abrirCheckoutPix === 'function') {
-                await window.abrirCheckoutPix(valor);
-                console.log(`✅ [Wallet] Checkout iniciado para valor: R$ ${valor}`);
+                await window.abrirCheckoutPix(valorNumerico);
             } else {
-                throw new Error("Motor de pagamento não encontrado no sistema.");
+                alert("❌ Erro: Motor de pagamento offline.");
             }
         } catch (error) {
-            console.error("🔥 [Wallet] Erro ao iniciar recarga:", error.message);
-            alert("⚠️ Erro ao gerar pagamento. Tente novamente em instantes.");
+            console.error("🔥 Erro Recarga:", error);
         } finally {
-            // 🔓 RESTAURAÇÃO: Devolve o botão ao estado normal após a tentativa
             btn.innerText = textoOriginal;
             btn.disabled = false;
         }
