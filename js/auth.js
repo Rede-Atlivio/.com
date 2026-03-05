@@ -650,4 +650,48 @@ async function verificarSentenca(uid) {
 // 🌍 EXPOSIÇÃO GLOBAL V23 (PARA O CONSOLE E APP.JS VEREM AS FUNÇÕES)
 window.renderizarRadarOffline = renderizarRadarOffline;
 window.concederBonusSeAtivo = concederBonusSeAtivo;
-console.log("%c✅ AUTH.JS: Funções expostas com sucesso!", "color: #10b981; font-weight: bold;");
+/**
+ * ⚡ MOTOR DE CHECKOUT DINÂMICO V1.0
+ * Esta função liga para o seu Robô no Google Cloud, que por sua vez fala com a InfinitePay.
+ * Ela é blindada para suportar milhões de requisições e garantir que o ID do usuário vá no link.
+ */
+window.abrirCheckoutPix = async (valor) => {
+    // 🌍 ENDEREÇO DO SEU ROBÔ VENDEDOR (Gerado no Cloud Run)
+    const URL_ROBO_VENDEDOR = "https://gerar-checkout-infinitepay-887430049204.us-central1.run.app";
+    const uid = auth.currentUser?.uid;
+
+    if (!uid) return alert("❌ Erro: Você precisa estar logado para recarregar.");
+
+    console.log(`📡 [Checkout] Solicitando link de R$ ${valor} para o UID: ${uid}`);
+
+    try {
+        // Envia o pedido para o Robô (UID + VALOR EM CENTAVOS)
+        const resposta = await fetch(URL_ROBO_VENDEDOR, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: uid,
+                amount: valor * 100 // Converte R$ para centavos (Ex: 20 vira 2000)
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (dados.url) {
+            console.log("✅ [Checkout] Link gerado com sucesso! Redirecionando...");
+            // Abre o link da InfinitePay em uma nova aba para o usuário pagar
+            window.open(dados.url, '_blank');
+        } else {
+            throw new Error(dados.error || "Erro ao gerar link de pagamento.");
+        }
+
+    } catch (error) {
+        console.error("🔥 [Checkout] Erro crítico:", error.message);
+        alert("⚠️ Ocorreu um problema ao gerar o PIX. Tente novamente em instantes.");
+    }
+};
+
+// 🌍 EXPOSIÇÃO GLOBAL V24 (Garante que o botão do Index.html consiga enxergar as funções)
+window.renderizarRadarOffline = renderizarRadarOffline;
+window.concederBonusSeAtivo = concederBonusSeAtivo;
+console.log("%c✅ AUTH.JS: Motor de Checkout V1.0 e Funções expostas!", "color: #10b981; font-weight: bold;");
