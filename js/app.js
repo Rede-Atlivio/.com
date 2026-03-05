@@ -524,17 +524,15 @@ auth.onAuthStateChanged(async (user) => {
             checkOnboarding(user); 
         }
         
-        // 💰 Monitoramento Financeiro V11 (PIX Integrado)
-        // Ativa a escuta em tempo real do saldo para reagir ao recebimento do PIX.
-       if (typeof iniciarMonitoramentoCarteira === 'function') {
-    // Garante que a carteira seja a primeira a ouvir o banco, ignorando delays do Maestro
-    console.log("💰 [Maestro] Prioridade Financeira: Ativando radar de saldo...");
-    iniciarMonitoramentoCarteira();
-}
-        
-       // 🖥️ Montagem da Interface (Chamada única controlada)
-        if (!window.atlivioBootConcluido) {
-            window.carregarInterface(user);
+        // 💰 PRIORIDADE FINANCEIRA: Ativa o rastreador de PIX antes de montar a tela
+        if (typeof iniciarMonitoramentoCarteira === 'function') {
+            console.log("💰 [Maestro] Motor Financeiro: Ativando radar de saldo real-time...");
+            iniciarMonitoramentoCarteira(); // Liga a escuta do banco de dados para o saldo
+        }
+
+        // 🖥️ BOOT DA INTERFACE: Chama a montagem visual apenas se o sistema ainda não subiu
+        if (!window.atlivioBootConcluido) {
+            window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
         }
 
     } else {
