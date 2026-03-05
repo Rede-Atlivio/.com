@@ -1575,22 +1575,32 @@ window.verificarVidaUtilChat = async (pedido) => {
         } catch (e) { console.error("Erro no resgate Maestro:", e); }
     }
 };
-// 🚀 ATIVAÇÃO AUTOMÁTICA LAZARUS (Vigilante de Ciclo de Vida)
-setTimeout(async () => {
-    // 🛡️ Garante que o banco e a função existem antes de rodar
+/**
+ * 🕒 DESPERTADOR LAZARUS V26 (Sincronizado)
+ * Esta função substitui o gatilho automático por um comando controlado pelo Maestro.
+ * Agora ele só executa a varredura se o usuário estiver autenticado.
+ */
+window.ativarDespertadorLazarus = async function() {
+    console.log("🕒 Lazarus: Iniciando despertador de chats ativos...");
+    
     if (!window.db || !window.verificarVidaUtilChat) {
-        console.warn("🤖 Lazarus: Aguardando inicialização do banco...");
-        return;
+        return console.warn("🤖 Lazarus: Banco de dados ainda não disponível.");
     }
 
     try {
+        // Importação dinâmica para economizar memória em dispositivos humildes
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🔍 Busca apenas chats que ainda estão em negociação
         const q = query(collection(window.db, "orders"), where("status", "in", ["pending", "accepted"]));
         const snap = await getDocs(q);
         
         snap.forEach(d => {
             window.verificarVidaUtilChat({id: d.id, ...d.data()});
         });
-        console.log(`🤖 Lazarus: Varredura de inicialização concluída (${snap.size} verificados).`);
-    } catch (e) { console.error("❌ Erro no despertador Lazarus:", e); }
-}, 8000); // Aumentado para 8s para garantir que o login e o banco estejam 100% online
+
+        console.log(`✅ Lazarus: Varredura concluída (${snap.size} chats vigiados).`);
+    } catch (e) { 
+        console.error("❌ Erro na varredura Lazarus:", e.message); 
+    }
+};
