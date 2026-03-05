@@ -397,9 +397,9 @@ export async function iniciarRadarPrestador(uidManual = null) {
     window.HOUVE_BLOQUEIO_SESSAO = false;
   if (radarUnsubscribe) radarUnsubscribe();
 
-    // 🛡️ VÁLVULA DE BLOQUEIO IMEDIATO: Impede as 4 chamadas no boot
-    if (window.taxasSincronizadasRadar === false) {
-        window.taxasSincronizadasRadar = 'loading'; // Tranca a porta instantaneamente
+    // 🛡️ VÁLVULA INTELIGENTE V28: Permite a tentativa, mas não tranca se falhar
+if (!window.taxasSincronizadasRadar || window.taxasSincronizadasRadar === 'error') {
+    window.taxasSincronizadasRadar = 'loading'; // Inicia a tentativa de sincronia
         const configRef = doc(db, "settings", "financeiro");
         getDoc(configRef).then(s => { 
             if(s.exists()) {
