@@ -23,36 +23,35 @@ if ('serviceWorker' in navigator) {
 import { app, auth, db, storage, provider } from './config.js';
 import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🛰️ MONITOR DE DEPLOY: Vigia ordens de limpeza global via documento real 'deploy'
-onSnapshot(doc(db, "settings", "deploy"), (snap) => {
-    if (snap.exists()) {
-        const data = snap.data();
-        // Converte o timestamp do Firebase para milissegundos para comparação precisa
-        const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
-        const ordemLocal = localStorage.getItem('last_force_reset') || 0;
+/**
+ * 🛰️ MONITOR DE DEPLOY V26 (Blindado)
+ * Esta função vigia ordens de limpeza global enviadas pelo Admin.
+ * Encapsulada para evitar erros de permissão antes do login.
+ */
+window.iniciarMonitorDeploy = function() {
+    onSnapshot(doc(db, "settings", "deploy"), (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
+            const ordemLocal = localStorage.getItem('last_force_reset') || 0;
 
-        // 🔥 GATILHO DE FAXINA: Se o Admin mandou um novo sinal, reseta tudo.
-        if (ultimaOrdem > ordemLocal) {
-            console.log("🧹 ORDEM DO ADMIN: Iniciando limpeza global de cache...");
-            localStorage.setItem('last_force_reset', ultimaOrdem);
-            
-            // 1. Desinstala Service Workers travados
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(regs => {
-                    for(let reg of regs) reg.unregister();
+            if (ultimaOrdem > ordemLocal) {
+                console.log("🧹 ORDEM DO ADMIN: Executando limpeza de cache...");
+                localStorage.setItem('last_force_reset', ultimaOrdem);
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(regs => {
+                        for(let reg of regs) reg.unregister();
+                    });
+                }
+                caches.keys().then(names => {
+                    for (let name of names) caches.delete(name);
+                }).then(() => {
+                    location.reload(true);
                 });
             }
-            
-            // 2. Limpa o armazenamento físico e recarrega a página limpa
-            caches.keys().then(names => {
-                for (let name of names) caches.delete(name);
-            }).then(() => {
-                console.log("🚀 Sistema limpo. Reiniciando...");
-                location.reload(true);
-            });
         }
-    }
-}, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
+    }, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
+};
 
 // ============================================================================
 
