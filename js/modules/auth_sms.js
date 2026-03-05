@@ -70,12 +70,16 @@ window.confirmarCodigoLogin = async function() {
         const snap = await getDoc(userRef);
         
         if(!snap.exists()) {
+            // 🛡️ CRIAÇÃO DE CONTA BLINDADA (SMS): Adiciona o campo oficial de carteira
+            // Isso garante que usuários de SMS também entrem no novo ecossistema financeiro.
             await setDoc(userRef, {
                 uid: result.user.uid,
                 phone: result.user.phoneNumber,
                 created_at: serverTimestamp(),
                 is_provider: false,
-                perfil_completo: false
+                perfil_completo: false,
+                wallet_balance: 0.00, // Novo campo padrão V11
+                status: 'ativo'
             });
             
             // 🔥 Gatilho de automação para bônus inicial via Admin
