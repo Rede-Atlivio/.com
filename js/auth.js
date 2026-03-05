@@ -186,28 +186,24 @@ window.alternarPerfil = async () => {
     }
 };
 
-// --- ENFORCER & MONITOR (VERSÃO V27 - SILENCIADA) ---
-// Adicionamos uma trava para garantir que as escutas só liguem quando o usuário estiver pronto
+// ============================================================================
+// 2. ENFORCER & MONITOR (VERSÃO V27 - SILENCIADA)
+// ============================================================================
 onAuthStateChanged(auth, async (user) => {
     const transitionOverlay = document.getElementById('transition-overlay');
     const isToggling = sessionStorage.getItem('is_toggling_profile'); 
 
     if (user) {
-        // 1. Bloqueia a interface para o Maestro assumir depois
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
         if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
         const userRef = doc(db, "usuarios", user.uid);
         
-        /** * 🛰️ MONITOR DE PERFIL V27 (SILENCIADO)
-         * Usamos getDoc primeiro para verificar se o usuário existe ANTES de ligar o Snapshot.
-         * Isso evita que o Firebase tente "ouvir" um documento que ele ainda não tem permissão.
-         */
+        /** 🛰️ MONITOR DE PERFIL V27: Faz getDoc para validar token antes do Snapshot */
         const initialCheck = await getDoc(userRef);
         
         if (!initialCheck.exists()) {
-             // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
              const trafficSource = localStorage.getItem("traffic_source") || "direct";
              const novoPerfil = { 
                  email: user.email, 
@@ -230,65 +226,50 @@ onAuthStateChanged(auth, async (user) => {
              await concederBonusSeAtivo(user.uid);
         }
 
-        // AGORA SIM, com o perfil garantido, ligamos a escuta em tempo real
+        // LIGA A ESCUTA EM TEMPO REAL APÓS VALIDAÇÃO
         onSnapshot(userRef, async (docSnap) => {
-            if (!docSnap.exists()) return;
-                } else {
-                    // CARREGAMENTO DE PERFIL EXISTENTE
-                    const data = docSnap.data();
-                    
-                    if (data.status === 'banido') console.warn("🚫 Usuário Banido.");
-                    if (data.status === 'suspenso' && data.is_online) {
-                        setDoc(doc(db, "active_providers", user.uid), { is_online: false }, { merge: true });
-                    }
-                    
-                    // 💰 BLINDAGEM DE SALDO V13: Leitura exclusiva do campo oficial - PONTO CRÍTICO SOLUÇÃO BÔNUS
-                    data.wallet_balance = parseFloat(data.wallet_balance || 0);
-                    if (isNaN(data.wallet_balance)) data.wallet_balance = 0;
+            try {
+                if (!docSnap.exists()) return;
+                const data = docSnap.data();
+                
+                if (data.status === 'banido') console.warn("🚫 Usuário Banido.");
+                if (data.status === 'suspenso' && data.is_online) {
+                    await setDoc(doc(db, "active_providers", user.uid), { is_online: false }, { merge: true });
+                }
+                
+                data.wallet_balance = parseFloat(data.wallet_balance || 0);
+                if (isNaN(data.wallet_balance)) data.wallet_balance = 0;
 
-                    // 🛰️ RASTREADOR DE PRESENÇA: Atualiza o banco sem dar reload na interface
-                    if (!window.presencaRegistrada) {
-                        updateDoc(userRef, { last_active: serverTimestamp() });
-                        window.presencaRegistrada = true;
-                    }
+                if (!window.presencaRegistrada) {
+                    updateDoc(userRef, { last_active: serverTimestamp() });
+                    window.presencaRegistrada = true;
+                }
 
-                    userProfile = data; 
-                    window.userProfile = data;
-                    
-                    aplicarRestricoesDeStatus(data.status);
-                    renderizarBotaoSuporte(); 
+                userProfile = data; 
+                window.userProfile = data;
+                aplicarRestricoesDeStatus(data.status);
+                renderizarBotaoSuporte(); 
 
-                   if (data.status !== 'banido') {
-                        atualizarInterfaceUsuario(userProfile);
-                        
-                        /* 🚀 SINCRONIA EXTERNA: Registra o celular no rádio do Google */
-                        capturarEnderecoNotificacao(user.uid);
-                        iniciarAppLogado(user); 
-                        
-                        if (userProfile.is_provider) {
-                            verificarStatusERadar(user.uid);
-                        }
-                    } // Fecha o else (Carregamento de perfil)
-                } // Fecha o if (!docSnap.exists())
+                if (data.status !== 'banido') {
+                    atualizarInterfaceUsuario(userProfile);
+                    capturarEnderecoNotificacao(user.uid);
+                    iniciarAppLogado(user); 
+                    if (userProfile.is_provider) verificarStatusERadar(user.uid);
+                }
             } catch (err) {
-                console.error("Erro perfil:", err); 
+                console.error("Erro perfil:", err);
                 iniciarAppLogado(user); 
             }
         });
     } else {
-        // 🆕 SE ESTIVER NA TROCA DE PERFIL, NÃO MOSTRA TELA DE LOGIN!
         if (isToggling) {
             document.getElementById('auth-container')?.classList.add('hidden');
             if (transitionOverlay) transitionOverlay.classList.remove('hidden');
-            return; // 🛑 PARA AQUI E NÃO RODA O CÓDIGO DE LOGOUT
+            return;
         }
-
-        // 3. Lógica de Logout / Usuário Deslogado (Só roda se NÃO for troca de perfil)
         document.getElementById('auth-container')?.classList.remove('hidden');
         document.getElementById('role-selection')?.classList.add('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
-        
-        // Garante que o overlay suma no login
         if (transitionOverlay) transitionOverlay.classList.add('hidden');
         removerBloqueiosVisuais();
     }
