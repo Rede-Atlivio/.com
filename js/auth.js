@@ -335,8 +335,15 @@ window.abrirChatSuporte = async () => {
 let unsubscribeSuporte = null;
 function carregarMensagensSuporte() {
     const container = document.getElementById('support-messages');
+    
+    // 🛡️ PROTEÇÃO V27: Se o Firebase ainda não logou, não tenta ler o suporte
+    if (!auth.currentUser) {
+        console.warn("📥 Suporte: Aguardando login para carregar mensagens...");
+        return;
+    }
+    
     const uid = auth.currentUser.uid;
-    if(unsubscribeSuporte) unsubscribeSuporte(); 
+    if(unsubscribeSuporte) unsubscribeSuporte();
     const q = query(collection(db, "support_tickets"), where("uid", "==", uid), orderBy("created_at", "asc"));
     unsubscribeSuporte = onSnapshot(q, (snap) => {
         container.innerHTML = "";
