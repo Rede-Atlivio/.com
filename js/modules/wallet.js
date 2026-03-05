@@ -558,3 +558,46 @@ window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
 window.definirMetaDiaria = definirMetaDiaria;
 window.filtrarGanhos = filtrarGanhos;
+// ============================================================================
+// 💳 CONEXÃO COM MOTOR DE RECARGA (PIX DINÂMICO V1.0)
+// ============================================================================
+
+/**
+ * 🚀 Ativador do Botão de Recarga
+ * Esta função identifica o clique no botão "GERAR PIX AGORA" e chama o robô vendedor.
+ */
+document.addEventListener('click', async (e) => {
+    // 🔍 Verifica se o clique foi exatamente no botão de recarga do modal
+    if (e.target && e.target.id === 'btn-fazer-recarga') {
+        const btn = e.target;
+        const inputValor = document.getElementById('valor-recarga');
+        const valor = parseFloat(inputValor?.value || 0);
+
+        // 🛡️ VALIDAÇÃO DE SEGURANÇA: Mínimo configurado na plataforma
+        if (isNaN(valor) || valor < 5) {
+            return alert("⚠️ O valor mínimo para recarga é R$ 5,00.");
+        }
+
+        // 🔄 FEEDBACK VISUAL: Trava o botão para evitar múltiplas cobranças acidentais
+        const textoOriginal = btn.innerText;
+        btn.innerText = "⏳ GERANDO PIX...";
+        btn.disabled = true;
+
+        try {
+            // 📡 CHAMA O MOTOR NO AUTH.JS: A função global injetada pelo auth.js
+            if (typeof window.abrirCheckoutPix === 'function') {
+                await window.abrirCheckoutPix(valor);
+                console.log(`✅ [Wallet] Checkout iniciado para valor: R$ ${valor}`);
+            } else {
+                throw new Error("Motor de pagamento não encontrado no sistema.");
+            }
+        } catch (error) {
+            console.error("🔥 [Wallet] Erro ao iniciar recarga:", error.message);
+            alert("⚠️ Erro ao gerar pagamento. Tente novamente em instantes.");
+        } finally {
+            // 🔓 RESTAURAÇÃO: Devolve o botão ao estado normal após a tentativa
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+        }
+    }
+});
