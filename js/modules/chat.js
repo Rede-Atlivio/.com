@@ -1591,9 +1591,19 @@ window.ativarDespertadorLazarus = async function() {
         // Importação dinâmica para economizar memória em dispositivos humildes
         const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 🔍 Busca apenas chats que ainda estão em negociação
-        const q = query(collection(window.db, "orders"), where("status", "in", ["pending", "accepted"]));
-        const snap = await getDocs(q);
+        // 🔍 VARREDURA SEGURA V27: O Lazarus agora só vigia os SEUS pedidos.
+        // Isso respeita as Rules do Firebase e elimina o erro de permissão no console.
+        const uid = window.auth?.currentUser?.uid;
+        if (!uid) return console.warn("🤖 Lazarus: Aguardando identificação para iniciar vigia.");
+
+        // Criamos duas buscas rápidas: uma como cliente e outra como prestador
+        const qCliente = query(collection(window.db, "orders"), where("client_id", "==", uid), where("status", "in", ["pending", "accepted"]));
+        const qPrestador = query(collection(window.db, "orders"), where("provider_id", "==", uid), where("status", "in", ["pending", "accepted"]));
+
+        const [snapC, snapP] = await Promise.all([getDocs(qCliente), getDocs(qPrestador)]);
+        
+        // Unifica os resultados para o Lazarus processar
+        const docsParaVigiar = [...snapC.docs, ...snapP.docs];
         
         snap.forEach(d => {
             window.verificarVidaUtilChat({id: d.id, ...d.data()});
