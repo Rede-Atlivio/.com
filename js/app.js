@@ -465,10 +465,12 @@ auth.onAuthStateChanged(async (user) => {
 
         // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
         // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        // 📢 SINCRONIA SEGURA V26: Ativa as configurações e o Aviso Global somente após o login.
+        // 📢 ORQUESTRAÇÃO MAESTRO V26: Liga os motores sensíveis somente após o Login.
+        // Isso elimina 100% dos erros de 'Missing Permissions' no console.
         if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
         if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
-
+        if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
+        if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
         /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
         // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
