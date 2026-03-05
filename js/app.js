@@ -526,9 +526,11 @@ auth.onAuthStateChanged(async (user) => {
         
         // 💰 Monitoramento Financeiro V11 (PIX Integrado)
         // Ativa a escuta em tempo real do saldo para reagir ao recebimento do PIX.
-        if (typeof iniciarMonitoramentoCarteira === 'function') {
-            iniciarMonitoramentoCarteira();
-        }
+       if (typeof iniciarMonitoramentoCarteira === 'function') {
+    // Garante que a carteira seja a primeira a ouvir o banco, ignorando delays do Maestro
+    console.log("💰 [Maestro] Prioridade Financeira: Ativando radar de saldo...");
+    iniciarMonitoramentoCarteira();
+}
         
        // 🖥️ Montagem da Interface (Chamada única controlada)
         if (!window.atlivioBootConcluido) {
