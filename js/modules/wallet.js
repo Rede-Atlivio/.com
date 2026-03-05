@@ -567,42 +567,44 @@ window.filtrarGanhos = filtrarGanhos;
  * Esta função identifica o clique no botão "GERAR PIX AGORA" e chama o robô vendedor.
  */
 /**
- * 🚀 Ativador de Recarga V1.2 (Valores Fixos)
- * Esta função captura o valor da lista de opções e dispara o checkout mapeado.
+// ============================================================================
+// 💳 MOTOR DE RECARGA DINÂMICO (V1.3 - COMPATÍVEL COM INDEX)
+// ============================================================================
+
+/**
+ * 🚀 Motor de Checkout Mestre
+ * Recebe o valor numérico enviado pelo Index.html e abre o link da InfinitePay.
  */
-document.addEventListener('click', async (e) => {
-    // 🔍 Identifica o clique no botão principal de confirmação
-    if (e.target && e.target.id === 'btn-fazer-recarga') {
-        const btn = e.target;
-        
-        // 📥 CAPTURA: Tenta ler de um select ou de botões de opção marcados
-        // Se o seu HTML usa um <select id="valor-recarga-lista">
-        const lista = document.getElementById('valor-recarga-lista');
-        let valorSelecionado = lista ? lista.value : "20"; // Padrão 20 se não achar nada
+window.abrirCheckoutPix = async function(valor) {
+    const user = auth.currentUser;
+    if (!user) return alert("❌ Sessão encerrada. Faça login para recarregar.");
 
-        // 🧹 LIMPEZA: Remove R$, pontos e converte vírgula em ponto para o JS entender
-        const valorNumerico = parseFloat(valorSelecionado.replace(/[^\d,.]/g, '').replace('.', '').replace(',', '.'));
+    // 🌍 Endereço do Robô de Sincronia (Cloud Run)
+    const webhook = "https://receber-pix-infinitepay-887430049204.us-central1.run.app";
+    
+    // 🎯 Mapa de Produtos (IDs oficiais da sua conta InfinitePay)
+    const mapaLinks = {
+        20: "1TUi45d4Th", 50: "jkLCOttPD", 100: "99GfJyoq3", 
+        200: "2SUU4yP26N", 300: "2SUUGOmtPL", 500: "jkLd3nQM5", 
+        1000: "1TUhOdZ8ad", 2000: "2SUVAIvQMP", 3000: "7NTWVWSBU7", 
+        4000: "3gjlUFObIZ", 5000: "7NTXamCMWX"
+    };
 
-        if (isNaN(valorNumerico) || valorNumerico < 20) {
-            return alert("⚠️ Selecione um valor a partir de R$ 20,00.");
-        }
+    const codigoProduto = mapaLinks[valor];
 
-        const textoOriginal = btn.innerText;
-        btn.innerText = "⏳ GERANDO PIX...";
-        btn.disabled = true;
-
-        try {
-            // 📡 CONEXÃO: Envia o valor puro para o dicionário de links no auth.js
-            if (typeof window.abrirCheckoutPix === 'function') {
-                await window.abrirCheckoutPix(valorNumerico);
-            } else {
-                alert("❌ Erro: Motor de pagamento offline.");
-            }
-        } catch (error) {
-            console.error("🔥 Erro Recarga:", error);
-        } finally {
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-        }
+    if (!codigoProduto) {
+        return alert("⚠️ Este valor não está disponível para recarga automática.");
     }
-});
+
+    const linkBase = `https://checkout.infinitepay.io/atlivio-servicos/${codigoProduto}`;
+
+    // 🚀 IDENTIDADE DIGITAL:
+    // order_nsu: Leva o UID do usuário para o robô saber quem pagou.
+    // webhook_url: Avisa para a InfinitePay onde avisar quando o PIX cair.
+    const linkFinal = `${linkBase}?order_nsu=${user.uid}&webhook_url=${webhook}`;
+
+    console.log(`💰 Recarga iniciada: R$ ${valor} | UID: ${user.uid}`);
+    
+    // Abre o checkout em uma nova aba
+    window.open(linkFinal, '_blank');
+};
