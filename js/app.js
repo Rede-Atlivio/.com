@@ -519,7 +519,8 @@ auth.onAuthStateChanged(async (user) => {
             checkOnboarding(user); 
         }
         
-        // 💰 Monitoramento Financeiro
+        // 💰 Monitoramento Financeiro V11 (PIX Integrado)
+        // Ativa a escuta em tempo real do saldo para reagir ao recebimento do PIX.
         if (typeof iniciarMonitoramentoCarteira === 'function') {
             iniciarMonitoramentoCarteira();
         }
