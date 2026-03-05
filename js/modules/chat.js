@@ -1605,7 +1605,7 @@ window.ativarDespertadorLazarus = async function() {
         // Unifica os resultados para o Lazarus processar
         const docsParaVigiar = [...snapC.docs, ...snapP.docs];
         
-        snap.forEach(d => {
+        docsParaVigiar.forEach(d => {
             window.verificarVidaUtilChat({id: d.id, ...d.data()});
         });
 
