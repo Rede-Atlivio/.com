@@ -604,7 +604,8 @@ async function verificarSentenca(uid) {
 // ============================================================================
 // 📢 SISTEMA DE AVISO GLOBAL (CLIENTE - ESCUTA EM TEMPO REAL)
 // ============================================================================
-(function IniciarAvisoGlobal() {
+// 📢 SINCRONIZADOR DE AVISO (V26): Agora protegido por login
+window.IniciarAvisoGlobal = function() {
     // Garante que o DB está carregado antes de tentar ouvir
     if (typeof db === 'undefined') return console.warn("Aviso Global: DB não pronto.");
 
