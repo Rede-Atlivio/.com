@@ -466,9 +466,9 @@ auth.onAuthStateChanged(async (user) => {
 
         // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
         // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        if (window.carregarConfiguracoesIniciais) {
-            window.carregarConfiguracoesIniciais();
-        }
+        // 📢 SINCRONIA SEGURA V26: Ativa as configurações e o Aviso Global somente após o login.
+        if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
+        if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
 
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
         /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
