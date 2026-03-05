@@ -348,7 +348,7 @@ window.abrirCheckoutPix = async function(valor) {
 
     // 🎯 DICIONÁRIO DE LINKS: Mapeia o valor escolhido para o link oficial da InfinitePay
     const mapaLinks = {
-        20: "1TUi45d4Th", 50: "jkLCOttPD", 100: "99GfJyoq3", 
+        20: "3hS2biT59D", 50: "jkLCOttPD", 100: "99GfJyoq3", 
         200: "2SUU4yP26N", 300: "2SUUGOmtPL", 500: "jkLd3nQM5", 
         1000: "1TUhOdZ8ad", 2000: "2SUVAIvQMP", 3000: "7NTWVWSBU7", 
         4000: "3gjlUFObIZ", 5000: "7NTXamCMWX"
