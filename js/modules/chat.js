@@ -1605,6 +1605,7 @@ window.ativarDespertadorLazarus = async function() {
         // Unifica os resultados para o Lazarus processar
         const docsParaVigiar = [...snapC.docs, ...snapP.docs];
         
+        // 🔄 LOOP DE VIGIA: Percorre a lista unificada de pedidos (Cliente + Prestador)
         docsParaVigiar.forEach(d => {
             window.verificarVidaUtilChat({id: d.id, ...d.data()});
         });
