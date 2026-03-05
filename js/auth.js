@@ -186,47 +186,53 @@ window.alternarPerfil = async () => {
     }
 };
 
-// --- ENFORCER & MONITOR (VERSÃO FINAL V10) ---
+// --- ENFORCER & MONITOR (VERSÃO V27 - SILENCIADA) ---
+// Adicionamos uma trava para garantir que as escutas só liguem quando o usuário estiver pronto
 onAuthStateChanged(auth, async (user) => {
     const transitionOverlay = document.getElementById('transition-overlay');
-    const isToggling = sessionStorage.getItem('is_toggling_profile'); // 🆕 LÊ A FLAG
+    const isToggling = sessionStorage.getItem('is_toggling_profile'); 
 
     if (user) {
-        // 1. Limpeza Visual Imediata (Esconde Login)
+        // 1. Bloqueia a interface para o Maestro assumir depois
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
-
-        // 🆕 SE LOGOU COM SUCESSO, REMOVE A FLAG (Ciclo completo)
         if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
         const userRef = doc(db, "usuarios", user.uid);
         
-        // 2. Monitoramento Real-time do Perfil (V25 Blindada)
-        onSnapshot(userRef, async (docSnap) => {
-            try {
-                if (!docSnap.exists()) {
-                    // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
-                    const trafficSource = localStorage.getItem("traffic_source") || "direct";
-                    const novoPerfil = { 
-                        email: user.email, 
-                        phone: user.phoneNumber, 
-                        displayName: user.displayName || "Usuário", 
-                        photoURL: user.photoURL, 
-                        tenant_id: DEFAULT_TENANT, 
-                        perfil_completo: false, 
-                        role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
-                        wallet_balance: 0.00, 
-                        // Campo saldo removido globalmente da criação de conta - PONTO CRÍTICO SOLUÇÃO BÔNUS
-                        is_provider: false, 
-                        created_at: serverTimestamp(), 
-                        status: 'ativo',
-                        traffic_source: trafficSource,
-                        termo_aceito_versao: "05-02-2026" // ✅ Blindagem Jurídica Automática
-                    };
-                    userProfile = novoPerfil; 
-                    window.userProfile = novoPerfil;
-                    await setDoc(userRef, novoPerfil);
-                    await concederBonusSeAtivo(user.uid);
+        /** * 🛰️ MONITOR DE PERFIL V27 (SILENCIADO)
+         * Usamos getDoc primeiro para verificar se o usuário existe ANTES de ligar o Snapshot.
+         * Isso evita que o Firebase tente "ouvir" um documento que ele ainda não tem permissão.
+         */
+        const initialCheck = await getDoc(userRef);
+        
+        if (!initialCheck.exists()) {
+             // CRIAÇÃO DE NOVO PERFIL V12 (BLINDADO)
+             const trafficSource = localStorage.getItem("traffic_source") || "direct";
+             const novoPerfil = { 
+                 email: user.email, 
+                 phone: user.phoneNumber, 
+                 displayName: user.displayName || "Usuário", 
+                 photoURL: user.photoURL, 
+                 tenant_id: DEFAULT_TENANT, 
+                 perfil_completo: false, 
+                 role: (user.email && ADMIN_EMAILS.includes(user.email)) ? 'admin' : 'user', 
+                 wallet_balance: 0.00, 
+                 is_provider: false, 
+                 created_at: serverTimestamp(), 
+                 status: 'ativo',
+                 traffic_source: trafficSource,
+                 termo_aceito_versao: "05-02-2026" 
+             };
+             userProfile = novoPerfil; 
+             window.userProfile = novoPerfil;
+             await setDoc(userRef, novoPerfil);
+             await concederBonusSeAtivo(user.uid);
+        }
+
+        // AGORA SIM, com o perfil garantido, ligamos a escuta em tempo real
+        onSnapshot(userRef, async (docSnap) => {
+            if (!docSnap.exists()) return;
                 } else {
                     // CARREGAMENTO DE PERFIL EXISTENTE
                     const data = docSnap.data();
