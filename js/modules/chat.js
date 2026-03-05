@@ -1609,7 +1609,7 @@ window.ativarDespertadorLazarus = async function() {
             window.verificarVidaUtilChat({id: d.id, ...d.data()});
         });
 
-        console.log(`✅ Lazarus: Varredura concluída (${snap.size} chats vigiados).`);
+        console.log(`✅ Lazarus: Varredura concluída (${docsParaVigiar.length} pedidos vigiados).`);
     } catch (e) { 
         console.error("❌ Erro na varredura Lazarus:", e.message); 
     }
