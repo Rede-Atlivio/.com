@@ -646,8 +646,8 @@ window.IniciarAvisoGlobal = function() {
         }
     }, (error) => {
         console.warn("Silenciando aviso global (sem permissão ou erro de rede).");
-    });
-})();
+   });
+};
 // 🌍 EXPOSIÇÃO GLOBAL V23 (PARA O CONSOLE E APP.JS VEREM AS FUNÇÕES)
 window.renderizarRadarOffline = renderizarRadarOffline;
 window.concederBonusSeAtivo = concederBonusSeAtivo;
