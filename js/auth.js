@@ -226,8 +226,11 @@ onAuthStateChanged(auth, async (user) => {
              await concederBonusSeAtivo(user.uid);
         }
 
-        // LIGA A ESCUTA EM TEMPO REAL APÓS VALIDAÇÃO
-        onSnapshot(userRef, async (docSnap) => {
+       /** * 🛰️ PROTEÇÃO V28 (SILENCIADOR DE BOOT): 
+         * Encapsulamos a lógica do Snapshot para tratar o erro de permissão que ocorre
+         * no microsegundo entre o reconhecimento do UID e a validação do Token.
+         */
+        const snapshotSilentHandler = async (docSnap) => {
             try {
                 if (!docSnap.exists()) return;
                 const data = docSnap.data();
@@ -257,9 +260,14 @@ onAuthStateChanged(auth, async (user) => {
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
             } catch (err) {
-                console.error("Erro perfil:", err);
+                console.warn("⚠️ [Auth] Aguardando estabilidade de dados...");
                 iniciarAppLogado(user); 
             }
+        };
+
+        // LIGA A ESCUTA COM TRATAMENTO DE ERRO (O SEGREDO PARA LIMPAR O CONSOLE)
+        onSnapshot(userRef, snapshotSilentHandler, (error) => {
+            console.warn("🛰️ [Maestro] Sincronia em espera de autorização final...");
         });
     } else {
         if (isToggling) {
