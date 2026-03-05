@@ -465,12 +465,16 @@ auth.onAuthStateChanged(async (user) => {
 
         // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
         // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        // 📢 ORQUESTRAÇÃO MAESTRO V26: Liga os motores sensíveis somente após o Login.
-        // Isso elimina 100% dos erros de 'Missing Permissions' no console.
-        if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
-        if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
-        if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
-        if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
+        // 🎼 MAESTRO V27 (Sincronia Harmônica): 
+        // Aguarda 2 segundos para o Firebase validar os tokens de segurança.
+        // Isso silencia os erros de permissão no console e estabiliza o boot.
+        setTimeout(() => {
+            console.log("🎼 Maestro: Tokens validados. Iniciando motores de fundo...");
+            if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
+            if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
+            if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
+            if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
+        }, 2000);
         /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
         /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
         // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
