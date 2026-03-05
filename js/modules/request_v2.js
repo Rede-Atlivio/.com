@@ -414,7 +414,10 @@ if (!window.taxasSincronizadasRadar || window.taxasSincronizadasRadar === 'error
                 window.taxasSincronizadasRadar = true;
                 console.log("💰 [ESCALA] Sincronia única realizada.");
             }
-        }).catch(() => { window.taxasSincronizadasRadar = false; });
+       }).catch((err) => { 
+    console.warn("⚠️ Falha na sincronia de taxas, liberando para nova tentativa...");
+    window.taxasSincronizadasRadar = 'error'; // Em caso de erro (permissão), permite tentar de novo
+});
     }
 
     garantirContainerRadar();
