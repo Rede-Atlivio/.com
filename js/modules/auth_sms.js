@@ -94,5 +94,9 @@ window.confirmarCodigoLogin = async function() {
         console.error(error);
         alert("Código inválido.");
         btn.innerText = "ENTRAR AGORA 🚀"; btn.disabled = false;
-    }
+   }
 };
+
+// 🛰️ PONTE DE EXPORTAÇÃO: Resolve o erro "Indisponível" no Robô de Auditoria.
+// Mapeamos o nome que o Maestro procura para a função real do arquivo.
+window.enviarSmsSessao = window.enviarSMSLogin;
