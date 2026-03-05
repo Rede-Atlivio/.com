@@ -535,7 +535,7 @@ auth.onAuthStateChanged(async (user) => {
             window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
         }
 
-    } else {
+    } else { // 🚪 Caso o usuário saia da conta ou não esteja logado:
         console.log("🚪 Usuário Desconectado.");
         document.getElementById('auth-container')?.classList.remove('hidden');
         document.getElementById('app-container')?.classList.add('hidden');
