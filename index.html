@@ -717,11 +717,16 @@
 
             // 🛡️ TRAVA DINÂMICA MAESTRO: Lê o limite definido por você no Painel Admin em tempo real.
             const limiteAtual = parseFloat(window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500); // Se não achar no banco, usa 500 como segurança.
+            // 🛡️ TRAVA INTELIGENTE: Bloqueia e orienta o usuário a falar com o suporte.
             if (valor > limiteAtual) {
-                alert(`🔒 SEGURANÇA ATLIVIO:\n\nO limite atual para recargas rápidas é de R$ ${limiteAtual.toFixed(2)}.\n\nPara valores maiores, sua conta precisa de verificação manual.`);
-                return; // Para a execução e não abre o link da InfinitePay.
+                const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
+                
+                if (confirmar) {
+                    // 🚀 Redireciona para o suporte ou aba de ajuda
+                    if(window.switchTab) window.switchTab('notificacoes'); // Ou 'suporte' se tiver a aba.
+                }
+                return; 
             }
-
             // 🚀 DISPARO DO MOTOR DINÂMICO: Chama a função blindada do seu wallet.js
             if (window.abrirCheckoutPix) {
                 window.abrirCheckoutPix(valor);
