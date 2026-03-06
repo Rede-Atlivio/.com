@@ -278,8 +278,9 @@ window.saveBusinessRules = async () => {
         porcentagem_reserva_cliente: Number(rawPctCli),
         valor_minimo: Number(rawValMin),
         valor_maximo: Number(rawValMax),
-        // 🛡️ GRAVAÇÃO V13: Salva oficialmente o teto de recarga no "Cérebro Financeiro"
-        limite_recarga_v1: Number(rawLimiteRecarga),
+        // 💾 GRAVAÇÃO MESTRA V14: Salva o estado da Chave (true para liberado, false para travado)
+        // Isso substitui o antigo 'limite_recarga_v1' por um comando binário mais rápido para milhões de usuários
+        liberar_black_geral_v1: isLibertadoGeral,
         completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
         updated_at: new Date(),
         modificado_por: "admin"
