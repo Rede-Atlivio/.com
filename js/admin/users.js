@@ -147,15 +147,28 @@ async function openEditor(collectionName, id) {
         // 💎 STATUS VIP V13: Adicionado 'is_verified' para liberar recargas BLACK individualmente
         const keys = ['nome', 'email', 'status', 'is_verified']; 
         html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+        // 🔄 GERADOR DINÂMICO V13: Cria inputs normais ou Chave Seletora (Switch) para VIP
         keys.forEach(key => { 
             const val = data[key] === undefined ? "" : data[key];
-            const labelColor = key === 'is_verified' ? 'text-blue-400' : 'text-gray-400';
-            const placeholder = key === 'is_verified' ? 'true ou false' : '';
 
-            html += `<div>
-                        <label class="block text-[10px] ${labelColor} uppercase font-bold mb-1">${key}</label>
-                        <input type="text" id="edit-${key}" value="${val}" placeholder="${placeholder}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold">
-                    </div>`; 
+            // Se for a chave de verificação VIP, cria um botão Switch em vez de caixa de texto
+            if (key === 'is_verified') {
+                const isChecked = (val === true || val === "true") ? 'checked' : '';
+                html += `<div class="bg-blue-600/5 p-3 rounded-xl border border-blue-500/20 flex flex-col items-center">
+                            <label class="block text-[9px] text-blue-400 uppercase font-black mb-2">💎 CONTA VERIFICADA (VIP BLACK)</label>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="edit-${key}" class="sr-only peer" ${isChecked}>
+                                <div class="w-11 h-6 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                            </label>
+                            <p class="text-[7px] text-gray-500 mt-1 uppercase font-bold">Ative para liberar recargas Black</p>
+                        </div>`;
+            } else {
+                // Para os outros campos (nome, email, status), mantém a caixa de texto padrão
+                html += `<div>
+                            <label class="block text-[10px] text-gray-400 uppercase font-bold mb-1">${key}</label>
+                            <input type="text" id="edit-${key}" value="${val}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold">
+                        </div>`;
+            } 
         
         }); // 🏁 Fecha o loop das chaves de edição (nome, email, status, is_verified)  
         html += `</div><div class="border-t border-slate-700 pt-6 mt-6 flex gap-3">
