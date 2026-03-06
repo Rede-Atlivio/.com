@@ -627,18 +627,27 @@
         <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block">Valor da Recarga</label>
 
         <div class="relative mb-4">
-            <select id="select-recarga" onchange="atualizarBotaoRecarga()" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 py-3 px-4 pr-8 rounded-xl font-bold focus:outline-none focus:border-blue-500 text-sm">
-                <option value="20">R$ 20,00 (Mínimo)</option>
-                <option value="50" selected>R$ 50,00 (Padrão)</option>
-                <option value="100">R$ 100,00</option>
-                <option value="200">R$ 200,00</option>
-                <option value="300">R$ 300,00</option>
-                <option value="500">R$ 500,00</option>
-                <option value="1000">R$ 1.000,00</option>
-                <option value="2000">R$ 2.000,00</option>
-                <option value="3000">R$ 3.000,00</option>
-                <option value="5000">R$ 5.000,00</option>
-            </select>
+           <select id="select-recarga" onchange="atualizarBotaoRecarga()" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 py-3 px-4 pr-8 rounded-xl font-bold focus:outline-none focus:border-blue-500 text-sm">
+                <optgroup label="🚀 INICIAL">
+                    <option value="20">R$ 20,00 (Mínima)</option>
+                    <option value="50" selected>R$ 50,00 (Padrão)</option>
+                </optgroup>
+
+                <optgroup label="⚡ CATEGORIA PRÓ">
+                    <option value="100">R$ 100,00 (Pró 01)</option>
+                    <option value="200">R$ 200,00 (Pró 02)</option>
+                    <option value="300">R$ 300,00 (Pró 03)</option>
+                    <option value="500">R$ 500,00 (Pró 04)</option>
+                </optgroup>
+
+                <optgroup label="🏴 CATEGORIA BLACK">
+                    <option value="1000">R$ 1.000,00 (Black 01)</option>
+                    <option value="2000">R$ 2.000,00 (Black 02)</option>
+                    <option value="3000">R$ 3.000,00 (Black 03)</option>
+                    <option value="4000">R$ 4.000,00 (Black 04)</option>
+                    <option value="5000">R$ 5.000,00 (Black 05)</option>
+                </optgroup>
+            </select>
             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
                 <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                     <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
