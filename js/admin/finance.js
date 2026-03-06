@@ -343,3 +343,11 @@ window.executarLiberacaoGeral = () => {
     // Alerta visual de sucesso
     console.log("🚀 [FINANCE] Trava master de R$ 500 desativada pelo administrador.");
 };
+// ============================================================================
+// 🛰️ EXPOSIÇÃO GLOBAL DE FUNÇÕES (PARA O BOTÃO ATUALIZAR)
+// ============================================================================
+window.loadFinanceData = loadFinanceData;
+window.openBalanceEditor = openBalanceEditor;
+
+// Garante que o Lucide dispare os ícones caso o core.js demore
+setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 1000);
