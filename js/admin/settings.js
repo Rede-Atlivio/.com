@@ -197,8 +197,7 @@ async function loadSettings() {
             }
         }
         // 🛡️ CONEXÃO V13: Carrega o limite de recarga sem erros de sintaxe (ddocument corrigido para document)
-        const campoLimite = document.getElementById('conf-limite-recarga');
-        if (campoLimite) campoLimite.value = data.limite_recarga_v1 ?? 500;
+        // 🔄 SINCRONIA: O campo de texto foi removido, o status agora é controlado pelo Switch acima.
         // 🛡️ CARREGAMENTO V13: Lê o limite de segurança de recarga do banco
         document.getElementById('conf-limite-recarga').value = data.limite_recarga_v1 ?? 500;
     } catch(e) { console.error("Erro ao carregar settings", e); }
