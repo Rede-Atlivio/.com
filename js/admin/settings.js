@@ -184,8 +184,9 @@ async function loadSettings() {
 
         // 3. Parâmetros Operacionais (Lê do Master com Fallback no Legado)
         document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
-        document.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
-
+        ddocument.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
+        // 🛡️ CARREGAMENTO V13: Lê o limite de segurança de recarga do banco
+        document.getElementById('conf-limite-recarga').value = data.limite_recarga_v1 ?? 500;
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
