@@ -27,9 +27,26 @@ export async function init() {
                 <p class="text-[10px] uppercase font-bold text-emerald-400 mb-1">CONTAS ATIVAS</p>
                 <h3 class="text-3xl font-black text-white" id="fin-total-users">0</h3>
             </div>
-        </div>
+        <div class="bg-blue-600/10 p-5 rounded-3xl border border-blue-500/30 flex items-center justify-between mb-6 shadow-2xl animate-fade">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)]">
+                    <i data-lucide="unlock" class="text-white w-6 h-6"></i>
+                </div>
+                <div>
+                    <h4 class="text-xs font-black text-white uppercase tracking-widest italic">Liberação Geral Black</h4>
+                    <p class="text-[9px] text-blue-300 uppercase font-bold">Ignorar trava de R$ 500 para recargas PIX</p>
+                </div>
+            </div>
 
-        <div class="glass-panel p-4 mb-6 flex flex-col md:flex-row gap-4 items-center bg-slate-900/50 border border-slate-800">
+            <div class="flex flex-col items-center gap-2">
+                <label class="relative inline-flex items-center cursor-pointer scale-110">
+                    <input type="checkbox" id="conf-liberar-black-geral" class="sr-only peer" onchange="window.confirmarLiberacaoGeral(this)">
+                    <div class="w-12 h-6 bg-slate-800 rounded-full peer peer-checked:bg-blue-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                </label>
+                <span id="txt-status-black" class="text-[8px] font-black text-gray-500 uppercase italic">🔒 Sistema Travado</span>
+            </div>
+            <input type="hidden" id="conf-limite-recarga" value="500">
+        </div>
             <div class="relative flex-1 w-full">
                 <i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-gray-500"></i>
                 <input type="text" id="fin-search-input" placeholder="Pesquisar por nome ou email..." 
