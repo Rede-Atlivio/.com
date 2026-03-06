@@ -156,10 +156,8 @@ async function openEditor(collectionName, id) {
                         <label class="block text-[10px] ${labelColor} uppercase font-bold mb-1">${key}</label>
                         <input type="text" id="edit-${key}" value="${val}" placeholder="${placeholder}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold">
                     </div>`; 
-        });
-            const val = data[key] || data.displayName || ""; 
-            html += `<div><label class="block text-[10px] text-gray-400 uppercase font-bold mb-1">${key}</label><input type="text" id="edit-${key}" value="${val}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold"></div>`; 
-        });
+        
+        }); // 🏁 Fecha o loop das chaves de edição (nome, email, status, is_verified)  
         html += `</div><div class="border-t border-slate-700 pt-6 mt-6 flex gap-3">
                     <button onclick="window.saveAction('${collectionName}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded text-xs font-bold">⛔ BANIR</button>
                     <button onclick="window.saveAction('${collectionName}', '${id}', 'suspenso')" class="flex-1 bg-yellow-600 text-white py-3 rounded text-xs font-bold">⚠️ SUSPENDER</button>
