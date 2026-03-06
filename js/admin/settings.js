@@ -219,14 +219,38 @@ window.saveAppSettings = async () => {
 
 // 💾 SALVAR REGRAS FINANCEIRAS (MASTER V12.0 - ANTI-ERRO 400)
 //Agora, garantimos que quando você clicar em "Salvar", a taxa do cliente também vá para o Firebase.
+// 🛡️ MODAL DE CONFIRMAÇÃO V13: Protege contra cliques acidentais na Liberação Geral
+window.confirmarLiberacaoGeral = (el) => {
+    const statusTxt = document.getElementById('txt-status-black');
+    if (el.checked) {
+        if (!confirm("⚠️ ATENÇÃO: Deseja LIBERAR recargas BLACK para TODOS os usuários do sistema agora?")) {
+            el.checked = false;
+            return;
+        }
+        statusTxt.innerText = "🔓 RECARGAS BLACK LIBERADAS GERAL";
+        statusTxt.className = "text-[9px] font-bold text-blue-400 uppercase animate-pulse";
+    } else {
+        if (!confirm("🔒 Deseja ATIVAR a trava de segurança de R$ 500 para todos novamente?")) {
+            el.checked = true;
+            return;
+        }
+        statusTxt.innerText = "🔒 Bloqueio de Segurança Ativo";
+        statusTxt.className = "text-[9px] font-bold text-gray-500 uppercase";
+    }
+};
+
 window.saveBusinessRules = async () => {
-    const rawTaxaP = document.getElementById('conf-taxa-plataforma')?.value || "0";
-    const rawTaxaC = document.getElementById('conf-taxa-cliente')?.value || "0";
-    const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
-    const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
-    const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
-    const rawValMin = document.getElementById('conf-val-min')?.value || "20";
-    const rawValMax = document.getElementById('conf-val-max')?.value || "500";
+    // Captura os dados normais
+    const rawTaxaP = document.getElementById('conf-taxa-plataforma')?.value || "0";
+    const rawTaxaC = document.getElementById('conf-taxa-cliente')?.value || "0";
+    const rawLimite = document.getElementById('conf-limite-divida')?.value || "0";
+    const rawPctPres = document.getElementById('conf-pct-reserva-prestador')?.value || "0";
+    const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
+    const rawValMin = document.getElementById('conf-val-min')?.value || "20";
+    const rawValMax = document.getElementById('conf-val-max')?.value || "500";
+    
+    // ⚡ CAPTURA DA CHAVE MESTRA: Verifica se o botão está ON ou OFF
+    const liberarBlackGeral = document.getElementById('conf-liberar-black-geral').checked;
     // 🛡️ CAPTURA V13: Pega o valor digitado no novo campo de limite de recarga
     const rawLimiteRecarga = document.getElementById('conf-limite-recarga')?.value || "500";
 
