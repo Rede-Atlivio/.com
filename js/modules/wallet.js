@@ -355,11 +355,19 @@ window.abrirCheckoutPix = async function(valor) {
     let linkBase = "";
 
     // 🎯 DICIONÁRIO DE LINKS: Mapeia o valor escolhido para o link oficial da InfinitePay
+    // 🎯 DICIONÁRIO DE LINKS V13: Links otimizados (sem endereço + redirecionamento)
     const mapaLinks = {
-        20: "3hS2biT59D", 50: "jkLCOttPD", 100: "99GfJyoq3", 
-        200: "2SUU4yP26N", 300: "2SUUGOmtPL", 500: "jkLd3nQM5", 
-        1000: "1TUhOdZ8ad", 2000: "2SUVAIvQMP", 3000: "7NTWVWSBU7", 
-        4000: "3gjlUFObIZ", 5000: "7NTXamCMWX"
+        20: "5k0YyunYF",     // Recarga Mínima
+        50: "7PMm7JxIbd",    // Recarga Padrão
+        100: "1EYoDIDmGB",   // Recarga Pró 01
+        200: "7PMsNbklbP",   // Recarga Pró 02
+        300: "7PMt8KBMMh",   // Recarga Pró 03
+        500: "1TsBExCwNB",   // Recarga Pró 04
+        1000: "7PMvPQH4B1",  // Recarga Black 01
+        2000: "2T7e5Vu0ON",  // Recarga Black 02
+        3000: "7PMwygZ5Rr",  // Recarga Black 03
+        4000: "cHPerkNv7",   // Recarga Black 04
+        5000: "7PMykvuDCZ"   // Recarga Black 05
     };
 
     const codigoProduto = mapaLinks[valor];
