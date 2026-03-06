@@ -7,9 +7,12 @@ import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, ad
  * O sistema irá sobrescrever esses valores em milissegundos assim que o 'iniciarRegrasFinanceiras' 
  * ler o seu Painel Administrativo no Firestore.
  */
+// 💰 CONFIGURAÇÕES MESTRE DINÂMICAS
+// Estes valores são atualizados automaticamente pelo Painel Admin via 'iniciarRegrasFinanceiras'
 export let CONFIG_FINANCEIRA = {
-    taxa: 0.20,     
-    limite: 0.00  
+    taxa: 0.20,             // Taxa padrão de intermediação (20%)
+    limite: 0.00,           // Limite de dívida negativa permitido para prestadores
+    limite_recarga_v1: 500  // Novo: Teto de recarga rápida (PIX) controlado pelo Admin
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
