@@ -200,17 +200,59 @@ async function saveServiceAction(id, index, status) {
     } catch(e) { alert(e.message); }
 }
 
+// 💾 SALVAMENTO MESTRE V13: Captura dados de texto e o estado da chave VIP (Switch)
 async function saveAction(col, id, action) {
+    if(!confirm(`⚠️ DESEJA SALVAR ESTAS ALTERAÇÕES NO PERFIL?`)) return;
+
     let updates = { updated_at: serverTimestamp() };
     let msg = "";
+
+    // Lógica para criação de novo usuário
     if(!id) {
-        const nome = document.getElementById('edit-nome').value;
-        const email = document.getElementById('edit-email').value;
-        if(!nome || !email) return alert("Preencha os campos.");
+        const nome = document.getElementById('edit-nome')?.value;
+        const email = document.getElementById('edit-email')?.value;
+        if(!nome || !email) return alert("Erro: Nome e Email são obrigatórios.");
         await addDoc(collection(window.db, col), { nome, email, status: 'ativo', created_at: serverTimestamp() });
         document.getElementById('modal-editor').classList.add('hidden');
         return loadList();
     }
+
+    // Captura o estado da Chave VIP (true ou false)
+    const checkVip = document.getElementById('edit-is_verified');
+    if (checkVip) updates.is_verified = checkVip.checked;
+
+    // Captura campos de texto comuns
+    const nomeTxt = document.getElementById('edit-nome')?.value;
+    const emailTxt = document.getElementById('edit-email')?.value;
+    if(nomeTxt) updates.nome = nomeTxt;
+    if(emailTxt) updates.email = emailTxt;
+
+    // Define status administrativo
+    if(action === 'banir') { updates.status = 'banido'; updates.is_online = false; msg = "Sua conta foi banida."; }
+    if(action === 'suspenso') { updates.status = 'suspenso'; updates.is_online = false; msg = "Sua conta foi suspensa."; }
+    if(action === 'aprovar') { updates.status = 'aprovado'; updates.is_online = true; msg = "Perfil aprovado e atualizado!"; }
+
+    try {
+        await updateDoc(doc(window.db, col, id), updates);
+        
+        // Envia notificação automática para o celular do usuário
+        if(msg) {
+            await addDoc(collection(window.db, "notifications"), { 
+                uid: id, 
+                message: msg, 
+                type: action === 'aprovar' ? 'success' : 'alert', 
+                read: false, 
+                created_at: serverTimestamp() 
+            });
+        }
+        
+        alert("✅ OPERAÇÃO REALIZADA! Dados sincronizados com o banco.");
+        document.getElementById('modal-editor').classList.add('hidden');
+        loadList();
+    } catch(e) {
+        alert("❌ Falha crítica ao salvar: " + e.message);
+    }
+}
     if(action === 'banir') { updates.status = 'banido'; updates.is_online = false; msg = "Sua conta foi banida."; }
     if(action === 'suspenso') { updates.status = 'suspenso'; updates.is_online = false; msg = "Sua conta foi suspensa."; }
     if(action === 'aprovar') { updates.status = 'aprovado'; updates.is_online = true; msg = "Perfil aprovado!"; }
