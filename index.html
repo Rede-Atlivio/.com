@@ -717,8 +717,10 @@
 
             // 🛡️ TRAVA DINÂMICA MAESTRO: Lê o limite definido por você no Painel Admin em tempo real.
             const limiteAtual = parseFloat(window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500); // Se não achar no banco, usa 500 como segurança.
-            // 🛡️ TRAVA INTELIGENTE: Bloqueia e orienta o usuário a falar com o suporte.
-            if (valor > limiteAtual) {
+           // 🛡️ TRAVA INTELIGENTE V13: Bloqueia apenas se o valor exceder o limite E o usuário não for VIP.
+            const isVip = window.userProfile?.is_verified === "true" || window.userProfile?.is_verified === true; // Verifica o status do Admin
+
+            if (valor > limiteAtual && !isVip) {
                 const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
               if (confirmar) {
