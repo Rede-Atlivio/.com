@@ -722,8 +722,14 @@
                 const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
                 if (confirmar) {
-                    // 🚀 MAESTRO REDIRECT: Envia o usuário direto para o SAC Real-time
-                    if(window.switchTab) window.switchTab('support'); // 'support' é o ID da aba do support.js
+                    // 🚀 ACIONAMENTO DIRETO: Simula o clique no botão azul do suporte que já existe na tela
+                    const btnSuporte = document.querySelector('.fixed.bottom-4.right-4') || document.querySelector('button[onclick*="Support"]');
+                    if (btnSuporte) {
+                        btnSuporte.click(); // Abre o modal de suporte automaticamente
+                    } else {
+                        // Plano B: Se o botão não for achado pelo seletor, tenta a função global
+                        if(window.abrirChatSuporte) window.abrirChatSuporte();
+                    }
                 }
                 return; 
             }
