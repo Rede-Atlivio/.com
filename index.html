@@ -706,11 +706,12 @@
 
             const valor = parseInt(select.value);
 
-            // --- 🛡️ TRAVA DE SEGURANÇA PARA MILHÕES DE USUÁRIOS ---
-            if (valor > 500 && !USUARIO_VERIFICADO) {
-                alert("🔒 SEGURANÇA:\n\nPara recargas acima de R$ 500,00, é necessária verificação de conta.\n\nEscolha um valor menor para começar.");
-                return;
-            }
+            // 🛡️ TRAVA DINÂMICA MAESTRO: Lê o limite definido por você no Painel Admin em tempo real.
+            const limiteAtual = parseFloat(window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500); // Se não achar no banco, usa 500 como segurança.
+            if (valor > limiteAtual) {
+                alert(`🔒 SEGURANÇA ATLIVIO:\n\nO limite atual para recargas rápidas é de R$ ${limiteAtual.toFixed(2)}.\n\nPara valores maiores, sua conta precisa de verificação manual.`);
+                return; // Para a execução e não abre o link da InfinitePay.
+            }
 
             // 🚀 DISPARO DO MOTOR DINÂMICO: Chama a função blindada do seu wallet.js
             if (window.abrirCheckoutPix) {
