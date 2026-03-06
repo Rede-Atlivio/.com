@@ -182,9 +182,20 @@ async function loadSettings() {
         document.getElementById('conf-pct-reserva-cliente').value = data.porcentagem_reserva_cliente ?? 10;
         document.getElementById('conf-completar-pagamento').checked = data.completar_valor_total ?? true;
 
-        // 3. Parâmetros Operacionais (Lê do Master com Fallback no Legado)
-        document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
-        document.getElementById('conf-val-max').value = data.valor_maximo ?? legado.valor_maximo ?? 500;
+        // 📥 CARREGAMENTO V13: Lê os valores mínimos e o estado da Chave Mestra Black
+        document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
+        
+        // Sincroniza o Switch de Liberação Geral (ON ou OFF)
+        const switchGeral = document.getElementById('conf-liberar-black-geral');
+        if (switchGeral) {
+            switchGeral.checked = data.liberar_black_geral_v1 ?? false;
+            // Atualiza o texto visual conforme o que vem do banco
+            const statusTxt = document.getElementById('txt-status-black');
+            if (statusTxt) {
+                statusTxt.innerText = switchGeral.checked ? "🔓 RECARGAS BLACK LIBERADAS GERAL" : "🔒 Bloqueio de Segurança Ativo";
+                statusTxt.className = switchGeral.checked ? "text-[9px] font-bold text-blue-400 uppercase animate-pulse" : "text-[9px] font-bold text-gray-500 uppercase";
+            }
+        }
         // 🛡️ CONEXÃO V13: Carrega o limite de recarga sem erros de sintaxe (ddocument corrigido para document)
         const campoLimite = document.getElementById('conf-limite-recarga');
         if (campoLimite) campoLimite.value = data.limite_recarga_v1 ?? 500;
