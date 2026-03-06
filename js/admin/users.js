@@ -144,9 +144,19 @@ async function openEditor(collectionName, id) {
              });
              html += `</div></div>`;
         }
-        const keys = ['nome', 'email', 'status']; 
+        // 💎 STATUS VIP V13: Adicionado 'is_verified' para liberar recargas BLACK individualmente
+        const keys = ['nome', 'email', 'status', 'is_verified']; 
         html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
         keys.forEach(key => { 
+            const val = data[key] === undefined ? "" : data[key];
+            const labelColor = key === 'is_verified' ? 'text-blue-400' : 'text-gray-400';
+            const placeholder = key === 'is_verified' ? 'true ou false' : '';
+
+            html += `<div>
+                        <label class="block text-[10px] ${labelColor} uppercase font-bold mb-1">${key}</label>
+                        <input type="text" id="edit-${key}" value="${val}" placeholder="${placeholder}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold">
+                    </div>`; 
+        });
             const val = data[key] || data.displayName || ""; 
             html += `<div><label class="block text-[10px] text-gray-400 uppercase font-bold mb-1">${key}</label><input type="text" id="edit-${key}" value="${val}" class="w-full bg-white text-gray-900 border border-gray-300 rounded p-2 text-sm font-bold"></div>`; 
         });
