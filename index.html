@@ -720,7 +720,12 @@
            // 🛡️ TRAVA INTELIGENTE V13: Bloqueia apenas se o valor exceder o limite E o usuário não for VIP.
             const isVip = window.userProfile?.is_verified === "true" || window.userProfile?.is_verified === true; // Verifica o status do Admin
 
-            if (valor > limiteAtual && !isVip) {
+            // 🛡️ TRAVA MESTRA V14: Checa o Limite, se o usuário é VIP, ou se a Porteira Geral está aberta no Admin.
+            const isLiberadoGeral = window.CONFIG_FINANCEIRA?.liberar_black_geral_v1 === true; // Lê o Switch do Admin
+            const isVip = window.userProfile?.is_verified === "true" || window.userProfile?.is_verified === true; // Lê o seu "VIP" individual
+
+            // Só bloqueia se: O valor for alto E a porteira geral estiver FECHADA E o usuário NÃO for VIP.
+            if (valor > limiteAtual && !isLiberadoGeral && !isVip) {
                 const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
               if (confirmar) {
