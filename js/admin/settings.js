@@ -224,6 +224,8 @@ window.saveBusinessRules = async () => {
     const rawPctCli = document.getElementById('conf-pct-reserva-cliente')?.value || "0";
     const rawValMin = document.getElementById('conf-val-min')?.value || "20";
     const rawValMax = document.getElementById('conf-val-max')?.value || "500";
+    // 🛡️ CAPTURA V13: Pega o valor digitado no novo campo de limite de recarga
+    const rawLimiteRecarga = document.getElementById('conf-limite-recarga')?.value || "500";
 
     // 🛡️ BLINDAGEM DECIMAL: Transforma 20 em 0.20 e 5 em 0.05
     let taxaP = parseFloat(String(rawTaxaP).replace(',', '.'));
