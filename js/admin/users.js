@@ -253,15 +253,7 @@ async function saveAction(col, id, action) {
         alert("❌ Falha crítica ao salvar: " + e.message);
     }
 }
-    if(action === 'banir') { updates.status = 'banido'; updates.is_online = false; msg = "Sua conta foi banida."; }
-    if(action === 'suspenso') { updates.status = 'suspenso'; updates.is_online = false; msg = "Sua conta foi suspensa."; }
-    if(action === 'aprovar') { updates.status = 'aprovado'; updates.is_online = true; msg = "Perfil aprovado!"; }
-    await updateDoc(doc(window.db, col, id), updates);
-    if(msg) await addDoc(collection(window.db, "notifications"), { uid: id, message: msg, type: action==='aprovar'?'success':'alert', read: false, created_at: serverTimestamp() });
-    alert("✅ Salvo!");
-    document.getElementById('modal-editor').classList.add('hidden');
-    loadList();
-}
+    // 🏁 Fim da função saveAction corrigida (Removido lixo de código duplicado que causava erro de sintaxe)
 
 // ✅ RESTAURADO: Ações em Massa
 function abrirModalMassa() {
