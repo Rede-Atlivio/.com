@@ -196,10 +196,7 @@ async function loadSettings() {
                 statusTxt.className = switchGeral.checked ? "text-[9px] font-bold text-blue-400 uppercase animate-pulse" : "text-[9px] font-bold text-gray-500 uppercase";
             }
         }
-        // 🛡️ CONEXÃO V13: Carrega o limite de recarga sem erros de sintaxe (ddocument corrigido para document)
-        // 🔄 SINCRONIA: O campo de texto foi removido, o status agora é controlado pelo Switch acima.
-        // 🛡️ CARREGAMENTO V13: Lê o limite de segurança de recarga do banco
-        document.getElementById('conf-limite-recarga').value = data.limite_recarga_v1 ?? 500;
+        // ✅ SINCRONIA V14: O carregamento agora é feito apenas pelo Switch de Liberação Geral.
     } catch(e) { console.error("Erro ao carregar settings", e); }
 }
 
