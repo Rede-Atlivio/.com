@@ -326,6 +326,20 @@
         </div>
     </div>
 
+    <div id="modal-confirmacao-black" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade">
+        <div class="bg-slate-900 border border-blue-500/30 w-full max-w-md rounded-3xl p-8 shadow-2xl text-center">
+            <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
+                <i data-lucide="shield-alert" class="text-blue-500 w-8 h-8"></i>
+            </div>
+            <h3 class="text-lg font-black text-white uppercase italic mb-2">Confirmar Liberação Geral?</h3>
+            <p class="text-gray-400 text-[10px] mb-6 uppercase font-bold tracking-widest">A trava de R$ 500 será ignorada para todos os usuários.</p>
+            <div class="flex gap-3">
+                <button onclick="window.cancelarLiberacaoGeral()" class="flex-1 bg-slate-800 text-gray-400 py-3 rounded-xl font-black uppercase text-[10px] hover:bg-slate-700 transition">Cancelar</button>
+                <button onclick="window.executarLiberacaoGeral()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black uppercase text-[10px] hover:bg-blue-500 transition">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import './js/admin/core.js?v=2026_V60';
         // Aguarda um pouco para os ícones serem desenhados na tela
