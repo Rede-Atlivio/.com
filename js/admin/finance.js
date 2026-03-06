@@ -59,9 +59,6 @@ export async function init() {
                 <option value="debtors">⚠️ TOP DEVEDORES</option>
             </select>
 
-            <button onclick="window.loadFinanceData()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl text-xs font-bold uppercase transition">
-                Atualizar
-            </button>
         </div>
 
         <div id="fin-master-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade">
