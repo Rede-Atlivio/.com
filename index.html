@@ -721,10 +721,14 @@
             if (valor > limiteAtual) {
                 const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
-              // 🚀 SOLUÇÃO DIRETA: Se confirmou, clica no botão azul e abre o chat na hora.
-                if (confirmar) {
-                    const btnChat = document.querySelector('.fixed.bottom-4.right-4');
-                    if (btnChat) btnChat.click(); // Dispara o suporte instantaneamente
+              if (confirmar) {
+                    // 🚀 COMANDO MESTRE: Tenta a função global primeiro (mais rápido) e o clique como backup
+                    if (window.abrirChatSuporte) {
+                        window.abrirChatSuporte(); // Abre o motor do chat direto
+                    } else {
+                        const btnSuporte = document.querySelector('.fixed.bottom-4.right-4');
+                        if (btnSuporte) btnSuporte.click(); // Backup: Tenta o clique físico
+                    }
                 }
                 return; 
             }
