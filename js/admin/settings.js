@@ -242,7 +242,9 @@ window.saveBusinessRules = async () => {
         porcentagem_reserva_cliente: Number(rawPctCli),
         valor_minimo: Number(rawValMin),
         valor_maximo: Number(rawValMax),
-        completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
+        // 🛡️ GRAVAÇÃO V13: Salva oficialmente o teto de recarga no "Cérebro Financeiro"
+        limite_recarga_v1: Number(rawLimiteRecarga),
+        completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
         updated_at: new Date(),
         modificado_por: "admin"
     };
