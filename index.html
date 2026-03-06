@@ -682,7 +682,7 @@
                 avisoBox.className = "bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded-r-lg";
                 copyText.className = "text-[10px] text-blue-800 font-medium italic";
                 copyText.innerText = "Ideal para começar e testar a plataforma.";
-            } else if (valor <= 500) {
+            } else if (valor <= (window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500)) {
                 avisoBox.className = "bg-green-50 border-l-4 border-green-500 p-3 mb-4 rounded-r-lg";
                 copyText.className = "text-[10px] text-green-800 font-medium italic";
                 copyText.innerText = "Garanta saldo para pegar vários serviços seguidos.";
