@@ -260,11 +260,9 @@ window.saveBusinessRules = async () => {
     const rawValMin = document.getElementById('conf-val-min')?.value || "20";
     const rawValMax = document.getElementById('conf-val-max')?.value || "500";
     
-    // ⚡ CAPTURA DA CHAVE MESTRA: Verifica se o botão está ON ou OFF
-    const liberarBlackGeral = document.getElementById('conf-liberar-black-geral').checked;
-    // 🛡️ CAPTURA V13: Pega o valor digitado no novo campo de limite de recarga
-    const rawLimiteRecarga = document.getElementById('conf-limite-recarga')?.value || "500";
-
+    // ⚡ CAPTURA MESTRA V14: Pega o estado da Chave (Ligado/Desligado)
+    // Removemos a captura de 'rawLimiteRecarga' pois agora usamos apenas o botão ON/OFF
+    const isLibertadoGeral = document.getElementById('conf-liberar-black-geral')?.checked || false;
     // 🛡️ BLINDAGEM DECIMAL: Transforma 20 em 0.20 e 5 em 0.05
     let taxaP = parseFloat(String(rawTaxaP).replace(',', '.'));
     if (taxaP > 1) taxaP = taxaP / 100;
