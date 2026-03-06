@@ -314,3 +314,32 @@ window.executeAdjustment = async (uid) => {
         alert("Erro na sincronia: " + e.message);
     }
 };
+// ============================================================================
+// 🔓 LÓGICA DE LIBERAÇÃO BLACK (MÓDULO FINANCEIRO)
+// ============================================================================
+
+window.confirmarLiberacaoGeral = (el) => {
+    if (el.checked) {
+        // Se tentou ligar, abre o modal de confirmação
+        document.getElementById('modal-confirmacao-black').classList.remove('hidden');
+    } else {
+        // Se desligou, apenas atualiza o texto
+        document.getElementById('txt-status-black').innerText = "🔒 SISTEMA TRAVADO (500)";
+        document.getElementById('txt-status-black').classList.replace('text-blue-400', 'text-gray-500');
+    }
+};
+
+window.cancelarLiberacaoGeral = () => {
+    const sw = document.getElementById('conf-liberar-black-geral');
+    if (sw) sw.checked = false;
+    document.getElementById('modal-confirmacao-black').classList.add('hidden');
+};
+
+window.executarLiberacaoGeral = () => {
+    document.getElementById('txt-status-black').innerText = "🔓 LIBERADO PARA TODOS";
+    document.getElementById('txt-status-black').classList.replace('text-gray-500', 'text-blue-400');
+    document.getElementById('modal-confirmacao-black').classList.add('hidden');
+    
+    // Alerta visual de sucesso
+    console.log("🚀 [FINANCE] Trava master de R$ 500 desativada pelo administrador.");
+};
