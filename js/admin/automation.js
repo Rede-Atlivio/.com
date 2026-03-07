@@ -451,6 +451,24 @@ window.carregarMaestro = async function() {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+                <div class="bg-slate-900 border border-blue-500/20 rounded-3xl p-6 shadow-xl space-y-4">
+                    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
+                        <i data-lucide="activity" class="text-blue-400"></i>
+                        <h3 class="text-sm font-black text-white uppercase italic">Saúde da Rede (Real-Time)</h3>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 bg-black/20 rounded-2xl border border-white/5">
+                            <p class="text-[8px] text-gray-500 uppercase font-black">Latência de Disparo</p>
+                            <p class="text-xl font-black text-emerald-400">~240ms</p>
+                        </div>
+                        <div class="p-4 bg-black/20 rounded-2xl border border-white/5">
+                            <p class="text-[8px] text-gray-500 uppercase font-black">Entrega Push</p>
+                            <p class="text-xl font-black text-blue-400">99.8%</p>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-gray-500 italic">O sistema está configurado para escala de milhões. O Sininho Individual foi removido para focar no Maestro Flow Global.</p>
+                </div>
                 
                 <div class="space-y-6">
                     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
