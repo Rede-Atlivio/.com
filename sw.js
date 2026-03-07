@@ -39,7 +39,17 @@ messaging.onBackgroundMessage((payload) => {
         data: { url: payload.data?.url || '/' }
     };
 
-    return self.registration.showNotification(title, options);
+    // 🛡️ TRAVA DE DUPLICIDADE: Só mostra o Push se o usuário NÃO estiver com o site aberto
+    return clients.matchAll({type: 'window', includeUncontrolled: true}).then(windowClients => {
+        const estaAtivo = windowClients.some(client => client.visibilityState === 'visible');
+        
+        if (estaAtivo) {
+            console.log("🤫 [Maestro] Usuário já está no app. Push externo silenciado.");
+            return; // Não mostra nada fora, deixa o Balão Azul do site cuidar disso
+        }
+
+        return self.registration.showNotification(title, options);
+    });
 });
 
 // 🖱️ GERENCIADOR DE CLIQUE: Faz a mágica de abrir o site quando o usuário toca na notificação
