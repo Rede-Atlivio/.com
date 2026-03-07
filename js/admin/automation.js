@@ -678,25 +678,27 @@ window.salvarESincronizarRede = async function() {
     }
 };
 
-// 🔔 PASSO 3: DISPARAR PUSH (A ANTENA DO GOOGLE) ──▶
+// 🔔 PASSO 3: DISPARAR PUSH (SINCRO EXTERNA V60)
 window.ativarGatilhoPush = async function() {
-    // 🛡️ CHAVE VAPID REAL QUE VOCÊ ME ENVIOU ──▶
-    const VAPID_KEY = "BCw5YpjLvlm9UPEJOQNGocnpXdllamtPomsgoxVBbSlw68tu32THnvt6daIVsg8hBUtjS4pPn2FrxBXtN9-Ebv8";
-    
+    console.log("📡 [Maestro] Acionando torres de transmissão externas...");
     try {
+        // 🛰️ IMPORTAÇÃO DINÂMICA: Protege contra erro de 'undefined' no carregamento
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 🚀 ORDEM DE DISPARO EXTERNO: Avisa o servidor para fazer o celular apitar ──▶
-        await addDoc(collection(window.db, "push_queue"), {
-            titulo: "Informativo Maestro",
-            mensagem: "Sua jornada de hoje começou! Confira os novos bônus.",
-            status: "pending",
+        // 🚀 ORDEM DE DISPARO: Escreve na coleção oficial que o Robô Cloud vigia
+        await addDoc(collection(window.db, "maestro_push"), {
+            title: "Jornada Atlivio",       // Título curto para o celular
+            message: "Sincronia Maestro: Novos bônus liberados para você! 💰", 
+            type: "marketing",
+            priority: "high",               // Força o Google Cloud a processar na hora
+            status: "pending",              // Sinal para o Robô Cloud agir
             created_at: serverTimestamp()
         });
 
-        alert("🔔 PUSH ATIVADO!\nO sinal foi enviado para as torres de transmissão do Google.");
+        alert("🚀 SINAL PROPAGADO!\nO canhão externo foi disparado com sucesso.");
     } catch (e) {
-        alert("❌ Falha no gatilho: " + e.message);
+        console.error("❌ Erro no disparo Push:", e);
+        alert("Erro técnico: " + e.message);
     }
 };
 
