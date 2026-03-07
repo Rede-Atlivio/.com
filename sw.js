@@ -20,21 +20,37 @@ var messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('📬 [Maestro] Sinal recebido fora do App:', payload);
     
-    // Captura inteligente para garantir que a mensagem apareça independente do formato
-    const title = payload.data?.title || payload.notification?.title || "Notificação Atlivio";
-    const body = payload.data?.message || payload.notification?.body || "Novidades na sua conta!";
+    // 🧠 Captura inteligente: Prioriza os dados do Maestro Flow (JSON)
+    const title = payload.data?.title || payload.notification?.title || "ATLIVIO";
+    const body = payload.data?.message || payload.notification?.body || "Você tem uma nova atualização!";
     
+    // 🎨 CONFIGURAÇÃO VISUAL MASTER: Transforma a notificação em um App Profissional
     const options = {
         body: body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        vibrate: [200, 100, 200],
+        // 🖼️ ÍCONE: Imagem grande que aparece na notificação
+        icon: 'https://ui-avatars.com/api/?name=A&background=1e3a8a&color=fff&size=128', 
+        // 🛡️ BADGE: Ícone pequeno que aparece na barra de status do Android (Deve ser branco/transparente)
+        badge: 'https://ui-avatars.com/api/?name=A&background=1e3a8a&color=fff&size=96',
+        // 📳 VIBRAÇÃO: Padrão de pulso [vibra, pausa, vibra]
+        vibrate: [300, 100, 300],
+        // 🏷️ TAG: Impede que várias notificações iguais se acumulem, elas se atualizam
+        tag: 'atlivio-maestro-alert',
+        // 🚀 RENOVAÇÃO: Faz o celular vibrar/tocar de novo se chegar outra mensagem da mesma tag
+        renotify: true,
+        // 🔗 DADOS: Guarda a URL para onde o usuário vai ao clicar
         data: { url: payload.data?.url || '/' }
     };
 
     return self.registration.showNotification(title, options);
 });
 
+// 🖱️ GERENCIADOR DE CLIQUE: Faz a mágica de abrir o site quando o usuário toca na notificação
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close(); // Fecha a janelinha
+    event.waitUntil(
+        clients.openWindow(event.notification.data.url) // Abre o Marketplace no lugar certo
+    );
+});
 // ──▶ ABAIXO DAQUI SEGUE O SEU CÓDIGO DE CACHE (NEVER_CACHE, FETCH, ETC)
 
 const CACHE_NAME = 'atlivio-cache-v50'; 
