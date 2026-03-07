@@ -33,8 +33,6 @@ messaging.onBackgroundMessage((payload) => {
         badge: 'https://ui-avatars.com/api/?name=A&background=1e3a8a&color=fff&size=96',
         // 📳 VIBRAÇÃO: Padrão de pulso [vibra, pausa, vibra]
         vibrate: [300, 100, 300],
-        // 🏷️ TAG: Impede que várias notificações iguais se acumulem, elas se atualizam
-        tag: 'atlivio-maestro-alert',
         // 🚀 RENOVAÇÃO: Faz o celular vibrar/tocar de novo se chegar outra mensagem da mesma tag
         renotify: true,
         // 🔗 DADOS: Guarda a URL para onde o usuário vai ao clicar
