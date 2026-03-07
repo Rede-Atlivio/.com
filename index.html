@@ -709,18 +709,30 @@
             }
         }
 
-        window.processarRecarga = function() {
+window.processarRecarga = async function() { // 🚀 Adicionado "async" para permitir a consulta ao banco em tempo real
             const select = document.getElementById('select-recarga');
             if (!select) return;
 
             const valor = parseInt(select.value);
+            const db = window.db; // 🛰️ Pega a conexão com o banco de dados já aberta
 
-            // 🛡️ TRAVA DINÂMICA MAESTRO: Lê o limite definido por você no Painel Admin em tempo real.
-            const limiteAtual = parseFloat(window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500); // Se não achar no banco, usa 500 como segurança.
-           // 🛡️ TRAVA MESTRA V14: Única declaração de segurança.
-            const isLiberadoGeral = window.CONFIG_FINANCEIRA?.liberar_black_geral_v1 === true; 
+            // 🔍 CONSULTA DE SEGURANÇA: Vai ao Firebase checar se você ligou o Botão Black no Admin
+            let isLiberadoGeral = false;
+            try {
+                // Importa as ferramentas de leitura apenas se necessário (otimiza memória)
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const confSnap = await getDoc(doc(db, "configuracoes", "global"));
+                if (confSnap.exists()) {
+                    // Se o campo lá no seu Firebase estiver "true", a trava cai aqui
+                    isLiberadoGeral = confSnap.data().liberar_black_geral_v1 === true;
+                }
+            } catch (e) { console.error("Falha ao ler trava global:", e); }
+
+            const limiteAtual = 500; // Limite padrão de segurança
+            // 👤 Verifica se este usuário específico já é VIP (Verificado)
             const isVipUser = window.userProfile?.is_verified === "true" || window.userProfile?.is_verified === true; 
 
+            // 🔒 BLOQUEIO OU LIBERAÇÃO: Se o Admin liberou geral OU o cliente for VIP, ele pula o erro
             if (valor > limiteAtual && !isLiberadoGeral && !isVipUser) {
                 const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
