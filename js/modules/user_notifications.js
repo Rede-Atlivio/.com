@@ -405,8 +405,13 @@ window.dispararNotificacaoExterna = async (uid, titulo, mensagem, tipo = 'market
         } else {
             console.warn("⚠️ [Transmissor] O Robô respondeu, mas com erro:", status);
         }
-    } catch (error) {
-        // Caso a internet caia ou o servidor esteja fora, o sistema não trava, apenas loga o erro
-        console.error("🔥 [Transmissor] Erro crítico ao falar com o Google Cloud:", error);
-    }
+   } catch (error) {
+        // 🛡️ Tratamento de Resiliência: Caso o servidor falhe, o App continua rodando normalmente.
+        console.error("🔥 [Transmissor] Erro crítico ao falar com o Google Cloud:", error);
+    }
 };
+
+// 🛰️ EXPOSIÇÃO DE ELITE: Disponibiliza as funções para o Sentinela e para o Painel Admin
+// Sem estas linhas, o Admin não consegue dar ordens manuais ou automáticas.
+window.carregarMaestro = window.iniciarSistemaNotificacoes; // 🔑 Chave de ignição para o Sentinela
+window.dispararFluxoManual = window.processarFluxoAutomatico; // 🚀 Permite testes manuais via console
