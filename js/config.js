@@ -29,19 +29,20 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
-// 🛡️ CORREÇÃO V36: Inclusão de arrayUnion e increment para Ad-Engine
-// 🛡️ CORREÇÃO V37: Inclusão do writeBatch para limpeza em massa
+// 🛡️ VERSÃO FINAL MAESTRO: Centralização de módulos e Motor de Escala (Contagem e Massa)
 import { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion, writeBatch 
+    increment, arrayUnion, writeBatch,
+    getCountFromServer // 📊 Necessário para contar milhões de usuários sem custo alto
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🛡️ CONFIGURAÇÃO V39: Expondo writeBatch para o Maestro Flow suportar milhões de usuários
+// Exposição Global para os Robôs de Teste e Automação
 window.firebaseModules = { 
     doc, getDoc, getDocs, collection, query, where, orderBy, limit, 
     updateDoc, addDoc, onSnapshot, serverTimestamp, runTransaction, 
-    increment, arrayUnion, writeBatch // 🚀 A chave para o salvamento em massa
+    increment, arrayUnion, writeBatch,
+    getCountFromServer // 🚀 Habilita o Robô de Estresse
 };
 
 // 4. EXPORTAÇÃO (Para os outros arquivos importarem daqui)
