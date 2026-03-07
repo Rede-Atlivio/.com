@@ -512,7 +512,8 @@ window.dispararMaestroEmMassa = async function() {
     btn.disabled = true;
 
     try {
-        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = window.firebaseModules;
+        // 🛰️ IMPORTAÇÃO DINÂMICA: Garante que os módulos existam antes do disparo
+        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         const db = window.db;
         
         // 🎯 MIRA: Identifica o grupo alvo
