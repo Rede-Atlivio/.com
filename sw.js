@@ -33,8 +33,7 @@ messaging.onBackgroundMessage((payload) => {
         badge: 'https://ui-avatars.com/api/?name=A&background=1e3a8a&color=fff&size=96',
         // 📳 VIBRAÇÃO: Padrão de pulso [vibra, pausa, vibra]
         vibrate: [300, 100, 300],
-        // 🚀 RENOVAÇÃO: Faz o celular vibrar/tocar de novo se chegar outra mensagem da mesma tag
-        renotify: true,
+        // 🚀 MODO EMPILHAMENTO: Cada mensagem aparecerá individualmente no celular
         // 🔗 DADOS: Guarda a URL para onde o usuário vai ao clicar
         data: { url: payload.data?.url || '/' }
     };
