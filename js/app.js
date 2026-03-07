@@ -1,3 +1,9 @@
+// 🛰️ IDENTIDADE ATLIVIO V60
+// Garante que o navegador saiba exatamente qual versão do motor está rodando.
+localStorage.setItem('atlivio_version', '2026_V60');
+
+// ============================================================================
+
 // ============================================================================
 // 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
 // ============================================================================
