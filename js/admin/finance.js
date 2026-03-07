@@ -332,13 +332,24 @@ window.cancelarLiberacaoGeral = () => {
     document.getElementById('modal-confirmacao-black').classList.add('hidden');
 };
 
-window.executarLiberacaoGeral = () => {
-    document.getElementById('txt-status-black').innerText = "🔓 LIBERADO PARA TODOS";
-    document.getElementById('txt-status-black').classList.replace('text-gray-500', 'text-blue-400');
-    document.getElementById('modal-confirmacao-black').classList.add('hidden');
-    
-    // Alerta visual de sucesso
-    console.log("🚀 [FINANCE] Trava master de R$ 500 desativada pelo administrador.");
+window.executarLiberacaoGeral = async () => {
+    try {
+        const db = window.db;
+        // 🛰️ GRAVAÇÃO NA CHAVE MESTRA: Altera apenas 1 documento para todo o sistema
+        const configRef = doc(db, "configuracoes", "global");
+        await updateDoc(configRef, {
+            liberar_black_geral_v1: true,
+            updated_at: serverTimestamp()
+        });
+
+        document.getElementById('txt-status-black').innerText = "🔓 LIBERADO PARA TODOS";
+        document.getElementById('txt-status-black').classList.replace('text-gray-500', 'text-blue-400');
+        document.getElementById('modal-confirmacao-black').classList.add('hidden');
+        
+        alert("🚨 COMANDO GLOBAL ATIVADO: Trava de R$ 500 removida de todos os usuários.");
+    } catch (e) {
+        alert("Erro ao gravar no Firebase: " + e.message);
+    }
 };
 // ============================================================================
 // 🛰️ EXPOSIÇÃO GLOBAL NECESSÁRIA (FINAL DO ARQUIVO)
