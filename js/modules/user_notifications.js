@@ -330,16 +330,13 @@ window.carregarHistoricoNotificacoes = async () => {
 
         const snap = await getDocs(q);
 
-       // 🧹 FAXINA AUTOMÁTICA V42: Se achou mensagens, marca todas como lidas no banco de uma vez ──▶
-        if (!snap.empty) {
-            const batch = writeBatch(window.db);
-            snap.docs.forEach(doc => {
-                if (doc.data().read === false) batch.update(doc.ref, { read: true, limpo_em: new Date() });
-            });
-            await batch.commit(); // 🚀 Envia a ordem de baixa definitiva para o Google
-            console.log(`✅ [Maestro] Sincronia concluída: ${snap.size} mensagens limpas.`);
-        }
-
+       // 🛡️ SINCRONIA INTELIGENTE V45: Só limpa o badge (bolinha) se o usuário abrir o histórico.
+       // Removemos a faxina automática agressiva que matava o Balão Azul antes dele nascer.
+        if (!snap.empty) {
+           console.log(`✅ [Maestro] Histórico carregado: ${snap.size} mensagens encontradas.`);
+           // A bolinha vermelha agora só some quando o usuário visualiza o histórico, 
+           // mas não marca como "lido" no banco instantaneamente para não quebrar o tempo real.
+        }
         if (snap.empty) {
             lista.innerHTML = '<p class="text-center text-gray-400 text-xs italic py-10">Nenhuma mensagem encontrada.</p>';
             return;
