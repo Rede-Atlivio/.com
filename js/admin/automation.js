@@ -495,67 +495,53 @@ window.carregarMaestro = async function() {
    };
 
 // 🗑️ LIXO REMOVIDO: A busca individual foi desativada para unificação do Maestro Flow.
-// ============================================================================
-// 🚀 MOTOR DE DISPARO EM MASSA DO MAESTRO
-// ============================================================================
+
+// 🚀 MOTOR DE DISPARO UNIFICADO V60: Pronta para Escala Global
 window.dispararMaestroEmMassa = async function() {
     const intencao = document.getElementById('maestro-mass-intent').value;
     const msg = document.getElementById('maestro-mass-msg').value.trim();
     const action = document.getElementById('maestro-mass-action').value;
     const btn = document.getElementById('btn-mass-fire');
 
-    if (!msg) return alert("❌ Digite a mensagem da oferta/guia!");
+    if (!msg) return alert("❌ Digite a mensagem da oferta!");
     
-    let txtPublico = intencao === 'todos' ? 'TODOS OS USUÁRIOS DA PLATAFORMA' : `todos os usuários de: ${intencao.toUpperCase()}`;
-    if (!confirm(`🔥 AÇÃO DE MARKETING: Você vai disparar um alerta Push Inteligente para ${txtPublico}!\n\nConfirmar disparo?`)) return;
+    // 🛡️ Segurança: Alerta de impacto global antes de gravar no banco
+    if (!confirm(`🔥 MARKETING GLOBAL: Disparar para ${intencao.toUpperCase()}?`)) return;
 
-    btn.innerHTML = "⏳ Enviando Lote...";
+    btn.innerHTML = "⏳ PROCESSANDO LOTE...";
     btn.disabled = true;
 
     try {
-        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = window.firebaseModules;
         const db = window.db;
-
-        // Monta a Query 
-        let q;
-        if (intencao === 'todos') {
-            q = collection(db, "usuarios");
-        } else {
-            q = query(collection(db, "usuarios"), where("user_intent", "==", intencao));
-        }
+        
+        // 🎯 MIRA: Identifica o grupo alvo
+        const q = (intencao === 'todos') ? collection(db, "usuarios") : query(collection(db, "usuarios"), where("user_intent", "==", intencao));
 
         const snap = await getDocs(q);
-        if (snap.empty) {
-            alert("Nenhum usuário ativo neste público alvo.");
-            btn.innerHTML = "Disparar para Público Alvo 🔥";
-            btn.disabled = false;
-            return;
-        }
+        if (snap.empty) { alert("Público vazio."); btn.disabled = false; return; }
 
-        const batch = writeBatch(db);
-        let contador = 0;
-
+        const batch = writeBatch(db); // ⚡ Batch: Essencial para performance com milhões de usuários
+        
         snap.forEach(d => {
-            const uid = d.id;
-            const refNotif = doc(collection(db, "user_notifications"));
-           batch.set(refNotif, {
-                userId: uid,
-                type: action === 'canal' ? "canal" : "gift", 
-                message: msg,
+            // 🎯 ENDEREÇO UNIFICADO: Onde o App escuta as mensagens (Balão Azul)
+            const refNotif = doc(collection(db, "usuarios", d.id, "notificacoes"));
+            batch.set(refNotif, {
+                title: "Aviso Atlivio",       // ✅ Campo padronizado (Inglês)
+                message: msg,                // ✅ Campo padronizado (Inglês)
+                type: 'marketing',
                 action: action,
-                read: false,
-                created_at: serverTimestamp()
+                read: false,                 // ✅ Indica mensagem não lida para o motor visual
+                created_at: serverTimestamp() // ✅ Carimbo oficial de tempo do Google
             });
-            contador++;
         });
 
-        await batch.commit();
-
-        alert(`✅ MARKETING ENVIADO!\nGuia disparado para ${contador} usuários na hora.`);
+        await batch.commit(); // 🚀 Dispara todas as gravações de uma vez
+        alert(`✅ SUCESSO! Marketing entregue para ${snap.size} usuários.`);
         document.getElementById('maestro-mass-msg').value = "";
     } catch (e) {
-        console.error("Erro no disparo em massa:", e);
-        alert("❌ Erro no disparo: " + e.message);
+        console.error("Erro no Maestro:", e);
+        alert("Falha técnica: " + e.message);
     } finally {
         btn.innerHTML = "Disparar para Público Alvo 🔥";
         btn.disabled = false;
