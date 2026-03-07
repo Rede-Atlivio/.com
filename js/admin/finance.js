@@ -315,14 +315,26 @@ window.executeAdjustment = async (uid) => {
 // 🔓 LÓGICA DE LIBERAÇÃO BLACK (MÓDULO FINANCEIRO)
 // ============================================================================
 
-window.confirmarLiberacaoGeral = (el) => {
+window.confirmarLiberacaoGeral = async (el) => {
     if (el.checked) {
         // Se tentou ligar, abre o modal de confirmação
         document.getElementById('modal-confirmacao-black').classList.remove('hidden');
     } else {
-        // Se desligou, apenas atualiza o texto
-        document.getElementById('txt-status-black').innerText = "🔒 SISTEMA TRAVADO (500)";
-        document.getElementById('txt-status-black').classList.replace('text-blue-400', 'text-gray-500');
+        // 🔒 BLOQUEIO GLOBAL: Grava 'false' no Firebase e atualiza o visual
+        try {
+            const configRef = doc(window.db, "configuracoes", "global");
+            await updateDoc(configRef, { 
+                liberar_black_geral_v1: false,
+                updated_at: serverTimestamp() 
+            });
+            
+            document.getElementById('txt-status-black').innerText = "🔒 SISTEMA TRAVADO (500)";
+            document.getElementById('txt-status-black').classList.replace('text-blue-400', 'text-gray-500');
+            console.log("✅ [FINANCE] Trava global reativada com sucesso.");
+        } catch (e) {
+            el.checked = true; // Reverte o botão se der erro no banco
+            alert("Erro ao travar sistema: " + e.message);
+        }
     }
 };
 
