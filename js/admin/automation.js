@@ -451,59 +451,7 @@ window.carregarMaestro = async function() {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
-                    <div class="flex items-center gap-3 border-b border-slate-800 pb-4">
-                        <i data-lucide="megaphone" class="text-blue-500"></i>
-                        <h3 class="text-sm font-black text-white uppercase">Sininho: Teste Individual</h3>
-                    </div>
-                    
-                    <div class="relative">
-                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Buscar Usuário (Nome, Email, CPF, Tel)</label>
-                        <div id="maestro-search-container" class="relative">
-                            <input type="text" id="maestro-user-search" placeholder="Digite para buscar..." oninput="window.buscarUsuarioMaestro(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition pr-10">
-                            <i data-lucide="search" class="absolute right-3 top-3 w-4 h-4 text-gray-500"></i>
-                        </div>
-                        
-                        <div id="maestro-search-results" class="absolute z-50 w-full bg-slate-800 border border-slate-700 rounded-xl mt-1 hidden max-h-48 overflow-y-auto custom-scrollbar shadow-2xl"></div>
-                        
-                        <input type="hidden" id="maestro-uid">
-                        
-                        <div id="maestro-selected-user" class="hidden mt-2 flex justify-between items-center bg-blue-900/20 border border-blue-800/50 p-3 rounded-xl">
-                            <span id="maestro-selected-name" class="text-xs font-bold text-blue-400"></span>
-                            <button onclick="window.limparSelecaoMaestro()" class="text-red-400 hover:text-red-300 text-[10px] font-black uppercase tracking-widest px-2 transition">✕ Trocar</button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Mensagem do Teste</label>
-                        <textarea id="maestro-msg" rows="2" placeholder="Ex: Aviso direto para teste..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs outline-none focus:border-blue-500 transition resize-none"></textarea>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div class="hidden">
-                             <input type="hidden" id="maestro-type" value="gift">
-                        </div>
-                        <div>
-                            <label class="block text-[9px] font-black text-gray-500 uppercase mb-1">Ação</label>
-                           <select id="maestro-action" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white text-xs font-bold outline-none">
-                                <option value="chat">💬 Ir para Chat</option>
-                                <option value="wallet">💰 Ir para Carteira</option>
-                                <option value="services">🛠️ Ir para Serviços</option>
-                                <option value="missoes">⚡ Ir para Missões</option>
-                                <option value="jobs">💼 Ir para Vagas</option>
-                                <option value="oportunidades">🏷️ Ir para Oportunidades</option>
-                                <option value="produtos">🛍️ Ir para Produtos</option>
-                                <option value="canal">📺 Ir para Canal ATLIVIO</option>
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button onclick="window.dispararNotificacaoMaestro()" class="w-full bg-slate-700 hover:bg-blue-600 text-white font-black py-3 rounded-xl transition uppercase text-[10px] tracking-widest">
-                                Enviar Teste
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
+                
                 <div class="space-y-6">
                     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
                         <div class="flex items-center gap-3 border-b border-slate-800 pb-4 mb-4">
