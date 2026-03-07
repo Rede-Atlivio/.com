@@ -116,9 +116,9 @@ window.escutarComandosMaestro = (uid) => {
 };
 window.processarFluxoAutomatico = async (user) => {
     try {
-        // Passo 1: Busca o "Livro de Ordens" (JSON) que o Gil salvou no Admin
-        const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const snapMaestro = await getDoc(doc(db, "settings", "maestro_flow"));
+        // 🛡️ Passo 1: Busca o "Livro de Ordens" (JSON) usando os módulos já carregados na blindagem global
+        // Isso evita que o sistema baixe o Firebase várias vezes, economizando dados e bateria do usuário.
+        const snapMaestro = await getDoc(doc(window.db, "settings", "maestro_flow"));
         
         if (!snapMaestro.exists()) return console.log("ℹ️ Maestro: Nenhum roteiro agendado no momento.");
 
