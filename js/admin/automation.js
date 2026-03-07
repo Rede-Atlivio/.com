@@ -527,13 +527,18 @@ window.dispararMaestroEmMassa = async function() {
         snap.forEach(d => {
             // 🎯 ENDEREÇO UNIFICADO: Onde o App escuta as mensagens (Balão Azul)
             const refNotif = doc(collection(db, "usuarios", d.id, "notificacoes"));
+            // 🎯 ESCALA GLOBAL: Gravação em formato bilíngue para compatibilidade total
             batch.set(refNotif, {
-                title: "Aviso Atlivio",       // ✅ Campo padronizado (Inglês)
-                message: msg,                // ✅ Campo padronizado (Inglês)
+                title: "Aviso Atlivio",       // Padrão Internacional (Novo)
+                titulo: "Aviso Atlivio",      // Padrão Legado (Antigo)
+                message: msg,                 // Padrão Internacional (Novo)
+                mensagem: msg,                // Padrão Legado (Antigo)
                 type: 'marketing',
+                tipo: 'marketing',
                 action: action,
-                read: false,                 // ✅ Indica mensagem não lida para o motor visual
-                created_at: serverTimestamp() // ✅ Carimbo oficial de tempo do Google
+                read: false,                  // Gatilho do Balão Azul
+                lida: false,                  // Gatilho do Sistema Legado
+                created_at: serverTimestamp() // Selo de Tempo Real
             });
         });
 
