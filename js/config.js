@@ -24,11 +24,13 @@ const db = getFirestore(app);
 const storage = getStorage(app); 
 const provider = new GoogleAuthProvider();
 
-// 3. EXPOSIÇÃO GLOBAL
-window.app = app; // <--- ADICIONE ESTA LINHA
+// 3. EXPOSIÇÃO GLOBAL (Sincronia Total V32)
+// Garante que todos os robôs e arquivos enxerguem as chaves mestras.
+window.app = app; 
 window.auth = auth;
 window.db = db;
 window.storage = storage;
+window.VAPID_KEY = "BCw5YpjLvlm9UPEJOQNGocnpXdllamtPomsgoxVBbSlw68tu32THnvt6daIVsg8hBUtjS4pPn2FrxBXtN9-Ebv8";
 
 // 🛡️ VERSÃO FINAL MAESTRO: Centralização de módulos e Motor de Escala (Contagem e Massa)
 import { 
