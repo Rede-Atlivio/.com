@@ -525,20 +525,16 @@ window.dispararMaestroEmMassa = async function() {
         const batch = writeBatch(db); // ⚡ Batch: Essencial para performance com milhões de usuários
         
         snap.forEach(d => {
-            // 🎯 ENDEREÇO UNIFICADO: Onde o App escuta as mensagens (Balão Azul)
-            const refNotif = doc(collection(db, "usuarios", d.id, "notificacoes"));
-            // 🎯 ESCALA GLOBAL: Gravação em formato bilíngue para compatibilidade total
-            batch.set(refNotif, {
-                title: "Aviso Atlivio",       // Padrão Internacional (Novo)
-                titulo: "Aviso Atlivio",      // Padrão Legado (Antigo)
-                message: msg,                 // Padrão Internacional (Novo)
-                mensagem: msg,                // Padrão Legado (Antigo)
-                type: 'marketing',
-                tipo: 'marketing',
+            // 🎯 ESCALA MAESTRO: Cria a ordem de serviço para o Robô Cloud Run processar por fora
+            const refPush = doc(collection(db, "maestro_push"));
+            batch.set(refPush, {
+                uid: d.id,                   // UID de cada usuário do lote
+                title: "Oportunidade Atlivio",
+                message: msg,
                 action: action,
-                read: false,                  // Gatilho do Balão Azul
-                lida: false,                  // Gatilho do Sistema Legado
-                created_at: serverTimestamp() // Selo de Tempo Real
+                priority: "high",            // Entrega garantida
+                status: "pending",           // Comando de execução
+                created_at: serverTimestamp()
             });
         });
 
