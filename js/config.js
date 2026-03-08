@@ -6,7 +6,8 @@ import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-// 1. SUAS CHAVES DO FIREBASE
+// 1. CREDENCIAIS MESTRE FIREBASE (V32 - SINCRONIA TOTAL)
+// 🛡️ IMPORTANTE: O appId deve ser o mesmo do firebase-messaging-sw.js para o rádio funcionar.
 const firebaseConfig = { 
     apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", 
     authDomain: "atlivio-oficial-a1a29.firebaseapp.com", 
