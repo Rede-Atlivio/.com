@@ -375,38 +375,9 @@ window.carregarHistoricoNotificacoes = async () => {
  * Esta função permite que o site "grite" para o servidor e o servidor avise o usuário.
  * Preparado para milhões de requisições simultâneas.
  */
-window.dispararNotificacaoExterna = async (uid, titulo, mensagem, tipo = 'marketing') => {
-    // 🌍 ENDEREÇO DO ROBÔ: O link que acabamos de criar e testar no Google Cloud
-    const URL_ROBO_MAESTRO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
-    
-    console.log(`📡 [Transmissor] Enviando ordem externa para o UID: ${uid}`);
 
-    try {
-        // Envia os dados para o Google Cloud via POST (formato seguro de envio)
-        const resposta = await fetch(URL_ROBO_MAESTRO, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                uid: uid,
-                titulo: titulo,
-                mensagem: mensagem,
-                tipo: tipo
-            })
-        });
-
-        // Aguarda a resposta do servidor (Deve ser "OK")
-        const status = await resposta.text();
-        
-        if (status === "OK") {
-            console.log("✅ [Transmissor] Sucesso: O Google Cloud recebeu a notificação!");
-        } else {
-            console.warn("⚠️ [Transmissor] O Robô respondeu, mas com erro:", status);
-        }
-   } catch (error) {
-        // 🛡️ Tratamento de Resiliência: Caso o servidor falhe, o App continua rodando normalmente.
-        console.error("🔥 [Transmissor] Erro crítico ao falar com o Google Cloud:", error);
-    }
-};
+// 🛡️ FIAÇÃO REESTRUTURADA: O disparo externo (Cloud Run) agora é exclusivo do Módulo de Automação/Admin.
+// Este arquivo agora foca 100% na experiência do usuário final e recepção de sinais.
 
 // 🛰️ EXPOSIÇÃO DE ELITE: Disponibiliza as funções para o Sentinela e para o Painel Admin
 // Sem estas linhas, o Admin não consegue dar ordens manuais ou automáticas.
