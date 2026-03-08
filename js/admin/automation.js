@@ -676,31 +676,29 @@ window.salvarESincronizarRede = async function() {
 
 // 🔔 PASSO 3: DISPARAR PUSH (SINCRO EXTERNA V60)
 window.ativarGatilhoPush = async function() {
-    console.log("📡 [Maestro] Preparando disparo cirúrgico...");
+    console.log("🚀 [Maestro] DISPARO EM MASSA INICIADO...");
     try {
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 🎯 CAPTURA DE ALVO: Pega o UID e a Mensagem direto da tela do Admin
-        const uidAlvo = document.getElementById('maestro-uid')?.value.trim();
-        const msgTexto = document.getElementById('maestro-mass-msg')?.value.trim() || "Novos bônus liberados para você! 💰";
+        // 📜 PEGA O SCRIPT DO CAMPO JSON: Se houver algo lá, o Robô Cloud usará como base
+        const scriptJson = document.getElementById('maestro-flow-json')?.value.trim();
 
-        if (!uidAlvo) return alert("❌ Informe o UID do usuário para o disparo individual!");
-
-        // 🚀 ORDEM DE DISPARO: Envia com UID e Prioridade Máxima
+        // 🚀 ORDEM DE DISPARO GLOBAL: Envia para a coleção que o Cloud Run vigia
+        // O Robô Cloud Run V12.2 está preparado para ver o campo "global: true" e disparar para a massa
         await addDoc(collection(window.db, "maestro_push"), {
-            uid: uidAlvo,                    // Identifica quem vai receber (O que faltava!)
-            title: "Jornada Atlivio",       // Título da Notificação
-            message: msgTexto,               // Mensagem personalizada
-            type: "marketing",
-            priority: "high",               // Fura o bloqueio de bateria do celular
-            status: "pending",              // Acorda o Robô Cloud Run
+            mode: "mass_broadcast",          // Avisa que é para todo mundo
+            title: "Jornada Atlivio", 
+            message: "Sincronia Maestro: Novos bônus liberados! 💰",
+            script_payload: scriptJson ? JSON.parse(scriptJson) : null,
+            status: "pending",               // Gatilho de ativação
+            priority: "high",                // Força a entrega
             created_at: serverTimestamp()
         });
 
-        alert("🚀 SINAL ENVIADO!\nO Robô Cloud Run recebeu a ordem de transmissão.");
+        alert("🔥 CANHÃO EM MASSA DISPARADO!\nO sinal está sendo propagado para toda a rede.");
     } catch (e) {
-        console.error("❌ Erro no disparo Push:", e);
-        alert("Erro técnico: " + e.message);
+        console.error("❌ Falha no disparo global:", e);
+        alert("Erro ao disparar: Verifique se o JSON está correto.");
     }
 };
 
