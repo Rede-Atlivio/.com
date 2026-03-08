@@ -496,60 +496,53 @@ window.carregarMaestro = async function() {
 
 // 🗑️ LIXO REMOVIDO: A busca individual foi desativada para unificação do Maestro Flow.
 
-// 🚀 MOTOR DE DISPARO UNIFICADO V60: Pronta para Escala Global
+// 🚀 MOTOR DE DISPARO INSTANTÂNEO V12.4: Fale direto com o Robô Cloud Run
 window.dispararMaestroEmMassa = async function() {
+    // 🌍 ENDEREÇO DO ROBÔ: O link oficial do seu Cloud Run
+    const URL_ROBO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
     const intencao = document.getElementById('maestro-mass-intent').value;
     const msg = document.getElementById('maestro-mass-msg').value.trim();
     const action = document.getElementById('maestro-mass-action').value;
     const btn = document.getElementById('btn-mass-fire');
 
-    if (!msg) return alert("❌ Digite a mensagem da oferta!");
+    if (!msg) return alert("❌ Digite a mensagem do disparo!");
     
-    // 🛡️ Segurança: Alerta de impacto global antes de gravar no banco
-    if (!confirm(`🔥 MARKETING GLOBAL: Disparar para ${intencao.toUpperCase()}?`)) return;
+    // 🛡️ Segurança: Confirmação de impacto em massa
+    if (!confirm(`🔥 IMPACTO GLOBAL: Disparar agora para o segmento ${intencao.toUpperCase()}?`)) return;
 
-    btn.innerHTML = "⏳ PROCESSANDO LOTE...";
+    btn.innerHTML = "⏳ DISPARANDO CANHÃO...";
     btn.disabled = true;
 
     try {
-        // 🛰️ IMPORTAÇÃO DINÂMICA: Garante que os módulos existam antes do disparo
-        const { collection, getDocs, query, where, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const db = window.db;
+        console.log("📡 [Maestro] Enviando ordem direta para o Robô Cloud Run...");
         
-        // 🎯 MIRA: Identifica o grupo alvo
-        const q = (intencao === 'todos') ? collection(db, "usuarios") : query(collection(db, "usuarios"), where("user_intent", "==", intencao));
-
-        const snap = await getDocs(q);
-        if (snap.empty) { alert("Público vazio."); btn.disabled = false; return; }
-
-        const batch = writeBatch(db); // ⚡ Batch: Essencial para performance com milhões de usuários
-        
-        snap.forEach(d => {
-            // 🎯 ESCALA MAESTRO: Cria a ordem de serviço para o Robô Cloud Run processar por fora
-            const refPush = doc(collection(db, "maestro_push"));
-            batch.set(refPush, {
-                uid: d.id,                   // UID de cada usuário do lote
-                title: "Oportunidade Atlivio",
-                message: msg,
-                action: action,
-                priority: "high",            // Entrega garantida
-                status: "pending",           // Comando de execução
-                created_at: serverTimestamp()
-            });
+        // 🚀 O Admin agora dá uma ÚNICA ordem direta para o servidor processar a base toda
+        const resposta = await fetch(URL_ROBO, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                mode: "instant_target", // Chave para o Robô V12.4 entender o comando de massa
+                intencao: intencao,
+                mensagem: msg,
+                action: action
+            })
         });
 
-        await batch.commit(); // 🚀 Dispara todas as gravações de uma vez
-        alert(`✅ SUCESSO! Marketing entregue para ${snap.size} usuários.`);
-        document.getElementById('maestro-mass-msg').value = "";
+        if (resposta.ok) {
+            alert("🚀 SUCESSO! O Robô recebeu a ordem e está entregando as notificações agora.");
+            document.getElementById('maestro-mass-msg').value = "";
+        } else {
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt);
+        }
     } catch (e) {
-        console.error("Erro no Maestro:", e);
-        alert("Falha técnica: " + e.message);
+        console.error("❌ Erro no Disparo em Massa:", e);
+        alert("Falha ao acionar o Robô: " + e.message);
     } finally {
         btn.innerHTML = "Disparar para Público Alvo 🔥";
         btn.disabled = false;
     }
 };
-
 // 🗑️ LIXO REMOVIDO: Disparo individual por UID agora é via Robô Maestro Cloud.
 
 window.resetarTourUsuario = async function() {
