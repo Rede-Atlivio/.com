@@ -951,25 +951,27 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
 </div>
 
 <script>
-    
-    // 2. LÓGICA DO BOTÃO "INSTALAR"
+    // 🛰️ REGISTRO DO GENERAL UNIFICADO (V61)
+    // Usamos apenas um arquivo para Cache e Push para evitar conflitos de escopo no navegador.
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+                .then(reg => console.log("✅ Motor Híbrido Ativo (Escopo):", reg.scope))
+                .catch(err => console.warn("🚩 Falha ao subir rádio mestre:", err));
+        });
+    }
+
+    // 📲 GERENCIADOR DE INSTALAÇÃO (PWA)
     let deferredPrompt;
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-
         const btn = document.getElementById('btn-install-app');
         if (btn) {
             btn.classList.remove('hidden');
-            console.log("📲 Botão de Instalar ativado pelo navegador!");
-
             btn.onclick = async () => {
                 if (deferredPrompt) {
                     deferredPrompt.prompt();
-                    const {
-                        outcome
-                    } = await deferredPrompt.userChoice;
-                    console.log(`Opção escolhida: ${outcome}`);
                     deferredPrompt = null;
                     btn.classList.add('hidden');
                 }
