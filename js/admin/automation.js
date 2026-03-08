@@ -674,31 +674,50 @@ window.salvarESincronizarRede = async function() {
     }
 };
 
-// 🔔 PASSO 3: DISPARAR PUSH (SINCRO EXTERNA V60)
+// 🔔 PASSO 3: DISPARAR PUSH (MOTOR DE IMPACTO TOTAL V12.3)
 window.ativarGatilhoPush = async function() {
-    console.log("🚀 [Maestro] DISPARO EM MASSA INICIADO...");
+    const URL_ROBO_MAESTRO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
+    console.log("🚀 [Maestro] Iniciando Canhão de Milhões...");
+    
     try {
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 📜 PEGA O SCRIPT DO CAMPO JSON: Se houver algo lá, o Robô Cloud usará como base
+        // 1. Resgata o DNA (JSON) que está na tela do Admin
         const scriptJson = document.getElementById('maestro-flow-json')?.value.trim();
+        if (!scriptJson) return alert("❌ O Cérebro (JSON) está vazio! Cole o roteiro primeiro.");
 
-        // 🚀 ORDEM DE DISPARO GLOBAL: Envia para a coleção que o Cloud Run vigia
-        // O Robô Cloud Run V12.2 está preparado para ver o campo "global: true" e disparar para a massa
+        const payloadOficial = JSON.parse(scriptJson);
+
+        // 2. REGISTRO DE SEGURANÇA: Salva a ordem no banco para histórico
         await addDoc(collection(window.db, "maestro_push"), {
-            mode: "mass_broadcast",          // Avisa que é para todo mundo
-            title: "Jornada Atlivio", 
-            message: "Sincronia Maestro: Novos bônus liberados! 💰",
-            script_payload: scriptJson ? JSON.parse(scriptJson) : null,
-            status: "pending",               // Gatilho de ativação
-            priority: "high",                // Força a entrega
+            mode: "mass_broadcast",
+            status: "processing", // Marca como processando para o robô não duplicar
+            payload_version: payloadOficial.versao || "65.1",
             created_at: serverTimestamp()
         });
 
-        alert("🔥 CANHÃO EM MASSA DISPARADO!\nO sinal está sendo propagado para toda a rede.");
+        // 3. O GRITO EXTERNO: Aciona o Robô Cloud Run diretamente via POST
+        // É aqui que a mágica da escala de milhões acontece sem latência.
+        console.log("📡 [Transmissor] Gritando para o Robô Cloud Run...");
+        const resposta = await fetch(URL_ROBO_MAESTRO, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                mode: "mass_broadcast",
+                script_payload: payloadOficial // Envia o roteiro completo para o robô varrer a rede
+            })
+        });
+
+        if (resposta.ok) {
+            alert("🔥 CANHÃO EM MASSA DISPARADO!\nO Robô iniciou a varredura de milhões de usuários.");
+        } else {
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt);
+        }
+
     } catch (e) {
-        console.error("❌ Falha no disparo global:", e);
-        alert("Erro ao disparar: Verifique se o JSON está correto.");
+        console.error("❌ Erro Crítico no Canhão:", e);
+        alert("Falha no Disparo: " + e.message);
     }
 };
 
