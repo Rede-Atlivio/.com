@@ -148,9 +148,15 @@ async function capturarEnderecoNotificacao(uid) {
             });
             
             if (tokenAtual) {
-                console.log("✅ Celular grampeado para notificações com sucesso.");
+                // 🛰️ CAPTURA DE ALTA PRECISÃO: Extrai o pacote de chaves completo (Endpoint + Keys)
+                // Usamos a 'registration' já validada na linha 131.
+                const sub = await registration.pushManager.getSubscription();
+                
+                console.log("✅ Endereço Maestro V60 capturado. Sincronizando...");
+                
                 await updateDoc(doc(db, "usuarios", uid), {
-                    fcm_token: tokenAtual,
+                    // Salvamos o objeto completo convertido em texto para o Cloud Run ler
+                    fcm_token: sub ? JSON.stringify(sub) : tokenAtual, 
                     push_enabled: true,
                     last_token_update: serverTimestamp()
                 });
