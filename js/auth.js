@@ -663,7 +663,10 @@ window.IniciarAvisoGlobal = function() {
 };
 // 🌍 EXPOSIÇÃO GLOBAL V25 (Sincronia Final)
 // Garante que o Index.html e o Console consigam usar as funções do Auth
+// 🌍 EXPOSIÇÃO GLOBAL V28.2 (Fiação Completa)
+// Publicamos a função na window para que o app.js e os Robôs consigam ligar a antena
+window.capturarEnderecoNotificacao = capturarEnderecoNotificacao; 
 window.renderizarRadarOffline = renderizarRadarOffline;
 window.concederBonusSeAtivo = concederBonusSeAtivo;
 
-console.log("%c✅ AUTH.JS: Funções de Interface estabilizadas!", "color: #10b981; font-weight: bold;");
+console.log("%c✅ AUTH.JS: Fiação Global estabilizada (Antena Exposta)!", "color: #10b981; font-weight: bold;");
