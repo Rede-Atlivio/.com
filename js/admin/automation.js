@@ -680,22 +680,28 @@ window.salvarESincronizarRede = async function() {
 
 // 🔔 PASSO 3: DISPARAR PUSH (SINCRO EXTERNA V60)
 window.ativarGatilhoPush = async function() {
-    console.log("📡 [Maestro] Acionando torres de transmissão externas...");
+    console.log("📡 [Maestro] Preparando disparo cirúrgico...");
     try {
-        // 🛰️ IMPORTAÇÃO DINÂMICA: Protege contra erro de 'undefined' no carregamento
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // 🚀 ORDEM DE DISPARO: Escreve na coleção oficial que o Robô Cloud vigia
+        // 🎯 CAPTURA DE ALVO: Pega o UID e a Mensagem direto da tela do Admin
+        const uidAlvo = document.getElementById('maestro-uid')?.value.trim();
+        const msgTexto = document.getElementById('maestro-mass-msg')?.value.trim() || "Novos bônus liberados para você! 💰";
+
+        if (!uidAlvo) return alert("❌ Informe o UID do usuário para o disparo individual!");
+
+        // 🚀 ORDEM DE DISPARO: Envia com UID e Prioridade Máxima
         await addDoc(collection(window.db, "maestro_push"), {
-            title: "Jornada Atlivio",       // Título curto para o celular
-            message: "Sincronia Maestro: Novos bônus liberados para você! 💰", 
+            uid: uidAlvo,                    // Identifica quem vai receber (O que faltava!)
+            title: "Jornada Atlivio",       // Título da Notificação
+            message: msgTexto,               // Mensagem personalizada
             type: "marketing",
-            priority: "high",               // Força o Google Cloud a processar na hora
-            status: "pending",              // Sinal para o Robô Cloud agir
+            priority: "high",               // Fura o bloqueio de bateria do celular
+            status: "pending",              // Acorda o Robô Cloud Run
             created_at: serverTimestamp()
         });
 
-        alert("🚀 SINAL PROPAGADO!\nO canhão externo foi disparado com sucesso.");
+        alert("🚀 SINAL ENVIADO!\nO Robô Cloud Run recebeu a ordem de transmissão.");
     } catch (e) {
         console.error("❌ Erro no disparo Push:", e);
         alert("Erro técnico: " + e.message);
