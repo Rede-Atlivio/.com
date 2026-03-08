@@ -128,34 +128,37 @@ window.definirPerfil = async (tipo) => {
 let travaSincroniaAtiva = false;
 
 async function capturarEnderecoNotificacao(uid) {
+    // 🛡️ TRAVA DE SEGURANÇA: Só roda se o navegador suportar e se não estiver em loop
     if (!('serviceWorker' in navigator) || travaSincroniaAtiva) return;
-    travaSincroniaAtiva = true; // Bloqueia novas tentativas imediatas
+    travaSincroniaAtiva = true; 
 
     try {
-        console.log("🛰️ Maestro: Sincronizando rádio de mensagens...");
+        console.log("🛰️ Maestro: Acionando antena de mensagens externas...");
         
-        // 1. Usa o registro de rádio já ativo para evitar loops de atualização
-        const registration = await navigator.serviceWorker.ready;
-
+        // 🛠️ PASSO 1: Força o registro do arquivo oficial na raiz do GitHub
+        const registration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+        
+        // 🛠️ PASSO 2: Inicializa o rádio do Firebase vinculado a este registro
         const messaging = getMessaging(app);
+        
+        // 🛠️ PASSO 3: Solicita permissão ao usuário (Sininho)
         const permissao = await Notification.requestPermission();
         
         if (permissao === 'granted') {
-            // 2. Tenta obter o Token usando a chave carregada do config.js
+            // 🛠️ PASSO 4: Gera o Token (Endereço) usando a Chave VAPID e o Registro
             const tokenAtual = await getToken(messaging, { 
                 vapidKey: VAPID_KEY,
                 serviceWorkerRegistration: registration 
             });
             
             if (tokenAtual) {
-                // 🛰️ CAPTURA DE ALTA PRECISÃO: Extrai o pacote de chaves completo (Endpoint + Keys)
-                // Usamos a 'registration' já validada na linha 131.
+                // 🛠️ PASSO 5: Captura o JSON completo (Endpoint/Chaves) para o Cloud Run V12.2 ler
                 const sub = await registration.pushManager.getSubscription();
                 
-                console.log("✅ Endereço Maestro V60 capturado. Sincronizando...");
+                console.log("✅ [Sincronia] Antena Maestro Online e operante!");
                 
+                // 🛠️ PASSO 6: Salva no perfil do usuário no Firestore
                 await updateDoc(doc(db, "usuarios", uid), {
-                    // Salvamos o objeto completo convertido em texto para o Cloud Run ler
                     fcm_token: sub ? JSON.stringify(sub) : tokenAtual, 
                     push_enabled: true,
                     last_token_update: serverTimestamp()
@@ -163,7 +166,9 @@ async function capturarEnderecoNotificacao(uid) {
             }
         }
     } catch (error) {
-        console.warn("⚠️ Push em espera:", error.message);
+        // Se der erro, avisamos o sistema mas não travamos o App
+        console.warn("⚠️ [Antena] Aguardando nova tentativa de rádio:", error.message);
+        travaSincroniaAtiva = false; // Permite tentar de novo se o erro for temporário
     }
 }
 window.alternarPerfil = async () => {
