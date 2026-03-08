@@ -7,22 +7,32 @@ localStorage.setItem('atlivio_version', '2026_V60');
 // ============================================================================
 // 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
 // ============================================================================
+// 🛰️ MOTOR DE SINCRONIZAÇÃO DUPLO (PWA + NOTIFICAÇÕES)
+// Essencial para escala de milhões: registra o cache e a antena separadamente.
 if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-       navigator.serviceWorker.register('./sw.js').then(reg => {
-            // Monitoramento silencioso ativado
+    window.addEventListener('load', async () => {
+        try {
+            // 1. Registro do Escudo (Cache e Offline)
+            const regSw = await navigator.serviceWorker.register('./sw.js');
+            console.log("🛡️ Escudo de Cache: Ativo");
 
-            // ✨ SISTEMA ANTI-LOOP V25
-            // Deixa o navegador atualizar o cache em segundo plano sem interromper o Gil
-            reg.onupdatefound = () => {
-                const installingWorker = reg.installing;
-                installingWorker.onstatechange = () => {
-                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("📥 Nova versão baixada. Será aplicada no próximo acesso.");
+            // 2. Registro da Antena (O rádio que ouve o Google FCM)
+            // Sem esta linha, o Google dá o erro "Requested entity was not found"
+            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+            console.log("📡 Antena de Notificações: Sintonizada");
+
+            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
+            regSw.onupdatefound = () => {
+                const worker = regSw.installing;
+                worker.onstatechange = () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
                     }
                 };
             };
-        }).catch(err => console.error('❌ Erro no Registro PWA:', err));
+        } catch (err) {
+            console.error('❌ Falha Crítica no Motor PWA:', err);
+        }
     });
 }
 // ============================================================================
