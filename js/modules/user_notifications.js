@@ -137,17 +137,20 @@ window.processarFluxoAutomatico = async (user) => {
         const ordemDeHoje = roteiro.fluxo.find(f => f.dia === diaAtualDoUsuario);
 
        
-       // 🎯 LOGICA DE DISPARO INTELIGENTE: Se houver ordem para hoje, avisa o robô externo
+      // 🎯 GATILHO DE EXPERIÊNCIA: Se o usuário estiver no dia certo da jornada, o balão azul aparece localmente.
         if (ordemDeHoje) {
-            console.log("🎯 Maestro: Ordem de roteiro encontrada! Acionando transmissor externo...");
+            console.log("🎯 Maestro: Ordem encontrada para o dia do usuário. Exibindo alerta local...");
             
-            // Em vez de só mostrar na tela, usamos a nova função para garantir que o Google Cloud registre a mensagem
-            window.dispararNotificacaoExterna(
-                user.uid, 
-                roteiro.campanha || "Aviso Atlivio", 
-                ordemDeHoje.mensagem, 
-                'marketing'
-            );
+            // O sinal externo (celular apitando) é disparado pelo Admin. 
+            // Aqui, apenas garantimos que o usuário veja o balão azul na tela enquanto navega.
+            if (window.mostrarBarraNotificacao) {
+                window.mostrarBarraNotificacao("auto_" + diaAtualDoUsuario, {
+                    title: ordemDeHoje.titulo || "Jornada Atlivio",
+                    message: ordemDeHoje.mensagem,
+                    type: 'marketing',
+                    action: ordemDeHoje.action || 'home'
+                });
+            }
         }
 
     } catch (e) {
