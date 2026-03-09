@@ -153,12 +153,12 @@ async function capturarEnderecoNotificacao(uid) {
             });
             
             // 🛰️ GERADOR DE ENDEREÇO V33: Garante que o token gerado tenha o DNA puro para o Robô Cloud Run.
+            // 🛰️ SINTONIA V33: Salvamos apenas o token puro. Isso evita erros de leitura no Robô de milhões.
             if (tokenAtual) {
-                // Salvamos o token puro (string). O Robô V14.0 prefere este formato para evitar erros de leitura.
                 await updateDoc(doc(db, "usuarios", uid), {
-                    fcm_token: tokenAtual, // Salva o código puro da antena
-                    push_enabled: true,     // Ativa o rádio no perfil
-                    last_token_update: serverTimestamp() // Marca a hora da sintonia
+                    fcm_token: tokenAtual, // Salva APENAS o código puro (string)
+                    push_enabled: true,    // Ativa o rádio
+                    last_token_update: serverTimestamp()
                 });
                 console.log("✅ [Rádio] Endereço digital soldado no perfil!");
             }
