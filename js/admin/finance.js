@@ -152,18 +152,18 @@ window.filterFinanceList = () => {
                         class="p-2 bg-slate-900 rounded-lg text-blue-400 hover:bg-blue-600 hover:text-white transition shadow-sm border border-slate-700">⚙️</button>
                 </div>
                 
-                <div class="grid grid-cols-3 gap-2">
-                    <div class="bg-black/20 p-2 rounded border border-white/5">
-                        <p class="text-[8px] text-gray-500 font-bold uppercase">Saldo Real</p>
-                        <p class="text-xs font-black ${color}">R$ ${balReal.toFixed(2)}</p>
+               <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-black/20 p-2 rounded border border-white/5 text-center">
+                        <p class="text-[7px] text-gray-500 font-bold uppercase">Principal</p>
+                        <p class="text-xs font-black ${color}">${balReal.toFixed(2)}</p>
                     </div>
-                    <div class="bg-black/20 p-2 rounded border border-white/5">
-                        <p class="text-[8px] text-gray-500 font-bold uppercase">Bônus</p>
-                        <p class="text-xs font-black text-purple-400">R$ ${balBonus.toFixed(2)}</p>
+                    <div class="bg-black/20 p-2 rounded border border-white/5 text-center">
+                        <p class="text-[7px] text-gray-500 font-bold uppercase">Fundo Bônus</p>
+                        <p class="text-xs font-black text-purple-400">${balBonus.toFixed(2)}</p>
                     </div>
-                    <div class="bg-black/20 p-2 rounded border border-white/5">
-                        <p class="text-[8px] text-gray-500 font-bold uppercase">Reserva</p>
-                        <p class="text-xs font-black text-amber-400">R$ ${balReserved.toFixed(2)}</p>
+                    <div class="bg-black/20 p-2 rounded border border-white/5 text-center">
+                        <p class="text-[7px] text-gray-500 font-bold uppercase">Lock (Cust)</p>
+                        <p class="text-xs font-black text-amber-400">${balReserved.toFixed(2)}</p>
                     </div>
                 </div>
             </div>
