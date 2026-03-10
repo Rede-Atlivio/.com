@@ -320,10 +320,11 @@ window.executarVarreduraDeInativos = async () => {
             }
         }
         alert(`🎯 VARREDURA CONCLUÍDA!\n\n${contagem} usuários inativos foram bonificados.`);
-    } catch (e) {
-        console.error("❌ Erro técnico no motor:", e);
+   } catch (e) {
+        console.error("❌ Erro técnico no motor de varredura:", e);
     }
-};
+}; // 🛡️ Fim da Varredura de Inativos
+
 // ============================================================================
 // 🎼 MÓDULO MAESTRO: CONTROLE DE EXPERIÊNCIA E FLUXO
 // ============================================================================
