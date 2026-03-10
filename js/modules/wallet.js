@@ -547,7 +547,8 @@ window.filtrarGanhos = async (periodo) => {
         const lbHome = document.getElementById('label-ganhos-home');
         
         if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-            elEarningsHome.innerText = `R$ ${valorFormatado}`;
+            // 🏷️ Identidade V63.5: Finaliza a troca de R$ por ATLIX no motor de busca
+            elEarningsHome.innerText = `${valorFormatado} ATLIX`;
             if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
         }
     } catch (e) {
