@@ -155,8 +155,6 @@ window.processarFluxoAutomatico = async (user) => {
                     action: msgData.action || 'home'
                 });
             }
-            }
-        }
 
     } catch (e) {
         console.error("❌ Maestro: Erro ao processar fluxo automático:", e);
