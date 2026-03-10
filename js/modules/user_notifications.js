@@ -372,9 +372,11 @@ window.carregarHistoricoNotificacoes = async () => {
             return '🔔';
         };
 
-      // 📱 Blindagem V66: Garante que no Celular as notificações fiquem em lista (uma embaixo da outra)
-        lista.className = "grid grid-cols-1 gap-4 w-full pb-20"; 
+     // 📱 Sincronia de Layout V62: Força o ID para ativar o CSS de Grid/Scroll que injetamos no app.js
+        lista.id = 'notif-list-container'; 
+        lista.className = ""; // Limpa classes antigas para não haver conflito com o novo ID
 
+        // Renderiza as notificações mapeando os dados do banco para o HTML
         lista.innerHTML = snap.docs.map(doc => {
             const d = doc.data();
             const dataFormatada = d.created_at?.toDate().toLocaleDateString('pt-BR') || 'Recente';
