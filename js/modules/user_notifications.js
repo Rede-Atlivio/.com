@@ -154,9 +154,10 @@ window.processarFluxoAutomatico = async (user) => {
                     type: 'marketing',
                     action: msgData.action || 'home'
                 });
-            }
+               } // 🛰️ Fim do IF (window.mostrarBarraNotificacao)
+            } // 🎯 Fim do IF (ordemDeHoje)
 
-    } catch (e) {
+    } catch (e) { // 🛡️ Captura erro do bloco try principal
         console.error("❌ Maestro: Erro ao processar fluxo automático:", e);
     }
 };
