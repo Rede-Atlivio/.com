@@ -147,16 +147,17 @@ export function iniciarMonitoramentoCarteira() {
             const txtMeta = document.getElementById('meta-text-home');
             const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
 
+            // 🏷️ Identidade V63: Substitui o R$ pelo sufixo ATLIX na tela inicial
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-                elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
+                elEarningsHome.innerText = `${sEarnings.toFixed(2).replace('.', ',')} ATLIX`;
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
-                elBalanceHome.innerText = `R$ ${powerCalculado.toFixed(2).replace('.', ',')}`;
+                elBalanceHome.innerText = `${powerCalculado.toFixed(2).replace('.', ',')} ATLIX`;
             }
 
-            // Cálculo da Barra de Meta
+            // Cálculo da Barra de Meta (Unidade de medida ajustada)
             if (barMeta && txtMeta) {
-                txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
+                txtMeta.innerText = `Meta: ${metaDefinida.toFixed(2).replace('.', ',')} ATLIX`;
                 const porcentagem = metaDefinida > 0 ? Math.min((sEarnings / metaDefinida) * 100, 100) : 0;
                 barMeta.style.width = `${porcentagem}%`;
                 barMeta.className = porcentagem >= 100 ? "bg-emerald-500 h-full transition-all duration-700" : "bg-blue-500 h-full transition-all duration-700";
