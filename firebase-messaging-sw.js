@@ -26,8 +26,10 @@ messaging.onBackgroundMessage((payload) => {
         vibrate: [300, 100, 300],
         // Injeta uma imagem grande se o Robô enviar, senão fica apenas o ícone
         image: payload.data?.image || null, 
-        data: { 
-            url: payload.data?.link || payload.data?.action || '/' 
+       data: { 
+            // 🛡️ Blindagem V66: Forçamos o dado de clique a ser sempre a raiz. 
+            // O redirecionamento por abas agora é responsabilidade exclusiva do Maestro dentro do App.
+            url: '/' 
         }
     };
     return self.registration.showNotification(title, options);
