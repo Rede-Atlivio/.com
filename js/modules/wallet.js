@@ -1,6 +1,24 @@
 import { db, auth } from '../config.js';
 import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// 🎨 SKIN PREMIUM V64: Injeta o brilho dourado nas moedas ATLIX
+const styleGold = document.createElement('style');
+styleGold.innerHTML = `
+    .moeda-ouro { 
+        color: #fbbf24; /* Amarelo Ouro */
+        font-weight: 900;
+        text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .icon-coin { filter: drop-shadow(0 0 2px #d97706); }
+`;
+document.head.appendChild(styleGold);
+
+// Helper para renderizar a moeda com ícone
+const GOLD_COIN = '<span class="moeda-ouro"><span class="icon-coin">🪙</span></span>';
+
 /**
  * 💰 CONFIGURAÇÕES MESTRE
  * O valor inicial é apenas um "placeholder". 
