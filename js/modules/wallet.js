@@ -427,8 +427,8 @@ async function carregarHistoricoCarteira(uid) {
                             </div>
                         </div>
                         <div class="text-right">
-                            <p class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-slate-800'}">
-                                ${isPositivo ? '+' : ''} ${Math.abs(valor).toFixed(2).replace('.', ',')} ATLIX
+                            <p class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-red-600'}">
+                                ${isPositivo ? '+' : '-'} ${Math.abs(valor).toFixed(2).replace('.', ',')} ATLIX
                             </p>
                             <p class="text-[8px] text-gray-400 font-bold uppercase">${t.timestamp?.toDate().toLocaleDateString() || 'Processando'}</p>
                         </div>
