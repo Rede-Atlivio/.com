@@ -320,25 +320,45 @@ async function carregarInterface(user) {
         }
     }
 
-    // 🎨 REFORMA UI V61: Habilita scroll no Desktop e organiza notificações em GRID
+    // 🎨 MAESTRO GRID V62: Corrige o vazamento horizontal e organiza em cards (Mobile e PC)
     const styleFix = document.createElement('style');
     styleFix.innerHTML = `
-        /* Habilita barra de rolagem estilizada para o PC */
-        #sec-notificacoes { 
-            max-height: 80vh; 
-            overflow-y: auto !important; 
-            padding-right: 10px;
+        /* 📱 Mobile: Força uma única coluna e impede o transbordamento horizontal */
+        #notif-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden !important; /* Mata o carrossel quebrado */
+            padding: 10px 5px;
+        }
+
+        /* 💻 Desktop (PC): Transforma em Grid de 2 colunas para aproveitar espaço */
+        @media (min-width: 1024px) {
+            #notif-list-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+        }
+
+        /* ⚓ Scrollbar Industrial para a seção de notificações */
+        #sec-notificacoes {
+            max-height: 85vh;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            padding-bottom: 50px;
+            scrollbar-width: thin;
+            scrollbar-color: #3b82f6 #0f172a;
         }
         #sec-notificacoes::-webkit-scrollbar { width: 6px; }
         #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-
-        /* No Desktop, as notificações ficam lado a lado em 2 colunas */
-        @media (min-width: 1024px) {
-            #notif-list-container { 
-                display: grid; 
-                grid-template-columns: repeat(2, 1fr); 
-                gap: 15px; 
-            }
+        
+        /* Ajuste fino nos cards para não esticarem o layout */
+        #notif-list-container > div {
+            width: 100% !important;
+            box-sizing: border-box;
         }
     `;
     document.head.appendChild(styleFix);
