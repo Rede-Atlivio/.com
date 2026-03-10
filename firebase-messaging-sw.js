@@ -39,7 +39,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // ⚡ [CACHE] Inteligência de Carregamento (O que estava no sw.js)
-const CACHE_NAME = 'atlivio-cache-v61';
+const CACHE_NAME = 'atlivio-cache-v62'; // 👈 Mudei para 62 para o celular entender que tem novidade
 const NEVER_CACHE = ['request.js', 'request_v2.js', 'auth.js', 'profile.js'];
 
 self.addEventListener('install', (e) => self.skipWaiting());
