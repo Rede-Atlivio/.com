@@ -359,7 +359,13 @@ window.carregarHistoricoNotificacoes = async () => {
             
             return `
                 <div class="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-start gap-4">
-                    <div class="text-2xl">${iconMap[d.type] || '🔔'}</div>
+                   <div class="text-2xl">
+    ${d.action === 'ganhar' || d.action === 'missoes' ? '💰' : 
+      d.action === 'contratar' || d.action === 'services' ? '🛠️' : 
+      d.action === 'loja' || d.action === 'produtos' ? '🛍️' : 
+      d.action === 'canal' ? '📺' : 
+      d.action === 'oportunidades' ? '🏷️' : '🔔'}
+</div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <p class="text-[10px] font-black text-blue-600 uppercase">${d.type || 'SISTEMA'}</p>
