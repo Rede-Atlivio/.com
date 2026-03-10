@@ -185,7 +185,7 @@ window.mostrarBarraNotificacao = (id, data) => {
             </div>
             <div style="flex:1; min-width:0;">
                 <h4 style="margin:0; font-size:10px; color:#60a5fa; text-transform:uppercase; font-weight:900; letter-spacing:0.1em;">${titulo}</h4>
-                <p style="margin:2px 0 0; font-size:12px; color:white; font-weight:bold; line-height:1.2;">${data.message}</p>
+                <p style="margin:2px 0 0; font-size:12px; color:white; font-weight:bold; line-height:1.2;">${data.mensagem || data.message || "Novidade disponível!"}</p>
                 ${data.credit_val > 0 ? `<p style="margin:4px 0 0; font-size:10px; color:#34d399; font-weight:900;">💰 R$ ${data.credit_val} DISPONÍVEL</p>` : ''}
             </div>
         </div>
