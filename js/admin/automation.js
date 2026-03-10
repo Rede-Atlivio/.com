@@ -695,9 +695,13 @@ window.ativarGatilhoPush = async function() {
         const resposta = await fetch(URL_ROBO_MAESTRO, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            // 🛡️ Blindagem V66: Garante que o Robô receba a chave 'fluxo' para evitar Erro 500 no servidor
             body: JSON.stringify({
                 mode: "mass_broadcast",
-                script_payload: payloadOficial // Envia o roteiro completo para o robô varrer a rede
+                script_payload: {
+                    campanha: payloadOficial.campanha || "MARKETING_GLOBAL",
+                    fluxo: payloadOficial.fluxo || payloadOficial // 🚀 Se o JSON já tiver a chave fluxo, usa ela. Se não, envelopa o array.
+                }
             })
         });
 
