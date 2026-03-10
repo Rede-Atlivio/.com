@@ -491,11 +491,13 @@ window.carregarMaestro = async function() {
             </div>
         </div>
     `;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+        console.error("❌ Erro ao renderizar interface Maestro:", e);
+    }
+}; // 🛡️ Fim da função window.carregarMaestro
 
-   };
-
-// 🗑️ LIXO REMOVIDO: A busca individual foi desativada para unificação do Maestro Flow.
+// 🗑️ UNIFICAÇÃO: A busca individual foi desativada para focar no Maestro Flow Global.
 
 // 🚀 MOTOR DE DISPARO INSTANTÂNEO V66: Blindagem de Ícone e Título Único
 window.dispararMaestroEmMassa = async function() {
