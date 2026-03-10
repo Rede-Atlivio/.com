@@ -216,7 +216,8 @@ window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
             const poderCompra = rBonus + rBal;
 
             if (poderCompra < valor) {
-                throw `Saldo insuficiente. Necessário R$ ${valor.toFixed(2)}`;
+                // ⚖️ Ajuste V63.5: Remove o R$ do erro de processamento
+                throw `Saldo insuficiente. Necessário ${valor.toFixed(2)} ATLIX`;
             }
 
             // Lógica do Liquidificador: Consome bônus primeiro
