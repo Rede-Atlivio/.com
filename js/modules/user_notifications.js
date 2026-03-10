@@ -25,11 +25,16 @@ window.iniciarSistemaNotificacoes = () => {
 };
 
     window.escutarNotificacoes = (uid) => {
-    // 🎯 AJUSTE DE MIRA: Agora vigia a subcoleção correta dentro do usuário
+    // 🛡️ Filtro Temporal Maestro V61: Ignora o "entulho" de notificações lidas antes do último refresh
+    const lastSync = Number(localStorage.getItem('maestro_last_sync')) || 0;
+    const dataLimite = new Date(lastSync);
+
+    // 🎯 Ajuste de Mira Industrial: Além de não lidas, precisam ser posteriores à última limpeza do usuário
     const q = query(
         collection(window.db, "usuarios", uid, "notificacoes"), 
-        where("read", "==", false), // Só traz o que o usuário ainda não viu
-        orderBy("created_at", "desc") // As mais novas aparecem primeiro
+        where("read", "==", false),
+        where("created_at", ">", dataLimite), 
+        orderBy("created_at", "desc")
     );
 
     onSnapshot(q, (snap) => {
