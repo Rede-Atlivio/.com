@@ -33,9 +33,29 @@ messaging.onBackgroundMessage((payload) => {
     return self.registration.showNotification(title, options);
 });
 
+// 🛡️ Blindagem V66: Garante que o clique sempre leve para a Home se a URL falhar
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    event.waitUntil(clients.openWindow(event.notification.data.url));
+    
+    // Se a URL não começar com http, nós forçamos ela a ir para a raiz do site
+    let targetUrl = event.notification.data.url || '/';
+    if (!targetUrl.startsWith('http')) {
+        targetUrl = 'https://rede-atlivio.github.io/.com/'; 
+    }
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(windowClients => {
+            // Se o site já estiver aberto, foca nele em vez de abrir uma nova aba
+            for (var i = 0; i < windowClients.length; i++) {
+                var client = windowClients[i];
+                if (client.url === targetUrl && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Se não estiver aberto, abre a URL protegida
+            if (clients.openWindow) return clients.openWindow(targetUrl);
+        })
+    );
 });
 
 // ⚡ [CACHE] Inteligência de Carregamento (O que estava no sw.js)
