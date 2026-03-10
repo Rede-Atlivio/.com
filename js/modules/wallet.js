@@ -569,7 +569,8 @@ async function definirMetaDiaria() {
     }
 }
 // ============================================================================
-// 🚀 EXPORTAÇÕES GLOBAIS (FINAL DO ARQUIVO - V25.1)
+// 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
+// Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
 // ============================================================================
 window.carregarCarteira = carregarCarteira;
 window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
@@ -578,4 +579,7 @@ window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.atualizarCarteira = carregarCarteira;
 window.definirMetaDiaria = definirMetaDiaria;
 window.filtrarGanhos = filtrarGanhos;
-console.log("%c✅ WALLET.JS: Sistema Financeiro V12.1 Estabilizado.", "color: #10b981; font-weight: bold;");
+// 🔗 Soldagem Crítica: Disponibiliza o histórico para o Maestro e para o Sininho
+window.carregarHistoricoCarteira = carregarHistoricoCarteira; 
+
+console.log("%c✅ WALLET V63.4: Economia ATLIX e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
