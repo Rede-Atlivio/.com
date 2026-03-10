@@ -294,9 +294,10 @@ window.executeAdjustment = async (uid) => {
             }
 
             const extratoRef = doc(collection(db, "extrato_financeiro"));
+           // ⚖️ Correção V63.6: Garante que débitos gravem o sinal de negativo (-) no banco
             transaction.set(extratoRef, {
                 uid: uid,
-                valor: Number(amount),
+                valor: Number(finalAmount), // FINALAMOUNT já carrega o sinal correto (+ ou -)
                 tipo: mode === 'credit' ? 'CRÉDITO 📈' : 'DÉBITO 📉',
                 descricao: desc,
                 timestamp: serverTimestamp()
