@@ -111,19 +111,22 @@ window.addEventListener('userProfileLoaded', (e) => {
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
   // ✨ SINCRONIA DE HISTÓRICO: Gatilho de Limpeza Maestro V31
+    // ✨ SINCRONIA DE HISTÓRICO V61: Resolve a duplicidade ao recarregar.
     if (tabName === 'notificacoes') {
-        // Usa o ID CORRETO definido no user_notifications.js
-        const badge = document.getElementById('notif-badge');
-        if (badge) badge.remove(); 
+        // 1. Marca o exato momento da leitura para que o sistema ignore mensagens do passado no próximo refresh
+        localStorage.setItem('maestro_last_sync', Date.now());
 
-        // 🧹 FAXINA REAL V42: Além de carregar, garante que o banco seja zerado ──▶
+        // 2. Remove o badge vermelho imediatamente da tela
+        const badge = document.getElementById('notif-badge');
+        if (badge) {
+            badge.remove();
+            badge.classList.add('hidden');
+        }
+
+        // 3. Aciona o motor de histórico apenas se ele existir
         if (typeof window.carregarHistoricoNotificacoes === 'function') {
-            console.log("🧹 Maestro: Executando limpeza e sincronia de histórico...");
+            console.log("🧹 Maestro V61: Sincronizando e selando histórico antigo...");
             window.carregarHistoricoNotificacoes();
-            
-            // 🔥 O TIRO DE MISERICÓRDIA: Força o zeramento do badge visual no ato ──▶
-            const b = document.getElementById('notif-badge');
-            if(b) b.classList.add('hidden');
         }
     }
 
