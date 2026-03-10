@@ -388,7 +388,7 @@ window.abrirCheckoutPix = async function(valor) {
     // Sem isso, o dinheiro entra mas o saldo não sobe automaticamente.
     const linkFinal = `${linkBase}?order_nsu=${user.uid}&webhook_url=${webhook}`;
 
-    console.log(`💰 Abrindo Recarga de R$ ${valor} para o usuário ${user.uid}`);
+    console.log(`💰 Gerando recarga de ${valor} ATLIX para o usuário ${user.uid}`);
     window.open(linkFinal, '_blank');
 };
 //PONTO CRÍTICO: LEDGER IMUTÁVEL APÓS NOVA INTERFACE: LINHAS 270 A 333
