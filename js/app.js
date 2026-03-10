@@ -316,9 +316,32 @@ async function carregarInterface(user) {
         if (novoToggle.checked && window.iniciarRadarPrestador) {
              window.iniciarRadarPrestador(user.uid);
         } else if (!novoToggle.checked && window.pararRadarFisico) {
-             window.pararRadarFisico();
+            window.pararRadarFisico();
         }
     }
+
+    // 🎨 REFORMA UI V61: Habilita scroll no Desktop e organiza notificações em GRID
+    const styleFix = document.createElement('style');
+    styleFix.innerHTML = `
+        /* Habilita barra de rolagem estilizada para o PC */
+        #sec-notificacoes { 
+            max-height: 80vh; 
+            overflow-y: auto !important; 
+            padding-right: 10px;
+        }
+        #sec-notificacoes::-webkit-scrollbar { width: 6px; }
+        #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+
+        /* No Desktop, as notificações ficam lado a lado em 2 colunas */
+        @media (min-width: 1024px) {
+            #notif-list-container { 
+                display: grid; 
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 15px; 
+            }
+        }
+    `;
+    document.head.appendChild(styleFix);
 
     // ============================================================================
     // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
