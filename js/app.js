@@ -631,12 +631,12 @@ window.togglePrivacyHome = () => {
     const isHidden = elEarnings.getAttribute('data-hidden') === 'true';
 
     if (isHidden) {
-        // MOSTRAR VALORES
+        // ✨ Sincronia V63: Exibe os valores com a nova identidade ATLIX ao clicar no "olhinho"
         const ganhos = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
         const saldo = (window.userProfile?.wallet_total_power || 0).toFixed(2).replace('.', ',');
         
-        elEarnings.innerText = `R$ ${ganhos}`;
-        elBalance.innerText = `R$ ${saldo}`;
+        elEarnings.innerText = `${ganhos} ATLIX`;
+        elBalance.innerText = `${saldo} ATLIX`;
         
         elEarnings.setAttribute('data-hidden', 'false');
         svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
