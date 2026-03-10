@@ -320,11 +320,10 @@ window.executarVarreduraDeInativos = async () => {
             }
         }
         alert(`🎯 VARREDURA CONCLUÍDA!\n\n${contagem} usuários inativos foram bonificados.`);
-   } catch (e) {
-        console.error("❌ Erro técnico no motor de varredura:", e);
+    } catch (e) {
+        console.error("❌ Erro técnico no motor:", e);
     }
-}; // 🛡️ Fim da Varredura de Inativos
-
+};
 // ============================================================================
 // 🎼 MÓDULO MAESTRO: CONTROLE DE EXPERIÊNCIA E FLUXO
 // ============================================================================
@@ -491,108 +490,268 @@ window.carregarMaestro = async function() {
             </div>
         </div>
     `;
-         if (typeof lucide !== 'undefined') lucide.createIcons();
-    } catch (e) {
-        console.error("❌ Erro ao renderizar interface Maestro:", e);
-    }
-}; // 🛡️ Fim da função window.carregarMaestro
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
-// 🗑️ UNIFICAÇÃO: A busca individual foi desativada para focar no Maestro Flow Global.
+   };
 
-// ============================================================================
-// 🎼 MOTOR DE DISPARO E GESTÃO MAESTRO V66 (ESTABILIZADO)
-// ============================================================================
+// 🗑️ LIXO REMOVIDO: A busca individual foi desativada para unificação do Maestro Flow.
 
-// 🚀 DISPARO EM MASSA: Blindagem de Ícone e Título Único
+// 🚀 MOTOR DE DISPARO INSTANTÂNEO V12.4: Fale direto com o Robô Cloud Run
 window.dispararMaestroEmMassa = async function() {
+    // 🌍 ENDEREÇO DO ROBÔ: O link oficial do seu Cloud Run
     const URL_ROBO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
     const intencao = document.getElementById('maestro-mass-intent').value;
     const msg = document.getElementById('maestro-mass-msg').value.trim();
     const action = document.getElementById('maestro-mass-action').value;
     const btn = document.getElementById('btn-mass-fire');
 
-    if (!msg) return alert("❌ Digite a mensagem!");
-    if (btn.disabled) return; 
+    if (!msg) return alert("❌ Digite a mensagem do disparo!");
+    
+    // 🛡️ Segurança: Confirmação de impacto em massa
+    if (!confirm(`🔥 IMPACTO GLOBAL: Disparar agora para o segmento ${intencao.toUpperCase()}?`)) return;
 
-    if (!confirm(`🔥 IMPACTO GLOBAL: Enviar para ${intencao.toUpperCase()}?`)) return;
-
-    btn.innerHTML = "⏳ DISPARANDO...";
-    btn.disabled = true; 
+    btn.innerHTML = "⏳ DISPARANDO CANHÃO...";
+    btn.disabled = true;
 
     try {
-        const titulos = {
-            'wallet': '💰 SALDO ATUALIZADO',
-            'services': '🛠️ PRECISA CONTRATAR?',
-            'missoes': '⚡ NOVA MISSÃO',
-            'jobs': '💼 VAGA DE EMPREGO',
-            'oportunidades': '🏷️ OPORTUNIDADE VIP',
-            'produtos': '🛍️ PRODUTO EM OFERTA',
-            'canal': '📺 NOVO VÍDEO NO CANAL'
-        };
-
-        const payload = {
-            mode: "instant_target",
-            intencao: intencao,
-            titulo: titulos[action] || "🔔 AVISO ATLIVIO",
-            title: titulos[action] || "🔔 AVISO ATLIVIO",
-            mensagem: msg,
-            message: msg,
-            body: msg,
-            action: action,
-            link: "https://atlivio.com.br/", 
-            icon: "https://atlivio.com.br/icon-192x192.png" 
-        };
-
+        console.log("📡 [Maestro] Enviando ordem direta para o Robô Cloud Run...");
+        
+        // 🚀 O Admin agora dá uma ÚNICA ordem direta para o servidor processar a base toda
         const resposta = await fetch(URL_ROBO, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                mode: "instant_target", // Chave para o Robô V12.4 entender o comando de massa
+                intencao: intencao,
+                mensagem: msg,
+                action: action
+            })
         });
 
         if (resposta.ok) {
-            alert("🚀 SUCESSO! Entrega única iniciada.");
+            alert("🚀 SUCESSO! O Robô recebeu a ordem e está entregando as notificações agora.");
             document.getElementById('maestro-mass-msg').value = "";
         } else {
-            throw new Error(await resposta.text());
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt);
         }
     } catch (e) {
-        alert("❌ Erro no Disparo: " + e.message);
+        console.error("❌ Erro no Disparo em Massa:", e);
+        alert("Falha ao acionar o Robô: " + e.message);
     } finally {
         btn.innerHTML = "Disparar para Público Alvo 🔥";
         btn.disabled = false;
     }
 };
+// 🗑️ LIXO REMOVIDO: Disparo individual por UID agora é via Robô Maestro Cloud.
 
-// 🔄 UTILITÁRIOS DE GESTÃO DO MAESTRO
 window.resetarTourUsuario = async function() {
-    const uid = document.getElementById('maestro-uid')?.value?.trim();
-    if (!uid) return alert("❌ Informe o UID!");
+    const uid = document.getElementById('maestro-uid').value.trim();
+    if (!uid) return alert("❌ Informe o UID para resetar o Tour!");
+
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        await updateDoc(doc(window.db, "usuarios", uid), { tour_complete: false, user_intent: "" });
-        alert("✅ Tour resetado!");
-    } catch (e) { alert("❌ Erro: " + e.message); }
+        const { db } = await import('./config.js');
+
+        // 🧹 LIMPEZA TOTAL: Reseta o estado e a intenção para o Tour reaparecer
+        await updateDoc(doc(db, "usuarios", uid), {
+            tour_complete: false,
+            user_intent: "" 
+        });
+
+        alert("✅ Tour e Intenção resetados! O usuário verá a tela de escolha no próximo login.");
+    } catch (e) {
+        alert("❌ Erro ao resetar: " + e.message);
+    }
+};
+// ============================================================================
+// 🛰️ SENTINELA REALTIME: Monitora conversas e alimenta o Painel Maestro
+// ============================================================================
+window.unsubscribeGatilhoChat = null;
+let contadorLocalAlertas = 0;
+
+window.ativarGatilhoChatRealtime = async () => {
+    // 🛡️ Previne duplicidade de conexão
+    if (window.unsubscribeGatilhoChat) {
+        alert("📡 O Sentinela já está em órbita monitorando a rede.");
+        return;
+    }
+
+    const { collection, query, where, onSnapshot, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const db = window.db;
+
+    // 🟢 Atualiza a Interface Visual (LED e Texto)
+    const led = document.getElementById('status-robo-led');
+    const txt = document.getElementById('status-robo-txt');
+    if (led) led.className = "w-4 h-4 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]";
+    if (txt) txt.innerText = "SISTEMA ATIVO";
+
+    // 🕵️ Ouve chats com mensagens não lidas
+    const q = query(collection(db, "chats"), where("last_message_read", "==", false));
+
+    window.unsubscribeGatilhoChat = onSnapshot(q, (snap) => {
+        // Atualiza card de "Usuários em Chat" no painel
+        const countAtivos = document.getElementById('count-ativos');
+        if (countAtivos) countAtivos.innerText = snap.size;
+
+        snap.docChanges().forEach(async (change) => {
+            if (change.type === "added" || change.type === "modified") {
+                const d = change.doc.data();
+                const target = d.last_message_to;
+
+                if (target) {
+                    // 1. DISPARA NOTIFICAÇÃO PARA O CELULAR DO USUÁRIO
+                    await addDoc(collection(db, "user_notifications"), {
+                        userId: target,
+                        type: 'chat',
+                        message: "Nova proposta recebida no chat! 💬",
+                        action: 'chat',
+                        read: false,
+                        created_at: serverTimestamp()
+                    });
+
+                    // 2. ESCREVE NO LOG VISUAL DO ADMIN
+                    contadorLocalAlertas++;
+                    const countEl = document.getElementById('count-alertas');
+                    if (countEl) countEl.innerText = contadorLocalAlertas;
+
+                    const logArea = document.getElementById('maestro-live-logs');
+                    if (logArea) {
+                        const time = new Date().toLocaleTimeString();
+                        const linhaLog = `
+                            <div class="text-blue-400 border-l-2 border-blue-500 pl-3 py-1 mb-2 bg-blue-500/5 animate-fade font-mono">
+                                <span class="text-gray-500">[${time}]</span> 
+                                <span class="font-black text-white">CHAT EVENT</span> ──▶ 
+                                <span class="text-blue-300">Target: ${target.slice(0,8)}...</span>
+                                <span class="ml-2 text-[9px] bg-green-600/20 text-green-400 px-1 rounded font-bold">PUSH SENT ✔</span>
+                            </div>
+                        `;
+                        // Remove a mensagem de "Aguardando..." se for a primeira linha
+                        if (contadorLocalAlertas === 1) logArea.innerHTML = "";
+                        logArea.innerHTML = linhaLog + logArea.innerHTML;
+                    }
+                }
+            }
+        });
+    }, (error) => {
+        console.error("❌ Erro no Sentinela:", error);
+        if (led) led.className = "w-4 h-4 rounded-full bg-red-600 animate-pulse";
+        if (txt) txt.innerText = "OFFLINE (ERRO)";
+    });
+
+    console.log("🛰️ Sentinela Atlivio V3.5 Online.");
+};
+// ============================================================================
+// 🎼 LÓGICA MESTRA: MAESTRO FLOW V50 (O QUE FALTAVA) ──▶
+// ============================================================================
+
+// 💾 PASSO 2: SALVAR E SINCRONIZAR ──▶
+window.salvarESincronizarRede = async function() {
+    const jsonArea = document.getElementById('maestro-flow-json');
+    if (!jsonArea || !jsonArea.value.trim()) return alert("❌ Digite o Script JSON antes de salvar!");
+
+    try {
+        const scriptValido = JSON.parse(jsonArea.value);
+        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+        // 🛡️ GRAVAÇÃO DE ESCALA: Salva o roteiro central para milhões de usuários lerem ──▶
+        await setDoc(doc(window.db, "settings", "maestro_flow"), {
+            script: scriptValido,
+            versao: "V50",
+            updated_at: serverTimestamp()
+        });
+
+        alert("💾 REDE SINCRONIZADA!\nO sinal foi propagado para o banco de dados.");
+    } catch (e) {
+        alert("❌ ERRO NO SCRIPT: Verifique se esqueceu alguma vírgula ou aspas.");
+    }
 };
 
-window.agendarFluxoMensal = async function() {
+// 🔔 PASSO 3: DISPARAR PUSH (MOTOR DE IMPACTO TOTAL V12.3)
+window.ativarGatilhoPush = async function() {
+    const URL_ROBO_MAESTRO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
+    console.log("🚀 [Maestro] Iniciando Canhão de Milhões...");
+    
     try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        await updateDoc(doc(window.db, "settings", "global"), { maestro_auto_pilot: true, last_schedule: new Date() });
-        alert("📅 AGENDAMENTO CONCLUÍDO!");
-    } catch (e) { alert("❌ Erro."); }
-};
+        const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 1. Resgata o DNA (JSON) que está na tela do Admin
+        const scriptJson = document.getElementById('maestro-flow-json')?.value.trim();
+        if (!scriptJson) return alert("❌ O Cérebro (JSON) está vazio! Cole o roteiro primeiro.");
 
-window.resgatarRoteiroDoBanco = async function() {
-    try {
-        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const snap = await getDoc(doc(window.db, "settings", "maestro_flow"));
-        if (snap.exists() && snap.data().script) {
-            document.getElementById('maestro-flow-json').value = JSON.stringify(snap.data().script, null, 2);
-            alert("✅ ROTEIRO RESGATADO!");
+        const payloadOficial = JSON.parse(scriptJson);
+
+        // 2. REGISTRO DE SEGURANÇA: Salva a ordem no banco para histórico
+        await addDoc(collection(window.db, "maestro_push"), {
+            mode: "mass_broadcast",
+            status: "processing", // Marca como processando para o robô não duplicar
+            payload_version: payloadOficial.versao || "65.1",
+            created_at: serverTimestamp()
+        });
+
+        // 3. O GRITO EXTERNO: Aciona o Robô Cloud Run diretamente via POST
+        // É aqui que a mágica da escala de milhões acontece sem latência.
+        console.log("📡 [Transmissor] Gritando para o Robô Cloud Run...");
+        const resposta = await fetch(URL_ROBO_MAESTRO, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            // 🛡️ Blindagem V66: Garante que o Robô receba a chave 'fluxo' para evitar Erro 500 no servidor
+            body: JSON.stringify({
+                mode: "mass_broadcast",
+                script_payload: {
+                    campanha: payloadOficial.campanha || "MARKETING_GLOBAL",
+                    fluxo: payloadOficial.fluxo || payloadOficial // 🚀 Se o JSON já tiver a chave fluxo, usa ela. Se não, envelopa o array.
+                }
+            })
+        });
+
+        if (resposta.ok) {
+            alert("🔥 CANHÃO EM MASSA DISPARADO!\nO Robô iniciou a varredura de milhões de usuários.");
+        } else {
+            const erroTxt = await resposta.text();
+            throw new Error(erroTxt);
         }
-    } catch (e) { alert("❌ Erro no resgate."); }
+
+    } catch (e) {
+        console.error("❌ Erro Crítico no Canhão:", e);
+        alert("Falha no Disparo: " + e.message);
+    }
 };
 
-// 🛰️ EXPOSIÇÃO FINAL PARA O SISTEMA
-window.dispararFluxoManual = window.processarFluxoAutomatico;
-console.log("🚀 [Maestro] Módulo de Automação V66 Estabilizado.");
+// 📅 PASSO 4: AGENDAR MESES ──▶
+window.agendarFluxoMensal = async function() {
+    const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    
+    // ⚙️ PILOTO AUTOMÁTICO: Liga a verificação diária de jornada ──▶
+    await updateDoc(doc(window.db, "settings", "global"), {
+        maestro_auto_pilot: true,
+        last_schedule: new Date()
+    });
+
+    alert("📅 AGENDAMENTO CONCLUÍDO!\nA automação de meses agora está vigiando a rede.");
+};
+// 📥 FUNÇÃO DE RESGATE MAESTRO: Busca o último JSON salvo para evitar perda de dados ──▶
+window.resgatarRoteiroDoBanco = async function() {
+    console.log("🔍 [Maestro] Iniciando resgate de roteiro...");
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+    try {
+        const snap = await getDoc(doc(window.db, "settings", "maestro_flow"));
+
+        if (snap.exists()) {
+            const dados = snap.data();
+            const campoJson = document.getElementById('maestro-flow-json');
+            
+            if (campoJson && dados.script) {
+                // Injeta o JSON formatado com 2 espaços para ficar bonito na tela ──▶
+                campoJson.value = JSON.stringify(dados.script, null, 2);
+                alert("✅ ROTEIRO RESGATADO!\nO seu último script salvo foi carregado no campo.");
+            }
+        } else {
+            alert("⚠️ Nenhum roteiro encontrado no servidor.");
+        }
+    } catch (e) {
+        console.error("❌ Erro no resgate:", e);
+        alert("Erro técnico ao buscar dados.");
+    }
+};
