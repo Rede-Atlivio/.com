@@ -351,21 +351,26 @@ window.carregarHistoricoNotificacoes = async () => {
             return;
         }
 
-        const iconMap = { 'gift': '🎁', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'canal': '📺' };
+        // 🎯 Mapeamento V66: O ícone do card agora combina com a ação da mensagem para escala de milhões
+        const getIcon = (action) => {
+            if (action === 'ganhar' || action === 'missoes') return '💰';
+            if (action === 'contratar' || action === 'services') return '🛠️';
+            if (action === 'loja' || action === 'produtos') return '🛍️';
+            if (action === 'canal') return '📺';
+            if (action === 'oportunidades') return '🏷️';
+            return '🔔';
+        };
+
+      // 📱 Blindagem V66: Garante que no Celular as notificações fiquem em lista (uma embaixo da outra)
+        lista.className = "grid grid-cols-1 gap-4 w-full pb-20"; 
 
         lista.innerHTML = snap.docs.map(doc => {
             const d = doc.data();
             const dataFormatada = d.created_at?.toDate().toLocaleDateString('pt-BR') || 'Recente';
             
             return `
-                <div class="bg-white border border-gray-100 p-4 rounded-2xl shadow-sm flex items-start gap-4">
-                   <div class="text-2xl">
-    ${d.action === 'ganhar' || d.action === 'missoes' ? '💰' : 
-      d.action === 'contratar' || d.action === 'services' ? '🛠️' : 
-      d.action === 'loja' || d.action === 'produtos' ? '🛍️' : 
-      d.action === 'canal' ? '📺' : 
-      d.action === 'oportunidades' ? '🏷️' : '🔔'}
-</div>
+                <div class="bg-white border border-gray-100 p-5 rounded-3xl shadow-sm flex items-start gap-4 w-full">
+                    <div class="text-3xl flex-shrink-0">${getIcon(d.action)}</div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
                             <p class="text-[10px] font-black text-blue-600 uppercase">${d.type || 'SISTEMA'}</p>
