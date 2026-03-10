@@ -362,15 +362,15 @@ window.carregarHistoricoNotificacoes = async () => {
                     <div class="text-2xl">${iconMap[d.type] || '🔔'}</div>
                     <div class="flex-1">
                         <div class="flex justify-between items-start">
-                            <p class="text-[10px] font-black text-blue-600 uppercase">${d.type}</p>
+                            <p class="text-[10px] font-black text-blue-600 uppercase">${d.type || 'SISTEMA'}</p>
                             <p class="text-[8px] text-gray-400 font-bold">${dataFormatada}</p>
                         </div>
-                        <p class="text-xs text-gray-700 font-medium mt-1">${d.message}</p>
-                        <button onclick="window.switchTab('${d.action}')" class="mt-3 text-[9px] font-black text-blue-500 uppercase tracking-widest hover:underline">
+                        <h4 class="text-[11px] font-black text-slate-800 uppercase mt-1">${d.titulo || d.title || "Aviso Atlivio"}</h4>
+                        <p class="text-xs text-gray-600 font-medium leading-tight">${d.mensagem || d.message || d.body || "Abra para ver os detalhes da oportunidade."}</p>
+                        <button onclick="window.acaoNotificacao('${doc.id}', '${d.action}')" class="mt-3 text-[9px] font-black text-blue-500 uppercase tracking-widest hover:underline">
                             Ver detalhes ➔
                         </button>
                     </div>
-                </div>
             `;
         }).join('');
 
