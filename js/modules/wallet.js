@@ -276,7 +276,8 @@ function atualizarInterfaceGanhar(saldo) {
     const el = document.getElementById('user-balance-earn'); 
     if (el) {
         //PONTO CRÍTICO, LINHA 169: TRINDADE FINANCEIRA
-        el.innerText = `R$ ${saldo.toFixed(2).replace('.', ',')}`;
+        // 💰 Aba Ganhar (Destaque principal)
+        el.innerText = `${saldo.toFixed(2).replace('.', ',')} ATLIX`;
         el.className = saldo < 0 ? "text-4xl font-black italic text-red-400" : "text-4xl font-black italic text-green-400";
     }
 }
