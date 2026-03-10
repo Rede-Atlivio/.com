@@ -491,7 +491,7 @@ window.carregarMaestro = async function() {
             </div>
         </div>
     `;
-if (typeof lucide !== 'undefined') lucide.createIcons();
+         if (typeof lucide !== 'undefined') lucide.createIcons();
     } catch (e) {
         console.error("❌ Erro ao renderizar interface Maestro:", e);
     }
