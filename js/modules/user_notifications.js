@@ -143,13 +143,18 @@ window.processarFluxoAutomatico = async (user) => {
             
             // O sinal externo (celular apitando) é disparado pelo Admin. 
             // Aqui, apenas garantimos que o usuário veja o balão azul na tela enquanto navega.
+            // 🎯 GATILHO V51: Sincroniza o Balão Azul com os nomes exatos do seu JSON (notificacao_1)
             if (window.mostrarBarraNotificacao) {
+                // Decide se mostra a notificacao_1 ou 2 baseado na hora (Ex: Manhã e Noite)
+                const msgData = (new Date().getHours() < 14) ? ordemDeHoje.notificacao_1 : ordemDeHoje.notificacao_2;
+                
                 window.mostrarBarraNotificacao("auto_" + diaAtualDoUsuario, {
-                    title: ordemDeHoje.titulo || "Jornada Atlivio",
-                    message: ordemDeHoje.mensagem,
+                    titulo: msgData.titulo,
+                    mensagem: msgData.mensagem,
                     type: 'marketing',
-                    action: ordemDeHoje.action || 'home'
+                    action: msgData.action || 'home'
                 });
+            }
             }
         }
 
