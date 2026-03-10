@@ -20,10 +20,15 @@ messaging.onBackgroundMessage((payload) => {
     const body = payload.data?.message || payload.notification?.body || "Você tem uma nova atualização!";
     const options = {
         body: body,
-        icon: 'https://atlivio.com.br/assets/icon-192x192.png',
-        badge: 'https://atlivio.com.br/assets/badge-72x72.png',
+        // 🛡️ Usamos caminhos relativos para garantir que o PWA ache os ícones na raiz
+        icon: '/icon-192x192.png', 
+        badge: '/icon-72x72.png', 
         vibrate: [300, 100, 300],
-        data: { url: payload.data?.link || '/' }
+        // Injeta uma imagem grande se o Robô enviar, senão fica apenas o ícone
+        image: payload.data?.image || null, 
+        data: { 
+            url: payload.data?.link || payload.data?.action || '/' 
+        }
     };
     return self.registration.showNotification(title, options);
 });
