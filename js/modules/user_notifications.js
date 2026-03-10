@@ -167,8 +167,10 @@ window.mostrarBarraNotificacao = (id, data) => {
 
     // 2. Mapeamento de Identidade
     const iconMap = { 'gift': '⚡', 'order': '🛠️', 'chat': '💬', 'wallet': '💰', 'marketing': '🚀' };
+    // 🛰️ MAPEAMENTO V51: Traduz o sinal do Robô para a interface do usuário.
+    // O Robô envia 'titulo' e 'mensagem', garantimos que o site entenda exatamente isso.
     const icon = iconMap[data.type] || '🔔';
-    const titulo = data.title || "Notificação Oficial";
+    const titulo = data.titulo || data.title || "Notificação Oficial";
 
     const div = document.createElement('div');
     div.id = 'user-alert-bar';
