@@ -395,6 +395,7 @@ window.carregarHistoricoNotificacoes = async () => {
                             Ver detalhes ➔
                         </button>
                     </div>
+                </div>
             `;
         }).join('');
 
