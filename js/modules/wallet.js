@@ -167,10 +167,12 @@ export function iniciarMonitoramentoCarteira() {
 
             // 🏷️ Identidade V63: Substitui o R$ pelo sufixo ATLIX na tela inicial
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-                elEarningsHome.innerText = `${sEarnings.toFixed(2).replace('.', ',')} ATLIX`;
+                // Ganhos de Prestador = Dinheiro Real
+                elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
-                elBalanceHome.innerText = `${powerCalculado.toFixed(2).replace('.', ',')} ATLIX`;
+                // Saldo de Conta = Crédito Atlix Dourado
+                elBalanceHome.innerHTML = `${powerCalculado.toFixed(2).replace('.', ',')} ${GOLD_COIN}`;
             }
 
             // Cálculo da Barra de Meta (Unidade de medida ajustada)
