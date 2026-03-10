@@ -158,9 +158,9 @@ export function iniciarMonitoramentoCarteira() {
             atualizarInterfaceCarteira(saldoExibicao);
             atualizarInterfaceHeader(saldoExibicao);
             atualizarInterfaceGanhar(saldoExibicao);
-           // 💰 Sincroniza Ganhos, Saldo e Meta Home V25
-            const elEarningsHome = document.getElementById('user-earnings-home');
-            const elBalanceHome = document.getElementById('user-balance-home');
+           // 💰 Sincronia Híbrida V64: Ganhos em R$ (Trabalho) e Saldo em Moeda (Acesso)
+            const elEarningsHome = document.getElementById('user-earnings-home'); // Este recebe R$
+            const elBalanceHome = document.getElementById('user-balance-home');   // Este recebe Moeda
             const barMeta = document.getElementById('meta-progress-bar');
             const txtMeta = document.getElementById('meta-text-home');
             const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
