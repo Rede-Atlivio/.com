@@ -496,9 +496,8 @@ window.carregarMaestro = async function() {
 
 // 🗑️ LIXO REMOVIDO: A busca individual foi desativada para unificação do Maestro Flow.
 
-// 🚀 MOTOR DE DISPARO INSTANTÂNEO V12.4: Fale direto com o Robô Cloud Run
+// 🚀 MOTOR DE DISPARO INSTANTÂNEO V66: Blindagem de Ícone e Título Único
 window.dispararMaestroEmMassa = async function() {
-    // 🌍 ENDEREÇO DO ROBÔ: O link oficial do seu Cloud Run
     const URL_ROBO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
     const intencao = document.getElementById('maestro-mass-intent').value;
     const msg = document.getElementById('maestro-mass-msg').value.trim();
@@ -506,27 +505,59 @@ window.dispararMaestroEmMassa = async function() {
     const btn = document.getElementById('btn-mass-fire');
 
     if (!msg) return alert("❌ Digite a mensagem do disparo!");
-    
-    // 🛡️ Segurança: Confirmação de impacto em massa
+    if (btn.disabled) return; // 🛡️ Trava contra cliques múltiplos no Admin
+
     if (!confirm(`🔥 IMPACTO GLOBAL: Disparar agora para o segmento ${intencao.toUpperCase()}?`)) return;
 
-    btn.innerHTML = "⏳ DISPARANDO CANHÃO...";
-    btn.disabled = true;
+    btn.innerHTML = "⏳ DISPARANDO...";
+    btn.disabled = true; // 🔒 Bloqueia o botão para evitar envio duplo pelo servidor
 
     try {
-        console.log("📡 [Maestro] Enviando ordem direta para o Robô Cloud Run...");
-        
-        // 🚀 O Admin agora dá uma ÚNICA ordem direta para o servidor processar a base toda
+        // 🎯 MAPEAMENTO DE TÍTULO DINÂMICO: Garante que o ícone interno combine com a aba
+        const titulos = {
+            'wallet': '💰 SALDO ATUALIZADO',
+            'services': '🛠️ PRECISA CONTRATAR?',
+            'missoes': '⚡ NOVA MICRO TAREFA',
+            'jobs': '💼 VAGA DE EMPREGO',
+            'oportunidades': '🏷️ OPORTUNIDADE VIP',
+            'produtos': '🛍️ PRODUTO EM OFERTA',
+            'canal': '📺 NOVO VÍDEO NO CANAL'
+        };
+
+        const payload = {
+            mode: "instant_target",
+            intencao: intencao,
+            // 🛡️ ENVIAMOS CAMPOS DUPLOS: Para garantir que o Robô Cloud Run ache a informação
+            // e exiba o ícone corretamente sem criar notificações fantasmas.
+            titulo: titulos[action] || "🔔 AVISO ATLIVIO",
+            title: titulos[action] || "🔔 AVISO ATLIVIO",
+            mensagem: msg,
+            message: msg,
+            body: msg,
+            action: action,
+            link: "https://atlivio.com.br/", // 🔗 Força o link seguro para evitar erro 404
+            icon: "https://atlivio.com.br/icon-192x192.png" // 🖼️ Injeta o ícone direto no envio
+        };
+
         const resposta = await fetch(URL_ROBO, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                mode: "instant_target", // Chave para o Robô V12.4 entender o comando de massa
-                intencao: intencao,
-                mensagem: msg,
-                action: action
-            })
+            body: JSON.stringify(payload)
         });
+
+        if (resposta.ok) {
+            alert("🚀 SUCESSO! O Robô iniciou a entrega única com ícone.");
+            document.getElementById('maestro-mass-msg').value = "";
+        } else {
+            throw new Error(await resposta.text());
+        }
+    } catch (e) {
+        alert("❌ Erro no Disparo: " + e.message);
+    } finally {
+        btn.innerHTML = "Disparar para Público Alvo 🔥";
+        btn.disabled = false;
+    }
+};
 
         if (resposta.ok) {
             alert("🚀 SUCESSO! O Robô recebeu a ordem e está entregando as notificações agora.");
