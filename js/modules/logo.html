@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador de Ícones Atlivio V66</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { background: #0f172a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        .canvas-container { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; gap: 20px; }
+        /* 🎨 DESIGN DO ÍCONE 192x192 */
+        #icon-large { width: 192px; height: 192px; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); display: flex; align-items: center; justify-content: center; border-radius: 40px; position: relative; overflow: hidden; }
+        #icon-large::after { content: 'A'; font-size: 120px; font-weight: 900; color: white; font-style: italic; text-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        /* 🎨 DESIGN DO BADGE 72x72 */
+        #badge-small { width: 72px; height: 72px; background: #000; display: flex; align-items: center; justify-content: center; border-radius: 15px; }
+        #badge-small::after { content: 'A'; font-size: 45px; font-weight: 900; color: white; font-style: italic; }
+        .controls { display: flex; gap: 10px; }
+        button { background: #2563eb; border: none; color: white; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <h1>🛰️ Gerador de DNA Visual Atlivio</h1>
+    <div class="canvas-container">
+        <div id="icon-large"></div>
+        <div id="badge-small"></div>
+    </div>
+    <div class="controls">
+        <button onclick="download('icon-large', 'icon-192x192.png')">📥 Baixar Ícone (PNG)</button>
+        <button onclick="download('badge-small', 'icon-72x72.png')">📥 Baixar Badge (PNG)</button>
+        <button onclick="window.print()">📄 Salvar como PDF</button>
+    </div>
+    <script>
+        function download(id, name) {
+            html2canvas(document.getElementById(id), { backgroundColor: null }).then(canvas => {
+                let link = document.createElement('a');
+                link.download = name;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            });
+        }
+    </script>
+</body>
+</html>
