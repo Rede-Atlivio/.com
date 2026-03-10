@@ -335,12 +335,18 @@ window.carregarHistoricoNotificacoes = async () => {
         
         // 🛡️ MODO SEGURO: Faxina automática removida para evitar loop de processos.
         
-        // 🎯 SINCRONIA: Busca o histórico real de notificações dentro da pasta do usuário
+        // 🎯 Sincronia de Histórico V61: Busca as últimas 20 mensagens para exibir no histórico.
         const q = query(
             collection(window.db, "usuarios", uid, "notificacoes"),
             orderBy("created_at", "desc"),
             limit(20)
         );
+
+        // 🎨 Injetor de Layout Dinâmico: Garante que no Desktop vire GRID e no Mobile fique em LISTA
+        const containerPai = document.getElementById('lista-historico-notificacoes');
+        if (containerPai) {
+            containerPai.id = 'notif-list-container'; // Força o ID para o CSS que injetamos no app.js funcionar
+        }
 
         const snap = await getDocs(q);
 
