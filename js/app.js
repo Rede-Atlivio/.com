@@ -533,9 +533,12 @@ auth.onAuthStateChanged(async (user) => {
             if (banido) return; 
         }
 
-        // 🔔 CRM de Notificações
+       // 🔔 CRM DE NOTIFICAÇÕES V61: Inicia o sistema com trava de memória.
         if (typeof window.iniciarSistemaNotificacoes === 'function') {
-            window.iniciarSistemaNotificacoes();
+            // Só ativa o motor se o boot ainda não foi concluído para evitar re-injeção de alertas antigos
+            if (!window.atlivioBootConcluido) {
+                window.iniciarSistemaNotificacoes();
+            }
         }
 
         // 🎁 Fluxos de Boas-vindas
