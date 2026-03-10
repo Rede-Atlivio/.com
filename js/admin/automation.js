@@ -670,8 +670,14 @@ window.salvarESincronizarRede = async function() {
 // 🔔 PASSO 3: DISPARAR PUSH (MOTOR DE IMPACTO TOTAL V12.3)
 window.ativarGatilhoPush = async function() {
     const URL_ROBO_MAESTRO = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
-    console.log("🚀 [Maestro] Iniciando Canhão de Milhões...");
+    const btn = document.querySelector('button[onclick="window.ativarGatilhoPush()"]'); // 🎯 Pega o botão
     
+    if(btn.disabled) return; // 🛑 Se já estiver disparando, ignora o clique extra
+
+    console.log("🚀 [Maestro] Iniciando Canhão de Milhões...");
+    btn.disabled = true; // 🔒 Trava o botão imediatamente
+    btn.innerHTML = "⏳ DISPARANDO...";
+
     try {
         const { collection, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
