@@ -285,8 +285,8 @@ function atualizarInterfaceHeader(saldo) {
             headerName.appendChild(badge);
         }
         //PONTO CRÍTICO - LINHA 158 TRINDADE FINANCEIRA 
-        // 🛰️ Badge do Header (Versão ATLIX)
-        badge.innerText = `${saldo.toFixed(2).replace('.', ',')} AX`; // AX é a abreviação para espaços pequenos
+        // 🛰️ Badge do Header V64 (Compacto e Premium)
+        badge.innerHTML = `${saldo.toFixed(2).replace('.', ',')} ${GOLD_COIN}`;
         badge.className = saldo < 0 
             ? "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-red-200 bg-red-50 text-red-600 font-bold"
             : "ml-2 text-[10px] px-2 py-0.5 rounded-full border border-green-200 bg-green-50 text-green-600 font-bold";
