@@ -165,12 +165,12 @@ export function iniciarMonitoramentoCarteira() {
             const txtMeta = document.getElementById('meta-text-home');
             const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
 
-            // 🏷️ Sincronia V65: Ganhos em R$ e Acesso Total em ATLIX Dourado
+            // 🏷️ Sincronia V65: Mantém Ganhos em R$ e soma tudo no Acesso Total (🪙)
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
                 elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
-                // Exibe a soma de todos os créditos como "Acesso Total"
+                // Injeta o valor total somado (Principal + Reserva) com o ícone de moeda
                 elBalanceHome.innerHTML = `${powerCalculado.toFixed(2).replace('.', ',')} ${GOLD_COIN}`;
             }
 
