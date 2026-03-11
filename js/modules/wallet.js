@@ -576,8 +576,9 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-       // 💰 Sincronia V71: Limpa duplicidade de R$ e garante histórico real de AX e Reais
-        // O segredo aqui é que a 'somaReal' e 'somaAX' vêm do loop que lê o extrato por data
+      // 💰 V120: Atualiza a memória global com o valor real somado do banco
+        if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
+
         const txtRealOnly = `${somaReal.toFixed(2).replace('.', ',')}`;
         const txtAXOnly = somaAX > 0 ? ` | ${somaAX.toFixed(2).replace('.', ',')} 🪙` : "";
 
