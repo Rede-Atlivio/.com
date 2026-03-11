@@ -1081,21 +1081,22 @@ window.iniciarTrabalho = async (orderId) => {
 };
 
 window.finalizarTrabalho = async (orderId) => {
-    if(!confirm("🏁 CONCLUIR O SERVIÇO?\n\nIsso encerrará o cronômetro e liberará o pagamento.")) return;
+    /* ✅ V109: O Prestador finaliza a execução, mas NÃO LIQUIDA o financeiro. */
+    if(!confirm("🏁 CONCLUIR O TRABALHO?\n\nIsso avisará o cliente para realizar o pagamento final.")) return;
     try {
         await updateDoc(doc(db, "orders", orderId), { 
-            status: 'completed', // Vai para o estado final de liberação
+            status: 'completed', 
             real_end: serverTimestamp(),
-            system_step: 4
+            // Mantemos no Step 3 para o botão de PAGAR do cliente continuar visível
+            system_step: 3 
         });
-         await addDoc(collection(db, `chats/${orderId}/messages`), { 
-            text: `🏁 Serviço Finalizado pelo Prestador.`, 
+        await addDoc(collection(db, `chats/${orderId}/messages`), { 
+            text: `🏁 O Prestador marcou o serviço como CONCLUÍDO. Aguardando liberação do pagamento pelo Cliente.`, 
             sender_id: 'system', 
             timestamp: serverTimestamp() 
         });
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error("Erro ao finalizar trabalho:", e); }
 };
-
 // ⚖️ AÇÃO 11: LÓGICA DE CANCELAMENTO COM PENALIDADE E ESTORNO
 window.cancelarServico = async (orderId) => {
     if(!confirm("🚫 DESEJA REALMENTE CANCELAR?\n\n⚠️ Atenção:\n1. Isso impactará sua Reputação (Risk Score).\n2. O valor reservado (se houver) será estornado para seu saldo.\n\nTem certeza?")) return;
