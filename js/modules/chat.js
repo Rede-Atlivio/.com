@@ -1603,13 +1603,21 @@ window.verificarVidaUtilChat = async (pedido) => {
             // Marca no banco que o aviso foi disparado para não travar o celular do usuário com spam
             await updateDoc(doc(window.db, "orders", pedido.id), { chat_lifecycle_status: 'warning' });
 
-            // 💎 CHAMA O BALÃO PREMIUM (Slate-900) QUE CRIAMOS NO INDEX
+            // 💎 V126: Maestro Inteligente - Fala a língua de quem está ouvindo
             if (window.mostrarBarraNotificacao) {
-                window.mostrarBarraNotificacao(pedido.id, {
+                const souPrestador = window.auth?.currentUser?.uid === pedido.provider_id;
+                
+                const configMaestro = souPrestador ? {
+                    type: 'alert',
+                    action: 'chat', // Mantém o prestador no chat para ele insistir
+                    message: "O cliente silenciou? 🤐 Envie um ultimato ou tente outra oportunidade!"
+                } : {
                     type: 'chat',
-                    action: 'services', // Se o chat parou, sugere voltar para ver outros serviços
-                    message: "A negociação parou? ⏳ Não perca tempo, veja outros profissionais ativos agora!"
-                });
+                    action: 'services', // Manda o cliente procurar outro profissional
+                    message: "A negociação parou? ⏳ Não perca tempo, veja outros profissionais ativos!"
+                };
+
+                window.mostrarBarraNotificacao(pedido.id, configMaestro);
             }
         } catch (e) { console.error("Erro no resgate Maestro:", e); }
     }
