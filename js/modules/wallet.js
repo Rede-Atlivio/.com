@@ -176,22 +176,13 @@ export function iniciarMonitoramentoCarteira() {
                 elBalanceHome.innerHTML = `${powerCalculado.toFixed(2).replace('.', ',')} ${GOLD_COIN}`;
             }
 
-            // 🎯 V123: Reativador da Barra de Meta (Garante que ela suba assim que o dinheiro cair)
-            if (barMeta && txtMeta) {
-                txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
-                
-                // Pega o ganho real calculado pelo extrato de HOJE
-                const ganhoRealHoje = window.ultimoSaldoGanhosCalculado || 0; 
-                const porcentagem = metaDefinida > 0 ? Math.min((ganhoRealHoje / metaDefinida) * 100, 100) : 0;
-                
-                // 🚀 Aplicação Forçada: Garante que o CSS mude o tamanho no HTML
-                barMeta.style.setProperty('width', `${porcentagem}%`, 'important');
-                
-                // Troca cor: Azul (Em andamento) -> Esmeralda (Meta Batida)
-                barMeta.className = porcentagem >= 100 
-                    ? "bg-emerald-500 h-full transition-all duration-700 shadow-[0_0_15px_#10b981]" 
-                    : "bg-blue-500 h-full transition-all duration-700 shadow-[0_0_8px_rgba(59,130,246,0.5)]";
-            }
+            // Cálculo da Barra de Meta (Unidade de medida ajustada)
+            if (barMeta && txtMeta) {
+                txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
+                const porcentagem = metaDefinida > 0 ? Math.min((ganhoParaMeta / metaDefinida) * 100, 100) : 0;
+                barMeta.style.width = `${porcentagem}%`;
+                barMeta.className = porcentagem >= 100 ? "bg-emerald-500 h-full transition-all duration-700" : "bg-blue-500 h-full transition-all duration-700";
+            }
             carregarHistoricoCarteira(uid);
         }
     });
