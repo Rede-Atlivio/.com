@@ -340,9 +340,9 @@ export async function processarCobrancaTaxa(orderId, valorServico) {
             const ganhosAtuais = parseFloat(userDoc.data().wallet_earnings || 0);
             const novoSaldo = saldoAtual - valorTaxa;
 
+            // ✅ Restauração V74: Atualiza o saldo real deduzindo a taxa de intermediação
             transaction.update(userRef, { 
                 wallet_balance: novoSaldo,
-                // Mantemos o registro de ganhos para o nível do usuário
                 updated_at: serverTimestamp()
             });
 
