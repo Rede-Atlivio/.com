@@ -418,16 +418,7 @@ function gerarBannerEtapa(step, isProvider, pedido, orderId) {
             
             <div class="flex justify-between items-center mb-4 relative z-10">
                 <div class="flex flex-col leading-none">
-                    <div class="flex flex-col">
-    <p class="text-[8px] font-black text-white uppercase tracking-widest">
-        ${isUltimato ? '⚠️ OFERTA FINAL' : 'Investimento Total'}
-    </p>
-    ${(isProvider && !pedido.negotiation_closed) ? `
-        <p class="text-[6px] text-amber-400 font-bold uppercase mt-1 animate-pulse">
-            Aviso: Informe ao cliente que o chat encerra após o tempo acabar.
-        </p>
-    ` : ''}
-</div>
+                    <p class="text-[8px] font-black text-white uppercase tracking-widest">${isUltimato ? '⚠️ OFERTA FINAL' : 'Investimento Total'}</p>
                     <p class="text-2xl font-black text-[#34d399] mt-1 tracking-tighter">R$ ${valorAcordo.toFixed(2).replace('.', ',')}</p>
                 </div>
                 <div class="text-right leading-none max-w-[120px]">
