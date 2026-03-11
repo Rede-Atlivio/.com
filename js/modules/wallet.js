@@ -568,20 +568,19 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-        const valorFormatado = soma.toFixed(2).replace('.', ',');
-        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos nos últimos ${periodo} dias`;
-        elEarnings.innerText = valorFormatado;
+        // 💰 Sincronia V70: Formata a saída dupla para o card de ganhos
+        const txtReal = `R$ ${somaReal.toFixed(2).replace('.', ',')}`;
+        const txtAX = somaAX > 0 ? ` | ${somaAX.toFixed(2).replace('.', ',')} 🪙` : "";
 
-       // 📈 Sincronia V65 Final: Renderiza ganhos de trabalho e missões no mesmo card
+        // Atualiza o card da aba Carteira
+        elEarnings.innerHTML = `${txtReal}<span class="text-[10px] opacity-60">${txtAX}</span>`;
+        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo}D`;
+
+        // 📈 Atualiza o card da aba Home (Identidade Visual Premium)
         const elEarningsHome = document.getElementById('user-earnings-home');
-        const lbHome = document.getElementById('label-ganhos-home');
-        
         if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-            // Se houver ganho AX (Missão), ele aparece em destaque ao lado do Real
-            let htmlGanhos = `R$ ${somaReal.toFixed(2).replace('.', ',')}`;
-            if (somaAX > 0) htmlGanhos += ` <span class="moeda-ouro ml-1">| ${somaAX.toFixed(2)} 🪙</span>`;
-            
-            elEarningsHome.innerHTML = htmlGanhos;
+            elEarningsHome.innerHTML = `${txtReal}<span class="text-amber-400 scale-90 inline-block ml-1">${txtAX}</span>`;
+            const lbHome = document.getElementById('label-ganhos-home');
             if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
         }
     } catch (e) {
