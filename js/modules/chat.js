@@ -109,11 +109,18 @@ export async function abrirChatPedido(orderId) {
     painelChat.style.display = window.innerWidth >= 768 ? 'flex' : 'block';
     window.lastOpenedOrderId = orderId; // Garante ID para robôs e cronômetros
     const pedidoRef = doc(db, "orders", orderId);
-    window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => { //PONTO CRÍTICO - SOLUÇÃO 03 TROCA DE CHATS
-        if (!snap.exists()) return;
+    window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => {
+        if (!snap.exists()) return;
         const pedido = snap.data();
         const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
+
+        // 🛡️ VIGILANTE DE ESTADO V82: Se o pedido foi concluído ou arquivado, mata o chat na hora
+        if (pedido.status === 'completed' || pedido.status === 'archived' || pedido.status === 'negotiation_closed') {
+            console.log("🏁 Vigilante: Detectado fim de ciclo. Fechando interface...");
+            if (window.voltarParaListaPedidos) window.voltarParaListaPedidos();
+            return; // Interrompe a renderização para não bugar
+        }
 
         if (typeof window.atualizarCronometro === 'function') {
             window.atualizarCronometro(pedido);
