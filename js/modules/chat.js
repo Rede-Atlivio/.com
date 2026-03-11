@@ -994,7 +994,7 @@ function atualizarRelogioDOM(pedido) {
         } else if (displayUltimato && restante > 0) {
             const m = Math.floor((restante % 3600000) / 60000).toString().padStart(2, '0');
             const s = Math.floor((restante % 60000) / 1000).toString().padStart(2, '0');
-            displayUltimato.innerText = `🚨 EXPIRA EM ${m}:${s}`;
+            displayUltimato.innerText = `🚨 CASO VOCÊ NÃO ACEITE A PROPOSTA ESSE CHAT SE ENCERRARÁ EM ${m}:${s}`;
         }
     }
 
