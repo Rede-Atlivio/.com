@@ -568,18 +568,21 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-        // 💰 Sincronia V70: Formata a saída dupla para o card de ganhos
-        const txtReal = `R$ ${somaReal.toFixed(2).replace('.', ',')}`;
-        const txtAX = somaAX > 0 ? ` | ${somaAX.toFixed(2).replace('.', ',')} 🪙` : "";
+       // 💰 Sincronia V71: Limpa duplicidade de R$ e garante histórico real de AX e Reais
+        // O segredo aqui é que a 'somaReal' e 'somaAX' vêm do loop que lê o extrato por data
+        const txtRealOnly = `${somaReal.toFixed(2).replace('.', ',')}`;
+        const txtAXOnly = somaAX > 0 ? ` | ${somaAX.toFixed(2).replace('.', ',')} 🪙` : "";
 
-        // Atualiza o card da aba Carteira
-        elEarnings.innerHTML = `${txtReal}<span class="text-[10px] opacity-60">${txtAX}</span>`;
-        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo}D`;
+        // 1. Atualiza a aba Carteira (Ganhos de Hoje/7D/30D)
+        if (elEarnings) {
+            elEarnings.innerHTML = `R$ ${txtRealOnly}<span class="text-[10px] opacity-60">${txtAXOnly}</span>`;
+        }
+        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
 
-        // 📈 Atualiza o card da aba Home (Identidade Visual Premium)
+        // 2. Atualiza a aba Home (Respeita o filtro de tempo selecionado)
         const elEarningsHome = document.getElementById('user-earnings-home');
         if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-            elEarningsHome.innerHTML = `${txtReal}<span class="text-amber-400 scale-90 inline-block ml-1">${txtAX}</span>`;
+            elEarningsHome.innerHTML = `R$ ${txtRealOnly}<span class="text-amber-400 text-[10px] ml-1">${txtAXOnly}</span>`;
             const lbHome = document.getElementById('label-ganhos-home');
             if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
         }
