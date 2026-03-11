@@ -166,9 +166,10 @@ export function iniciarMonitoramentoCarteira() {
             const txtMeta = document.getElementById('meta-text-home');
             const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
 
-            // 🏷️ Sincronia V65: Mantém Ganhos em R$ e soma tudo no Acesso Total (🪙)
+            // 🏷️ V112: Força a Home a mostrar apenas os Ganhos de Hoje (Zera às 00:00h)
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-                elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
+                // Em vez de ler o saldo fixo, ele reconstrói a soma do dia atual
+                window.filtrarGanhos('hoje');
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
                 // Injeta o valor total somado (Principal + Reserva) com o ícone de moeda
