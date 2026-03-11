@@ -98,9 +98,9 @@ export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO 
 
     if (saldoFinal < limite) {
         if(custo > 0) {
-             // ⚖️ Conversão V63: Formata o valor para o padrão de créditos digitais
+             // ⚖️ Ajuste V65: Alerta focado em Créditos de Acesso Total
              const saldoFmt = saldoTotal.toFixed(2).replace('.', ',');
-             alert(`⛔ ATLIX INSUFICIENTES\n\nVocê tem ${saldoFmt} ATLIX. Recarregue para continuar.`);
+             alert(`⛔ ATLIX INSUFICIENTES\n\nVocê tem ${saldoFmt} ATLIX. Recarregue seu Saldo Principal.`);
              if(window.switchTab) window.switchTab('ganhar');
         }
         return false; 
