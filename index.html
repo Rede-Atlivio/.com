@@ -1008,13 +1008,6 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
         s.src = `${src}?v=${VERSAO}`;
         document.head.appendChild(s);
     });
-
-    /* 🛡️ SOLDAGEM DE INTERFACE V88: Força o chat a morar dentro do container que você commitou */
-    setInterval(() => {
-        const chatSolto = document.querySelector('body > #painel-chat-individual');
-        const containerMestre = document.getElementById('interface-flutuante-container');
-        if (chatSolto && containerMestre) containerMestre.appendChild(chatSolto);
-    }, 1000);
     console.log("🛰️ Interface V28: Sistema Financeiro Sincronizado.");
 </script>
 
@@ -1372,7 +1365,6 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
             </button>
         </div>
     </div>
-<div id="interface-flutuante-container" class="relative z-[9999]"></div>
 </div>
 </body>
 </html>
