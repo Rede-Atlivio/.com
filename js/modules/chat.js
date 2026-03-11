@@ -109,18 +109,11 @@ export async function abrirChatPedido(orderId) {
     painelChat.style.display = window.innerWidth >= 768 ? 'flex' : 'block';
     window.lastOpenedOrderId = orderId; // Garante ID para robôs e cronômetros
     const pedidoRef = doc(db, "orders", orderId);
-    window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => {
-        if (!snap.exists()) return;
+    window.unsubscribeChat = onSnapshot(pedidoRef, (snap) => { //PONTO CRÍTICO - SOLUÇÃO 03 TROCA DE CHATS
+        if (!snap.exists()) return;
         const pedido = snap.data();
         const isProvider = pedido.provider_id === auth.currentUser.uid;
         const step = pedido.system_step || 1;
-
-        // 🛡️ VIGILANTE DE ESTADO V82: Se o pedido foi concluído ou arquivado, mata o chat na hora
-        if (pedido.status === 'completed' || pedido.status === 'archived' || pedido.status === 'negotiation_closed') {
-            console.log("🏁 Vigilante: Detectado fim de ciclo. Fechando interface...");
-            if (window.voltarParaListaPedidos) window.voltarParaListaPedidos();
-            return; // Interrompe a renderização para não bugar
-        }
 
         if (typeof window.atualizarCronometro === 'function') {
             window.atualizarCronometro(pedido);
@@ -894,23 +887,8 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 sender_id: "system", timestamp: serverTimestamp()
             });
         });
-        // ✅ Sincronia V80: Alerta de sucesso e comando de fechar a interface
         alert("✅ Pagamento Realizado com Sucesso!");
-        
-        // 🧼 Faxina de Memória: Mata a escuta em tempo real do chat finalizado
-        if (window.unsubscribeChat) {
-            window.unsubscribeChat();
-            window.unsubscribeChat = null;
-        }
-
-        // ⬅️ Comando de Retorno: Minimiza o chat e volta para a lista de pedidos
-        if (window.voltarParaListaPedidos) {
-            window.voltarParaListaPedidos();
-        } else {
-            // Plano B: Se a função global falhar, força o sumiço do elemento na marra
-            const painel = document.getElementById('painel-chat-individual');
-            if (painel) painel.classList.add('hidden');
-        }
+        window.voltarParaListaPedidos();
     } catch(e) { 
         console.error("Erro na liquidação:", e);
         alert("⛔ FALHA NA LIQUIDAÇÃO:\n" + e);
