@@ -202,11 +202,11 @@ function atualizarInterfaceCarteira(saldoTotal) {
     if (elTotal) {
         elTotal.innerText = saldoTotal.toFixed(2).replace('.', ',');
     }
-    
+    //PONTO CRÍTICO: COBRANÇA UNIVERSAL ATIVADA "TODAS AS ABAS" LINHAS: 144 A 205
+    // 🪙 Sincronia V65: Atualiza os cofres AX e o valor em Custódia com a moeda premium
     if (elReal) elReal.innerText = sReal.toFixed(2).replace('.', ',');
     if (elBonus) elBonus.innerText = sBonus.toFixed(2).replace('.', ',');
-    //PONTO CRÍTICO: COBRANÇA UNIVERSAL ATIVADA "TODAS AS ABAS" LINHAS: 144 A 205
-   if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
+    if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
     
     // Inicia com "Hoje" se for a primeira carga
     if (elEarnings && !window.filtroGanhosAtivo) {
