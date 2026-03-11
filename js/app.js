@@ -635,8 +635,9 @@ window.togglePrivacyHome = () => {
         const ganhos = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
         const saldo = (window.userProfile?.wallet_total_power || 0).toFixed(2).replace('.', ',');
         
-        elEarnings.innerText = `${ganhos} ATLIX`;
-        elBalance.innerText = `${saldo} ATLIX`;
+        // ✨ Sincronia V72: Ganhos em R$ e Saldo em Moeda Dourada ao revelar
+        elEarnings.innerText = `R$ ${ganhos}`;
+        elBalance.innerHTML = `${saldo} 🪙`;
         
         elEarnings.setAttribute('data-hidden', 'false');
         svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
