@@ -381,8 +381,8 @@ window.saveModalData = async () => {
 // ✅ PONTE ADMINISTRATIVA OTIMIZADA PARA MASSA
 window.finalizarManualmente = async (orderId) => {
     try {
-        // ✅ Correção V76: Removido o ".com" duplicado do caminho de importação
-        const chatModule = await import('./modules/chat.js?v=' + Date.now());
+        // ✅ V79: Caminho corrigido para a estrutura [js/admin] -> [js/modules]
+        const chatModule = await import('../modules/chat.js?v=' + Date.now());
         // Executa e aguarda a promessa. Lança erro para o loop de massa capturar se falhar.
         await chatModule.finalizarServicoPassoFinalAction(orderId, true);
         console.log(`✅ Ordem ${orderId} liquidada.`);
