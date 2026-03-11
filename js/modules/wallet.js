@@ -250,9 +250,10 @@ window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
             }
 
             // Atualiza o banco
+            // 📡 Sincronia de Gravação: Atualiza os campos oficiais do banco
             transaction.update(userRef, {
-                wallet_balance: rBal,
-                wallet_bonus: rBonus,
+                wallet_balance: rPrincipal,
+                wallet_bonus: rReserva,
                 updated_at: serverTimestamp()
             });
 
