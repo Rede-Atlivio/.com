@@ -549,12 +549,22 @@ window.filtrarGanhos = async (periodo) => {
         const snap = await getDocs(q);
         let soma = 0;
 
+        let somaReal = 0;
+        let somaAX = 0;
+
         snap.forEach(doc => {
             const t = doc.data();
             const tipo = t.tipo || "";
-            // Captura qualquer ganho positivo de serviço ou missão (✅, ⚡ ou 🎯)
-            if (t.valor > 0 && (tipo.includes('GANHO') || tipo.includes('✅') || tipo.includes('⚡') || tipo.includes('🎯'))) {
-                soma += parseFloat(t.valor);
+            const valor = parseFloat(t.valor || 0);
+
+            if (valor > 0) {
+                // 🪙 Se o tipo tiver o ícone de moeda ou for de missão, soma no contador AX
+                if (tipo.includes('🪙') || tipo.includes('MISSÃO')) {
+                    somaAX += valor;
+                } else if (tipo.includes('GANHO') || tipo.includes('✅')) {
+                    // 💰 Caso contrário, soma no ganho em Reais (Trabalho)
+                    somaReal += valor;
+                }
             }
         });
 
