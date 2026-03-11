@@ -1503,21 +1503,38 @@ window.ativarModoUltimato = async (orderId) => {
 };
 
 // Função para o sistema matar o chat sem perguntar ao usuário
+// 🛡️ V114: Função de Encerramento com Trava de Segurança (Evita Spam/Duplicidade)
 window.encerrarNegociacaoSilenciosa = async (orderId) => {
-    if (!orderId) return;
+    if (!orderId || window.bloqueioDisparoUltimato === orderId) return;
+    
+    // 🔒 Ativa a trava imediata na memória para evitar que o próximo segundo do cronômetro dispare
+    window.bloqueioDisparoUltimato = orderId;
+
     try {
         const { doc, updateDoc, addDoc, collection, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        await updateDoc(doc(db, "orders", orderId), {
-            status: 'negotiation_closed'.toLowerCase(),
+        
+        const orderRef = doc(db, "orders", orderId);
+
+        // 📝 Grava no banco a trava 'negotiation_closed: true' para silenciar o Lazarus e outros robôs
+        await updateDoc(orderRef, {
+            status: 'negotiation_closed',
+            negotiation_closed: true, // 🚩 Sincronia: Esta é a trava que faltava no Robô 03
             closed_by: 'system_ultimato',
             closed_at: serverTimestamp()
         });
+
+        // 💬 Envia apenas UMA mensagem de sistema
         await addDoc(collection(db, `chats/${orderId}/messages`), {
             text: `🤝 NEGOCIAÇÃO ENCERRADA: O prazo de resposta expirou.`,
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
-    } catch(e) { console.error("Erro no auto-close:", e); }
+
+        console.log("✅ Chat encerrado com sucesso e trava ativada.");
+    } catch(e) { 
+        console.error("Erro no auto-close:", e);
+        window.bloqueioDisparoUltimato = null; // Libera a trava apenas em caso de erro real
+    }
 };
 
 // ============================================================================
