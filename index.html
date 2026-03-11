@@ -1009,6 +1009,13 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
         s.src = `${src}?v=${VERSAO}`;
         document.head.appendChild(s);
     });
+
+    /* 🏗️ V94: Força o Chat a entrar no Container do Index e respeitar as travas visuais */
+    setInterval(() => {
+        const chatFugitivo = document.querySelector('body > #painel-chat-individual');
+        const containerMestre = document.getElementById('sec-servicos'); // Coloca ele dentro da aba de serviços
+        if (chatFugitivo && containerMestre) containerMestre.appendChild(chatFugitivo);
+    }, 1000);
     console.log("🛰️ Interface V28: Sistema Financeiro Sincronizado.");
 </script>
 
