@@ -100,7 +100,8 @@ export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO 
         if(custo > 0) {
             // ⚖️ Sincronia V65: Alerta direcionando para a recarga dos Créditos de Acesso
              const saldoFmt = saldoTotal.toFixed(2).replace('.', ',');
-             alert(`⛔ ATLIX INSUFICIENTES\n\nVocê tem ${saldoFmt} ATLIX. Recarregue seus Créditos de Acesso.`);
+             // ⚖️ Sincronia V68: Alerta usando o nome literal do novo HTML
+             alert(`⛔ ATLIX INSUFICIENTES\n\nVocê tem ${saldoFmt} ATLIX. Adicione saldo em sua "Carteira de Recarga" para continuar.`);
              if(window.switchTab) window.switchTab('ganhar');
         }
         return false; 
