@@ -241,10 +241,10 @@ window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
             }
 
             // Lógica do Liquidificador: Consome a Reserva Premium primeiro
-            if (rReserva >= valor) {
-                rReserva -= valor;
-            } else {
-                const resto = valor - rReserva;
+            if (rReserva >= valorDebito) {
+            rReserva -= valorDebito;
+       } else {
+           const resto = valorDebito - rReserva;
                 rReserva = 0;
                 rPrincipal -= resto;
             }
