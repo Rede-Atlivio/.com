@@ -381,8 +381,7 @@ window.saveModalData = async () => {
 // ✅ PONTE ADMINISTRATIVA OTIMIZADA PARA MASSA
 window.finalizarManualmente = async (orderId) => {
     try {
-        // ✅ Correção V75: Caminho saneado (./) para funcionar em qualquer domínio sem erro 404
-        const chatModule = await import('./modules/chat.js?v=' + Date.now());
+        const chatModule = await import('/.com/js/modules/chat.js?v=' + Date.now());
         // Executa e aguarda a promessa. Lança erro para o loop de massa capturar se falhar.
         await chatModule.finalizarServicoPassoFinalAction(orderId, true);
         console.log(`✅ Ordem ${orderId} liquidada.`);
