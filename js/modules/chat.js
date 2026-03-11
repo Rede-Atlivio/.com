@@ -1494,7 +1494,7 @@ window.toggleFerramentasChat = () => {
     if(window.rolarChatParaBaixo) window.rolarChatParaBaixo();
 };
 window.ativarModoUltimato = async (orderId) => {
-    if (!confirm("🚨 ATENÇÃO. AVISE AO CLIENTE ANTES DE ENVIAR. \n\nATIVAR ÚLTIMA OFERTA? Isso iniciará um cronômetro de pressão para o cliente. Se ele não aceitar a tempo, a negociação será ENCERRADA AUTOMATICAMENTE.\n\nConfirmar envio?")) return;
+    if (!confirm("🚨 ATENÇÃO. AVISE AO CLIENTE ANTES DE ENVIAR. \n\nATIVAR ÚLTIMA OFERTA? Isso iniciará um cronômetro de pressão para a outra parte. Se ele não aceitar a tempo, a negociação será ENCERRADA AUTOMATICAMENTE.\n\nConfirmar envio?")) return;
 
     const minutos = prompt("Em quantos minutos a oferta expira?", "5");
     const tempoFinal = Date.now() + (parseInt(minutos) * 60000);
