@@ -1216,11 +1216,26 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
             const userRef = doc(db, "usuarios", uid);
             const origem = localStorage.getItem("traffic_source") || "direto";
 
-           await setDoc(userRef, {
+           // 🛡️ V130: Consulta o Admin antes de dar o bônus. Evita dar bônus se estiver desativado.
+            let valorPromocional = 0;
+            let mensagemSucesso = `Parabéns ${nome}! Cadastro concluído com sucesso!`;
+
+            try {
+                // Sintoniza com a coleção correta 'configuracoes' (Unificação V129)
+                const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+                const config = configSnap.data();
+
+                if (config && config.bonus_boas_vindas_ativo === true) {
+                    valorPromocional = parseFloat(config.valor_bonus_promocional) || 20.00;
+                    mensagemSucesso = `Parabéns ${nome}! Cadastro concluído e R$ ${valorPromocional.toFixed(2).replace('.',',')} de bônus liberados!`;
+                }
+            } catch (e) { console.warn("🛰️ Falha ao ler regra de bônus, seguindo sem saldo extra."); }
+
+            await setDoc(userRef, {
                 nome: nome,
                 telefone: fone,
-                // O bônus de R$ 20 agora é injetado via wallet_bonus para separação contábil   - PONTO CRÍTICO SOLUÇÃO BÔNUS
-                wallet_bonus: 20.00,
+                // 🎁 O valor agora vem do Admin (valorPromocional). Se o Admin desligar, aqui vira 0.
+                wallet_bonus: valorPromocional,
                 traffic_source: origem,
                 onboarding_completed: true,
                 terms_accepted: true,
@@ -1228,7 +1243,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
                 updated_at: serverTimestamp()
             }, { merge: true });
 
-            alert(`Parabéns ${nome}! Cadastro concluído e R$ 20,00 de bônus liberados!`);
+            alert(mensagemSucesso);
             document.getElementById('modal-onboarding').classList.add('hidden');
         } catch (err) { alert("Erro ao salvar."); btn.disabled = false; }
     });
