@@ -985,13 +985,25 @@ function atualizarRelogioDOM(pedido) {
         const agora = Date.now();
         const restante = pedido.ultimato_expira - agora;
         
-        if (restante <= 0 && pedido.status !== 'negotiation_closed') {
-            console.warn("🔥 ULTIMATO EXPIRADO!");
-            const currentId = pedido.id || window.lastOpenedOrderId;
-            window.encerrarNegociacaoSilenciosa(currentId); 
+       if (restante <= 0) {
+            // 🔒 V115: Torna o card inútil e visualmente bloqueado
+            const banner = document.getElementById('banner-fechamento-v12');
+            if (banner) {
+                banner.style.opacity = "0.5"; // Fica "apagado"
+                banner.style.pointerEvents = "none"; // Ninguém consegue clicar em nada
+                banner.classList.remove('animate-ultimato'); // Para de pulsar
+            }
+            
             if (displayUltimato) displayUltimato.innerText = "🚨 OFERTA EXPIRADA";
+            
+            // Só dispara o fechamento no banco se ainda não estiver fechado
+            if (pedido.status !== 'negotiation_closed') {
+                const currentId = pedido.id || window.lastOpenedOrderId;
+                window.encerrarNegociacaoSilenciosa(currentId);
+            }
             return;
-        } else if (displayUltimato && restante > 0) {
+        } 
+        else if (displayUltimato && restante > 0) {
             const m = Math.floor((restante % 3600000) / 60000).toString().padStart(2, '0');
             const s = Math.floor((restante % 60000) / 1000).toString().padStart(2, '0');
             displayUltimato.innerText = `🚨 CASO VOCÊ NÃO ACEITE A PROPOSTA ESSE CHAT SE ENCERRARÁ EM ${m}:${s}`;
