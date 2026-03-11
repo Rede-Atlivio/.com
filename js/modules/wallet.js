@@ -571,13 +571,16 @@ window.filtrarGanhos = async (periodo) => {
         elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos nos últimos ${periodo} dias`;
         elEarnings.innerText = valorFormatado;
 
-        // Atualiza o Card da Home em tempo real (Ganhos filtrados)
+       // 📈 Sincronia V65: Atualiza o Card da Home com suporte a R$ e AX
         const elEarningsHome = document.getElementById('user-earnings-home');
         const lbHome = document.getElementById('label-ganhos-home');
         
         if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-            // 🏷️ Identidade V63.5: Finaliza a troca de R$ por ATLIX no motor de busca
-            elEarningsHome.innerText = `${valorFormatado} ATLIX`;
+            // Ganhos de Trabalho (R$) + Ganhos de Missão (AX) se houver
+            let displayGanhos = `R$ ${somaReal.toFixed(2).replace('.', ',')}`;
+            if (somaAX > 0) displayGanhos += ` <span class="text-[10px] text-amber-400">| ${somaAX.toFixed(2)} 🪙</span>`;
+            
+            elEarningsHome.innerHTML = displayGanhos;
             if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
         }
     } catch (e) {
