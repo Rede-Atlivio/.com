@@ -364,9 +364,13 @@ window.saveMarketingRules = async () => {
     };
 
     try {
-        // 🛡️ V129: Unificando com a coleção 'configuracoes' que o App do usuário consome
+        // 🛰️ V132: Soldagem Dupla (Legado + Novo Motor)
+        // Salva na 'configuracoes' para o novo motor e na 'settings' para o auth.js legado.
+        // Isso garante que NENHUM usuário receba bônus se você desativar aqui.
         await setDoc(doc(window.db, "configuracoes", "global"), payload, { merge: true });
-        alert("✅ ESTRATÉGIA DE MARKETING ATUALIZADA!\nAs novas regras de bônus já estão em vigor.");
+        await setDoc(doc(window.db, "settings", "global"), payload, { merge: true });
+
+        alert("✅ ESTRATÉGIA UNIFICADA!\nAs duas coleções (settings e configuracoes) foram sincronizadas.");
     } catch(e) {
         alert("❌ Erro ao salvar regras: " + e.message);
     } finally {
