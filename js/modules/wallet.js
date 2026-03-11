@@ -231,22 +231,22 @@ window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
             if (!userSnap.exists()) throw "Usuário não encontrado";
 
             const data = userSnap.data();
-            let rBonus = parseFloat(data.wallet_bonus || 0);
-            let rBal = parseFloat(data.wallet_balance || 0);
-            const poderCompra = rBonus + rBal;
+           // 🛡️ Motor de Débito V73: Garante a saída do Saldo Reserva Premium (wallet_bonus)
+            let rReserva = parseFloat(data.wallet_bonus || 0);
+            let rPrincipal = parseFloat(data.wallet_balance || 0);
+            const poderTotal = rReserva + rPrincipal;
 
-            if (poderCompra < valor) {
-                // ⚖️ Ajuste V63.5: Remove o R$ do erro de processamento
-                throw `Saldo insuficiente. Necessário ${valor.toFixed(2)} ATLIX`;
+            if (poderTotal < valor) {
+                throw `Saldo insuficiente. Necessário ${valor.toFixed(2)} 🪙`;
             }
 
-            // Lógica do Liquidificador: Consome bônus primeiro
-            if (rBonus >= valor) {
-                rBonus -= valor;
+            // Lógica do Liquidificador: Consome a Reserva Premium primeiro
+            if (rReserva >= valor) {
+                rReserva -= valor;
             } else {
-                const resto = valor - rBonus;
-                rBonus = 0;
-                rBal -= resto;
+                const resto = valor - rReserva;
+                rReserva = 0;
+                rPrincipal -= resto;
             }
 
             // Atualiza o banco
