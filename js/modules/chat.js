@@ -887,8 +887,23 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 sender_id: "system", timestamp: serverTimestamp()
             });
         });
+        // ✅ Sincronia V80: Alerta de sucesso e comando de fechar a interface
         alert("✅ Pagamento Realizado com Sucesso!");
-        window.voltarParaListaPedidos();
+        
+        // 🧼 Faxina de Memória: Mata a escuta em tempo real do chat finalizado
+        if (window.unsubscribeChat) {
+            window.unsubscribeChat();
+            window.unsubscribeChat = null;
+        }
+
+        // ⬅️ Comando de Retorno: Minimiza o chat e volta para a lista de pedidos
+        if (window.voltarParaListaPedidos) {
+            window.voltarParaListaPedidos();
+        } else {
+            // Plano B: Se a função global falhar, força o sumiço do elemento na marra
+            const painel = document.getElementById('painel-chat-individual');
+            if (painel) painel.classList.add('hidden');
+        }
     } catch(e) { 
         console.error("Erro na liquidação:", e);
         alert("⛔ FALHA NA LIQUIDAÇÃO:\n" + e);
