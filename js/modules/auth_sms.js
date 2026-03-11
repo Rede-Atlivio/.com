@@ -82,9 +82,14 @@ window.confirmarCodigoLogin = async function() {
                 status: 'ativo'
             });
             
-            // 🔥 Gatilho de automação para bônus inicial via Admin
-            if (typeof window.concederBonusSeAtivo === 'function') {
+            // 🔥 V129: Só dispara o bônus se o Admin não tiver desligado a chave global
+            const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+            const bonusLiberado = configSnap.exists() ? configSnap.data().bonus_boas_vindas_ativo : false;
+
+            if (bonusLiberado && typeof window.concederBonusSeAtivo === 'function') {
                 await window.concederBonusSeAtivo(result.user.uid);
+            } else {
+                console.log("🎁 Bônus ignorado: Chave global desativada no Admin.");
             }
         }
         
