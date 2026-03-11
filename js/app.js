@@ -91,8 +91,36 @@ import './modules/user_notifications.js';
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
-// 🛡️ MAESTRO V25: Flag de controle
+// 🛡️ MAESTRO V127: Flag de controle e Motor Universal de Engajamento
 window.atlivioBootConcluido = false;
+
+/**
+ * 🛰️ MOTOR MAESTRO UNIVERSAL (V127)
+ * Esta é a Torre de Controle que fala com o usuário baseado em quem ele é.
+ * @param {string} origem - De onde vem o alerta (chat, jobs, missions, etc)
+ * @param {object} dados - { id, type, msgPrestador, msgCliente, linkPrestador, linkCliente }
+ */
+window.maestroUniversal = function(origem, dados) {
+    // 🛡️ Verifica se a função visual de balão existe para não quebrar o código
+    if (!window.mostrarBarraNotificacao) return;
+
+    // 🕵️ Identifica se o usuário atual é um Prestador (quem trabalha)
+    const isP = window.userProfile?.is_provider === true;
+
+    // 🏗️ Monta a configuração baseada na Identidade (Bipolaridade do Maestro)
+    const configMaestro = {
+        type: dados.type || 'marketing', // Ícone do balão (chat, alert, gift, etc)
+        // Escolhe a mensagem certa para o público certo
+        message: isP ? (dados.msgPrestador || dados.message) : (dados.msgCliente || dados.message),
+        // Escolhe o destino certo baseado na aba que o usuário deve ir
+        action: isP ? (dados.linkPrestador || dados.action) : (dados.linkCliente || dados.action)
+    };
+
+    // 🚀 Dispara o balão na tela com o ID único para evitar duplicação
+    window.mostrarBarraNotificacao(dados.id || `maestro_${origem}_${Date.now()}`, configMaestro);
+    
+    console.log(`📡 [Maestro Universal] Disparo efetuado via: ${origem} | Alvo: ${isP ? 'Prestador' : 'Cliente'}`);
+};
 window.abaAtual = 'home';
 
 // 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
