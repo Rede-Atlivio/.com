@@ -220,6 +220,14 @@ async function injetarMétricasEngajamento(uidPartner) {
 }
 
 async function renderizarEstruturaChat(container, pedido, isProvider, orderId, step) {
+    /* 🛡️ V107: Garante que a identidade seja preservada mesmo se o Index falhar */
+    const meuUid = window.auth?.currentUser?.uid;
+    const souPrestadorTrabalhando = pedido.provider_id === meuUid;
+    
+    // Sobrescreve a variável para evitar o erro de 'undefined'
+    isProvider = souPrestadorTrabalhando; 
+    window.isProvider = isProvider;
+
     const uidPartner = isProvider ? pedido.client_id : pedido.provider_id;
     let partnerData = { nome: "Usuário", photoURL: "", phone: "" };
 
