@@ -364,7 +364,8 @@ window.saveMarketingRules = async () => {
     };
 
     try {
-        await setDoc(doc(window.db, "settings", "global"), payload, { merge: true });
+        // 🛡️ V129: Unificando com a coleção 'configuracoes' que o App do usuário consome
+        await setDoc(doc(window.db, "configuracoes", "global"), payload, { merge: true });
         alert("✅ ESTRATÉGIA DE MARKETING ATUALIZADA!\nAs novas regras de bônus já estão em vigor.");
     } catch(e) {
         alert("❌ Erro ao salvar regras: " + e.message);
