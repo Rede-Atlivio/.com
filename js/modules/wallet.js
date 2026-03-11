@@ -526,6 +526,9 @@ window.filtrarGanhos = async (periodo) => {
     const elLabel = document.getElementById('label-ganhos');
     if (!uid || !elEarnings) return;
 
+    /* 🛡️ V119: Inicializa o contador global para que a Barra de Meta (V116) consiga ler os valores */
+    if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = 0;
+
     window.filtroGanhosAtivo = periodo;
     elEarnings.innerText = "...";
 
