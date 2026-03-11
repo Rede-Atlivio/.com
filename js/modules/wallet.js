@@ -165,13 +165,12 @@ export function iniciarMonitoramentoCarteira() {
             const txtMeta = document.getElementById('meta-text-home');
             const metaDefinida = parseFloat(data.wallet_daily_goal || 0);
 
-            // 🏷️ Identidade V63: Substitui o R$ pelo sufixo ATLIX na tela inicial
+            // 🏷️ Sincronia V65: Ganhos em R$ e Acesso Total em ATLIX Dourado
             if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-                // Ganhos de Prestador = Dinheiro Real
                 elEarningsHome.innerText = `R$ ${sEarnings.toFixed(2).replace('.', ',')}`;
             }
             if (elBalanceHome && elBalanceHome.getAttribute('data-hidden') !== 'true') {
-                // Saldo de Conta = Crédito Atlix Dourado
+                // Exibe a soma de todos os créditos como "Acesso Total"
                 elBalanceHome.innerHTML = `${powerCalculado.toFixed(2).replace('.', ',')} ${GOLD_COIN}`;
             }
 
