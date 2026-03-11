@@ -20,7 +20,8 @@ async function concederBonusSeAtivo(userUid) {
         // Se o usuário já recebeu o bônus alguma vez, para aqui.
         if (userSnap.exists() && userSnap.data().bonus_inicial_ok) return;
 
-        const configSnap = await getDoc(doc(db, "settings", "global"));
+        // 🛡️ V131: Sintoniza com a coleção 'configuracoes' (A única que o Admin agora gerencia)
+        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
         const config = configSnap.data();
 
         // Só concede se estiver ATIVO no Admin
