@@ -178,7 +178,8 @@ export function iniciarMonitoramentoCarteira() {
 
             // Cálculo da Barra de Meta (Unidade de medida ajustada)
             if (barMeta && txtMeta) {
-                txtMeta.innerText = `Meta: ${metaDefinida.toFixed(2).replace('.', ',')} ATLIX`;
+                // 🏷️ V117: Alinha a meta visual com os ganhos reais (R$)
+                txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
                 // 📈 V116: Garante que se o ganho for igual ou maior que a meta, a barra encha 100%
                 const ganhoParaMeta = sEarnings; 
                 const porcentagem = metaDefinida > 0 ? Math.min((ganhoParaMeta / metaDefinida) * 100, 100) : 0;
