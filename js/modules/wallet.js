@@ -482,36 +482,47 @@ window.registrarMovimentacao = async (valor, tipo, descricao) => {
     } catch (e) { console.error("Erro ao gravar Ledger:", e); }
 };
 
-// 🎀 FUNÇÃO PARA EXIBIR FAIXA DE BOAS VINDAS - PONTO CRÍTICO SOLUÇÃO BÔNUS -  LINHAS ANTES 302 A 306 DEPOIS 302 A 305
+// 🛰️ V151: Sincronização de bônus visual. O valor agora vem do banco de dados (valorBonus).
 function verificarFaixaBonus(valorBonus) {
+    // Verifica se o usuário já clicou no "X" para fechar esta faixa anteriormente
     const jaFechou = localStorage.getItem('atlivio_bonus_visto'); 
     
+    // Se o bônus for maior que zero e o usuário ainda não fechou a faixa...
     if (valorBonus > 0 && !jaFechou) {
         let banner = document.getElementById('bonus-banner');
         
+        // Se a faixa ainda não existe na tela, nós a criamos
         if (!banner) {
             banner = document.createElement('div');
             banner.id = 'bonus-banner';
             banner.className = "fixed top-0 left-0 w-full bg-gradient-to-r from-green-600 to-green-500 text-white py-3 px-4 z-[9999] shadow-lg flex justify-between items-center animate-bounce-subtle";
+            
+            // 💰 O valor abaixo (.toFixed(2)) formata o número real do seu Admin (Ex: 10,00 ou 5,00)
             banner.innerHTML = `
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🎁</span>
-                    <p class="text-xs font-bold uppercase tracking-wider">Você ganhou R$ 20,00 de bônus de boas-vindas!</p>
+                    <div>
+                        <p class="text-[9px] opacity-80 uppercase font-black">Presente de Boas-Vindas</p>
+                        <p class="text-xs font-bold uppercase tracking-wider">VOCÊ GANHOU R$ ${valorBonus.toFixed(2).replace('.', ',')} PARA USAR AGORA!</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="window.switchTab('ganhar')" class="bg-white text-green-600 text-[10px] font-black px-3 py-1 rounded-full uppercase">Usar Agora</button>
-                    <button id="close-bonus" class="text-white opacity-70 hover:opacity-100 text-lg">✕</button>
+                    <button onclick="window.switchTab('ganhar')" class="bg-white text-green-600 text-[10px] font-black px-4 py-2 rounded-xl uppercase shadow-md active:scale-95 transition">Usar Agora</button>
+                    <button id="close-bonus" class="text-white opacity-70 hover:opacity-100 text-xl px-2">✕</button>
                 </div>
             `;
+            // Insere a faixa no topo do site
             document.body.prepend(banner);
 
+            // Configura o botão de fechar (X)
             document.getElementById('close-bonus').onclick = () => {
                 banner.remove();
-                // ✅ GRAVA NA MEMÓRIA PERMANENTE DO NAVEGADOR
+                // ✅ Salva no navegador que este usuário já viu o bônus para não incomodar mais
                 localStorage.setItem('atlivio_bonus_visto', 'true'); 
             };
         }
     } else {
+        // Se o bônus for zero ou o Admin desligar, removemos a faixa da tela
         const banner = document.getElementById('bonus-banner');
         if (banner) banner.remove();
     }
