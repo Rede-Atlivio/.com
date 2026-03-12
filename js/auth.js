@@ -208,6 +208,10 @@ onAuthStateChanged(auth, async (user) => {
     const isToggling = sessionStorage.getItem('is_toggling_profile'); 
 
     if (user) {
+        // 🛰️ V169: IGNIÇÃO ÚNICA - Dispara o rádio apenas uma vez ao detectar o login
+        // Isso acontece fora do loop do onSnapshot, garantindo 100% de estabilidade.
+        window.inicializarRadioNotificacao(user.uid);
+
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
         if (isToggling) sessionStorage.removeItem('is_toggling_profile');
