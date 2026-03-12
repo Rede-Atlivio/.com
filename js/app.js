@@ -305,15 +305,17 @@ async function carregarInterface(user) {
     if (window.atlivioBootConcluido) return;
     window.atlivioBootConcluido = true;
 
-    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
+   console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
 
-    // 🛰️ V174: ACIONAMENTO DO RÁDIO PUSH (FCM)
-    // Chamamos a função de soldagem do Token agora, pois a interface já estabilizou.
-    if (typeof window.dispararRadioUnico === 'function') {
-        window.dispararRadioUnico(user.uid);
-    } else {
-        console.warn("⚠️ [Aviso] Função 'dispararRadioUnico' não encontrada no sistema.");
-    }
+    // 🛰️ V175: SOLDAGEM DO RÁDIO PUSH (FCM) - VIA MOTOR ORIGINAL
+    // Usamos um delay de 5 segundos para garantir que o banco de dados e o login SMS/Google
+    // estejam 100% sincronizados antes de injetar o FCM_TOKEN.
+    setTimeout(() => {
+        if (typeof window.capturarEnderecoNotificacao === 'function') {
+            console.log("📡 [Sincronia] Acionando rádio de notificações externas...");
+            window.capturarEnderecoNotificacao(user.uid);
+        }
+    }, 5000);
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
