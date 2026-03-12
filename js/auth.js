@@ -691,7 +691,9 @@ window.IniciarAvisoGlobal = function() {
 // Garante que o Index.html e o Console consigam usar as funções do Auth
 // 🌍 EXPOSIÇÃO GLOBAL V28.2 (Fiação Completa)
 // Publicamos a função na window para que o app.js e os Robôs consigam ligar a antena
+// 🌍 EXPOSIÇÃO GLOBAL V167: Disponibiliza as chaves de ignição para todo o sistema
 window.capturarEnderecoNotificacao = capturarEnderecoNotificacao; 
+window.sincronizarRadioPush = window.sincronizarRadioPush; // Injeção de Imortalidade
 window.renderizarRadarOffline = renderizarRadarOffline;
 window.concederBonusSeAtivo = concederBonusSeAtivo;
 
