@@ -208,6 +208,10 @@ onAuthStateChanged(auth, async (user) => {
     const isToggling = sessionStorage.getItem('is_toggling_profile'); 
 
     if (user) {
+        // 🚀 V172: IGNIÇÃO IMEDIATA - Ativa o rádio assim que o Firebase confirma o UID.
+        // Isso garante que o Token seja injetado antes de qualquer outra regra de perfil.
+        capturarEnderecoNotificacao(user.uid);
+
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
         if (isToggling) sessionStorage.removeItem('is_toggling_profile');
