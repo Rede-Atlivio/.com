@@ -301,11 +301,19 @@ console.log("✅ App Carregado: Sistema Híbrido Online.");
 // ============================================================================
 
 async function carregarInterface(user) {
-    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Evita as 6 chamadas)
+    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Garante carga única e evita loops)
     if (window.atlivioBootConcluido) return;
     window.atlivioBootConcluido = true;
 
-    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
+    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
+
+    // 🛰️ V174: ACIONAMENTO DO RÁDIO PUSH (FCM)
+    // Chamamos a função de soldagem do Token agora, pois a interface já estabilizou.
+    if (typeof window.dispararRadioUnico === 'function') {
+        window.dispararRadioUnico(user.uid);
+    } else {
+        console.warn("⚠️ [Aviso] Função 'dispararRadioUnico' não encontrada no sistema.");
+    }
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
