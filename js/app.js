@@ -171,9 +171,27 @@ async function capturarEnderecoNotificacao(uid) {
         }
     } catch (error) {
         console.warn("⚠️ [Antena] Falha na sintonia:", error.message);
-        travaSincroniaAtiva = false; // Libera para nova tentativa
+        travaSincroniaAtiva = false; 
     }
 }
+
+/** * ⚡ FUNÇÃO MESTRE: DISPARAR RÁDIO ÚNICO (V172)
+ * Esta função só será chamada pelo app.js quando o sistema estiver 100% carregado.
+ * Ela possui uma trava de segurança para rodar apenas UMA VEZ por acesso.
+ */
+window.dispararRadioUnico = (uid) => {
+    if (!uid || window.radioSoldadoNestaSessao) return;
+    
+    // Marca que o rádio já foi acionado para impedir repetições (loops)
+    window.radioSoldadoNestaSessao = true;
+    travaSincroniaAtiva = false; // Garante que a via está livre
+
+    // Aguarda 4 segundos de segurança para o Firebase validar o usuário
+    setTimeout(() => {
+        console.log("🛰️ [Maestro] Solicitando soldagem de FCM_TOKEN via App Flow...");
+        capturarEnderecoNotificacao(uid);
+    }, 4000); 
+};
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
