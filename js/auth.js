@@ -171,9 +171,26 @@ async function capturarEnderecoNotificacao(uid) {
         }
     } catch (error) {
         console.warn("⚠️ [Antena] Falha na sintonia:", error.message);
-        travaSincroniaAtiva = false; // Libera para nova tentativa
+        travaSincroniaAtiva = false; 
     }
 }
+
+/** * ⚡ FUNÇÃO MESTRE: INICIALIZAR RÁDIO (V170)
+ * Controla o rádio de notificações para que ele rode apenas uma vez por sessão.
+ */
+window.inicializarRadioNotificacao = (uid) => {
+    if (!uid) return;
+    
+    // 🛡️ Blindagem de Sessão: Se já tentamos nesta carga de página, não repete.
+    if (window.radioIniciadoNestaSessao) return;
+    window.radioIniciadoNestaSessao = true;
+
+    // Aguarda 3 segundos para o Firebase e Service Worker estabilizarem totalmente
+    setTimeout(() => {
+        console.log("📡 [Sincronia] Acionando captura de FCM TOKEN (Disparo Único)...");
+        capturarEnderecoNotificacao(uid);
+    }, 3000); 
+};
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
