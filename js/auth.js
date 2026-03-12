@@ -171,26 +171,9 @@ async function capturarEnderecoNotificacao(uid) {
         }
     } catch (error) {
         console.warn("⚠️ [Antena] Falha na sintonia:", error.message);
-        travaSincroniaAtiva = false; 
+        travaSincroniaAtiva = false; // Libera para nova tentativa
     }
 }
-
-/** * ⚡ FUNÇÃO MESTRE: SINCRONIZAR RÁDIO PUSH (V166)
- * Esta é a única função que tem permissão para "puxar a corda" do motor de notificações.
- * Ela reseta as travas e garante que o navegador tente capturar o token de forma limpa.
- */
-window.sincronizarRadioPush = async (uid) => {
-    if (!uid) return;
-    
-    // 1. Destrava o sistema para permitir uma nova tentativa fresca
-    travaSincroniaAtiva = false;
-    
-    // 2. Pequeno delay para o Firebase estabilizar as credenciais no navegador (Race Condition)
-    setTimeout(() => {
-        console.log("📡 [Maestro] Iniciando tentativa de soldagem do FCM TOKEN...");
-        capturarEnderecoNotificacao(uid);
-    }, 1500); // 1.5 segundos é o tempo de segurança para milhões de usuários
-};
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
@@ -284,15 +267,9 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
-               // 🛰️ V165: O rádio agora é chamado fora do loop de interface para garantir estabilidade
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    
-                    // 🚀 DISJUNTOR: Em vez de capturar aqui, acionamos a sincronia mestre do navegador
-                    if (window.sincronizarRadioPush) {
-                        window.sincronizarRadioPush(user.uid);
-                    }
-                    
+                    capturarEnderecoNotificacao(user.uid);
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
@@ -691,9 +668,7 @@ window.IniciarAvisoGlobal = function() {
 // Garante que o Index.html e o Console consigam usar as funções do Auth
 // 🌍 EXPOSIÇÃO GLOBAL V28.2 (Fiação Completa)
 // Publicamos a função na window para que o app.js e os Robôs consigam ligar a antena
-// 🌍 EXPOSIÇÃO GLOBAL V167: Disponibiliza as chaves de ignição para todo o sistema
 window.capturarEnderecoNotificacao = capturarEnderecoNotificacao; 
-window.sincronizarRadioPush = window.sincronizarRadioPush; // Injeção de Imortalidade
 window.renderizarRadarOffline = renderizarRadarOffline;
 window.concederBonusSeAtivo = concederBonusSeAtivo;
 
