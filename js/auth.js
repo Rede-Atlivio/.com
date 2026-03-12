@@ -267,11 +267,20 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
+               // 🛰️ V162: REATIVAÇÃO DO RÁDIO PUSH (DNA do Auth Antigo)
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
+                    
+                    // 🚀 CHAMADA CRÍTICA: Captura o FCM Token no exato momento da validação do perfil
+                    // Isso garante que o endereço do celular seja salvo no campo 'fcm_token' do banco.
                     capturarEnderecoNotificacao(user.uid);
+                    
                     iniciarAppLogado(user); 
+                    
+                    // Se for prestador, aciona o Radar de pedidos
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
+                    
+                    console.log("📡 [Sincronia] Antena FCM acionada via Auth Flow.");
                 }
             } catch (err) {
                 console.warn("⚠️ [Auth] Aguardando estabilidade de dados...");
