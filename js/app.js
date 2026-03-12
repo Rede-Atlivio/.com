@@ -138,23 +138,17 @@ window.addEventListener('userProfileLoaded', (e) => {
 // 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
 // ============================================================================
 function switchTab(tabName, isAutoBoot = false) {
-  // ✨ SINCRONIA DE HISTÓRICO: Gatilho de Limpeza Maestro V31
-    // ✨ SINCRONIA DE HISTÓRICO V61: Resolve a duplicidade ao recarregar.
+ // ✨ V153: Sincronia de Histórico - Abre o Sininho sem apagar as mensagens
     if (tabName === 'notificacoes') {
-        // 1. Marca o exato momento da leitura para que o sistema ignore mensagens do passado no próximo refresh
-        localStorage.setItem('maestro_last_sync', Date.now());
+        // 1. Apenas esconde o sinal visual (badge), não apaga a memória
+        const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
+        if (badge) badge.classList.add('hidden');
 
-        // 2. Remove o badge vermelho imediatamente da tela
-        const badge = document.getElementById('notif-badge');
-        if (badge) {
-            badge.remove();
-            badge.classList.add('hidden');
-        }
-
-        // 3. Aciona o motor de histórico apenas se ele existir
+        // 2. Carrega as mensagens do histórico para o usuário ver
         if (typeof window.carregarHistoricoNotificacoes === 'function') {
-            console.log("🧹 Maestro V61: Sincronizando e selando histórico antigo...");
             window.carregarHistoricoNotificacoes();
+        } else {
+            console.warn("⚠️ Motor de Histórico não carregado.");
         }
     }
 
