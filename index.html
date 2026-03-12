@@ -1220,16 +1220,24 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
             let valorPromocional = 0;
             let mensagemSucesso = `Parabéns ${nome}! Cadastro concluído com sucesso!`;
 
-            try {
-                // Sintoniza com a coleção correta 'configuracoes' (Unificação V129)
-                const configSnap = await getDoc(doc(db, "configuracoes", "global"));
-                const config = configSnap.data();
-
-                if (config && config.bonus_boas_vindas_ativo === true) {
-                    valorPromocional = parseFloat(config.valor_bonus_promocional) || 20.00;
-                    mensagemSucesso = `Parabéns ${nome}! Cadastro concluído e R$ ${valorPromocional.toFixed(2).replace('.',',')} de bônus liberados!`;
+           try {
+                // 🛡️ V133: Força a leitura do banco ignorando qualquer resquício de cache local
+                const configRef = doc(db, "configuracoes", "global");
+                const configSnap = await getDoc(configRef);
+                
+                if (configSnap.exists()) {
+                    const d = configSnap.data();
+                    // Checa se a chave é true de forma rigorosa
+                    if (d.bonus_boas_vindas_ativo === true) {
+                        // Garante que o valor 20 (Number) seja convertido corretamente
+                        valorPromocional = Number(d.valor_bonus_promocional || 20);
+                        mensagemSucesso = `Parabéns ${nome}! Bônus de R$ ${valorPromocional.toFixed(2).replace('.',',')} ATIVADO! 🎁`;
+                        console.log("✅ Bônus Validado:", valorPromocional);
+                    } else {
+                        console.log("🚫 Bônus desligado no Admin.");
+                    }
                 }
-            } catch (e) { console.warn("🛰️ Falha ao ler regra de bônus, seguindo sem saldo extra."); }
+            } catch (e) { console.error("❌ Erro Crítico Bônus:", e); }
 
             await setDoc(userRef, {
                 nome: nome,
