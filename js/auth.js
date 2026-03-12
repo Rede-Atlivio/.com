@@ -20,13 +20,16 @@ async function concederBonusSeAtivo(userUid) {
         // Se o usuário já recebeu o bônus alguma vez, para aqui.
         if (userSnap.exists() && userSnap.data().bonus_inicial_ok) return;
 
-        const configSnap = await getDoc(doc(db, "settings", "global"));
+        // 🛡️ V131: Sintoniza com a coleção 'configuracoes' (A única que o Admin agora gerencia)
+        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
         const config = configSnap.data();
 
         // Só concede se estiver ATIVO no Admin
         if (config?.bonus_boas_vindas_ativo) {
             await updateDoc(userRef, {
-                wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
+                // 🛰️ V146: Removemos o valor fixo '20.00'. Agora o bônus é 100% o que estiver no Admin.
+                // Se o campo estiver vazio no banco, ele assume 0 para não quebrar a conta do usuário.
+                wallet_bonus: Number(config.valor_bonus_promocional || 0),
                 bonus_inicial_ok: true
             });
             console.log("🎁 Bônus inicial concedido via Admin.");
