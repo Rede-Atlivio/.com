@@ -267,9 +267,9 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
+                // 🛰️ V171: O rádio foi removido deste bloco para evitar loops infinitos no onSnapshot
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    capturarEnderecoNotificacao(user.uid);
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
