@@ -171,26 +171,9 @@ async function capturarEnderecoNotificacao(uid) {
         }
     } catch (error) {
         console.warn("⚠️ [Antena] Falha na sintonia:", error.message);
-        travaSincroniaAtiva = false; 
+        travaSincroniaAtiva = false; // Libera para nova tentativa
     }
 }
-
-/** * ⚡ FUNÇÃO MESTRE: INICIALIZAR RÁDIO (V170)
- * Controla o rádio de notificações para que ele rode apenas uma vez por sessão.
- */
-window.inicializarRadioNotificacao = (uid) => {
-    if (!uid) return;
-    
-    // 🛡️ Blindagem de Sessão: Se já tentamos nesta carga de página, não repete.
-    if (window.radioIniciadoNestaSessao) return;
-    window.radioIniciadoNestaSessao = true;
-
-    // Aguarda 3 segundos para o Firebase e Service Worker estabilizarem totalmente
-    setTimeout(() => {
-        console.log("📡 [Sincronia] Acionando captura de FCM TOKEN (Disparo Único)...");
-        capturarEnderecoNotificacao(uid);
-    }, 3000); 
-};
 window.alternarPerfil = async () => {
     if(!userProfile) return;
     
@@ -225,10 +208,6 @@ onAuthStateChanged(auth, async (user) => {
     const isToggling = sessionStorage.getItem('is_toggling_profile'); 
 
     if (user) {
-        // 🛰️ V169: IGNIÇÃO ÚNICA - Dispara o rádio apenas uma vez ao detectar o login
-        // Isso acontece fora do loop do onSnapshot, garantindo 100% de estabilidade.
-        window.inicializarRadioNotificacao(user.uid);
-
         document.getElementById('auth-container')?.classList.add('hidden');
         if (transitionOverlay) transitionOverlay.classList.remove('hidden');
         if (isToggling) sessionStorage.removeItem('is_toggling_profile');
@@ -288,9 +267,9 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
-               // 🛰️ V168: Interface e App iniciados sem interferência do rádio (Fim do Loop)
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
+                    capturarEnderecoNotificacao(user.uid);
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
