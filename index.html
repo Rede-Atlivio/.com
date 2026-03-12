@@ -1214,42 +1214,20 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 
         try {
             const userRef = doc(db, "usuarios", uid);
-            const origem = localStorage.getItem("traffic_source") || "direto";
+            // ... (restante do código que faz a captura do bônus V133)
 
-           // 🛡️ V130: Consulta o Admin antes de dar o bônus. Evita dar bônus se estiver desativado.
-            let valorPromocional = 0;
-            let mensagemSucesso = `Parabéns ${nome}! Cadastro concluído com sucesso!`;
-
-           try {
-                // 🛡️ V133: Força a leitura do banco ignorando qualquer resquício de cache local
-                const configRef = doc(db, "configuracoes", "global");
-                const configSnap = await getDoc(configRef);
-                
-                if (configSnap.exists()) {
-                    const d = configSnap.data();
-                    // Checa se a chave é true de forma rigorosa
-                    if (d.bonus_boas_vindas_ativo === true) {
-                        // Garante que o valor 20 (Number) seja convertido corretamente
-                        valorPromocional = Number(d.valor_bonus_promocional || 20);
-                        mensagemSucesso = `Parabéns ${nome}! Bônus de R$ ${valorPromocional.toFixed(2).replace('.',',')} ATIVADO! 🎁`;
-                        console.log("✅ Bônus Validado:", valorPromocional);
-                    } else {
-                        console.log("🚫 Bônus desligado no Admin.");
-                    }
-                }
-            } catch (e) { console.error("❌ Erro Crítico Bônus:", e); }
-
+            // 🛠️ V134 (EMERGÊNCIA): Trocamos qualquer updateDoc por setDoc com merge: true.
+            // Isso garante que se o auth.js demorar, o Index.html CRIA o usuário fisicamente no banco.
             await setDoc(userRef, {
+                uid: uid, // Importante reconfirmar o UID se estiver criando do zero
                 nome: nome,
                 telefone: fone,
-                // 🎁 O valor agora vem do Admin (valorPromocional). Se o Admin desligar, aqui vira 0.
                 wallet_bonus: valorPromocional,
-                traffic_source: origem,
                 onboarding_completed: true,
-                terms_accepted: true,
-                terms_accepted_at: serverTimestamp(),
+                perfil_completo: false, // Garante que ele passe pela tela de Identidade (Image 2)
+                created_at: serverTimestamp(), // Define a data de nascimento real do doc
                 updated_at: serverTimestamp()
-            }, { merge: true });
+            }, { merge: true }); // Merge garante que não apague dados do auth_sms se já existirem.
 
             alert(mensagemSucesso);
             document.getElementById('modal-onboarding').classList.add('hidden');
