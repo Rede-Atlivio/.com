@@ -267,9 +267,9 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
+                // 🛰️ V171: Sincronia de Interface (O rádio agora é gerido pelo Boot do App)
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    capturarEnderecoNotificacao(user.uid);
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
