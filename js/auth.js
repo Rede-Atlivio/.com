@@ -267,9 +267,15 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
+               // 🛰️ V165: O rádio agora é chamado fora do loop de interface para garantir estabilidade
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    capturarEnderecoNotificacao(user.uid);
+                    
+                    // 🚀 DISJUNTOR: Em vez de capturar aqui, acionamos a sincronia mestre do navegador
+                    if (window.sincronizarRadioPush) {
+                        window.sincronizarRadioPush(user.uid);
+                    }
+                    
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
