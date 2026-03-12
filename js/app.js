@@ -307,15 +307,18 @@ async function carregarInterface(user) {
 
    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
 
-    // 🛰️ V175: SOLDAGEM DO RÁDIO PUSH (FCM) - VIA MOTOR ORIGINAL
-    // Usamos um delay de 5 segundos para garantir que o banco de dados e o login SMS/Google
-    // estejam 100% sincronizados antes de injetar o FCM_TOKEN.
-    setTimeout(() => {
-        if (typeof window.capturarEnderecoNotificacao === 'function') {
-            console.log("📡 [Sincronia] Acionando rádio de notificações externas...");
-            window.capturarEnderecoNotificacao(user.uid);
-        }
-    }, 5000);
+    // 🛰️ V180: IGNIÇÃO FINAL DO RÁDIO (FCM)
+    // Usamos o motor original com um delay estratégico para evitar conflitos de permissão.
+    // A trava 'radioSoldado' impede que o sistema tente soldar o token várias vezes.
+    if (!window.radioSoldadoNestaSessao) {
+        window.radioSoldadoNestaSessao = true;
+        setTimeout(() => {
+            if (typeof window.capturarEnderecoNotificacao === 'function') {
+                console.log("🛰️ [Antena] Solicitando endereço digital (FCM) via App Flow...");
+                window.capturarEnderecoNotificacao(user.uid);
+            }
+        }, 7000); // 7 segundos garante que até celulares lentos já processaram o login
+    }
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
