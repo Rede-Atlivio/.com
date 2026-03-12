@@ -1200,7 +1200,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         console.log("🔓 Abrindo documento:", type);
     };
 
-    // --- 🎁 MOTOR DE CADASTRO E BÔNUS DE R$ 20,00 ---
+    // 🛰️ V150: MOTOR DE CADASTRO E BÔNUS DINÂMICO (SEM VALOR FIXO)
     document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-onboard-submit');
@@ -1210,43 +1210,50 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 
         if (!uid) return alert("Erro: Faça login antes!");
         btn.disabled = true;
-        btn.innerText = "ATIVANDO BÔNUS...";
+        btn.innerText = "ATIVANDO ACESSO...";
 
         try {
             const userRef = doc(db, "usuarios", uid);
             const origem = localStorage.getItem("traffic_source") || "direto";
             
-            // 🛡️ V135: Sincronização Dinâmica com o Admin
             let valorBonusFinal = 0;
             let msgBoasVindas = `Parabéns ${nome}! Cadastro concluído.`;
 
+            // 🔍 CONSULTA REAL AO ADMIN (Garante que a faixa diga a verdade)
             try {
                 const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-                // Consulta a coleção unificada que o Admin gerencia
                 const configSnap = await getDoc(doc(db, "configuracoes", "global"));
                 
                 if (configSnap.exists()) {
                     const cfg = configSnap.data();
-                    // Se o bônus estiver ligado no Admin, captura o valor real (ex: 20, 50, 100)
                     if (cfg.bonus_boas_vindas_ativo === true) {
                         valorBonusFinal = Number(cfg.valor_bonus_promocional || 0);
                         if (valorBonusFinal > 0) {
                             msgBoasVindas = `Parabéns ${nome}! Cadastro concluído e R$ ${valorBonusFinal.toFixed(2).replace('.',',')} de bônus liberados! 🎁`;
+                            
+                            // 🚀 INJETOR DA FAIXA VERDE (Respeitando o Admin)
+                            if (window.mostrarBarraNotificacao) {
+                                window.mostrarBarraNotificacao('bonus_boas_vindas', {
+                                    type: 'gift',
+                                    message: `VOCÊ GANHOU R$ ${valorBonusFinal.toFixed(2).replace('.',',')} PARA USAR AGORA! 💰`,
+                                    action: 'ganhar'
+                                });
+                            }
                         }
                     }
                 }
-            } catch (e) { console.warn("🛰️ Falha ao ler bônus do Admin, seguindo com zero."); }
+            } catch (e) { console.warn("Erro na leitura do bônus visual."); }
 
-            // 🛠️ V135: SALVAMENTO HÍBRIDO (CRIA OU ATUALIZA)
+            // 🛠️ GRAVAÇÃO FINAL NO FIRESTORE
             await setDoc(userRef, {
                 uid: uid,
                 nome: nome,
                 telefone: fone,
-                whatsapp: fone, // Sincroniza logo o campo de contato principal
-                wallet_bonus: valorBonusFinal, // Valor que veio direto do Admin
+                whatsapp: fone,
+                wallet_bonus: valorBonusFinal,
                 traffic_source: origem,
                 onboarding_completed: true,
-                perfil_completo: false, // Força a escolha de Identidade (Cliente/Prestador)
+                perfil_completo: false, 
                 created_at: serverTimestamp(),
                 updated_at: serverTimestamp()
             }, { merge: true });
