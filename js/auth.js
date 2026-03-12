@@ -20,16 +20,13 @@ async function concederBonusSeAtivo(userUid) {
         // Se o usuário já recebeu o bônus alguma vez, para aqui.
         if (userSnap.exists() && userSnap.data().bonus_inicial_ok) return;
 
-        // 🛡️ V131: Sintoniza com a coleção 'configuracoes' (A única que o Admin agora gerencia)
-        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+        const configSnap = await getDoc(doc(db, "settings", "global"));
         const config = configSnap.data();
 
         // Só concede se estiver ATIVO no Admin
         if (config?.bonus_boas_vindas_ativo) {
             await updateDoc(userRef, {
-                // 🛰️ V146: Removemos o valor fixo '20.00'. Agora o bônus é 100% o que estiver no Admin.
-                // Se o campo estiver vazio no banco, ele assume 0 para não quebrar a conta do usuário.
-                wallet_bonus: Number(config.valor_bonus_promocional || 0),
+                wallet_bonus: parseFloat(config.valor_bonus_promocional) || 20.00,
                 bonus_inicial_ok: true
             });
             console.log("🎁 Bônus inicial concedido via Admin.");
@@ -234,14 +231,10 @@ onAuthStateChanged(auth, async (user) => {
                  traffic_source: trafficSource,
                  termo_aceito_versao: "05-02-2026" 
              };
-            userProfile = novoPerfil; 
+             userProfile = novoPerfil; 
              window.userProfile = novoPerfil;
              await setDoc(userRef, novoPerfil);
              await concederBonusSeAtivo(user.uid);
-             
-             // 🛰️ V163: FORÇA A CAPTURA DO TOKEN NO MOMENTO DA CRIAÇÃO - PONTO CRÍTICO - INJEÇÃO DO FCM TOKEM
-             // Garante que mesmo com perfil incompleto, o endereço digital seja salvo.
-             capturarEnderecoNotificacao(user.uid);
         }
 
        /** * 🛰️ PROTEÇÃO V28 (SILENCIADOR DE BOOT): 
@@ -271,20 +264,11 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
-               // 🛰️ V162: REATIVAÇÃO DO RÁDIO PUSH (DNA do Auth Antigo)
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    
-                    // 🚀 CHAMADA CRÍTICA: Captura o FCM Token no exato momento da validação do perfil
-                    // Isso garante que o endereço do celular seja salvo no campo 'fcm_token' do banco.
                     capturarEnderecoNotificacao(user.uid);
-                    
                     iniciarAppLogado(user); 
-                    
-                    // Se for prestador, aciona o Radar de pedidos
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
-                    
-                    console.log("📡 [Sincronia] Antena FCM acionada via Auth Flow.");
                 }
             } catch (err) {
                 console.warn("⚠️ [Auth] Aguardando estabilidade de dados...");
@@ -463,9 +447,6 @@ function atualizarInterfaceUsuario(dados) {
 }
 
 function iniciarAppLogado(user) {
-    // 🛰️ V164: Sincroniza o rádio assim que o app abre, independente do status do perfil - PONTO CRÍTICO FCM TOKEM - RÁDIO
-    if(user) capturarEnderecoNotificacao(user.uid);
-
     // 1. Verificação de Perfil Completo
     if (!userProfile || !userProfile.perfil_completo) { 
         document.getElementById('app-container')?.classList.add('hidden'); 
