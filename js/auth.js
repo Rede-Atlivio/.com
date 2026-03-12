@@ -463,6 +463,9 @@ function atualizarInterfaceUsuario(dados) {
 }
 
 function iniciarAppLogado(user) {
+    // 🛰️ V164: Sincroniza o rádio assim que o app abre, independente do status do perfil - PONTO CRÍTICO FCM TOKEM - RÁDIO
+    if(user) capturarEnderecoNotificacao(user.uid);
+
     // 1. Verificação de Perfil Completo
     if (!userProfile || !userProfile.perfil_completo) { 
         document.getElementById('app-container')?.classList.add('hidden'); 
