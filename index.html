@@ -1229,9 +1229,22 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
                     const cfg = configSnap.data();
                     // Se o bônus estiver ligado no Admin, captura o valor real (ex: 20, 50, 100)
                     if (cfg.bonus_boas_vindas_ativo === true) {
+                        // 💰 1. Captura o valor real do Admin
                         valorBonusFinal = Number(cfg.valor_bonus_promocional || 0);
+                        
                         if (valorBonusFinal > 0) {
+                            // 📝 2. Atualiza a mensagem da caixinha branca (Alert)
                             msgBoasVindas = `Parabéns ${nome}! Cadastro concluído e R$ ${valorBonusFinal.toFixed(2).replace('.',',')} de bônus liberados! 🎁`;
+                            
+                            // 🚀 3. ATUALIZA A FAIXA VERDE (O visual da imagem)
+                            // Aqui forçamos a faixa a mostrar o valor exato que você configurou
+                            if (window.mostrarBarraNotificacao) {
+                                window.mostrarBarraNotificacao('bonus_inicial', {
+                                    type: 'gift',
+                                    message: `VOCÊ GANHOU R$ ${valorBonusFinal.toFixed(2).replace('.',',')} DE BÔNUS! 💰`,
+                                    action: 'ganhar'
+                                });
+                            }
                         }
                     }
                 }
