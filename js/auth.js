@@ -267,9 +267,9 @@ onAuthStateChanged(auth, async (user) => {
                 aplicarRestricoesDeStatus(data.status);
                 renderizarBotaoSuporte(); 
 
+               // 🛰️ V168: Interface e App iniciados sem interferência do rádio (Fim do Loop)
                 if (data.status !== 'banido') {
                     atualizarInterfaceUsuario(userProfile);
-                    capturarEnderecoNotificacao(user.uid);
                     iniciarAppLogado(user); 
                     if (userProfile.is_provider) verificarStatusERadar(user.uid);
                 }
