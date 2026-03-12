@@ -140,10 +140,19 @@ window.addEventListener('userProfileLoaded', (e) => {
 function switchTab(tabName, isAutoBoot = false) {
  // ✨ V153: Sincronia de Histórico - Abre o Sininho sem apagar as mensagens
     if (tabName === 'notificacoes') {
-        // 1. Apenas esconde o sinal visual (badge), não apaga a memória
-        const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
-        if (badge) badge.classList.add('hidden');
+        // 🛰️ V157: Avisa ao banco e ao navegador que o usuário limpou o Sininho AGORA
+    const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
+    if (badge) badge.classList.add('hidden');
 
+    // Grava a hora da limpeza no Navegador e no Banco
+    const agora = Date.now();
+    localStorage.setItem('maestro_last_sync', agora);
+    
+    // Atualiza o perfil do usuário no Firestore para o Maestro saber que ele está "em dia"
+    const { doc, updateDoc } = window.firebaseModules;
+    updateDoc(doc(window.db, "usuarios", auth.currentUser.uid), {
+        last_notif_read: agora // Nova trava de segurança no banco
+    }).catch(e => console.warn("Erro ao atualizar trava de leitura."));
         // 2. Carrega as mensagens do histórico para o usuário ver
         if (typeof window.carregarHistoricoNotificacoes === 'function') {
             window.carregarHistoricoNotificacoes();
