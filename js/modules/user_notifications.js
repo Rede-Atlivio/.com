@@ -259,14 +259,14 @@ window.fecharNotificacao = async (id) => {
         // 🎯 AJUSTE DE MIRA: Agora aponta para a sub-coleção correta onde o histórico lê
         const notifRef = doc(window.db, "usuarios", auth.currentUser.uid, "notificacoes", idString);
         
+       // Finaliza a atualização no banco de dados
         await updateDoc(notifRef, { read: true, atendido_em: new Date() });
         console.log("✅ [Maestro] Baixa registrada no histórico do usuário.");
-    } catch(e) { console.warn("ℹ️ Notificação local ou já lida."); }
-};
     } catch(e) { 
-        console.error("❌ Erro ao dar baixa na notificação:", e); 
+        // Silencia avisos de notificações que não existem no banco (locais)
+        console.warn("ℹ️ Notificação local ou já lida."); 
     }
-};
+}; // Fim real e único da função fecharNotificacao
 
 // 🚀 AÇÃO DE NOTIFICAÇÃO COM VIGILANTE INTEGRADO (V3.1)
 window.acaoNotificacao = async (id, action) => {
