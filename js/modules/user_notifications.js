@@ -148,18 +148,26 @@ window.processarFluxoAutomatico = async (user) => {
             
             // O sinal externo (celular apitando) é disparado pelo Admin. 
             // Aqui, apenas garantimos que o usuário veja o balão azul na tela enquanto navega.
-            // 🎯 GATILHO V51: Sincroniza o Balão Azul com os nomes exatos do seu JSON (notificacao_1)
+            // 🛰️ V156: O Maestro agora checa o Admin antes de anunciar o presente de Dia 1
             if (window.mostrarBarraNotificacao) {
-                // Decide se mostra a notificacao_1 ou 2 baseado na hora (Ex: Manhã e Noite)
                 const msgData = (new Date().getHours() < 14) ? ordemDeHoje.notificacao_1 : ordemDeHoje.notificacao_2;
                 
+                // 🛡️ TRAVA DE SEGURANÇA: Se a mensagem for sobre bônus/presente, checa se o bônus está ativo no Admin
+                const isMensagemBonus = msgData.titulo?.includes("PRESENTE") || msgData.mensagem?.includes("saldo inicial");
+                const bonusRealAtivo = window.CONFIG_FINANCEIRA?.valor_bonus_promocional > 0;
+
+                if (isMensagemBonus && !bonusRealAtivo) {
+                    console.log("🔕 Maestro: Mensagem de presente bloqueada (Bônus desativado no Admin).");
+                    return; 
+                }
+
                 window.mostrarBarraNotificacao("auto_" + diaAtualDoUsuario, {
                     titulo: msgData.titulo,
                     mensagem: msgData.mensagem,
-                    type: 'marketing',
+                    type: isMensagemBonus ? 'gift' : 'marketing',
                     action: msgData.action || 'home'
                 });
-               } // 🛰️ Fim do IF (window.mostrarBarraNotificacao)
+            }
             } // 🎯 Fim do IF (ordemDeHoje)
 
     } catch (e) { // 🛡️ Captura erro do bloco try principal
