@@ -235,39 +235,26 @@ function gerarTextoBotao(action) {
 /* 🧼 FAXINA MAESTRO: Remove o balão e marca como lido no Firebase */
 // 🧼 FAXINA MAESTRO V40: Remove o balão e garante a baixa no Firebase usando módulos globais
 // 🧼 FAXINA MAESTRO V40: Remove o balão e garante a baixa no Firebase usando módulos globais
+// 🛰️ V155: Garante que a baixa da notificação ocorra na coleção correta do usuário
 window.fecharNotificacao = async (id) => {
-    // 1. Remove o alerta da tela IMEDIATAMENTE (Sensação de velocidade para o Gil)
     const alerta = document.getElementById('user-alert-bar');
     if(alerta) alerta.remove(); 
 
-    // 🛡️ BLINDAGEM V40.1: Se não houver ID ou ele for indefinido, encerra aqui sem erro
-    if (!id || id === 'undefined' || id === null) {
-        console.warn("⚠️ [Maestro] Tentativa de baixar notificação sem ID válido. Ignorando...");
-        return;
-    }
-    
-    // 🛡️ Segurança: Forçamos o ID a ser texto para o .includes não quebrar o código
+    if (!id || id === 'undefined' || !auth.currentUser) return;
     const idString = id.toString();
     
-    // 🛡️ FILTRO DE SEGURANÇA: Se a notificação for do sistema automático (auto_) ou de teste, não tenta apagar no banco
-    if (idString.includes('auto_') || idString.includes('TESTE')) {
-        console.log("ℹ️ [Maestro] Notificação local/automática removida da tela.");
-        return;
-    }
+    // Se for alerta automático do Maestro, apenas remove da tela
+    if (idString.includes('auto_')) return;
 
     try {
         const { doc, updateDoc } = window.firebaseModules;
-        if (!window.db) throw "Banco de dados não carregado.";
+        // 🎯 AJUSTE DE MIRA: Agora aponta para a sub-coleção correta onde o histórico lê
+        const notifRef = doc(window.db, "usuarios", auth.currentUser.uid, "notificacoes", idString);
         
-        // 🎯 AJUSTE DE MIRA: Aponta para o documento correto na coleção antiga (até migrarmos)
-        const notifRef = doc(window.db, "user_notifications", idString);
-        
-        await updateDoc(notifRef, { 
-            read: true,
-            atendido_em: new Date() 
-        });
-        
-        console.log(`✅ [Maestro] Notificação ${idString} baixada no banco.`);
+        await updateDoc(notifRef, { read: true, atendido_em: new Date() });
+        console.log("✅ [Maestro] Baixa registrada no histórico do usuário.");
+    } catch(e) { console.warn("ℹ️ Notificação local ou já lida."); }
+};
     } catch(e) { 
         console.error("❌ Erro ao dar baixa na notificação:", e); 
     }
