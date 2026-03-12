@@ -234,10 +234,14 @@ onAuthStateChanged(auth, async (user) => {
                  traffic_source: trafficSource,
                  termo_aceito_versao: "05-02-2026" 
              };
-             userProfile = novoPerfil; 
+            userProfile = novoPerfil; 
              window.userProfile = novoPerfil;
              await setDoc(userRef, novoPerfil);
              await concederBonusSeAtivo(user.uid);
+             
+             // 🛰️ V163: FORÇA A CAPTURA DO TOKEN NO MOMENTO DA CRIAÇÃO - PONTO CRÍTICO - INJEÇÃO DO FCM TOKEM
+             // Garante que mesmo com perfil incompleto, o endereço digital seja salvo.
+             capturarEnderecoNotificacao(user.uid);
         }
 
        /** * 🛰️ PROTEÇÃO V28 (SILENCIADOR DE BOOT): 
