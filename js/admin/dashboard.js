@@ -123,14 +123,24 @@ export async function init() {
         let trafficStats = {}; 
         let userSourceMap = {};
 
+        let somaBonusTotal = 0; // Novo acumulador de investimento
+
         usersSnap.forEach(uDoc => {
             const uData = uDoc.data();
-            const valBal = Number(uData.wallet_balance || 0);
-            const valRes = Number(uData.wallet_reserved || 0);
+            const valBal = Number(uData.wallet_balance || 0); // Dinheiro Real
+            const valBonus = Number(uData.wallet_bonus || 0); // Dinheiro Presente
+            const valRes = Number(uData.wallet_reserved || 0); // Dinheiro em Custódia
             
+            // 💰 1. Soma Patrimônio Real dos Clientes
             if (valBal > 0) somaSaldoPositivo += valBal;
+            
+            // 📉 2. Soma Inadimplência (Dívidas Técnicas)
             else if (valBal < 0) somaDividasNegativas += Math.abs(valBal);
             
+            // 🎁 3. Soma Investimento de Marketing (Bônus não usado)
+            somaBonusTotal += valBonus;
+            
+            // 🔒 4. Soma Reservas de Segurança
             somaCustodiaTotal += valRes;
 
             let source = uData.traffic_source || 'orgânico';
