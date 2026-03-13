@@ -19,9 +19,12 @@ window.irParaChat = () => {
 window.carregarChat = () => {
     if(window.carregarInterfaceDeChat) window.carregarInterfaceDeChat();
 };
+// 🚀 EXPOSIÇÃO GLOBAL V302: Garante que o Admin e o App vejam as funções financeiras
 window.abrirChatPedido = abrirChatPedido;
 window.enviarMensagemChat = enviarMensagemChat;
 window.confirmarAcordo = confirmarAcordo;
+// Exporta a ação real para o Robô de 12h e para o Robô de Auditoria
+window.finalizarServicoPassoFinalAction = finalizarServicoPassoFinalAction; 
 window.finalizarServicoPassoFinal = (id) => finalizarServicoPassoFinalAction(id);
 window.voltarParaListaPedidos = () => {
     console.log("⬅️ Executando Minimizar e Voltar...");
