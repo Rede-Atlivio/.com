@@ -357,9 +357,12 @@ window.saveModalData = async () => {
             const key = input.id.replace('field-', '');
             let val = input.value;
 
-            // 💎 REGRA DE OURO: Se o campo for de saldo ou reserva, salva como NÚMERO
-            if (key === 'wallet_balance' || key === 'wallet_reserved' || key === 'saldo') {
-                updates[key] = parseFloat(val) || 0;
+            // 💎 REGRA DE OURO V401: Campos financeiros DEVEM ser números para não quebrar o motor de queima de ATLIX
+            // Incluímos o 'wallet_bonus' na lista de conversão obrigatória.
+            const camposNumericos = ['wallet_balance', 'wallet_reserved', 'wallet_bonus', 'saldo'];
+
+            if (camposNumericos.includes(key)) {
+                updates[key] = parseFloat(val) || 0; // Converte texto em número decimal
             } else {
                 updates[key] = val;
             }
