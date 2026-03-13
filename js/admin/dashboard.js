@@ -177,10 +177,12 @@ export async function init() {
         });
 
         // Atualiza a Interface (Apenas IDs existentes no novo HTML de 5 colunas)
+        // ✅ INJEÇÃO V604: Alimenta os 6 cards com a realidade do banco de dados
         if(document.getElementById('kpi-users')) document.getElementById('kpi-users').innerText = usersSnap.size;
         if(document.getElementById('kpi-custodia')) document.getElementById('kpi-custodia').innerText = `R$ ${somaCustodiaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-balance')) document.getElementById('kpi-balance').innerText = `R$ ${somaSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-dividas')) document.getElementById('kpi-dividas').innerText = `R$ ${somaDividasNegativas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if(document.getElementById('kpi-investimento')) document.getElementById('kpi-investimento').innerText = `R$ ${somaBonusTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
