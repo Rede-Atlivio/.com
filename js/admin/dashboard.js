@@ -104,7 +104,6 @@ export async function init() {
             </div>
         </div>
     `;
-    `;
     
     try {
         const db = window.db;
