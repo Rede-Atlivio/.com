@@ -56,6 +56,8 @@ export async function init() {
         </div> 
     `;
         
+       // 🚀 V606: Injeção Segura da Segunda Grade (Tráfego e Radar)
+    container.innerHTML += `
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel p-6 col-span-1 md:col-span-2">
                 <h4 class="font-bold text-white mb-4 flex items-center gap-2">📊 Fontes de Tráfego</h4>
@@ -101,6 +103,7 @@ export async function init() {
                 </div>
             </div>
         </div>
+    `;
     `;
     
     try {
