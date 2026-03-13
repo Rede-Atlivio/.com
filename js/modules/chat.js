@@ -855,11 +855,13 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
 
-            // 5. COFRE ATLIVIO: Soma as taxas P + C e atualiza o saldo global
-            const totalTaxasCalculadas = Number((valorTaxaAtlivioP + valorTaxaAtlivioC).toFixed(2));
-            if (totalTaxasCalculadas > 0) {
+            // 5. COFRE ATLIVIO V301: Filtra o lucro real para não inflacionar o Admin
+            // IMPORTANTE: Pedidos antigos (legados) sem registro de reserva não somam no cofre por segurança
+            const lucroRealConfirmado = parseFloat(pedido.origem_real || 0); 
+            
+            if (lucroRealConfirmado > 0) {
                 transaction.update(atlivioReceitaRef, {
-                    total_acumulado: increment(totalTaxasCalculadas),
+                    total_acumulado: increment(Number(lucroRealConfirmado.toFixed(2))),
                     ultima_atualizacao: serverTimestamp()
                 });
             }
