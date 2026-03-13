@@ -380,10 +380,11 @@ window.executarLiberacaoGeral = async () => {
     }
 };
 // ============================================================================
-// 🛰️ EXPOSIÇÃO GLOBAL NECESSÁRIA (FINAL DO ARQUIVO)
+// 🛰️ EXPOSIÇÃO GLOBAL NECESSÁRIA (V503)
 // ============================================================================
-// Necessário para abrir o ajuste manual de saldo ao clicar na engrenagem ⚙️
 window.openBalanceEditor = openBalanceEditor;
+window.loadFinanceData = loadFinanceData; // Expõe para os Robôs e Refresh
+window.filterFinanceList = filterFinanceList; // Expõe para a busca em tempo real
 
 // Mantém a renderização de ícones Lucide segura
 setTimeout(() => { 
