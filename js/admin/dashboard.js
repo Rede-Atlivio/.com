@@ -28,33 +28,35 @@ export async function init() {
 
        // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
     container.innerHTML += `
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-            <div class="glass-panel p-4 border-l-2 border-blue-500">
-                <p class="text-[9px] uppercase font-bold text-gray-400">👥 Usuários</p>
-                <h3 class="text-xl font-black text-white" id="kpi-users">--</h3>
-            </div>
-            <div class="glass-panel p-4 border-l-2 border-emerald-500 bg-emerald-500/5 flex flex-col justify-between overflow-hidden">
-                <div>
-                    <p class="text-[9px] uppercase font-bold text-emerald-400">💰 Cofre Atlivio</p>
-                    <h3 class="text-xl font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
-                </div>
-                <div id="mini-log-lucros" class="mt-2 space-y-1 h-12 overflow-y-auto custom-scrollbar border-t border-emerald-500/20 pt-1">
-                    <p class="text-[7px] text-gray-500 uppercase font-bold">Aguardando taxas...</p>
-                </div>
-            </div>
-            <div class="glass-panel p-4 border-l-2 border-amber-500">
-                <p class="text-[9px] uppercase font-bold text-amber-400">🔐 Em Custódia</p>
-                <h3 class="text-xl font-black text-amber-400" id="kpi-custodia">R$ 0,00</h3>
-            </div>
-            <div class="glass-panel p-4 border-l-2 border-slate-500">
-                <p class="text-[9px] uppercase font-bold text-gray-400">💳 Saldo Clientes</p>
-                <h3 class="text-xl font-black text-white" id="kpi-balance">R$ 0,00</h3>
-            </div>
-            <div class="glass-panel p-4 border-l-2 border-red-500">
-                <p class="text-[9px] uppercase font-bold text-red-400">📉 Dívidas Totais</p>
-                <h3 class="text-xl font-black text-red-400" id="kpi-dividas">R$ 0,00</h3>
-            </div>
-        </div> 
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 animate-fade">
+            <div class="glass-panel p-4 border-t-2 border-blue-500">
+                <p class="text-[8px] uppercase font-bold text-gray-500">👥 Base Total</p>
+                <h3 class="text-lg font-black text-white" id="kpi-users">--</h3>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-emerald-500 bg-emerald-500/5">
+                <p class="text-[8px] uppercase font-bold text-emerald-400">💰 Lucro Real (PIX)</p>
+                <h3 class="text-lg font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
+                <div id="mini-log-lucros" class="mt-1 h-8 overflow-hidden text-[7px]"></div>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-purple-500">
+                <p class="text-[8px] uppercase font-bold text-purple-400">🎁 Investimento</p>
+                <h3 class="text-lg font-black text-purple-300" id="kpi-investimento">R$ 0,00</h3>
+                <p class="text-[6px] text-gray-600 uppercase">Bônus em Circulação</p>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-blue-400">
+                <p class="text-[8px] uppercase font-bold text-blue-400">🔒 Em Custódia</p>
+                <h3 class="text-lg font-black text-white" id="kpi-custodia">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-slate-500">
+                <p class="text-[8px] uppercase font-bold text-gray-400">💳 Saldo Clientes</p>
+                <h3 class="text-lg font-black text-white" id="kpi-balance">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-red-500">
+                <p class="text-[8px] uppercase font-bold text-red-500">🔥 Risco / Dívida</p>
+                <h3 class="text-lg font-black text-red-400" id="kpi-dividas">R$ 0,00</h3>
+            </div>
+        </div> 
+    `;
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="glass-panel p-6 col-span-1 md:col-span-2">
