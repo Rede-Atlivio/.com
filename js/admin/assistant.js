@@ -162,8 +162,7 @@ export async function renderAssistant(containerId) {
                         ${pendingAnalise > 0 ? `<button onclick="document.querySelector('[data-view=\\'active_providers\\']').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-lg flex items-center gap-2">🔍 Aprovar (${pendingAnalise})</button>` : ''}
                         ${pendingTickets > 0 ? `<button onclick="document.querySelector('[data-view=\\'support\\']').click()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-lg flex items-center gap-2">💬 Tickets (${pendingTickets})</button>` : ''}
                     </div>
-                </div>
-                <div class="absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-blue-500/10 to-transparent pointer-events-none"></div>
+                </div> 
             </div>
         `;
 
