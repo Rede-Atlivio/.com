@@ -219,63 +219,78 @@ function atualizarInterfaceCarteira(saldoTotal) {
     }
 }
 
-/**
- * ⚡ MOTOR DE COBRANÇA UNIVERSAL (V14)
- * Esta função é o 'pedágio' para as abas Empregos, Vídeos e Oportunidades.
- * Ela prioriza o wallet_bonus e depois o wallet_balance.
+/** 💳 O COFRE UNIVERSAL ATLIX (V200)
+ * Unifica a cobrança de todas as abas. 
+ * NOVA REGRA: Consome SALDO REAL (PIX) primeiro. Bônus é apenas reserva técnica.
  */
-window.processarPagamentoServico = async (valor, etiqueta, descricao) => {
+window.pagarComAtlix = async (valor, etiqueta, descricao) => {
     const uid = auth.currentUser?.uid;
-    if (!uid) return { sucess: false, error: "Usuário deslogado" };
+    if (!uid) return { success: false, error: "Usuário deslogado" };
+    const valorDebito = parseFloat(valor);
 
     try {
-        let resultado = await runTransaction(db, async (transaction) => {
+        return await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
-            const userSnap = await transaction.get(userRef);
-            if (!userSnap.exists()) throw "Usuário não encontrado";
+            const cofreRef = doc(db, "sys_finance", "receita_total");
+            const [userSnap, cofreSnap] = await Promise.all([transaction.get(userRef), transaction.get(cofreRef)]);
+            
+            if (!userSnap.exists()) throw "Perfil não localizado";
 
             const data = userSnap.data();
-           // 🛡️ Motor de Débito V73: Garante a saída do Saldo Reserva Premium (wallet_bonus)
-            let rReserva = parseFloat(data.wallet_bonus || 0);
-            let rPrincipal = parseFloat(data.wallet_balance || 0);
-            const poderTotal = rReserva + rPrincipal;
+            let rPrincipal = parseFloat(data.wallet_balance || 0); // Saldo Real (PIX)
+            let rBonus = parseFloat(data.wallet_bonus || 0);       // Saldo Presente (Marketing)
+            const poderTotal = rPrincipal + rBonus;
 
-            if (poderTotal < valor) {
-                throw `Saldo insuficiente. Necessário ${valor.toFixed(2)} 🪙`;
+            if (poderTotal < valorDebito) {
+                throw `Saldo insuficiente. Você tem ${poderTotal.toFixed(2)} ATLIX.`;
             }
 
-            // Lógica do Liquidificador: Consome a Reserva Premium primeiro
-            if (rReserva >= valorDebito) {
-            rReserva -= valorDebito;
-       } else {
-           const resto = valorDebito - rReserva;
-                rReserva = 0;
-                rPrincipal -= resto;
+            let lucroRealParaEmpresa = 0;
+
+            // 🌀 NOVO LIQUIDIFICADOR V200: Prioridade ao Dinheiro Real (Lucro Atlivio)
+            if (rPrincipal >= valorDebito) {
+                // Cenário A: O dinheiro real cobre tudo
+                rPrincipal -= valorDebito;
+                lucroRealParaEmpresa = valorDebito; // Tudo é lucro real
+            } else {
+                // Cenário B: Dinheiro real acaba, usa o bônus para completar
+                lucroRealParaEmpresa = rPrincipal; // Apenas o que era real vira lucro
+                const restante = valorDebito - rPrincipal;
+                rPrincipal = 0;
+                rBonus -= restante;
             }
 
-            // Atualiza o banco
-            // 📡 Sincronia de Gravação: Atualiza os campos oficiais do banco
+            // 1. Atualiza os Cofres do Usuário (Sincronizado)
             transaction.update(userRef, {
                 wallet_balance: rPrincipal,
-                wallet_bonus: rReserva,
+                wallet_bonus: rBonus,
                 updated_at: serverTimestamp()
             });
 
-            // Grava no Ledger (Extrato)
+            // 2. 🛡️ TRAVA CONTÁBIL: Só incrementa o faturamento se houver valor REAL envolvido
+            if (lucroRealParaEmpresa > 0) {
+                transaction.update(cofreRef, {
+                    total_acumulado: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
+
+            // 3. Registra no Ledger (Extrato Imutável)
             const extratoRef = doc(collection(db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: uid,
-                valor: -valor,
+                valor: -valorDebito,
                 tipo: etiqueta,
                 descricao: descricao,
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp(),
+                origem_real: lucroRealParaEmpresa // Para auditoria do Robô 47
             });
 
+            console.log(`✅ [Cofre] Débito de ${valorDebito} concluído. Lucro Real: ${lucroRealParaEmpresa}`);
             return { success: true };
         });
-        return resultado;
     } catch (e) {
-        console.error("❌ Erro no pagamento:", e);
+        console.warn("❌ Falha no Pagamento Universal:", e);
         return { success: false, error: e };
     }
 };
