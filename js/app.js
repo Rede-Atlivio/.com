@@ -17,14 +17,16 @@ if ('serviceWorker' in navigator) {
             const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
             console.log("📡 Antena Maestro: Sintonizada e Protegida (Cache + Push)");
 
-            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
-            regSw.onupdatefound = () => {
-                const worker = regSw.installing;
-                worker.onstatechange = () => {
-                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
-                    }
-                };
+            // ✨ SISTEMA ANTI-LOOP V68: Vigia atualizações via Antena Unificada
+            regMsg.onupdatefound = () => {
+                const worker = regMsg.installing;
+                if (worker) {
+                    worker.onstatechange = () => {
+                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log("📥 Atlívio Atualizada: Novo motor detectado na Antena Maestro.");
+                        }
+                    };
+                }
             };
         } catch (err) {
             console.error('❌ Falha Crítica no Motor PWA:', err);
