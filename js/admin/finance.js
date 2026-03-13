@@ -117,12 +117,14 @@ async function loadFinanceData() {
         });
 
         // Injeta os valores nos novos cards separados
+        // ✅ SANEAMENTO V504: Injeta valores reais e limpa chamadas fantasmas
         document.getElementById('fin-saldo-real').innerText = `R$ ${totalRealPIX.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('fin-saldo-bonus').innerText = `${totalFundoBonus.toLocaleString('pt-BR', {minimumFractionDigits: 2})} AX`;
         document.getElementById('fin-custodia').innerText = `R$ ${totalEmCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('fin-receber').innerText = `R$ ${totalEmDivida.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        document.getElementById('fin-receber').innerText = `R$ ${receber.toFixed(2)}`;
         document.getElementById('fin-total-users').innerText = window.allFinData.length;
+
+        console.log("📊 [Finance] Reforma Econômica aplicada com sucesso nos KPIs.");
 
         window.filterFinanceList(); // Renderiza a lista inicial
     } catch (e) { console.error(e); }
