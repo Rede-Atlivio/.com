@@ -12,14 +12,10 @@ localStorage.setItem('atlivio_version', '2026_V60');
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            // 1. Registro do Escudo (Cache e Offline)
-            const regSw = await navigator.serviceWorker.register('./sw.js');
-            console.log("🛡️ Escudo de Cache: Ativo");
-
-            // 2. Registro da Antena (O rádio que ouve o Google FCM)
-            // Sem esta linha, o Google dá o erro "Requested entity was not found"
+            // 🛰️ V67: REGISTRO UNIFICADO (FUSÃO ATLIVIO)
+            // Um único motor para Cache e Notificações, eliminando duplicidade e ícone "W".
             const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            console.log("📡 Antena de Notificações: Sintonizada");
+            console.log("📡 Antena Maestro: Sintonizada e Protegida (Cache + Push)");
 
             // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
             regSw.onupdatefound = () => {
