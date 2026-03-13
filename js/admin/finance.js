@@ -10,14 +10,21 @@ export async function init() {
     const container = document.getElementById('view-finance');
     
     container.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 animate-fade">
-          <div class="glass-panel p-6 border-l-4 border-amber-500 relative overflow-hidden">
-                <p class="text-[10px] uppercase font-bold text-amber-400 mb-1">TOTAL CIRCULANTE (ATLIX)</p>
-                <h3 class="text-3xl font-black text-white" id="fin-saldo-total">0,00 AX</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade">
+            <div class="glass-panel p-6 border-l-4 border-emerald-500 relative overflow-hidden">
+                <p class="text-[10px] uppercase font-bold text-emerald-400 mb-1">💰 SALDO REAL (PIX)</p>
+                <h3 class="text-2xl font-black text-white" id="fin-saldo-real">R$ 0,00</h3>
+                <p class="text-[8px] text-gray-500 mt-1">Patrimônio Real dos Usuários</p>
+            </div>
+            <div class="glass-panel p-6 border-l-4 border-purple-500 relative overflow-hidden">
+                <p class="text-[10px] uppercase font-bold text-purple-400 mb-1">🎁 FUNDO BÔNUS</p>
+                <h3 class="text-2xl font-black text-white" id="fin-saldo-bonus">0,00 AX</h3>
+                <p class="text-[8px] text-gray-500 mt-1">Investimento de Marketing Ativo</p>
             </div>
             <div class="glass-panel p-6 border-l-4 border-blue-500 relative overflow-hidden">
-                <p class="text-[10px] uppercase font-bold text-blue-400 mb-1">EM CUSTÓDIA (LOCK)</p>
-                <h3 class="text-3xl font-black text-white" id="fin-custodia">0,00 AX</h3>
+                <p class="text-[10px] uppercase font-bold text-blue-400 mb-1">🔒 EM CUSTÓDIA</p>
+                <h3 class="text-2xl font-black text-white" id="fin-custodia">R$ 0,00</h3>
+                <p class="text-[8px] text-gray-500 mt-1">Garantias de Serviços em Aberto</p>
             </div>
             <div class="glass-panel p-6 border-l-4 border-red-500 relative overflow-hidden">
                 <p class="text-[10px] uppercase font-bold text-red-400 mb-1">DÍVIDAS TÉCNICAS</p>
