@@ -32,7 +32,7 @@ messaging.onBackgroundMessage((payload) => {
             url: '/' 
         }
     };
-    return self.registration.showNotification(title, options);
+    //EXCLUSÃO DA LINHA SHOW NOTIFICATION PARA MATAR O FANTASMA DA NOTIFICAÇÃO "W"
 });
 
 /**
