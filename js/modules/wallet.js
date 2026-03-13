@@ -644,14 +644,15 @@ async function definirMetaDiaria() {
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
 // ============================================================================
+// 🚀 EXPORTAÇÕES GLOBAIS V201 (REFORMA ECONÔMICA)
 window.carregarCarteira = carregarCarteira;
 window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
+window.pagarComAtlix = window.pagarComAtlix; // API Universal de Pagamento
 window.processarCobrancaTaxa = processarCobrancaTaxa;
-window.atualizarCarteira = carregarCarteira;
-window.definirMetaDiaria = definirMetaDiaria;
+window.registrarMovimentacao = window.registrarMovimentacao;
 window.filtrarGanhos = filtrarGanhos;
-// 🔗 Soldagem Crítica: Disponibiliza o histórico para o Maestro e para o Sininho
-window.carregarHistoricoCarteira = carregarHistoricoCarteira; 
+window.definirMetaDiaria = window.definirMetaDiaria;
+window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 
 console.log("%c✅ WALLET V63.4: Economia ATLIX e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
