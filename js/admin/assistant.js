@@ -149,8 +149,13 @@ export async function renderAssistant(containerId) {
                         </div>
                     </div>
                     
-                    <div class="space-y-2 text-sm text-gray-300 max-h-40 overflow-y-auto custom-scrollbar">
-                        ${insights.map(i => `<p class="border-b border-white/5 pb-1 last:border-0">${i}</p>`).join('')}
+                    <div class="flex flex-col gap-2 text-xs text-gray-300 max-h-[75px] overflow-y-auto custom-scrollbar pr-2 w-full">
+                        ${insights.map(i => `
+                            <div class="flex items-center gap-2 border-b border-white/5 pb-1.5 last:border-0 w-full group">
+                                <span class="opacity-40 group-hover:opacity-100 transition-opacity">🕒</span>
+                                <p class="flex-1 leading-relaxed">${i}</p>
+                            </div>
+                        `).join('')}
                     </div>
 
                     <div class="flex gap-2 mt-4">
