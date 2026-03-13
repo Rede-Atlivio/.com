@@ -24,15 +24,29 @@ async function concederBonusSeAtivo(userUid) {
         const configSnap = await getDoc(doc(db, "configuracoes", "global"));
         const config = configSnap.data();
 
-        // Só concede se estiver ATIVO no Admin
+        // 🚀 V400: Entrega o bônus e protocola no extrato como Investimento de Marketing
         if (config?.bonus_boas_vindas_ativo) {
+            const valorPresente = Number(config.valor_bonus_promocional || 0);
+
+            // 1. Injeta o valor na conta do usuário
             await updateDoc(userRef, {
-                // 🛰️ V146: Removemos o valor fixo '20.00'. Agora o bônus é 100% o que estiver no Admin.
-                // Se o campo estiver vazio no banco, ele assume 0 para não quebrar a conta do usuário.
-                wallet_bonus: Number(config.valor_bonus_promocional || 0),
-                bonus_inicial_ok: true
+                wallet_bonus: valorPresente,
+                bonus_inicial_ok: true,
+                updated_at: serverTimestamp()
             });
-            console.log("🎁 Bônus inicial concedido via Admin.");
+
+            // 2. 📝 REGISTRO DE INVESTIMENTO: Protocola no extrato financeiro global
+            // Isso permite que o Dashboard some quanto a Atlivio "investiu" em presentes hoje.
+            await addDoc(collection(db, "extrato_financeiro"), {
+                uid: userUid,
+                valor: valorPresente,
+                tipo: "🎁 BÔNUS_INICIAL",
+                descricao: "Presente de Boas-Vindas Atlívio",
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX"
+            });
+
+            console.log(`🎁 [Marketing] Bônus de ${valorPresente} protocolado como Investimento.`);
         }
     } catch(e) { console.warn("🎁 Bônus: Regra de Admin ignorada ou usuário novo."); }
 }
