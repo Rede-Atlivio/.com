@@ -130,7 +130,8 @@ export async function renderAssistant(containerId) {
 
         // Renderiza
         container.innerHTML = `
-            <div class="bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl p-5 ${statusColor} shadow-lg mb-6 flex flex-col md:flex-row items-start gap-4 animate-fade relative overflow-hidden">
+            // 🚀 V610: Container de largura total para escala global
+            <div class="bg-slate-900/80 backdrop-blur-md rounded-2xl p-5 ${statusColor} shadow-2xl mb-6 flex items-start gap-5 animate-fade relative overflow-hidden w-full border border-white/5">
                 <div class="text-4xl bg-slate-800/50 p-3 rounded-full border border-slate-700 shadow-inner flex-shrink-0">
                     ${icon}
                 </div>
