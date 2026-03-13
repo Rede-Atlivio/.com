@@ -92,27 +92,35 @@ async function loadFinanceData() {
         const q = query(collection(db, "usuarios"), limit(500));
         const snap = await getDocs(q);
         
-        window.allFinData = [];
-        let custodia = 0;
-        let receber = 0;
+       window.allFinData = [];
+        let totalRealPIX = 0;
+        let totalFundoBonus = 0;
+        let totalEmDivida = 0;
+        let totalEmCustodia = 0;
 
         snap.forEach(doc => {
             const d = doc.data();
-            //PONTO CRÍTICO LIMPEZA CAMPO SALDO
-            // ✅ SANEAMENTO V12: Foco exclusivo na Trindade Financeira
-            const saldoFinal = parseFloat(d.wallet_balance || 0);
-            const reservado = parseFloat(d.wallet_reserved || 0);
+            // Separação cirúrgica dos 3 cofres do usuário
+            const sReal = parseFloat(d.wallet_balance || 0);
+            const sBonus = parseFloat(d.wallet_bonus || 0);
+            const sReserved = parseFloat(d.wallet_reserved || 0);
+
+            // Contabilidade do Topo
+            if (sReal > 0) totalRealPIX += sReal;
+            else if (sReal < 0) totalEmDivida += Math.abs(sReal);
             
-            if (saldoFinal > 0) custodia += saldoFinal; 
-            if (saldoFinal < 0) receber += Math.abs(saldoFinal);
-            let totalReservadoReal = 0; // Variável auxiliar para o próximo passo
-            
-            window.allFinData.push({ id: doc.id, ...d, saldoCalculado: saldoFinal });
+            totalFundoBonus += sBonus;
+            totalEmCustodia += sReserved;
+
+            // Armazena para a lista com o saldo principal (Real) para ordenação
+            window.allFinData.push({ id: doc.id, ...d, saldoCalculado: sReal });
         });
 
-        const totalCustodiaReal = window.allFinData.reduce((acc, curr) => acc + (parseFloat(curr.wallet_reserved) || 0), 0);
-        document.getElementById('fin-saldo-total').innerText = `R$ ${custodia.toFixed(2)}`;
-        document.getElementById('fin-custodia').innerText = `R$ ${totalCustodiaReal.toFixed(2)}`;
+        // Injeta os valores nos novos cards separados
+        document.getElementById('fin-saldo-real').innerText = `R$ ${totalRealPIX.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('fin-saldo-bonus').innerText = `${totalFundoBonus.toLocaleString('pt-BR', {minimumFractionDigits: 2})} AX`;
+        document.getElementById('fin-custodia').innerText = `R$ ${totalEmCustodia.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('fin-receber').innerText = `R$ ${totalEmDivida.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         document.getElementById('fin-receber').innerText = `R$ ${receber.toFixed(2)}`;
         document.getElementById('fin-total-users').innerText = window.allFinData.length;
 
