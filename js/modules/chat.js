@@ -628,18 +628,19 @@ export async function confirmarAcordo(orderId, aceitar) { //240 A 323 - PONTO CR
                 const valorReservaPrestador = totalPedido * (parseFloat(configData.porcentagem_reserva || 0) / 100);
                 const valorReservaCliente = totalPedido * (parseFloat(configData.porcentagem_reserva_cliente || 0) / 100);
 
-                // 🌀 LIQUIDIFICADOR DE BÔNUS: Desconta do bônus antes do saldo real 299  A 326 - PONTO CRÍTICO
+                // 🌀 LIQUIDIFICADOR DE ESCASSEZ V300: Prioriza SALDO REAL (PIX)
+                // O bônus só é usado se o dinheiro real do usuário acabar.
                 const processarDebitoHibrido = (snap, ref, valorDebito, uidDestino) => {
-                    let rBonus = parseFloat(snap.data().wallet_bonus || 0);
-                    let rBal = parseFloat(snap.data().wallet_balance || 0);
-                    let rRes = parseFloat(snap.data().wallet_reserved || 0);
+                    let rBal = parseFloat(snap.data().wallet_balance || 0); // Cofre Real
+                    let rBonus = parseFloat(snap.data().wallet_bonus || 0); // Cofre de Marketing
+                    let rRes = parseFloat(snap.data().wallet_reserved || 0); // Cofre em Custódia
 
-                    if (rBonus >= valorDebito) {
-                        rBonus -= valorDebito;
+                    if (rBal >= valorDebito) {
+                        rBal -= valorDebito; // Queima o saldo real primeiro para gerar lucro
                     } else {
-                        const resto = valorDebito - rBonus;
-                        rBonus = 0;
-                        rBal -= resto;
+                        const resto = valorDebito - rBal;
+                        rBal = 0;
+                        rBonus -= resto; // Usa o bônus apenas para cobrir a falta
                     }
 
                     transaction.update(ref, { 
