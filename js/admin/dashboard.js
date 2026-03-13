@@ -20,11 +20,9 @@ export async function init() {
     // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
     const container = document.getElementById('dashboard-main-content');
     
-    // Se o container de dados estiver vazio, inicializa a estrutura interna de widgets
-    if (!container.innerHTML.includes('admin-assistant-widget')) {
-       // O container de dados inicia limpo, pois a Assistente agora é fixa no admin.html
-        container.innerHTML = "";
-    }
+   // ✅ SANEAMENTO V605: Garante que o Dashboard inicie limpo para receber os novos KPIs
+    // Removemos a verificação de widgets legados para evitar o erro "Unexpected token"
+    container.innerHTML = "";
 
        // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
     container.innerHTML += `
