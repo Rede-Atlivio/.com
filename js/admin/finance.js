@@ -315,7 +315,7 @@ window.executeAdjustment = async (uid) => {
             if (mode === 'credit') {
                 const meses = field === 'wallet_balance' ? (window.CONFIG_FINANCEIRA?.validade_pix_meses || 12) : (window.CONFIG_FINANCEIRA?.validade_bonus_meses || 6);
                 dataExpiracao = new Date();
-                dataExpiracao.setMonth(dataExpiracao.setMonth() + meses);
+                dataExpiracao.setMonth(dataExpiracao.getMonth() + meses);
                 
                 // 🚀 GERAÇÃO DE LOTE (LEDGER): Cria o rastro para o Robô de Expiração
                 const ledgerRef = doc(collection(db, "usuarios", uid, "ledger"));
