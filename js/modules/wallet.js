@@ -751,4 +751,8 @@ window.filtrarGanhos = filtrarGanhos;
 window.definirMetaDiaria = window.definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 
+// 🛰️ BRIDGE DE MÓDULOS: Garante que o App tenha acesso às ferramentas do Firebase
+import * as firestore from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+window.firebaseModules = { ...window.firebaseModules, ...firestore };
+
 console.log("%c✅ WALLET V63.4: Economia ATLIX e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
