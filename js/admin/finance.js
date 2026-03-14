@@ -336,8 +336,9 @@ window.executeAdjustment = async (uid) => {
                 valor: Number(finalAmount), // FINALAMOUNT já carrega o sinal correto (+ ou -)
                 tipo: mode === 'credit' ? 'CRÉDITO 📈' : 'DÉBITO 📉',
                 descricao: desc,
-                timestamp: serverTimestamp()
-            }); 
+                timestamp: serverTimestamp(),
+                data_expiracao: dataExpiracao // Registra a data para o usuário ver no App
+            });
         });
 
         alert("✅ Saldo sincronizado em todas as bases!");
