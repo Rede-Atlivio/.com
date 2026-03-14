@@ -63,12 +63,14 @@ function iniciarRegrasFinanceiras() {
             if (taxaBruta > 1) taxaBruta = taxaBruta / 100;
 
             // 🧠 SINCRONIZAÇÃO MAESTRO: Captura os novos campos de segurança do Admin
+           // Captura regras de validade vindas do Admin ou assume o padrão seguro
             const novasRegras = {
-                taxa: taxaBruta,
-                limite: parseFloat(data.limite_divida || 0),
-                // Lemos o novo campo do banco. Se estiver vazio no Firestore, o padrão é 500.
-                limite_recarga_v1: parseFloat(data.limite_recarga_v1 || 500)
-            };
+                taxa: taxaBruta,
+                limite: parseFloat(data.limite_divida || 0),
+                limite_recarga_v1: parseFloat(data.limite_recarga_v1 || 500),
+                validade_pix: parseInt(data.validade_pix_meses || 12),
+                validade_bonus: parseInt(data.validade_bonus_meses || 6)
+            };
             
             window.CONFIG_FINANCEIRA = novasRegras;
             // 🔄 ATUALIZAÇÃO SÍNCRONA: Garante que todo o App saiba do novo limite sem precisar de F5
