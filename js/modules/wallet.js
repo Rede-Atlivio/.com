@@ -773,12 +773,8 @@ window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de 
 window.filtrarGanhos = filtrarGanhos;
 window.definirMetaDiaria = window.definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
-// 🛰️ BRIDGE: Libera ferramentas de tempo para o motor de saneamento
-import * as firestoreModules from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-window.firebaseModules = { ...window.firebaseModules, ...firestoreModules };
-
-// 🛰️ BRIDGE DE MÓDULOS: Garante que o App tenha acesso às ferramentas do Firebase
-import * as firestore from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-window.firebaseModules = { ...window.firebaseModules, ...firestore };
+// 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
+import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
 
 console.log("%c✅ WALLET V63.4: Economia ATLIX e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
