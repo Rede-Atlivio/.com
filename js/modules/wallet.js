@@ -128,9 +128,35 @@ export function iniciarMonitoramentoCarteira() {
 
     console.log("📡 Carteira V10: Conectando ao Banco...");
 
-    unsubscribeWallet = onSnapshot(ref, (docSnap) => {
-        if (docSnap.exists()) {
-            const data = docSnap.data();
+    unsubscribeWallet = onSnapshot(ref, async (docSnap) => {
+        if (docSnap.exists()) {
+            let data = docSnap.data();
+            
+            // 🕒 MOTOR DE SANEAMENTO V2026: Verifica se existem lotes vencidos no Ledger
+            try {
+                const { collection, getDocs, query, where, Timestamp } = window.firebaseModules;
+                const agora = Timestamp.now();
+                const ledgerSnap = await getDocs(query(collection(db, "usuarios", uid, "ledger"), where("status", "==", "ativo")));
+                
+                let saldoExpiradoPix = 0;
+                let saldoExpiradoBonus = 0;
+
+                ledgerSnap.forEach(loteDoc => {
+                    const lote = loteDoc.data();
+                    if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
+                        // O lote venceu! 
+                        if (lote.tipo === 'PIX') saldoExpiradoPix += lote.valor;
+                        else saldoExpiradoBonus += lote.valor;
+                    }
+                });
+
+                // Ajusta os valores em tempo real para a interface (sem alterar o banco ainda)
+                if (saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) {
+                    console.warn(`⏳ [VALIDADE] Identificado saldo expirado: PIX: ${saldoExpiradoPix} | Bônus: ${saldoExpiradoBonus}`);
+                    data.wallet_balance = Math.max(0, (data.wallet_balance || 0) - saldoExpiradoPix);
+                    data.wallet_bonus = Math.max(0, (data.wallet_bonus || 0) - saldoExpiradoBonus);
+                }
+            } catch (e) { console.error("Erro no motor de validade:", e); }
             
             //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 101 A 115 DEPOIS 102 A 118
             // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
