@@ -145,11 +145,29 @@ export function iniciarMonitoramentoCarteira() {
                     }
                 });
 
-                // Ajusta os valores em tempo real para a interface (sem alterar o banco ainda)
+                // 🔥 MOTOR DE EXECUÇÃO FÍSICA V2026: Limpa bônus e congela PIX no banco
                 if (saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) {
-                    console.warn(`⏳ [VALIDADE] Identificado saldo expirado: PIX: ${saldoExpiradoPix} | Bônus: ${saldoExpiradoBonus}`);
-                    data.wallet_balance = Math.max(0, (data.wallet_balance || 0) - saldoExpiradoPix);
-                    data.wallet_bonus = Math.max(0, (data.wallet_bonus || 0) - saldoExpiradoBonus);
+                    console.error("🚨 SANEAMENTO FÍSICO INICIADO: Limpando banco de dados...");
+                    const { updateDoc, increment } = window.firebaseModules;
+                    
+                    // 1. Limpa os campos principais do usuário
+                    await updateDoc(ref, {
+                        wallet_balance: increment(-saldoExpiradoPix),
+                        wallet_bonus: increment(-saldoExpiradoBonus),
+                        wallet_frozen: increment(saldoExpiradoPix), // Joga o PIX pro congelador
+                        updated_at: serverTimestamp()
+                    });
+
+                    // 2. Mata os lotes no Ledger para não processar de novo
+                    for (const loteDoc of ledgerSnap.docs) {
+                        const lote = loteDoc.data();
+                        if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
+                            await updateDoc(doc(db, "usuarios", uid, "ledger", loteDoc.id), {
+                                status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
+                                saneado_at: serverTimestamp()
+                            });
+                        }
+                    }
                 }
             } catch (e) { console.error("Erro no motor de validade:", e); }
             
