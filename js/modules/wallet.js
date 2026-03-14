@@ -39,6 +39,7 @@ export let CONFIG_FINANCEIRA = {
 // Monitora alterações nas regras financeiras em Tempo Real
 // Variáveis de controle de memória
 let unsubscribeWallet = null; 
+let processandoSaneamento = false; // 🔒 SEMÁFORO: Bloqueia execuções duplicadas para evitar saldo negativo
 
 /**
  * 🧠 CÉREBRO FINANCEIRO V12
