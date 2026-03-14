@@ -291,6 +291,8 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
                 origem_real: lucroRealParaEmpresa // Para auditoria do Robô 47
             });
 
+            // 🕒 LOGICA DE VALIDADE: Registra a movimentação no Ledger com data de expiração
+            // Se for positivo (entrada), calculamos o vencimento. Se for negativo (débito), o FIFO consome.
             console.log(`✅ [Cofre] Débito de ${valorDebito} concluído. Lucro Real: ${lucroRealParaEmpresa}`);
             return { success: true };
         });
