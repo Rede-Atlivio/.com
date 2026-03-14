@@ -470,10 +470,15 @@ async function carregarHistoricoCarteira(uid) {
                             <div class="w-10 h-10 rounded-full ${isPositivo ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center text-lg font-bold">
                                 ${t.tipo.includes('🎁') ? '🎁' : t.tipo.includes('🔒') ? '🔒' : isPositivo ? '📈' : '🏁'}
                             </div>
-                            <div>
-                                <p class="text-[10px] font-black uppercase text-slate-800 leading-tight">${t.tipo}</p>
-                                <p class="text-[9px] text-gray-400 font-medium">${t.descricao || 'Movimentação Automática'}</p>
-                            </div>
+                           <div>
+                                <p class="text-[10px] font-black uppercase text-slate-800 leading-tight">${t.tipo}</p>
+                                <p class="text-[9px] text-gray-400 font-medium">${t.descricao || 'Movimentação Automática'}</p>
+                                ${t.data_expiracao ? `
+                                    <p class="text-[8px] font-bold mt-1 ${t.valor > 0 ? 'text-amber-600' : 'hidden'} flex items-center gap-1">
+                                        ⏱️ Vence em: ${t.data_expiracao.toDate ? t.data_expiracao.toDate().toLocaleDateString() : new Date(t.data_expiracao).toLocaleDateString()}
+                                    </p>
+                                ` : ''}
+                            </div>
                         </div>
                         <div class="text-right">
                             <p class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-red-600'}">
