@@ -152,14 +152,17 @@ export function iniciarMonitoramentoCarteira() {
                 
                // 🔥 MOTOR DE SANEAMENTO ATÔMICO V2026.PRO (BLOQUEIO DE LOOP ATIVO)
                 if ((saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) && !processandoSaneamento) {
-                    processandoSaneamento = true; // 🔒 FECHA O SEMÁFORO
-                    const { updateDoc, increment, doc } = window.firebaseModules;
-                    console.error("🚨 SANEAMENTO: Iniciando limpeza única e atômica...");
+                    processandoSaneamento = true; // 🔒 FECHA O SEMÁFORO: Impede execuções simultâneas
+                    console.error("🚨 SANEAMENTO: Iniciando faxina única...");
 
                     const tarefas = [];
+                    let idsProcessados = []; // 🛡️ LISTA DE SEGURANÇA: Evita processar o mesmo ID duas vezes
+
                     ledgerSnap.forEach(loteDoc => {
                         const lote = loteDoc.data();
-                        if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
+                        // 🛡️ FILTRO DUPLO: Só processa se estiver vencido E se não tiver sido pego nesta rodada
+                        if (lote.expires_at && lote.expires_at.seconds < agora.seconds && !idsProcessados.includes(loteDoc.id)) {
+                            idsProcessados.push(loteDoc.id);
                             tarefas.push(updateDoc(doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
                                 status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
                                 saneado_at: serverTimestamp() 
@@ -167,20 +170,25 @@ export function iniciarMonitoramentoCarteira() {
                         }
                     });
 
-                    tarefas.push(updateDoc(ref, {
-                        wallet_balance: increment(-saldoExpiradoPix),
-                        wallet_bonus: increment(-saldoExpiradoBonus),
-                        wallet_frozen: increment(saldoExpiradoPix),
-                        updated_at: serverTimestamp()
-                    }));
+                    // 🛡️ SÓ MEXE NO SALDO SE HOUVER TAREFAS DE LOTE CONFIRMADAS
+                    if (tarefas.length > 0) {
+                        tarefas.push(updateDoc(ref, {
+                            wallet_balance: increment(-saldoExpiradoPix),
+                            wallet_bonus: increment(-saldoExpiradoBonus),
+                            wallet_frozen: increment(saldoExpiradoPix), // SÓ O PIX VAI PARA O CONGELADOR
+                            updated_at: serverTimestamp()
+                        }));
 
-                    try {
-                        await Promise.all(tarefas);
-                        console.log("✅ BANCO SANEADO COM SUCESSO.");
-                    } catch (err) {
-                        console.error("❌ Erro no saneamento:", err);
-                    } finally {
-                        processandoSaneamento = false; // 🟢 ABRE O SEMÁFORO
+                        try {
+                            await Promise.all(tarefas); // EXECUÇÃO ATÔMICA
+                            console.log("✅ BANCO HIGIENIZADO.");
+                        } catch (err) {
+                            console.error("❌ Erro ao sanear:", err);
+                        } finally {
+                            processandoSaneamento = false; // 🟢 ABRE O SEMÁFORO
+                        }
+                    } else {
+                        processandoSaneamento = false;
                     }
                     return; 
                 }
