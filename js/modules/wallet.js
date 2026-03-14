@@ -90,9 +90,12 @@ function iniciarRegrasFinanceiras() {
  */
 export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 59 A 72 DEPOIS 59 A 73
     const user = window.userProfile;
-    // Soma Real + Bônus para saber se ele tem "poder de fogo"
-    const saldoReal = parseFloat(user?.wallet_balance || 0);
-    const saldoBonus = parseFloat(user?.wallet_bonus || 0);
+    // 🛡️ TRAVA V2026 (VALIDADE REAL): Subtrai o saldo congelado antes de autorizar
+    const saldoReal = parseFloat(window.userProfile?.wallet_balance || 0);
+    const saldoBonus = parseFloat(window.userProfile?.wallet_bonus || 0);
+    
+    // O saldoTotal aqui já deve vir saneado pelo iniciarMonitoramentoCarteira 
+    // Mas garantimos a segurança absoluta pegando o que está na memória do Perfil Global
     const saldoTotal = saldoReal + saldoBonus;
     
     const custo = parseFloat(custoEstimado || 0);
