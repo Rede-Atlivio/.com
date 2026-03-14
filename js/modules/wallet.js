@@ -136,7 +136,7 @@ export function iniciarMonitoramentoCarteira() {
                 // 🛰️ BUSCA SEGURA: Pega apenas lotes que ainda constam como 'ativo' no banco
                // 🛰️ BUSCA SEGURA: Usa os módulos do bridge global sem redeclarar
                 const fv = window.firebaseModules;
-                const ledgerSnap = await getDocs(query(collection(db, "usuarios", uid, "ledger"), where("status", "==", "ativo")));
+                const ledgerSnap = await fv.getDocs(fv.query(fv.collection(db, "usuarios", uid, "ledger"), fv.where("status", "==", "ativo")));
                 
                 let saldoExpiradoPix = 0;
                 let saldoExpiradoBonus = 0;
