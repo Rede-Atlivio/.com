@@ -32,6 +32,8 @@ messaging.onBackgroundMessage((payload) => {
             url: '/' 
         }
     };
+    // 🚀 REATIVAÇÃO MAESTRO: Esta linha transforma o sinal silencioso do Robô 
+    // em uma notificação real, usando a Logo "A" que já está no cache do celular.
     return self.registration.showNotification(title, options);
 });
 
