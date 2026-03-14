@@ -310,7 +310,26 @@ window.executeAdjustment = async (uid) => {
                 });
             }
 
-            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            // 🕒 V2026: Cálculo de Validade para Ajuste Manual
+            let dataExpiracao = null;
+            if (mode === 'credit') {
+                const meses = field === 'wallet_balance' ? (window.CONFIG_FINANCEIRA?.validade_pix_meses || 12) : (window.CONFIG_FINANCEIRA?.validade_bonus_meses || 6);
+                dataExpiracao = new Date();
+                dataExpiracao.setMonth(dataExpiracao.setMonth() + meses);
+                
+                // 🚀 GERAÇÃO DE LOTE (LEDGER): Cria o rastro para o Robô de Expiração
+                const ledgerRef = doc(collection(db, "usuarios", uid, "ledger"));
+                transaction.set(ledgerRef, {
+                    valor: Number(amount),
+                    tipo: field === 'wallet_balance' ? 'PIX' : 'BONUS',
+                    status: 'ativo',
+                    descricao: `Ajuste Admin: ${desc}`,
+                    created_at: serverTimestamp(),
+                    expires_at: dataExpiracao
+                });
+            }
+
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
            // ⚖️ Correção V63.6: Garante que débitos gravem o sinal de negativo (-) no banco
             transaction.set(extratoRef, {
                 uid: uid,
