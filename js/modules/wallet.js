@@ -132,7 +132,8 @@ export function iniciarMonitoramentoCarteira() {
             try {
                 const { collection, getDocs, query, where, Timestamp } = window.firebaseModules;
                 const agora = Timestamp.now();
-                const ledgerSnap = await getDocs(query(collection(db, "usuarios", uid, "ledger"), where("status", "==", "ativo")));
+               // 🛰️ BUSCA GLOBAL: Pega todos os lotes do usuário para validar o tempo
+                const ledgerSnap = await getDocs(collection(db, "usuarios", uid, "ledger"));
                 
                 let saldoExpiradoPix = 0;
                 let saldoExpiradoBonus = 0;
