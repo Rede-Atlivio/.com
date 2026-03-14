@@ -147,15 +147,13 @@ export function iniciarMonitoramentoCarteira() {
                 });
 
                 
-                // 🔥 MOTOR DE SANEAMENTO ATÔMICO V2026.PRO (Proteção contra saldo negativo)
-                if (saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) {
+               // 🔥 MOTOR DE SANEAMENTO ATÔMICO V2026.PRO (BLOQUEIO DE LOOP ATIVO)
+                if ((saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) && !processandoSaneamento) {
+                    processandoSaneamento = true; // 🔒 FECHA O SEMÁFORO
                     const { updateDoc, increment, doc } = window.firebaseModules;
-                    console.error("🚨 SANEAMENTO: Processando limpeza atômica...");
+                    console.error("🚨 SANEAMENTO: Iniciando limpeza única e atômica...");
 
-                    // Criamos uma lista de tarefas para o banco fazer de uma vez só
                     const tarefas = [];
-                    
-                    // Tarefa 1: Marcar lotes como mortos (Isso impede o re-processamento)
                     ledgerSnap.forEach(loteDoc => {
                         const lote = loteDoc.data();
                         if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
@@ -166,7 +164,6 @@ export function iniciarMonitoramentoCarteira() {
                         }
                     });
 
-                    // Tarefa 2: Ajustar o saldo final
                     tarefas.push(updateDoc(ref, {
                         wallet_balance: increment(-saldoExpiradoPix),
                         wallet_bonus: increment(-saldoExpiradoBonus),
@@ -174,8 +171,14 @@ export function iniciarMonitoramentoCarteira() {
                         updated_at: serverTimestamp()
                     }));
 
-                    await Promise.all(tarefas); // Executa tudo em paralelo
-                    console.log("✅ BANCO LIMPO.");
+                    try {
+                        await Promise.all(tarefas);
+                        console.log("✅ BANCO SANEADO COM SUCESSO.");
+                    } catch (err) {
+                        console.error("❌ Erro no saneamento:", err);
+                    } finally {
+                        processandoSaneamento = false; // 🟢 ABRE O SEMÁFORO
+                    }
                     return; 
                 }
             } catch (e) { console.error("Erro no motor de validade:", e); }
