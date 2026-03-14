@@ -167,7 +167,8 @@ export function iniciarMonitoramentoCarteira() {
                                 saneado_at: serverTimestamp()
                             });
                         }
-                    }
+                   }
+                    return; // 🛑 CRUCIAL: Interrompe o processamento atual para recarregar com o banco limpo
                 }
             } catch (e) { console.error("Erro no motor de validade:", e); }
             
