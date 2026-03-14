@@ -27,10 +27,13 @@ const GOLD_COIN = '<span class="moeda-ouro"><span class="icon-coin">🪙</span><
  */
 // 💰 CONFIGURAÇÕES MESTRE DINÂMICAS
 // Estes valores são atualizados automaticamente pelo Painel Admin via 'iniciarRegrasFinanceiras'
+// 💰 CONFIGURAÇÕES MESTRE DINÂMICAS (V2026.VALIDADE)
 export let CONFIG_FINANCEIRA = {
-    taxa: 0.20,             // Taxa padrão de intermediação (20%)
-    limite: 0.00,           // Limite de dívida negativa permitido para prestadores
-    limite_recarga_v1: 500  // Novo: Teto de recarga rápida (PIX) controlado pelo Admin
+    taxa: 0.20,             // Taxa padrão de intermediação (20%)
+    limite: 0.00,           // Limite de dívida negativa permitido para prestadores
+    limite_recarga_v1: 500, // Teto de recarga rápida controlado pelo Admin
+    validade_pix_meses: 12, // Dinheiro real: 1 ano para congelamento
+    validade_bonus_meses: 6 // Bônus/Missões: 6 meses para destruição total
 };
 
 // Monitora alterações nas regras financeiras em Tempo Real
