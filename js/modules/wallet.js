@@ -145,8 +145,8 @@ export function iniciarMonitoramentoCarteira() {
                     const lote = loteDoc.data();
                     if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
                         // O lote venceu! 
-                        if (lote.tipo === 'PIX') saldoExpiradoPix += lote.valor;
-                        else saldoExpiradoBonus += lote.valor;
+                        if (lote.tipo === 'PIX') saldoExpiradoPix += Number(lote.valor || 0);
+                        else saldoExpiradoBonus += Number(lote.valor || 0);
                     }
                 });
 
