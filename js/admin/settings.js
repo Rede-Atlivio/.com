@@ -276,7 +276,9 @@ window.saveBusinessRules = async () => {
         porcentagem_reserva_cliente: Number(rawPctCli),
         valor_minimo: Number(rawValMin),
         valor_maximo: Number(rawValMax),
-        // 💾 GRAVAÇÃO MESTRA V14: Salva o estado da Chave (true para liberado, false para travado)
+        validade_pix_meses: Number(document.getElementById('conf-validade-pix')?.value || 12),
+        validade_bonus_meses: Number(document.getElementById('conf-validade-bonus')?.value || 6),
+        // 💾 GRAVAÇÃO MESTRA V2026: Salva estado da Chave e Prazos de Validade
         // Isso substitui o antigo 'limite_recarga_v1' por um comando binário mais rápido para milhões de usuários
         liberar_black_geral_v1: isLibertadoGeral,
         completar_valor_total: document.getElementById('conf-completar-pagamento').checked,
