@@ -358,8 +358,13 @@ window.saveModalData = async () => {
             let val = input.value;
 
             // 💎 REGRA DE OURO V401: Campos financeiros DEVEM ser números para não quebrar o motor de queima de ATLIX
-            // Incluímos o 'wallet_bonus' na lista de conversão obrigatória.
-            const camposNumericos = ['wallet_balance', 'wallet_reserved', 'wallet_bonus', 'saldo'];
+            // 💎 REGRA DE OURO V402: Campos financeiros e geográficos DEVEM ser números decimais.
+            // Removemos o 'saldo' (extinto) e adicionamos travas para validade e coordenadas GPS.
+            const camposNumericos = [
+                'wallet_balance', 'wallet_reserved', 'wallet_bonus', 
+                'validade_pix_meses', 'validade_bonus_meses',
+                'latitude', 'longitude', 'radius'
+            ];
 
             if (camposNumericos.includes(key)) {
                 updates[key] = parseFloat(val) || 0; // Converte texto em número decimal
