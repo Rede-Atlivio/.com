@@ -707,12 +707,15 @@ window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V201 (REFORMA ECONÔMICA)
+// 🚀 EXPORTAÇÕES GLOBAIS V2026.VALIDADE (Sincronizadas)
+window.CONFIG_FINANCEIRA = CONFIG_FINANCEIRA; // Expondo o objeto de regras
 window.carregarCarteira = carregarCarteira;
 window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
 window.podeTrabalhar = podeTrabalhar;
-window.pagarComAtlix = window.pagarComAtlix; // API Universal de Pagamento
+window.pagarComAtlix = window.pagarComAtlix;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.registrarMovimentacao = window.registrarMovimentacao;
+window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
 window.filtrarGanhos = filtrarGanhos;
 window.definirMetaDiaria = window.definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
