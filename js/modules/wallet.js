@@ -161,23 +161,21 @@ export function iniciarMonitoramentoCarteira() {
 
                     ledgerSnap.forEach(loteDoc => {
                         const lote = loteDoc.data();
-                        // 🛡️ FILTRO DUPLO: Só processa se estiver vencido E se não tiver sido pego nesta rodada
                         if (lote.expires_at && lote.expires_at.seconds < agora.seconds && !idsProcessados.includes(loteDoc.id)) {
                             idsProcessados.push(loteDoc.id);
-                            tarefas.push(updateDoc(doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
+                            tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
                                 status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
-                                saneado_at: serverTimestamp() 
+                                saneado_at: fv.serverTimestamp() 
                             }));
                         }
                     });
 
-                    // 🛡️ SÓ MEXE NO SALDO SE HOUVER TAREFAS DE LOTE CONFIRMADAS
                     if (tarefas.length > 0) {
-                        tarefas.push(updateDoc(ref, {
-                            wallet_balance: increment(-saldoExpiradoPix),
-                            wallet_bonus: increment(-saldoExpiradoBonus),
-                            wallet_frozen: increment(saldoExpiradoPix), // SÓ O PIX VAI PARA O CONGELADOR
-                            updated_at: serverTimestamp()
+                        tarefas.push(fv.updateDoc(ref, {
+                            wallet_balance: fv.increment(-saldoExpiradoPix),
+                            wallet_bonus: fv.increment(-saldoExpiradoBonus),
+                            wallet_frozen: fv.increment(saldoExpiradoPix),
+                            updated_at: fv.serverTimestamp()
                         }));
 
                         try {
