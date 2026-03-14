@@ -107,8 +107,16 @@ export async function init() {
         <input type="checkbox" id="conf-completar-pagamento" class="chk-custom" onchange="window.validarAtivacaoLiquidacao(this)">
     </div>
 </div>
-                <div class="mt-2 border-t border-slate-700 pt-4">
-    <p class="text-[9px] text-blue-400 font-bold mb-2 uppercase">Parâmetros Operacionais (App)</p>
+                <div class="mt-4 border-t border-slate-700 pt-4">
+                    <p class="text-[9px] text-amber-500 font-black mb-2 uppercase tracking-widest">Controle de Validade (Meses)</p>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label class="text-[9px] text-gray-500 uppercase">Validade PIX</label><input type="number" id="conf-validade-pix" class="inp-editor h-8 text-white font-bold" placeholder="12"></div>
+                        <div><label class="text-[9px] text-gray-500 uppercase">Validade Bônus</label><input type="number" id="conf-validade-bonus" class="inp-editor h-8 text-white font-bold" placeholder="6"></div>
+                    </div>
+                </div>
+
+                <div class="mt-2 border-t border-slate-700 pt-4">
+    <p class="text-[9px] text-blue-400 font-bold mb-2 uppercase">Parâmetros Operacionais (App)</p>
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div><label class="text-[9px] text-gray-500 uppercase">Valor Mín. Pedido</label><input type="number" id="conf-val-min" class="inp-editor h-8 text-white" placeholder="20.00"></div>
         <div><label class="text-[9px] text-gray-500 uppercase">Valor Máx. Pedido</label><input type="number" id="conf-val-max" class="inp-editor h-8 text-white" placeholder="500.00"></div>
