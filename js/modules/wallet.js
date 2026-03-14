@@ -162,8 +162,9 @@ export function iniciarMonitoramentoCarteira() {
             // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
             // 🛡️ SINCRONIA V12: Poder de Compra (Real + Bônus)
             // 💰 ESTRUTURA HÍBRIDA V25 (COM GATILHO DE MARKETING EM MASSA)
-            const sReal = parseFloat(data.wallet_balance || 0);
-            const sBonus = parseFloat(data.wallet_bonus || 0);
+            // 💰 VALORES SANEADOS V2026: Subtrai o lixo tecnológico antes de mostrar na tela
+            const sReal = Math.max(0, parseFloat(data.wallet_balance || 0));
+            const sBonus = Math.max(0, parseFloat(data.wallet_bonus || 0));
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
