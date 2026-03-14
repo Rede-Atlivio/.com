@@ -72,7 +72,8 @@ function iniciarRegrasFinanceiras() {
                 validade_bonus: parseInt(data.validade_bonus_meses || 6)
             };
             
-            window.CONFIG_FINANCEIRA = novasRegras;
+            // 🛰️ Sincronia V2026: Garante que o objeto global receba todas as novas chaves de validade
+            window.CONFIG_FINANCEIRA = { ...window.CONFIG_FINANCEIRA, ...novasRegras };
             // 🔄 ATUALIZAÇÃO SÍNCRONA: Garante que todo o App saiba do novo limite sem precisar de F5
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
