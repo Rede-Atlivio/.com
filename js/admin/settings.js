@@ -184,6 +184,8 @@ async function loadSettings() {
 
         // 📥 CARREGAMENTO V13: Lê os valores mínimos e o estado da Chave Mestra Black
         document.getElementById('conf-val-min').value = data.valor_minimo ?? legado.valor_minimo ?? 20;
+        document.getElementById('conf-validade-pix').value = data.validade_pix_meses ?? 12;
+        document.getElementById('conf-validade-bonus').value = data.validade_bonus_meses ?? 6;
         
         // Sincroniza o Switch de Liberação Geral (ON ou OFF)
         const switchGeral = document.getElementById('conf-liberar-black-geral');
