@@ -32,7 +32,11 @@ messaging.onBackgroundMessage((payload) => {
             url: '/' 
         }
     };
-    //EXCLUSÃO DA LINHA SHOW NOTIFICATION PARA MATAR O FANTASMA DA NOTIFICAÇÃO "W"
+    };
+    // 🚀 REATIVAÇÃO MAESTRO: Esta linha transforma o sinal silencioso do Robô 
+    // em uma notificação real, usando a Logo "A" que já está no cache do celular.
+    return self.registration.showNotification(title, options);
+});
 });
 
 /**
