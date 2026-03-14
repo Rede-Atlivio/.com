@@ -152,6 +152,11 @@ export async function init() {
             if(source === 'direct') source = 'orgânico';
             trafficStats[source] = (trafficStats[source] || 0) + 1;
             userSourceMap[uDoc.id] = source;
+
+            // 🕒 VARREDURA DE VALIDADE V2026: Monitora bônus que expiram em breve
+            if(valBonus > 0) {
+                // Futuramente: Injetar busca na subcoleção 'ledger' aqui
+            }
         });
 
         // 🚀 ESCUTA REAL-TIME DO COFRE (Plataforma)
