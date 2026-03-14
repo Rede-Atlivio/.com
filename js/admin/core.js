@@ -375,7 +375,7 @@ window.saveModalData = async () => {
 
         await updateDoc(doc(window.db, col, id), updates);
         
-        alert("✅ Dados e Saldo atualizados com sucesso!");
+        alert("✅ Dados e Créditos ATLIX atualizados com sucesso!");
         window.fecharModalUniversal();
         window.switchView(window.activeView); 
     } catch(e) {
