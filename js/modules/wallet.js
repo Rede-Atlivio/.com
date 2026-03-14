@@ -145,30 +145,37 @@ export function iniciarMonitoramentoCarteira() {
                     }
                 });
 
-                // 🔥 MOTOR DE EXECUÇÃO FÍSICA V2026: Limpa bônus e congela PIX no banco
+                
+                // 🔥 MOTOR DE SANEAMENTO ATÔMICO V2026.PRO (Proteção contra saldo negativo)
                 if (saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) {
-                    console.error("🚨 SANEAMENTO FÍSICO INICIADO: Limpando banco de dados...");
-                    const { updateDoc, increment } = window.firebaseModules;
-                    
-                    // 1. Limpa os campos principais do usuário
-                    await updateDoc(ref, {
-                        wallet_balance: increment(-saldoExpiradoPix),
-                        wallet_bonus: increment(-saldoExpiradoBonus),
-                        wallet_frozen: increment(saldoExpiradoPix), // Joga o PIX pro congelador
-                        updated_at: serverTimestamp()
-                    });
+                    const { updateDoc, increment, doc } = window.firebaseModules;
+                    console.error("🚨 SANEAMENTO: Processando limpeza atômica...");
 
-                    // 2. Mata os lotes no Ledger para não processar de novo
-                    for (const loteDoc of ledgerSnap.docs) {
+                    // Criamos uma lista de tarefas para o banco fazer de uma vez só
+                    const tarefas = [];
+                    
+                    // Tarefa 1: Marcar lotes como mortos (Isso impede o re-processamento)
+                    ledgerSnap.forEach(loteDoc => {
                         const lote = loteDoc.data();
                         if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
-                            await updateDoc(doc(db, "usuarios", uid, "ledger", loteDoc.id), {
+                            tarefas.push(updateDoc(doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
                                 status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
-                                saneado_at: serverTimestamp()
-                            });
+                                saneado_at: serverTimestamp() 
+                            }));
                         }
-                   }
-                    return; // 🛑 CRUCIAL: Interrompe o processamento atual para recarregar com o banco limpo
+                    });
+
+                    // Tarefa 2: Ajustar o saldo final
+                    tarefas.push(updateDoc(ref, {
+                        wallet_balance: increment(-saldoExpiradoPix),
+                        wallet_bonus: increment(-saldoExpiradoBonus),
+                        wallet_frozen: increment(saldoExpiradoPix),
+                        updated_at: serverTimestamp()
+                    }));
+
+                    await Promise.all(tarefas); // Executa tudo em paralelo
+                    console.log("✅ BANCO LIMPO.");
+                    return; 
                 }
             } catch (e) { console.error("Erro no motor de validade:", e); }
             
