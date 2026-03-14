@@ -188,6 +188,7 @@ export async function init() {
         if(document.getElementById('kpi-balance')) document.getElementById('kpi-balance').innerText = `R$ ${somaSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-dividas')) document.getElementById('kpi-dividas').innerText = `R$ ${somaDividasNegativas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-investimento')) document.getElementById('kpi-investimento').innerText = `R$ ${somaBonusTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if(document.getElementById('kpi-expiracao')) document.getElementById('kpi-expiracao').innerText = `R$ 0,00`; // Placeholder funcional
         
         const tbody = document.getElementById('analytics-table-body');
         tbody.innerHTML = "";
