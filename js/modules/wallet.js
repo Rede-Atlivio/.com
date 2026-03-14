@@ -88,30 +88,22 @@ function iniciarRegrasFinanceiras() {
  * 🛡️ TRAVA DE TRABALHO V12
  * Decide se o Radar fica AZUL ou VERMELHO
  */
-export function podeTrabalhar(custoEstimado = 0) { //- PONTO CRÍTICO SOLUÇÃO BÔNUS LINHAS ANTES 59 A 72 DEPOIS 59 A 73
-    const user = window.userProfile;
-    // 🛡️ TRAVA V2026 (VALIDADE REAL): Subtrai o saldo congelado antes de autorizar
-    const saldoReal = parseFloat(window.userProfile?.wallet_balance || 0);
-    const saldoBonus = parseFloat(window.userProfile?.wallet_bonus || 0);
-    
-    // O saldoTotal aqui já deve vir saneado pelo iniciarMonitoramentoCarteira 
-    // Mas garantimos a segurança absoluta pegando o que está na memória do Perfil Global
-    const saldoTotal = saldoReal + saldoBonus;
+export function podeTrabalhar(custoEstimado = 0) {
+    // 🛡️ SEGURANÇA V2026: Pega o saldo JÁ SANEADO da memória global
+    const sReal = parseFloat(window.userProfile?.wallet_balance || 0);
+    const sBonus = parseFloat(window.userProfile?.wallet_bonus || 0);
+    const saldoDisponivel = sReal + sBonus;
     
     const custo = parseFloat(custoEstimado || 0);
     const limite = parseFloat(window.CONFIG_FINANCEIRA?.limite || 0);
 
-    if (isNaN(saldoTotal) || isNaN(custo)) return false; 
-    
-    const saldoFinal = saldoTotal - custo;
+    console.log(`🛡️ [Trava] Validando: Disponível ${saldoDisponivel} | Custo: ${custo}`);
 
-    if (saldoFinal < limite) {
+    if (saldoDisponivel < (custo + limite)) {
         if(custo > 0) {
-            // ⚖️ Sincronia V65: Alerta direcionando para a recarga dos Créditos de Acesso
-             const saldoFmt = saldoTotal.toFixed(2).replace('.', ',');
-             // ⚖️ Sincronia V68: Alerta usando o nome literal do novo HTML
-             alert(`⛔ ATLIX INSUFICIENTES\n\nVocê tem ${saldoFmt} ATLIX. Adicione saldo em sua "Carteira de Recarga" para continuar.`);
-             if(window.switchTab) window.switchTab('ganhar');
+            const saldoFmt = saldoDisponivel.toFixed(2).replace('.', ',');
+            alert(`⛔ SALDO INSUFICIENTE (VALIDADE)\n\nSeu saldo válido é de ${saldoFmt} ATLIX.\n\nNote que saldos expirados ou congelados não podem ser usados para novas solicitações.`);
+            if(window.switchTab) window.switchTab('ganhar');
         }
         return false; 
     }
