@@ -12,21 +12,23 @@ localStorage.setItem('atlivio_version', '2026_V60');
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
         try {
-            // 🛰️ V67: REGISTRO UNIFICADO (FUSÃO ATLIVIO)
-            // Um único motor para Cache e Notificações, eliminando duplicidade e ícone "W".
-            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            console.log("📡 Antena Maestro: Sintonizada e Protegida (Cache + Push)");
+            // 1. Registro do Escudo (Cache e Offline)
+            const regSw = await navigator.serviceWorker.register('./sw.js');
+            console.log("🛡️ Escudo de Cache: Ativo");
 
-            // ✨ SISTEMA ANTI-LOOP V68: Vigia atualizações via Antena Unificada
-            regMsg.onupdatefound = () => {
-                const worker = regMsg.installing;
-                if (worker) {
-                    worker.onstatechange = () => {
-                        if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log("📥 Atlívio Atualizada: Novo motor detectado na Antena Maestro.");
-                        }
-                    };
-                }
+            // 2. Registro da Antena (O rádio que ouve o Google FCM)
+            // Sem esta linha, o Google dá o erro "Requested entity was not found"
+            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
+            console.log("📡 Antena de Notificações: Sintonizada");
+
+            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
+            regSw.onupdatefound = () => {
+                const worker = regSw.installing;
+                worker.onstatechange = () => {
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
+                    }
+                };
             };
         } catch (err) {
             console.error('❌ Falha Crítica no Motor PWA:', err);
