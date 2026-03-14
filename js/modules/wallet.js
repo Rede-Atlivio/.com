@@ -647,6 +647,60 @@ async function definirMetaDiaria() {
         }
     }
 }
+/**
+ * 🛰️ MOTOR DE RECEBIMENTO COM VALIDADE (V2026.B)
+ * Esta função deve ser usada por Missões e Recargas para injetar saldo com "prazo de validade".
+ */
+window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const valorNum = parseFloat(valor);
+    const mesesValidade = tipoOrigem === 'PIX' ? CONFIG_FINANCEIRA.validade_pix_meses : CONFIG_FINANCEIRA.validade_bonus_meses;
+    
+    // Calcula a data futura de expiração
+    const dataExpiracao = new Date();
+    dataExpiracao.setMonth(dataExpiracao.getMonth() + mesesValidade);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", uid);
+            const ledgerRef = doc(collection(db, "usuarios", uid, "ledger")); // Criando a nova subcoleção
+            
+            // 1. Atualiza o saldo principal no perfil
+            const campoAlvo = tipoOrigem === 'PIX' ? 'wallet_balance' : 'wallet_bonus';
+            transaction.update(userRef, {
+                [campoAlvo]: increment(valorNum),
+                updated_at: serverTimestamp()
+            });
+
+            // 2. Cria o Lote de Validade (A prova jurídica)
+            transaction.set(ledgerRef, {
+                valor: valorNum,
+                tipo: tipoOrigem, // 'PIX' ou 'BONUS'
+                status: 'ativo',
+                descricao: descricao,
+                created_at: serverTimestamp(),
+                expires_at: dataExpiracao,
+                meses_concedidos: mesesValidade
+            });
+
+            // 3. Registra no Extrato visual do usuário
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: valorNum,
+                tipo: tipoOrigem === 'PIX' ? '📈 RECARGA PIX' : '🎁 MISSÃO/BÔNUS',
+                descricao: descricao,
+                timestamp: serverTimestamp(),
+                data_expiracao: dataExpiracao
+            });
+        });
+        console.log(`✅ Lote de ${valorNum} (${tipoOrigem}) registrado. Expira em: ${dataExpiracao.toLocaleDateString()}`);
+    } catch (e) {
+        console.error("❌ Falha ao registrar lote com validade:", e);
+    }
+};
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
