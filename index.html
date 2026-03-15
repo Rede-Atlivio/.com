@@ -578,17 +578,18 @@
                 </div>
             </div>
 
-           <div class="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
+           <div class="grid grid-cols-3 gap-2 border-t border-white/5 pt-6">
                 <div>
-                    <p class="text-[8px] font-bold text-gray-400 uppercase mb-1">Saldo de Recargas</p>
-                    <p class="text-sm font-black text-white"><span id="user-balance-real">0,00</span> 🪙</p>
+                    <p class="text-[7px] font-bold text-gray-400 uppercase mb-1">Recargas</p>
+                    <p class="text-xs font-black text-white"><span id="user-balance-real">0,00</span> 🪙</p>
                 </div>
-               <div>
-                    <div class="flex items-center gap-1 mb-1">
-                        <p class="text-[8px] font-black text-amber-400 uppercase tracking-wider">Bônus Ganhos</p>
-                        <button onclick="alert('🎁 BÔNUS GANHOS:\n\nCréditos de presente concedidos pela Atlivio para você usar em serviços, compras e muito mais!')" class="text-[10px] text-amber-400 opacity-60">ⓘ</button>
-                    </div>
-                    <p class="text-sm font-black text-amber-400"><span id="user-balance-bonus">0,00</span> 🪙</p>
+                <div>
+                    <p class="text-[7px] font-black text-amber-400 uppercase mb-1">Bônus</p>
+                    <p class="text-xs font-black text-amber-400"><span id="user-balance-bonus">0,00</span> 🪙</p>
+                </div>
+                <div class="cursor-pointer" onclick="alert('❄️ SALDO CONGELADO:\n\nEste é o seu dinheiro real (PIX) que passou do prazo de validade.\n\nEle NÃO SUMIU, mas está bloqueado. Para resgatá-lo e voltar a usá-lo, basta realizar qualquer nova recarga na plataforma!')">
+                    <p class="text-[7px] font-black text-blue-400 uppercase mb-1 flex items-center gap-1">Congelado ❄️</p>
+                    <p class="text-xs font-black text-blue-400"><span id="user-balance-frozen">0,00</span> 🪙</p>
                 </div>
             </div>
         </div>
