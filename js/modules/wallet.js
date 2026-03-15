@@ -244,31 +244,28 @@ export function iniciarMonitoramentoCarteira() {
             const powerCalculado = sReal + sBonus;
 
           // 🚀 MAESTRO SENSORIAL V2026.3: Ressurreição de Saldo + Validade Silenciosa
+            // 🚀 MAESTRO SENSORIAL V2026.4: Inteligência Antiduplicidade (Proteção de Escala)
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-                const diferenca = sReal - window.ultimoSaldoConhecido; // Calcula quanto entrou de dinheiro novo
-                
-                if (diferenca >= 1.00) { // Só processa se for recarga (evita centavos de bônus)
-                    console.log(`🪙 [Sistema] Detectada nova carga. Verificando saldos congelados...`);
+                const diferenca = sReal - window.ultimoSaldoConhecido; // O quanto o saldo subiu agora
+                const frozenAtual = parseFloat(data.wallet_frozen || 0); // O quanto tem no freezer
+
+                // 🛡️ FILTRO PRO: Só cria lote se a subida NÃO for causada pelo resgate do Frozen
+                // Se a subida for igual ao valor do Frozen, o Maestro ignora para não criar lote fantasma.
+                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+                    console.log(`🪙 [Sistema] Nova recarga detectada (R$ ${diferenca}). Sincronizando...`);
                     
-                    const frozen = parseFloat(data.wallet_frozen || 0); // Olha se tem dinheiro no congelador
-                    
-                    if (frozen > 0) {
-                        // 🔥 GATILHO DE RESSURREIÇÃO: Puxa o dinheiro do Frozen de volta para o Balance (Saldo Ativo)
+                    if (frozenAtual > 0) {
+                        // ⚡ RESSURREIÇÃO: Traz o dinheiro do congelador para o bolso ativo
                         const fv = window.firebaseModules;
-                        const userRef = fv.doc(db, "usuarios", uid);
-                        
-                        await fv.updateDoc(userRef, {
-                            wallet_balance: fv.increment(frozen), // Soma o congelado ao saldo real
-                            wallet_frozen: 0, // Zera o cofre de congelados
-                            updated_at: fv.serverTimestamp() // Carimba o horário da operação
+                        await fv.updateDoc(fv.doc(db, "usuarios", uid), {
+                            wallet_balance: fv.increment(frozenAtual), // Soma o que estava preso
+                            wallet_frozen: 0, // Limpa o cofre frozen
+                            updated_at: fv.serverTimestamp()
                         });
-                        
-                        // Registra no extrato para o usuário ver que recuperou o dinheiro antigo
-                        window.registrarMovimentacao(frozen, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado com sucesso!");
-                        console.log(`✅ [Ressurreição] R$ ${frozen} voltaram ao saldo ativo.`);
+                        window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
                     }
 
-                    // Chama a função que apenas cria a data de validade (sem mexer no dinheiro de novo)
+                    // Registra a validade apenas para o valor NOVO que entrou via PIX
                     window.oficializarLoteExterno(diferenca, "Recarga Integrada");
                 }
             }
