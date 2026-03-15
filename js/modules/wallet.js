@@ -243,15 +243,16 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-          // 🚀 MAESTRO SENSORIAL V2026: Sincroniza recargas externas (InfinitePay) com o Sistema de Validade
+          // 🚀 MAESTRO SENSORIAL V2026.2: Oficializa validade sem gerar loop de saldo
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 
-                console.log(`🪙 [Maestro] Detectada entrada externa de R$ ${diferenca}. Oficializando validade...`);
-                
-                // 🛡️ CHAVE MESTRA: Chama a função que cria o lote no Ledger e resgata o saldo Frozen
-                // Sem mexer no Robô de PIX, o próprio App do usuário "cura" o saldo assim que detecta a entrada.
-                window.receberSaldoComValidade(diferenca, 'PIX', 'Recarga Automática (InfinitePay)');
+                // 🛡️ Filtro de ruído: Evita processar ganhos de trabalho como recarga PIX
+                // Geralmente recargas são valores redondos ou maiores que R$ 10,00
+                if (diferenca >= 1.00) {
+                   console.log(`🪙 [Maestro] Sincronizando Recarga de R$ ${diferenca.toFixed(2)}...`);
+                   window.oficializarLoteExterno(diferenca, "Recarga Automática (InfinitePay)");
+                }
             }
             // Guarda o saldo atual para a próxima comparação
             window.ultimoSaldoConhecido = sReal;
