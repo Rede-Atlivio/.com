@@ -135,25 +135,30 @@ export function iniciarMonitoramentoCarteira() {
         let saldoExpiradoBonus = 0;
         let tarefas = [];
 
+        let idsParaLimpar = [];
+
         ledgerSnap.forEach(loteDoc => {
             const lote = loteDoc.data();
-            // 🛡️ CRITÉRIO DE MORTE: Se o tempo atual passou do tempo de expiração
+            // Identifica o que está podre
             if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
-                if (lote.tipo === 'PIX') saldoExpiradoPix += Number(lote.valor || 0);
-                else saldoExpiradoBonus += Number(lote.valor || 0);
-
-                // Agenda a mudança de status do lote individualmente
-                tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
-                    status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
-                    saneado_at: fv.serverTimestamp() 
-                }));
+                idsParaLimpar.push({ id: loteDoc.id, valor: Number(lote.valor || 0), tipo: lote.tipo });
             }
         });
 
-        // ⚡ EXECUÇÃO ATÔMICA: Só mexe no saldo se houver lixo detectado
-        if (tarefas.length > 0) {
-            processandoSaneamento = true; 
-            console.error("🚨 VIGIA DE TEMPO: Detectou saldo vencido. Iniciando limpeza passiva...");
+        // 🔥 SEGUNDA TRAVA: Só prossegue se tiver algo E se ninguém pegou a chave no meio do caminho
+        if (idsParaLimpar.length > 0 && !processandoSaneamento) {
+            processandoSaneamento = true; // 🔒 FECHA A PORTA AGORA (Antes de montar as ordens)
+            console.error(`🚨 VIGIA DE TEMPO: Iniciando limpeza de ${idsParaLimpar.length} lote(s)...`);
+
+            idsParaLimpar.forEach(item => {
+                if (item.tipo === 'PIX') saldoExpiradoPix += item.valor;
+                else saldoExpiradoBonus += item.valor;
+
+                tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", item.id), { 
+                    status: item.tipo === 'PIX' ? 'congelado' : 'exterminado',
+                    saneado_at: fv.serverTimestamp() 
+                }));
+            });
 
            // 1. Ajusta os cofres principais
             tarefas.push(fv.updateDoc(ref, {
