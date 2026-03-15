@@ -786,15 +786,19 @@ async function definirMetaDiaria() {
     }
 }
 /**
- * 🛰️ OFICIALIZADOR DE CARGA EXTERNA (V2026.PRO)
- * Esta função cria o rastro no Ledger SILENCIOSAMENTE (sem duplicar extrato).
+ * 🛰️ OFICIALIZADOR DE CARGA (V2026.PRO - HÍBRIDO)
+ * Agora suporta PIX e BONUS, respeitando os meses de validade de cada um.
  */
-window.oficializarLoteExterno = async (valor, descricao) => {
+window.oficializarLoteExterno = async (valor, tipoCarga = "PIX", descCustom = "") => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
     const config = window.CONFIG_FINANCEIRA;
-    const meses = parseInt(config.validade_pix_meses || 12);
+    // Seleciona o prazo: se for BONUS usa a regra de 6 meses, se for PIX usa 12 meses (conforme seu Admin)
+    const meses = tipoCarga === "BONUS" 
+        ? parseInt(config.validade_bonus_meses || 6) 
+        : parseInt(config.validade_pix_meses || 12);
+    
     const dataBase = new Date();
     const dataExp = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
 
@@ -802,32 +806,30 @@ window.oficializarLoteExterno = async (valor, descricao) => {
         const fv = window.firebaseModules;
         const batch = fv.writeBatch(db);
         
-        // 1. Cria o Lote no Ledger (Obrigatório para o vigia de tempo)
+        // 1. Cria o Lote no Ledger (O papel que o Vigia de Tempo lê)
         const ledgerRef = fv.doc(fv.collection(db, "usuarios", uid, "ledger"));
         batch.set(ledgerRef, {
             valor: parseFloat(valor),
-            tipo: 'PIX',
+            tipo: tipoCarga, // 'PIX' ou 'BONUS'
             status: 'ativo',
-            descricao: "Recarga Sincronizada", 
+            descricao: descCustom || (tipoCarga === "PIX" ? "Recarga Sincronizada" : "Bônus Sincronizado"), 
             created_at: fv.serverTimestamp(),
-            expires_at: fv.Timestamp.fromDate(dataExp),
+            expires_at: fv.Timestamp.fromDate(dataExp), // Carimbo de morte do saldo
             meses_concedidos: meses
         });
 
-        // 2. Busca a última recarga no extrato para injetar a validade visualmente
+        // 2. Tenta injetar a validade no extrato visual para o usuário ver na tela
         const extratoRef = fv.collection(db, "extrato_financeiro");
         const q = fv.query(extratoRef, fv.where("uid", "==", uid), fv.orderBy("timestamp", "desc"), fv.limit(1));
         const snapExtrato = await fv.getDocs(q);
 
         if (!snapExtrato.empty) {
-            const docId = snapExtrato.docs[0].id;
-            const docRef = fv.doc(db, "extrato_financeiro", docId);
-            // Atualiza o registro que o Robô de PIX criou, adicionando a data de expiração
+            const docRef = fv.doc(db, "extrato_financeiro", snapExtrato.docs[0].id);
             batch.update(docRef, { data_expiracao: fv.Timestamp.fromDate(dataExp) });
         }
 
         await batch.commit();
-        console.log(`✅ [Sistema] Validade de ${meses} meses injetada no extrato e no Ledger.`);
+        console.log(`✅ [Ledger] Lote de ${tipoCarga} criado: R$ ${valor} com ${meses} meses de validade.`);
     } catch (e) { console.error("❌ Erro ao oficializar validade:", e); }
 };
 // ============================================================================
