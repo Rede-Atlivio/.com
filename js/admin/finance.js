@@ -281,22 +281,41 @@ window.executeAdjustment = async (uid) => {
         const db = window.db;
         
         await runTransaction(db, async (transaction) => {
+            // 📡 1. ÁREA DE LEITURA (READS FIRST)
             const userRef = doc(db, "usuarios", uid);
             const providerRef = doc(db, "active_providers", uid);
-           const userDoc = await transaction.get(userRef);
-            const provDoc = await transaction.get(providerRef);
+            const configRef = doc(db, "settings", "financeiro");
+
+            const [userDoc, provDoc, configSnap] = await Promise.all([
+                transaction.get(userRef),
+                transaction.get(providerRef),
+                transaction.get(configRef)
+            ]);
             
             if (!userDoc.exists()) throw "Usuário não encontrado!";
 
-            const field = document.getElementById('trans-target-field').value;
+            const configData = configSnap.exists() ? configSnap.data() : {};
             const userData = userDoc.data();
+            const field = document.getElementById('trans-target-field').value;
+            
+            // 🧪 2. ÁREA DE LÓGICA (CÁLCULOS)
             const currentVal = Number(userData[field] || 0);
             const newVal = currentVal + finalAmount;
-
             const novoReal = field === 'wallet_balance' ? newVal : Number(userData.wallet_balance || 0);
             const novoBonus = field === 'wallet_bonus' ? newVal : Number(userData.wallet_bonus || 0);
             const novoTotalPower = novoReal + novoBonus;
 
+            let dataExpiracao = null;
+            if (mode === 'credit') {
+                const meses = field === 'wallet_balance' 
+                    ? parseInt(configData.validade_pix_meses || 1) 
+                    : parseInt(configData.validade_bonus_meses || 3);
+
+                const dataBase = new Date();
+                dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
+            }
+
+            // ✍️ 3. ÁREA DE ESCRITA (WRITES LAST)
             transaction.update(userRef, { 
                 [field]: Number(newVal),
                 wallet_total_power: Number(novoTotalPower),
@@ -309,23 +328,6 @@ window.executeAdjustment = async (uid) => {
                     updated_at: serverTimestamp()
                 });
             }
-
-            // 🕒 V2026: Cálculo de Validade para Ajuste Manual
-            let dataExpiracao = null;
-            if (mode === 'credit') {
-                // 🛰️ BUSCA REGRAS NO ADMIN: O Admin precisa ler a própria configuração no banco
-                const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
-                const configData = configSnap.exists() ? configSnap.data() : {};
-                
-                // Mapeia os meses exatamente como você definiu no Firestore
-                const meses = field === 'wallet_balance' 
-                    ? parseInt(configData.validade_pix_meses || 1) 
-                    : parseInt(configData.validade_bonus_meses || 3);
-
-                const dataBase = new Date();
-                dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
-                
-                console.log(`⚖️ [Admin-Audit] Aplicando ${meses} mês(es). Expiração: ${dataExpiracao.toLocaleDateString()}`);
                 
                 // 🚀 GERAÇÃO DE LOTE (LEDGER): Cria o rastro para o Robô de Expiração
                 const ledgerRef = doc(collection(db, "usuarios", uid, "ledger"));
