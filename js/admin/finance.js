@@ -313,9 +313,19 @@ window.executeAdjustment = async (uid) => {
             // 🕒 V2026: Cálculo de Validade para Ajuste Manual
             let dataExpiracao = null;
             if (mode === 'credit') {
-                const meses = field === 'wallet_balance' ? (window.CONFIG_FINANCEIRA?.validade_pix_meses || 12) : (window.CONFIG_FINANCEIRA?.validade_bonus_meses || 6);
-                dataExpiracao = new Date();
-                dataExpiracao.setMonth(dataExpiracao.getMonth() + meses);
+                // 🛰️ BUSCA REGRAS NO ADMIN: O Admin precisa ler a própria configuração no banco
+                const configSnap = await transaction.get(doc(db, "settings", "financeiro"));
+                const configData = configSnap.exists() ? configSnap.data() : {};
+                
+                // Mapeia os meses exatamente como você definiu no Firestore
+                const meses = field === 'wallet_balance' 
+                    ? parseInt(configData.validade_pix_meses || 1) 
+                    : parseInt(configData.validade_bonus_meses || 3);
+
+                const dataBase = new Date();
+                dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
+                
+                console.log(`⚖️ [Admin-Audit] Aplicando ${meses} mês(es). Expiração: ${dataExpiracao.toLocaleDateString()}`);
                 
                 // 🚀 GERAÇÃO DE LOTE (LEDGER): Cria o rastro para o Robô de Expiração
                 const ledgerRef = doc(collection(db, "usuarios", uid, "ledger"));
