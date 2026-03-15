@@ -762,10 +762,22 @@ window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
                 const saldoCongelado = parseFloat(snapshot.data().wallet_frozen || 0);
                 
                 transaction.update(userRef, {
-                    wallet_balance: increment(valorNum + saldoCongelado), // Soma Recarga + Congelado
-                    wallet_frozen: 0, // Zera o congelador (Dinheiro voltou à vida)
+                    wallet_balance: increment(valorNum + saldoCongelado),
+                    wallet_frozen: 0,
                     updated_at: serverTimestamp()
                 });
+
+                // Se havia algo congelado, cria a linha de resgate no extrato
+                if (saldoCongelado > 0) {
+                    const resgateRef = doc(collection(db, "extrato_financeiro"));
+                    transaction.set(resgateRef, {
+                        uid: uid,
+                        valor: saldoCongelado,
+                        tipo: "🔥 SALDO RESGATADO",
+                        descricao: "Seu saldo congelado voltou para a carteira!",
+                        timestamp: serverTimestamp()
+                    });
+                }
             } else {
                 // Se for Bônus, apenas incrementa normalmente
                 transaction.update(userRef, {
