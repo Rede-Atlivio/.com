@@ -765,99 +765,8 @@ async function definirMetaDiaria() {
     }
 }
 /**
- * 🛰️ MOTOR DE RECEBIMENTO COM VALIDADE (V2026.B)
- * Esta função deve ser usada por Missões e Recargas para injetar saldo com "prazo de validade".
- */
-/**
- * 🛰️ MOTOR DE RECEBIMENTO COM VALIDADE (V2026.PRO)
- * Esta função agora é 100% escrava das configurações do Admin.
- */
-window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return;
-
-    const valorNum = parseFloat(valor);
-    
-    // 🎯 MIRA CORRIGIDA: Pega os meses direto da memória que os robôs validaram
-    const config = window.CONFIG_FINANCEIRA;
-    const mesesValidade = tipoOrigem === 'PIX' ? 
-        parseInt(config.validade_pix_meses || 12) : 
-        parseInt(config.validade_bonus_meses || 6);
-    
-    // 🕒 CÁLCULO DE VALIDADE V2026.PRO
-    // Forçamos a criação de uma nova data limpa para evitar resíduos de memória
-    const dataBase = new Date(); 
-    const mesesParaSomar = parseInt(mesesValidade || (tipoOrigem === 'PIX' ? 12 : 6));
-    
-    // Define a data de expiração somando os meses do Admin
-    const dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + mesesParaSomar, dataBase.getDate());
-
-    console.log(`📡 [Cálculo] Base: ${dataBase.toLocaleDateString()} + ${mesesParaSomar} meses = ${dataExpiracao.toLocaleDateString()}`);
-    try {
-        await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, "usuarios", uid);
-            const ledgerRef = doc(collection(db, "usuarios", uid, "ledger")); // Criando a nova subcoleção
-            
-            // 🛡️ MOTOR DE RESSURREIÇÃO: Se for PIX, recupera o saldo congelado automaticamente
-            if (tipoOrigem === 'PIX') {
-                const snapshot = await transaction.get(userRef);
-                const saldoCongelado = parseFloat(snapshot.data().wallet_frozen || 0);
-                
-                transaction.update(userRef, {
-                    wallet_balance: increment(valorNum + saldoCongelado),
-                    wallet_frozen: 0,
-                    updated_at: serverTimestamp()
-                });
-
-                // Se havia algo congelado, cria a linha de resgate no extrato
-                if (saldoCongelado > 0) {
-                    const resgateRef = doc(collection(db, "extrato_financeiro"));
-                    transaction.set(resgateRef, {
-                        uid: uid,
-                        valor: saldoCongelado,
-                        tipo: "🔥 SALDO RESGATADO",
-                        descricao: "Seu saldo congelado voltou para a carteira!",
-                        timestamp: serverTimestamp()
-                    });
-                }
-            } else {
-                // Se for Bônus, apenas incrementa normalmente
-                transaction.update(userRef, {
-                    wallet_bonus: increment(valorNum),
-                    updated_at: serverTimestamp()
-                });
-            }
-
-            // 2. Cria o Lote de Validade (A prova jurídica)
-            transaction.set(ledgerRef, {
-                valor: valorNum,
-                tipo: tipoOrigem, // 'PIX' ou 'BONUS'
-                status: 'ativo',
-                descricao: descricao,
-                created_at: serverTimestamp(),
-                expires_at: dataExpiracao,
-                meses_concedidos: mesesValidade
-            });
-
-            // 3. Registra no Extrato visual do usuário
-            const extratoRef = doc(collection(db, "extrato_financeiro"));
-            transaction.set(extratoRef, {
-                uid: uid,
-                valor: valorNum,
-                tipo: tipoOrigem === 'PIX' ? '📈 RECARGA PIX' : '🎁 MISSÃO/BÔNUS',
-                descricao: descricao,
-                timestamp: serverTimestamp(),
-                data_expiracao: dataExpiracao
-            });
-        });
-        console.log(`✅ Lote de ${valorNum} (${tipoOrigem}) registrado. Expira em: ${dataExpiracao.toLocaleDateString()}`);
-    } catch (e) {
-        console.error("❌ Falha ao registrar lote com validade:", e);
-    }
-};
-/**
- * 🛰️ OFICIALIZADOR DE CARGA EXTERNA (V2026)
- * Esta função cria o rastro no Ledger SEM mexer no saldo (evita loops).
+ * 🛰️ OFICIALIZADOR DE CARGA EXTERNA (V2026.PRO)
+ * Esta função cria o rastro no Ledger SILENCIOSAMENTE (sem duplicar extrato).
  */
 window.oficializarLoteExterno = async (valor, descricao) => {
     const uid = auth.currentUser?.uid;
@@ -870,35 +779,23 @@ window.oficializarLoteExterno = async (valor, descricao) => {
 
     try {
         const fv = window.firebaseModules;
-        const batch = fv.writeBatch(db);
-        
-        // 1. Cria o Lote no Ledger para o vigia de tempo ver
         const ledgerRef = fv.doc(fv.collection(db, "usuarios", uid, "ledger"));
-        batch.set(ledgerRef, {
+        
+        // REGISTRO TÉCNICO: Apenas para o vigia de tempo saber que esse dinheiro morre um dia.
+        await fv.setDoc(ledgerRef, {
             valor: parseFloat(valor),
             tipo: 'PIX',
             status: 'ativo',
-            descricao: descricao,
+            descricao: "Recarga Sincronizada", 
             created_at: fv.serverTimestamp(),
             expires_at: fv.Timestamp.fromDate(dataExp),
             meses_concedidos: meses
         });
 
-        // 2. Registra no Extrato visual APENAS como rastro (não altera saldo)
-        const extratoRef = fv.doc(fv.collection(db, "extrato_financeiro"));
-        batch.set(extratoRef, {
-            uid: uid,
-            valor: parseFloat(valor),
-            tipo: '📈 RECARGA PIX',
-            descricao: "Validada pelo Maestro",
-            timestamp: fv.serverTimestamp(),
-            data_expiracao: fv.Timestamp.fromDate(dataExp)
-        });
-
-        await batch.commit();
-        console.log(`✅ [Maestro] Lote de R$ ${valor} oficializado com sucesso.`);
-    } catch (e) { console.error("❌ Erro ao oficializar lote:", e); }
+        console.log(`✅ [Sistema] Validade de ${meses} meses aplicada ao novo lote.`);
+    } catch (e) { console.error("❌ Erro ao oficializar validade:", e); }
 };
+
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
