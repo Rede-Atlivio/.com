@@ -243,34 +243,40 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-          // 🚀 MAESTRO SENSORIAL V2026.3: Ressurreição de Saldo + Validade Silenciosa
-            // 🚀 MAESTRO SENSORIAL V2026.4: Inteligência Antiduplicidade (Proteção de Escala)
+         // 🚀 MAESTRO SENSORIAL V2026.5: Sensor Híbrido (Detecta PIX e BÔNUS)
+            // 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-                const diferenca = sReal - window.ultimoSaldoConhecido; // O quanto o saldo subiu agora
-                const frozenAtual = parseFloat(data.wallet_frozen || 0); // O quanto tem no freezer
+                const diferenca = sReal - window.ultimoSaldoConhecido;
+                const frozenAtual = parseFloat(data.wallet_frozen || 0);
 
-                // 🛡️ FILTRO PRO: Só cria lote se a subida NÃO for causada pelo resgate do Frozen
-                // Se a subida for igual ao valor do Frozen, o Maestro ignora para não criar lote fantasma.
+                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
                 if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
-                    console.log(`🪙 [Sistema] Nova recarga detectada (R$ ${diferenca}). Sincronizando...`);
-                    
                     if (frozenAtual > 0) {
-                        // ⚡ RESSURREIÇÃO: Traz o dinheiro do congelador para o bolso ativo
                         const fv = window.firebaseModules;
                         await fv.updateDoc(fv.doc(db, "usuarios", uid), {
-                            wallet_balance: fv.increment(frozenAtual), // Soma o que estava preso
-                            wallet_frozen: 0, // Limpa o cofre frozen
+                            wallet_balance: fv.increment(frozenAtual),
+                            wallet_frozen: 0,
                             updated_at: fv.serverTimestamp()
                         });
                         window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
                     }
-
-                    // Registra a validade apenas para o valor NOVO que entrou via PIX
-                    window.oficializarLoteExterno(diferenca, "Recarga Integrada");
+                    window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
                 }
             }
-            // Guarda o saldo atual para a próxima comparação
+
+            // 2. SENSOR DE BÔNUS (Novo: Detecta se o Admin ou Boas-vindas deu dinheiro)
+            if (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido) {
+                const difBonus = sBonus - window.ultimoSaldoBonusConhecido;
+                if (difBonus >= 0.01) {
+                    console.log(`🎁 [Maestro] Bônus detectado (R$ ${difBonus}). Carimbando Ledger...`);
+                    // Chama a mesma função oficializadora, mas avisando que o tipo é BONUS
+                    window.oficializarLoteExterno(difBonus, "BONUS", "Bônus ou Premiação");
+                }
+            }
+
+            // Atualiza as memórias de comparação para a próxima mudança de saldo
             window.ultimoSaldoConhecido = sReal;
+            window.ultimoSaldoBonusConhecido = sBonus;
 
             // Alinha o perfil global (Essencial para milhões de usuários)
             window.userProfile = window.userProfile || {};
