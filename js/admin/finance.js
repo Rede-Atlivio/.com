@@ -265,6 +265,9 @@ window.setTransactionMode = (mode) => {
 // ============================================================================
 // 🚨 FUNÇÃO DE AJUSTE FINANCEIRO (VERSÃO V3.0 - COMPATÍVEL COM CARTEIRA)
 // ============================================================================
+// ============================================================================
+// 🚨 FUNÇÃO DE AJUSTE FINANCEIRO (VERSÃO V3.1 - BLINDAGEM DE SINTAXE)
+// ============================================================================
 window.executeAdjustment = async (uid) => {
     const amount = parseFloat(document.getElementById('trans-amount').value);
     const desc = document.getElementById('trans-desc').value;
@@ -281,7 +284,7 @@ window.executeAdjustment = async (uid) => {
         const db = window.db;
         
         await runTransaction(db, async (transaction) => {
-            // 📡 1. ÁREA DE LEITURA (READS FIRST)
+            // 📡 1. LEITURA (Sempre no topo da transação)
             const userRef = doc(db, "usuarios", uid);
             const providerRef = doc(db, "active_providers", uid);
             const configRef = doc(db, "settings", "financeiro");
@@ -298,7 +301,7 @@ window.executeAdjustment = async (uid) => {
             const userData = userDoc.data();
             const field = document.getElementById('trans-target-field').value;
             
-            // 🧪 2. ÁREA DE LÓGICA (CÁLCULOS)
+            // 🧪 2. LÓGICA (Cálculo do novo saldo e datas)
             const currentVal = Number(userData[field] || 0);
             const newVal = currentVal + finalAmount;
             const novoReal = field === 'wallet_balance' ? newVal : Number(userData.wallet_balance || 0);
@@ -307,6 +310,7 @@ window.executeAdjustment = async (uid) => {
 
             let dataExpiracao = null;
             if (mode === 'credit') {
+                // Pega meses do Admin ou usa 1 (PIX) / 3 (Bônus) como padrão
                 const meses = field === 'wallet_balance' 
                     ? parseInt(configData.validade_pix_meses || 1) 
                     : parseInt(configData.validade_bonus_meses || 3);
@@ -315,21 +319,24 @@ window.executeAdjustment = async (uid) => {
                 dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
             }
 
-            // ✍️ 3. ÁREA DE ESCRITA (WRITES LAST)
+            // ✍️ 3. ESCRITA (Sempre ao final da transação)
+            // Atualiza Perfil Principal
             transaction.update(userRef, { 
                 [field]: Number(newVal),
                 wallet_total_power: Number(novoTotalPower),
                 updated_at: serverTimestamp()
             });
 
+            // Sincroniza com o Radar se o usuário for um prestador ativo
             if (provDoc.exists()) {
                 transaction.update(providerRef, { 
                     balance: Number(novoReal),
                     updated_at: serverTimestamp()
                 });
             }
-                
-                // 🚀 GERAÇÃO DE LOTE (LEDGER): Cria o rastro para o Robô de Expiração
+
+            // Se for Crédito, cria o Lote de Validade (Ledger) para o vigia de tempo
+            if (mode === 'credit') {
                 const ledgerRef = doc(collection(db, "usuarios", uid, "ledger"));
                 transaction.set(ledgerRef, {
                     valor: Number(amount),
@@ -341,24 +348,25 @@ window.executeAdjustment = async (uid) => {
                 });
             }
 
-            const extratoRef = doc(collection(db, "extrato_financeiro"));
-           // ⚖️ Correção V63.6: Garante que débitos gravem o sinal de negativo (-) no banco
+            // Registra a linha no Extrato Financeiro visual
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: uid,
-                valor: Number(finalAmount), // FINALAMOUNT já carrega o sinal correto (+ ou -)
+                valor: Number(finalAmount),
                 tipo: mode === 'credit' ? 'CRÉDITO 📈' : 'DÉBITO 📉',
                 descricao: desc,
                 timestamp: serverTimestamp(),
-                data_expiracao: dataExpiracao // Registra a data para o usuário ver no App
-            });
-           });
-    
+                data_expiracao: dataExpiracao
+            });
+        });
+
         alert("✅ Saldo sincronizado em todas as bases!");
         document.getElementById('modal-editor').classList.add('hidden');
         if(window.loadFinanceData) window.loadFinanceData();
 
     } catch (e) {
         alert("Erro na sincronia: " + e.message);
+        console.error("Erro completo:", e);
     }
 };
 // ============================================================================
