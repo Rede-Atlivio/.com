@@ -150,10 +150,23 @@ export function iniciarMonitoramentoCarteira() {
             processandoSaneamento = true; // 🔒 FECHA A PORTA AGORA (Antes de montar as ordens)
             console.error(`🚨 VIGIA DE TEMPO: Iniciando limpeza de ${idsParaLimpar.length} lote(s)...`);
 
-            idsParaLimpar.forEach(item => {
-                if (item.tipo === 'PIX') saldoExpiradoPix += item.valor;
-                else saldoExpiradoBonus += item.valor;
+            // 🛡️ SEGURANÇA V2026: Pega o saldo atual do usuário antes de calcular a poda
+            const saldoRealAtual = parseFloat(window.userProfile?.wallet_balance || 0);
+            const saldoBonusAtual = parseFloat(window.userProfile?.wallet_bonus || 0);
 
+            idsParaLimpar.forEach(item => {
+                if (item.tipo === 'PIX') {
+                    // Só soma para expirar se o usuário ainda tiver saldo real
+                    // Se o saldo já for 0, ele limpa o lote mas não subtrai mais
+                    const valorADeduzir = Math.min(item.valor, Math.max(0, saldoRealAtual - saldoExpiradoPix));
+                    saldoExpiradoPix += valorADeduzir;
+                } else {
+                    // Mesma lógica para o bônus
+                    const valorADeduzirBonus = Math.min(item.valor, Math.max(0, saldoBonusAtual - saldoExpiradoBonus));
+                    saldoExpiradoBonus += valorADeduzirBonus;
+                }
+
+                // 💀 INDEPENDENTE DO SALDO: O lote deve ser marcado como morto para não processar de novo
                 tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", item.id), { 
                     status: item.tipo === 'PIX' ? 'congelado' : 'exterminado',
                     saneado_at: fv.serverTimestamp() 
