@@ -66,13 +66,14 @@ function iniciarRegrasFinanceiras() {
 
             // 🧠 SINCRONIZAÇÃO MAESTRO: Captura os novos campos de segurança do Admin
            // Captura regras de validade vindas do Admin ou assume o padrão seguro
+           // 🧠 SINCRONIA MESTRE: Mapeia os nomes exatamente como estão no Firestore Admin
             const novasRegras = {
-                taxa: taxaBruta,
-                limite: parseFloat(data.limite_divida || 0),
-                limite_recarga_v1: parseFloat(data.limite_recarga_v1 || 500),
-                validade_pix: parseInt(data.validade_pix_meses || 12),
-                validade_bonus: parseInt(data.validade_bonus_meses || 6)
-            };
+                taxa: taxaBruta,
+                limite: parseFloat(data.limite_divida || 0),
+                limite_recarga_v1: parseFloat(data.limite_recarga_v1 || 500),
+                validade_pix_meses: parseInt(data.validade_pix_meses || 12), // Nome corrigido
+                validade_bonus_meses: parseInt(data.validade_bonus_meses || 6) // Nome corrigido
+            };
             
             // 🛰️ Sincronia V2026: Garante que o objeto global receba todas as novas chaves de validade
             window.CONFIG_FINANCEIRA = { ...window.CONFIG_FINANCEIRA, ...novasRegras };
