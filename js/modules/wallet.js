@@ -243,12 +243,16 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-          // 🚀 MAESTRO SENSORIAL: Detecta aumento de saldo (PIX ou Ganhos)
-            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-                console.log("🪙 MOVIMENTAÇÃO POSITIVA: Atualizando interfaces e silenciando avisos duplicados.");
-                // Aqui não disparamos 'mostrarBarraNotificacao' manualmente porque o Robô de PIX (Cloud Run) já vai fazer isso via Maestro. 
-                // Evitamos que o usuário receba duas mensagens iguais ao mesmo tempo.
-            }
+          // 🚀 MAESTRO SENSORIAL V2026: Sincroniza recargas externas (InfinitePay) com o Sistema de Validade
+            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
+                const diferenca = sReal - window.ultimoSaldoConhecido;
+                
+                console.log(`🪙 [Maestro] Detectada entrada externa de R$ ${diferenca}. Oficializando validade...`);
+                
+                // 🛡️ CHAVE MESTRA: Chama a função que cria o lote no Ledger e resgata o saldo Frozen
+                // Sem mexer no Robô de PIX, o próprio App do usuário "cura" o saldo assim que detecta a entrada.
+                window.receberSaldoComValidade(diferenca, 'PIX', 'Recarga Automática (InfinitePay)');
+            }
             // Guarda o saldo atual para a próxima comparação
             window.ultimoSaldoConhecido = sReal;
 
