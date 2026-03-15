@@ -78,9 +78,12 @@ function iniciarRegrasFinanceiras() {
             // 🛰️ Sincronia V2026: Garante que o objeto global receba todas as novas chaves de validade
             window.CONFIG_FINANCEIRA = { ...window.CONFIG_FINANCEIRA, ...novasRegras };
             // 🔄 ATUALIZAÇÃO SÍNCRONA: Garante que todo o App saiba do novo limite sem precisar de F5
+            // 🔄 ATUALIZAÇÃO SÍNCRONA: Sobrescreve os placeholders iniciais com a vontade do Admin
             CONFIG_FINANCEIRA.taxa = novasRegras.taxa;
             CONFIG_FINANCEIRA.limite = novasRegras.limite;
             CONFIG_FINANCEIRA.limite_recarga_v1 = novasRegras.limite_recarga_v1;
+            CONFIG_FINANCEIRA.validade_pix_meses = novasRegras.validade_pix_meses;
+            CONFIG_FINANCEIRA.validade_bonus_meses = novasRegras.validade_bonus_meses;
             
             console.log(`%c 🎯 SINCRONIA ATIVA: Taxa lida como ${(novasRegras.taxa * 100).toFixed(0)}%`, "color: #059669; font-weight: bold;");
         }
