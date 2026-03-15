@@ -127,8 +127,9 @@ export function iniciarMonitoramentoCarteira() {
     const qLedger = fv.query(fv.collection(db, "usuarios", uid, "ledger"), fv.where("status", "==", "ativo"));
 
     unsubscribeLedger = fv.onSnapshot(qLedger, async (ledgerSnap) => {
-        if (processandoSaneamento) return; // 🔒 Trava de segurança contra loop
-
+        // 🔒 BLOQUEIO IMEDIATO: Se já houver um faxineiro na sala, ignora totalmente este disparo
+        if (processandoSaneamento) return; 
+        
         const agora = fv.Timestamp.now();
         let saldoExpiradoPix = 0;
         let saldoExpiradoBonus = 0;
