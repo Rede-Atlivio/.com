@@ -154,12 +154,39 @@ export function iniciarMonitoramentoCarteira() {
             processandoSaneamento = true; 
             console.error("🚨 VIGIA DE TEMPO: Detectou saldo vencido. Iniciando limpeza passiva...");
 
+           // 1. Ajusta os cofres principais
             tarefas.push(fv.updateDoc(ref, {
                 wallet_balance: fv.increment(-saldoExpiradoPix),
                 wallet_bonus: fv.increment(-saldoExpiradoBonus),
                 wallet_frozen: fv.increment(saldoExpiradoPix),
                 updated_at: fv.serverTimestamp()
             }));
+
+            // 2. 📝 REGISTRO NO EXTRATO: Cria a linha visual para o usuário não achar que sumiu
+            const extratoRef = fv.doc(fv.collection(db, "extrato_financeiro"));
+            
+            // Se expirou PIX, avisa que foi CONGELADO
+            if (saldoExpiradoPix > 0) {
+                tarefas.push(fv.setDoc(extratoRef, {
+                    uid: uid,
+                    valor: -saldoExpiradoPix,
+                    tipo: "❄️ SALDO CONGELADO",
+                    descricao: "Prazo de validade expirado (Pode ser recuperado)",
+                    timestamp: fv.serverTimestamp()
+                }));
+            }
+
+            // Se expirou BÔNUS, avisa que foi EXTERMINADO
+            if (saldoExpiradoBonus > 0) {
+                const extratoBonusRef = fv.doc(fv.collection(db, "extrato_financeiro"));
+                tarefas.push(fv.setDoc(extratoBonusRef, {
+                    uid: uid,
+                    valor: -saldoExpiradoBonus,
+                    tipo: "💀 BÔNUS EXPIRADO",
+                    descricao: "Prazo de utilização encerrado",
+                    timestamp: fv.serverTimestamp()
+                }));
+            }
 
             try {
                 await Promise.all(tarefas);
