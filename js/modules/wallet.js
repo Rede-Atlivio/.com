@@ -779,10 +779,15 @@ window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
         parseInt(config.validade_pix_meses || 12) : 
         parseInt(config.validade_bonus_meses || 6);
     
-    // Calcula a data futura de expiração
-    const dataExpiracao = new Date();
-    dataExpiracao.setMonth(dataExpiracao.getMonth() + mesesValidade);
+    // 🕒 CÁLCULO DE VALIDADE V2026.PRO
+    // Forçamos a criação de uma nova data limpa para evitar resíduos de memória
+    const dataBase = new Date(); 
+    const mesesParaSomar = parseInt(mesesValidade || (tipoOrigem === 'PIX' ? 12 : 6));
+    
+    // Define a data de expiração somando os meses do Admin
+    const dataExpiracao = new Date(dataBase.getFullYear(), dataBase.getMonth() + mesesParaSomar, dataBase.getDate());
 
+    console.log(`📡 [Cálculo] Base: ${dataBase.toLocaleDateString()} + ${mesesParaSomar} meses = ${dataExpiracao.toLocaleDateString()}`);
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
