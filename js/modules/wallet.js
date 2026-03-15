@@ -266,14 +266,15 @@ function atualizarInterfaceCarteira(saldoTotal) {
     const elTotal = document.getElementById('user-balance'); 
     const elReal = document.getElementById('user-balance-real');
     const elBonus = document.getElementById('user-balance-bonus');
+    const elFrozen = document.getElementById('user-balance-frozen'); // Novo campo visual
     const elReserved = document.getElementById('user-reserved'); 
     const elEarnings = document.getElementById('user-earnings'); 
     
     const sReal = parseFloat(window.userProfile?.wallet_balance || 0);
     const sBonus = parseFloat(window.userProfile?.wallet_bonus || 0);
+    const sFrozen = parseFloat(window.userProfile?.wallet_frozen || 0);
     const reserved = parseFloat(window.userProfile?.wallet_reserved || 0);
     const earnings = parseFloat(window.userProfile?.wallet_earnings || 0);
-
     if (elTotal) {
         elTotal.innerText = saldoTotal.toFixed(2).replace('.', ',');
     }
