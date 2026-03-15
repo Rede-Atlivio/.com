@@ -1,5 +1,5 @@
 import { db, auth } from '../config.js';
-import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, runTransaction, collection, serverTimestamp, getDoc, increment, addDoc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🎨 SKIN PREMIUM V64: Injeta o brilho dourado nas moedas ATLIX
 const styleGold = document.createElement('style');
