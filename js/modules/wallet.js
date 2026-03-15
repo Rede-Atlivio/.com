@@ -797,10 +797,11 @@ window.oficializarLoteExterno = async (valor, descricao) => {
 
     try {
         const fv = window.firebaseModules;
-        const ledgerRef = fv.doc(fv.collection(db, "usuarios", uid, "ledger"));
+        const batch = fv.writeBatch(db);
         
-        // REGISTRO TÉCNICO: Apenas para o vigia de tempo saber que esse dinheiro morre um dia.
-        await fv.setDoc(ledgerRef, {
+        // 1. Cria o Lote no Ledger (Obrigatório para o vigia de tempo)
+        const ledgerRef = fv.doc(fv.collection(db, "usuarios", uid, "ledger"));
+        batch.set(ledgerRef, {
             valor: parseFloat(valor),
             tipo: 'PIX',
             status: 'ativo',
@@ -810,10 +811,22 @@ window.oficializarLoteExterno = async (valor, descricao) => {
             meses_concedidos: meses
         });
 
-        console.log(`✅ [Sistema] Validade de ${meses} meses aplicada ao novo lote.`);
+        // 2. Busca a última recarga no extrato para injetar a validade visualmente
+        const extratoRef = fv.collection(db, "extrato_financeiro");
+        const q = fv.query(extratoRef, fv.where("uid", "==", uid), fv.orderBy("timestamp", "desc"), fv.limit(1));
+        const snapExtrato = await fv.getDocs(q);
+
+        if (!snapExtrato.empty) {
+            const docId = snapExtrato.docs[0].id;
+            const docRef = fv.doc(db, "extrato_financeiro", docId);
+            // Atualiza o registro que o Robô de PIX criou, adicionando a data de expiração
+            batch.update(docRef, { data_expiracao: fv.Timestamp.fromDate(dataExp) });
+        }
+
+        await batch.commit();
+        console.log(`✅ [Sistema] Validade de ${meses} meses injetada no extrato e no Ledger.`);
     } catch (e) { console.error("❌ Erro ao oficializar validade:", e); }
 };
-
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
