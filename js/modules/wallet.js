@@ -129,70 +129,7 @@ export function iniciarMonitoramentoCarteira() {
         if (docSnap.exists()) {
             let data = docSnap.data();
             
-            // 🕒 MOTOR DE SANEAMENTO V2026: Verifica se existem lotes vencidos no Ledger
-            try {
-                const { collection, getDocs, query, where, Timestamp } = window.firebaseModules;
-                const agora = Timestamp.now();
-               // 🛰️ BUSCA GLOBAL: Pega todos os lotes do usuário para validar o tempo
-                // 🛰️ BUSCA SEGURA: Pega apenas lotes que ainda constam como 'ativo' no banco
-               // 🛰️ BUSCA SEGURA: Usa os módulos do bridge global sem redeclarar
-                const fv = window.firebaseModules;
-                const ledgerSnap = await fv.getDocs(fv.query(fv.collection(db, "usuarios", uid, "ledger"), fv.where("status", "==", "ativo")));
-                
-                let saldoExpiradoPix = 0;
-                let saldoExpiradoBonus = 0;
-
-                ledgerSnap.forEach(loteDoc => {
-                    const lote = loteDoc.data();
-                    if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
-                        // O lote venceu! 
-                        if (lote.tipo === 'PIX') saldoExpiradoPix += Number(lote.valor || 0);
-                        else saldoExpiradoBonus += Number(lote.valor || 0);
-                    }
-                });
-
-                
-               // 🔥 MOTOR DE SANEAMENTO ATÔMICO V2026.PRO (BLOQUEIO DE LOOP ATIVO)
-                if ((saldoExpiradoPix > 0 || saldoExpiradoBonus > 0) && !processandoSaneamento) {
-                    processandoSaneamento = true; // 🔒 FECHA O SEMÁFORO: Impede execuções simultâneas
-                    console.error("🚨 SANEAMENTO: Iniciando faxina única...");
-
-                    const tarefas = [];
-                    let idsProcessados = []; // 🛡️ LISTA DE SEGURANÇA: Evita processar o mesmo ID duas vezes
-
-                    ledgerSnap.forEach(loteDoc => {
-                        const lote = loteDoc.data();
-                        if (lote.expires_at && lote.expires_at.seconds < agora.seconds && !idsProcessados.includes(loteDoc.id)) {
-                            idsProcessados.push(loteDoc.id);
-                            tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
-                                status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
-                                saneado_at: fv.serverTimestamp() 
-                            }));
-                        }
-                    });
-
-                    if (tarefas.length > 0) {
-                        tarefas.push(fv.updateDoc(ref, {
-                            wallet_balance: fv.increment(-saldoExpiradoPix),
-                            wallet_bonus: fv.increment(-saldoExpiradoBonus),
-                            wallet_frozen: fv.increment(saldoExpiradoPix),
-                            updated_at: fv.serverTimestamp()
-                        }));
-
-                        try {
-                            await Promise.all(tarefas); // EXECUÇÃO ATÔMICA
-                            console.log("✅ BANCO HIGIENIZADO.");
-                        } catch (err) {
-                            console.error("❌ Erro ao sanear:", err);
-                        } finally {
-                            processandoSaneamento = false; // 🟢 ABRE O SEMÁFORO
-                        }
-                    } else {
-                        processandoSaneamento = false;
-                    }
-                    return; 
-                }
-            } catch (e) { console.error("Erro no motor de validade:", e); }
+            // 🛡️ INTERFACE V2026: O saneamento agora é gerido pelo 'unsubscribeLedger' de forma independente
             
             //PONTO CRÍTICO SOLUÇÃO BÔNUS - LINHAS ANTES 101 A 115 DEPOIS 102 A 118
             // 💰 ESTRUTURA HÍBRIDA: Separação de Real e Bônus
