@@ -118,7 +118,59 @@ export function iniciarMonitoramentoCarteira() {
     if (!auth || !auth.currentUser) return; 
     
     const uid = auth.currentUser.uid;
+    //MONITOR EM TEMPO REAL PARA CONFERIR VALIDADE DE SALDOS
     if (unsubscribeWallet) unsubscribeWallet();
+    if (unsubscribeLedger) unsubscribeLedger(); // Limpa escuta anterior para evitar vazamento de memória
+
+    const fv = window.firebaseModules;
+    // 🛰️ VIGIA DE TEMPO: Monitora apenas lotes ATIVOS. Se um deles mudar (vencer), o gatilho dispara.
+    const qLedger = fv.query(fv.collection(db, "usuarios", uid, "ledger"), fv.where("status", "==", "ativo"));
+
+    unsubscribeLedger = fv.onSnapshot(qLedger, async (ledgerSnap) => {
+        if (processandoSaneamento) return; // 🔒 Trava de segurança contra loop
+
+        const agora = fv.Timestamp.now();
+        let saldoExpiradoPix = 0;
+        let saldoExpiradoBonus = 0;
+        let tarefas = [];
+
+        ledgerSnap.forEach(loteDoc => {
+            const lote = loteDoc.data();
+            // 🛡️ CRITÉRIO DE MORTE: Se o tempo atual passou do tempo de expiração
+            if (lote.expires_at && lote.expires_at.seconds < agora.seconds) {
+                if (lote.tipo === 'PIX') saldoExpiradoPix += Number(lote.valor || 0);
+                else saldoExpiradoBonus += Number(lote.valor || 0);
+
+                // Agenda a mudança de status do lote individualmente
+                tarefas.push(fv.updateDoc(fv.doc(db, "usuarios", uid, "ledger", loteDoc.id), { 
+                    status: lote.tipo === 'PIX' ? 'congelado' : 'exterminado',
+                    saneado_at: fv.serverTimestamp() 
+                }));
+            }
+        });
+
+        // ⚡ EXECUÇÃO ATÔMICA: Só mexe no saldo se houver lixo detectado
+        if (tarefas.length > 0) {
+            processandoSaneamento = true; 
+            console.error("🚨 VIGIA DE TEMPO: Detectou saldo vencido. Iniciando limpeza passiva...");
+
+            tarefas.push(fv.updateDoc(ref, {
+                wallet_balance: fv.increment(-saldoExpiradoPix),
+                wallet_bonus: fv.increment(-saldoExpiradoBonus),
+                wallet_frozen: fv.increment(saldoExpiradoPix),
+                updated_at: fv.serverTimestamp()
+            }));
+
+            try {
+                await Promise.all(tarefas);
+                console.log("✅ VIGIA DE TEMPO: Banco saneado com sucesso.");
+            } catch (err) {
+                console.error("❌ Erro no saneamento passivo:", err);
+            } finally {
+                processandoSaneamento = false; // Destranca a porta
+            }
+        }
+    });
 
     // 🛡️ FONTE DE VERDADE: Documento do USUÁRIO
     const ref = doc(db, "usuarios", uid);
