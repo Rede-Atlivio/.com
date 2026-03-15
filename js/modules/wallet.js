@@ -279,9 +279,10 @@ function atualizarInterfaceCarteira(saldoTotal) {
         elTotal.innerText = saldoTotal.toFixed(2).replace('.', ',');
     }
     //PONTO CRÍTICO: COBRANÇA UNIVERSAL ATIVADA "TODAS AS ABAS" LINHAS: 144 A 205
-    // 🪙 V124: Atualiza o Saldo Real, os Bônus Ganhos (Antiga Reserva) e o Saldo em Custódia
+    // 🪙 V124: Atualiza os 4 cofres: Real, Bônus, Congelado e Reserva
     if (elReal) elReal.innerText = sReal.toFixed(2).replace('.', ',');
     if (elBonus) elBonus.innerText = sBonus.toFixed(2).replace('.', ',');
+    if (elFrozen) elFrozen.innerText = sFrozen.toFixed(2).replace('.', ',');
     if (elReserved) elReserved.innerText = reserved.toFixed(2).replace('.', ',');
     
     // Inicia com "Hoje" se for a primeira carga
