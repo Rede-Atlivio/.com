@@ -854,6 +854,50 @@ window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
         console.error("❌ Falha ao registrar lote com validade:", e);
     }
 };
+/**
+ * 🛰️ OFICIALIZADOR DE CARGA EXTERNA (V2026)
+ * Esta função cria o rastro no Ledger SEM mexer no saldo (evita loops).
+ */
+window.oficializarLoteExterno = async (valor, descricao) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    const config = window.CONFIG_FINANCEIRA;
+    const meses = parseInt(config.validade_pix_meses || 12);
+    const dataBase = new Date();
+    const dataExp = new Date(dataBase.getFullYear(), dataBase.getMonth() + meses, dataBase.getDate());
+
+    try {
+        const fv = window.firebaseModules;
+        const batch = fv.writeBatch(db);
+        
+        // 1. Cria o Lote no Ledger para o vigia de tempo ver
+        const ledgerRef = fv.doc(fv.collection(db, "usuarios", uid, "ledger"));
+        batch.set(ledgerRef, {
+            valor: parseFloat(valor),
+            tipo: 'PIX',
+            status: 'ativo',
+            descricao: descricao,
+            created_at: fv.serverTimestamp(),
+            expires_at: fv.Timestamp.fromDate(dataExp),
+            meses_concedidos: meses
+        });
+
+        // 2. Registra no Extrato visual APENAS como rastro (não altera saldo)
+        const extratoRef = fv.doc(fv.collection(db, "extrato_financeiro"));
+        batch.set(extratoRef, {
+            uid: uid,
+            valor: parseFloat(valor),
+            tipo: '📈 RECARGA PIX',
+            descricao: "Validada pelo Maestro",
+            timestamp: fv.serverTimestamp(),
+            data_expiracao: fv.Timestamp.fromDate(dataExp)
+        });
+
+        await batch.commit();
+        console.log(`✅ [Maestro] Lote de R$ ${valor} oficializado com sucesso.`);
+    } catch (e) { console.error("❌ Erro ao oficializar lote:", e); }
+};
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
