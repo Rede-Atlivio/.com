@@ -218,7 +218,9 @@ export function iniciarMonitoramentoCarteira() {
             window.userProfile.wallet_balance = sReal;
             window.userProfile.wallet_bonus = sBonus;
             window.userProfile.wallet_total_power = powerCalculado;
+            // ❄️ Sincroniza o saldo congelado na memória global do App
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
+            window.userProfile.wallet_frozen = parseFloat(data.wallet_frozen || 0); 
             window.userProfile.wallet_earnings = sEarnings;
             
             const saldoExibicao = powerCalculado;
