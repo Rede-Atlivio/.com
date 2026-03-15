@@ -351,7 +351,8 @@ window.executeAdjustment = async (uid) => {
                 timestamp: serverTimestamp(),
                 data_expiracao: dataExpiracao // Registra a data para o usuário ver no App
             });
-
+           });
+    
         alert("✅ Saldo sincronizado em todas as bases!");
         document.getElementById('modal-editor').classList.add('hidden');
         if(window.loadFinanceData) window.loadFinanceData();
