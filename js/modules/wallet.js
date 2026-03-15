@@ -763,12 +763,21 @@ async function definirMetaDiaria() {
  * 🛰️ MOTOR DE RECEBIMENTO COM VALIDADE (V2026.B)
  * Esta função deve ser usada por Missões e Recargas para injetar saldo com "prazo de validade".
  */
+/**
+ * 🛰️ MOTOR DE RECEBIMENTO COM VALIDADE (V2026.PRO)
+ * Esta função agora é 100% escrava das configurações do Admin.
+ */
 window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
     const valorNum = parseFloat(valor);
-    const mesesValidade = tipoOrigem === 'PIX' ? CONFIG_FINANCEIRA.validade_pix_meses : CONFIG_FINANCEIRA.validade_bonus_meses;
+    
+    // 🎯 MIRA CORRIGIDA: Pega os meses direto da memória que os robôs validaram
+    const config = window.CONFIG_FINANCEIRA;
+    const mesesValidade = tipoOrigem === 'PIX' ? 
+        parseInt(config.validade_pix_meses || 12) : 
+        parseInt(config.validade_bonus_meses || 6);
     
     // Calcula a data futura de expiração
     const dataExpiracao = new Date();
