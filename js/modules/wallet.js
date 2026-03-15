@@ -739,12 +739,23 @@ window.receberSaldoComValidade = async (valor, tipoOrigem, descricao) => {
             const userRef = doc(db, "usuarios", uid);
             const ledgerRef = doc(collection(db, "usuarios", uid, "ledger")); // Criando a nova subcoleção
             
-            // 1. Atualiza o saldo principal no perfil
-            const campoAlvo = tipoOrigem === 'PIX' ? 'wallet_balance' : 'wallet_bonus';
-            transaction.update(userRef, {
-                [campoAlvo]: increment(valorNum),
-                updated_at: serverTimestamp()
-            });
+            // 🛡️ MOTOR DE RESSURREIÇÃO: Se for PIX, recupera o saldo congelado automaticamente
+            if (tipoOrigem === 'PIX') {
+                const snapshot = await transaction.get(userRef);
+                const saldoCongelado = parseFloat(snapshot.data().wallet_frozen || 0);
+                
+                transaction.update(userRef, {
+                    wallet_balance: increment(valorNum + saldoCongelado), // Soma Recarga + Congelado
+                    wallet_frozen: 0, // Zera o congelador (Dinheiro voltou à vida)
+                    updated_at: serverTimestamp()
+                });
+            } else {
+                // Se for Bônus, apenas incrementa normalmente
+                transaction.update(userRef, {
+                    wallet_bonus: increment(valorNum),
+                    updated_at: serverTimestamp()
+                });
+            }
 
             // 2. Cria o Lote de Validade (A prova jurídica)
             transaction.set(ledgerRef, {
