@@ -243,15 +243,33 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-          // 🚀 MAESTRO SENSORIAL V2026.2: Oficializa validade sem gerar loop de saldo
+          // 🚀 MAESTRO SENSORIAL V2026.3: Ressurreição de Saldo + Validade Silenciosa
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-                const diferenca = sReal - window.ultimoSaldoConhecido;
+                const diferenca = sReal - window.ultimoSaldoConhecido; // Calcula quanto entrou de dinheiro novo
                 
-                // 🛡️ Filtro de ruído: Evita processar ganhos de trabalho como recarga PIX
-                // Geralmente recargas são valores redondos ou maiores que R$ 10,00
-                if (diferenca >= 1.00) {
-                   console.log(`🪙 [Maestro] Sincronizando Recarga de R$ ${diferenca.toFixed(2)}...`);
-                   window.oficializarLoteExterno(diferenca, "Recarga Automática (InfinitePay)");
+                if (diferenca >= 1.00) { // Só processa se for recarga (evita centavos de bônus)
+                    console.log(`🪙 [Sistema] Detectada nova carga. Verificando saldos congelados...`);
+                    
+                    const frozen = parseFloat(data.wallet_frozen || 0); // Olha se tem dinheiro no congelador
+                    
+                    if (frozen > 0) {
+                        // 🔥 GATILHO DE RESSURREIÇÃO: Puxa o dinheiro do Frozen de volta para o Balance (Saldo Ativo)
+                        const fv = window.firebaseModules;
+                        const userRef = fv.doc(db, "usuarios", uid);
+                        
+                        await fv.updateDoc(userRef, {
+                            wallet_balance: fv.increment(frozen), // Soma o congelado ao saldo real
+                            wallet_frozen: 0, // Zera o cofre de congelados
+                            updated_at: fv.serverTimestamp() // Carimba o horário da operação
+                        });
+                        
+                        // Registra no extrato para o usuário ver que recuperou o dinheiro antigo
+                        window.registrarMovimentacao(frozen, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado com sucesso!");
+                        console.log(`✅ [Ressurreição] R$ ${frozen} voltaram ao saldo ativo.`);
+                    }
+
+                    // Chama a função que apenas cria a data de validade (sem mexer no dinheiro de novo)
+                    window.oficializarLoteExterno(diferenca, "Recarga Integrada");
                 }
             }
             // Guarda o saldo atual para a próxima comparação
