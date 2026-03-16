@@ -916,7 +916,8 @@ window.registrarMovimentacao = window.registrarMovimentacao;
 window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
 window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
 window.filtrarGanhos = filtrarGanhos;
-window.definirMetaDiaria = window.definirMetaDiaria;
+// 🎯 V2026.FIX: Expõe a função para que o botão "Meta" no HTML volte a funcionar
+window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 // 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
