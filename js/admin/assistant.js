@@ -114,9 +114,17 @@ export async function renderAssistant(containerId) {
             if (newUsers > 0 || newProvs > 0) {
                 insights.push(`🚀 <b>Crescimento:</b> +${newUsers} usuários e +${newProvs} prestadores hoje.`);
             }
+           if (totalPix > 0) {
+                insights.push(`💰 <b>URGENTE:</b> ${totalPix} pagamentos em PIX pendentes.`);
+                statusColor = "border-l-4 border-emerald-500"; icon = "💵";
+            }
+            if (totalMisAnalise > 0) {
+                insights.push(`📸 <b>MISSÕES:</b> ${totalMisAnalise} envios aguardando auditoria.`);
+                if(totalPix === 0) statusColor = "border-l-4 border-blue-400";
+            }
             if (pendingAnalise > 0) {
-                insights.push(`⚠️ <b>Atenção:</b> ${pendingAnalise} perfis em análise.`);
-                statusColor = "border-l-4 border-yellow-500"; icon = "⚡";
+                insights.push(`⚠️ <b>PRESTADORES:</b> ${pendingAnalise} perfis para aprovar.`);
+                if(totalPix === 0 && totalMisAnalise === 0) statusColor = "border-l-4 border-yellow-500";
             }
             if (pendingTickets > 0) {
                 insights.push(`💬 <b>Suporte:</b> ${pendingTickets} tickets de chat abertos.`);
