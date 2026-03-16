@@ -891,6 +891,7 @@ window.pagarComAtlix = window.pagarComAtlix;
 window.processarCobrancaTaxa = processarCobrancaTaxa;
 window.registrarMovimentacao = window.registrarMovimentacao;
 window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
+window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
 window.filtrarGanhos = filtrarGanhos;
 window.definirMetaDiaria = window.definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
