@@ -703,10 +703,22 @@ window.filtrarGanhos = async (periodo) => {
     window.filtroGanhosAtivo = periodo;
     elEarnings.innerText = "...";
 
-    // Se o filtro for 'total', usamos o campo estático do perfil para ser instantâneo
+    // 🏆 V2026.PREMIUM: Filtro instantâneo para Ganhos Totais
     if (periodo === 'total') {
-        elLabel.innerText = "Ganhos Totais";
-        elEarnings.innerText = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
+        const totalR = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
+        const totalA = (window.userProfile?.wallet_bonus_ganho_total || 0).toFixed(2).replace('.', ',');
+        
+        // Aplica o título correto
+        if (elLabel) elLabel.innerText = "Ganhos Totais";
+        
+        // Injeta a estrutura de Dupla de Ataque (Real | ATLIX) no modo Total
+        elEarnings.innerHTML = `
+            <div class="flex items-center gap-1.5 justify-center font-black">
+                <span class="text-emerald-600">R$ ${totalR}</span>
+                <span class="text-slate-300 font-light mx-0.5">|</span>
+                <span class="text-amber-500">${totalA} 🪙</span>
+            </div>
+        `;
         return;
     }
 
