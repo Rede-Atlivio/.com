@@ -54,16 +54,23 @@ async function renderizarMissaoCards() {
             const iconAtlas = isAtlas ? '<span class="globo-atlas">🌍</span>' : '🎯';
             const badgeClass = isAtlas ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600';
 
-            // 🎨 Layout Evoluído com Diferenciação de Produto
+            // 💰 V2026.PRO: Identifica a moeda de recompensa (ATLIX ou REAL)
+            const isRealMoney = m.pay_type === 'real';
+            const labelMoeda = isRealMoney ? 'DINHEIRO REAL 💰' : 'BÔNUS ATLIX 🪙';
+            const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
+
+            // 🎨 Layout Evoluído com Transparência Financeira
             container.innerHTML += `
                 <div class="${cardClass} p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all animate-fadeIn mb-4">
                     <div class="flex justify-between items-start mb-3">
-                        <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12">
+                        <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
                             ${iconAtlas}
                         </div>
                         <div class="text-right">
-                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Recompensa</p>
-                            <p class="text-lg font-black text-emerald-600">R$ ${m.reward.toFixed(2).replace('.', ',')}</p>
+                            <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
+                            <p class="text-xl font-black ${isAtlas ? 'text-white' : 'text-slate-800'} tracking-tighter">
+                                R$ ${m.reward.toFixed(2).replace('.', ',')}
+                            </p>
                         </div>
                     </div>
 
