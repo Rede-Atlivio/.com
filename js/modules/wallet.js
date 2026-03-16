@@ -750,13 +750,23 @@ window.filtrarGanhos = async (periodo) => {
       // 💰 V120: Atualiza a memória global com o valor real somado do banco
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
 
-        const txtRealOnly = `${somaReal.toFixed(2).replace('.', ',')}`;
-        const txtAXOnly = somaAX > 0 ? ` | ${somaAX.toFixed(2).replace('.', ',')} 🪙` : "";
+        // 💰 V2026.PREMIUM: Formatação de Ganhos em Dupla de Ataque (Real | ATLIX)
+        const txtReal = somaReal.toFixed(2).replace('.', ',');
+        const txtAX = somaAX.toFixed(2).replace('.', ',');
 
-        // 1. Atualiza a aba Carteira (Ganhos de Hoje/7D/30D)
+        // 🏗️ Injeta a estrutura fixa com separador elegante e cores vibrantes
+        const htmlGanhos = `
+            <div class="flex items-center gap-2 justify-center">
+                <span class="font-black text-emerald-600">R$ ${txtReal}</span>
+                <span class="text-slate-300 font-light mx-1">|</span>
+                <span class="font-black text-amber-500">${txtAX} 🪙</span>
+            </div>
+        `;
+
         if (elEarnings) {
-            elEarnings.innerHTML = `R$ ${txtRealOnly}<span class="text-[10px] opacity-60">${txtAXOnly}</span>`;
+            elEarnings.innerHTML = htmlGanhos;
         }
+
         elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
 
         // 2. Atualiza a aba Home (Respeita o filtro de tempo selecionado)
