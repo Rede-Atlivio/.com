@@ -596,27 +596,28 @@
 
         <div class="grid grid-cols-2 gap-3">
             <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 relative">
-                <button onclick="alert('🔒 SALDO EM CUSTÓDIA:\n\nEste valor está reservado para garantir um serviço em andamento.\n\nEle fica congelado por segurança até que o serviço seja concluído. Após a finalização, ele é liquidado ou estornado conforme o caso.')" class="absolute top-4 right-4 text-gray-300 text-xs font-bold border border-gray-100 w-5 h-5 rounded-full flex items-center justify-center">?</button>
+                <button onclick="alert('🔒 SALDO EM CUSTÓDIA:\n\nValor reservado para garantir a segurança de serviços em andamento.')" class="absolute top-4 right-4 text-gray-300 text-[10px] font-bold border border-gray-50 w-5 h-5 rounded-full flex items-center justify-center">?</button>
                 <span class="text-blue-600 text-lg">🔒</span>
                 <div>
-                    <p class="text-[8px] font-black text-gray-400 uppercase">Em Custódia</p>
-                    <p class="text-lg font-black text-slate-800"><span id="user-reserved">0,00</span> 🪙</p>
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Em Custódia</p>
+                    <p class="text-sm font-black text-slate-800"><span id="user-reserved">0,00</span> 🪙</p>
                 </div>
             </div>
+
             <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 relative group">
-                <div class="absolute top-3 right-3 z-[100]">
-                    <select id="filtro-ganhos" onchange="window.filtrarGanhos(this.value)" class="relative block w-full bg-blue-50 border-none text-[9px] font-black text-blue-600 uppercase outline-none cursor-pointer p-1.5 rounded-lg shadow-sm appearance-none text-center">
+                <div class="absolute top-3 right-3 z-[50]">
+                    <select id="filtro-ganhos" onchange="window.filtrarGanhos(this.value)" class="bg-blue-50 border-none text-[9px] font-black text-blue-600 uppercase outline-none p-1 rounded-lg cursor-pointer">
                         <option value="hoje">Hoje</option>
                         <option value="7">7 Dias</option>
                         <option value="30">30 Dias</option>
                         <option value="total">Total</option>
                     </select>
                 </div>
-                <span id="ganho-icon" class="text-emerald-500 text-lg transition-transform duration-300 group-hover:scale-110">📈</span>
+                <span id="ganho-icon" class="text-emerald-500 text-lg">📈</span>
                 <div>
                     <p id="label-ganhos" class="text-[8px] font-black text-gray-400 uppercase tracking-wider">Ganhos de Hoje</p>
-                    <div id="user-earnings" class="text-lg font-black text-slate-800 flex items-center gap-2">
-                        R$ 0,00
+                    <div id="user-earnings" class="text-[11px] font-black text-slate-800 mt-1">
+                        R$ 0,00 | 0,00 🪙
                     </div>
                 </div>
             </div>
