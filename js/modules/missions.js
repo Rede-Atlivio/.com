@@ -2,8 +2,21 @@ import { db, auth } from '../config.js';
 import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🚀 V2026: MOTOR DE MISSÕES GEOLOCALIZADAS (ATLAS VIVO)
+// 🎨 Estilização Dinâmica para o Globo Rodando e Card Atlas
+const styleAtlas = document.createElement('style');
+styleAtlas.innerHTML = `
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }
+    .card-atlas-premium { 
+        background: linear-gradient(145deg, #0f172a, #1e293b);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+`;
+document.head.appendChild(styleAtlas);
+
 export async function initMissions() {
-    console.log("🎯 Atlas Vivo: Iniciando radar de missões...");
+    console.log("🌍 Atlas Vivo: Sincronizando radar geográfico...");
     const container = document.getElementById('lista-missoes');
     if (!container) return;
 
