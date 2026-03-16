@@ -48,11 +48,19 @@ async function renderizarMissaoCards() {
             const m = doc.data();
             const id = doc.id;
 
-            // 🎨 Layout do Card Premium com botão de Tutorial e GPS
+            // 🌍 V2026: Identifica se é uma missão Atlas (Geolocalizada) ou Tarefa Simples
+            const isAtlas = m.latitude && m.longitude;
+            const cardClass = isAtlas ? 'card-atlas-premium text-white' : 'bg-white text-slate-800';
+            const iconAtlas = isAtlas ? '<span class="globo-atlas">🌍</span>' : '🎯';
+            const badgeClass = isAtlas ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600';
+
+            // 🎨 Layout Evoluído com Diferenciação de Produto
             container.innerHTML += `
-                <div class="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all animate-fadeIn">
+                <div class="${cardClass} p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all animate-fadeIn mb-4">
                     <div class="flex justify-between items-start mb-3">
-                        <div class="bg-blue-50 text-blue-600 p-2 rounded-2xl text-xl">🎯</div>
+                        <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12">
+                            ${iconAtlas}
+                        </div>
                         <div class="text-right">
                             <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Recompensa</p>
                             <p class="text-lg font-black text-emerald-600">R$ ${m.reward.toFixed(2).replace('.', ',')}</p>
