@@ -747,19 +747,19 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-      // 💰 V120: Atualiza a memória global com o valor real somado do banco
+      // 💰 V2026.PREMIUM: Sincronização e Estilização Final
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
 
-        // 💰 V2026.PREMIUM: Formatação de Ganhos em Dupla de Ataque (Real | ATLIX)
-        const txtReal = somaReal.toFixed(2).replace('.', ',');
-        const txtAX = somaAX.toFixed(2).replace('.', ',');
+        // Definimos os nomes finais para evitar o erro de ReferenceError
+        const txtRealOnly = somaReal.toFixed(2).replace('.', ','); 
+        const txtAXOnly = somaAX.toFixed(2).replace('.', ',');
 
-        // 🏗️ Injeta a estrutura fixa com separador elegante e cores vibrantes
+        // 🏗️ Injeta a estrutura fixa aprovada (Real | ATLIX)
         const htmlGanhos = `
-            <div class="flex items-center gap-2 justify-center">
-                <span class="font-black text-emerald-600">R$ ${txtReal}</span>
+            <div class="flex items-center gap-2 justify-center font-black">
+                <span class="text-emerald-600">R$ ${txtRealOnly}</span>
                 <span class="text-slate-300 font-light mx-1">|</span>
-                <span class="font-black text-amber-500">${txtAX} 🪙</span>
+                <span class="text-amber-500">${txtAXOnly} 🪙</span>
             </div>
         `;
 
@@ -767,7 +767,9 @@ window.filtrarGanhos = async (periodo) => {
             elEarnings.innerHTML = htmlGanhos;
         }
 
-        elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
+        if (elLabel) {
+            elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
+        }
 
         // 2. Atualiza a aba Home (Respeita o filtro de tempo selecionado)
         const elEarningsHome = document.getElementById('user-earnings-home');
