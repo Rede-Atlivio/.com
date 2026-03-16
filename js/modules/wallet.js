@@ -747,43 +747,35 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-     // 💰 V2026.ULTRA: Sincronização Final com ID Mapeado
+     // 💰 V2026.ULTRA: Sincronização de Ganhos com Interface Unificada
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
 
-        const txtRealOnly = somaReal.toFixed(2).replace('.', ','); 
-        const txtAXOnly = somaAX.toFixed(2).replace('.', ',');
+        // Formatação dos valores para o padrão brasileiro
+        const txtR = somaReal.toFixed(2).replace('.', ','); 
+        const txtA = somaAX.toFixed(2).replace('.', ',');
 
-        // 🏗️ Estrutura Master aprovada nas fotos
-        const htmlGanhosMaster = `
-            <div class="flex items-center gap-2 justify-center font-black">
-                <span class="text-emerald-600">R$ ${txtRealOnly}</span>
-                <span class="text-slate-300 font-light mx-1">|</span>
-                <span class="text-amber-500">${txtAXOnly} 🪙</span>
+        // 🏗️ Molde Visual Premium (Dupla de Ataque)
+        const htmlMaster = `
+            <div class="flex items-center gap-1.5 justify-center font-black">
+                <span class="text-emerald-600">R$ ${txtR}</span>
+                <span class="text-slate-300 font-light mx-0.5">|</span>
+                <span class="text-amber-500">${txtA} 🪙</span>
             </div>
         `;
 
-        // 🎯 Injeta no container principal (Hoje/7d/30d)
-        if (elEarnings) {
-            elEarnings.innerHTML = htmlGanhosMaster;
-        }
+        // 🎯 Injeta no container da Carteira (ID unificado no index.html)
+        if (elEarnings) elEarnings.innerHTML = htmlMaster;
 
-        // 🎯 CORREÇÃO DO CONFLITO: Usa o ID que o mapeador encontrou (user-earnings)
-        // Gil, como o mapeador mostrou que o ID do Total também é gerido aqui,
-        // garantimos que ele receba a mesma formatação.
-        const elTotalReal = document.getElementById('user-earnings'); 
-        if (elTotalReal && periodo === 'hoje') {
-            elTotalReal.innerHTML = htmlGanhosMaster;
-        }
-
+        // Atualiza os Labels (Títulos) da Carteira
         if (elLabel) {
-            elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
+            elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : 
+                                periodo === 'total' ? "Ganhos Totais" : `Ganhos ${periodo} dias`;
         }
-        // 2. Atualiza a aba Home (Respeita o filtro de tempo selecionado)
-        const elEarningsHome = document.getElementById('user-earnings-home');
-        if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
-            elEarningsHome.innerHTML = `R$ ${txtRealOnly}<span class="text-amber-400 text-[10px] ml-1">${txtAXOnly}</span>`;
-            const lbHome = document.getElementById('label-ganhos-home');
-            if (lbHome) lbHome.innerText = periodo === 'hoje' ? "Ganhos" : `Ganhos ${periodo}D`;
+
+        // 🏠 Sincroniza o Card da Home (Se estiver visível)
+        const elHome = document.getElementById('user-earnings-home');
+        if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
+            elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
         }
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
