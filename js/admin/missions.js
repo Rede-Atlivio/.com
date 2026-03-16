@@ -233,24 +233,41 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
+// 💰 V2026: Motor de Aprovação e Pagamento Híbrido (Real -> ATLIX)
 async function aprovarMissao(docId, userId, valor) {
-    if(!confirm(`Aprovar missão e pagar R$ ${valor}?`)) return;
+    if(!confirm(`Aprovar missão e pagar R$ ${valor} em ATLIX?`)) return;
+    
     try {
-        await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'approved' });
-        const userRef = doc(window.db, "usuarios", userId);
-        await runTransaction(window.db, async (t) => {
-            const uDoc = await t.get(userRef);
-            if(uDoc.exists()) {
-                const novo = (uDoc.data().saldo || 0) + parseFloat(valor);
-                t.update(userRef, { saldo: novo, wallet_balance: novo });
-            }
+        // 1. Marca a submissão como aprovada no banco de auditoria
+        await updateDoc(doc(window.db, "mission_submissions", docId), { 
+            status: 'approved',
+            paid_at: serverTimestamp() 
         });
+
+        // 2. Aciona o Cofre de Bônus (ATLIX) via Wallet Module
+        // Gil, aqui usamos a função que você já "commitou" no wallet.js
+        if (window.receberRecompensaMissao) {
+            await window.receberRecompensaMissao(valor, "Missão Aprovada pelo Admin");
+        } else {
+            throw new Error("Motor Financeiro (Wallet) não carregado no Admin.");
+        }
+
+        // 3. Dispara Notificação Oficial para o Usuário
         await addDoc(collection(window.db, "notifications"), {
-            uid: userId, message: `💰 Parabéns! Você recebeu R$ ${valor} pela missão.`, read: false, type: 'success', created_at: serverTimestamp()
+            uid: userId, 
+            message: `💰 Missão Aprovada! R$ ${valor.toFixed(2).replace('.',',')} em bônus ATLIX foram adicionados à sua carteira.`, 
+            read: false, 
+            type: 'success', 
+            created_at: serverTimestamp()
         });
-        alert("✅ Pago com sucesso!");
-        loadSubmissions();
-    } catch(e) { alert(e.message); }
+
+        alert("✅ Pagamento ATLIX processado com sucesso!");
+        loadSubmissions(); // Recarrega a lista para mostrar o novo status
+
+    } catch(e) { 
+        console.error("Erro no Payout:", e);
+        alert("❌ Erro ao processar pagamento: " + e.message); 
+    }
 }
 
 async function rejeitarMissao(docId) {
