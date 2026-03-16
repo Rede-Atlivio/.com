@@ -104,7 +104,7 @@ function verTutorialMissao(videoId) {
 }
 
 // 📸 GATILHO DE PROVA (CÂMERA + GPS)
-async function abrirProvaMissao(id, titulo, recompensa) {
+async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
     const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema irá solicitar sua localização atual.`);
     if (!confirmar) return;
 
