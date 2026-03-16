@@ -116,27 +116,41 @@ function abrirNovaMissao(dados = null) {
             <h3 class="text-xl font-bold text-white mb-4">${dados ? 'Editar Missão' : 'Nova Micro Tarefa'}</h3>
             <input type="hidden" id="mis-id" value="${dados?.id || ''}">
             
-            <div>
-                <label class="text-[10px] text-gray-400 font-bold uppercase">Título</label>
-                <input id="mis-title" value="${dados?.title || ''}" class="w-full p-3 rounded bg-white text-black font-bold" placeholder="Ex: Seguir no Instagram">
-            </div>
-            
-            <div>
-                <label class="text-[10px] text-gray-400 font-bold uppercase">Descrição / Instruções</label>
-                <textarea id="mis-desc" class="w-full p-3 rounded bg-white text-black" rows="3" placeholder="Explique o que fazer...">${dados?.description || ''}</textarea>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Recompensa (R$)</label>
-                    <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-3 rounded bg-white text-black font-bold text-green-700" placeholder="0.50">
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Título da Missão</label>
+                    <input id="mis-title" value="${dados?.title || ''}" class="w-full p-2 rounded bg-white text-black font-bold border border-slate-700" placeholder="Ex: Verificar Fachada">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Tipo de Prova</label>
-                    <select id="mis-type" class="w-full p-3 rounded bg-white text-black">
-                        <option value="screenshot" ${dados?.type === 'screenshot' ? 'selected' : ''}>📸 Print / Foto</option>
-                        <option value="video" ${dados?.type === 'video' ? 'selected' : ''}>🎥 Vídeo</option>
-                        <option value="text" ${dados?.type === 'text' ? 'selected' : ''}>📝 Texto / Link</option>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">ID Vídeo Tutorial (Veo 3)</label>
+                    <input id="mis-video-id" value="${dados?.video_id || ''}" class="w-full p-2 rounded bg-white text-black font-mono text-xs border border-slate-700" placeholder="ID do YouTube">
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-[10px] text-gray-400 font-bold uppercase">Instruções para o Usuário</label>
+                <textarea id="mis-desc" class="w-full p-2 rounded bg-white text-black text-sm" rows="2" placeholder="Explique o passo a passo...">${dados?.description || ''}</textarea>
+            </div>
+            
+            <div class="p-3 bg-slate-800 rounded-xl border border-blue-500/30">
+                <p class="text-[9px] font-black text-blue-400 uppercase mb-2">📍 Âncora Geográfica (Atlas Vivo)</p>
+                <div class="grid grid-cols-3 gap-2">
+                    <input id="mis-lat" value="${dados?.latitude || ''}" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Latitude">
+                    <input id="mis-lng" value="${dados?.longitude || ''}" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Longitude">
+                    <input id="mis-radius" value="${dados?.radius || 50}" type="number" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Raio (m)">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Valor da Recompensa</label>
+                    <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-2 rounded bg-white text-black font-black text-green-700" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Tipo de Pagamento</label>
+                    <select id="mis-pay-type" class="w-full p-2 rounded bg-white text-black font-bold">
+                        <option value="atlix" ${dados?.pay_type === 'atlix' ? 'selected' : ''}>🪙 ATLIX (Bônus)</option>
+                        <option value="real" ${dados?.pay_type === 'real' ? 'selected' : ''}>💰 REAL (Dinheiro)</option>
                     </select>
                 </div>
             </div>
