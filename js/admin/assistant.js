@@ -48,12 +48,17 @@ export async function renderAssistant(containerId) {
         hoje.setHours(0, 0, 0, 0);
         const timestampHoje = Timestamp.fromDate(hoje);
 
-        // Queries
+       // 🔍 QUERIES V2026.PRO (Incluindo Missões e PIX)
         const qUsersToday = query(collection(db, "usuarios"), where("created_at", ">=", timestampHoje));
         const qProvToday = query(collection(db, "active_providers"), where("created_at", ">=", timestampHoje));
         const qAnalise = query(collection(db, "active_providers"), where("status", "==", "em_analise"));
         const qTickets = query(collection(db, "support_tickets"), where("read", "==", false), where("sender", "==", "user"));
         const qNotificacoes = query(collection(db, "notifications"), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
+        
+        // 💰 Monitor de Pagamento em REAL (PIX Pendente)
+        const qPixPendentes = query(collection(db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
+        // 📸 Monitor de Auditoria (Missões que aguardam seu OK)
+        const qMissaoAnalise = query(collection(db, "mission_submissions"), where("status", "==", "pending"));
         
         // 🚀 MONITORAMENTO ATLIVIO (Fase 2)
         const qDisputas = query(collection(db, "orders"), where("status", "==", "dispute"));
