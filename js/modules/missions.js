@@ -84,7 +84,7 @@ async function renderizarMissaoCards() {
                             </button>
                         ` : ''}
 
-                        <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward})" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-blue-200 active:scale-95 transition">
+                        <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-blue-200 active:scale-95 transition">
                             Realizar Missão ➜
                         </button>
                     </div>
