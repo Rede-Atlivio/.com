@@ -163,17 +163,35 @@ function abrirNovaMissao(dados = null) {
 }
 
 async function salvarMissao() {
+    // Captura de IDs e Valores do Novo Formulário
     const id = document.getElementById('mis-id').value;
     const title = document.getElementById('mis-title').value;
     const desc = document.getElementById('mis-desc').value;
     const reward = document.getElementById('mis-reward').value;
-    const type = document.getElementById('mis-type').value;
+    const videoId = document.getElementById('mis-video-id').value;
+    
+    // Captura Atlas Vivo
+    const lat = document.getElementById('mis-lat').value;
+    const lng = document.getElementById('mis-lng').value;
+    const radius = document.getElementById('mis-radius').value;
+    
+    // Captura Moeda
+    const payType = document.getElementById('mis-pay-type').value;
 
-    if(!title || !reward) return alert("Preencha título e valor.");
+    if(!title || !reward) return alert("Erro: Título e Valor são obrigatórios.");
 
+    // 🏗️ PAYLOAD V2026: Estrutura preparada para escala de milhões de usuários
     const payload = {
-        title, description: desc, reward: parseFloat(reward), type,
-        updated_at: serverTimestamp(), active: true
+        title, 
+        description: desc, 
+        reward: parseFloat(reward), 
+        video_id: videoId || null,
+        latitude: lat ? parseFloat(lat) : null,
+        longitude: lng ? parseFloat(lng) : null,
+        radius: radius ? parseInt(radius) : 50,
+        pay_type: payType, // Define se paga em ATLIX ou REAL
+        updated_at: serverTimestamp(), 
+        active: true
     };
 
     try {
