@@ -265,40 +265,57 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💰 V2026: Motor de Aprovação e Pagamento Híbrido (Real -> ATLIX)
+// 💰 V2026.PRO: Motor de Aprovação Híbrido (ATLIX Automático vs REAL na Fila)
 async function aprovarMissao(docId, userId, valor) {
-    if(!confirm(`Aprovar missão e pagar R$ ${valor} em ATLIX?`)) return;
-    
+    // Primeiro, recuperamos os dados da submissão para saber o pay_type
     try {
-        // 1. Marca a submissão como aprovada no banco de auditoria
-        await updateDoc(doc(window.db, "mission_submissions", docId), { 
-            status: 'approved',
-            paid_at: serverTimestamp() 
-        });
+        const subSnap = await getDoc(doc(window.db, "mission_submissions", docId));
+        if (!subSnap.exists()) return alert("Erro: Envio não encontrado.");
+        const subData = subSnap.data();
+        const tipoMoeda = subData.pay_type || 'atlix'; // Padrão é ATLIX se estiver vazio
 
-        // 2. Aciona o Cofre de Bônus (ATLIX) via Wallet Module
-        // Gil, aqui usamos a função que você já "commitou" no wallet.js
-        if (window.receberRecompensaMissao) {
-            await window.receberRecompensaMissao(valor, "Missão Aprovada pelo Admin");
+        if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
+
+        if (tipoMoeda === 'atlix') {
+            // --- FLUXO A: PAGAMENTO AUTOMÁTICO EM ATLIX ---
+            await updateDoc(doc(window.db, "mission_submissions", docId), { 
+                status: 'approved', 
+                paid_at: serverTimestamp() 
+            });
+
+            if (window.receberRecompensaMissao) {
+                await window.receberRecompensaMissao(valor, subData.mission_title || "Missão Concluída");
+            }
+
+            await addDoc(collection(window.db, "notifications"), {
+                uid: userId, 
+                message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
+                read: false, type: 'success', created_at: serverTimestamp()
+            });
+            alert("✅ Pago automaticamente em ATLIX!");
+
         } else {
-            throw new Error("Motor Financeiro (Wallet) não carregado no Admin.");
+            // --- FLUXO B: PAGAMENTO EM REAL (VAI PARA A FILA DO DASHBOARD) ---
+            // Mudamos o status para um específico que o Dashboard/Assistant vai vigiar
+            await updateDoc(doc(window.db, "mission_submissions", docId), { 
+                status: 'approved_pending_pix', 
+                approved_at: serverTimestamp() 
+            });
+
+            // Notifica o usuário que foi aprovado, mas o PIX está sendo processado
+            await addDoc(collection(window.db, "notifications"), {
+                uid: userId, 
+                message: `✅ Sua missão de R$ ${valor} foi aprovada! O pagamento via PIX será realizado em breve.`, 
+                read: false, type: 'info', created_at: serverTimestamp()
+            });
+            alert("⚠️ Aprovada! O pagamento em REAL foi enviado para sua fila de PIX no Dashboard.");
         }
 
-        // 3. Dispara Notificação Oficial para o Usuário
-        await addDoc(collection(window.db, "notifications"), {
-            uid: userId, 
-            message: `💰 Missão Aprovada! R$ ${valor.toFixed(2).replace('.',',')} em bônus ATLIX foram adicionados à sua carteira.`, 
-            read: false, 
-            type: 'success', 
-            created_at: serverTimestamp()
-        });
+        loadSubmissions(); // Atualiza a tabela do Admin
 
-        alert("✅ Pagamento ATLIX processado com sucesso!");
-        loadSubmissions(); // Recarrega a lista para mostrar o novo status
-
-    } catch(e) { 
-        console.error("Erro no Payout:", e);
-        alert("❌ Erro ao processar pagamento: " + e.message); 
+    } catch(e) {
+        console.error("Erro na Aprovação:", e);
+        alert("❌ Falha técnica: " + e.message);
     }
 }
 
