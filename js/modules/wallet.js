@@ -747,13 +747,14 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-      // 💰 V2026.ULTRA: Sincronização Unificada (Hoje + Total)
+     // 💰 V2026.ULTRA: Sincronização Final com ID Mapeado
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
 
         const txtRealOnly = somaReal.toFixed(2).replace('.', ','); 
         const txtAXOnly = somaAX.toFixed(2).replace('.', ',');
 
-        const htmlGanhos = `
+        // 🏗️ Estrutura Master aprovada nas fotos
+        const htmlGanhosMaster = `
             <div class="flex items-center gap-2 justify-center font-black">
                 <span class="text-emerald-600">R$ ${txtRealOnly}</span>
                 <span class="text-slate-300 font-light mx-1">|</span>
@@ -761,12 +762,17 @@ window.filtrarGanhos = async (periodo) => {
             </div>
         `;
 
-        if (elEarnings) elEarnings.innerHTML = htmlGanhos;
+        // 🎯 Injeta no container principal (Hoje/7d/30d)
+        if (elEarnings) {
+            elEarnings.innerHTML = htmlGanhosMaster;
+        }
 
-        // 🎯 AQUI ESTAVA O ERRO: Atualizando o Total com a mesma estrutura
-        const elTotal = document.getElementById('user-total-earnings');
-        if (elTotal && periodo === 'hoje') {
-            elTotal.innerHTML = htmlGanhos; 
+        // 🎯 CORREÇÃO DO CONFLITO: Usa o ID que o mapeador encontrou (user-earnings)
+        // Gil, como o mapeador mostrou que o ID do Total também é gerido aqui,
+        // garantimos que ele receba a mesma formatação.
+        const elTotalReal = document.getElementById('user-earnings'); 
+        if (elTotalReal && periodo === 'hoje') {
+            elTotalReal.innerHTML = htmlGanhosMaster;
         }
 
         if (elLabel) {
