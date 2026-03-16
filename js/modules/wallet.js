@@ -747,14 +747,12 @@ window.filtrarGanhos = async (periodo) => {
             }
         });
 
-      // 💰 V2026.PREMIUM: Sincronização e Estilização Final
+      // 💰 V2026.ULTRA: Sincronização Unificada (Hoje + Total)
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
 
-        // Definimos os nomes finais para evitar o erro de ReferenceError
         const txtRealOnly = somaReal.toFixed(2).replace('.', ','); 
         const txtAXOnly = somaAX.toFixed(2).replace('.', ',');
 
-        // 🏗️ Injeta a estrutura fixa aprovada (Real | ATLIX)
         const htmlGanhos = `
             <div class="flex items-center gap-2 justify-center font-black">
                 <span class="text-emerald-600">R$ ${txtRealOnly}</span>
@@ -763,14 +761,17 @@ window.filtrarGanhos = async (periodo) => {
             </div>
         `;
 
-        if (elEarnings) {
-            elEarnings.innerHTML = htmlGanhos;
+        if (elEarnings) elEarnings.innerHTML = htmlGanhos;
+
+        // 🎯 AQUI ESTAVA O ERRO: Atualizando o Total com a mesma estrutura
+        const elTotal = document.getElementById('user-total-earnings');
+        if (elTotal && periodo === 'hoje') {
+            elTotal.innerHTML = htmlGanhos; 
         }
 
         if (elLabel) {
             elLabel.innerText = periodo === 'hoje' ? "Ganhos de Hoje" : `Ganhos ${periodo} dias`;
         }
-
         // 2. Atualiza a aba Home (Respeita o filtro de tempo selecionado)
         const elEarningsHome = document.getElementById('user-earnings-home');
         if (elEarningsHome && elEarningsHome.getAttribute('data-hidden') !== 'true') {
