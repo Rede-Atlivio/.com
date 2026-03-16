@@ -54,9 +54,9 @@ async function renderizarMissaoCards() {
             const iconAtlas = isAtlas ? '<span class="globo-atlas">🌍</span>' : '🎯';
             const badgeClass = isAtlas ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600';
 
-            // 💰 V2026.PRO: Identifica a moeda de recompensa (ATLIX ou REAL)
+           // 💰 V2026.PRO: Identifica a moeda de recompensa (CRÉDITOS vs PIX)
             const isRealMoney = m.pay_type === 'real';
-            const labelMoeda = isRealMoney ? 'DINHEIRO REAL 💰' : 'BÔNUS ATLIX 🪙';
+            const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
             const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
 
             // 🎨 Layout Evoluído com Transparência Financeira
