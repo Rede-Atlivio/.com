@@ -832,6 +832,51 @@ window.oficializarLoteExterno = async (valor, tipoCarga = "PIX", descCustom = ""
         console.log(`✅ [Ledger] Lote de ${tipoCarga} criado: R$ ${valor} com ${meses} meses de validade.`);
     } catch (e) { console.error("❌ Erro ao oficializar validade:", e); }
 };
+
+/**
+ * 🎯 MOTOR DE RECOMPENSA ATLAS VIVO (V2026)
+ * Esta função garante que todo ganho de missão entre como WALLET_BONUS (ATLIX).
+ * Isso protege o lucro real da empresa (SYS_FINANCE).
+ */
+window.receberRecompensaMissao = async (valor, tituloMissao) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return { success: false, error: "Usuário não identificado" };
+
+    try {
+        const userRef = doc(db, "usuarios", uid);
+        const fv = window.firebaseModules;
+
+        // 1. Injeta o valor no Cofre de Bônus (Destino Único Aprovado)
+        // Usamos increment para evitar erro de concorrência se houver 2 missões ao mesmo tempo
+        await fv.updateDoc(userRef, {
+            wallet_bonus: fv.increment(parseFloat(valor)),
+            updated_at: fv.serverTimestamp()
+        });
+
+        // 2. Carimba a "Certidão de Nascimento" no Ledger (Dando 6 meses de validade)
+        // Isso garante que o bônus da missão também expire se o usuário sumir
+        if (typeof window.oficializarLoteExterno === 'function') {
+            await window.oficializarLoteExterno(valor, "BONUS", `Recompensa: ${tituloMissao}`);
+        }
+
+        // 3. Registra no Extrato Financeiro para o usuário ver de onde veio o dinheiro
+        await fv.addDoc(fv.collection(db, "extrato_financeiro"), {
+            uid: uid,
+            valor: parseFloat(valor),
+            tipo: "💰 MISSÃO_CONCLUÍDA",
+            descricao: `Você ganhou por: ${tituloMissao}`,
+            timestamp: fv.serverTimestamp(),
+            moeda: "ATLIX"
+        });
+
+        console.log(`✅ [Atlas] Recompensa de ${valor} ATLIX creditada com sucesso.`);
+        return { success: true };
+
+    } catch (e) {
+        console.error("❌ Falha ao creditar recompensa:", e);
+        return { success: false, error: e };
+    }
+};
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
