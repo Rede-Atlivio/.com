@@ -324,3 +324,6 @@ async function rejeitarMissao(docId) {
     await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
     loadSubmissions();
 }
+// 🔐 SOLDAGEM GLOBAL ADMIN
+// Gil, isso libera o botão "+ NOVO" para abrir o criador de missões
+window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
