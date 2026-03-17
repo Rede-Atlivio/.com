@@ -38,12 +38,61 @@ export async function carregarDadosPerfil() {
         const imgSet = document.getElementById('settings-pic');
         if(imgSet) imgSet.src = data.foto_perfil || user.photoURL;
 
-        // Capa
-        const bannerPreview = document.getElementById('banner-preview');
-        if(bannerPreview && data.cover_image) {
-            bannerPreview.src = data.cover_image;
-        }
-    }
+        // 🎨 GAMIFICAÇÃO V2026: Nível, XP e Badges
+        // Gil, aqui o sistema calcula o progresso do usuário para mostrar na tela
+        const xp = data.user_xp || 0;
+        const nivel = Math.floor(xp / 100) + 1; // Cada 100 XP sobe um nível
+        const progressoXp = xp % 100; // Quanto falta para o próximo nível
+
+        // Atualiza elementos de gamificação se existirem no HTML
+        if(document.getElementById('user-level')) document.getElementById('user-level').innerText = `Nível ${nivel}`;
+        if(document.getElementById('xp-bar')) document.getElementById('xp-bar').style.width = `${progressoXp}%`;
+        
+        // Exibe Badges Conquistadas (Ex: Pioneiro Atlas)
+        const badgeContainer = document.getElementById('user-badges');
+        if(badgeContainer && data.badges) {
+            badgeContainer.innerHTML = data.badges.map(b => `<span class="badge-icon" title="${b.label}">${b.icon}</span>`).join('');
+        }
+
+        // Capa
+        const bannerPreview = document.getElementById('banner-preview');
+        if(bannerPreview && data.cover_image) {
+            bannerPreview.src = data.cover_image;
+        }
+    }
+}
+
+// 🏆 MOTOR DE PROGRESSO: Adiciona XP ao usuário
+// Esta função será chamada pelo motor de missões ao aprovar uma tarefa
+export async function ganharExperiencia(pontos, badgeId = null) {
+    const user = auth.currentUser;
+    if(!user) return;
+
+    try {
+        const userRef = doc(db, "usuarios", user.uid);
+        const userSnap = await getDoc(userRef);
+        const data = userSnap.data();
+
+        let updates = {
+            user_xp: (data.user_xp || 0) + pontos,
+            updated_at: new Date()
+        };
+
+        // Se a missão liberar uma Badge nova (Ex: Primeira Missão)
+        if(badgeId && (!data.badges || !data.badges.find(b => b.id === badgeId))) {
+            const novaBadge = { id: badgeId, date: new Date() };
+            // Lógica simples de labels para badges
+            if(badgeId === 'atlas_pioneer') { novaBadge.icon = '🌍'; novaBadge.label = 'Pioneiro Atlas'; }
+            
+            const { arrayUnion } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            updates.badges = arrayUnion(novaBadge);
+        }
+
+        await updateDoc(userRef, updates);
+        console.log(`✨ Evolução: +${pontos} XP adicionados.`);
+    } catch(e) {
+        console.error("Erro ao processar XP:", e);
+    }
 }
 
 // ============================================================================
