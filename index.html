@@ -113,12 +113,20 @@
         }
 
    /* ============================================================
-      RADAR VISUAL V12 - SISTEMA MULTI-OFERTAS
+      RADAR VISUAL V2026 - SISTEMA ATLAS VIVO 🌍
       ============================================================ */
 
-       /* 🌍 ATLAS VIVO: Animação do Globo Rotativo */
-        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+        /* Gil, este é o motor que faz o globo girar suavemente */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Classe que aplicamos na div do emoji */
+        .animate-spin-slow { 
+            display: inline-block; /* Necessário para o navegador permitir a rotação */
+            animation: spin-slow 12s linear infinite; 
+        }
 
         /* 📱 FEED SOCIAL: Container rolável estilo rede social para Missões */
         #lista-missoes {
