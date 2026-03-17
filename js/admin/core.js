@@ -277,24 +277,44 @@ window.abrirMenuAcoesMassa = () => {
     `;
 };
 
-// --- LOGICA PARA O BOTÃO "+ NOVO" ---
+// --- 🆕 LOGICA V2026 PARA O BOTÃO "+ NOVO" (CORE BRIDGE) ---
+// Gil, aqui o sistema decide qual formulário abrir baseado na aba que você está olhando.
 window.abrirModalCriarNovo = () => {
     const view = window.activeView;
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
-    modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = `CRIAR NOVO: ${view.toUpperCase()}`;
+    if (!modal || !content) return;
 
-    if (view === 'services') {
+    modal.classList.remove('hidden');
+    document.getElementById('modal-title').innerText = `NOVO REGISTRO: ${view.toUpperCase()}`;
+
+    // 🎯 SE ESTIVER NA ABA DE MISSÕES
+    if (view === 'missions') {
+        if (window.abrirCriadorMissaoAtlas) {
+            // Chama a função elegante que criamos no js/admin/missions.js
+            window.abrirCriadorMissaoAtlas();
+        } else {
+            content.innerHTML = `<p class="text-center text-red-400 py-10">Erro: Motor de Missões não carregado. Recarregue a página.</p>`;
+        }
+    } 
+    // 🛠️ SE ESTIVER NA ABA DE PRESTADORES
+    else if (view === 'services') {
         content.innerHTML = `
             <div class="space-y-4">
+                <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Cadastro Manual de Prestador</p>
                 <input type="text" id="new-prov-uid" placeholder="Cole o UID do Usuário" class="inp-editor">
                 <input type="text" id="new-prov-nome" placeholder="Nome Profissional" class="inp-editor">
                 <input type="text" id="new-prov-cat" placeholder="Categoria (Ex: Encanador)" class="inp-editor">
-                <button onclick="window.salvarNovoPrestador()" class="w-full bg-blue-600 py-3 rounded-xl font-bold uppercase text-xs">Criar Prestador</button>
+                <button onclick="window.salvarNovoPrestador()" class="w-full bg-blue-600 py-3 rounded-xl font-bold uppercase text-xs shadow-lg">Criar Prestador</button>
             </div>`;
-    } else {
-        content.innerHTML = `<p class="text-center text-gray-400 py-10">Use o Painel do Robô ou Gerador para criar ${view}.</p>`;
+    } 
+    // 🚪 CASO CONTRÁRIO (FALLBACK)
+    else {
+        content.innerHTML = `
+            <div class="py-10 text-center">
+                <span class="text-4xl">🚧</span>
+                <p class="text-gray-400 mt-4 text-xs italic">A criação manual para '${view}' deve ser feita via Robô ou Firebase direto.</p>
+            </div>`;
     }
 };
 
