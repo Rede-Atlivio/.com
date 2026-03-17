@@ -123,3 +123,7 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
         alert("❌ Erro: Para ganhar a recompensa, você precisa permitir o GPS.");
     });
 }
+// 🔐 SOLDAGEM GLOBAL ATLAS
+// Gil, isso garante que o app.js consiga ligar o radar de missões
+window.carregarMissoes = carregarMissoes;
+if(typeof initMissions !== 'undefined') window.initMissions = initMissions;
