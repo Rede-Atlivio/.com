@@ -169,7 +169,7 @@ function switchTab(tabName, isAutoBoot = false) {
         'home': 'home',
         'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
         'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
-        'extra': 'missoes', 'missoes': 'missoes',
+        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', // 🎯 Rota unificada para Atlas Vivo
         'oportunidades': 'oportunidades',
         'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
         'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
