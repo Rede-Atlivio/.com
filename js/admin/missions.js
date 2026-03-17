@@ -102,7 +102,9 @@ function editarMissao(id) {
     }
 }
 
-function abrirNovaMissao(dados = null) {
+// 🚀 CRIADOR DE MISSÕES ATLAS V2026.PRO
+// Gil, mudamos o nome para abrirCriadorMissaoAtlas para o Core.js te encontrar
+async function abrirCriadorMissaoAtlas(dados = null) {
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
