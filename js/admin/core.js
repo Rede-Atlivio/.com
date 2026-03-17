@@ -370,9 +370,17 @@ window.saveModalData = async () => {
                 'latitude', 'longitude', 'radius', 'reward', 'offer_value'
             ];
             if (camposNumericos.includes(key)) {
-                updates[key] = parseFloat(val) || 0; // Converte texto em número decimal
+                // Força a conversão para número decimal puro para o GPS e Financeiro funcionar
+                updates[key] = val === "" ? null : parseFloat(val); 
             } else {
                 updates[key] = val;
+            }
+
+            // 🔐 SEGURANÇA B2B: Trava de Perfil para Missões
+            // Gil, aqui marcamos missões novas como oficiais do sistema (Admin Master)
+            if (col === 'missions' && !id) { 
+                updates.owner_role = 'admin_master'; 
+                updates.b2b_verified = true;
             }
         });
 
