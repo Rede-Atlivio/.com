@@ -1,7 +1,7 @@
 import { collection, getDocs, query, where, orderBy, limit, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { renderAssistant } from "./assistant.js"; // 👈 IMPORTA A SECRETÁRIA
 
-// Função para abrir/fechar o detalhe do usuário
+// Função para abrir/fechar o detalhe do usuário no Feed Vivo
 window.toggleFeed = (uid) => {
     const el = document.getElementById(`feed-details-${uid}`);
     const btn = document.getElementById(`btn-feed-${uid}`);
@@ -14,6 +14,77 @@ window.toggleFeed = (uid) => {
         btn.innerText = "▼ EXPANDIR";
         btn.classList.remove('text-red-400');
     }
+};
+
+// 💰 V2026: FUNÇÃO PARA REVELAR A MESA DE PIX PENDENTE
+// Gil, essa função será chamada quando você clicar no alerta do Assistant
+window.abrirMesaTrabalhoPix = async () => {
+    const mesa = document.getElementById('mesa-pix-pendente');
+    const graficos = document.getElementById('grade-kpis-dashboard');
+    const feedback = document.getElementById('feedback-mesa-pix');
+    
+    if(!mesa || !graficos) return;
+
+    // Esconde os gráficos e mostra a lista de pagamentos
+    graficos.classList.add('hidden');
+    mesa.classList.remove('hidden');
+    feedback.innerHTML = `<div class="p-10 text-center"><div class="loader mx-auto border-emerald-500"></div><p class="text-[10px] text-gray-500 mt-2">Buscando chaves PIX...</p></div>`;
+
+    try {
+        // Busca apenas quem está com status de PIX Pendente
+        const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("approved_at", "desc"));
+        const snap = await getDocs(q);
+        
+        if(snap.empty) {
+            feedback.innerHTML = `<p class="text-center py-20 text-gray-500 text-xs italic uppercase">Nenhum PIX aguardando na fila. Céu limpo! ☀️</p>`;
+            return;
+        }
+
+        feedback.innerHTML = ""; // Limpa loader
+        
+        snap.forEach(d => {
+            const m = d.data();
+            // Criamos cada linha de pagamento com botão de Copiar e Botão de Confirmar
+            feedback.innerHTML += `
+                <div class="bg-slate-800/50 border border-emerald-500/20 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade mb-3">
+                    <div class="flex-1 text-left">
+                        <p class="text-[9px] font-black text-emerald-400 uppercase leading-none mb-1">Valor: R$ ${m.reward}</p>
+                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'}</h5>
+                        <p class="text-[10px] text-gray-500 font-mono select-all">PIX: ${m.pix_key || 'Chave não cadastrada'}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="navigator.clipboard.writeText('${m.pix_key}'); alert('Chave Copiada!')" class="bg-slate-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-slate-600 transition">📋 Copiar</button>
+                        <button onclick="window.confirmarPagamentoRealizado('${d.id}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-emerald-900/20 active:scale-95 transition">✅ Confirmar PIX</button>
+                    </div>
+                </div>
+            `;
+        });
+
+    } catch(e) {
+        feedback.innerHTML = `<p class="text-red-500 text-center text-[10px]">Erro ao carregar fila: ${e.message}</p>`;
+    }
+};
+
+// 🏛️ FINALIZA O PROCESSO: MOVE DA FILA PARA O HISTÓRICO
+window.confirmarPagamentoRealizado = async (docId) => {
+    if(!confirm("Você confirma que já realizou o PIX no banco? Esta ação é irreversível.")) return;
+    
+    try {
+        await updateDoc(doc(window.db, "mission_submissions", docId), {
+            status: 'paid_real',
+            finalized_at: serverTimestamp()
+        });
+        alert("✅ Pagamento registrado com sucesso!");
+        window.abrirMesaTrabalhoPix(); // Recarrega a mesa
+    } catch(e) {
+        alert("Erro ao finalizar: " + e.message);
+    }
+};
+
+// 🔙 VOLTAR PARA O DASHBOARD NORMAL
+window.fecharMesaPix = () => {
+    document.getElementById('mesa-pix-pendente').classList.add('hidden');
+    document.getElementById('grade-kpis-dashboard').classList.remove('hidden');
 };
 
 export async function init() {
