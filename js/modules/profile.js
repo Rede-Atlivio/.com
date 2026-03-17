@@ -223,4 +223,5 @@ window.carregarDadosPerfil = carregarDadosPerfil;
 window.abrirConfiguracoes = abrirConfiguracoes;
 window.salvarConfiguracoes = salvarConfiguracoes;
 window.copiarLinkAfiliado = copiarLinkAfiliado;
-window.verPerfilCompleto = window.verPerfilCompleto; // Garante a exportação
+window.verPerfilCompleto = window.verPerfilCompleto; 
+window.ganharExperiencia = ganharExperiencia; // Libera para o Missions usar
