@@ -324,6 +324,7 @@ async function rejeitarMissao(docId) {
     await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
     loadSubmissions();
 }
-// 🔐 SOLDAGEM GLOBAL ADMIN
-// Gil, isso libera o botão "+ NOVO" para abrir o criador de missões
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026
+// Libera o acesso para o botão + NOVO do Core.js
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
+console.log("✅ [Missions Admin] Criador Atlas exportado com sucesso.");
