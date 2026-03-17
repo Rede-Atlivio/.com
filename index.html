@@ -116,7 +116,19 @@
       RADAR VISUAL V12 - SISTEMA MULTI-OFERTAS
       ============================================================ */
 
-        /* 1. CONTAINER FLUIDO */
+       /* 🌍 ATLAS VIVO: Animação do Globo Rotativo */
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .animate-spin-slow { animation: spin-slow 8s linear infinite; }
+
+        /* 📱 FEED SOCIAL: Container rolável estilo rede social para Missões */
+        #lista-missoes {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 100px;
+        }
+
+        /* 1. CONTAINER FLUIDO DO RADAR DE SERVIÇOS */
         #radar-container {
             display: flex;
             flex-direction: column;
