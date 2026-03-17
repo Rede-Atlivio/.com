@@ -159,7 +159,12 @@ window.switchView = async function(viewName) {
     
     // 2. DEFINIR ROTA (AGORA COM PRODUTOS)
     // No Dashboard, o container alvo agora é o 'dashboard-main-content' para não apagar o Sentinela que fica no 'view-dashboard'
-    if (viewName === 'dashboard') { moduleFile = './dashboard.js'; containerId = 'view-dashboard'; }
+    if (viewName === 'dashboard') { 
+        moduleFile = './dashboard.js'; 
+        containerId = 'view-dashboard'; 
+        // 💰 Reset visual: Garante que ao entrar no Dashboard, a mesa de PIX comece fechada
+        if(window.fecharMesaPix) window.fecharMesaPix();
+    }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
     else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
