@@ -305,8 +305,19 @@
         </div>
     </div>
 
-    <script type="module">
+   <script type="module">
         import './js/admin/core.js?v=2026_V60';
+        
+        // 🚀 MAESTRO VIDEO BRIDGE: Abre vídeos no admin
+        window.assistirVideoAdmin = (videoId) => {
+            const modal = document.getElementById('modal-video-maestro');
+            const frame = document.getElementById('player-maestro-frame');
+            if(modal && frame) {
+                frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+                modal.classList.remove('hidden');
+            }
+        };
+
         // Aguarda um pouco para os ícones serem desenhados na tela
         setTimeout(() => { 
             if (typeof lucide !== 'undefined') lucide.createIcons(); 
