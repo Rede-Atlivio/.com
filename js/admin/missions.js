@@ -45,8 +45,8 @@ async function switchMissionTab(tab) {
         
         if(btnAdd) { 
             btnAdd.style.display = 'block'; 
-            btnAdd.innerHTML = "+ NOVA MISSÃO"; 
-            btnAdd.onclick = () => abrirNovaMissao(); // Limpa para criar nova
+           btnAdd.innerHTML = "+ NOVA MISSÃO"; 
+            btnAdd.onclick = () => abrirCriadorMissaoAtlas(); // Nome padronizado V2026
         }
         header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadMissionsManagement();
