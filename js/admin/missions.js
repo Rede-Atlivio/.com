@@ -134,13 +134,35 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                 <textarea id="mis-desc" class="w-full p-2 rounded bg-white text-black text-sm" rows="2" placeholder="Explique o passo a passo...">${dados?.description || ''}</textarea>
             </div>
             
-            <div class="p-3 bg-slate-800 rounded-xl border border-blue-500/30">
-                <p class="text-[9px] font-black text-blue-400 uppercase mb-2">📍 Âncora Geográfica (Atlas Vivo)</p>
-                <div class="grid grid-cols-3 gap-2">
-                    <input id="mis-lat" value="${dados?.latitude || ''}" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Latitude">
-                    <input id="mis-lng" value="${dados?.longitude || ''}" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Longitude">
-                    <input id="mis-radius" value="${dados?.radius || 50}" type="number" class="p-2 rounded bg-slate-900 text-white text-xs font-mono" placeholder="Raio (m)">
+           <div class="p-4 bg-slate-800 rounded-2xl border border-blue-500/20 space-y-3">
+                <div class="flex justify-between items-center">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📍 Localização Atlas Vivo</p>
+                    <button onclick="window.obterLocalizacaoAutomatica()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase transition flex items-center gap-1 shadow-lg">
+                        <span class="text-xs">🎯</span> Pegar GPS Atual
+                    </button>
                 </div>
+
+                <div class="relative group">
+                    <input type="text" id="mis-address-search" placeholder="Ou digite o endereço (Rua, Número, Cidade)..." class="w-full p-2.5 pl-9 rounded-xl bg-slate-900 text-white text-xs border border-slate-700 focus:border-blue-500 outline-none transition">
+                    <span class="absolute left-3 top-2.5 text-gray-500">🔍</span>
+                    <button onclick="window.converterEnderecoEmGps()" class="absolute right-2 top-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-[8px] font-bold uppercase transition">Converter</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="space-y-1">
+                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Latitude</label>
+                        <input id="mis-lat" value="${dados?.latitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Longitude</label>
+                        <input id="mis-lng" value="${dados?.longitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Raio (Metros)</label>
+                        <input id="mis-radius" value="${dados?.radius || 50}" type="number" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-slate-800" placeholder="50">
+                    </div>
+                </div>
+                <p class="text-[8px] text-gray-500 italic">* Se for missão online (sem local fixo), deixe Latitude e Longitude vazios.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
