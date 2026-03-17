@@ -779,3 +779,10 @@ window.addEventListener('click', (e) => {
         console.warn(`[🛡️ Vigilante V3] Clique em ${abaAlvo} bloqueado com sucesso.`);
     }
 }, { capture: true }); // O segredo da velocidade está no 'capture: true'
+
+// 🔐 SOLDAGEM GLOBAL DE EMERGÊNCIA V2026
+// Gil, estas linhas garantem que o HTML consiga "conversar" com o JS.
+window.switchTab = switchTab;
+window.maestroUniversal = maestroUniversal;
+window.registrarEventoMaestro = registrarEventoMaestro;
+console.log("🚀 [App.js] Sistema de Navegação e Maestro Soldados com Sucesso!");
