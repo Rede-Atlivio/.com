@@ -97,7 +97,20 @@ export async function init() {
 
        // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
     container.innerHTML += `
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 animate-fade">
+        <div id="mesa-pix-pendente" class="hidden animate-fade mb-6">
+            <div class="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 shadow-2xl">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Fila de Pagamentos PIX 💰</h3>
+                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pague no seu banco e confirme aqui para limpar a fila.</p>
+                    </div>
+                    <button onclick="window.fecharMesaPix()" class="bg-slate-800 text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:text-white transition">✖ Voltar ao Painel</button>
+                </div>
+                <div id="feedback-mesa-pix" class="space-y-3"></div>
+            </div>
+        </div>
+
+        <div id="grade-kpis-dashboard" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 animate-fade">
             <div class="glass-panel p-4 border-t-2 border-blue-500">
                 <p class="text-[8px] uppercase font-bold text-gray-500">👥 Base Total</p>
                 <h3 class="text-lg font-black text-white" id="kpi-users">--</h3>
