@@ -349,8 +349,10 @@ async function rejeitarMissao(docId) {
     loadSubmissions();
 }
 // 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO
-// Gil, agora o window recebe a função com o nome correto.
+// Gil, aqui garantimos que TODOS os botões do GPS funcionem sem dar erro de "not a function"
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
-window.abrirNovaMissao = abrirCriadorMissaoAtlas; // Mantém compatibilidade com o botão interno
+window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
+window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
+window.converterEnderecoEmGps = converterEnderecoEmGps;
 
-console.log("🚀 [Missions Admin] Motor Atlas Soldado com Sucesso!");
+console.log("🚀 [Missions Admin] Todas as funções de GPS e Atlas foram soldadas!");
