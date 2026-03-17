@@ -326,7 +326,9 @@ async function rejeitarMissao(docId) {
     await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
     loadSubmissions();
 }
-// 🔐 SOLDAGEM GLOBAL ADMIN V2026
-// Libera o acesso para o botão + NOVO do Core.js
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO
+// Gil, agora o window recebe a função com o nome correto.
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
-console.log("✅ [Missions Admin] Criador Atlas exportado com sucesso.");
+window.abrirNovaMissao = abrirCriadorMissaoAtlas; // Mantém compatibilidade com o botão interno
+
+console.log("🚀 [Missions Admin] Motor Atlas Soldado com Sucesso!");
