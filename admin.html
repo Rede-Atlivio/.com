@@ -282,6 +282,15 @@
         </div>
     </div>
 
+    <div id="modal-video-maestro" class="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl hidden flex items-center justify-center p-4 animate-fade">
+        <div class="bg-slate-900 w-full max-w-4xl aspect-video rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
+            <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden'); document.getElementById('player-maestro-frame').src='';" class="absolute top-4 right-4 z-50 bg-black/50 text-white p-2 rounded-full hover:bg-red-600 transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <iframe id="player-maestro-frame" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+    </div>
+
     <div id="modal-confirmacao-black" class="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4 animate-fade">
         <div class="bg-slate-900 border border-blue-500/30 w-full max-w-md rounded-3xl p-8 shadow-2xl text-center">
             <div class="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-500/30">
