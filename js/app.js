@@ -657,12 +657,7 @@ auth.onAuthStateChanged(async (user) => {
         if (window.pararRadarFisico) window.pararRadarFisico();
     }
 });
-// 🩹 Blindagem financeira processada via evento userProfileLoaded no topo.
-window.switchTab = switchTab;
-window.registrarEventoMaestro = registrarEventoMaestro;
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.carregarInterface = carregarInterface;
+// 🩹 Saneamento V2026: Exportações movidas para o final do arquivo para evitar conflitos.
 
 // 🧭 NOVAS FUNÇÕES DO TOUR
 if (typeof renderizarTourBoasVindas === 'function') {
