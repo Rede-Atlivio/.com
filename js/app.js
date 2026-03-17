@@ -728,8 +728,8 @@ window.addEventListener('click', (e) => {
     const isPrestador = window.userProfile?.is_provider === true;
     
     // Suas regras de negócio exatas:
-    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos']; 
+    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
     
     // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
     // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
