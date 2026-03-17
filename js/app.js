@@ -78,10 +78,10 @@ import './auth.js';
 import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
+import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
-
 // Importa a carteira e extrai a função de monitoramento
 import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
 
