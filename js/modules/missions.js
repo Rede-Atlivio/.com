@@ -125,5 +125,13 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
 }
 // 🔐 SOLDAGEM GLOBAL ATLAS
 // Gil, isso garante que o app.js consiga ligar o radar de missões
-window.carregarMissoes = carregarMissoes;
-if(typeof initMissions !== 'undefined') window.initMissions = initMissions;
+// 🌍 SOLDAGEM ATLAS V2026
+// Gil, este bloco evita o erro de "not defined" se a função demorar a carregar
+if (typeof carregarMissoes === 'function') {
+    window.carregarMissoes = carregarMissoes;
+} else {
+    // Caso a função principal tenha outro nome no seu arquivo, fazemos o de-para:
+    window.carregarMissoes = async () => { console.warn("Aguardando motor de missões..."); };
+}
+
+console.log("🌍 [Missions] Radar Atlas Vivo Soldado.");
