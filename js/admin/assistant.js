@@ -187,3 +187,7 @@ export async function renderAssistant(containerId) {
         container.innerHTML = `<div class="p-4 bg-red-900/20 border border-red-500/50 rounded text-red-200 text-xs">Erro na IA: ${e.message}</div>`;
     }
 }
+// 🔐 SOLDAGEM GLOBAL V2026
+// Gil, essa linha é o que permite que o Dashboard chame a secretária.
+// Sem isso, o robô dá erro ❌ e você não vê os alertas de PIX.
+window.renderAssistant = renderAssistant;
