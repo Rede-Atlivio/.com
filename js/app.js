@@ -775,9 +775,13 @@ window.addEventListener('click', (e) => {
     }
 }, { capture: true }); // O segredo da velocidade está no 'capture: true'
 
-// 🔐 SOLDAGEM GLOBAL DE EMERGÊNCIA V2026
-// Gil, estas linhas garantem que o HTML consiga "conversar" com o JS.
+// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
+// Gil, centralizamos aqui todas as funções que o HTML (onclick) precisa enxergar.
 window.switchTab = switchTab;
+window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
 window.maestroUniversal = maestroUniversal;
 window.registrarEventoMaestro = registrarEventoMaestro;
-console.log("🚀 [App.js] Sistema de Navegação e Maestro Soldados com Sucesso!");
+window.carregarInterface = carregarInterface;
+
+console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
