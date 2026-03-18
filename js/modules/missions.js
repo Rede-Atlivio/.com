@@ -128,7 +128,9 @@ function verTutorialMissao(videoId) {
     
     if (modal && frame) {
         // Usamos o domínio nocookie para reduzir a carga de scripts do YouTube
-        const cleanUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&origin=${window.location.origin}`;
+       // Gil, forçamos o controls=0 para ele não ter onde pendurar a barra de "Mais Vídeos"
+        // E usamos o loop para ele não parar e mostrar lixo no final
+        const cleanUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&widget_referrer=${encodeURIComponent(window.location.origin)}&origin=${window.location.origin}`;
         
         frame.src = cleanUrl;
         modal.classList.remove('hidden');
