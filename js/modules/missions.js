@@ -166,13 +166,8 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 
 // 🔐 SOLDAGEM GLOBAL ATLAS
 // Gil, isso garante que o app.js consiga ligar o radar de missões
-// 🌍 SOLDAGEM ATLAS V2026
-// Gil, este bloco evita o erro de "not defined" se a função demorar a carregar
-if (typeof carregarMissoes === 'function') {
-    window.carregarMissoes = carregarMissoes;
-} else {
-    // Caso a função principal tenha outro nome no seu arquivo, fazemos o de-para:
-    window.carregarMissoes = async () => { console.warn("Aguardando motor de missões..."); };
-}
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
+window.carregarMissoes = carregarMissoes;
+window.renderizarMissaoCards = carregarMissoes; // Mantém compatibilidade interna
 
-console.log("🌍 [Missions] Radar Atlas Vivo Soldado.");
+console.log("🚀 [Missions] Sistema Atlas Vivo Sincronizado!");
