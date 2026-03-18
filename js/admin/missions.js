@@ -532,14 +532,58 @@ window.finalizarPagamentoComprovante = async (docId) => {
             
             const reader = new FileReader();
             reader.readAsDataURL(blob);
-            reader.onloadend = async () => {
-                await updateDoc(doc(window.db, "mission_submissions", docId), {
-                    status: 'paid_real',
-                    receipt_url: reader.result, // Agora cabe no banco!
-                    paid_at: serverTimestamp()
+           reader.onloadend = async () => {
+                const base64Img = reader.result;
+                console.log("🚀 Iniciando Transação Contábil Atlivio...");
+
+                await runTransaction(window.db, async (transaction) => {
+                    const subRef = doc(window.db, "mission_submissions", docId);
+                    const subSnap = await transaction.get(subRef);
+                    if (!subSnap.exists()) throw "Registro não encontrado";
+                    
+                    const mData = subSnap.data();
+                    const valorPago = parseFloat(mData.reward);
+                    const uidUsuario = mData.user_id;
+
+                    // 1. Marca missão como paga e anexa a prova física (Comprovante)
+                    transaction.update(subRef, {
+                        status: 'paid_real',
+                        receipt_url: base64Img,
+                        paid_at: serverTimestamp()
+                    });
+
+                    // 2. DÉBITO NA EMPRESA: Tira o valor do lucro acumulado do Dashboard
+                    const cofreRef = doc(window.db, "sys_finance", "receita_total");
+                    transaction.update(cofreRef, {
+                        total_acumulado: increment(-valorPago),
+                        ultima_atualizacao: serverTimestamp()
+                    });
+
+                    // 3. LIVRO RAZÃO (sys_ledger): Histórico imutável de saída da empresa
+                    const ledgerRef = doc(collection(window.db, "sys_ledger"));
+                    transaction.set(ledgerRef, {
+                        origem: "SAIDA_MISSAO_PIX",
+                        valor: -valorPago,
+                        usuario_pago: uidUsuario,
+                        missao_id: docId,
+                        timestamp: serverTimestamp()
+                    });
+
+                    // 4. CRÉDITO NO EXTRATO DO USUÁRIO: Para ele ver no App como GANHO EM R$
+                    const userExtratoRef = doc(collection(window.db, "extrato_financeiro"));
+                    transaction.set(userExtratoRef, {
+                        uid: uidUsuario,
+                        valor: valorPago,
+                        tipo: "💰 GANHO_MISSÃO",
+                        descricao: `Recebido por: ${mData.mission_title}`,
+                        moeda: "BRL",
+                        timestamp: serverTimestamp()
+                    });
                 });
-                alert("✅ SUCESSO: PIX Confirmado e Comprovante enviado!");
+
+                alert("💸 PAGAMENTO FINALIZADO!\nO cofre da empresa foi debitado e o usuário recebeu o comprovante.");
                 if(window.loadMissionsPayments) window.loadMissionsPayments();
+                if(window.initDashboard) window.initDashboard(); 
             };
         } catch(err) { 
             console.error(err);
