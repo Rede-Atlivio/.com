@@ -62,15 +62,13 @@ async function carregarMissoes() {
             // 🛰️ VALIDAÇÃO DE PROXIMIDADE ATLAS
             const isAtlas = m.latitude && m.longitude;
             
-            // Se for missão de local fixo e tivermos o GPS do usuário
             if (isAtlas && window.userLocation) {
                 const distKm = calcularDistancia(window.userLocation.lat, window.userLocation.lng, m.latitude, m.longitude);
-                const raioMetros = m.radius || 500;
+                const raioMetros = Number(m.radius) || 0;
                 const distMetros = distKm * 1000;
 
-                // Gil, se a distância for maior que o raio definido no Admin, pulamos esta missão
-                if (distMetros > raioMetros) {
-                    console.log(`📍 Fora do Raio: ${m.title} (${distMetros.toFixed(0)}m)`);
+                // Se o raio for 0, a missão é global. Se tiver valor, filtramos.
+                if (raioMetros > 0 && distMetros > raioMetros) {
                     return; 
                 }
             }
