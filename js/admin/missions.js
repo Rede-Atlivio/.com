@@ -353,11 +353,69 @@ async function rejeitarMissao(docId) {
     await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
     loadSubmissions();
 }
-// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO
-// Gil, aqui garantimos que TODOS os botões do GPS funcionem sem dar erro de "not a function"
+
+// 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026
+// Gil, esta função liga as sugestões inteligentes do Google ao seu campo de busca
+window.iniciarAutocompleteMissions = () => {
+    const input = document.getElementById('mis-address-search');
+    // Verifica se o input existe e se o script do Google no admin.html carregou
+    if (!input || !window.google) return console.warn("🛰️ Google Maps SDK não detectado ou campo ausente.");
+
+    // Configura o Autocomplete focado em endereços brasileiros
+    const options = {
+        componentRestrictions: { country: "br" },
+        fields: ["geometry", "formatted_address"],
+        types: ["address"]
+    };
+
+    const auto = new google.maps.places.Autocomplete(input, options);
+
+    // 🎯 O GOLPE DE MESTRE: Quando você clica na sugestão, ele preenche os números sozinho!
+    auto.addListener("place_changed", () => {
+        const place = auto.getPlace();
+        if (!place.geometry || !place.geometry.location) {
+            return alert("Local não encontrado. Selecione uma opção da lista sugestiva.");
+        }
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Alimenta os campos de coordenadas automaticamente
+        document.getElementById('mis-lat').value = lat.toFixed(6);
+        document.getElementById('mis-lng').value = lng.toFixed(6);
+        
+        console.log("📍 Endereço Geocodificado:", place.formatted_address);
+    });
+};
+
+// 📡 MOTOR DE GEOLOCALIZAÇÃO FÍSICA
+// Pega a sua posição exata pelo GPS do seu notebook ou celular atual
+window.obterLocalizacaoAutomatica = () => {
+    if (!navigator.geolocation) return alert("Seu navegador não tem sensor de GPS.");
+    
+    const btn = event.currentTarget;
+    btn.innerText = "🛰️ BUSCANDO...";
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+        document.getElementById('mis-lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('mis-lng').value = pos.coords.longitude.toFixed(6);
+        btn.innerText = "✅ LOCALIZADO";
+        setTimeout(() => { btn.innerText = "🎯 PEGAR GPS ATUAL"; }, 2000);
+    }, (err) => {
+        alert("Erro no GPS: " + err.message);
+        btn.innerText = "🎯 PEGAR GPS ATUAL";
+    }, { enableHighAccuracy: true });
+};
+
+// 💡 PONTE DE AUXÍLIO
+window.converterEnderecoEmGps = () => {
+    alert("💡 Dica do Maestro: Basta digitar o endereço no campo de busca acima e clicar na sugestão que aparecer!");
+};
+
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
 
-console.log("🚀 [Missions Admin] Todas as funções de GPS e Atlas foram soldadas!");
+console.log("🚀 [Missions Admin] Sistema Atlas Vivo com Inteligência Google Soldado!");
