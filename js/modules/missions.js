@@ -139,7 +139,7 @@ function verTutorialMissao(videoId) {
 
 // 📸 MOTOR DE EXECUÇÃO: Valida distância e abre câmera
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
-    const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nSe a missão for física o sistema verificará se você está no local correto.`);
+    const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nSe a missão for presencial o sistema verificará se você está no local correto.`);
     if (!confirmar) return;
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
