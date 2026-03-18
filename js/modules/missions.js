@@ -3,10 +3,12 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } f
 
 // 🚀 V2026: MOTOR DE MISSÕES GEOLOCALIZADAS (ATLAS VIVO)
 // 🎨 Estilização Dinâmica para o Globo Rodando e Card Atlas
+//🎨 Blindagem de Contraste V2026: Força o título a ser branco no card escuro
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }
+    .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }  
+    .card-atlas-premium h3 { color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     .card-atlas-premium { 
         background: linear-gradient(145deg, #0f172a, #1e293b);
         border: 1px solid rgba(59, 130, 246, 0.3);
