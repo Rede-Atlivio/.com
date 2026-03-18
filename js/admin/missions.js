@@ -429,10 +429,28 @@ window.converterEnderecoEmGps = () => {
     alert("💡 Dica do Maestro: Basta digitar o endereço no campo de busca acima e clicar na sugestão que aparecer!");
 };
 
+// 📸 MOTOR VISUALIZADOR DE PROVAS
+window.visualizarProva = (url) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    
+    modal.classList.remove('hidden');
+    content.innerHTML = `
+        <div class="flex flex-col items-center">
+            <h3 class="text-white font-bold mb-4 uppercase text-xs tracking-widest">Auditoria de Imagem</h3>
+            <div class="bg-slate-900 p-2 rounded-2xl border border-white/10 shadow-2xl">
+                <img src="${url}" class="max-w-full max-h-[70vh] rounded-xl shadow-lg">
+            </div>
+            <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="mt-6 bg-white text-black px-8 py-2 rounded-full font-black text-xs uppercase shadow-xl hover:bg-gray-200 transition">Fechar Visualização</button>
+        </div>
+    `;
+};
+
 // 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
+window.visualizarProva = visualizarProva;
 
 console.log("🚀 [Missions Admin] Sistema Atlas Vivo com Inteligência Google Soldado!");
