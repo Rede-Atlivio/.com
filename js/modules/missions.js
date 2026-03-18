@@ -147,9 +147,23 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
         console.log("📸 Aguardando captura da imagem...");
         
     }, (err) => {
-        alert("❌ Erro: Para ganhar a recompensa, você precisa permitir o GPS.");
+       alert("❌ Erro: Para ganhar a recompensa, você precisa permitir o GPS.");
     });
 }
+
+// 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
+// Gil, esta função calcula a distância exata entre dois pontos no globo terrestre
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Raio da Terra em KM
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+}
+
 // 🔐 SOLDAGEM GLOBAL ATLAS
 // Gil, isso garante que o app.js consiga ligar o radar de missões
 // 🌍 SOLDAGEM ATLAS V2026
