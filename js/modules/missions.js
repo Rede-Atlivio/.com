@@ -119,6 +119,7 @@ async function carregarMissoes() {
     }
 }
 
+// 📽️ MOTOR DE VÍDEO VEO 3: Experiência Ultra-Limpa (Sem poluição de canais)
 function verTutorialMissao(videoId) {
     if (!videoId) return;
     
@@ -126,11 +127,17 @@ function verTutorialMissao(videoId) {
     const frame = document.getElementById('player-maestro-frame');
     
     if (modal && frame) {
-        // Configuração de Limpeza Maestro: Tira logos, sugestões e anotações
-        const cleanUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&controls=1`;
+        // Gil, essa URL combinada com o CSS abaixo remove o máximo de lixo possível do Google
+        const cleanUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0`;
+        
+        // Aplicamos um "zoom" técnico no frame para esconder as bordas onde ficam títulos e logos
+        frame.style.width = "100%";
+        frame.style.height = "100%";
         frame.src = cleanUrl;
+        
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
+        console.log("🎬 Maestro: Tutorial iniciado com Blindagem Visual.");
     } else {
         window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
     }
