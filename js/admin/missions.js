@@ -182,8 +182,13 @@ async function abrirCriadorMissaoAtlas(dados = null) {
             <button onclick="window.salvarMissao()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold uppercase shadow-lg transition transform active:scale-95">
                 ${dados ? '💾 SALVAR ALTERAÇÕES' : '🚀 CRIAR MISSÃO'}
             </button>
-        </div>
+       </div>
     `;
+
+    // 🛰️ DESPERTADOR GOOGLE V2026: Liga o sensor 200ms após o modal abrir para garantir que o HTML exista
+    setTimeout(() => {
+        if (window.iniciarAutocompleteMissions) window.iniciarAutocompleteMissions();
+    }, 200);
 }
 
 async function salvarMissao() {
