@@ -69,30 +69,30 @@ async function carregarMissoes() {
             }
 
             // PADRÃO VISUAL ATLIVIO: Todas escuras com Globo girando
-            const cardClass = 'card-atlas-premium text-white';
+           const cardClass = 'card-atlas-premium text-white';
             const iconAtlas = '<span class="globo-atlas">🌍</span>';
             const badgeClass = 'bg-blue-500/20 text-blue-300';
 
-           // 💰 V2026.PRO: Identifica a moeda de recompensa (CRÉDITOS vs PIX)
+            // 💰 V2026.PRO: Identifica a moeda de recompensa (CRÉDITOS vs PIX)
             const isRealMoney = m.pay_type === 'real';
             const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
             const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
 
-            // 🎨 Layout Evoluído com Transparência Financeira
+            // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
             container.innerHTML += `
-                <div class="${cardClass} p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all animate-fadeIn mb-4">
+                <div class="${cardClass} p-5 rounded-3xl border border-white/10 shadow-xl transition-all animate-fadeIn mb-4">
                     <div class="flex justify-between items-start mb-3">
                         <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
                             ${iconAtlas}
                         </div>
                         <div class="text-right">
                             <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
-                            <p class="text-xl font-black ${isAtlas ? 'text-white' : 'text-slate-800'} tracking-tighter">
-                                R$ ${m.reward.toFixed(2).replace('.', ',')}
+                            <p class="text-xl font-black text-white tracking-tighter">
+                                R$ ${Number(m.reward).toFixed(2).replace('.', ',')}
                             </p>
                         </div>
                     </div>
-
+                    
                     <h3 class="font-black text-slate-800 text-sm uppercase mb-1">${m.title}</h3>
                     <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
 
