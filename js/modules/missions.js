@@ -140,35 +140,68 @@ function verTutorialMissao(videoId) {
     }
 }
 
-// 📸 MOTOR DE EXECUÇÃO: Valida distância e abre câmera
+// 📸 MOTOR DE EXECUÇÃO V2026: Bypass de Segurança & Câmera Instantânea
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
-    const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nSe a missão for presencial o sistema verificará se você está no local correto.`);
-    if (!confirmar) return;
+    if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) return;
+
+    const inputCamera = document.getElementById('camera-input');
+    inputCamera.click();
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        
-        // 🛰️ VERIFICAÇÃO DE DISTÂNCIA REAL-TIME
-        // Buscamos os dados da missão para comparar
-        const q = query(collection(db, "missions"), where("__name__", "==", id));
-        const snap = await getDocs(q);
-        const m = snap.docs[0]?.data();
+        window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    }, null, { enableHighAccuracy: true });
 
-        if (m && m.latitude && m.longitude) {
-            const distKm = calcularDistancia(latitude, longitude, m.latitude, m.longitude);
-            const raioM = Number(m.radius) || 500;
-            
-            if (distKm * 1000 > raioM) {
-                return alert(`📍 LOCAL INCORRETO: Você está muito longe deste local para realizar a missão. Aproxime-se do endereço indicado!`);
-            }
-        }
+    inputCamera.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+    };
+}
 
-        // Se passar na distância ou for online: Abre câmera
-        document.getElementById('camera-input').click();
+// 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
+async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo) {
+    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const originalText = btn.innerText;
+    
+    try {
+        btn.disabled = true;
+        btn.innerText = "⏳ COMPRIMINDO...";
+
+        const bitmap = await createImageBitmap(arquivo);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 1200 / Math.max(bitmap.width, bitmap.height);
+        canvas.width = bitmap.width * scale;
+        canvas.height = bitmap.height * scale;
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         
-    }, (err) => {
-        alert("⚠️ ATENÇÃO: Para realizar esta missão e receber o pagamento, você precisa ativar o GPS do seu celular.");
-    }, { enableHighAccuracy: true });
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
+        btn.innerText = "🚀 ENVIANDO PROVA...";
+
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+            const base64data = reader.result;
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                mission_title: titulo,
+                reward: recompensa,
+                pay_type: tipoPagamento,
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Usuário Atlivio",
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                status: 'pending',
+                created_at: serverTimestamp()
+            });
+            alert("✅ SUCESSO! Sua prova foi enviada para análise.");
+            btn.innerText = "✅ ENVIADO";
+        };
+    } catch (err) {
+        alert("❌ Falha no envio.");
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
 }
 
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
