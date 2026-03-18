@@ -348,16 +348,23 @@ async function aprovarMissao(docId, userId, valor) {
                 approved_at: serverTimestamp() 
             });
 
-            // Notifica o usuário que foi aprovado, mas o PIX está sendo processado
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `✅ Sua missão de R$ ${valor} foi aprovada! O pagamento via PIX será realizado em breve.`, 
                 read: false, type: 'info', created_at: serverTimestamp()
             });
+
+            // Gil, aqui damos o "toque" no Dashboard: Se a função de recarregar o Assistant existir, chamamos ela
+            if (window.initDashboard) {
+                console.log("🔔 Missões: Notificando Dashboard sobre novo PIX...");
+                window.initDashboard(); 
+            }
+
             alert("⚠️ Aprovada! O pagamento em REAL foi enviado para sua fila de PIX no Dashboard.");
         }
 
-        loadSubmissions(); // Atualiza a tabela do Admin
+        // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
+        loadSubmissions();
 
     } catch(e) {
         console.error("Erro na Aprovação:", e);
