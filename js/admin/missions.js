@@ -34,29 +34,31 @@ export async function init() {
 
 async function switchMissionTab(tab) {
     currentTab = tab;
-    const btnMissions = document.getElementById('btn-tab-missions');
-    const btnSubs = document.getElementById('btn-tab-submissions');
+    // Reset de botões
+    ['missions', 'submissions', 'payments'].forEach(t => {
+        const btn = document.getElementById(`btn-tab-${t}`);
+        if(btn) btn.className = "text-gray-400 font-bold uppercase text-[9px] pb-2 border-b-2 border-transparent transition";
+    });
+
+    const activeBtn = document.getElementById(`btn-tab-${tab}`);
+    if(activeBtn) activeBtn.className = "text-blue-500 font-bold uppercase text-[9px] pb-2 border-b-2 border-blue-500 transition";
+
     const btnAdd = document.getElementById('btn-list-add');
     const header = document.getElementById('list-header');
 
     if(tab === 'missions') {
-        btnMissions.className = "text-blue-500 font-bold uppercase text-xs pb-2 border-b-2 border-blue-500 transition";
-        btnSubs.className = "text-gray-400 font-bold uppercase text-xs pb-2 border-b-2 border-transparent transition";
-        
-        if(btnAdd) { 
-            btnAdd.style.display = 'block'; 
-           btnAdd.innerHTML = "+ NOVA MISSÃO"; 
-            btnAdd.onclick = () => abrirCriadorMissaoAtlas(); // Nome padronizado V2026
-        }
+        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA MISSÃO"; btnAdd.onclick = () => abrirCriadorMissaoAtlas(); }
         header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadMissionsManagement();
-    } else {
-        btnMissions.className = "text-gray-400 font-bold uppercase text-xs pb-2 border-b-2 border-transparent transition";
-        btnSubs.className = "text-blue-500 font-bold uppercase text-xs pb-2 border-b-2 border-blue-500 transition";
-        
+    } else if(tab === 'submissions') {
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">MISSÃO</th><th class="p-3">USUÁRIO</th><th class="p-3">PROVA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadSubmissions();
+    } else {
+        // ABA DE PAGAMENTOS
+        if(btnAdd) { btnAdd.style.display = 'none'; }
+        header.innerHTML = `<th class="p-3">USUÁRIO</th><th class="p-3">VALOR</th><th class="p-3">CHAVE PIX</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadMissionsPayments(); // Nova função
     }
 }
 
