@@ -271,13 +271,15 @@ async function loadSubmissions() {
             if(data.status === 'approved') statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
             if(data.status === 'rejected') statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
 
-           // Gil, aqui geramos a miniatura da foto para você não precisar abrir outra aba
+          // Gil, agora a foto abre em um modal flutuante para não falhar o carregamento
             let provaLink = '<span class="text-gray-600 text-[10px]">SEM FOTO</span>';
             if(data.proof_url) {
                 provaLink = `
-                    <div class="relative group cursor-pointer" onclick="window.open('${data.proof_url}', '_blank')">
-                        <img src="${data.proof_url}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 hover:scale-150 transition-all z-10">
-                        <span class="absolute -bottom-1 -right-1 bg-blue-600 text-[8px] px-1 rounded">🔍</span>
+                    <div class="relative group cursor-pointer" onclick="window.visualizarProva('${data.proof_url}')">
+                        <img src="${data.proof_url}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 transition-all">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity">
+                            <span class="text-white text-[10px] font-bold">VER</span>
+                        </div>
                     </div>
                 `;
             }
