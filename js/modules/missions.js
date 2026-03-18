@@ -119,20 +119,19 @@ async function carregarMissoes() {
     }
 }
 
-// 📽️ MOTOR DE VÍDEO VEO 3: Abre o tutorial direto para o usuário
 function verTutorialMissao(videoId) {
     if (!videoId) return;
     
-    // Gil, usamos o modal de vídeo que já existe no seu sistema (configurado no index.html)
     const modal = document.getElementById('modal-video-maestro');
     const frame = document.getElementById('player-maestro-frame');
     
     if (modal && frame) {
-        frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        // Configuração de Limpeza Maestro: Tira logos, sugestões e anotações
+        const cleanUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&controls=1`;
+        frame.src = cleanUrl;
         modal.classList.remove('hidden');
         modal.style.display = 'flex';
     } else {
-        // Fallback caso o modal do index não esteja mapeado
         window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
     }
 }
