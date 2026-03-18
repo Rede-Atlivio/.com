@@ -1,5 +1,4 @@
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, runTransaction, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { collection, getDocs, getDoc, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, runTransaction, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 let currentTab = 'submissions'; 
 let allLoadedMissions = []; // Armazena as missões para edição
 
