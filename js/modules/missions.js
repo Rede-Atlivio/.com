@@ -164,10 +164,11 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
     return R * c; 
 }
 
-// 🔐 SOLDAGEM GLOBAL ATLAS
-// Gil, isso garante que o app.js consiga ligar o radar de missões
-// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
+// 🔐 SOLDAGEM GLOBAL ATLAS V2026.PRO (FINAL)
+// Gil, aqui entregamos todas as funções para o navegador reconhecer os cliques nos botões
 window.carregarMissoes = carregarMissoes;
-window.renderizarMissaoCards = carregarMissoes; // Mantém compatibilidade interna
+window.renderizarMissaoCards = carregarMissoes; 
+window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
+window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
 
-console.log("🚀 [Missions] Sistema Atlas Vivo Sincronizado!");
+console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
