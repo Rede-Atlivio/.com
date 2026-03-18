@@ -17,16 +17,14 @@ styleAtlas.innerHTML = `
 `;
 document.head.appendChild(styleAtlas);
 
+// 🚀 INICIALIZADOR ÚNICO V2026
+// Gil, esta função agora apenas prepara o terreno, as exportações ficam fixas no final do arquivo
 export async function initMissions() {
     console.log("🌍 Atlas Vivo: Sincronizando radar geográfico...");
     const container = document.getElementById('lista-missoes');
     if (!container) return;
 
-    // Exporta funções para o mundo global (HTML)
-    window.abrirProvaMissao = abrirProvaMissao;
-    window.verTutorialMissao = verTutorialMissao;
-
-    await renderizarMissaoCards();
+    await carregarMissoes(); // Chama o motor de carga principal
 }
 
 // 🏗️ MOTOR DE CARGA ATLAS VIVO V2026
