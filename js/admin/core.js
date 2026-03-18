@@ -209,27 +209,28 @@ window.switchView = async function(viewName) {
         }
     }
 
-    // 4. CARREGAR JS
+    // 4. CARREGAR INTELIGÊNCIA (JS)
     if (moduleFile) {
         try {
             const module = await import(`${moduleFile}?v=${Date.now()}`);
             if (module.init) await module.init(viewName);
             
-            // 🚀 GATILHO MAESTRO V2.0: Sincroniza a interface visual com o motor de automação
+            // Gil, se a rota for 'pix_workdesk', forçamos o motor a abrir a lista de pagamentos na hora
+            if (viewName === 'pix_workdesk' && window.abrirMesaTrabalhoPix) {
+                console.log("💰 Maestro: Ativando Mesa de Trabalho PIX...");
+                window.abrirMesaTrabalhoPix();
+            }
+
+            // GATILHO MAESTRO V2.0: Sincroniza a interface visual
             if (viewName === 'maestro') {
-                console.log("🛰️ Sincronizando Painel Maestro...");
-                
-                // 1. Força a atualização do LED de Status
                 const led = document.getElementById('status-robo-led');
                 const txt = document.getElementById('status-robo-txt');
-                const isAtivo = !!window.unsubscribeGatilhoChat; // Verifica se a escuta do Firebase está viva
+                const isAtivo = !!window.unsubscribeGatilhoChat;
 
                 if (led && txt) {
                     led.className = isAtivo ? "w-4 h-4 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]" : "w-4 h-4 rounded-full bg-red-600 animate-pulse";
                     txt.innerText = isAtivo ? "Sistema Ativo" : "Offline";
                 }
-
-                // 2. Chama a função de carga se o módulo automation.js já estiver injetado
                 if (window.carregarMaestro) await window.carregarMaestro();
             }
         } catch (e) {
