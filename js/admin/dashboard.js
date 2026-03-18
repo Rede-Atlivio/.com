@@ -42,23 +42,29 @@ window.abrirMesaTrabalhoPix = async () => {
 
         feedback.innerHTML = ""; // Limpa loader
         
-        snap.forEach(d => {
+      for (const d of snap.docs) {
             const m = d.data();
-            // Criamos cada linha de pagamento com botão de Copiar e Botão de Confirmar
+            const idDoc = d.id;
+            
+            // Gil, as missões às vezes não salvam a chave PIX no envio, então vamos buscar direto no perfil do dono da missão
+            const userSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", m.user_id)));
+            const userData = !userSnap.empty ? userSnap.docs[0].data() : {};
+            const chavePixReal = m.pix_key || userData.pix_key || userData.chave_pix || 'Não informada';
+
             feedback.innerHTML += `
                 <div class="bg-slate-800/50 border border-emerald-500/20 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade mb-3">
                     <div class="flex-1 text-left">
-                        <p class="text-[9px] font-black text-emerald-400 uppercase leading-none mb-1">Valor: R$ ${m.reward}</p>
-                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'}</h5>
-                        <p class="text-[10px] text-gray-500 font-mono select-all">PIX: ${m.pix_key || 'Chave não cadastrada'}</p>
+                        <p class="text-[9px] font-black text-emerald-400 uppercase leading-none mb-1">Missão: ${m.mission_title || 'Tarefa'}</p>
+                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'} ──▶ R$ ${m.reward}</h5>
+                        <p class="text-[10px] text-gray-500 font-mono select-all mt-1 italic">CHAVE PIX: ${chavePixReal}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="navigator.clipboard.writeText('${m.pix_key}'); alert('Chave Copiada!')" class="bg-slate-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-slate-600 transition">📋 Copiar</button>
-                        <button onclick="window.confirmarPagamentoRealizado('${d.id}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg shadow-emerald-900/20 active:scale-95 transition">✅ Confirmar PIX</button>
+                        <button onclick="navigator.clipboard.writeText('${chavePixReal}'); alert('Chave Copiada!')" class="bg-slate-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-slate-600 transition">📋 Copiar Chave</button>
+                        <button onclick="window.confirmarPagamentoRealizado('${idDoc}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg active:scale-95 transition">✅ Confirmar Envio do PIX</button>
                     </div>
                 </div>
             `;
-        });
+        }
 
     } catch(e) {
         feedback.innerHTML = `<p class="text-red-500 text-center text-[10px]">Erro ao carregar fila: ${e.message}</p>`;
