@@ -215,9 +215,10 @@ async function salvarMissao() {
         description: desc, 
         reward: parseFloat(reward), 
         video_id: videoId || null,
-        latitude: lat ? parseFloat(lat) : null,
+       latitude: lat ? parseFloat(lat) : null,
         longitude: lng ? parseFloat(lng) : null,
-        radius: radius ? parseInt(radius) : 50,
+        // Gil, garantimos que o raio seja lido como número inteiro puro (Metros)
+        radius: radius ? Number(radius) : 50,
         pay_type: payType, // Define se paga em ATLIX ou REAL
         updated_at: serverTimestamp(), 
         active: true
