@@ -119,10 +119,22 @@ async function carregarMissoes() {
     }
 }
 
-// 📽️ ABRE O TUTORIAL (MODAL DE VÍDEO)
+// 📽️ MOTOR DE VÍDEO VEO 3: Abre o tutorial direto para o usuário
 function verTutorialMissao(videoId) {
-    // Aqui no futuro chamaremos o modal unificado de vídeo
-    alert(`🎥 Iniciando Tutorial Veo 3...\n(ID do Vídeo: ${videoId})\n\nGil, o modal de vídeo será configurado na próxima fase.`);
+    if (!videoId) return;
+    
+    // Gil, usamos o modal de vídeo que já existe no seu sistema (configurado no index.html)
+    const modal = document.getElementById('modal-video-maestro');
+    const frame = document.getElementById('player-maestro-frame');
+    
+    if (modal && frame) {
+        frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+    } else {
+        // Fallback caso o modal do index não esteja mapeado
+        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    }
 }
 
 // 📸 GATILHO DE PROVA (CÂMERA + GPS)
