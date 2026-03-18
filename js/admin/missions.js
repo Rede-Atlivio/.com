@@ -311,16 +311,25 @@ async function aprovarMissao(docId, userId, valor) {
 
         if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
 
-        if (tipoMoeda === 'atlix') {
-            // --- FLUXO A: PAGAMENTO AUTOMÁTICO EM ATLIX ---
+       if (tipoMoeda === 'atlix') {
+            // Gil, aqui o sistema entra na carteira do usuário e deposita os créditos agora mesmo
             await updateDoc(doc(window.db, "mission_submissions", docId), { 
                 status: 'approved', 
                 paid_at: serverTimestamp() 
             });
 
-            if (window.receberRecompensaMissao) {
-                await window.receberRecompensaMissao(valor, subData.mission_title || "Missão Concluída");
-            }
+            // Chama o motor financeiro global para processar o saldo
+            const userRef = doc(window.db, "usuarios", userId);
+            await runTransaction(window.db, async (transaction) => {
+                const userDoc = await transaction.get(userRef);
+                if (!userDoc.exists()) return;
+                
+                const novoSaldoBonus = (userDoc.data().wallet_bonus || 0) + valor;
+                transaction.update(userRef, { 
+                    wallet_bonus: novoSaldoBonus,
+                    updated_at: serverTimestamp() 
+                });
+            });
 
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
