@@ -60,21 +60,18 @@ async function carregarMissoes() {
             const id = doc.id;
 
             // 🛰️ VALIDAÇÃO DE PROXIMIDADE ATLAS
-            const isAtlas = m.latitude && m.longitude;
+            const isLocal = m.latitude && m.longitude;
+            const raioMetros = Number(m.radius) || 0;
             
-            if (isAtlas && window.userLocation) {
+            if (isLocal && raioMetros > 0 && window.userLocation) {
                 const distKm = calcularDistancia(window.userLocation.lat, window.userLocation.lng, m.latitude, m.longitude);
-                const raioMetros = Number(m.radius) || 0;
-                const distMetros = distKm * 1000;
-
-                // Se o raio for 0, a missão é global. Se tiver valor, filtramos.
-                if (raioMetros > 0 && distMetros > raioMetros) {
-                    return; 
-                }
+                if ((distKm * 1000) > raioMetros) return; 
             }
-            const cardClass = isAtlas ? 'card-atlas-premium text-white' : 'bg-white text-slate-800';
-            const iconAtlas = isAtlas ? '<span class="globo-atlas">🌍</span>' : '🎯';
-            const badgeClass = isAtlas ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-50 text-blue-600';
+
+            // PADRÃO VISUAL ATLIVIO: Todas escuras com Globo girando
+            const cardClass = 'card-atlas-premium text-white';
+            const iconAtlas = '<span class="globo-atlas">🌍</span>';
+            const badgeClass = 'bg-blue-500/20 text-blue-300';
 
            // 💰 V2026.PRO: Identifica a moeda de recompensa (CRÉDITOS vs PIX)
             const isRealMoney = m.pay_type === 'real';
