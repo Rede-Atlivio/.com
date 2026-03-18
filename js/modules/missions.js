@@ -183,12 +183,20 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
     }, null, { enableHighAccuracy: true });
 
     inputCamera.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
-    };
+            const file = e.target.files[0];
+            if (!file) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                return;
+            }
+            await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+        };
+    } catch (err) {
+        console.error("Erro na trava:", err);
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
 }
-
 // 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
 async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo) {
     const btn = document.querySelector(`button[onclick*="${id}"]`);
