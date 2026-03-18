@@ -500,36 +500,51 @@ async function loadMissionsPayments() {
     } catch(e) { console.error(e); }
 }
 
-// 📤 MOTOR DE FINALIZAÇÃO COM COMPROVANTE
+// 📤 MOTOR DE FINALIZAÇÃO COM COMPROVANTE (VERSÃO COMPRIMIDA V2026)
 window.finalizarPagamentoComprovante = async (docId) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
     
-    alert("Passo 1: Faça o PIX no seu banco.\nPasso 2: Selecione o comprovante (print) agora.");
+    if(!confirm("Passo 1: Faça o PIX no banco.\nPasso 2: Clique em OK para anexar o comprovante.")) return;
     
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if(!file) return;
 
-        const btn = event.target;
-        btn.innerText = "🚀 ENVIANDO...";
-        btn.disabled = true;
+        // Feedback visual no console e tela
+        console.log("📑 Comprimindo comprovante...");
 
         try {
-            // Gil, para economizar memória e plano, convertemos o comprovante em Base64 leve
+            // MOTOR DE COMPRESSÃO: Reduz o print do banco para caber no Firestore
+            const bitmap = await createImageBitmap(file);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Reduzimos para 1000px de largura (suficiente para ler comprovante)
+            const scale = 1000 / Math.max(bitmap.width, bitmap.height);
+            canvas.width = bitmap.width * scale;
+            canvas.height = bitmap.height * scale;
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            
+            // Converte para JPEG leve (qualidade 0.6)
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.6));
+            
             const reader = new FileReader();
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(blob);
             reader.onloadend = async () => {
                 await updateDoc(doc(window.db, "mission_submissions", docId), {
                     status: 'paid_real',
-                    receipt_url: reader.result,
+                    receipt_url: reader.result, // Agora cabe no banco!
                     paid_at: serverTimestamp()
                 });
-                alert("💰 SUCESSO! Pagamento finalizado e comprovante enviado ao usuário.");
-                loadMissionsPayments();
+                alert("✅ SUCESSO: PIX Confirmado e Comprovante enviado!");
+                if(window.loadMissionsPayments) window.loadMissionsPayments();
             };
-        } catch(err) { alert("Erro ao salvar comprovante."); btn.disabled = false; }
+        } catch(err) { 
+            console.error(err);
+            alert("❌ Erro ao processar imagem."); 
+        }
     };
     input.click();
 };
