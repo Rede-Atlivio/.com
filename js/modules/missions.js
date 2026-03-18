@@ -179,14 +179,21 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
         window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     }, null, { enableHighAccuracy: true });
 
-    inputCamera.onchange = async (e) => {
+   inputCamera.onchange = async (e) => {
             const file = e.target.files[0];
+            
+            // Reseta o valor do input imediatamente para permitir novas capturas sem erro
+            const currentInput = e.target;
+            
             if (!file) {
                 btn.disabled = false;
                 btn.innerText = originalText;
+                currentInput.value = ""; // Limpa o cache do evento
                 return;
             }
+            
             await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+            currentInput.value = ""; // Limpa após o processamento
         };
     } catch (err) {
         console.error("Erro na trava:", err);
