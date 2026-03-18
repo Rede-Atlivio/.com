@@ -1394,16 +1394,19 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
   </div>
 </div>
 
-<div id="modal-video-maestro" class="fixed inset-0 z-[200] bg-black/95 backdrop-blur-md hidden items-center justify-center p-4 animate-fadeIn">
-    <div class="bg-black w-full max-w-2xl aspect-video rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden">
+<div id="modal-video-maestro" class="fixed inset-0 z-[200] bg-black/98 backdrop-blur-xl hidden items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-black w-full max-w-2xl aspect-video rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
         
-        <button onclick="document.getElementById('player-maestro-frame').src=''; document.getElementById('modal-video-maestro').style.display='none'; document.getElementById('modal-video-maestro').classList.add('hidden');" 
-                class="absolute top-4 right-4 z-[210] bg-white/10 hover:bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center transition backdrop-blur-md border border-white/20">
-            <span class="text-2xl font-light">×</span>
+        <button onclick="document.getElementById('player-maestro-frame').src=''; document.getElementById('modal-video-maestro').style.setProperty('display', 'none', 'important'); document.getElementById('modal-video-maestro').classList.add('hidden');" 
+                class="absolute top-6 right-6 z-[250] bg-red-600/80 hover:bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-xl border border-white/10">
+            <span class="text-2xl">×</span>
         </button>
 
-        <div class="w-full h-full overflow-hidden scale-[1.02]">
-            <iframe id="player-maestro-frame" class="w-full h-full pointer-events-auto" src="" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        <div class="absolute inset-0 w-full h-full overflow-hidden">
+            <iframe id="player-maestro-frame" 
+                    class="absolute w-[115%] h-[135%] top-[-17.5%] left-[-7.5%] pointer-events-auto" 
+                    src="" frameborder="0" allow="autoplay; encrypted-media">
+            </iframe>
         </div>
     </div>
 </div>
