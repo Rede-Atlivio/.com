@@ -140,11 +140,42 @@ function verTutorialMissao(videoId) {
     }
 }
 
-// 📸 MOTOR DE EXECUÇÃO V2026: Bypass de Segurança & Câmera Instantânea
+// 📸 MOTOR DE EXECUÇÃO V2026: Escudo de Duplicidade & Câmera
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
-    if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) return;
+    // Gil, aqui o robô verifica se o usuário já tem algum envio (pendente ou pago) para este ID de missão
+    const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    
+    // Bloqueia o clique e mostra o loader no botão para o usuário saber que estamos validando
+    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "🔍 VALIDANDO...";
 
-    const inputCamera = document.getElementById('camera-input');
+    try {
+        const qCheck = query(
+            collection(window.db, "mission_submissions"), 
+            where("user_id", "==", auth.currentUser.uid),
+            where("mission_id", "==", id)
+        );
+        const snapCheck = await getDocs(qCheck);
+
+        // 🛡️ TRAVA DE SEGURANÇA: Se encontrar qualquer registro, barra a participação
+        if (!snapCheck.empty) {
+            alert(`⚠️ OPS! Você já participou desta missão.\n\nCada missão só pode ser realizada uma única vez por usuário.`);
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        // Se passar na trava, segue o fluxo normal
+        if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        const inputCamera = document.getElementById('camera-input');
+        inputCamera.click();
     inputCamera.click();
 
     navigator.geolocation.getCurrentPosition(async (pos) => {
