@@ -27,9 +27,23 @@ export async function initMissions() {
     await renderizarMissaoCards();
 }
 
-// 🏗️ DESENHA OS CARDS NA TELA DO USUÁRIO
-async function renderizarMissaoCards() {
+// 🏗️ MOTOR DE CARGA ATLAS VIVO V2026
+// Gil, mudamos o nome para carregarMissoes para o app.js te encontrar e já pedimos o GPS
+async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
+    if (!container) return;
+
+    // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega agora com a posição na mão
+            },
+            (err) => { console.error("GPS negado ou falhou"); },
+            { enableHighAccuracy: true }
+        );
+    }
     container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
