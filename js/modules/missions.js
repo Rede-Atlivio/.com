@@ -137,25 +137,35 @@ function verTutorialMissao(videoId) {
     }
 }
 
-// 📸 GATILHO DE PROVA (CÂMERA + GPS)
+// 📸 MOTOR DE EXECUÇÃO: Valida distância e abre câmera
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
-    const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema irá solicitar sua localização atual.`);
+    const confirmar = confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema verificará se você está no local correto.`);
     if (!confirmar) return;
 
-    // 🛰️ CAPTURA GPS EM TEMPO REAL
     navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude, longitude } = pos.coords;
-        console.log(`📍 GPS Capturado: ${latitude}, ${longitude}`);
         
-        // Dispara a câmera traseira
+        // 🛰️ VERIFICAÇÃO DE DISTÂNCIA REAL-TIME
+        // Buscamos os dados da missão para comparar
+        const q = query(collection(db, "missions"), where("__name__", "==", id));
+        const snap = await getDocs(q);
+        const m = snap.docs[0]?.data();
+
+        if (m && m.latitude && m.longitude) {
+            const distKm = calcularDistancia(latitude, longitude, m.latitude, m.longitude);
+            const raioM = Number(m.radius) || 500;
+            
+            if (distKm * 1000 > raioM) {
+                return alert(`📍 LOCAL INCORRETO: Você está muito longe deste local para realizar a missão. Aproxime-se do endereço indicado!`);
+            }
+        }
+
+        // Se passar na distância ou for online: Abre câmera
         document.getElementById('camera-input').click();
         
-        // Gil, aqui deixamos o gancho para o upload da foto que faremos no Bloco 3
-        console.log("📸 Aguardando captura da imagem...");
-        
     }, (err) => {
-       alert("❌ Erro: Para ganhar a recompensa, você precisa permitir o GPS.");
-    });
+        alert("⚠️ ATENÇÃO: Para realizar esta missão e receber o pagamento, você precisa ativar o GPS do seu celular.");
+    }, { enableHighAccuracy: true });
 }
 
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
