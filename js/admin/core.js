@@ -157,13 +157,19 @@ window.switchView = async function(viewName) {
 
     let moduleFile, containerId;
     
-    // 2. DEFINIR ROTA (AGORA COM PRODUTOS)
-    // No Dashboard, o container alvo agora é o 'dashboard-main-content' para não apagar o Sentinela que fica no 'view-dashboard'
-    if (viewName === 'dashboard') { 
+    // 2. DEFINIR ROTA (SINCRONIA FINANCEIRA V2026)
+    // Gil, aqui o sistema decide qual arquivo carregar e qual DIV mostrar na tela.
+    if (viewName === 'dashboard') { 
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
-        // 💰 Reset visual: Garante que ao entrar no Dashboard, a mesa de PIX comece fechada
+        // Reseta a mesa de PIX para não abrir o Dashboard com a lista de pagamentos por cima dos gráficos
         if(window.fecharMesaPix) window.fecharMesaPix();
+    }
+    // Rota Especial para a Mesa de Trabalho PIX (Chamada pelo Assistant ou Botões de Tickets)
+    else if (viewName === 'pix_workdesk') {
+        moduleFile = './dashboard.js';
+        containerId = 'view-dashboard';
+        window.activeView = 'dashboard'; // Mantém o contexto no dashboard para os gráficos voltarem depois
     }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
