@@ -427,5 +427,12 @@ window.liquidarTodasExpiradas = async () => {
         }
         alert(`✅ SUCESSO: ${cont} serviços foram liquidados e pagos aos prestadores.`);
         window.switchView('dashboard');
-    } catch (e) { alert("Erro na varredura: " + e.message); }
+   } catch (e) { alert("Erro na varredura: " + e.message); }
 };
+
+// 🔐 SOLDAGEM MAESTRO: Garante que as funções financeiras existam globalmente para o robô e o sistema
+window.showPixWorkdesk = window.abrirMesaTrabalhoPix;
+window.processarPagamentoMissao = window.confirmarPagamentoRealizado;
+window.renderPixList = window.abrirMesaTrabalhoPix;
+
+console.log("🚀 [Dashboard] Motor Financeiro e Mesa de Trabalho PIX Soldados!");
