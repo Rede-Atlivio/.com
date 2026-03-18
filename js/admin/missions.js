@@ -157,9 +157,9 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                         <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Longitude</label>
                         <input id="mis-lng" value="${dados?.longitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
                     </div>
-                    <div class="space-y-1">
-                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Raio (Metros)</label>
-                        <input id="mis-radius" value="${dados?.radius || 50}" type="number" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-slate-800" placeholder="50">
+                   <div class="space-y-1">
+                        <label class="text-[8px] text-blue-400 font-bold uppercase ml-1">Distância Máxima (Ex: 5000 para 5km)</label>
+                        <input id="mis-radius" value="${dados?.radius || 500}" type="number" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-slate-800" placeholder="Ex: 1000">
                     </div>
                 </div>
                 <p class="text-[8px] text-gray-500 italic">* Se for missão online (sem local fixo), deixe Latitude e Longitude vazios.</p>
