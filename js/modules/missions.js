@@ -1,9 +1,6 @@
 import { db, auth } from '../config.js';
 import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🚀 V2026: MOTOR DE MISSÕES GEOLOCALIZADAS (ATLAS VIVO)
-// 🎨 Estilização Dinâmica para o Globo Rodando e Card Atlas
-//🎨 Blindagem de Contraste V2026: Força o título a ser branco no card escuro
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
