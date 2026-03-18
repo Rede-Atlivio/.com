@@ -456,8 +456,88 @@ window.visualizarProva = (url) => {
     `;
 };
 
+// 💸 MOTOR DE PAGAMENTOS: Carrega a fila de PIX dentro da aba Micro Tarefas
+async function loadMissionsPayments() {
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center"><div class="loader mx-auto border-emerald-500"></div></td></tr>`;
+
+    try {
+        const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
+
+        if(snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-gray-500 italic uppercase text-[10px]">Nenhum PIX pendente. Fila limpa!</td></tr>`;
+            return;
+        }
+
+        for (const d of snap.docs) {
+            const data = d.data();
+            // Busca a chave PIX no perfil do usuário para garantir
+            const uSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", data.user_id)));
+            const userPix = !uSnap.empty ? (uSnap.docs[0].data().pix_key || uSnap.docs[0].data().chave_pix) : 'Não cadastrada';
+
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+                    <td class="p-3">
+                        <p class="text-white font-bold text-xs">${data.mission_title}</p>
+                        <p class="text-[9px] text-gray-500">${data.user_name || 'Usuário'}</p>
+                    </td>
+                    <td class="p-3 text-emerald-400 font-black text-xs">R$ ${data.reward}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono text-gray-400 bg-black/30 p-1 rounded">${userPix}</span>
+                            <button onclick="navigator.clipboard.writeText('${userPix}'); alert('Copiada!')" class="text-[10px] bg-slate-700 px-2 py-1 rounded">📋</button>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="window.finalizarPagamentoComprovante('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg transition">Pagar e Anexar ✅</button>
+                    </td>
+                </tr>
+            `;
+        }
+        document.getElementById('list-count').innerText = `${snap.size} pagamentos pendentes`;
+    } catch(e) { console.error(e); }
+}
+
+// 📤 MOTOR DE FINALIZAÇÃO COM COMPROVANTE
+window.finalizarPagamentoComprovante = async (docId) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    alert("Passo 1: Faça o PIX no seu banco.\nPasso 2: Selecione o comprovante (print) agora.");
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        const btn = event.target;
+        btn.innerText = "🚀 ENVIANDO...";
+        btn.disabled = true;
+
+        try {
+            // Gil, para economizar memória e plano, convertemos o comprovante em Base64 leve
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = async () => {
+                await updateDoc(doc(window.db, "mission_submissions", docId), {
+                    status: 'paid_real',
+                    receipt_url: reader.result,
+                    paid_at: serverTimestamp()
+                });
+                alert("💰 SUCESSO! Pagamento finalizado e comprovante enviado ao usuário.");
+                loadMissionsPayments();
+            };
+        } catch(err) { alert("Erro ao salvar comprovante."); btn.disabled = false; }
+    };
+    input.click();
+};
+
 // 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
+window.loadMissionsPayments = loadMissionsPayments; // ✅ Soldado!
+window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
