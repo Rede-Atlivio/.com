@@ -164,7 +164,8 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
             return;
         }
 
-        // Se passar na trava, segue o fluxo normal
+       // Se passar na trava, segue o fluxo normal
+        // Gil, pedimos o OK primeiro para garantir que o sistema não "atropele" a câmera
         if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) {
             btn.disabled = false;
             btn.innerText = originalText;
@@ -172,9 +173,8 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
         }
 
         const inputCamera = document.getElementById('camera-input');
-        inputCamera.click();
-    inputCamera.click();
-
+        // Limpa o valor anterior para garantir que a troca de arquivos funcione sempre
+        inputCamera.value = "";
     navigator.geolocation.getCurrentPosition(async (pos) => {
         window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     }, null, { enableHighAccuracy: true });
