@@ -255,7 +255,8 @@ export async function init() {
             }
         });
 
-        // 🚀 ESCUTA REAL-TIME DO COFRE (Monitor de Saldo com Alerta Vermelho)
+       // 🚀 ESCUTA REAL-TIME DO COFRE (Monitor de Saldo + Gráfico de Fluxo)
+        let histCaixa = []; // Memória temporária para o desenho da linha
         onSnapshot(doc(db, "sys_finance", "receita_total"), (snapDoc) => {
             if (snapDoc.exists()) {
                 const total = snapDoc.data().total_acumulado || 0;
@@ -266,22 +267,21 @@ export async function init() {
                 if (elCofre) {
                     elCofre.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
                     
-                    // 🚨 REGRA DE OURO: Se o saldo for negativo, o Dashboard avisa em vermelho
+                    // Alerta de cor para saldo negativo
                     if (total < 0) {
-                        elCofre.style.color = "#ef4444"; // Vermelho Google
+                        elCofre.style.color = "#ef4444";
                         if(elLabel) elLabel.style.color = "#f87171"; 
-                        if(elCard) {
-                            elCard.style.borderColor = "#ef4444";
-                            elCard.style.background = "rgba(239, 68, 68, 0.1)";
-                        }
+                        if(elCard) { elCard.style.borderColor = "#ef4444"; elCard.style.background = "rgba(239, 68, 68, 0.1)"; }
                     } else {
-                        elCofre.style.color = "#10b981"; // Verde Esmeralda padrão
+                        elCofre.style.color = "#10b981";
                         if(elLabel) elLabel.style.color = "#34d399";
-                        if(elCard) {
-                            elCard.style.borderColor = "#10b981"; // Borda verde original
-                            elCard.style.background = "rgba(16, 185, 129, 0.05)";
-                        }
+                        if(elCard) { elCard.style.borderColor = "#10b981"; elCard.style.background = "rgba(16, 185, 129, 0.05)"; }
                     }
+
+                    // 📈 ATUALIZAÇÃO DO MINI GRÁFICO (Linha de Tendência)
+                    histCaixa.push(total);
+                    if (histCaixa.length > 15) histCaixa.shift(); // Mantém apenas os últimos 15 pontos
+                    if (window.atualizarMiniGraficoCaixa) window.atualizarMiniGraficoCaixa(histCaixa);
                 }
             }
         });
