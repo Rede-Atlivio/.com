@@ -192,9 +192,12 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
                 return;
             }
             
-            await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+           await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
             currentInput.value = ""; // Limpa após o processamento
         };
+
+        // 🚀 TIRO ÚNICO: Dispara a câmera apenas UMA VEZ após toda a lógica acima estar montada
+        inputCamera.click();
     } catch (err) {
         console.error("Erro na trava:", err);
         btn.disabled = false;
