@@ -465,4 +465,39 @@ window.showPixWorkdesk = window.abrirMesaTrabalhoPix;
 window.processarPagamentoMissao = window.confirmarPagamentoRealizado;
 window.renderPixList = window.abrirMesaTrabalhoPix;
 
-console.log("🚀 [Dashboard] Motor Financeiro e Mesa de Trabalho PIX Soldados!");
+// 📊 MOTOR DE DESENHO: FLUXO DE CAIXA EM TEMPO REAL
+let meuGraficoCaixa = null;
+window.atualizarMiniGraficoCaixa = (dados) => {
+    const ctx = document.getElementById('miniChartCaixa');
+    if (!ctx || !window.Chart) return;
+
+    if (meuGraficoCaixa) {
+        meuGraficoCaixa.data.datasets[0].data = dados;
+        meuGraficoCaixa.update('none'); // Update suave sem travar o PC
+        return;
+    }
+
+    meuGraficoCaixa = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dados.map(() => ""), // Sem textos no fundo para não poluir
+            datasets: [{
+                data: dados,
+                borderColor: '#10b981',
+                borderWidth: 2,
+                pointRadius: 0, // Linha pura, estilo batimento cardíaco
+                fill: true,
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4 // Linha curva suave
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } }
+        }
+    });
+};
+
+console.log("🚀 [Dashboard] Motor Financeiro e Gráficos de Fluxo Soldados!");
