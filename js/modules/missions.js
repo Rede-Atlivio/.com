@@ -296,4 +296,64 @@ window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined'
 window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
 window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
 
+// 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
+// Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
+async function carregarMissoesRealizadas() {
+    const container = document.getElementById('lista-missoes-realizadas');
+    if (!container) return;
+
+    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+
+    try {
+        const { collection, query, where, orderBy, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🛰️ A CONSULTA MESTRA (Requer o índice que o robô solicitou)
+        const q = query(
+            collection(window.db, "mission_submissions"),
+            where("user_id", "==", auth.currentUser.uid),
+            orderBy("created_at", "desc")
+        );
+
+        onSnapshot(q, (snap) => {
+            if (snap.empty) {
+                container.innerHTML = `<p class="text-center text-gray-500 text-[10px] py-10 italic">Você ainda não realizou nenhuma missão.</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const m = doc.data();
+                const statusMap = {
+                    'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
+                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
+                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
+                };
+                const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
+
+                container.innerHTML += `
+                    <div class="bg-white border border-gray-100 p-4 rounded-2xl mb-3 shadow-sm animate-fadeIn">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-black text-gray-800 text-[11px] uppercase">${m.mission_title}</h4>
+                            <span class="text-[7px] font-black px-2 py-1 rounded-full uppercase ${st.css}">${st.txt}</span>
+                        </div>
+                        <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
+                        
+                        ${m.status === 'paid_real' && m.receipt_url ? `
+                            <button onclick="window.abrirComprovantePIX('${m.receipt_url}')" class="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 py-2.5 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-100 transition flex items-center justify-center gap-2">
+                                📄 Ver Comprovante PIX
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        });
+    } catch (e) {
+        console.error("Erro no histórico:", e);
+        container.innerHTML = `<p class="text-center text-red-500 text-[9px]">Erro ao carregar histórico.</p>`;
+    }
+}
+
+window.carregarMissoesRealizadas = carregarMissoesRealizadas;
+
 console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
