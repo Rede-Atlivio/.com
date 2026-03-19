@@ -1,4 +1,9 @@
-import { collection, getDocs, query, where, orderBy, limit, onSnapshot, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, where, orderBy, limit, onSnapshot, doc, updateDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+// 📊 INJEÇÃO DO MOTOR GRÁFICO (Chart.js)
+const scriptChart = document.createElement('script');
+scriptChart.src = "https://cdn.jsdelivr.net/npm/chart.js";
+document.head.appendChild(scriptChart);
 import { renderAssistant } from "./assistant.js"; // 👈 IMPORTA A SECRETÁRIA
 
 // Função para abrir/fechar o detalhe do usuário no Feed Vivo
