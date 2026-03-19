@@ -336,6 +336,16 @@ async function aprovarMissao(docId, userId, valor) {
                 });
             });
 
+            // 📝 Registro no Extrato Financeiro com DNA ATLIX
+            await addDoc(collection(window.db, "extrato_financeiro"), {
+                uid: userId,
+                valor: parseFloat(valor),
+                tipo: "💰 MISSÃO_CONCLUÍDA",
+                descricao: `Você ganhou por: ${subData.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX" // 🚀 O Carimbo de Moeda Bônus
+            });
+
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
