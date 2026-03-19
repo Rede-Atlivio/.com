@@ -858,16 +858,8 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
 
-            // 5. COFRE ATLIVIO V301: Filtra o lucro real para não inflacionar o Admin
-            // IMPORTANTE: Pedidos antigos (legados) sem registro de reserva não somam no cofre por segurança
-            const lucroRealConfirmado = parseFloat(pedido.origem_real || 0); 
-            
-            if (lucroRealConfirmado > 0) {
-                transaction.update(atlivioReceitaRef, {
-                    total_acumulado: increment(Number(lucroRealConfirmado.toFixed(2))),
-                    ultima_atualizacao: serverTimestamp()
-                });
-            }
+           // 💰 EXTERMÍNIO DE CRÉDITO: O lucro da Atlivio já foi registrado na entrada (Recarga).
+            // Ao finalizar o serviço, apenas subtraímos do usuário sem inflar o Dashboard novamente.
 
             // REGISTRO 1 (MÉTRICA SITE): Alimenta o "Hoje" e "Total" com o lucro líquido
             transaction.set(doc(collection(db, "extrato_financeiro")), {
