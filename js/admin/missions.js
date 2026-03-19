@@ -589,8 +589,8 @@ window.finalizarPagamentoComprovante = async (docId) => {
                         valor: valorPago, // Gravando como número puro igual ao chat
                         tipo: "GANHO_SERVIÇO ✅", // Gil, usamos o mesmo texto do chat para o wallet não bugar
                         descricao: `Missão concluída: ${mData.mission_title}`,
-                        timestamp: serverTimestamp()
-                        // Removemos o campo 'moeda' para ficar 100% igual ao chat
+                        timestamp: serverTimestamp(),
+                        moeda: "BRL" // 🚀 Identifica como Dinheiro Real (PIX)
                     });
                 });
 
