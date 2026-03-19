@@ -251,6 +251,10 @@ export function iniciarMonitoramentoCarteira() {
 
                 // 🛡️ Filtro para não duplicar saldo que veio do Frozen
                 if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+                    const fv = window.firebaseModules;
+                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
+
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
                         await fv.updateDoc(fv.doc(db, "usuarios", uid), {
