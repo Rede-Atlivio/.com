@@ -593,6 +593,7 @@ window.finalizarPagamentoComprovante = async (docId) => {
             alert("❌ Erro ao processar imagem."); 
         }
     };
+    // Dispara a galeria de fotos após a lógica estar montada
     input.click();
 };
 
