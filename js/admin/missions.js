@@ -536,6 +536,7 @@ window.finalizarPagamentoComprovante = async (docId) => {
                 const base64Img = reader.result;
                 console.log("🚀 Iniciando Transação Contábil Atlivio...");
 
+               // ⚡ TRANSAÇÃO ATÔMICA: Garante que o débito na empresa e o crédito no usuário ocorram juntos
                 await runTransaction(window.db, async (transaction) => {
                     const subRef = doc(window.db, "mission_submissions", docId);
                     const subSnap = await transaction.get(subRef);
