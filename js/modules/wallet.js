@@ -615,7 +615,7 @@ async function carregarHistoricoCarteira(uid) {
                         <div class="text-right">
                             <p class="font-black text-xs ${isPositivo ? 'text-green-600' : 'text-red-600'}">
                                 ${isPositivo ? '+' : '-'} ${Math.abs(valor).toFixed(2).replace('.', ',')} 
-                                ${t.moeda === 'BRL' ? 'R$' : 'ATLIX'}
+                                ${(t.moeda === 'BRL' || (t.tipo && t.tipo.toUpperCase().includes('GANHO'))) ? 'R$' : 'ATLIX'}
                             </p>
                             <p class="text-[8px] text-gray-400 font-bold uppercase">${t.timestamp?.toDate().toLocaleDateString() || 'Processando'}</p>
                         </div>
