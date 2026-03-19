@@ -237,7 +237,9 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
+            const moedaDestaMissao = (tipoPagamento === 'real') ? 'BRL' : 'ATLIX';
             await addDoc(collection(db, "mission_submissions"), {
+                moeda: moedaDestaMissao,
                 mission_id: id,
                 mission_title: titulo,
                 reward: recompensa,
