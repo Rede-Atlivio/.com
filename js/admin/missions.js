@@ -501,12 +501,14 @@ async function loadMissionsPayments() {
 }
 
 // 📤 MOTOR DE FINALIZAÇÃO COM COMPROVANTE (VERSÃO COMPRIMIDA V2026)
+// 💰 MOTOR DE PAGAMENTO FINAL (DNA CHAT + CORREÇÃO FOTO DUPLA)
 window.finalizarPagamentoComprovante = async (docId) => {
+    // Primeiro pedimos a confirmação para não travar o seletor de arquivos
+    if(!confirm("⚠️ Confirma que o PIX já foi feito no banco?\nClique em OK para escolher o comprovante.")) return;
+
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    
-    if(!confirm("Passo 1: Faça o PIX no banco.\nPasso 2: Clique em OK para anexar o comprovante.")) return;
     
     input.onchange = async (e) => {
         const file = e.target.files[0];
