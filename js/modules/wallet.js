@@ -749,13 +749,14 @@ window.filtrarGanhos = async (periodo) => {
             const tipo = t.tipo || "";
             const valor = parseFloat(t.valor || 0);
 
-            if (valor > 0) {
-               // 🧬 REGRA MASTER: Prioridade total para o campo 'moeda' do banco
-                if (moedaOficial === 'ATLIX' || tipo.includes('🪙')) {
-                    somaAX += valor;
+           if (valor > 0) {
+                // 🧬 REGRA MASTER: Prioridade para o DNA da moeda gravado no documento
+                const moedaDoBanco = t.moeda || ""; 
+
+                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO')) {
+                    somaAX += valor; // 🪙 Cai no balde de Bônus (Dourado)
                 } else {
-                    // 💰 Tudo que não for ATLIX explicitamente, soma como Real (BRL)
-                    somaReal += valor;
+                    somaReal += valor; // 💰 Cai no balde de Real (Verde)
                 }
             }
         });
