@@ -294,5 +294,6 @@ window.carregarMissoes = carregarMissoes;
 window.renderizarMissaoCards = carregarMissoes; 
 window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
 window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
+window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
 
 console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
