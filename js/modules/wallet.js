@@ -750,11 +750,11 @@ window.filtrarGanhos = async (periodo) => {
             const valor = parseFloat(t.valor || 0);
 
             if (valor > 0) {
-                // 🪙 Se o tipo tiver o ícone de moeda ou for de missão, soma no contador AX
-                if (tipo.includes('🪙') || tipo.includes('MISSÃO')) {
+               // 🧬 REGRA MASTER: Prioridade total para o campo 'moeda' do banco
+                if (moedaOficial === 'ATLIX' || tipo.includes('🪙')) {
                     somaAX += valor;
-                } else if (tipo.includes('GANHO') || tipo.includes('✅')) {
-                    // 💰 Caso contrário, soma no ganho em Reais (Trabalho)
+                } else {
+                    // 💰 Tudo que não for ATLIX explicitamente, soma como Real (BRL)
                     somaReal += valor;
                 }
             }
