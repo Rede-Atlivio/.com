@@ -106,9 +106,15 @@ async function carregarMissoes() {
                             </button>
                         ` : ''}
 
-                        <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg shadow-blue-200 active:scale-95 transition">
-                            Realizar Missão ➜
-                        </button>
+                        ${isMobile ? `
+                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition">
+                                Realizar Missão ➜
+                            </button>
+                        ` : `
+                            <button onclick="alert('📱 Missão Exclusiva para Celular\\n\\nPara garantir a veracidade das fotos, esta tarefa só pode ser cumprida através do aplicativo no seu smartphone.')" class="flex-[2] bg-gray-700 text-gray-400 py-3 rounded-xl font-black text-[9px] uppercase cursor-not-allowed">
+                                🔒 Use o Celular
+                            </button>
+                        `}
                     </div>
                 </div>
             `;
