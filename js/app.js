@@ -233,10 +233,11 @@ function switchTab(tabName, isAutoBoot = false) {
     if(nomeLimpo === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
     }
-    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos os sensores imediatamente
+    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
     if(nomeLimpo === 'missoes') {
         if(window.carregarMissoes) window.carregarMissoes(); 
-        console.log("🛰️ Atlas Vivo: Sensores de proximidade ativados para o Feed.");
+        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas(); // 🚀 Carrega os comprovantes
+        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
