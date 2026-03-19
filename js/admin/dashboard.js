@@ -255,11 +255,35 @@ export async function init() {
             }
         });
 
-        // 🚀 ESCUTA REAL-TIME DO COFRE (Plataforma)
+        // 🚀 ESCUTA REAL-TIME DO COFRE (Monitor de Saldo com Alerta Vermelho)
         onSnapshot(doc(db, "sys_finance", "receita_total"), (snapDoc) => {
-            const total = snapDoc.exists() ? snapDoc.data().total_acumulado || 0 : 0;
-            const elCofre = document.getElementById('kpi-cofre');
-            if(elCofre) elCofre.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            if (snapDoc.exists()) {
+                const total = snapDoc.data().total_acumulado || 0;
+                const elCofre = document.getElementById('kpi-cofre');
+                const elCard = document.getElementById('card-financeiro-atlivio');
+                const elLabel = document.getElementById('lbl-lucro-real');
+
+                if (elCofre) {
+                    elCofre.innerText = `R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                    
+                    // 🚨 REGRA DE OURO: Se o saldo for negativo, o Dashboard avisa em vermelho
+                    if (total < 0) {
+                        elCofre.style.color = "#ef4444"; // Vermelho Google
+                        if(elLabel) elLabel.style.color = "#f87171"; 
+                        if(elCard) {
+                            elCard.style.borderColor = "#ef4444";
+                            elCard.style.background = "rgba(239, 68, 68, 0.1)";
+                        }
+                    } else {
+                        elCofre.style.color = "#10b981"; // Verde Esmeralda padrão
+                        if(elLabel) elLabel.style.color = "#34d399";
+                        if(elCard) {
+                            elCard.style.borderColor = "#10b981"; // Borda verde original
+                            elCard.style.background = "rgba(16, 185, 129, 0.05)";
+                        }
+                    }
+                }
+            }
         });
 
         // 🚀 LOG DE ÚLTIMOS LUCROS (TAXAS)
