@@ -259,6 +259,22 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
     }
 }
 
+// 📄 VISUALIZADOR DE COMPROVANTE (MATA-SUPORTE)
+// Gil, esta função abre a imagem do PIX que você anexou no Admin para o usuário conferir.
+window.abrirComprovantePIX = (url) => {
+    if (!url) return alert("Aguardando processamento do comprovante...");
+    
+    const win = window.open();
+    win.document.write(`
+        <html>
+            <head><title>Comprovante Atlivio</title></head>
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center;">
+                <img src="${url}" style="max-width:100%; max-height:100vh; border-radius:12px; shadow:0 0 20px rgba(0,0,0,0.5);">
+            </body>
+        </html>
+    `);
+};
+
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
 // Gil, esta função calcula a distância exata entre dois pontos no globo terrestre
 function calcularDistancia(lat1, lon1, lat2, lon2) {
