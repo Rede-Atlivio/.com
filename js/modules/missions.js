@@ -73,7 +73,10 @@ async function carregarMissoes() {
             const iconAtlas = '<span class="globo-atlas">🌍</span>';
             const badgeClass = 'bg-blue-500/20 text-blue-300';
 
-            // 💰 V2026.PRO: Identifica a moeda de recompensa (CRÉDITOS vs PIX)
+            // 🛡️ SENSOR DE DISPOSITIVO: Verifica se é Celular ou PC
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            // 💰 V2026.PRO: Identifica a moeda de recompensa
             const isRealMoney = m.pay_type === 'real';
             const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
             const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
