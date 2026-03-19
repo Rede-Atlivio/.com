@@ -570,15 +570,15 @@ window.finalizarPagamentoComprovante = async (docId) => {
                         timestamp: serverTimestamp()
                     });
 
-                    // 4. CRÉDITO NO EXTRATO DO USUÁRIO: Para ele ver no App como GANHO EM R$
+                    // 4. CRÉDITO NO EXTRATO DO USUÁRIO: (DNA IDENTICO AO CHAT.JS)
                     const userExtratoRef = doc(collection(window.db, "extrato_financeiro"));
                     transaction.set(userExtratoRef, {
                         uid: uidUsuario,
-                        valor: valorPago,
-                        tipo: "💰 GANHO_MISSÃO",
-                        descricao: `Recebido por: ${mData.mission_title}`,
-                        moeda: "BRL",
+                        valor: valorPago, // Gravando como número puro igual ao chat
+                        tipo: "GANHO_SERVIÇO ✅", // Gil, usamos o mesmo texto do chat para o wallet não bugar
+                        descricao: `Missão concluída: ${mData.mission_title}`,
                         timestamp: serverTimestamp()
+                        // Removemos o campo 'moeda' para ficar 100% igual ao chat
                     });
                 });
 
