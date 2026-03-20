@@ -633,6 +633,27 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.onloadend = async () => {
             const base64data = reader.result;
             const moedaDestaMissao = (tipoPagamento === 'real') ? 'BRL' : 'ATLIX';
+           // 🛡️ ESCUDO DE PRECISÃO (GPS MATCH): Compara local do usuário com o local da missão
+            let gpsStatus = 'no_location';
+            
+            // Busca os dados da missão original que estão guardados no card ou memória
+            const missaoRef = doc(db, "missions", id);
+            const missaoSnap = await getDoc(missaoRef);
+            const mData = missaoSnap.exists() ? missaoSnap.data() : null;
+
+            if (mData && mData.latitude && window.currentMissionLocation) {
+                const distanciaMetros = calcularDistancia(
+                    window.currentMissionLocation.lat, 
+                    window.currentMissionLocation.lng, 
+                    mData.latitude, 
+                    mData.longitude
+                ) * 1000;
+
+                // Gil, se ele estiver dentro do raio definido pelo B2B (ou padrão 500m), é MATCH!
+                const raioPermitido = mData.radius || 500;
+                gpsStatus = (distanciaMetros <= raioPermitido) ? 'match' : 'suspect';
+            }
+
             await addDoc(collection(db, "mission_submissions"), {
                 moeda: moedaDestaMissao,
                 mission_id: id,
@@ -643,6 +664,8 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
                 proof_url: base64data,
                 location: window.currentMissionLocation || null,
+                gps_status: gpsStatus, // ✅ Carimbo para o B2B ver se é fraude
+                b2b_owner_uid: mData?.b2b_owner_uid || null, // Garante que a foto vá para o painel do cliente certo
                 status: 'pending',
                 created_at: serverTimestamp()
             });
