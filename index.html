@@ -1095,6 +1095,22 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
         try { await window.confirmationResult.confirm(code); console.log("Sucesso no login!"); } catch (error) { alert("Código inválido!"); }
     };
 
+   // 🧙‍♂️ ESTRUTURA GLOBAL DO WIZARD: Garante que os containers existam antes do JS chamar
+    const modalEditorExistente = document.getElementById('modal-editor');
+    if (!modalEditorExistente) {
+        const divModal = document.createElement('div');
+        divModal.id = 'modal-editor';
+        divModal.className = "fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm hidden flex items-center justify-center p-4 animate-fadeIn";
+        divModal.innerHTML = `
+            <div class="bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden relative">
+                <button id="btn-close-modal" class="absolute top-6 right-6 text-gray-500 hover:text-white text-3xl font-bold z-10">&times;</button>
+                <div id="modal-content" class="p-8 overflow-y-auto custom-scrollbar">
+                    </div>
+            </div>
+        `;
+        document.body.appendChild(divModal);
+    }
+
     // Sincronia de Alerta V12 - Corrigindo a rota para a nova coleção saneada
     window.carregarConfiguracoesIniciais = async () => {
         try {
