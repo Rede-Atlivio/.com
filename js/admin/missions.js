@@ -438,23 +438,28 @@ async function aprovarMissao(docId, userId, valor) {
         if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
 
        if (tipoMoeda === 'atlix') {
-            // Gil, aqui o sistema entra na carteira do usuário e deposita os créditos agora mesmo
-            await updateDoc(doc(window.db, "mission_submissions", docId), { 
-                status: 'approved', 
-                paid_at: serverTimestamp() 
-            });
-
-            // Chama o motor financeiro global para processar o saldo
-            const userRef = doc(window.db, "usuarios", userId);
+            // 🛡️ LIQUIDAÇÃO ATLIX: Tira da reserva da empresa e paga o bônus ao usuário
             await runTransaction(window.db, async (transaction) => {
+                const userRef = doc(window.db, "usuarios", userId);
+                const subRef = doc(window.db, "mission_submissions", docId);
                 const userDoc = await transaction.get(userRef);
-                if (!userDoc.exists()) return;
-                
-                const novoSaldoBonus = (userDoc.data().wallet_bonus || 0) + valor;
-                transaction.update(userRef, { 
-                    wallet_bonus: novoSaldoBonus,
-                    updated_at: serverTimestamp() 
-                });
+
+                // 1. Se for B2B, libera o valor que estava "preso" na reserva da empresa
+                if (subData.b2b_owner_uid) {
+                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
+                    transaction.update(b2bRef, { wallet_reserved: increment(-valor) });
+                }
+
+                // 2. Deposita o bônus na carteira do executor
+                if (userDoc.exists()) {
+                    transaction.update(userRef, { 
+                        wallet_bonus: increment(valor), 
+                        updated_at: serverTimestamp() 
+                    });
+                }
+
+                // 3. Marca como finalizado
+                transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
             });
 
             // 📝 Registro no Extrato Financeiro com DNA ATLIX
