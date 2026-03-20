@@ -311,6 +311,120 @@ async function carregarMissoes() {
         );
     };
 
+    // 🏁 WIZARD B2B: PASSO 4 (CHECKOUT E RESERVA)
+    window.abrirWizardPasso4 = () => {
+        const content = document.getElementById('modal-content');
+        const d = window.wizardB2BData;
+        const totalStr = d.total_with_fee.toFixed(2).replace('.', ',');
+
+        content.innerHTML = `
+            <div id="wizard-atlas-step-4" class="space-y-6 animate-fadeIn pb-6">
+                <div class="text-center">
+                    <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 4: Finalizar Ordem</h3>
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Revise os detalhes da sua encomenda</p>
+                </div>
+
+                <div class="p-5 bg-slate-900/80 rounded-3xl border border-white/5 space-y-3">
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-[8px] text-gray-500 uppercase font-bold">Serviço:</span>
+                        <span class="text-[10px] text-white font-black uppercase">${d.title}</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-[8px] text-gray-500 uppercase font-bold">Moeda:</span>
+                        <span class="text-[10px] text-emerald-500 font-black uppercase">${d.pay_type === 'real' ? 'Dinheiro Real' : 'Créditos Atlix'}</span>
+                    </div>
+                    <div class="bg-black/40 p-4 rounded-2xl text-center">
+                        <p class="text-[8px] text-gray-400 uppercase font-black mb-1">Total a ser Reservado:</p>
+                        <p class="text-3xl font-black text-white">R$ ${totalStr}</p>
+                        <p class="text-[7px] text-gray-500 mt-2">🔒 O valor ficará em custódia até você aprovar o dado.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="window.abrirWizardPasso3()" class="flex-1 py-4 bg-slate-800 text-gray-400 rounded-2xl font-black text-[9px] uppercase tracking-widest">Voltar</button>
+                    <button id="btn-finalizar-b2b" onclick="window.processarReservaB2B()" class="flex-[2] py-4 bg-emerald-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-emerald-900/20 active:scale-95 transition">Confirmar e Publicar ✅</button>
+                </div>
+            </div>
+        `;
+    };
+
+    // ⚡ MOTOR DO LIQUIDIFICADOR: Reserva de Saldo e Criação da Missão
+    window.processarReservaB2B = async () => {
+        const btn = document.getElementById('btn-finalizar-b2b');
+        btn.disabled = true;
+        btn.innerText = "⏳ PROCESSANDO RESERVA...";
+
+        try {
+            const userRef = doc(db, "usuarios", auth.currentUser.uid);
+            const d = window.wizardB2BData;
+            const totalNecessario = d.total_with_fee;
+
+            await runTransaction(db, async (transaction) => {
+                const userSnap = await transaction.get(userRef);
+                if (!userSnap.exists()) throw "Usuário não encontrado.";
+
+                const userData = userSnap.data();
+                const bal = userData.wallet_balance || 0;
+                const bon = userData.wallet_bonus || 0;
+
+                let debitoBalance = 0;
+                let debitoBonus = 0;
+
+                // 💰 REGRA RÍGIDA BRL: Jamais usa bônus para missões em Real
+                if (d.pay_type === 'real') {
+                    if (bal < totalNecessario) throw "Saldo insuficiente em REAL para esta missão.";
+                    debitoBalance = totalNecessario;
+                } 
+                // 🪙 REGRA HÍBRIDA ATLIX: Consome bônus primeiro, completa com real
+                else {
+                    if ((bal + bon) < totalNecessario) throw "Saldo insuficiente (Real + Bônus) para esta missão.";
+                    if (bon >= totalNecessario) {
+                        debitoBonus = totalNecessario;
+                    } else {
+                        debitoBonus = bon;
+                        debitoBalance = totalNecessario - bon;
+                    }
+                }
+
+                // 1. Atualiza Saldo do Cliente (Move para Reservado)
+                transaction.update(userRef, {
+                    wallet_balance: increment(-debitoBalance),
+                    wallet_bonus: increment(-debitoBonus),
+                    wallet_reserved: increment(totalNecessario),
+                    updated_at: serverTimestamp()
+                });
+
+                // 2. Cria o documento da Missão no radar
+                const missionRef = doc(collection(db, "missions"));
+                transaction.set(missionRef, {
+                    ...d,
+                    status: 'pending_b2b', // Aguardando aprovação do Gil
+                    active: false,
+                    created_at: serverTimestamp()
+                });
+
+                // 3. Registra no Extrato do Cliente (Cadeado 🔒)
+                const extratoRef = doc(collection(db, "extrato_financeiro"));
+                transaction.set(extratoRef, {
+                    uid: auth.currentUser.uid,
+                    valor: -totalNecessario,
+                    tipo: "RESERVA_MISSÃO 🔒",
+                    descricao: `Reserva para: ${d.title}`,
+                    moeda: d.pay_type === 'real' ? 'BRL' : 'ATLIX',
+                    timestamp: serverTimestamp()
+                });
+            });
+
+            alert("🚀 SUCESSO!\n\nSua missão foi enviada para auditoria do Gil e o saldo foi reservado com segurança.");
+            location.reload();
+
+        } catch (err) {
+            alert("❌ FALHA NO PAGAMENTO: " + err);
+            btn.disabled = false;
+            btn.innerText = "Confirmar e Publicar ✅";
+        }
+    };
+
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
