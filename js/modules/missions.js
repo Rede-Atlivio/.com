@@ -523,6 +523,25 @@ async function carregarMissoesInner() {
 
         if(listaCards) listaCards.innerHTML = ""; // Limpa loader
 
+        // 📣 CONVITE B2B (PARA PRESTADORES): Aparece apenas para quem não é cliente ainda
+        const perfilAcesso = window.userProfile?.perfil || 'prestador';
+        if (perfilAcesso === 'prestador' && listaCards) {
+            listaCards.innerHTML += `
+                <div onclick="window.abrirModalTrocaPerfil()" class="bg-gradient-to-r from-amber-900/40 to-slate-900 p-4 rounded-3xl border border-amber-500/30 mb-6 cursor-pointer hover:scale-[1.02] transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-600 p-3 rounded-2xl shadow-lg group-hover:bg-amber-500 transition">
+                            <span class="text-xl">💼</span>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-black text-[11px] uppercase tracking-tighter">Encomendar Inteligência Atlas</h4>
+                            <p class="text-[8px] text-amber-200/70 uppercase font-bold tracking-widest">Clique para alternar para perfil Empresa</p>
+                        </div>
+                        <div class="ml-auto text-amber-500">➜</div>
+                    </div>
+                </div>
+            `;
+        }
+
         snap.forEach(doc => {
             const m = doc.data();
             const id = doc.id;
