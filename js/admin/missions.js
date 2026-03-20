@@ -54,6 +54,11 @@ async function switchMissionTab(tab) {
         if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA MISSÃO"; btnAdd.onclick = () => abrirCriadorMissaoAtlas(); }
         header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadMissionsManagement();
+    } else if(tab === 'b2b_pendente') {
+        // 🤝 ABA B2B: Oculta o botão de criar (pois aqui você só aprova o que os outros criaram)
+        if(btnAdd) { btnAdd.style.display = 'none'; }
+        header.innerHTML = `<th class="p-3">EMPRESA</th><th class="p-3">MISSÃO</th><th class="p-3">VALOR/MOEDA</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadB2BPendingMissions(); // Chamaremos esta função no próximo passo
     } else if(tab === 'submissions') {
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">MISSÃO</th><th class="p-3">USUÁRIO</th><th class="p-3">PROVA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
