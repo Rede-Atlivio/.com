@@ -493,14 +493,14 @@ async function carregarMissoesInner() {
         const q = query(collection(db, "missions"), where("active", "==", true), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         
-        if (snap.empty) {
-            container.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
+       if (snap.empty) {
+            if(listaCards) listaCards.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
             return;
         }
 
-        container.innerHTML = ""; // Limpa loader
+        if(listaCards) listaCards.innerHTML = ""; // Limpa loader
 
-       snap.forEach(doc => {
+        snap.forEach(doc => {
             const m = doc.data();
             const id = doc.id;
 
