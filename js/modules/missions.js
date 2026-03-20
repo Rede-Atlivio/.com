@@ -67,54 +67,33 @@ async function carregarInterfaceB2B() {
     carregarMissoesInner();
 }
 
-// 🏗️ MOTOR DE CARGA ATLAS VIVO V2026 (PORTAL HÍBRIDO)
+// 🏗️ MOTOR DE CARGA PRESTADOR (LISTA DE EMPREGOS)
 async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
     if (!container) return;
-
-    // 🧭 NAVEGAÇÃO HÍBRIDA B2B: Cria o título e as abas de alternância
-    const isCliente = (window.userProfile?.perfil === 'cliente');
     
-    // Gil, injetamos o cabeçalho dinâmico para permitir a troca de visão
-    container.innerHTML = `
-        <div class="mb-6 flex justify-between items-end animate-fadeIn">
-            <div>
-                <h2 class="text-xl font-black text-white uppercase tracking-tight leading-none">Missões Atlas</h2>
-                <p class="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">Inteligência Geográfica em Tempo Real</p>
-            </div>
-            ${isCliente ? `
-                <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 shadow-inner">
-                    <button onclick="window.alternarSubAbaB2B('radar')" id="btn-sub-radar" class="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition bg-blue-600 text-white shadow-lg">📡 Radar</button>
-                    <button onclick="window.alternarSubAbaB2B('auditoria')" id="btn-sub-auditoria" class="px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white">⚖️ Auditoria</button>
-                </div>
-            ` : ''}
-        </div>
-        <div id="sub-view-container" class="space-y-4">
-            <div id="lista-cards-real"></div>
-        </div>
-    `;
-
-    // 🔄 MOTOR DE ALTERNÂNCIA B2B: Controla o que o Cliente vê
-    window.alternarSubAbaB2B = (aba) => {
-        const btnRadar = document.getElementById('btn-sub-radar');
-        const btnAudit = document.getElementById('btn-sub-auditoria');
-
-        if(aba === 'radar') {
-            btnRadar.className = "px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition bg-blue-600 text-white shadow-lg";
-            btnAudit.className = "px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white";
-            // Para voltar ao radar, apenas chamamos a carga normal, mas limpando a auditoria
-            document.getElementById('sub-view-container').innerHTML = '<div id="lista-cards-real"></div>';
-            carregarMissoesInner(); 
-        } else {
-            btnRadar.className = "px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white";
-            btnAudit.className = "px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition bg-amber-600 text-white shadow-lg";
-            window.carregarAuditoriaB2B(); 
-        }
-    };
-
-    // Chamamos a função interna de carga para não dar loop infinito
+    // Limpa e prepara container do prestador
+    container.innerHTML = `<div id="lista-cards-real" class="space-y-4"></div>`;
     carregarMissoesInner();
 }
+
+// 🔄 MOTOR DE ALTERNÂNCIA B2B (RE-SITUADO)
+window.alternarSubAbaB2B = (aba) => {
+    const btnRadar = document.getElementById('btn-sub-radar');
+    const btnAudit = document.getElementById('btn-sub-auditoria');
+    const content = document.getElementById('sub-view-b2b-content');
+
+    if(aba === 'radar') {
+        btnRadar.className = "px-4 py-2 rounded-lg text-[8px] font-black uppercase transition bg-blue-600 text-white shadow-lg";
+        btnAudit.className = "px-4 py-2 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white";
+        content.innerHTML = '<div id="lista-cards-real"></div>';
+        carregarMissoesInner(); 
+    } else {
+        btnRadar.className = "px-4 py-2 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white";
+        btnAudit.className = "px-4 py-2 rounded-lg text-[8px] font-black uppercase transition bg-amber-600 text-white shadow-lg";
+        window.carregarAuditoriaB2B(); 
+    }
+};
 
 // Criamos essa função auxiliar para o motor de carga funcionar dentro do novo container
 async function carregarMissoesInner() {
