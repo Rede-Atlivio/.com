@@ -730,6 +730,7 @@ window.finalizarPagamentoComprovante = async (docId) => {
 
 // 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
+window.publicarMissaoB2B = publicarMissaoB2B; // 🚀 Soldado!
 window.loadMissionsPayments = loadMissionsPayments; // ✅ Soldado!
 window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
