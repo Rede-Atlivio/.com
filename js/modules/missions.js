@@ -485,7 +485,8 @@ async function carregarMissoesInner() {
             { enableHighAccuracy: true }
         );
     }
-    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+    const listaCards = document.getElementById('lista-cards-real');
+    if(listaCards) listaCards.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
         // Busca apenas missões ativas no banco
