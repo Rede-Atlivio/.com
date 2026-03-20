@@ -45,8 +45,21 @@ async function carregarMissoes() {
                 <p class="text-[7px] opacity-90 uppercase font-black text-amber-100">Exclusivo para Empresas</p>
             </button>
         `;
-        document.body.appendChild(btnB2B);
+       document.body.appendChild(btnB2B);
     }
+
+    // 🛡️ SENTINELA DE PERFIL: Trava de segurança que impede Prestadores de acessar o Wizard
+    window.abrirWizardB2B = () => {
+        // Verifica se o perfil no banco de dados é 'cliente'
+        const perfilAtivo = window.userProfile?.perfil || 'prestador';
+        
+        if (perfilAtivo !== 'cliente') {
+            return alert("🚫 ACESSO NEGADO\n\nEste portal é exclusivo para Empresas.\n\nSe você é um cliente B2B, alterne seu perfil nas configurações para encomendar inteligência.");
+        }
+
+        // Se for cliente, o sistema prossegue para o motor de criação (Wizard)
+        console.log("🚀 Sentinela: Acesso autorizado para Cliente B2B.");
+    };
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
