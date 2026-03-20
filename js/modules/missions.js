@@ -24,11 +24,29 @@ export async function initMissions() {
     await carregarMissoes(); // Chama o motor de carga principal
 }
 
-// 🏗️ MOTOR DE CARGA ATLAS VIVO V2026
-// Gil, mudamos o nome para carregarMissoes para o app.js te encontrar e já pedimos o GPS
+// 🏗️ MOTOR DE CARGA ATLAS VIVO V2026 (PORTAL HÍBRIDO)
 async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
     if (!container) return;
+
+    // 🛡️ SENSOR DE PERFIL: Identifica se é Cliente/Empresa para liberar o portal de encomendas
+    const perfilUsuario = window.userProfile?.perfil || 'prestador';
+    const b2bButtonId = 'btn-encomendar-atlas';
+
+    if (perfilUsuario === 'cliente' && !document.getElementById(b2bButtonId)) {
+        const btnB2B = document.createElement('div');
+        btnB2B.id = b2bButtonId;
+        btnB2B.className = "fixed bottom-24 right-6 z-[100] animate-bounce";
+        btnB2B.innerHTML = `
+            <button onclick="window.abrirWizardB2B()" class="bg-amber-600 hover:bg-amber-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 transition-all active:scale-95 border-2 border-white/20">
+                <span class="text-2xl">💼</span>
+                <p class="text-[9px] font-black uppercase tracking-tighter text-center leading-none">Encomendar<br>Inteligência Atlas</p>
+                <div class="h-[1px] w-full bg-white/20 my-1"></div>
+                <p class="text-[7px] opacity-90 uppercase font-black text-amber-100">Exclusivo para Empresas</p>
+            </button>
+        `;
+        document.body.appendChild(btnB2B);
+    }
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
