@@ -346,20 +346,25 @@ async function carregarInterface(user) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
         
-        // 🛡️ SENSOR DE PERFIL B2B: Esconde a aba se o usuário não for 'cliente'
-        // Gil, aqui o sistema verifica o banco e apaga o botão se for prestador.
-        const abaB2B = document.getElementById('tab-b2b_gestao');
-        const isCliente = window.userProfile?.perfil === 'cliente';
-        
-        if (abaB2B) {
-            if (isCliente) {
-                abaB2B.classList.remove('hidden');
-                abaB2B.style.display = 'block';
-            } else {
-                abaB2B.classList.add('hidden');
-                abaB2B.style.display = 'none';
+        // 🛡️ SENSOR DE PERFIL B2B (V62.8 - SINCRONIZADO)
+        // Gil, colocamos um pequeno atraso para dar tempo do Firebase entregar o perfil real
+        setTimeout(() => {
+            const abaB2B = document.getElementById('tab-b2b_gestao');
+            // Verifica se o perfil no banco é exatamente 'cliente'
+            const isCliente = window.userProfile?.perfil === 'cliente';
+            
+            if (abaB2B) {
+                if (isCliente) {
+                    console.log("💎 Perfil B2B detectado. Liberando aba.");
+                    abaB2B.classList.remove('hidden');
+                    abaB2B.style.display = 'block';
+                } else {
+                    console.log("🛠️ Perfil Prestador. Escondendo aba B2B.");
+                    abaB2B.classList.add('hidden');
+                    abaB2B.style.display = 'none';
+                }
             }
-        }
+        }, 1500); // 1.5 segundos é o tempo de segurança para o perfil estar na memória
     }
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
