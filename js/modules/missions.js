@@ -120,14 +120,9 @@ async function carregarMissoesInner() {
        document.body.appendChild(btnB2B);
     }
 
-    // 🛡️ SENTINELA DE PERFIL: Trava de segurança que impede Prestadores de acessar o Wizard
+   // 🧙‍♂️ WIZARD ATLAS B2B: PASSO 1 (TEMPLATES PADRONIZADOS)
     window.abrirWizardB2B = () => {
-        // Verifica se o perfil no banco de dados é 'cliente'
-        const perfilAtivo = window.userProfile?.perfil || 'prestador';
-        
-        if (perfilAtivo !== 'cliente') {
-            return alert("🚫 ACESSO NEGADO\n\nEste portal é exclusivo para Empresas.\n\nSe você é um cliente B2B, alterne seu perfil nas configurações para encomendar inteligência.");
-        }
+        // Gil, não precisamos mais do 'if(perfil !== cliente)' aqui, pois o app.js já barrou o clique antes
 
         // 🧙‍♂️ WIZARD ATLAS B2B: PASSO 1 (TEMPLATES PADRONIZADOS)
         const modal = document.getElementById('modal-editor');
