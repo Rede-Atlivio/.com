@@ -345,6 +345,21 @@ async function carregarInterface(user) {
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
+        
+        // 🛡️ SENSOR DE PERFIL B2B: Esconde a aba se o usuário não for 'cliente'
+        // Gil, aqui o sistema verifica o banco e apaga o botão se for prestador.
+        const abaB2B = document.getElementById('tab-b2b_gestao');
+        const isCliente = window.userProfile?.perfil === 'cliente';
+        
+        if (abaB2B) {
+            if (isCliente) {
+                abaB2B.classList.remove('hidden');
+                abaB2B.style.display = 'block';
+            } else {
+                abaB2B.classList.add('hidden');
+                abaB2B.style.display = 'none';
+            }
+        }
     }
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
