@@ -747,8 +747,7 @@ window.abrirComprovantePIX = (url) => {
 };
 
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
-// Gil, esta função calcula a distância exata entre dois pontos no globo terrestre
-function calcularDistancia(lat1, lon1, lat2, lon2) {
+window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
     const R = 6371; // Raio da Terra em KM
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
