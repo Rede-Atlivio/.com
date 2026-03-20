@@ -296,7 +296,19 @@ async function carregarMissoes() {
         window.wizardB2BData.total_with_fee = (type === 'real') ? (reward * 2) : reward;
 
         console.log("💰 Financeiro Definido:", window.wizardB2BData);
-        window.abrirWizardPasso4(); // Vai para o Checkout Final
+        window.abrirWizardPasso4(); 
+    };
+
+    // 📊 EDUCAÇÃO DO CLIENTE: Tabela de Médias de Mercado
+    window.exibirSugestaoPreco = () => {
+        alert(
+            "📊 MÉDIAS DE MERCADO (Sugestão)\n\n" +
+            "📍 Missões Físicas (Ir ao local):\n" +
+            "De R$ 7,00 a R$ 20,00\n\n" +
+            "🌐 Missões Digitais (Check online):\n" +
+            "De R$ 3,00 a R$ 6,00\n\n" +
+            "💡 Valores maiores atraem colaboradores em poucos minutos!"
+        );
     };
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
