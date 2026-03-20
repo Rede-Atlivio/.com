@@ -14,14 +14,57 @@ styleAtlas.innerHTML = `
 `;
 document.head.appendChild(styleAtlas);
 
-// 🚀 INICIALIZADOR ÚNICO V2026
-// Gil, esta função agora apenas prepara o terreno, as exportações ficam fixas no final do arquivo
+// 🚀 INICIALIZADOR HÍBRIDO ATLAS V2026
 export async function initMissions() {
-    console.log("🌍 Atlas Vivo: Sincronizando radar geográfico...");
-    const container = document.getElementById('lista-missoes');
+    const perfil = window.userProfile?.perfil || 'prestador';
+    console.log(`🌍 Atlas Vivo: Sincronizando visão [${perfil.toUpperCase()}]`);
+
+    if (perfil === 'cliente') {
+        // Se for cliente, foca apenas na nova aba de Gestão
+        const containerB2B = document.getElementById('view-b2b-missions');
+        if (!containerB2B) return console.warn("Aguardando esqueleto HTML da aba B2B...");
+        
+        // Inicia direto na visão de Radar de Encomendas para o Cliente
+        await carregarInterfaceB2B(); 
+    } else {
+        // Se for prestador, mantém o fluxo normal na aba de Micro Tarefas
+        const containerPrestador = document.getElementById('lista-missoes');
+        if (!containerPrestador) return;
+        await carregarMissoes(); 
+    }
+}
+
+// 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B
+async function carregarInterfaceB2B() {
+    const container = document.getElementById('view-b2b-missions');
     if (!container) return;
 
-    await carregarMissoes(); // Chama o motor de carga principal
+    // Injeta o esqueleto fixo da central de comando do Cliente
+    container.innerHTML = `
+        <div class="p-4 space-y-6 animate-fadeIn">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-black text-white uppercase italic tracking-tighter">Gestão Atlas B2B</h2>
+                    <p class="text-[9px] text-amber-500 font-bold uppercase tracking-widest">Painel de Controle de Inteligência</p>
+                </div>
+                <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 shadow-inner">
+                    <button onclick="window.alternarSubAbaB2B('radar')" id="btn-sub-radar" class="px-4 py-2 rounded-lg text-[8px] font-black uppercase transition bg-blue-600 text-white shadow-lg">📡 Minhas Ordens</button>
+                    <button onclick="window.alternarSubAbaB2B('auditoria')" id="btn-sub-auditoria" class="px-4 py-2 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white">⚖️ Auditoria</button>
+                </div>
+            </div>
+            
+            <div id="sub-view-b2b-content" class="min-h-[400px]">
+                <div id="lista-cards-real"></div>
+            </div>
+
+            <button onclick="window.abrirWizardB2B()" class="fixed bottom-24 right-6 z-[100] bg-amber-600 hover:bg-amber-500 text-white p-5 rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20 animate-bounce">
+                <span class="text-2xl">💼</span>
+            </button>
+        </div>
+    `;
+    
+    // Carrega as missões que este cliente criou
+    carregarMissoesInner();
 }
 
 // 🏗️ MOTOR DE CARGA ATLAS VIVO V2026 (PORTAL HÍBRIDO)
