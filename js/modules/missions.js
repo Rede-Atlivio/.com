@@ -527,7 +527,7 @@ async function carregarMissoesInner() {
             const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
 
             // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
-            container.innerHTML += `
+            if(listaCards) listaCards.innerHTML += `
                 <div class="${cardClass} p-5 rounded-3xl border border-white/10 shadow-xl transition-all animate-fadeIn mb-4">
                     <div class="flex justify-between items-start mb-3">
                         <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
