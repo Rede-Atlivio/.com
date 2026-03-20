@@ -105,6 +105,62 @@ async function loadMissionsManagement() {
     } catch(e) { console.error(e); }
 }
 
+// 🤝 ABA B2B: BUSCA MISSÕES CRIADAS POR EMPRESAS (AGUARDANDO CURADORIA)
+async function loadB2BPendingMissions() {
+    const tbody = document.getElementById('list-body');
+    const badge = document.getElementById('badge-b2b-count');
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center p-10"><div class="loader mx-auto border-amber-500"></div></td></tr>`;
+    
+    try {
+        // 🔍 FILTRO RIGIDO: Busca apenas missões de empresas que ainda não foram publicadas
+        const q = query(collection(window.db, "missions"), where("status", "==", "pending_b2b"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
+        
+        if(snap.empty) { 
+            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhuma solicitação B2B pendente.</td></tr>`; 
+            if(badge) badge.classList.add('hidden');
+            return; 
+        }
+
+        // Atualiza o contador vermelho (Badge)
+        if(badge) {
+            badge.innerText = snap.size;
+            badge.classList.remove('hidden');
+        }
+
+        snap.forEach(d => {
+            const m = d.data();
+            const moedaIcon = m.pay_type === 'atlix' ? '🪙' : '💰';
+            const corValor = m.pay_type === 'atlix' ? 'text-amber-400' : 'text-emerald-400';
+
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-amber-900/10 transition">
+                    <td class="p-3">
+                        <p class="text-white font-bold text-xs uppercase">${m.b2b_name || 'Empresa B2B'}</p>
+                        <p class="text-[8px] text-gray-500">ID: ${d.id.slice(0,8)}</p>
+                    </td>
+                    <td class="p-3">
+                        <p class="text-gray-300 text-xs font-medium">${m.title}</p>
+                    </td>
+                    <td class="p-3">
+                        <span class="${corValor} font-mono font-bold text-xs">${moedaIcon} ${m.reward}</span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="window.publicarMissaoB2B('${d.id}')" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg transition active:scale-95">
+                            ✅ PUBLICAR NO MAPA
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('list-count').innerText = `${snap.size} solicitações aguardando`;
+    } catch(e) { 
+        console.error("Erro B2B Load:", e); 
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">Erro ao carregar (Pode faltar Índice no Firebase).</td></tr>`;
+    }
+}
+
 // ✅ FUNÇÃO DE PREPARAÇÃO PARA EDIÇÃO
 function editarMissao(id) {
     const mission = allLoadedMissions.find(m => m.id === id);
