@@ -57,8 +57,67 @@ async function carregarMissoes() {
             return alert("🚫 ACESSO NEGADO\n\nEste portal é exclusivo para Empresas.\n\nSe você é um cliente B2B, alterne seu perfil nas configurações para encomendar inteligência.");
         }
 
-        // Se for cliente, o sistema prossegue para o motor de criação (Wizard)
-        console.log("🚀 Sentinela: Acesso autorizado para Cliente B2B.");
+        // 🧙‍♂️ WIZARD ATLAS B2B: PASSO 1 (TEMPLATES PADRONIZADOS)
+        const modal = document.getElementById('modal-editor');
+        const content = document.getElementById('modal-content');
+        if(!modal || !content) return alert("Erro: Estrutura de Modal não encontrada.");
+
+        modal.classList.remove('hidden');
+        window.wizardB2BData = {}; // Reseta memória da encomenda atual
+
+        content.innerHTML = `
+            <div id="wizard-atlas-container" class="space-y-6 animate-fadeIn pb-6">
+                <div class="text-center space-y-1">
+                    <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Inteligência Atlas</h3>
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-[0.2em]">Passo 1: Selecione o Template</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="window.setWizardStep1('📸 Foto de Fachada', 'Tirar foto nítida e frontal da fachada, confirmando se o local está aberto e em operação.')" class="bg-slate-800/50 hover:bg-blue-600 p-4 rounded-2xl border border-white/5 text-left transition-all active:scale-95 group">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl bg-slate-900 p-2 rounded-xl group-hover:bg-blue-700 transition">🏢</span>
+                            <div>
+                                <p class="text-white font-black text-[11px] uppercase">Fachada e Operação</p>
+                                <p class="text-[8px] text-gray-400 group-hover:text-blue-100 uppercase font-bold">Auditoria Visual Rápida</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <button onclick="window.setWizardStep1('🏷️ Pesquisa de Preço', 'Localizar o item específico e fotografar o preço visível na prateleira/etiqueta.')" class="bg-slate-800/50 hover:bg-emerald-600 p-4 rounded-2xl border border-white/5 text-left transition-all active:scale-95 group">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl bg-slate-900 p-2 rounded-xl group-hover:bg-emerald-700 transition">🏷️</span>
+                            <div>
+                                <p class="text-white font-black text-[11px] uppercase">Pesquisa de Preço</p>
+                                <p class="text-[8px] text-gray-400 group-hover:text-emerald-100 uppercase font-bold">Monitoramento de Mercado</p>
+                            </div>
+                        </div>
+                    </button>
+
+                    <button onclick="window.setWizardStep1('🕒 Status e Promoção', 'Confirmar se há placas de oferta ativa e se o estabelecimento cumpre o horário.')" class="bg-slate-800/50 hover:bg-amber-600 p-4 rounded-2xl border border-white/5 text-left transition-all active:scale-95 group">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl bg-slate-900 p-2 rounded-xl group-hover:bg-amber-700 transition">🕒</span>
+                            <div>
+                                <p class="text-white font-black text-[11px] uppercase">Status e Promoção</p>
+                                <p class="text-[8px] text-gray-400 group-hover:text-amber-100 uppercase font-bold">Check de Campanhas</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="w-full py-4 text-gray-600 font-black text-[9px] uppercase tracking-widest hover:text-white transition">Cancelar Encomenda</button>
+            </div>
+        `;
+    };
+
+    // 💾 ARMAZENAMENTO DO PASSO 1
+    window.setWizardStep1 = (titulo, descricao) => {
+        window.wizardB2BData.title = titulo;
+        window.wizardB2BData.description = descricao;
+        window.wizardB2BData.b2b_owner_uid = window.auth.currentUser.uid;
+        window.wizardB2BData.b2b_name = window.userProfile?.nome || "Empresa B2B";
+        
+        console.log("📍 Template Selecionado:", titulo);
+        window.abrirWizardPasso2(); // Chama o motor do Mapa
     };
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
