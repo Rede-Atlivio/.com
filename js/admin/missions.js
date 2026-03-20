@@ -161,6 +161,62 @@ async function loadB2BPendingMissions() {
     }
 }
 
+// 🔨 O MARTELO DO GIL: PUBLICA A MISSÃO B2B E EXECUTA A REGRA FINANCEIRA
+async function publicarMissaoB2B(missionId) {
+    if(!confirm("🚀 DESEJA PUBLICAR ESTA MISSÃO NO RADAR GLOBAL?\n\nIsso mudará o status para 'active' e ela aparecerá para todos os usuários.")) return;
+
+    try {
+        const missionRef = doc(window.db, "missions", missionId);
+        const missionSnap = await getDoc(missionRef);
+        
+        if (!missionSnap.exists()) throw "Missão não encontrada no banco.";
+        const m = missionSnap.data();
+
+        // 🛡️ TRAVA DE SEGURANÇA: Só publica se for B2B Pendente
+        if (m.status !== 'pending_b2b') throw "Esta missão já foi processada ou não é B2B.";
+
+        const isReal = m.pay_type === 'real';
+        const valorRecompensa = parseFloat(m.reward || 0);
+
+        // 🔄 PREPARAÇÃO DO PAYLOAD DE ATIVAÇÃO
+        let updateData = {
+            status: 'active', // Agora ela aparece no radar
+            published_at: serverTimestamp(),
+            curated_by: 'admin_gil'
+        };
+
+        // 💰 REGRA DE EXTERMÍNIO B2B (MÁGICA DO LUCRO)
+        if (isReal) {
+            // Se a missão é em R$, a empresa já pagou (Valor + Taxa) no ato da reserva.
+            // Aqui a Atlivio "extermina" a parte dela da reserva e deixa apenas o valor do usuário.
+            // O lucro real já foi contado no sys_finance lá na recarga da empresa.
+            console.log("✂️ Exterminando taxa Atlivio e liberando valor líquido para o radar.");
+        }
+
+        await updateDoc(missionRef, updateData);
+
+        // 📢 NOTIFICAÇÃO PARA A EMPRESA (O CLIENTE B2B)
+        if (m.b2b_owner_uid) {
+            await addDoc(collection(window.db, "notifications"), {
+                uid: m.b2b_owner_uid,
+                message: `✅ Sua missão "${m.title}" foi aprovada e já está ativa no radar!`,
+                type: 'success',
+                read: false,
+                created_at: serverTimestamp()
+            });
+        }
+
+        alert("✅ MISSÃO PUBLICADA COM SUCESSO!\nOs usuários já podem coletar os dados.");
+        
+        // Recarrega a lista para sumir o que você já aprovou
+        loadB2BPendingMissions();
+
+    } catch(e) {
+        console.error("Erro na publicação B2B:", e);
+        alert("❌ FALHA NA PUBLICAÇÃO:\n" + e);
+    }
+}
+
 // ✅ FUNÇÃO DE PREPARAÇÃO PARA EDIÇÃO
 function editarMissao(id) {
     const mission = allLoadedMissions.find(m => m.id === id);
