@@ -733,9 +733,9 @@ window.addEventListener('click', (e) => {
     // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
     const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
     
-    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/GERENCIAR (Barra o Prestador)
-    // 🛡️ Adicionamos 'b2b_gestao' para que o Vigilante barre o prestador e peça a troca de perfil.
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing', 'b2b_gestao'];
+    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/GERENCIAR
+    // Gil, removemos 'b2b_gestao' daqui para que a aba não suma, o motor interno do missions.js cuidará da trava de perfil.
+    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
 
     // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
     const textoBotao = btn.innerText.toUpperCase();
