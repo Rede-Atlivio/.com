@@ -114,7 +114,7 @@ async function carregarMissoes() {
                         </div>
                     </div>
                     
-                    <h3 class="font-black text-slate-800 text-sm uppercase mb-1">${m.title}</h3>
+                    <h3 class="font-black text-white text-sm uppercase mb-1 tracking-tight">${m.title}</h3>
                     <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
 
                     <div class="flex gap-2">
