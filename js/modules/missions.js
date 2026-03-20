@@ -794,13 +794,21 @@ window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 }
 
-// 🔐 SOLDAGEM GLOBAL ATLAS V2026.PRO (FINAL)
-// Gil, aqui entregamos todas as funções para o navegador reconhecer os cliques nos botões
+// 🔐 SOLDAGEM GLOBAL REFORÇADA (VIGILANTE COMPATÍVEL)
+window.initMissions = initMissions; // Garante que o Robô 01 e o App.js a vejam
 window.carregarMissoes = carregarMissoes;
-window.renderizarMissaoCards = carregarMissoes; 
-window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
-window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
-window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
+window.abrirWizardB2B = abrirWizardB2B; // Garante que o clique funcione
+window.setWizardStep1 = setWizardStep1; 
+window.setWizardStep2 = setWizardStep2;
+window.setWizardStep3 = setWizardStep3;
+window.setWizardStep4 = window.abrirWizardPasso4; // Alias de segurança
+window.abrirWizardPasso2 = abrirWizardPasso2;
+window.abrirWizardPasso3 = abrirWizardPasso3;
+window.abrirWizardPasso4 = abrirWizardPasso4;
+window.alternarSubAbaB2B = alternarSubAbaB2B;
+window.abrirProvaMissao = abrirProvaMissao;
+window.verTutorialMissao = verTutorialMissao;
+window.abrirComprovantePIX = abrirComprovantePIX;
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
