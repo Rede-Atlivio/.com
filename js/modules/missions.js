@@ -64,26 +64,7 @@ async function carregarInterfaceB2B() {
         </div>
     `;
     
-    carregarMissoesInner();
-}
-                </div>
-                <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 shadow-inner">
-                    <button onclick="window.alternarSubAbaB2B('radar')" id="btn-sub-radar" class="px-4 py-2 rounded-lg text-[8px] font-black uppercase transition bg-blue-600 text-white shadow-lg">📡 Minhas Ordens</button>
-                    <button onclick="window.alternarSubAbaB2B('auditoria')" id="btn-sub-auditoria" class="px-4 py-2 rounded-lg text-[8px] font-black uppercase transition text-gray-500 hover:text-white">⚖️ Auditoria</button>
-                </div>
-            </div>
-            
-            <div id="sub-view-b2b-content" class="min-h-[400px]">
-                <div id="lista-cards-real"></div>
-            </div>
-
-            <button onclick="window.abrirWizardB2B()" class="fixed bottom-24 right-6 z-[100] bg-amber-600 hover:bg-amber-500 text-white p-5 rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20 animate-bounce">
-                <span class="text-2xl">💼</span>
-            </button>
-        </div>
-    `;
-    
-    // Carrega as missões que este cliente criou
+    // Dispara o motor de carregamento interno para buscar as ordens do cliente
     carregarMissoesInner();
 }
 
