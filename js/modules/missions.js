@@ -75,8 +75,9 @@ async function carregarMissoes() {
 
 // Criamos essa função auxiliar para o motor de carga funcionar dentro do novo container
 async function carregarMissoesInner() {
-    const listaCards = document.getElementById('lista-cards-real');
-    if (!listaCards) return;
+    // AQUI ESTAVA O ERRO: Não usamos 'const' novamente se ela já foi capturada
+    const containerInner = document.getElementById('lista-cards-real');
+    if (!containerInner) return;
 
     // 🛡️ SENSOR DE PERFIL: Identifica se é Cliente/Empresa para liberar o portal de encomendas
     const perfilUsuario = window.userProfile?.perfil || 'prestador';
