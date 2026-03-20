@@ -479,12 +479,19 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-        } else {
-            // --- FLUXO B: PAGAMENTO EM REAL (VAI PARA A FILA DO DASHBOARD) ---
-            // Mudamos o status para um específico que o Dashboard/Assistant vai vigiar
-            await updateDoc(doc(window.db, "mission_submissions", docId), { 
-                status: 'approved_pending_pix', 
-                approved_at: serverTimestamp() 
+       } else {
+            // --- FLUXO B: PAGAMENTO EM REAL (EXTERMÍNIO DE TAXA + FILA PIX) ---
+            await runTransaction(window.db, async (transaction) => {
+                const subRef = doc(window.db, "mission_submissions", docId);
+
+                // ✂️ EXTERMÍNIO: Se for B2B, limpamos o valor TOTAL (Taxa + Recompensa) da reserva.
+                // A Atlivio já lucrou na recarga, então aqui apenas removemos a custódia.
+                if (subData.b2b_owner_uid && subData.total_with_fee) {
+                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
+                    transaction.update(b2bRef, { wallet_reserved: increment(-subData.total_with_fee) });
+                }
+
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
             });
 
             await addDoc(collection(window.db, "notifications"), {
