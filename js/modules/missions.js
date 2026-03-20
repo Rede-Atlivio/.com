@@ -794,21 +794,21 @@ window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 }
 
-// 🔐 SOLDAGEM GLOBAL REFORÇADA (VIGILANTE COMPATÍVEL)
-window.initMissions = initMissions; // Garante que o Robô 01 e o App.js a vejam
-window.carregarMissoes = carregarMissoes;
-window.abrirWizardB2B = abrirWizardB2B; // Garante que o clique funcione
-window.setWizardStep1 = setWizardStep1; // Salva o Template e vai pro Passo 2
-window.setWizardStep2 = setWizardStep2; // Salva o Mapa e vai pro Passo 3
-window.setWizardStep3 = setWizardStep3; // Salva o Financeiro e vai pro Passo 4
-window.abrirWizardPasso2 = abrirWizardPasso2; // Abre a tela do Mapa
-window.abrirWizardPasso3 = abrirWizardPasso3; // Abre a tela da Calculadora
-window.abrirWizardPasso4 = abrirWizardPasso4; // Abre a tela de Checkout
-window.processarReservaB2B = processarReservaB2B; // Dispara o pagamento final
-window.alternarSubAbaB2B = alternarSubAbaB2B;
-window.abrirProvaMissao = abrirProvaMissao;
-window.verTutorialMissao = verTutorialMissao;
-window.abrirComprovantePIX = abrirComprovantePIX;
+// 🔐 ANCORAGEM SOBERANA ATLAS (V2026.V61)
+// Gil, soldamos aqui no topo para que o navegador reconheça as funções ANTES de qualquer erro.
+window.initMissions = async () => { const { initMissions } = await import('./missions.js'); initMissions(); };
+window.abrirWizardB2B = () => { if(typeof abrirWizardB2B === 'function') abrirWizardB2B(); else console.error("Motor B2B não carregado."); };
+window.setWizardStep1 = (t, d) => setWizardStep1(t, d);
+window.setWizardStep2 = () => setWizardStep2();
+window.setWizardStep3 = () => setWizardStep3();
+window.abrirWizardPasso2 = () => abrirWizardPasso2();
+window.abrirWizardPasso3 = () => abrirWizardPasso3();
+window.abrirWizardPasso4 = () => abrirWizardPasso4();
+window.processarReservaB2B = () => processarReservaB2B();
+window.alternarSubAbaB2B = (a) => alternarSubAbaB2B(a);
+window.abrirProvaMissao = (i, t, r, p) => abrirProvaMissao(i, t, r, p);
+window.verTutorialMissao = (v) => verTutorialMissao(v);
+window.abrirComprovantePIX = (u) => abrirComprovantePIX(u);
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
