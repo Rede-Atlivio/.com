@@ -198,8 +198,99 @@ async function carregarMissoes() {
         window.wizardB2BData.longitude = parseFloat(lng);
         window.wizardB2BData.radius = parseInt(radius);
 
-        console.log("📍 Localização Definida:", { lat, lng, radius });
-        window.abrirWizardPasso3(); // Vai para a Calculadora/Pagamento
+       console.log("📍 Localização Definida:", { lat, lng, radius });
+        window.abrirWizardPasso3(); 
+    };
+
+    // 💰 WIZARD B2B: PASSO 3 (CALCULADORA E MOEDA)
+    window.abrirWizardPasso3 = () => {
+        const content = document.getElementById('modal-content');
+        
+        content.innerHTML = `
+            <div id="wizard-atlas-step-3" class="space-y-6 animate-fadeIn pb-6">
+                <div class="text-center">
+                    <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 3: Investimento</h3>
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Defina a recompensa e a moeda</p>
+                </div>
+
+                <div class="p-5 bg-slate-900/80 rounded-3xl border border-white/5 space-y-4">
+                    <div>
+                        <label class="text-[8px] text-gray-500 font-black uppercase ml-2 mb-1 block">Tipo de Pagamento</label>
+                        <select id="b2b-pay-type" onchange="window.atualizarCalculoB2B()" class="w-full p-3 rounded-2xl bg-slate-950 text-white font-bold text-xs border border-white/10 outline-none">
+                            <option value="real">💰 DINHEIRO REAL (PIX)</option>
+                            <option value="atlix">🪙 CRÉDITOS ATLIX (BÔNUS)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center ml-2 mb-1">
+                            <label class="text-[8px] text-gray-500 font-black uppercase">Valor por Missão</label>
+                            <span class="text-[7px] text-amber-500 font-bold uppercase">Mínimo R$ 3,00</span>
+                        </div>
+                        <input type="number" id="b2b-reward" value="5.00" step="0.50" oninput="window.atualizarCalculoB2B()" class="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 text-2xl font-black border border-white/10 outline-none">
+                    </div>
+
+                    <div id="display-calculo-b2b" class="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-2">
+                        <div class="flex justify-between text-[9px] font-bold uppercase">
+                            <span class="text-gray-500">Recompensa Usuário:</span>
+                            <span id="calc-user" class="text-white">R$ 5,00</span>
+                        </div>
+                        <div id="row-taxa" class="flex justify-between text-[9px] font-bold uppercase">
+                            <span class="text-gray-500">Taxa Inteligência (100%):</span>
+                            <span id="calc-taxa" class="text-blue-400">R$ 5,00</span>
+                        </div>
+                        <div class="h-[1px] bg-white/10 my-1"></div>
+                        <div class="flex justify-between text-[11px] font-black uppercase tracking-tight">
+                            <span class="text-gray-400">Investimento Total:</span>
+                            <span id="calc-total" class="text-emerald-500">R$ 10,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="window.abrirWizardPasso2()" class="flex-1 py-4 bg-slate-800 text-gray-400 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-700 transition">Voltar</button>
+                    <button onclick="window.setWizardStep3()" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg active:scale-95 transition">Revisar Ordem ➜</button>
+                </div>
+            </div>
+        `;
+    };
+
+    // 🤖 ROBÔ CALCULADORA EM TEMPO REAL
+    window.atualizarCalculoB2B = () => {
+        const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
+        const type = document.getElementById('b2b-pay-type').value;
+        const rowTaxa = document.getElementById('row-taxa');
+        
+        let taxa = 0;
+        if (type === 'real') {
+            taxa = val; // Regra: 100% de taxa para Real
+            rowTaxa.style.display = 'flex';
+        } else {
+            taxa = 0; // Regra: Isento de taxa para movimentar ATLIX
+            rowTaxa.style.display = 'none';
+        }
+
+        const total = val + taxa;
+
+        document.getElementById('calc-user').innerText = `R$ ${val.toFixed(2)}`;
+        document.getElementById('calc-taxa').innerText = `R$ ${taxa.toFixed(2)}`;
+        document.getElementById('calc-total').innerText = `R$ ${total.toFixed(2)}`;
+    };
+
+    // 💾 ARMAZENAMENTO DO PASSO 3
+    window.setWizardStep3 = () => {
+        const reward = parseFloat(document.getElementById('b2b-reward').value);
+        const type = document.getElementById('b2b-pay-type').value;
+
+        // 🛡️ TRAVA DE SEGURANÇA: Piso de R$ 3,00
+        if (reward < 3) return alert("⚠️ VALOR INVÁLIDO\n\nO valor mínimo para atrair colaboradores é de R$ 3,00.");
+
+        window.wizardB2BData.reward = reward;
+        window.wizardB2BData.pay_type = type;
+        window.wizardB2BData.total_with_fee = (type === 'real') ? (reward * 2) : reward;
+
+        console.log("💰 Financeiro Definido:", window.wizardB2BData);
+        window.abrirWizardPasso4(); // Vai para o Checkout Final
     };
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
