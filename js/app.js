@@ -169,7 +169,8 @@ function switchTab(tabName, isAutoBoot = false) {
         'home': 'home',
         'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
         'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
-        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', // 🎯 Rota unificada para Atlas Vivo
+        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', 
+        'b2b_gestao': 'b2b_gestao', // 🚀 ROTA OFICIAL: Central de Inteligência Atlas
         'oportunidades': 'oportunidades',
         'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
         'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
