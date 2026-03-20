@@ -38,8 +38,8 @@ export async function init() {
 
 async function switchMissionTab(tab) {
     currentTab = tab;
-    // Reset de botões
-    ['missions', 'submissions', 'payments'].forEach(t => {
+   // Reset de botões (Incluindo a nova aba B2B na faxina visual)
+    ['missions', 'b2b_pendente', 'submissions', 'payments'].forEach(t => {
         const btn = document.getElementById(`btn-tab-${t}`);
         if(btn) btn.className = "text-gray-400 font-bold uppercase text-[9px] pb-2 border-b-2 border-transparent transition";
     });
