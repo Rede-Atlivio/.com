@@ -947,4 +947,11 @@ window.resolverVereditoB2B = async (docId, veredito) => {
 
 // A gestão de troca de perfil agora é feita pelo Vigilante centralizado no app.js
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
-console.log("🚀 [Missions] Sistema Atlas Híbrido B2B/B2C 100% Soldado!");
+
+// 📸 Visualizador de Provas para o B2B
+window.visualizarProva = (url) => {
+    const win = window.open();
+    win.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;"><img src="${url}" style="max-width:100%;max-height:100vh;"></body>`);
+};
+
+console.log("✅ [Atlas] Motor Híbrido Estabilizado V62.6");
