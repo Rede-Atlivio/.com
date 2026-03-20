@@ -794,22 +794,26 @@ window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
     return R * c; 
 }
 
-// 🔐 ANCORAGEM SOBERANA ATLAS (V2026.V61)
-// Gil, soldamos aqui no topo para que o navegador reconheça as funções ANTES de qualquer erro.
-window.initMissions = async () => { const { initMissions } = await import('./missions.js'); initMissions(); };
-window.abrirWizardB2B = () => { if(typeof abrirWizardB2B === 'function') abrirWizardB2B(); else console.error("Motor B2B não carregado."); };
-window.setWizardStep1 = (t, d) => setWizardStep1(t, d);
+// 🔐 ANCORAGEM DE SEGURANÇA (V2026.V62)
+// Gil, mudamos a estratégia: declaramos as intenções globais sem recursividade.
+window.initMissions = () => initMissions();
+window.abrirWizardB2B = () => abrirWizardB2B();
+window.setWizardStep1 = (titulo, desc) => setWizardStep1(titulo, desc);
 window.setWizardStep2 = () => setWizardStep2();
 window.setWizardStep3 = () => setWizardStep3();
 window.abrirWizardPasso2 = () => abrirWizardPasso2();
 window.abrirWizardPasso3 = () => abrirWizardPasso3();
 window.abrirWizardPasso4 = () => abrirWizardPasso4();
 window.processarReservaB2B = () => processarReservaB2B();
-window.alternarSubAbaB2B = (a) => alternarSubAbaB2B(a);
-window.abrirProvaMissao = (i, t, r, p) => abrirProvaMissao(i, t, r, p);
-window.verTutorialMissao = (v) => verTutorialMissao(v);
-window.abrirComprovantePIX = (u) => abrirComprovantePIX(u);
-
+window.alternarSubAbaB2B = (aba) => alternarSubAbaB2B(aba);
+window.abrirProvaMissao = (id, tit, rew, pay) => abrirProvaMissao(id, tit, rew, pay);
+window.verTutorialMissao = (vid) => verTutorialMissao(vid);
+window.abrirComprovantePIX = (url) => abrirComprovantePIX(url);
+window.visualizarProva = (url) => {
+    // 📸 Função auxiliar para o B2B ver a foto ampliada
+    const win = window.open();
+    win.document.write(`<body style="margin:0;bg:#000;display:flex;align-items:center;justify-content:center;"><img src="${url}" style="max-width:100%;max-height:100vh;"></body>`);
+};
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
 async function carregarMissoesRealizadas() {
