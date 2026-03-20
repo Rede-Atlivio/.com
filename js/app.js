@@ -197,10 +197,11 @@ function switchTab(tabName, isAutoBoot = false) {
     // 📍 REGISTRO CONTEXTUAL FINAL: Memoriza a aba ativa saneada para o sistema de notificações
     window.abaAtual = nomeLimpo;
 
-    // 🧹 LIMPEZA TOTAL
+    // 🧹 LIMPEZA TOTAL (V61): Respeita o novo container B2B
     document.querySelectorAll('main > section').forEach(el => {
         el.classList.add('hidden');
-        el.style.display = 'none';
+        // Usamos style.setProperty para garantir que o navegador não force a exibição
+        el.style.setProperty('display', 'none', 'important');
     });
 
     const alvo = document.getElementById(`sec-${nomeLimpo}`);
