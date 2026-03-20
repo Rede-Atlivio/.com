@@ -224,10 +224,16 @@ async function carregarMissoes() {
 
                     <div>
                         <div class="flex justify-between items-center ml-2 mb-1">
-                            <label class="text-[8px] text-gray-500 font-black uppercase">Valor por Missão</label>
-                            <span class="text-[7px] text-amber-500 font-bold uppercase">Mínimo R$ 3,00</span>
+                            <div class="flex items-center gap-1">
+                                <label class="text-[8px] text-gray-500 font-black uppercase">Valor da Recompensa</label>
+                                <button onclick="window.exibirSugestaoPreco()" class="w-4 h-4 flex items-center justify-center rounded-full bg-slate-800 text-blue-400 text-[10px] font-black hover:bg-blue-600 hover:text-white transition">?</button>
+                            </div>
+                            <span class="text-[7px] text-amber-500 font-bold uppercase tracking-tighter">Piso: R$ 3,00</span>
                         </div>
-                        <input type="number" id="b2b-reward" value="5.00" step="0.50" oninput="window.atualizarCalculoB2B()" class="w-full p-4 rounded-2xl bg-slate-950 text-emerald-400 text-2xl font-black border border-white/10 outline-none">
+                        <div class="relative">
+                            <span class="absolute left-4 top-4 text-emerald-600 font-black text-xl">R$</span>
+                            <input type="number" id="b2b-reward" value="5.00" min="3" step="0.50" oninput="window.atualizarCalculoB2B()" class="w-full p-4 pl-12 rounded-2xl bg-slate-950 text-emerald-400 text-2xl font-black border border-white/10 outline-none focus:border-blue-500 transition">
+                        </div>
                     </div>
 
                     <div id="display-calculo-b2b" class="p-4 bg-black/40 rounded-2xl border border-white/5 space-y-2">
