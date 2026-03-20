@@ -620,10 +620,18 @@ async function loadMissionsPayments() {
             const uSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", data.user_id)));
             const userPix = !uSnap.empty ? (uSnap.docs[0].data().pix_key || uSnap.docs[0].data().chave_pix) : 'Não cadastrada';
 
+           // 🏷️ IDENTIFICADOR DE ORIGEM: Verifica se a missão é B2B ou sua (ROOT)
+            const etiquetaOrigem = data.b2b_owner_uid 
+                ? `<span class="bg-amber-900/40 text-amber-500 border border-amber-800 text-[7px] px-1 rounded ml-1 font-black">B2B: ${data.b2b_name || 'EMPRESA'}</span>`
+                : `<span class="bg-blue-900/40 text-blue-500 border border-blue-800 text-[7px] px-1 rounded ml-1 font-black">ROOT</span>`;
+
             tbody.innerHTML += `
                 <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
                     <td class="p-3">
-                        <p class="text-white font-bold text-xs">${data.mission_title}</p>
+                        <div class="flex items-center">
+                            <p class="text-white font-bold text-xs">${data.mission_title}</p>
+                            ${etiquetaOrigem}
+                        </div>
                         <p class="text-[9px] text-gray-500">${data.user_name || 'Usuário'}</p>
                     </td>
                     <td class="p-3 text-emerald-400 font-black text-xs">R$ ${data.reward}</td>
