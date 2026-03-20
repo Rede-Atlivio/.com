@@ -182,10 +182,11 @@ function switchTab(tabName, isAutoBoot = false) {
     const perfil = window.userProfile;
     const isPrestador = perfil?.is_provider || false;
 
-    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
+    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Atualizada V60)
     const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    // 🛍️ EXPLORAÇÃO LIVRE: 'loja' e 'produtos' foram removidos da trava para acesso universal
-    const requerCliente = ['contratar', 'vaga'].includes(tabName);
+    
+    // 💼 GESTÃO ATLAS: Agora 'b2b_gestao' é oficialmente uma área de Cliente.
+    const requerCliente = ['contratar', 'vaga', 'b2b_gestao'].includes(tabName);
 
    // 🛡️ NAVEGAÇÃO LIVRE: O Maestro agora permite a transição entre abas sem forçar troca de perfil.
     if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
