@@ -523,11 +523,11 @@ async function carregarMissoesInner() {
 
         if(listaCards) listaCards.innerHTML = ""; // Limpa loader
 
-        // 📣 CONVITE B2B (PARA PRESTADORES): Aparece apenas para quem não é cliente ainda
+        // 📣 CONVITE B2B (PARA PRESTADORES): Agora integrado ao sistema de abas oficial
         const perfilAcesso = window.userProfile?.perfil || 'prestador';
         if (perfilAcesso === 'prestador' && listaCards) {
             listaCards.innerHTML += `
-                <div onclick="window.abrirModalTrocaPerfil()" class="bg-gradient-to-r from-amber-900/40 to-slate-900 p-4 rounded-3xl border border-amber-500/30 mb-6 cursor-pointer hover:scale-[1.02] transition-all group">
+                <div onclick="switchTab('b2b_gestao')" class="bg-gradient-to-r from-amber-900/40 to-slate-900 p-4 rounded-3xl border border-amber-500/30 mb-6 cursor-pointer hover:scale-[1.02] transition-all group">
                     <div class="flex items-center gap-4">
                         <div class="bg-amber-600 p-3 rounded-2xl shadow-lg group-hover:bg-amber-500 transition">
                             <span class="text-xl">💼</span>
