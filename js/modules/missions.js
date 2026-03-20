@@ -957,5 +957,24 @@ window.resolverVereditoB2B = async (docId, veredito) => {
     window.carregarAuditoriaB2B(); // Recarrega a lista
 };
 
+// 🔄 MOTOR DE TRANSIÇÃO DE PERFIL
+window.abrirModalTrocaPerfil = () => {
+    const confirmacao = confirm(
+        "🚀 DESEJA ATIVAR O PERFIL CLIENTE B2B?\n\n" +
+        "Ao confirmar, sua interface mudará para o modo de contratação.\n" +
+        "Você poderá encomendar pesquisas, fotos e dados da nossa rede.\n\n" +
+        "Deseja prosseguir para a configuração?"
+    );
+
+    if (confirmacao) {
+        // Gil, aqui chamaremos a função de update no banco que vamos soldar no auth.js
+        if(window.solicitarTrocaPerfilB2B) {
+            window.solicitarTrocaPerfilB2B();
+        } else {
+            alert("⚙️ O motor de transição está sendo calibrado. Tente novamente em instantes.");
+        }
+    }
+};
+
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 console.log("🚀 [Missions] Sistema Atlas Híbrido B2B/B2C 100% Soldado!");
