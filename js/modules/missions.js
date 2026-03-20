@@ -117,7 +117,89 @@ async function carregarMissoes() {
         window.wizardB2BData.b2b_name = window.userProfile?.nome || "Empresa B2B";
         
         console.log("📍 Template Selecionado:", titulo);
-        window.abrirWizardPasso2(); // Chama o motor do Mapa
+        window.abrirWizardPasso2(); 
+    };
+
+    // 📍 WIZARD B2B: PASSO 2 (LOCALIZAÇÃO E RAIO)
+    window.abrirWizardPasso2 = () => {
+        const content = document.getElementById('modal-content');
+        
+        content.innerHTML = `
+            <div id="wizard-atlas-step-2" class="space-y-5 animate-fadeIn pb-6">
+                <div class="text-center">
+                    <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 2: Onde está o Alvo?</h3>
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Defina o local exato da coleta de dados</p>
+                </div>
+
+                <div class="p-4 bg-slate-900/80 rounded-3xl border border-white/5 space-y-4">
+                    <div class="relative">
+                        <label class="text-[8px] text-gray-500 font-black uppercase ml-2 mb-1 block">Busca Inteligente (Google)</label>
+                        <input type="text" id="b2b-address-search" placeholder="Digite o endereço da empresa alvo..." class="w-full p-3 pl-10 rounded-2xl bg-slate-950 text-white text-xs border border-white/10 focus:border-blue-500 outline-none transition">
+                        <span class="absolute left-3 top-8 text-gray-500 text-sm">🔍</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="text-[8px] text-gray-500 font-black uppercase ml-2 block">Latitude</label>
+                            <input id="b2b-lat" readonly class="w-full p-3 rounded-2xl bg-slate-950 text-emerald-400 text-[10px] font-mono border border-white/5 opacity-60" placeholder="0.000000">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[8px] text-gray-500 font-black uppercase ml-2 block">Longitude</label>
+                            <input id="b2b-lng" readonly class="w-full p-3 rounded-2xl bg-slate-950 text-emerald-400 text-[10px] font-mono border border-white/5 opacity-60" placeholder="0.000000">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center ml-2">
+                            <label class="text-[8px] text-blue-400 font-black uppercase block">Raio de Precisão (Metros)</label>
+                            <span id="display-radius" class="text-[10px] text-white font-mono font-bold">500m</span>
+                        </div>
+                        <input type="range" id="b2b-radius" min="100" max="5000" step="100" value="500" oninput="document.getElementById('display-radius').innerText = this.value + 'm'" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <p class="text-[7px] text-gray-600 italic leading-tight">* Distância máxima que o usuário pode estar para conseguir enviar a foto.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="window.abrirWizardB2B()" class="flex-1 py-4 bg-slate-800 text-gray-400 rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-700 transition">Voltar</button>
+                    <button onclick="window.setWizardStep2()" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg shadow-blue-900/20 active:scale-95 transition">Próximo Passo ➜</button>
+                </div>
+            </div>
+        `;
+
+        // Ativa o Autocomplete do Google no campo B2B
+        setTimeout(() => {
+            if (window.google && window.google.maps) {
+                const input = document.getElementById('b2b-address-search');
+                const autocomplete = new google.maps.places.Autocomplete(input, {
+                    componentRestrictions: { country: "br" },
+                    fields: ["geometry", "formatted_address"],
+                    types: ["address"]
+                });
+
+                autocomplete.addListener("place_changed", () => {
+                    const place = autocomplete.getPlace();
+                    if (!place.geometry) return;
+                    document.getElementById('b2b-lat').value = place.geometry.location.lat().toFixed(6);
+                    document.getElementById('b2b-lng').value = place.geometry.location.lng().toFixed(6);
+                });
+            }
+        }, 300);
+    };
+
+    // 💾 ARMAZENAMENTO DO PASSO 2
+    window.setWizardStep2 = () => {
+        const lat = document.getElementById('b2b-lat').value;
+        const lng = document.getElementById('b2b-lng').value;
+        const radius = document.getElementById('b2b-radius').value;
+
+        if (!lat || !lng) return alert("❌ Por favor, selecione um endereço da lista do Google.");
+
+        window.wizardB2BData.latitude = parseFloat(lat);
+        window.wizardB2BData.longitude = parseFloat(lng);
+        window.wizardB2BData.radius = parseInt(radius);
+
+        console.log("📍 Localização Definida:", { lat, lng, radius });
+        window.abrirWizardPasso3(); // Vai para a Calculadora/Pagamento
     };
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
