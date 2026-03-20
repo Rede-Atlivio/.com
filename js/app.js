@@ -236,11 +236,14 @@ function switchTab(tabName, isAutoBoot = false) {
     if(nomeLimpo === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
     }
-    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
-    if(nomeLimpo === 'missoes') {
-        if(window.carregarMissoes) window.carregarMissoes(); 
-        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas(); // 🚀 Carrega os comprovantes
-        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
+    // 🌍 GATILHO ATLAS VIVO (V62): Sincronia Híbrida B2C/B2B
+    // Gil, aqui garantimos que o motor de missões se adapte ao perfil atual toda vez que a aba abrir.
+    if(['missoes', 'b2b_gestao'].includes(nomeLimpo)) {
+        if(window.initMissions) {
+            window.initMissions(); // Reinicia o motor do zero para limpar lixo de memória
+            if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
+            console.log("🛰️ Atlas Vivo: Motor Híbrido Sincronizado.");
+        }
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
