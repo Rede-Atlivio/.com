@@ -14,8 +14,9 @@ styleAtlas.innerHTML = `
 `;
 document.head.appendChild(styleAtlas);
 
-// 🚀 INICIALIZADOR HÍBRIDO ATLAS V2026
-export async function initMissions() {
+// 🚀 INICIALIZADOR HÍBRIDO ATLAS V2026 (SOLDA DIRETA)
+// Gil, aqui o sistema decide se mostra a tela de quem ganha ou de quem contrata
+window.initMissions = async function() {
     const perfil = window.userProfile?.perfil || 'prestador';
     console.log(`🌍 Atlas Vivo: Sincronizando visão [${perfil.toUpperCase()}]`);
 
