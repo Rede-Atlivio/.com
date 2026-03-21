@@ -78,7 +78,9 @@ import './auth.js';
 import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
-import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
+// Gil, mudamos para importar a função de ligar (init) de cada um, em vez de carregar o arquivo todo de uma vez.
+import { initMissions } from './modules/missions.js'; 
+import { initB2B } from './modules/atlas_b2b.js';
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
