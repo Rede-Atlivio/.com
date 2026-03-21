@@ -346,33 +346,46 @@ async function carregarInterface(user) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
         
-        // 🛡️ SENSOR DE IDENTIDADE REATIVO (V63 - ESCALA INDUSTRIAL)
-        // Gil, esta função controla a aba B2B baseada no perfil real do banco de dados
-        const sincronizarAbaB2B = (perfilData) => {
-            const abaB2B = document.getElementById('tab-b2b_gestao');
-            if (!abaB2B) return;
-
-            // Se for cliente, a aba aparece. Se não for, ela é removida da vista.
-            // Gil, usamos classList.toggle para evitar conflito de múltiplas classes hidden
-            const isCliente = perfilData?.perfil === 'cliente';
+        // 🛡️ MATRIZ DE IDENTIDADE REATIVA (V64 - CONTROLE DE ACESSO)
+        // Gil, esta função mapeia quais abas cada perfil tem o direito de enxergar.
+        const sincronizarDnaInterface = (perfilData) => {
+            const isC = perfilData?.perfil === 'cliente';
+            const isP = perfilData?.perfil === 'prestador';
             
-            if (abaB2B) {
-                if (isCliente) {
-                    abaB2B.classList.remove('hidden');
-                    abaB2B.style.display = 'block'; // Força a aparição
-                    console.log("✅ Aba B2B Ativada via DNA");
-                } else {
-                    abaB2B.classList.add('hidden');
-                    abaB2B.style.display = 'none'; // Garante o sumiço
-                }
+            // Lista de IDs das abas que devem ser controladas
+            const abas = {
+                b2b: document.getElementById('tab-b2b_gestao'),
+                loja: document.getElementById('tab-loja'),
+                missoes: document.getElementById('tab-missoes')
+            };
+
+            // 1. Gestão B2B: Só para Cliente
+            if (abas.b2b) {
+                const mostrar = isC;
+                abas.b2b.classList.toggle('hidden', !mostrar);
+                abas.b2b.style.display = mostrar ? 'block' : 'none';
             }
+
+            // 2. Loja de Produtos: Só para Cliente (Resolve o seu Problema 02)
+            if (abas.loja) {
+                const mostrar = isC;
+                abas.loja.classList.toggle('hidden', !mostrar);
+                abas.loja.style.display = mostrar ? 'block' : 'none';
+            }
+
+            // 3. Micro Tarefas: Só para Prestador
+            if (abas.missoes) {
+                const mostrar = isP;
+                abas.missoes.classList.toggle('hidden', !mostrar);
+                abas.missoes.style.display = mostrar ? 'block' : 'none';
+            }
+            
+            console.log(`🧬 DNA Sincronizado: Visão [${perfilData?.perfil?.toUpperCase() || 'AGUARDANDO'}]`);
         };
 
-        // Verifica agora (caso o dado já esteja pronto)
-        sincronizarAbaB2B(window.userProfile);
-
-        // Ouve o evento do sistema para garantir a sincronia assim que o dado chegar
-        window.addEventListener('userProfileLoaded', (e) => sincronizarAbaB2B(e.detail));
+        // Disparo imediato e ouvinte de evento para garantir escala industrial
+        sincronizarDnaInterface(window.userProfile);
+        window.addEventListener('userProfileLoaded', (e) => sincronizarDnaInterface(e.detail));
     }
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
