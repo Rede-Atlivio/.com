@@ -44,37 +44,17 @@ async function carregarMissoesInner() {
     const containerInner = document.getElementById('lista-cards-real');
     if (!containerInner) return;
 
-   // Gil, agora pegamos a localização do prestador para validar as missões próximas
+  // 🛰️ GPS ÚNICO ATLAS: Captura a posição apenas se necessário, sem criar loops.
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                carregarMissoes(); // Recarrega o radar com a posição real
+                console.log("📍 Localização capturada via Missions.");
+                // Chamamos a busca interna diretamente para não resetar o container
+                carregarMissoesInner(); 
             },
-            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
-            { enableHighAccuracy: true }
-        );
-    }
-    // Gil, agora pegamos a localização do prestador para validar as missões próximas
-    if (!window.userLocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                carregarMissoes(); // Recarrega o radar com a posição real
-            },
-            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
-            { enableHighAccuracy: true }
-        );
-    }
-    // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
-    if (!window.userLocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                carregarMissoes(); // Recarrega agora com a posição na mão
-            },
-            (err) => { console.error("GPS negado ou falhou"); },
-            { enableHighAccuracy: true }
+            (err) => { console.warn("GPS negado: Mostrando missões globais."); },
+            { enableHighAccuracy: true, timeout: 5000 }
         );
     }
     const listaCards = document.getElementById('lista-cards-real');
