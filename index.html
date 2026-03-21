@@ -1497,7 +1497,22 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
                 </button>
             </div>
         </div>
+   </div>
+</div>
+
+<div id="modal-editor" class="hidden fixed inset-0 z-[10001] bg-slate-900/98 backdrop-blur-xl flex flex-col overflow-y-auto custom-scrollbar">
+    <div class="p-6 flex justify-between items-center sticky top-0 bg-slate-900/50 z-10">
+        <h3 class="text-white font-black uppercase italic tracking-tighter">Nova Operação Atlas</h3>
+        <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="text-white bg-red-600/20 w-10 h-10 rounded-full font-bold">×</button>
+    </div>
+    
+    <div id="modal-content" class="flex-1 p-6">
+        <div class="py-20 text-center">
+            <div class="loader mx-auto border-blue-500"></div>
+            <p class="text-[10px] text-gray-400 mt-4">Construindo Formulário de Inteligência...</p>
+        </div>
     </div>
 </div>
+
 </body>
 </html>
