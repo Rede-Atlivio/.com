@@ -45,17 +45,16 @@ async function carregarMissoesInner() {
     const containerInner = document.getElementById('lista-cards-real');
     if (!containerInner) return;
 
- // Gil, este bloco verifica o GPS uma única vez para filtrar as tarefas perto do usuário
+ // Gil, verificamos o GPS para mostrar apenas as missões que estão no radar do usuário
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                // Guarda a posição na memória para não precisar pedir de novo
+                // Memoriza a localização para filtrar os cards sem recarregar a tela inteira
                 window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                // Aciona a busca de missões agora que sabemos onde o usuário está
-                carregarMissoesInner(); 
+                console.log("📍 Radar Atlas: Localização Sincronizada.");
             },
-            (err) => { console.warn("GPS não disponível: Mostrando missões globais."); },
-            { enableHighAccuracy: true, timeout: 10000 } // Dá 10 segundos para o satélite responder
+            (err) => { console.warn("🛰️ Radar Atlas: GPS negado ou offline. Exibindo missões globais."); },
+            { enableHighAccuracy: true, timeout: 15000 } // Tempo aumentado para 15s para evitar erros em túneis ou prédios
         );
     }
     const listaCards = document.getElementById('lista-cards-real');
