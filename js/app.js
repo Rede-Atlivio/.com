@@ -253,13 +253,8 @@ function switchTab(tabName, isAutoBoot = false) {
         }
     }
     
-    // 💼 GATILHO GESTÃO ATLAS: Ativa o motor financeiro assim que a aba é aberta
-    if(nomeLimpo === 'b2b_gestao') {
-        if(typeof window.initB2B === 'function') {
-            window.initB2B();
-            console.log("💼 Gestão Atlas: Painel B2B Inicializado.");
-        }
-    }
+    // Gil, o gatilho antigo do B2B foi removido daqui pois agora ele roda dentro do Portal Camaleão (aba missoes)
+    
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
         // Apenas esconde o modal, sem disparar switchTab novamente
