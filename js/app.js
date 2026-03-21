@@ -405,23 +405,11 @@ async function carregarInterface(user) {
         #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
         
         /* Ajuste fino nos cards para não esticarem o layout */
-        #notif-list-container > div {
-            width: 100% !important;
-            box-sizing: border-box;
-        }
-
-        /* 🚀 VISUAL PREMIUM ATLAS B2B (HOME CARD) */
-        .card-home-b2b {
-            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
-            border: 2px solid #3b82f6;
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
-            transition: all 0.3s ease;
-        }
-        .card-home-b2b:active { transform: scale(0.97) translateY(2px); box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3); }
-        .card-home-b2b h4 { color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .card-home-b2b p { color: #bfdbfe !important; }
-        .card-home-b2b .icon-box { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); }
-    `;
+       #notif-list-container > div {
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+    `;
     document.head.appendChild(styleFix);
 
     // ============================================================================
