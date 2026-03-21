@@ -52,16 +52,18 @@ async function switchMissionTab(tab) {
     const btnAdd = document.getElementById('btn-list-add');
     const header = document.getElementById('list-header');
 
-    if(tab === 'missions') {
+   if(tab === 'missions') {
+        // Gil, aqui o ADMIN Gil gerencia as missões ROOT do sistema
         if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA MISSÃO"; btnAdd.onclick = () => abrirCriadorMissaoAtlas(); }
         header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadMissionsManagement();
     } else if(tab === 'b2b_pendente') {
-        // 🤝 ABA B2B: Oculta o botão de criar (pois aqui você só aprova o que os outros criaram)
+        // 🤝 ABA B2B: Aqui o ADMIN Gil aprova o que as EMPRESAS encomendaram no atlas_b2b.js
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">EMPRESA</th><th class="p-3">MISSÃO</th><th class="p-3">VALOR/MOEDA</th><th class="p-3 text-right">AÇÕES</th>`;
-        await loadB2BPendingMissions(); // Chamaremos esta função no próximo passo
-    } else if(tab === 'submissions') {
+        await loadB2BPendingMissions(); 
+    }
+    else if(tab === 'submissions') {
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">MISSÃO</th><th class="p-3">USUÁRIO</th><th class="p-3">PROVA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadSubmissions();
