@@ -148,3 +148,124 @@ window.vereditoB2B = async (docId, status) => {
         window.carregarAuditoriaB2B();
     } catch (e) { alert("Erro ao processar veredito."); }
 };
+// 💰 PASSO 3: CONFIGURAÇÃO DE INVESTIMENTO
+window.finalizarLocalWizard = () => {
+    const lat = document.getElementById('b2b-lat').value;
+    const lng = document.getElementById('b2b-lng').value;
+    if(!lat || !lng) return alert("Selecione o local no mapa!");
+
+    window.wizardB2BData.latitude = parseFloat(lat);
+    window.wizardB2BData.longitude = parseFloat(lng);
+    window.wizardB2BData.radius = 500; // Raio padrão de 500 metros
+
+    const content = document.getElementById('modal-content');
+    content.innerHTML = `
+        <div class="space-y-6 animate-fadeIn pb-6">
+            <div class="text-center">
+                <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 3: Investimento</h3>
+                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Quanto você pagará por esta informação?</p>
+            </div>
+
+            <div class="p-5 bg-slate-900/80 rounded-3xl border border-white/5 space-y-4">
+                <div class="relative">
+                    <span class="absolute left-4 top-4 text-emerald-600 font-black text-xl">R$</span>
+                    <input type="number" id="b2b-reward" value="5.00" min="3" step="0.50" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-4 pl-12 rounded-2xl bg-slate-950 text-emerald-400 text-2xl font-black border border-white/10 outline-none focus:border-blue-500 transition">
+                </div>
+
+                <div class="p-4 bg-black/40 rounded-2xl space-y-2 border border-white/5">
+                    <div class="flex justify-between text-[9px] font-bold uppercase text-gray-500">
+                        <span>Recompensa (Prestador):</span>
+                        <span id="preview-user" class="text-white">R$ 5,00</span>
+                    </div>
+                    <div class="flex justify-between text-[9px] font-bold uppercase text-gray-500">
+                        <span>Taxa Atlivio (100%):</span>
+                        <span id="preview-tax" class="text-blue-400">R$ 5,00</span>
+                    </div>
+                    <div class="h-[1px] bg-white/10 my-1"></div>
+                    <div class="flex justify-between text-[11px] font-black uppercase text-gray-400">
+                        <span>Investimento Total:</span>
+                        <span id="preview-total" class="text-emerald-500">R$ 10,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.processarReservaB2B()" id="btn-confirmar-b2b" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-emerald-900/20 active:scale-95 transition">
+                Confirmar e Reservar Saldo ✅
+            </button>
+        </div>
+    `;
+};
+
+// 🤖 CALCULADORA DINÂMICA
+window.atualizarPreviewFinanceiro = () => {
+    const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
+    const total = val * 2; // Regra de 100% de taxa
+    document.getElementById('preview-user').innerText = `R$ ${val.toFixed(2)}`;
+    document.getElementById('preview-tax').innerText = `R$ ${val.toFixed(2)}`;
+    document.getElementById('preview-total').innerText = `R$ ${total.toFixed(2)}`;
+};
+
+// ⚡ MOTOR DE RESERVA (O CORAÇÃO DO B2B)
+window.processarReservaB2B = async () => {
+    const reward = parseFloat(document.getElementById('b2b-reward').value);
+    if(reward < 3) return alert("O valor mínimo é R$ 3,00");
+
+    const btn = document.getElementById('btn-confirmar-b2b');
+    btn.disabled = true;
+    btn.innerText = "⏳ RESERVANDO SALDO...";
+
+    const totalNecessario = reward * 2;
+    const uid = auth.currentUser.uid;
+    const userRef = doc(db, "usuarios", uid);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const userSnap = await transaction.get(userRef);
+            if (!userSnap.exists()) throw "Perfil não encontrado.";
+            
+            const bal = userSnap.data().wallet_balance || 0;
+            if (bal < totalNecessario) throw "Saldo insuficiente! Faça uma recarga para continuar.";
+
+            // 1. Debita o saldo disponível e move para o reservado
+            transaction.update(userRef, {
+                wallet_balance: increment(-totalNecessario),
+                wallet_reserved: increment(totalNecessario),
+                updated_at: serverTimestamp()
+            });
+
+            // 2. Cria o documento da Missão (Ordem de Serviço)
+            const missionRef = doc(collection(db, "missions"));
+            transaction.set(missionRef, {
+                ...window.wizardB2BData,
+                reward: reward,
+                total_with_fee: totalNecessario,
+                pay_type: 'real',
+                status: 'pending_b2b', // Aguarda Gil aprovar no Admin
+                active: false,
+                created_at: serverTimestamp()
+            });
+
+            // 3. Registra no extrato da empresa
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: -totalNecessario,
+                tipo: "RESERVA_B2B 🔒",
+                descricao: `Reserva: ${window.wizardB2BData.title}`,
+                moeda: "BRL",
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert("🚀 ORDEM ENVIADA!\nO Gil analisará o local e publicará no radar em breve.");
+        document.getElementById('modal-editor').classList.add('hidden');
+        window.carregarOrdensB2B();
+
+    } catch (e) {
+        alert("❌ ERRO: " + e);
+        btn.disabled = false;
+        btn.innerText = "Confirmar e Reservar Saldo ✅";
+    }
+};
+
+console.log("💼 [Atlas B2B] Módulo Financeiro e Checkout Soldado!");
