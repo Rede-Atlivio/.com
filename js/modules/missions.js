@@ -44,23 +44,16 @@ async function carregarMissoesInner() {
     const containerInner = document.getElementById('lista-cards-real');
     if (!containerInner) return;
 
-    // 🛡️ SENSOR DE PERFIL: Identifica se é Cliente/Empresa para liberar o portal de encomendas
-    const perfilUsuario = window.userProfile?.perfil || 'prestador';
-    const b2bButtonId = 'btn-encomendar-atlas';
-
-    if (perfilUsuario === 'cliente' && !document.getElementById(b2bButtonId)) {
-        const btnB2B = document.createElement('div');
-        btnB2B.id = b2bButtonId;
-        btnB2B.className = "fixed bottom-24 right-6 z-[100] animate-bounce";
-        btnB2B.innerHTML = `
-            <button onclick="window.abrirWizardB2B()" class="bg-amber-600 hover:bg-amber-500 text-white p-4 rounded-3xl shadow-2xl flex flex-col items-center gap-1 transition-all active:scale-95 border-2 border-white/20">
-                <span class="text-2xl">💼</span>
-                <p class="text-[9px] font-black uppercase tracking-tighter text-center leading-none">Encomendar<br>Inteligência Atlas</p>
-                <div class="h-[1px] w-full bg-white/20 my-1"></div>
-                <p class="text-[7px] opacity-90 uppercase font-black text-amber-100">Exclusivo para Empresas</p>
-            </button>
-        `;
-       document.body.appendChild(btnB2B);
+   // Gil, agora pegamos a localização do prestador para validar as missões próximas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega o radar com a posição real
+            },
+            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
+            { enableHighAccuracy: true }
+        );
     }
 
    // 🧙‍♂️ WIZARD ATLAS B2B: PASSO 1 (TEMPLATES PADRONIZADOS)
