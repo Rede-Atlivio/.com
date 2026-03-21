@@ -388,7 +388,6 @@
     <button onclick="switchTab('servicos')" id="tab-servicos" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Serviços 🛠️</button>
     <button onclick="switchTab('empregos')" id="tab-empregos" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Empregos 💼</button>
     <button onclick="switchTab('missoes')" id="tab-missoes" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Micro Tarefas 📷</button>
-    <button onclick="switchTab('b2b_gestao')" id="tab-b2b_gestao" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Gestão Atlas 💼</button>
     <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Oportunidades ⚡</button>
     <button onclick="switchTab('loja')" id="tab-loja" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Produtos 🛒</button>
     <button onclick="switchTab('ganhar')" id="tab-ganhar" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-green-600 uppercase italic">Carteira 💰</button>
@@ -411,13 +410,8 @@
                 <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos, Cashback e Apps que pagam por indicação</p>
                 <div id="lista-oportunidades" class="grid gap-3"></div>
             </section>
-
-            <section id="sec-b2b_gestao" class="hidden animate-fadeIn">
-                <div id="view-b2b-missions" class="min-h-screen">
-                    </div>
-            </section>
             
-            <section id="sec-missoes" class="hidden space-y-6 animate-fadeIn">
+           <section id="sec-missoes" class="hidden space-y-6 animate-fadeIn">
                 <div class="flex flex-col items-center justify-center py-6 text-center">
                     <div class="w-14 h-14 bg-blue-600/10 rounded-full flex items-center justify-center text-2xl mb-2 border border-blue-500/20">
                         <span class="animate-spin-slow">🌍</span>
@@ -1094,22 +1088,6 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
         const code = document.getElementById('login-code').value;
         try { await window.confirmationResult.confirm(code); console.log("Sucesso no login!"); } catch (error) { alert("Código inválido!"); }
     };
-
-   // 🧙‍♂️ ESTRUTURA GLOBAL DO WIZARD (V62): Garante o funcionamento dos modais B2B
-    const modalEditorExistente = document.getElementById('modal-editor');
-    if (!modalEditorExistente) {
-        const divModal = document.createElement('div');
-        divModal.id = 'modal-editor';
-        divModal.className = "fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm hidden flex items-center justify-center p-4 animate-fadeIn";
-        divModal.innerHTML = `
-            <div class="bg-slate-900 w-full max-w-lg rounded-[2.5rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden relative">
-                <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="absolute top-6 right-6 text-gray-500 hover:text-white text-3xl font-bold z-10">&times;</button>
-                <div id="modal-content" class="p-8 overflow-y-auto custom-scrollbar">
-                    </div>
-            </div>
-        `;
-        document.body.appendChild(divModal);
-    }
 
     // Sincronia de Alerta V12 - Corrigindo a rota para a nova coleção saneada
     window.carregarConfiguracoesIniciais = async () => {
