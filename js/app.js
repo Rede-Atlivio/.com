@@ -345,11 +345,11 @@ async function carregarInterface(user) {
         if (!perfil) return console.log("🧬 Sincronia: DNA ainda não carregado.");
 
         if (perfil === 'cliente') {
-            // Gil, se for cliente, matamos a Micro Tarefas e mostramos a B2B na marra
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); abaMissoes.classList.add('hidden'); }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); abaB2B.classList.remove('hidden'); }
+            // Gil, usamos 'flex' aqui porque é o que o seu CSS original usa para alinhar os botões do menu.
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
+            if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
             if(typeof window.initB2B === 'function') window.initB2B(); 
-        } 
+        }
         else if (perfil === 'prestador') {
             // Se for prestador, fazemos o inverso total
             if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); abaB2B.classList.add('hidden'); }
