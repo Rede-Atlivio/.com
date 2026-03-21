@@ -364,8 +364,11 @@ async function carregarInterface(user) {
         if(window.userProfile) sincronizarDnaInterface(window.userProfile);
     }
 
-    // 📡 ESCUTA REATIVA: Se o perfil demorar a carregar do Firebase, este ouvinte vira a chave assim que os dados chegarem.
-    window.addEventListener('userProfileLoaded', (e) => sincronizarDnaInterface(e.detail));
+    // 📡 ESCUTA REATIVA: Se o Firebase demorar alguns milisegundos, este comando 'atira' a aba certa assim que o DNA chegar.
+    window.addEventListener('userProfileLoaded', (e) => {
+        console.log("📡 DNA Recebido via sinal do Banco de Dados.");
+        sincronizarDnaInterface(e.detail);
+    });
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
     const toggle = document.getElementById('online-toggle');
