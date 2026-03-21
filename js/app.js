@@ -355,15 +355,15 @@ async function carregarInterface(user) {
 
         if (!perfil) return console.log("🧬 DNA em processamento...");
 
-        // Gil, correção de soberania: Forçamos a exibição das abas corretas sem esconder o código vital
+        // Gil, usamos o setProperty com 'important' para vencer qualquer trava do CSS
         if (perfil === 'cliente') {
-            if(abaMissoes) abaMissoes.style.display = 'none'; // Cliente não vê Micro Tarefas
-            if(abaB2B) abaB2B.style.display = 'flex'; // Cliente vê Gestão Atlas
+            if(abaMissoes) abaMissoes.style.setProperty('display', 'none', 'important');
+            if(abaB2B) abaB2B.style.setProperty('display', 'flex', 'important');
             if(typeof window.initB2B === 'function') window.initB2B(); 
         } 
         else {
-            if(abaB2B) abaB2B.style.display = 'none'; // Prestador não vê Gestão Atlas
-            if(abaMissoes) abaMissoes.style.display = 'flex'; // Prestador vê Micro Tarefas
+            if(abaB2B) abaB2B.style.setProperty('display', 'none', 'important');
+            if(abaMissoes) abaMissoes.style.setProperty('display', 'flex', 'important');
             if(window.carregarMissoes) window.carregarMissoes();
         }
     };
