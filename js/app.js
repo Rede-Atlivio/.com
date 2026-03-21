@@ -329,34 +329,28 @@ async function carregarInterface(user) {
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
-    // 🚀 [Maestro] DESTRAVAMENTO VISUAL: Mata o loader e libera o container
+   // 🚀 [Maestro] DESTRAVAMENTO VISUAL
     const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
-    if(loader) {
-        loader.classList.add('hidden');
-        loader.style.display = 'none';
-    }
+    if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
 
-   // 🛡️ MATRIZ DE IDENTIDADE V71: Gil, aqui o sistema decide o que aparece no menu.
+    // 🛡️ MATRIZ DE IDENTIDADE V75: Gil, essa função garante que NADA vaze se o DNA for nulo.
     const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil || 'prestador'; // Se o banco falhar, trata como prestador por segurança
+        const perfil = perfilData?.perfil; // Removido o '|| prestador' para não abrir a aba errada no início
         const abaB2B = document.getElementById('tab-b2b_gestao');
         const abaMissoes = document.getElementById('tab-missoes');
 
-        console.log(`🧬 DNA Identificado: [${perfil.toUpperCase()}] - Sincronizando Menu...`);
+        if (!perfil) return console.log("🧬 DNA em processamento...");
 
         if (perfil === 'cliente') {
-            // 💎 MUNDO CLIENTE: Mostra Gestão Atlas e esconde Micro Tarefas
-            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); }
+            // MATA MICRO TAREFAS E LIGA GESTÃO
             if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
-            
-            // Liga o motor novo de gestão que você criou
-            if(typeof initB2B === 'function') initB2B(); 
-        } else {
-            // 🛠️ MUNDO PRESTADOR: Mostra Micro Tarefas e esconde Gestão Atlas
+            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); }
+            if(typeof window.initB2B === 'function') window.initB2B(); 
+        } 
+        else if (perfil === 'prestador') {
+            // MATA GESTÃO E LIGA MICRO TAREFAS
             if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); }
             if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); }
-            
-            // Liga o motor de missões e radar GPS
             if(typeof initMissions === 'function') initMissions();
         }
     };
@@ -366,9 +360,8 @@ async function carregarInterface(user) {
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
-        
-        // Dispara a sincronia de abas com base no perfil carregado
-        sincronizarDnaInterface(window.userProfile);
+        // Tenta sincronizar agora, mas só se já tiver carregado na memória
+        if(window.userProfile) sincronizarDnaInterface(window.userProfile);
     }
 
     // 📡 ESCUTA REATIVA: Se o perfil demorar a carregar do Firebase, este ouvinte vira a chave assim que os dados chegarem.
