@@ -490,7 +490,7 @@ window.renderizarTourBoasVindas = function() {
                     </div>
                 </button>
 
-                <button id="btn-atlas-home" onclick="window.switchTab('b2b_gestao')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
+               <button id="btn-atlas-home" onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-blue-100">
                         <span class="animate-spin-slow">🌍</span>
                     </div>
