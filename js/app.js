@@ -356,14 +356,25 @@ async function carregarInterface(user) {
         if (!perfil) return console.log("🧬 DNA em processamento...");
 
         // Gil, usamos o setProperty com 'important' para vencer qualquer trava do CSS
+        // Gil, aqui aplicamos a técnica do Robô 18: força máxima para o botão aparecer no menu
         if (perfil === 'cliente') {
+            console.log("💎 DNA Cliente: Liberando Gestão B2B...");
             if(abaMissoes) abaMissoes.style.setProperty('display', 'none', 'important');
-            if(abaB2B) abaB2B.style.setProperty('display', 'flex', 'important');
+            if(abaB2B) {
+                abaB2B.style.setProperty('display', 'flex', 'important');
+                abaB2B.style.setProperty('visibility', 'visible', 'important');
+                abaB2B.style.setProperty('opacity', '1', 'important');
+            }
             if(typeof window.initB2B === 'function') window.initB2B(); 
         } 
-        else {
+        else if (perfil === 'prestador') {
+            console.log("🛠️ DNA Prestador: Liberando Micro Tarefas...");
             if(abaB2B) abaB2B.style.setProperty('display', 'none', 'important');
-            if(abaMissoes) abaMissoes.style.setProperty('display', 'flex', 'important');
+            if(abaMissoes) {
+                abaMissoes.style.setProperty('display', 'flex', 'important');
+                abaMissoes.style.setProperty('visibility', 'visible', 'important');
+                abaMissoes.style.setProperty('opacity', '1', 'important');
+            }
             if(window.carregarMissoes) window.carregarMissoes();
         }
     };
