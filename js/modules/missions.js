@@ -1,6 +1,5 @@
 import { db, auth } from '../config.js';
-// Gil, removemos o 'addDoc' de criação e adicionamos 'getDoc' e 'updateDoc' para o fluxo de provas do prestador
-import { collection, getDocs, getDoc, doc, query, where, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
@@ -15,83 +14,48 @@ styleAtlas.innerHTML = `
 `;
 document.head.appendChild(styleAtlas);
 
-// 🚀 INICIALIZADOR ATLAS V2026 (FOCO PRESTADOR)
-// Gil, agora este arquivo cuida apenas da visão de quem cumpre as tarefas.
-// Gil, o comando 'export' é o que dá permissão para o arquivo principal enxergar esta função
+// 🚀 INICIALIZADOR ÚNICO V2026
+// Gil, esta função agora apenas prepara o terreno, as exportações ficam fixas no final do arquivo
 export async function initMissions() {
-    console.log("🌍 Atlas Vivo: Sincronizando Radar de Micro Tarefas...");
-    
-    const containerPrestador = document.getElementById('lista-missoes');
-    if (!containerPrestador) return;
-    
-    // Inicia a carga das missões disponíveis no mapa
-    await carregarMissoes(); 
-};
+    console.log("🌍 Atlas Vivo: Sincronizando radar geográfico...");
+    const container = document.getElementById('lista-missoes');
+    if (!container) return;
 
+    await carregarMissoes(); // Chama o motor de carga principal
+}
 
-// 🏗️ MOTOR DE CARGA PRESTADOR (LISTA DE EMPREGOS)
+// 🏗️ MOTOR DE CARGA ATLAS VIVO V2026
+// Gil, mudamos o nome para carregarMissoes para o app.js te encontrar e já pedimos o GPS
 async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
     if (!container) return;
-    
-    // Limpa e prepara container do prestador
-    container.innerHTML = `<div id="lista-cards-real" class="space-y-4"></div>`;
-    carregarMissoesInner();
-}
 
-// Criamos essa função auxiliar para o motor de carga funcionar dentro do novo container
-async function carregarMissoesInner() {
-    // AQUI ESTAVA O ERRO: Não usamos 'const' novamente se ela já foi capturada
-    const containerInner = document.getElementById('lista-cards-real');
-    if (!containerInner) return;
-
- // Gil, verificamos o GPS para mostrar apenas as missões que estão no radar do usuário
+    // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                // Memoriza a localização para filtrar os cards sem recarregar a tela inteira
                 window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                console.log("📍 Radar Atlas: Localização Sincronizada.");
+                carregarMissoes(); // Recarrega agora com a posição na mão
             },
-            (err) => { console.warn("🛰️ Radar Atlas: GPS negado ou offline. Exibindo missões globais."); },
-            { enableHighAccuracy: true, timeout: 15000 } // Tempo aumentado para 15s para evitar erros em túneis ou prédios
+            (err) => { console.error("GPS negado ou falhou"); },
+            { enableHighAccuracy: true }
         );
     }
-    const listaCards = document.getElementById('lista-cards-real');
-    if(listaCards) listaCards.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
         // Busca apenas missões ativas no banco
         const q = query(collection(db, "missions"), where("active", "==", true), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         
-       if (snap.empty) {
-            if(listaCards) listaCards.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
+        if (snap.empty) {
+            container.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
             return;
         }
 
-        if(listaCards) listaCards.innerHTML = ""; // Limpa loader
+        container.innerHTML = ""; // Limpa loader
 
-        // 📣 CONVITE B2B (PARA PRESTADORES): Agora integrado ao sistema de abas oficial
-        const perfilAcesso = window.userProfile?.perfil || 'prestador';
-        if (perfilAcesso === 'prestador' && listaCards) {
-            listaCards.innerHTML += `
-                <div onclick="switchTab('b2b_gestao')" class="bg-gradient-to-r from-amber-900/40 to-slate-900 p-4 rounded-3xl border border-amber-500/30 mb-6 cursor-pointer hover:scale-[1.02] transition-all group">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-amber-600 p-3 rounded-2xl shadow-lg group-hover:bg-amber-500 transition">
-                            <span class="text-xl">💼</span>
-                        </div>
-                        <div>
-                            <h4 class="text-white font-black text-[11px] uppercase tracking-tighter">Encomendar Inteligência Atlas</h4>
-                            <p class="text-[8px] text-amber-200/70 uppercase font-bold tracking-widest">Clique para alternar para perfil Empresa</p>
-                        </div>
-                        <div class="ml-auto text-amber-500">➜</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        snap.forEach(doc => {
+       snap.forEach(doc => {
             const m = doc.data();
             const id = doc.id;
 
@@ -118,7 +82,7 @@ async function carregarMissoesInner() {
             const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
 
             // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
-            if(listaCards) listaCards.innerHTML += `
+            container.innerHTML += `
                 <div class="${cardClass} p-5 rounded-3xl border border-white/10 shadow-xl transition-all animate-fadeIn mb-4">
                     <div class="flex justify-between items-start mb-3">
                         <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
@@ -132,7 +96,7 @@ async function carregarMissoesInner() {
                         </div>
                     </div>
                     
-                    <h3 class="font-black text-white text-sm uppercase mb-1 tracking-tight">${m.title}</h3>
+                    <h3 class="font-black text-slate-800 text-sm uppercase mb-1">${m.title}</h3>
                     <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
 
                     <div class="flex gap-2">
@@ -144,7 +108,7 @@ async function carregarMissoesInner() {
 
                         ${isMobile ? `
                             <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition">
-                                Colaborar na Missão ➜
+                                Realizar Missão ➜
                             </button>
                         ` : `
                             <button onclick="alert('📱 Missão Exclusiva para Celular\\n\\nPara garantir a veracidade das fotos, esta tarefa só pode ser cumprida através do aplicativo no seu smartphone.')" class="flex-[2] bg-gray-700 text-gray-400 py-3 rounded-xl font-black text-[9px] uppercase cursor-not-allowed">
@@ -273,30 +237,7 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            const moedaDestaMissao = (tipoPagamento === 'real') ? 'BRL' : 'ATLIX';
-           // 🛡️ ESCUDO DE PRECISÃO (GPS MATCH): Compara local do usuário com o local da missão
-            let gpsStatus = 'no_location';
-            
-            // Busca os dados da missão original que estão guardados no card ou memória
-            const missaoRef = doc(db, "missions", id);
-            const missaoSnap = await getDoc(missaoRef);
-            const mData = missaoSnap.exists() ? missaoSnap.data() : null;
-
-            if (mData && mData.latitude && window.currentMissionLocation) {
-                const distanciaMetros = calcularDistancia(
-                    window.currentMissionLocation.lat, 
-                    window.currentMissionLocation.lng, 
-                    mData.latitude, 
-                    mData.longitude
-                ) * 1000;
-
-                // Gil, se ele estiver dentro do raio definido pelo B2B (ou padrão 500m), é MATCH!
-                const raioPermitido = mData.radius || 500;
-                gpsStatus = (distanciaMetros <= raioPermitido) ? 'match' : 'suspect';
-            }
-
             await addDoc(collection(db, "mission_submissions"), {
-                moeda: moedaDestaMissao,
                 mission_id: id,
                 mission_title: titulo,
                 reward: recompensa,
@@ -305,8 +246,6 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
                 proof_url: base64data,
                 location: window.currentMissionLocation || null,
-                gps_status: gpsStatus, // ✅ Carimbo para o B2B ver se é fraude
-                b2b_owner_uid: mData?.b2b_owner_uid || null, // Garante que a foto vá para o painel do cliente certo
                 status: 'pending',
                 created_at: serverTimestamp()
             });
@@ -337,7 +276,8 @@ window.abrirComprovantePIX = (url) => {
 };
 
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
-window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
+// Gil, esta função calcula a distância exata entre dois pontos no globo terrestre
+function calcularDistancia(lat1, lon1, lat2, lon2) {
     const R = 6371; // Raio da Terra em KM
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
@@ -347,6 +287,14 @@ window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c; 
 }
+
+// 🔐 SOLDAGEM GLOBAL ATLAS V2026.PRO (FINAL)
+// Gil, aqui entregamos todas as funções para o navegador reconhecer os cliques nos botões
+window.carregarMissoes = carregarMissoes;
+window.renderizarMissaoCards = carregarMissoes; 
+window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
+window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
+window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
@@ -406,15 +354,6 @@ async function carregarMissoesRealizadas() {
     }
 }
 
-// Gil, aqui "soldamos" as funções no sistema global para que os cliques nos botões funcionem
-window.initMissions = initMissions;
-window.carregarMissoes = carregarMissoes;
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
-// 📸 Visualizador de Provas para o B2B
-window.visualizarProva = (url) => {
-    const win = window.open();
-    win.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;"><img src="${url}" style="max-width:100%;max-height:100vh;"></body>`);
-};
-
-console.log("✅ [Atlas] Motor Híbrido Estabilizado V62.6");
+console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
