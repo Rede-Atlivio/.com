@@ -1,840 +1,438 @@
-// 🛰️ IDENTIDADE ATLIVIO V60
-// Garante que o navegador saiba exatamente qual versão do motor está rodando.
-localStorage.setItem('atlivio_version', '2026_V60');
+import { db, auth } from '../config.js';
+// Gil, removemos o 'addDoc' de criação e adicionamos 'getDoc' e 'updateDoc' para o fluxo de provas do prestador
+import { collection, getDocs, getDoc, doc, query, where, updateDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// ============================================================================
+const styleAtlas = document.createElement('style');
+styleAtlas.innerHTML = `
+    @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }  
+    .card-atlas-premium h3 { color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    .card-atlas-premium { 
+        background: linear-gradient(145deg, #0f172a, #1e293b);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+`;
+document.head.appendChild(styleAtlas);
 
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO DUPLO (PWA + NOTIFICAÇÕES)
-// Essencial para escala de milhões: registra o cache e a antena separadamente.
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        try {
-            // 1. Registro do Escudo (Cache e Offline)
-            const regSw = await navigator.serviceWorker.register('./sw.js');
-            console.log("🛡️ Escudo de Cache: Ativo");
-
-            // 2. Registro da Antena (O rádio que ouve o Google FCM)
-            // Sem esta linha, o Google dá o erro "Requested entity was not found"
-            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            console.log("📡 Antena de Notificações: Sintonizada");
-
-            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
-            regSw.onupdatefound = () => {
-                const worker = regSw.installing;
-                worker.onstatechange = () => {
-                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
-                    }
-                };
-            };
-        } catch (err) {
-            console.error('❌ Falha Crítica no Motor PWA:', err);
-        }
-    });
-}
-// ============================================================================
-import { app, auth, db, storage, provider } from './config.js';
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-/**
- * 🛰️ MONITOR DE DEPLOY V26 (Blindado)
- * Esta função vigia ordens de limpeza global enviadas pelo Admin.
- * Encapsulada para evitar erros de permissão antes do login.
- */
-window.iniciarMonitorDeploy = function() {
-    onSnapshot(doc(db, "settings", "deploy"), (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
-            const ordemLocal = localStorage.getItem('last_force_reset') || 0;
-
-            if (ultimaOrdem > ordemLocal) {
-                console.log("🧹 ORDEM DO ADMIN: Executando limpeza de cache...");
-                localStorage.setItem('last_force_reset', ultimaOrdem);
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(regs => {
-                        for(let reg of regs) reg.unregister();
-                    });
-                }
-                caches.keys().then(names => {
-                    for (let name of names) caches.delete(name);
-                }).then(() => {
-                    location.reload(true);
-                });
-            }
-        }
-    }, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
+// 🚀 INICIALIZADOR ATLAS V2026 (FOCO PRESTADOR)
+// Gil, agora este arquivo cuida apenas da visão de quem cumpre as tarefas.
+window.initMissions = async function() {
+    console.log("🌍 Atlas Vivo: Sincronizando Radar de Micro Tarefas...");
+    
+    const containerPrestador = document.getElementById('lista-missoes');
+    if (!containerPrestador) return;
+    
+    // Inicia a carga das missões disponíveis no mapa
+    await carregarMissoes(); 
 };
 
-// ============================================================================
 
-// ============================================================================
-// 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
-// ============================================================================
-import './auth.js';
-import './modules/auth_sms.js';
-import './modules/services.js';
-import './modules/jobs.js';
-// Gil, mudamos para importar a função de ligar (init) de cada um, em vez de carregar o arquivo todo de uma vez.
-import { initMissions } from './modules/missions.js'; 
-import { initB2B } from './modules/atlas_b2b.js';
-import './modules/opportunities.js';
-import './modules/chat.js';
-import './modules/reviews.js';
-// Importa a carteira e extrai a função de monitoramento
-import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
-
-import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js';
-import './modules/user_notifications.js';
-
-window.abrirConfiguracoes = abrirConfiguracoes;
-
-// 🛡️ MAESTRO V127: Flag de controle e Motor Universal de Engajamento
-window.atlivioBootConcluido = false;
-
-/**
- * 🛰️ MOTOR MAESTRO UNIVERSAL (V127)
- * Esta é a Torre de Controle que fala com o usuário baseado em quem ele é.
- * @param {string} origem - De onde vem o alerta (chat, jobs, missions, etc)
- * @param {object} dados - { id, type, msgPrestador, msgCliente, linkPrestador, linkCliente }
- */
-window.maestroUniversal = function(origem, dados) {
-    // 🛡️ Verifica se a função visual de balão existe para não quebrar o código
-    if (!window.mostrarBarraNotificacao) return;
-
-    // 🕵️ Identifica se o usuário atual é um Prestador (quem trabalha)
-    const isP = window.userProfile?.is_provider === true;
-
-    // 🏗️ Monta a configuração baseada na Identidade (Bipolaridade do Maestro)
-    const configMaestro = {
-        type: dados.type || 'marketing', // Ícone do balão (chat, alert, gift, etc)
-        // Escolhe a mensagem certa para o público certo
-        message: isP ? (dados.msgPrestador || dados.message) : (dados.msgCliente || dados.message),
-        // Escolhe o destino certo baseado na aba que o usuário deve ir
-        action: isP ? (dados.linkPrestador || dados.action) : (dados.linkCliente || dados.action)
-    };
-
-    // 🚀 Dispara o balão na tela com o ID único para evitar duplicação
-    window.mostrarBarraNotificacao(dados.id || `maestro_${origem}_${Date.now()}`, configMaestro);
-    
-    console.log(`📡 [Maestro Universal] Disparo efetuado via: ${origem} | Alvo: ${isP ? 'Prestador' : 'Cliente'}`);
-};
-window.abaAtual = 'home';
-
-// 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
-window.addEventListener('userProfileLoaded', (e) => {
-    window.userProfile = e.detail;
-    if (window.userProfile) {
-        Object.defineProperty(window.userProfile, 'saldo', {
-            get: function() { return this.wallet_balance || 0; },
-            configurable: true
-        });
-        console.log("✅ Polyfill de Saldo injetado via Evento.");
-    }
-});
-// ============================================================================
-// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
-// ============================================================================
-function switchTab(tabName, isAutoBoot = false) {
- // ✨ V153: Sincronia de Histórico - Abre o Sininho sem apagar as mensagens
-    if (tabName === 'notificacoes') {
-        // 🛰️ V157: Avisa ao banco e ao navegador que o usuário limpou o Sininho AGORA
-    const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
-    if (badge) badge.classList.add('hidden');
-
-    // Grava a hora da limpeza no Navegador e no Banco
-    const agora = Date.now();
-    localStorage.setItem('maestro_last_sync', agora);
-    
-    // Atualiza o perfil do usuário no Firestore para o Maestro saber que ele está "em dia"
-    const { doc, updateDoc } = window.firebaseModules;
-    updateDoc(doc(window.db, "usuarios", auth.currentUser.uid), {
-        last_notif_read: agora // Nova trava de segurança no banco
-    }).catch(e => console.warn("Erro ao atualizar trava de leitura."));
-        // 2. Carrega as mensagens do histórico para o usuário ver
-        if (typeof window.carregarHistoricoNotificacoes === 'function') {
-            window.carregarHistoricoNotificacoes();
-        } else {
-            console.warn("⚠️ Motor de Histórico não carregado.");
-        }
-    }
-
-    // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
-    if (isAutoBoot && window.atlivioBootConcluido) return;
-
-    // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
-    const mapa = { 
-        'home': 'home',
-        'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
-        'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
-        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', // 🎯 Rota unificada para Atlas Vivo
-        'oportunidades': 'oportunidades',
-        'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
-        'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
-        'canal': 'canal', 'tutorials': 'canal',
-        'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
-    };
-
-    const nomeLimpo = mapa[tabName] || tabName;
-    const perfil = window.userProfile;
-    const isPrestador = perfil?.is_provider || false;
-
-    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    // 🛍️ EXPLORAÇÃO LIVRE: 'loja' e 'produtos' foram removidos da trava para acesso universal
-    const requerCliente = ['contratar', 'vaga'].includes(tabName);
-
-   // 🛡️ NAVEGAÇÃO LIVRE: O Maestro agora permite a transição entre abas sem forçar troca de perfil.
-    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        console.log("ℹ️ [Maestro] Navegação cross-profile permitida.");
-    }
-
-    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
-    // 📍 REGISTRO CONTEXTUAL FINAL: Memoriza a aba ativa saneada para o sistema de notificações
-    window.abaAtual = nomeLimpo;
-
-    // 🧹 LIMPEZA TOTAL
-    document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
-        el.style.display = 'none';
-    });
-
-    const alvo = document.getElementById(`sec-${nomeLimpo}`);
-    if(alvo) {
-        alvo.classList.remove('hidden');
-        alvo.style.display = 'block';
-    } else {
-        console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
-    }
-
-    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
-    if(activeBtn) activeBtn.classList.add('active');
-
-    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
-
-    // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
-    if(nomeLimpo === 'home') {
-        const homeContent = document.getElementById('home-content');
-        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
-            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
-        }
-    }
-    if(nomeLimpo === 'servicos') {
-        if(window.carregarServicos) window.carregarServicos();
-        if(tabName === 'contratar') setTimeout(() => { if(window.switchServiceSubTab) window.switchServiceSubTab('contratar'); }, 100);
-    }
-    if(nomeLimpo === 'empregos') {
-        if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-    }
-    if(nomeLimpo === 'loja' && window.carregarProdutos) window.carregarProdutos();
-    if(nomeLimpo === 'ganhar') {
-        if(window.carregarCarteira) window.carregarCarteira();
-    }
-    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
-    if(nomeLimpo === 'missoes') {
-        if(window.carregarMissoes) window.carregarMissoes(); 
-        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
-        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
-    }
-    
-    // 💼 GATILHO GESTÃO ATLAS: Ativa o motor financeiro assim que a aba é aberta
-    if(nomeLimpo === 'b2b_gestao') {
-        if(typeof window.initB2B === 'function') {
-            window.initB2B();
-            console.log("💼 Gestão Atlas: Painel B2B Inicializado.");
-        }
-    }
-    if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
-    if(nomeLimpo === 'canal') {
-        // Apenas esconde o modal, sem disparar switchTab novamente
-        const modal = document.getElementById('modal-trava-perfil');
-        if (modal) modal.classList.add('hidden'); 
-        
-        import('./modules/canal.js?v=' + Date.now())
-            .then(m => { if(m.init) m.init(); })
-            .catch(e => console.error("Erro ao carregar módulo canal:", e));
-         }
-       }
-
-function switchServiceSubTab(subTab) {
-    console.log("🔍 Sub-aba Cliente:", subTab);
-    
-    // 🛡️ LISTA DE SEGURANÇA: Esconde tudo antes de mostrar a nova
-    const views = ['contratar', 'andamento', 'historico'];
-    const subContainers = ['meus-pedidos-andamento', 'meus-pedidos-historico'];
-
-    views.forEach(t => {
-        const el = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`subtab-${t}-btn`);
-        if(el) el.classList.add('hidden');
-        if(btn) btn.classList.remove('active');
-    });
-
-    // Mostra apenas o alvo
-    const target = document.getElementById(`view-${subTab}`);
-    const targetBtn = document.getElementById(`subtab-${subTab}-btn`);
-    if(target) target.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
-    
-    // 🧹 LIMPEZA DE VAZAMENTO: Se não for a aba dela, garante que o container interno suma
-    subContainers.forEach(id => {
-        const container = document.getElementById(id);
-        if(container) {
-            // Se a aba atual NÃO for a dona do container, esconde o conteúdo interno
-            const dono = id.includes(subTab);
-            container.style.display = dono ? 'block' : 'none';
-        }
-    });
-
-    if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-    if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
-}
-
-function switchProviderSubTab(subTab) {
-    console.log("🔍 Sub-aba Prestador:", subTab);
-    ['radar', 'ativos', 'historico'].forEach(t => {
-        const el = document.getElementById(`pview-${t}`);
-        const btn = document.getElementById(`ptab-${t}-btn`);
-        if(el && t !== subTab) el.classList.add('hidden');
-        if(btn) btn.classList.toggle('active', t === subTab);
-    });
-    const target = document.getElementById(`pview-${subTab}`);
-    if(target) target.classList.remove('hidden');
-
-    if(subTab === 'ativos' && window.carregarPedidosPrestador) window.carregarPedidosPrestador();
-    if(subTab === 'historico' && window.carregarHistoricoPrestador) window.carregarHistoricoPrestador();
-}
-console.log("✅ App Carregado: Sistema Híbrido Online.");
-
-// ============================================================================
-// 6. MONITORAMENTO DE LOGIN E CONTROLE DO RADAR (CORREÇÃO VITAL)
-// ============================================================================
-
-async function carregarInterface(user) {
-    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Garante carga única e evita loops)
-    if (window.atlivioBootConcluido) return;
-    window.atlivioBootConcluido = true;
-
-   console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
-
-    // 🛰️ V180: IGNIÇÃO FINAL DO RÁDIO (FCM)
-    // Usamos o motor original com um delay estratégico para evitar conflitos de permissão.
-    // A trava 'radioSoldado' impede que o sistema tente soldar o token várias vezes.
-    if (!window.radioSoldadoNestaSessao) {
-        window.radioSoldadoNestaSessao = true;
-        setTimeout(() => {
-            if (typeof window.capturarEnderecoNotificacao === 'function') {
-                console.log("🛰️ [Antena] Solicitando endereço digital (FCM) via App Flow...");
-                window.capturarEnderecoNotificacao(user.uid);
-            }
-        }, 7000); // 7 segundos garante que até celulares lentos já processaram o login
-    }
-    // Identifica perfil para o Guia Inteligente
-    if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
-    
-   // 🚀 [Maestro] DESTRAVAMENTO VISUAL
-    const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
-    if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
-
-    // 🛡️ MATRIZ DE IDENTIDADE V75: Garante que as abas certas apareçam para o perfil certo.
-    const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil; 
-        const abaB2B = document.getElementById('tab-b2b_gestao');
-        const abaMissoes = document.getElementById('tab-missoes');
-
-        if (!perfil) return console.log("🧬 DNA em processamento...");
-
-        if (perfil === 'cliente') {
-            // Gil, Cliente vê Gestão Atlas e esconde Micro Tarefas
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); 
-            const cM = document.getElementById('lista-missoes'); 
-            if(cM) cM.innerHTML = ''; }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
-            // Liga o motor financeiro B2B se ele já estiver carregado
-            if(typeof window.initB2B === 'function') window.initB2B(); 
-        } 
-        else if (perfil === 'prestador') {
-            // Prestador vê Micro Tarefas e esconde Gestão Atlas
-            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); 
-            const sB = document.getElementById('sec-b2b_gestao'); 
-            if(sB) sB.innerHTML = ''; }
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'flex', 'important'); }
-            if(typeof initMissions === 'function') initMissions();
-        }
-    };
-
-    document.getElementById('auth-container')?.classList.add('hidden');
-    const mainApp = document.getElementById('app-container');
-    if(mainApp) {
-        mainApp.classList.remove('hidden');
-        mainApp.style.display = 'block';
-        // Tenta sincronizar agora, mas só se já tiver carregado na memória
-        if(window.userProfile) sincronizarDnaInterface(window.userProfile);
-    }
-
-    // 📡 ESCUTA REATIVA: Se o Firebase demorar alguns milisegundos, este comando 'atira' a aba certa assim que o DNA chegar.
-    window.addEventListener('userProfileLoaded', (e) => {
-        console.log("📡 DNA Recebido via sinal do Banco de Dados.");
-        sincronizarDnaInterface(e.detail);
-    });
-
-    // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
-    const toggle = document.getElementById('online-toggle');
-    if (toggle) {
-        // Remove clones anteriores para evitar duplicação de eventos
-        const novoToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(novoToggle, toggle);
-
-        novoToggle.addEventListener('change', (e) => {
-         if (e.target.checked) {
-                console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
-                window.radarIniciado = false; 
-                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            } else {
-                console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
-                if (window.pararRadarFisico) window.pararRadarFisico();
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }   
-        });
-
-       // 🚀 INICIALIZAÇÃO INTELIGENTE V23: Sem timeouts que atropelam o services.js
-        if (novoToggle.checked && window.iniciarRadarPrestador) {
-             window.iniciarRadarPrestador(user.uid);
-        } else if (!novoToggle.checked && window.pararRadarFisico) {
-            window.pararRadarFisico();
-        }
-    }
-
-    // 🎨 MAESTRO GRID V62: Corrige o vazamento horizontal e organiza em cards (Mobile e PC)
-    const styleFix = document.createElement('style');
-    styleFix.innerHTML = `
-        /* 📱 Mobile: Força uma única coluna e impede o transbordamento horizontal */
-        #notif-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden !important; /* Mata o carrossel quebrado */
-            padding: 10px 5px;
-        }
-
-        /* 💻 Desktop (PC): Transforma em Grid de 2 colunas para aproveitar espaço */
-        @media (min-width: 1024px) {
-            #notif-list-container {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-            }
-        }
-
-        /* ⚓ Scrollbar Industrial para a seção de notificações */
-        #sec-notificacoes {
-            max-height: 85vh;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            padding-bottom: 50px;
-            scrollbar-width: thin;
-            scrollbar-color: #3b82f6 #0f172a;
-        }
-        #sec-notificacoes::-webkit-scrollbar { width: 6px; }
-        #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
-        
-        /* Ajuste fino nos cards para não esticarem o layout */
-        #notif-list-container > div {
-            width: 100% !important;
-            box-sizing: border-box;
-        }
-    `;
-    document.head.appendChild(styleFix);
-
-    // ============================================================================
-    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
-    // ============================================================================
-    if (window.switchTab) {
-        console.log("🎯 [Maestro] Analisando intenção do usuário...");
-        
-        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
-        setTimeout(() => {
-            // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
-            window.switchTab('home', true); 
-
-            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
-            let userIntent = window.userProfile?.user_intent || "";
-            if (userIntent === "home" || isToggling) userIntent = ""; 
-            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
-
-            if (userIntent && userIntent !== "") {
-                console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
-                
-                // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
-                setTimeout(() => {
-                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
-                    const mapaFiel = {
-                        'ganhar': 'missoes', 
-                        'loja': 'loja',      
-                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
-                        'servicos': 'servicos'
-                    };
-                    
-                    const destinoOficial = mapaFiel[userIntent] || userIntent;
-                    window.switchTab(destinoOficial);
-                }, 800); 
-
-            } else {
-                console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-                window.switchTab('home');
-                window.renderizarTourBoasVindas(); 
-            }
-        }, 600); // Fecha o setTimeout principal de 600ms
-    }
-    // ⏱️ VÁLVULA DE ESCAPE V60: Garante que o usuário veja o app mesmo se houver atraso no banco
-    setTimeout(() => {
-        const loaderOverlay = document.getElementById('transition-overlay');
-        if (loaderOverlay && !loaderOverlay.classList.contains('hidden')) {
-            console.warn("⚠️ [Segurança] Boot demorou demais. Forçando exibição da interface...");
-            loaderOverlay.classList.add('hidden');
-            const mApp = document.getElementById('app-container');
-            if(mApp) mApp.classList.remove('hidden');
-        }
-    }, 4000);
-} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
-// 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
-// 🎨 INTERFACE HOME V50: Intenção (Topo) + Exploração (Base)
-window.renderizarTourBoasVindas = function() {
-    const container = document.getElementById('home-content');
+// 🏗️ MOTOR DE CARGA PRESTADOR (LISTA DE EMPREGOS)
+async function carregarMissoes() {
+    const container = document.getElementById('lista-missoes');
     if (!container) return;
+    
+    // Limpa e prepara container do prestador
+    container.innerHTML = `<div id="lista-cards-real" class="space-y-4"></div>`;
+    carregarMissoesInner();
+}
 
-    container.innerHTML = `
-        <div class="animate-fadeIn p-6 space-y-8 w-full max-w-sm mx-auto pb-20">
-            <div class="space-y-2 text-center">
-                <h2 class="text-4xl font-black text-blue-900 italic tracking-tighter uppercase">Atlívio</h2>
-                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
-                <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">O que você busca agora?</p>
-            </div>
+// Criamos essa função auxiliar para o motor de carga funcionar dentro do novo container
+async function carregarMissoesInner() {
+    // AQUI ESTAVA O ERRO: Não usamos 'const' novamente se ela já foi capturada
+    const containerInner = document.getElementById('lista-cards-real');
+    if (!containerInner) return;
 
-            <div class="grid gap-4">
-                <button onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl">🛠️</div>
-                    <div><p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p></div>
-                </button>
-
-                <button onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
-                    <div><p class="font-black text-emerald-700 uppercase text-xs">Renda Extra</p></div>
-                </button>
-
-                <button onclick="window.finalizarTourMusculado('empregos', ['clt'])" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl">💼</div>
-                    <div><p class="font-black text-orange-700 uppercase text-xs">Buscar Emprego</p></div>
-                </button>
-            </div>
-
-            <div class="space-y-4 pt-4 border-t border-gray-100">
-                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">🔎 Quer conhecer mais?</p>
-                
-                <div class="grid gap-2">
-                    <button onclick="window.switchTab('canal')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">📺 Conheça a ATLIVIO</span>
-                        <span class="text-blue-600 font-black">→</span>
-                    </button>
-
-                    <button onclick="window.switchTab('loja')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🛍️ Ver Produtos e Benefícios</span>
-                        <span class="text-emerald-600 font-black">→</span>
-                    </button>
-
-                    <button onclick="window.switchTab('oportunidades')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🎯 Oportunidades em Alta</span>
-                        <span class="text-orange-600 font-black">→</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-};
-
-// ⚡ FUNÇÃO DE FINALIZAÇÃO (Ponte entre UI e Ad-Engine)
-window.finalizarTourMusculado = (escolha, tags) => {
-    console.log("🎯 Finalizando Tour Musculado para:", escolha);
-    window.registrarEventoMaestro({ 
-        tipo: "tour_final", 
-        escolha: escolha, 
-        tags: tags 
-    });
-    window.switchTab(escolha);
-};
-
-// 🛰️ DISPATCHER AD-ENGINE V35 (CONTROLE DE ESCALA)
-let lastEventTime = 0;
-window.registrarEventoMaestro = async function(dadosEvento) {
-    const agora = Date.now();
-    if (agora - lastEventTime < 2000 && dadosEvento.tipo !== 'tour_final') return; 
-    lastEventTime = agora;
-
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return;
+   // Gil, agora pegamos a localização do prestador para validar as missões próximas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega o radar com a posição real
+            },
+            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
+            { enableHighAccuracy: true }
+        );
+    }
+    // Gil, agora pegamos a localização do prestador para validar as missões próximas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega o radar com a posição real
+            },
+            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
+            { enableHighAccuracy: true }
+        );
+    }
+    // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega agora com a posição na mão
+            },
+            (err) => { console.error("GPS negado ou falhou"); },
+            { enableHighAccuracy: true }
+        );
+    }
+    const listaCards = document.getElementById('lista-cards-real');
+    if(listaCards) listaCards.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
-        const { doc, updateDoc, addDoc, collection, increment, arrayUnion } = window.firebaseModules;
-        const userRef = doc(window.db, "usuarios", uid);
-        let payload = { "updated_at": new Date() };
-
-       if (dadosEvento.tipo === "navegacao") {
-            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
-        }
-
-        if (dadosEvento.tipo === "tour_final") {
-            payload.user_intent = dadosEvento.escolha;
-            payload.tour_complete = true;
-            payload.tags_interesse = arrayUnion(...dadosEvento.tags);
-            // Inicializa scores básicos para o robô 47 não ver zeros
-            payload[`behavior.${dadosEvento.escolha}.score`] = 10; 
-            payload[`behavior.tags_count`] = dadosEvento.tags.length;
+        // Busca apenas missões ativas no banco
+        const q = query(collection(db, "missions"), where("active", "==", true), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        
+       if (snap.empty) {
+            if(listaCards) listaCards.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
+            return;
         }
 
-        await updateDoc(userRef, payload);
+        if(listaCards) listaCards.innerHTML = ""; // Limpa loader
 
-        // LOG DE AUDITORIA (ROBÔ 47)
-        await addDoc(collection(window.db, "events"), { 
-            uid, 
-            tipo: dadosEvento.tipo, 
-            aba: dadosEvento.aba || dadosEvento.escolha, 
-            timestamp: new Date() 
+        // 📣 CONVITE B2B (PARA PRESTADORES): Agora integrado ao sistema de abas oficial
+        const perfilAcesso = window.userProfile?.perfil || 'prestador';
+        if (perfilAcesso === 'prestador' && listaCards) {
+            listaCards.innerHTML += `
+                <div onclick="switchTab('b2b_gestao')" class="bg-gradient-to-r from-amber-900/40 to-slate-900 p-4 rounded-3xl border border-amber-500/30 mb-6 cursor-pointer hover:scale-[1.02] transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-600 p-3 rounded-2xl shadow-lg group-hover:bg-amber-500 transition">
+                            <span class="text-xl">💼</span>
+                        </div>
+                        <div>
+                            <h4 class="text-white font-black text-[11px] uppercase tracking-tighter">Encomendar Inteligência Atlas</h4>
+                            <p class="text-[8px] text-amber-200/70 uppercase font-bold tracking-widest">Clique para alternar para perfil Empresa</p>
+                        </div>
+                        <div class="ml-auto text-amber-500">➜</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        snap.forEach(doc => {
+            const m = doc.data();
+            const id = doc.id;
+
+            // 🛰️ VALIDAÇÃO DE PROXIMIDADE ATLAS
+            const isLocal = m.latitude && m.longitude;
+            const raioMetros = Number(m.radius) || 0;
+            
+            if (isLocal && raioMetros > 0 && window.userLocation) {
+                const distKm = calcularDistancia(window.userLocation.lat, window.userLocation.lng, m.latitude, m.longitude);
+                if ((distKm * 1000) > raioMetros) return; 
+            }
+
+            // PADRÃO VISUAL ATLIVIO: Todas escuras com Globo girando
+           const cardClass = 'card-atlas-premium text-white';
+            const iconAtlas = '<span class="globo-atlas">🌍</span>';
+            const badgeClass = 'bg-blue-500/20 text-blue-300';
+
+            // 🛡️ SENSOR DE DISPOSITIVO: Verifica se é Celular ou PC
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            // 💰 V2026.PRO: Identifica a moeda de recompensa
+            const isRealMoney = m.pay_type === 'real';
+            const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
+            const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
+
+            // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
+            if(listaCards) listaCards.innerHTML += `
+                <div class="${cardClass} p-5 rounded-3xl border border-white/10 shadow-xl transition-all animate-fadeIn mb-4">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
+                            ${iconAtlas}
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
+                            <p class="text-xl font-black text-white tracking-tighter">
+                                R$ ${Number(m.reward).toFixed(2).replace('.', ',')}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="font-black text-white text-sm uppercase mb-1 tracking-tight">${m.title}</h3>
+                    <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
+
+                    <div class="flex gap-2">
+                        ${m.video_id ? `
+                            <button onclick="window.verTutorialMissao('${m.video_id}')" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase hover:bg-slate-200 transition">
+                                📖 Tutorial
+                            </button>
+                        ` : ''}
+
+                        ${isMobile ? `
+                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition">
+                                Colaborar na Missão ➜
+                            </button>
+                        ` : `
+                            <button onclick="alert('📱 Missão Exclusiva para Celular\\n\\nPara garantir a veracidade das fotos, esta tarefa só pode ser cumprida através do aplicativo no seu smartphone.')" class="flex-[2] bg-gray-700 text-gray-400 py-3 rounded-xl font-black text-[9px] uppercase cursor-not-allowed">
+                                🔒 Use o Celular
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
         });
-
     } catch (e) {
-        console.warn("⚠️ Telemetria: Criando estrutura behavior...", e.message);
-        // Se falhar o updateDoc por falta do campo behavior, o Ad-Engine cria via transação ou setDoc se necessário, 
-        // mas o Firebase costuma aceitar Dot Notation para criar sub-campos.
+        console.error("Erro ao carregar missões:", e);
+        container.innerHTML = `<p class="text-center text-red-500 text-[10px]">Erro de conexão com o radar.</p>`;
     }
-};
-
-// Válvula de compatibilidade para o Tour
-window.salvarIntencaoMaestro = (escolha) => {
-    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
-    window.switchTab(escolha);
-};
-auth.onAuthStateChanged(async (user) => {
-   if (user) {
-        console.log("🔐 Autenticado com Sucesso V12");
-
-        // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
-        // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        // 🎼 MAESTRO V27 (Sincronia Harmônica): 
-        // Aguarda 2 segundos para o Firebase validar os tokens de segurança.
-        // Isso silencia os erros de permissão no console e estabiliza o boot.
-        setTimeout(() => {
-            console.log("🎼 Maestro: Tokens validados. Iniciando motores de fundo...");
-            if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
-            if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
-            if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
-            if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
-        }, 2000);
-        /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
-        /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
-        // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
-       /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 (AUTO-PILOTO) */
-        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-        // A. VIGIA DE REGRAS GLOBAIS (Configura uma vez, roda por meses)
-        onSnapshot(doc(window.db, "settings", "financeiro"), (snap) => {
-            if (snap.exists()) {
-                const config = snap.data();
-                // Se você ativar o aviso no Admin, o App mostra para todos automaticamente
-                if (config.aviso_marketing_ativo) {
-                    window.mostrarBarraNotificacao("campanha_mensal", {
-                        type: 'gift',
-                        action: config.aba_destino || 'ganhar',
-                        message: config.texto_marketing || "Confira as novidades da Atlivio!"
-                    });
-                }
-            }
-        });
-
-        // B. VIGIA DE COMPORTAMENTO (Sugere Missões se o usuário estiver parado na Home)
-        setTimeout(() => {
-            if (window.abaAtual === 'home' && window.mostrarBarraNotificacao) {
-                window.mostrarBarraNotificacao("auto_ajuda", {
-                    type: 'marketing',
-                    action: 'missoes',
-                    message: "Dica: Você sabia que pode começar a lucrar agora mesmo cumprindo micro-tarefas? ⚡"
-                });
-            }
-        }, 300000); // Aparece após 5 minutos de inatividade na Home
-        /* ---------------------------------------------------- */
-
-        // 🛡️ Trava de Segurança Antecipada
-        if (window.verificarSentenca) {
-            const banido = await window.verificarSentenca(user.uid);
-            if (banido) return; 
-        }
-
-       // 🔔 CRM DE NOTIFICAÇÕES V61: Inicia o sistema com trava de memória.
-        if (typeof window.iniciarSistemaNotificacoes === 'function') {
-            // Só ativa o motor se o boot ainda não foi concluído para evitar re-injeção de alertas antigos
-            if (!window.atlivioBootConcluido) {
-                window.iniciarSistemaNotificacoes();
-            }
-        }
-
-        // 🎁 Fluxos de Boas-vindas
-        if (typeof checkOnboarding === 'function') {
-            checkOnboarding(user); 
-        }
-        
-        // 💰 PRIORIDADE FINANCEIRA: Ativa o rastreador de PIX antes de montar a tela
-        if (typeof iniciarMonitoramentoCarteira === 'function') {
-            console.log("💰 [Maestro] Motor Financeiro: Ativando radar de saldo real-time...");
-            iniciarMonitoramentoCarteira(); // Liga a escuta do banco de dados para o saldo
-        }
-
-        // 🖥️ BOOT DA INTERFACE: Chama a montagem visual apenas se o sistema ainda não subiu
-        if (!window.atlivioBootConcluido) {
-            window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
-        }
-
-    } else { // 🚪 Caso o usuário saia da conta ou não esteja logado:
-        console.log("🚪 Usuário Desconectado.");
-        document.getElementById('auth-container')?.classList.remove('hidden');
-        document.getElementById('app-container')?.classList.add('hidden');
-        
-        // Desliga o Radar fisicamente
-        if (window.pararRadarFisico) window.pararRadarFisico();
-    }
-});
-// 🩹 Saneamento V2026: Exportações movidas para o final do arquivo para evitar conflitos.
-
-// 🧭 NOVAS FUNÇÕES DO TOUR
-if (typeof renderizarTourBoasVindas === 'function') {
-    window.renderizarTourBoasVindas = renderizarTourBoasVindas;
 }
-// 🔒 PRIVACIDADE DE GANHOS (ESTILO BANCÁRIO)
-window.togglePrivacyHome = () => {
-    const elEarnings = document.getElementById('user-earnings-home');
-    const elBalance = document.getElementById('user-balance-home');
-    const eye = document.getElementById('eye-icon-home');
-    const svg = document.getElementById('svg-eye');
-    
-    if (!elEarnings || !elBalance) return;
-    const isHidden = elEarnings.getAttribute('data-hidden') === 'true';
 
-    if (isHidden) {
-        // ✨ Sincronia V63: Exibe os valores com a nova identidade ATLIX ao clicar no "olhinho"
-        const ganhos = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
-        const saldo = (window.userProfile?.wallet_total_power || 0).toFixed(2).replace('.', ',');
+// 📽️ MOTOR DE VÍDEO VEO 3: Experiência Ultra-Limpa (Sem poluição de canais)
+function verTutorialMissao(videoId) {
+    if (!videoId) return;
+    
+    const modal = document.getElementById('modal-video-maestro');
+    const frame = document.getElementById('player-maestro-frame');
+    
+    if (modal && frame) {
+        // Usamos o domínio nocookie para reduzir a carga de scripts do YouTube
+       // Gil, forçamos o controls=0 para ele não ter onde pendurar a barra de "Mais Vídeos"
+        // E usamos o loop para ele não parar e mostrar lixo no final
+        const cleanUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&widget_referrer=${encodeURIComponent(window.location.origin)}&origin=${window.location.origin}`;
         
-        // ✨ Sincronia V72: Ganhos em R$ e Saldo em Moeda Dourada ao revelar
-        elEarnings.innerText = `R$ ${ganhos}`;
-        elBalance.innerHTML = `${saldo} 🪙`;
-        
-        elEarnings.setAttribute('data-hidden', 'false');
-        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-        eye.classList.remove('opacity-60');
+        frame.src = cleanUrl;
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
     } else {
-        // OCULTAR VALORES
-        // 🔒 Mantém o padrão de segurança visual
-        elEarnings.innerText = 'R$ ••••';
-        elBalance.innerText = '🪙 ••••';
-        
-        elEarnings.setAttribute('data-hidden', 'true');
-        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-        eye.classList.add('opacity-60');
+        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
     }
-};
-// --- FIM DO MAESTRO ---
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 TURBO (Escala Global)
-let disjuntorVigilante = false; 
+}
 
-// Usamos window para garantir que a proteção seja soberana
-window.addEventListener('click', (e) => {
-    // ⚡ FILTRO ATÔMICO: Se o disjuntor estiver ativo, mata o clique na hora
-    if (disjuntorVigilante) {
-        e.stopImmediatePropagation(); // 🛑 Comando mais forte do JS: impede que qualquer outro script ouça o clique
-        e.preventDefault();
-        return;
-    }
-
-    // ⚡ LOCALIZADOR: Acha o botão de switchTab
-    // 🕵️ O Vigilante agora vigia os dois tipos de botões de navegação do sistema
-    const btn = e.target.closest('button[onclick*="switchTab"], button[onclick*="finalizarTourMusculado"]');
-    if (!btn) return;
-
-    // ⚡ ANALISADOR: Extrai a aba alvo
-    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
-    if (!match) return;
-    const abaAlvo = match[1];
-
-    // ⚡ IDENTIFICADOR: Quem é o usuário?
-    const isPrestador = window.userProfile?.is_provider === true;
+// 📸 MOTOR DE EXECUÇÃO V2026: Escudo de Duplicidade & Câmera
+async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
+    // Gil, aqui o robô verifica se o usuário já tem algum envio (pendente ou pago) para este ID de missão
+    const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
-    // Suas regras de negócio exatas:
-    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
-    
-    // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
-   // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
-    // Gil, adicionamos 'b2b_gestao' aqui para o segurança saber que Prestador não entra nela.
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing', 'b2b_gestao'];
-    
-    // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
-    const textoBotao = btn.innerText.toUpperCase();
-    const comandoHtml = btn.getAttribute('onclick') || "";
+    // Bloqueia o clique e mostra o loader no botão para o usuário saber que estamos validando
+    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "🔍 VALIDANDO...";
 
-    // 🧠 Lógica de Sentinela V3.1 (Alta Precisão):
-    
-    // 1. Bloqueia Cliente se tentar entrar em abas de trabalho (missoes, radar, ativos)
-    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    
-    // 2. Bloqueia Prestador se:
-    // - A aba for Loja ou Contratar
-    // - OU se o texto do botão contiver "CONTRATAR"
-    // - OU se o botão disparar o Tour de 'contratante'
-    const bloqueioPrestador = (isPrestador && (
-        exclusivasCliente.includes(abaAlvo) || 
-        textoBotao.includes("CONTRATAR") || 
-        comandoHtml.includes("'contratante'")
-    ));
+    try {
+        const qCheck = query(
+            collection(window.db, "mission_submissions"), 
+            where("user_id", "==", auth.currentUser.uid),
+            where("mission_id", "==", id)
+        );
+        const snapCheck = await getDocs(qCheck);
 
-    if (bloqueioCliente || bloqueioPrestador) {
-        // ⛔ INTERCEPTAÇÃO SOBERANA
-        e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
-        e.preventDefault();
-
-        // 🏗️ DISPARO DO MODAL
-        const modal = document.getElementById('modal-troca-identidade');
-        const txt = document.getElementById('txt-perfil-atual');
-        
-        if (modal && txt) {
-            // Só mexe no texto se o modal estiver fechado
-            if (modal.classList.contains('hidden')) {
-                txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-                modal.classList.remove('hidden');
-            }
+        // 🛡️ TRAVA DE SEGURANÇA: Se encontrar qualquer registro, barra a participação
+        if (!snapCheck.empty) {
+            alert(`⚠️ OPS! Você já participou desta missão.\n\nCada missão só pode ser realizada uma única vez por usuário.`);
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
         }
 
-        // 🛡️ TRAVA ANTI-SPAM (400ms)
-        disjuntorVigilante = true;
-        setTimeout(() => { disjuntorVigilante = false; }, 400);
-        
-        console.warn(`[🛡️ Vigilante V3] Clique em ${abaAlvo} bloqueado com sucesso.`);
+       // Se passar na trava, segue o fluxo normal
+        // Gil, pedimos o OK primeiro para garantir que o sistema não "atropele" a câmera
+        if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) {
+            btn.disabled = false;
+            btn.innerText = originalText;
+            return;
+        }
+
+        const inputCamera = document.getElementById('camera-input');
+        // Limpa o valor anterior para garantir que a troca de arquivos funcione sempre
+        inputCamera.value = "";
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    }, null, { enableHighAccuracy: true });
+
+   inputCamera.onchange = async (e) => {
+            const file = e.target.files[0];
+            
+            // Reseta o valor do input imediatamente para permitir novas capturas sem erro
+            const currentInput = e.target;
+            
+            if (!file) {
+                btn.disabled = false;
+                btn.innerText = originalText;
+                currentInput.value = ""; // Limpa o cache do evento
+                return;
+            }
+            
+           await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+            currentInput.value = ""; // Limpa após o processamento
+        };
+
+        // 🚀 TIRO ÚNICO: Dispara a câmera apenas UMA VEZ após toda a lógica acima estar montada
+        inputCamera.click();
+    } catch (err) {
+        console.error("Erro na trava:", err);
+        btn.disabled = false;
+        btn.innerText = originalText;
     }
-}, { capture: true }); // O segredo da velocidade está no 'capture: true'
+}
+// 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
+async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo) {
+    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const originalText = btn.innerText;
+    
+    try {
+        btn.disabled = true;
+        btn.innerText = "⏳ COMPRIMINDO...";
 
-// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
-// Gil, centralizamos aqui todas as funções que o HTML (onclick) precisa enxergar.
-window.switchTab = switchTab;
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.maestroUniversal = maestroUniversal;
-window.registrarEventoMaestro = registrarEventoMaestro;
-window.carregarInterface = carregarInterface;
+        const bitmap = await createImageBitmap(arquivo);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const scale = 1200 / Math.max(bitmap.width, bitmap.height);
+        canvas.width = bitmap.width * scale;
+        canvas.height = bitmap.height * scale;
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
+        btn.innerText = "🚀 ENVIANDO PROVA...";
 
-console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
+        const reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onloadend = async () => {
+            const base64data = reader.result;
+            const moedaDestaMissao = (tipoPagamento === 'real') ? 'BRL' : 'ATLIX';
+           // 🛡️ ESCUDO DE PRECISÃO (GPS MATCH): Compara local do usuário com o local da missão
+            let gpsStatus = 'no_location';
+            
+            // Busca os dados da missão original que estão guardados no card ou memória
+            const missaoRef = doc(db, "missions", id);
+            const missaoSnap = await getDoc(missaoRef);
+            const mData = missaoSnap.exists() ? missaoSnap.data() : null;
+
+            if (mData && mData.latitude && window.currentMissionLocation) {
+                const distanciaMetros = calcularDistancia(
+                    window.currentMissionLocation.lat, 
+                    window.currentMissionLocation.lng, 
+                    mData.latitude, 
+                    mData.longitude
+                ) * 1000;
+
+                // Gil, se ele estiver dentro do raio definido pelo B2B (ou padrão 500m), é MATCH!
+                const raioPermitido = mData.radius || 500;
+                gpsStatus = (distanciaMetros <= raioPermitido) ? 'match' : 'suspect';
+            }
+
+            await addDoc(collection(db, "mission_submissions"), {
+                moeda: moedaDestaMissao,
+                mission_id: id,
+                mission_title: titulo,
+                reward: recompensa,
+                pay_type: tipoPagamento,
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Usuário Atlivio",
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                gps_status: gpsStatus, // ✅ Carimbo para o B2B ver se é fraude
+                b2b_owner_uid: mData?.b2b_owner_uid || null, // Garante que a foto vá para o painel do cliente certo
+                status: 'pending',
+                created_at: serverTimestamp()
+            });
+            alert("✅ SUCESSO! Sua prova foi enviada para análise.");
+            btn.innerText = "✅ ENVIADO";
+        };
+    } catch (err) {
+        alert("❌ Falha no envio.");
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
+}
+
+// 📄 VISUALIZADOR DE COMPROVANTE (MATA-SUPORTE)
+// Gil, esta função abre a imagem do PIX que você anexou no Admin para o usuário conferir.
+window.abrirComprovantePIX = (url) => {
+    if (!url) return alert("Aguardando processamento do comprovante...");
+    
+    const win = window.open();
+    win.document.write(`
+        <html>
+            <head><title>Comprovante Atlivio</title></head>
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center;">
+                <img src="${url}" style="max-width:100%; max-height:100vh; border-radius:12px; shadow:0 0 20px rgba(0,0,0,0.5);">
+            </body>
+        </html>
+    `);
+};
+
+// 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
+window.calcularDistancia = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Raio da Terra em KM
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c; 
+}
+
+// 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
+// Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
+async function carregarMissoesRealizadas() {
+    const container = document.getElementById('lista-missoes-realizadas');
+    if (!container) return;
+
+    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+
+    try {
+        const { collection, query, where, orderBy, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🛰️ A CONSULTA MESTRA (Requer o índice que o robô solicitou)
+        const q = query(
+            collection(window.db, "mission_submissions"),
+            where("user_id", "==", auth.currentUser.uid),
+            orderBy("created_at", "desc")
+        );
+
+        onSnapshot(q, (snap) => {
+            if (snap.empty) {
+                container.innerHTML = `<p class="text-center text-gray-500 text-[10px] py-10 italic">Você ainda não realizou nenhuma missão.</p>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            snap.forEach(doc => {
+                const m = doc.data();
+                const statusMap = {
+                    'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
+                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
+                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
+                };
+                const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
+
+                container.innerHTML += `
+                    <div class="bg-white border border-gray-100 p-4 rounded-2xl mb-3 shadow-sm animate-fadeIn">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-black text-gray-800 text-[11px] uppercase">${m.mission_title}</h4>
+                            <span class="text-[7px] font-black px-2 py-1 rounded-full uppercase ${st.css}">${st.txt}</span>
+                        </div>
+                        <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
+                        
+                        ${m.status === 'paid_real' && m.receipt_url ? `
+                            <button onclick="window.abrirComprovantePIX('${m.receipt_url}')" class="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 py-2.5 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-100 transition flex items-center justify-center gap-2">
+                                📄 Ver Comprovante PIX
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+            });
+        });
+    } catch (e) {
+        console.error("Erro no histórico:", e);
+        container.innerHTML = `<p class="text-center text-red-500 text-[9px]">Erro ao carregar histórico.</p>`;
+    }
+}
+
+// A gestão de troca de perfil agora é feita pelo Vigilante centralizado no app.js
+window.carregarMissoesRealizadas = carregarMissoesRealizadas;
+
+// 📸 Visualizador de Provas para o B2B
+window.visualizarProva = (url) => {
+    const win = window.open();
+    win.document.write(`<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;"><img src="${url}" style="max-width:100%;max-height:100vh;"></body>`);
+};
+
+console.log("✅ [Atlas] Motor Híbrido Estabilizado V62.6");
