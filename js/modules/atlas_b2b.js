@@ -268,4 +268,9 @@ window.processarReservaB2B = async () => {
     }
 };
 
+// 🔐 SOLDAGEM GLOBAL: Gil, aqui entregamos a chave da Gestão para o app.js
+window.initB2B = initB2B;
+window.carregarOrdensB2B = carregarOrdensB2B;
+window.carregarAuditoriaB2B = carregarAuditoriaB2B;
+
 console.log("💼 [Atlas B2B] Módulo Financeiro e Checkout Soldado!");
