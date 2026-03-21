@@ -26,38 +26,6 @@ window.initMissions = async function() {
     await carregarMissoes(); 
 };
 
-// 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B (V62.7 - ESTABILIZADO)
-async function carregarInterfaceB2B() {
-    const container = document.getElementById('view-b2b-missions');
-    if (!container) return;
-
-    // Gil, ajustamos o contraste para o nome não ficar "apagado"
-    container.innerHTML = `
-        <div class="p-4 space-y-6 animate-fadeIn">
-            <div class="flex justify-between items-end">
-                <div>
-                    <h2 class="text-2xl font-black text-blue-900 uppercase italic tracking-tighter leading-none">Gestão Atlas</h2>
-                    <p class="text-[10px] text-gray-500 font-black uppercase tracking-widest mt-1">Inteligência Estratégica B2B</p>
-                </div>
-                <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-gray-200 shadow-inner">
-                    <button onclick="window.alternarSubAbaB2B('radar')" id="btn-sub-radar" class="px-4 py-2 rounded-lg text-[9px] font-black uppercase transition bg-blue-600 text-white shadow-md">📡 Ordens</button>
-                    <button onclick="window.alternarSubAbaB2B('auditoria')" id="btn-sub-auditoria" class="px-4 py-2 rounded-lg text-[9px] font-black uppercase transition text-gray-400 hover:text-blue-600">⚖️ Auditoria</button>
-                </div>
-            </div>
-            
-            <div id="sub-view-container" class="min-h-[400px] space-y-4">
-                <div id="lista-cards-real"></div>
-            </div>
-
-            <button onclick="window.abrirWizardB2B()" class="fixed bottom-24 right-6 z-[100] bg-blue-600 hover:bg-blue-500 text-white p-5 rounded-full shadow-2xl transition-all active:scale-95 border-2 border-white/20 animate-bounce">
-                <span class="text-2xl">💼</span>
-            </button>
-        </div>
-    `;
-    
-    // Dispara o motor de carregamento interno para buscar as ordens do cliente
-    carregarMissoesInner();
-}
 
 // 🏗️ MOTOR DE CARGA PRESTADOR (LISTA DE EMPREGOS)
 async function carregarMissoes() {
