@@ -55,7 +55,17 @@ async function carregarMissoesInner() {
             { enableHighAccuracy: true }
         );
     }
-    
+    // Gil, agora pegamos a localização do prestador para validar as missões próximas
+    if (!window.userLocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                carregarMissoes(); // Recarrega o radar com a posição real
+            },
+            (err) => { console.warn("GPS negado: O radar mostrará missões globais."); },
+            { enableHighAccuracy: true }
+        );
+    }
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
