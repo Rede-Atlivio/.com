@@ -346,25 +346,27 @@ async function carregarInterface(user) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
         
-        // 🛡️ SENSOR DE PERFIL B2B (V62.8 - SINCRONIZADO)
-        // Gil, colocamos um pequeno atraso para dar tempo do Firebase entregar o perfil real
-        setTimeout(() => {
+        // 🛡️ SENSOR DE IDENTIDADE REATIVO (V63 - ESCALA INDUSTRIAL)
+        // Gil, esta função controla a aba B2B baseada no perfil real do banco de dados
+        const sincronizarAbaB2B = (perfilData) => {
             const abaB2B = document.getElementById('tab-b2b_gestao');
-            // Verifica se o perfil no banco é exatamente 'cliente'
-            const isCliente = window.userProfile?.perfil === 'cliente';
-            
-            if (abaB2B) {
-                if (isCliente) {
-                    console.log("💎 Perfil B2B detectado. Liberando aba.");
-                    abaB2B.classList.remove('hidden');
-                    abaB2B.style.display = 'block';
-                } else {
-                    console.log("🛠️ Perfil Prestador. Escondendo aba B2B.");
-                    abaB2B.classList.add('hidden');
-                    abaB2B.style.display = 'none';
-                }
+            if (!abaB2B) return;
+
+            // Se for cliente, a aba aparece. Se não for, ela é removida da vista.
+            if (perfilData?.perfil === 'cliente') {
+                abaB2B.classList.remove('hidden');
+                abaB2B.style.setProperty('display', 'block', 'important');
+            } else {
+                abaB2B.classList.add('hidden');
+                abaB2B.style.setProperty('display', 'none', 'important');
             }
-        }, 1500); // 1.5 segundos é o tempo de segurança para o perfil estar na memória
+        };
+
+        // Verifica agora (caso o dado já esteja pronto)
+        sincronizarAbaB2B(window.userProfile);
+
+        // Ouve o evento do sistema para garantir a sincronia assim que o dado chegar
+        window.addEventListener('userProfileLoaded', (e) => sincronizarAbaB2B(e.detail));
     }
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
