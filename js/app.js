@@ -801,3 +801,17 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.carregarInterface = carregarInterface;
 
 console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
+// Gil, esta função fecha o marketing e abre o modal de troca de perfil que você já tem
+window.abrirTrocaPerfilB2B = () => {
+    document.getElementById('modal-marketing-b2b').classList.add('hidden');
+    
+    // Simula o clique que o Vigilante intercepta
+    const modalTroca = document.getElementById('modal-troca-identidade');
+    const txtTroca = document.getElementById('txt-perfil-atual');
+    const isP = window.userProfile?.perfil === 'prestador';
+
+    if (modalTroca && txtTroca) {
+        txtTroca.innerText = isP ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
+        modalTroca.classList.remove('hidden');
+    }
+};
