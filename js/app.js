@@ -79,11 +79,8 @@ import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
 // Gil, mudamos para importar a função de ligar (init) de cada um, em vez de carregar o arquivo todo de uma vez.
-// Gil, aqui garantimos que as funções de início fiquem disponíveis para o sistema todo.
 import { initMissions } from './modules/missions.js'; 
 import { initB2B } from './modules/atlas_b2b.js';
-window.initMissions = initMissions;
-window.initB2B = initB2B;
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
@@ -336,25 +333,25 @@ async function carregarInterface(user) {
     const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
     if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
 
-    // 🛡️ MATRIZ DE IDENTIDADE V77: Garante que NADA vaze se o perfil for nulo.
+    // 🛡️ MATRIZ DE IDENTIDADE V75: Gil, essa função garante que NADA vaze se o DNA for nulo.
     const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil; 
+        const perfil = perfilData?.perfil; // Removido o '|| prestador' para não abrir a aba errada no início
         const abaB2B = document.getElementById('tab-b2b_gestao');
         const abaMissoes = document.getElementById('tab-missoes');
 
-        if (!perfil) return console.log("🧬 Sincronia: DNA ainda não carregado.");
+        if (!perfil) return console.log("🧬 DNA em processamento...");
 
         if (perfil === 'cliente') {
-            // Gil, usamos 'flex' aqui porque é o que o seu CSS original usa para alinhar os botões do menu.
+            // MATA MICRO TAREFAS E LIGA GESTÃO
             if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
+            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); }
             if(typeof window.initB2B === 'function') window.initB2B(); 
-        }
+        } 
         else if (perfil === 'prestador') {
-            // Se for prestador, fazemos o inverso total
-            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); abaB2B.classList.add('hidden'); }
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); abaMissoes.classList.remove('hidden'); }
-            if(typeof window.initMissions === 'function') window.initMissions();
+            // MATA GESTÃO E LIGA MICRO TAREFAS
+            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); }
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); }
+            if(typeof initMissions === 'function') initMissions();
         }
     };
 
@@ -363,20 +360,14 @@ async function carregarInterface(user) {
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
-        
-        // Gil, damos um pequeno atraso de 1 segundo (1000ms) para garantir que o menu Nav já foi desenhado na tela antes de tentarmos ligar a aba Gestão.
-        setTimeout(() => {
-            console.log("⏱️ Tempo de estabilização concluído. Sincronizando DNA...");
-            sincronizarDnaInterface(window.userProfile);
-        }, 1000);
+        // Tenta sincronizar agora, mas só se já tiver carregado na memória
+        if(window.userProfile) sincronizarDnaInterface(window.userProfile);
     }
 
-    // 📡 ESCUTA REATIVA: Se o DNA do Firebase chegar com atraso, este comando 'atira' a aba certa na tela no mesmo milissegundo.
+    // 📡 ESCUTA REATIVA: Se o Firebase demorar alguns milisegundos, este comando 'atira' a aba certa assim que o DNA chegar.
     window.addEventListener('userProfileLoaded', (e) => {
-        console.log("📡 [Sinal] DNA Confirmado via Firebase. Ajustando visibilidade do menu...");
-        if (typeof sincronizarDnaInterface === 'function') {
-            sincronizarDnaInterface(e.detail);
-        }
+        console.log("📡 DNA Recebido via sinal do Banco de Dados.");
+        sincronizarDnaInterface(e.detail);
     });
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
