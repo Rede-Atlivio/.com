@@ -363,8 +363,12 @@ async function carregarInterface(user) {
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
-        // Tenta sincronizar agora, mas só se já tiver carregado na memória
-        if(window.userProfile) sincronizarDnaInterface(window.userProfile);
+        
+        // Gil, damos um pequeno atraso de 1 segundo (1000ms) para garantir que o menu Nav já foi desenhado na tela antes de tentarmos ligar a aba Gestão.
+        setTimeout(() => {
+            console.log("⏱️ Tempo de estabilização concluído. Sincronizando DNA...");
+            sincronizarDnaInterface(window.userProfile);
+        }, 1000);
     }
 
     // 📡 ESCUTA REATIVA: Se o DNA do Firebase chegar com atraso, este comando 'atira' a aba certa na tela no mesmo milissegundo.
