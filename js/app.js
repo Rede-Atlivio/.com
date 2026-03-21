@@ -474,10 +474,18 @@ window.renderizarTourBoasVindas = function() {
                 <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">O que você busca agora?</p>
             </div>
 
-            <div class="grid gap-4">
-                <button onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
+            <div class="grid gap-3">
+                <button onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl">🛠️</div>
-                    <div><p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p></div>
+                    <div><p class="font-black text-blue-900 uppercase text-[11px]">Preciso Contratar</p></div>
+                </button>
+
+                <button onclick="window.switchTab('b2b_gestao')" class="bg-slate-900 border-2 border-blue-500 p-4 rounded-3xl flex items-center gap-4 shadow-lg active:scale-95 group text-left">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl">🛰️</div>
+                    <div>
+                        <p class="font-black text-white uppercase text-[11px]">Gestão Atlas</p>
+                        <p class="text-[8px] text-blue-300 font-bold uppercase tracking-tighter">Crie missões para sua empresa</p>
+                    </div>
                 </button>
 
                 <button onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
