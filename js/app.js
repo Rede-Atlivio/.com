@@ -79,8 +79,11 @@ import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
 // Gil, mudamos para importar a função de ligar (init) de cada um, em vez de carregar o arquivo todo de uma vez.
+// Gil, aqui garantimos que as funções de início fiquem disponíveis para o sistema todo.
 import { initMissions } from './modules/missions.js'; 
 import { initB2B } from './modules/atlas_b2b.js';
+window.initMissions = initMissions;
+window.initB2B = initB2B;
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
