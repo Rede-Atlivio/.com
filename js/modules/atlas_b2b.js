@@ -162,20 +162,36 @@ window.abrirWizardB2B = () => {
     if (!modal || !content) return;
 
     modal.classList.remove('hidden');
-    // PASSO 1: DEFINIÇÃO DO BRIEFING
+    
+    // 🎨 RETOQUE VISUAL ATLAS V2026: Título Cyan e Destaque Neon nos Inputs
+    // Gil, injetamos o CSS direto aqui para garantir que o efeito seja aplicado apenas neste modal
     content.innerHTML = `
+        <style>
+            /* 💡 EFEITO NEON NOS INPUTS: Dá profundidade e destaque ao redor do campo focado */
+            .b2b-input-premium {
+                transition: all 0.3s ease-in-out;
+            }
+            .b2b-input-premium:focus {
+                border-color: #22d3ee !important; /* Cyan */
+                box-shadow: 0 0 15px rgba(34, 211, 238, 0.4) !important;
+                background-color: #111a2e !important; /* Fundo levemente mais claro no foco */
+            }
+        </style>
+
         <div class="space-y-6 animate-fadeIn pb-6">
             <div class="text-center">
-                <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 1: Briefing</h3>
+                <h3 class="text-xl font-black text-cyan-400 uppercase italic tracking-tighter shadow-cyan-900/50">Passo 1: Briefing</h3>
                 <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">O que o prestador deve fazer?</p>
             </div>
             
             <div class="space-y-4">
-                <input type="text" id="b2b-title" placeholder="Título (Ex: Foto da Fachada - Loja X)" class="w-full p-4 rounded-2xl bg-slate-800 text-white font-bold border border-white/10 outline-none focus:border-blue-500">
-                <textarea id="b2b-desc" rows="4" placeholder="Instruções detalhadas..." class="w-full p-4 rounded-2xl bg-slate-800 text-white text-sm border border-white/10 outline-none focus:border-blue-500"></textarea>
+                <input type="text" id="b2b-title" placeholder="Título (Ex: Foto da Fachada - Loja X)" class="b2b-input-premium w-full p-4 rounded-2xl bg-slate-800 text-white font-bold border border-white/10 outline-none transition-all">
+                <textarea id="b2b-desc" rows="4" placeholder="Instruções detalhadas... (Use tópicos)" class="b2b-input-premium w-full p-4 rounded-2xl bg-slate-800 text-white text-sm border border-white/10 outline-none transition-all"></textarea>
             </div>
 
-            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition">Continuar para Localização ➜</button>
+            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/30 active:scale-95 transition-all hover:bg-blue-500">
+                Continuar para Localização ➜
+            </button>
         </div>
     `;
 };
