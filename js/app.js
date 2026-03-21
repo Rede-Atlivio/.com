@@ -819,17 +819,24 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.carregarInterface = carregarInterface;
 
 console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
-// Gil, esta função fecha o marketing e abre o modal de troca de perfil que você já tem
+// 🛰️ PONTE ATLAS B2B: Decide se troca o perfil ou se entra direto na aba
 window.abrirTrocaPerfilB2B = () => {
     document.getElementById('modal-marketing-b2b').classList.add('hidden');
     
-    // Simula o clique que o Vigilante intercepta
-    const modalTroca = document.getElementById('modal-troca-identidade');
-    const txtTroca = document.getElementById('txt-perfil-atual');
-    const isP = window.userProfile?.perfil === 'prestador';
+    const perfil = window.userProfile?.perfil;
 
-    if (modalTroca && txtTroca) {
-        txtTroca.innerText = isP ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-        modalTroca.classList.remove('hidden');
+    // Se já for cliente, vai direto para a Gestão Atlas
+    if (perfil === 'cliente') {
+        window.switchTab('b2b_gestao');
+        // Inicializa o motor se for a primeira vez
+        if (window.initB2B) window.initB2B(); 
+    } else {
+        // Se for prestador, abre o modal de troca que você já tem
+        const modalTroca = document.getElementById('modal-troca-identidade');
+        const txtTroca = document.getElementById('txt-perfil-atual');
+        if (modalTroca && txtTroca) {
+            txtTroca.innerText = "PRESTADOR para CLIENTE";
+            modalTroca.classList.remove('hidden');
+        }
     }
 };
