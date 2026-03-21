@@ -240,6 +240,16 @@ function switchTab(tabName, isAutoBoot = false) {
         console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
+    
+    // 💼 GATILHO B2B: Se o destino for Gestão Atlas, ligamos o motor executivo
+    if(nomeLimpo === 'b2b_gestao') {
+        if(window.initB2B) {
+            window.initB2B();
+        } else {
+            console.warn("⚠️ Motor B2B não carregado. Verifique o import no topo do app.js");
+        }
+    }
+
     if(nomeLimpo === 'canal') {
         // Apenas esconde o modal, sem disparar switchTab novamente
         const modal = document.getElementById('modal-trava-perfil');
