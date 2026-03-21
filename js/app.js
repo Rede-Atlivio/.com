@@ -480,13 +480,12 @@ window.renderizarTourBoasVindas = function() {
                     <div><p class="font-black text-blue-900 uppercase text-[11px]">Preciso Contratar</p></div>
                 </button>
 
-                <button onclick="window.switchTab('b2b_gestao')" class="bg-slate-800 border-2 border-slate-700 p-4 rounded-3xl flex items-center gap-4 shadow-lg active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-blue-500/20">
-                        <span class="animate-spin-slow">🌍</span> </div>
-                    <div>
-                        <p class="font-black text-white uppercase text-[11px]">Gestão Atlas Vivo</p>
-                        <p class="text-[8px] text-cyan-300 font-bold uppercase tracking-tighter">Inteligência & Missões de Campo</p>
+                <button onclick="window.switchTab('b2b_gestao')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
+                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-blue-100">
+                        <span class="animate-spin-slow">🌍</span>
                     </div>
+                    <div>
+                        <p class="font-black text-black uppercase text-[11px]">Gestão Atlas</p> <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Crie missões para sua empresa</p> </div>
                 </button>
 
                 <button onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
