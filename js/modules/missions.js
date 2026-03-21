@@ -17,7 +17,8 @@ document.head.appendChild(styleAtlas);
 
 // 🚀 INICIALIZADOR ATLAS V2026 (FOCO PRESTADOR)
 // Gil, agora este arquivo cuida apenas da visão de quem cumpre as tarefas.
-window.initMissions = async function() {
+// Gil, o comando 'export' é o que dá permissão para o arquivo principal enxergar esta função
+export async function initMissions() {
     console.log("🌍 Atlas Vivo: Sincronizando Radar de Micro Tarefas...");
     
     const containerPrestador = document.getElementById('lista-missoes');
