@@ -37,25 +37,6 @@ async function carregarMissoes() {
     carregarMissoesInner();
 }
 
-// 🔄 MOTOR DE ALTERNÂNCIA B2B (RE-SITUADO)
-window.alternarSubAbaB2B = (aba) => {
-    const btnRadar = document.getElementById('btn-sub-radar');
-    const btnAudit = document.getElementById('btn-sub-auditoria');
-    // Gil, usamos 'sub-view-container' que é o ID oficial da nossa interface nova
-    const mainView = document.getElementById('sub-view-container');
-
-    if(aba === 'radar') {
-        btnRadar.className = "px-4 py-2 rounded-lg text-[9px] font-black uppercase transition bg-blue-600 text-white shadow-md";
-        btnAudit.className = "px-4 py-2 rounded-lg text-[9px] font-black uppercase transition text-gray-400";
-        if(mainView) mainView.innerHTML = '<div id="lista-cards-real"></div>';
-        carregarMissoesInner(); 
-    } else {
-        btnRadar.className = "px-4 py-2 rounded-lg text-[9px] font-black uppercase transition text-gray-400";
-        btnAudit.className = "px-4 py-2 rounded-lg text-[9px] font-black uppercase transition bg-blue-600 text-white shadow-md";
-        window.carregarAuditoriaB2B(); 
-    }
-};
-
 // Criamos essa função auxiliar para o motor de carga funcionar dentro do novo container
 async function carregarMissoesInner() {
     // AQUI ESTAVA O ERRO: Não usamos 'const' novamente se ela já foi capturada
