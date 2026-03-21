@@ -1,4 +1,6 @@
+// Gil, mantemos o Firebase e importamos o motor B2B que acabamos de criar
 import { collection, getDocs, getDoc, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, runTransaction, where, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { initB2B } from './modules/atlas_b2b.js'; // 🚀 NOVO: Motor de Gestão de Empresas
 let currentTab = 'submissions'; 
 let allLoadedMissions = []; // Armazena as missões para edição
 
