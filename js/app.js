@@ -216,6 +216,12 @@ function switchTab(tabName, isAutoBoot = false) {
     if(activeBtn) activeBtn.classList.add('active');
 
     window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
+    // 🔓 DESBLOQUEIO IMEDIATO B2B: Garante que o loader suma quando entrar na Gestão
+    if (nomeLimpo === 'b2b_gestao') {
+        const overlay = document.getElementById('transition-overlay') || document.getElementById('loading-screen');
+        if (overlay) overlay.classList.add('hidden');
+        console.log("🔓 [Maestro] Forçando saída do loader para aba B2B.");
+    }
 
     // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
     if(nomeLimpo === 'home') {
