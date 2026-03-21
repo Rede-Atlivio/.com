@@ -14,26 +14,17 @@ styleAtlas.innerHTML = `
 `;
 document.head.appendChild(styleAtlas);
 
-// 🚀 INICIALIZADOR HÍBRIDO ATLAS V2026 (SOLDA DIRETA)
-// Gil, aqui o sistema decide se mostra a tela de quem ganha ou de quem contrata
+// 🚀 INICIALIZADOR ATLAS V2026 (FOCO PRESTADOR)
+// Gil, agora este arquivo cuida apenas da visão de quem cumpre as tarefas.
 window.initMissions = async function() {
-    const perfil = window.userProfile?.perfil || 'prestador';
-    console.log(`🌍 Atlas Vivo: Sincronizando visão [${perfil.toUpperCase()}]`);
-
-    if (perfil === 'cliente') {
-        // Se for cliente, foca apenas na nova aba de Gestão
-        const containerB2B = document.getElementById('view-b2b-missions');
-        if (!containerB2B) return console.warn("Aguardando esqueleto HTML da aba B2B...");
-        
-        // Inicia direto na visão de Radar de Encomendas para o Cliente
-        await carregarInterfaceB2B(); 
-    } else {
-        // Se for prestador, mantém o fluxo normal na aba de Micro Tarefas
-        const containerPrestador = document.getElementById('lista-missoes');
-        if (!containerPrestador) return;
-        await carregarMissoes(); 
-    }
-}
+    console.log("🌍 Atlas Vivo: Sincronizando Radar de Micro Tarefas...");
+    
+    const containerPrestador = document.getElementById('lista-missoes');
+    if (!containerPrestador) return;
+    
+    // Inicia a carga das missões disponíveis no mapa
+    await carregarMissoes(); 
+};
 
 // 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B (V62.7 - ESTABILIZADO)
 async function carregarInterfaceB2B() {
