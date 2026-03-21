@@ -355,22 +355,16 @@ async function carregarInterface(user) {
 
         if (!perfil) return console.log("🧬 DNA em processamento...");
 
+        // Gil, correção de soberania: Forçamos a exibição das abas corretas sem esconder o código vital
         if (perfil === 'cliente') {
-            // Gil, Cliente vê Gestão Atlas e esconde Micro Tarefas
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); 
-            const cM = document.getElementById('lista-missoes'); 
-            if(cM) cM.innerHTML = ''; }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
-            // Liga o motor financeiro B2B se ele já estiver carregado
+            if(abaMissoes) abaMissoes.style.display = 'none'; // Cliente não vê Micro Tarefas
+            if(abaB2B) abaB2B.style.display = 'flex'; // Cliente vê Gestão Atlas
             if(typeof window.initB2B === 'function') window.initB2B(); 
         } 
-        else if (perfil === 'prestador') {
-            // Prestador vê Micro Tarefas e esconde Gestão Atlas
-            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); 
-            const sB = document.getElementById('sec-b2b_gestao'); 
-            if(sB) sB.innerHTML = ''; }
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'flex', 'important'); }
-            if(typeof initMissions === 'function') initMissions();
+        else {
+            if(abaB2B) abaB2B.style.display = 'none'; // Prestador não vê Gestão Atlas
+            if(abaMissoes) abaMissoes.style.display = 'flex'; // Prestador vê Micro Tarefas
+            if(window.carregarMissoes) window.carregarMissoes();
         }
     };
 
