@@ -53,13 +53,13 @@ async function carregarMissoes() {
             return;
         }
 
-        // Gil, injetamos o botão de marketing no topo da lista de missões
+        // Gil, trocamos o pontilhado por uma borda sólida neon e um fundo sutil para dar peso de "Área de Negócios"
 container.innerHTML = `
-    <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-white border-2 border-dashed border-blue-200 p-4 rounded-3xl flex items-center gap-3 mb-6 shadow-sm active:scale-95 transition">
-        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl">🏢</div>
+    <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-50/50 border-2 border-blue-400 p-5 rounded-[2rem] flex items-center gap-4 mb-8 shadow-[0_10px_20px_rgba(59,130,246,0.15)] active:scale-95 transition-all hover:bg-blue-100">
+        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-blue-100">🏢</div>
         <div class="text-left">
-            <p class="text-[10px] font-black text-blue-900 uppercase leading-none">Micro Tarefas para Empresas?</p>
-            <p class="text-[8px] text-gray-400 font-bold uppercase mt-1">Veja como o Atlas escala seu negócio ➜</p>
+            <p class="text-[11px] font-black text-blue-900 uppercase leading-tight">Micro Tarefas para Empresas?</p>
+            <p class="text-[9px] text-blue-600 font-bold uppercase tracking-wide opacity-80">Transforme sua operação com o Atlas Vivo ➜</p>
         </div>
     </button>
 `;
