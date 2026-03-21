@@ -406,10 +406,17 @@ async function carregarInterface(user) {
         
         /* Ajuste fino nos cards para não esticarem o layout */
        #notif-list-container > div {
-            width: 100% !important;
-            box-sizing: border-box;
-        }
-    `;
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        /* 💡 EQUALIZAÇÃO NEON ATLIVIO V2026 */
+        /* Gil, aqui acendemos as bordas neon sem mudar a cor do botão */
+        #btn-contratar-home { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3)); border-color: #60a5fa !important; }
+        #btn-atlas-home { filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.4)); border-color: #22d3ee !important; }
+        #btn-renda-home { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.3)); border-color: #34d399 !important; }
+        #btn-emprego-home { filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.3)); border-color: #fb923c !important; }
+    `;
     document.head.appendChild(styleFix);
 
     // ============================================================================
