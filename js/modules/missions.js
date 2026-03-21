@@ -236,9 +236,28 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
+       reader.onloadend = async () => {
             const base64data = reader.result;
             const moedaDestaMissao = (tipoPagamento === 'real') ? 'BRL' : 'ATLIX';
+            
+            // 🛡️ ESCUDO DE PRECISÃO (GPS MATCH): Gil, aqui o sistema verifica se o cara não está tentando roubar
+            let gpsStatus = 'no_location';
+            const missaoRef = doc(db, "missions", id);
+            const missaoSnap = await getDoc(missaoRef);
+            const mData = missaoSnap.exists() ? missaoSnap.data() : null;
+
+            if (mData && mData.latitude && window.currentMissionLocation) {
+                const distanciaMetros = calcularDistancia(
+                    window.currentMissionLocation.lat, 
+                    window.currentMissionLocation.lng, 
+                    mData.latitude, 
+                    mData.longitude
+                ) * 1000;
+
+                const raioPermitido = mData.radius || 500;
+                gpsStatus = (distanciaMetros <= raioPermitido) ? 'match' : 'suspect';
+            }
+
             await addDoc(collection(db, "mission_submissions"), {
                 moeda: moedaDestaMissao,
                 mission_id: id,
@@ -249,6 +268,8 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
                 proof_url: base64data,
                 location: window.currentMissionLocation || null,
+                gps_status: gpsStatus, // ✅ Carimbo que diz ao Gil se ele estava no local
+                b2b_owner_uid: mData?.b2b_owner_uid || null, // Garante que a foto vá para o painel do cliente certo
                 status: 'pending',
                 created_at: serverTimestamp()
             });
