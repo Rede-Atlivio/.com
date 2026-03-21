@@ -353,12 +353,18 @@ async function carregarInterface(user) {
             if (!abaB2B) return;
 
             // Se for cliente, a aba aparece. Se não for, ela é removida da vista.
-            if (perfilData?.perfil === 'cliente') {
-                abaB2B.classList.remove('hidden');
-                abaB2B.style.setProperty('display', 'block', 'important');
-            } else {
-                abaB2B.classList.add('hidden');
-                abaB2B.style.setProperty('display', 'none', 'important');
+            // Gil, usamos classList.toggle para evitar conflito de múltiplas classes hidden
+            const isCliente = perfilData?.perfil === 'cliente';
+            
+            if (abaB2B) {
+                if (isCliente) {
+                    abaB2B.classList.remove('hidden');
+                    abaB2B.style.display = 'block'; // Força a aparição
+                    console.log("✅ Aba B2B Ativada via DNA");
+                } else {
+                    abaB2B.classList.add('hidden');
+                    abaB2B.style.display = 'none'; // Garante o sumiço
+                }
             }
         };
 
