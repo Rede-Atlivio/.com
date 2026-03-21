@@ -78,9 +78,7 @@ import './auth.js';
 import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
-// Gil, aqui importamos as funções de inicialização de cada arquivo separado para evitar conflito de abas
-import { initMissions } from './modules/missions.js'; 
-import { initB2B } from './modules/atlas_b2b.js'; // 💼 Importa o cérebro exclusivo do Cliente
+import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
@@ -336,45 +334,13 @@ async function carregarInterface(user) {
         loader.style.display = 'none';
     }
 
-   // 🛡️ MATRIZ DE IDENTIDADE V71 (CONTROLE DE ACESSO TOTAL)
-    // Gil, esta lógica decide na hora do login o que o usuário pode ver no menu.
-    const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil || 'prestador';
-        const abaB2B = document.getElementById('tab-b2b_gestao');
-        const abaMissoes = document.getElementById('tab-missoes');
-
-        console.log(`🧬 DNA Identificado: [${perfil.toUpperCase()}] - Sincronizando Menu...`);
-
-        if (perfil === 'cliente') {
-            // 💎 MUNDO CLIENTE: Liga Gestão Atlas e desliga Micro Tarefas
-            if(abaB2B) { abaB2B.classList.remove('hidden'); abaB2B.style.display = 'block'; }
-            if(abaMissoes) { abaMissoes.classList.add('hidden'); abaMissoes.style.display = 'none'; }
-            
-            // Liga o motor exclusivo de contratação que criamos no atlas_b2b.js
-            if(typeof initB2B === 'function') initB2B(); 
-        } else {
-            // 🛠️ MUNDO PRESTADOR: Desliga Gestão Atlas e liga Micro Tarefas
-            if(abaB2B) { abaB2B.classList.add('hidden'); abaB2B.style.display = 'none'; }
-            if(abaMissoes) { abaMissoes.classList.remove('hidden'); abaMissoes.style.display = 'block'; }
-            
-            // Liga o motor de execução de tarefas do missions.js
-            if(typeof initMissions === 'function') initMissions();
-        }
-    };
-
-    // Liberação visual do aplicativo
     document.getElementById('auth-container')?.classList.add('hidden');
     const mainApp = document.getElementById('app-container');
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
-        
-        // Executa a sincronia imediatamente com os dados que já temos
-        sincronizarDnaInterface(window.userProfile);
     }
 
-    // 📡 ESCUTA ATIVA: Se o perfil carregar depois (lentidão do banco), a interface vira a chave sozinha
-    window.addEventListener('userProfileLoaded', (e) => sincronizarDnaInterface(e.detail));
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
     const toggle = document.getElementById('online-toggle');
     if (toggle) {
