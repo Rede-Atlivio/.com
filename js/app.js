@@ -336,25 +336,25 @@ async function carregarInterface(user) {
     const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
     if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
 
-    // 🛡️ MATRIZ DE IDENTIDADE V75: Gil, essa função garante que NADA vaze se o DNA for nulo.
+    // 🛡️ MATRIZ DE IDENTIDADE V77: Garante que NADA vaze se o perfil for nulo.
     const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil; // Removido o '|| prestador' para não abrir a aba errada no início
+        const perfil = perfilData?.perfil; 
         const abaB2B = document.getElementById('tab-b2b_gestao');
         const abaMissoes = document.getElementById('tab-missoes');
 
-        if (!perfil) return console.log("🧬 DNA em processamento...");
+        if (!perfil) return console.log("🧬 Sincronia: DNA ainda não carregado.");
 
         if (perfil === 'cliente') {
-            // MATA MICRO TAREFAS E LIGA GESTÃO
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); }
+            // Gil, se for cliente, matamos a Micro Tarefas e mostramos a B2B na marra
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); abaMissoes.classList.add('hidden'); }
+            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); abaB2B.classList.remove('hidden'); }
             if(typeof window.initB2B === 'function') window.initB2B(); 
         } 
         else if (perfil === 'prestador') {
-            // MATA GESTÃO E LIGA MICRO TAREFAS
-            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); }
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); }
-            if(typeof initMissions === 'function') initMissions();
+            // Se for prestador, fazemos o inverso total
+            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); abaB2B.classList.add('hidden'); }
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); abaMissoes.classList.remove('hidden'); }
+            if(typeof window.initMissions === 'function') window.initMissions();
         }
     };
 
