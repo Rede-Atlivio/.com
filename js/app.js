@@ -431,20 +431,27 @@ async function carregarInterface(user) {
             if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
                 
-                // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
+               // ⏱️ DELAY DE SANEAMENTO (V61): Filtro de Identidade Atlivio
                 setTimeout(() => {
-                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
                     const mapaFiel = {
                         'ganhar': 'missoes', 
                         'loja': 'loja',      
-                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
+                        'produtos': 'loja', 
                         'servicos': 'servicos'
                     };
                     
-                    const destinoOficial = mapaFiel[userIntent] || userIntent;
-                    window.switchTab(destinoOficial);
-                }, 800); 
+                    let destinoOficial = mapaFiel[userIntent] || userIntent;
+                    const isCliente = window.userProfile?.perfil === 'cliente';
 
+                    // 🛡️ TRAVA DE DNA: Se for Cliente e o banco pedir 'missoes' ou 'extra', força a Home.
+                    // Isso evita o vazamento visual e prepara para o Card de Gestão B2B na Home.
+                    if (isCliente && (destinoOficial === 'missoes' || destinoOficial === 'extra')) {
+                        console.log("🛡️ [Maestro] Cliente detectado em rota de prestador. Redirecionando para Home Segura.");
+                        destinoOficial = 'home';
+                    }
+
+                    window.switchTab(destinoOficial);
+                }, 800);
             } else {
                 console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
                 window.switchTab('home');
