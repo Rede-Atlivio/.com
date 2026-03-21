@@ -776,8 +776,8 @@ window.addEventListener('click', (e) => {
     const isPrestador = window.userProfile?.is_provider === true;
     
     // Suas regras de negócio exatas:
-    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
+    // Gil, removemos 'missoes' desta lista para que Clientes também possam entrar na aba e ver sua Gestão B2B
+    const exclusivasPrestador = ['radar', 'ativos', 'extra', 'tarefas'];
     
     // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
    // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
