@@ -333,24 +333,25 @@ async function carregarInterface(user) {
     const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
     if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
 
-    // 🛡️ MATRIZ DE IDENTIDADE V75: Gil, essa função garante que NADA vaze se o DNA for nulo.
+    // 🛡️ MATRIZ DE IDENTIDADE V75: Garante que as abas certas apareçam para o perfil certo.
     const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil; // Removido o '|| prestador' para não abrir a aba errada no início
+        const perfil = perfilData?.perfil; 
         const abaB2B = document.getElementById('tab-b2b_gestao');
         const abaMissoes = document.getElementById('tab-missoes');
 
         if (!perfil) return console.log("🧬 DNA em processamento...");
 
         if (perfil === 'cliente') {
-            // MATA MICRO TAREFAS E LIGA GESTÃO
+            // Gil, Cliente vê Gestão Atlas e esconde Micro Tarefas
             if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
-            if(abaB2B) { abaB2B.style.setProperty('display', 'block', 'important'); }
+            if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
+            // Liga o motor financeiro B2B se ele já estiver carregado
             if(typeof window.initB2B === 'function') window.initB2B(); 
         } 
         else if (perfil === 'prestador') {
-            // MATA GESTÃO E LIGA MICRO TAREFAS
+            // Prestador vê Micro Tarefas e esconde Gestão Atlas
             if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); }
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'block', 'important'); }
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'flex', 'important'); }
             if(typeof initMissions === 'function') initMissions();
         }
     };
