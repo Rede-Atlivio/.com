@@ -757,11 +757,11 @@ window.addEventListener('click', (e) => {
     // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
     const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
     
-    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
     // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
-    // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
-
+   // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
+    // Gil, adicionamos 'b2b_gestao' aqui para o segurança saber que Prestador não entra nela.
+    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing', 'b2b_gestao'];
+    
     // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
     const textoBotao = btn.innerText.toUpperCase();
     const comandoHtml = btn.getAttribute('onclick') || "";
