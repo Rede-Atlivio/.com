@@ -351,7 +351,9 @@ async function carregarInterface(user) {
 
         if (perfil === 'cliente') {
             // Gil, Cliente vê Gestão Atlas e esconde Micro Tarefas
-            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); }
+            if(abaMissoes) { abaMissoes.style.setProperty('display', 'none', 'important'); 
+            const cM = document.getElementById('lista-missoes'); 
+            if(cM) cM.innerHTML = ''; }
             if(abaB2B) { abaB2B.style.setProperty('display', 'flex', 'important'); }
             // Liga o motor financeiro B2B se ele já estiver carregado
             if(typeof window.initB2B === 'function') window.initB2B(); 
