@@ -1,5 +1,6 @@
 import { db, auth } from '../config.js';
-import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Gil, removemos o 'addDoc' de criação (que agora é do B2B) e adicionamos 'doc' e 'getDoc' para validar o local da missão
+import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";;
 
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `A
