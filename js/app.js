@@ -238,8 +238,16 @@ function switchTab(tabName, isAutoBoot = false) {
     // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
     if(nomeLimpo === 'missoes') {
         if(window.carregarMissoes) window.carregarMissoes(); 
-        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas(); // 🚀 Carrega os comprovantes
+        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
         console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
+    }
+    
+    // 💼 GATILHO GESTÃO ATLAS: Ativa o motor financeiro assim que a aba é aberta
+    if(nomeLimpo === 'b2b_gestao') {
+        if(typeof window.initB2B === 'function') {
+            window.initB2B();
+            console.log("💼 Gestão Atlas: Painel B2B Inicializado.");
+        }
     }
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
