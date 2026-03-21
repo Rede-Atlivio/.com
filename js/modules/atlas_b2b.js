@@ -152,6 +152,89 @@ window.vereditoB2B = async (docId, status) => {
         window.carregarAuditoriaB2B();
     } catch (e) { alert("Erro ao processar veredito."); }
 };
+
+// 🪄 WIZARD ATLAS B2B: MOTOR DE CRIAÇÃO PASSO A PASSO
+window.wizardB2BData = {}; // Memória temporária da missão
+
+window.abrirWizardB2B = () => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    if (!modal || !content) return;
+
+    modal.classList.remove('hidden');
+    // PASSO 1: DEFINIÇÃO DO BRIEFING
+    content.innerHTML = `
+        <div class="space-y-6 animate-fadeIn pb-6">
+            <div class="text-center">
+                <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 1: Briefing</h3>
+                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">O que o prestador deve fazer?</p>
+            </div>
+            
+            <div class="space-y-4">
+                <input type="text" id="b2b-title" placeholder="Título (Ex: Foto da Fachada - Loja X)" class="w-full p-4 rounded-2xl bg-slate-800 text-white font-bold border border-white/10 outline-none focus:border-blue-500">
+                <textarea id="b2b-desc" rows="4" placeholder="Instruções detalhadas..." class="w-full p-4 rounded-2xl bg-slate-800 text-white text-sm border border-white/10 outline-none focus:border-blue-500"></textarea>
+            </div>
+
+            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition">Continuar para Localização ➜</button>
+        </div>
+    `;
+};
+
+window.proximoPassoWizard = (passo) => {
+    if (passo === 2) {
+        const title = document.getElementById('b2b-title').value;
+        const desc = document.getElementById('b2b-desc').value;
+        if (!title || !desc) return alert("Preencha o título e a descrição!");
+
+        window.wizardB2BData.title = title;
+        window.wizardB2BData.description = desc;
+        window.wizardB2BData.b2b_owner_uid = auth.currentUser.uid;
+
+        // PASSO 2: LOCALIZAÇÃO E ALVO (SIMULADO VIA COORDENADAS)
+        document.getElementById('modal-content').innerHTML = `
+            <div class="space-y-6 animate-fadeIn pb-6">
+                <div class="text-center">
+                    <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 2: Localização</h3>
+                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Onde a missão deve ser realizada?</p>
+                </div>
+
+                <div class="p-8 bg-slate-800 rounded-[2.5rem] border border-blue-500/30 text-center space-y-4">
+                    <div class="text-4xl">📍</div>
+                    <p class="text-xs text-gray-300">Deseja usar sua localização atual como centro do radar para esta missão?</p>
+                    <div class="grid grid-cols-2 gap-2" id="gps-action-area">
+                        <button onclick="window.capturarLocalizacaoWizard()" class="py-3 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">Sim, Usar GPS</button>
+                        <button onclick="alert('Funcionalidade de mapa manual em homologação. Use o GPS por enquanto.')" class="py-3 bg-slate-700 text-gray-400 rounded-xl font-black text-[9px] uppercase">Digitar Local</button>
+                    </div>
+                    <div id="gps-status" class="hidden text-[8px] font-black text-emerald-400 uppercase tracking-widest">Localização Fixada com Sucesso!</div>
+                    <input type="hidden" id="b2b-lat">
+                    <input type="hidden" id="b2b-lng">
+                </div>
+
+                <button id="btn-next-3" disabled onclick="window.finalizarLocalWizard()" class="w-full py-4 bg-gray-700 text-gray-500 rounded-2xl font-black text-[10px] uppercase cursor-not-allowed">Definir Investimento ➜</button>
+            </div>
+        `;
+    }
+};
+
+window.capturarLocalizacaoWizard = () => {
+    const btn = document.querySelector('#gps-action-area button');
+    btn.innerText = "⏳ BUSCANDO...";
+    
+    navigator.geolocation.getCurrentPosition((pos) => {
+        document.getElementById('b2b-lat').value = pos.coords.latitude;
+        document.getElementById('b2b-lng').value = pos.coords.longitude;
+        document.getElementById('gps-status').classList.remove('hidden');
+        document.getElementById('gps-action-area').classList.add('hidden');
+        
+        const btnNext = document.getElementById('btn-next-3');
+        btnNext.disabled = false;
+        btnNext.className = "w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition";
+    }, (err) => {
+        alert("Ative o GPS para prosseguir.");
+        btn.innerText = "Sim, Usar GPS";
+    });
+};
+
 // 💰 PASSO 3: CONFIGURAÇÃO DE INVESTIMENTO
 window.finalizarLocalWizard = () => {
     const lat = document.getElementById('b2b-lat').value;
