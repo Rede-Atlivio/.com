@@ -45,17 +45,17 @@ async function carregarMissoesInner() {
     const containerInner = document.getElementById('lista-cards-real');
     if (!containerInner) return;
 
-  // 🛰️ GPS ÚNICO ATLAS: Captura a posição apenas se necessário, sem criar loops.
+ // Gil, este bloco verifica o GPS uma única vez para filtrar as tarefas perto do usuário
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition(
             (pos) => {
+                // Guarda a posição na memória para não precisar pedir de novo
                 window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                console.log("📍 Localização capturada via Missions.");
-                // Chamamos a busca interna diretamente para não resetar o container
+                // Aciona a busca de missões agora que sabemos onde o usuário está
                 carregarMissoesInner(); 
             },
-            (err) => { console.warn("GPS negado: Mostrando missões globais."); },
-            { enableHighAccuracy: true, timeout: 5000 }
+            (err) => { console.warn("GPS não disponível: Mostrando missões globais."); },
+            { enableHighAccuracy: true, timeout: 10000 } // Dá 10 segundos para o satélite responder
         );
     }
     const listaCards = document.getElementById('lista-cards-real');
