@@ -407,7 +407,9 @@ async function carregarMissoesRealizadas() {
     }
 }
 
-// A gestão de troca de perfil agora é feita pelo Vigilante centralizado no app.js
+// Gil, aqui "soldamos" as funções no sistema global para que os cliques nos botões funcionem
+window.initMissions = initMissions;
+window.carregarMissoes = carregarMissoes;
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
 // 📸 Visualizador de Provas para o B2B
