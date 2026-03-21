@@ -4,7 +4,7 @@ import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp
 // 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B (V63 - ESCALA INDUSTRIAL)
 // Gil, este arquivo cuida apenas de quem CONTRATA inteligência.
 export async function initB2B() {
-    const container = document.getElementById('view-b2b-missions');
+   const container = document.getElementById('sec-b2b_gestao');
     if (!container) return;
 
     console.log("💼 Atlas B2B: Ativando Central de Inteligência Estratégica.");
