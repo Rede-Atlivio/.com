@@ -1,834 +1,761 @@
-// 🛰️ IDENTIDADE ATLIVIO V60
-// Garante que o navegador saiba exatamente qual versão do motor está rodando.
-localStorage.setItem('atlivio_version', '2026_V60');
+import { collection, getDocs, getDoc, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, runTransaction, where, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+let currentTab = 'submissions'; 
+let allLoadedMissions = []; // Armazena as missões para edição
 
-// ============================================================================
+export async function init() {
+    const container = document.getElementById('view-list');
+    
+    // 1. Cria a Navegação Interna (Sub-abas)
+    const subNav = document.createElement('div');
+    subNav.className = "flex gap-4 mb-6 border-b border-slate-800 pb-2";
+   subNav.innerHTML = `
+        <button onclick="window.switchMissionTab('missions')" id="btn-tab-missions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📋 Missões</button>
+        <button onclick="window.switchMissionTab('b2b_pendente')" id="btn-tab-b2b_pendente" class="text-amber-500 font-black uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition relative">
+            🤝 B2B Pendente
+            <span id="badge-b2b-count" class="hidden absolute -top-1 -right-2 bg-red-600 text-white text-[7px] px-1 rounded-full animate-pulse">0</span>
+        </button>
+        <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
+        <button onclick="window.switchMissionTab('payments')" id="btn-tab-payments" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">💸 Pagamentos PIX</button>
+    `;
+    
+    // Insere antes da tabela se não existir
+    if(!document.getElementById('btn-tab-missions')) {
+        container.insertBefore(subNav, container.firstChild);
+    }
 
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO DUPLO (PWA + NOTIFICAÇÕES)
-// Essencial para escala de milhões: registra o cache e a antena separadamente.
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        try {
-            // 1. Registro do Escudo (Cache e Offline)
-            const regSw = await navigator.serviceWorker.register('./sw.js');
-            console.log("🛡️ Escudo de Cache: Ativo");
-
-            // 2. Registro da Antena (O rádio que ouve o Google FCM)
-            // Sem esta linha, o Google dá o erro "Requested entity was not found"
-            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            console.log("📡 Antena de Notificações: Sintonizada");
-
-            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
-            regSw.onupdatefound = () => {
-                const worker = regSw.installing;
-                worker.onstatechange = () => {
-                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
-                    }
-                };
-            };
-        } catch (err) {
-            console.error('❌ Falha Crítica no Motor PWA:', err);
-        }
-    });
+    // Exporta Globais
+    window.switchMissionTab = switchMissionTab;
+    window.abrirNovaMissao = abrirNovaMissao;
+    window.editarMissao = editarMissao; // ✅ Nova Função
+    window.salvarMissao = salvarMissao;
+    window.excluirMissao = excluirMissao;
+    window.aprovarMissao = aprovarMissao;
+    window.rejeitarMissao = rejeitarMissao;
+    
+    // Inicia na aba de Gerenciar (já que você quer editar)
+    switchMissionTab('missions');
 }
-// ============================================================================
-import { app, auth, db, storage, provider } from './config.js';
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/**
- * 🛰️ MONITOR DE DEPLOY V26 (Blindado)
- * Esta função vigia ordens de limpeza global enviadas pelo Admin.
- * Encapsulada para evitar erros de permissão antes do login.
- */
-window.iniciarMonitorDeploy = function() {
-    onSnapshot(doc(db, "settings", "deploy"), (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
-            const ordemLocal = localStorage.getItem('last_force_reset') || 0;
-
-            if (ultimaOrdem > ordemLocal) {
-                console.log("🧹 ORDEM DO ADMIN: Executando limpeza de cache...");
-                localStorage.setItem('last_force_reset', ultimaOrdem);
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(regs => {
-                        for(let reg of regs) reg.unregister();
-                    });
-                }
-                caches.keys().then(names => {
-                    for (let name of names) caches.delete(name);
-                }).then(() => {
-                    location.reload(true);
-                });
-            }
-        }
-    }, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
-};
-
-// ============================================================================
-
-// ============================================================================
-// 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
-// ============================================================================
-import './auth.js';
-import './modules/auth_sms.js';
-import './modules/services.js';
-import './modules/jobs.js';
-import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
-import './modules/opportunities.js';
-import './modules/chat.js';
-import './modules/reviews.js';
-// Importa a carteira e extrai a função de monitoramento
-import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
-
-import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js';
-import './modules/user_notifications.js';
-
-window.abrirConfiguracoes = abrirConfiguracoes;
-
-// 🛡️ MAESTRO V127: Flag de controle e Motor Universal de Engajamento
-window.atlivioBootConcluido = false;
-
-/**
- * 🛰️ MOTOR MAESTRO UNIVERSAL (V127)
- * Esta é a Torre de Controle que fala com o usuário baseado em quem ele é.
- * @param {string} origem - De onde vem o alerta (chat, jobs, missions, etc)
- * @param {object} dados - { id, type, msgPrestador, msgCliente, linkPrestador, linkCliente }
- */
-window.maestroUniversal = function(origem, dados) {
-    // 🛡️ Verifica se a função visual de balão existe para não quebrar o código
-    if (!window.mostrarBarraNotificacao) return;
-
-    // 🕵️ Identifica se o usuário atual é um Prestador (quem trabalha)
-    const isP = window.userProfile?.is_provider === true;
-
-    // 🏗️ Monta a configuração baseada na Identidade (Bipolaridade do Maestro)
-    const configMaestro = {
-        type: dados.type || 'marketing', // Ícone do balão (chat, alert, gift, etc)
-        // Escolhe a mensagem certa para o público certo
-        message: isP ? (dados.msgPrestador || dados.message) : (dados.msgCliente || dados.message),
-        // Escolhe o destino certo baseado na aba que o usuário deve ir
-        action: isP ? (dados.linkPrestador || dados.action) : (dados.linkCliente || dados.action)
-    };
-
-    // 🚀 Dispara o balão na tela com o ID único para evitar duplicação
-    window.mostrarBarraNotificacao(dados.id || `maestro_${origem}_${Date.now()}`, configMaestro);
-    
-    console.log(`📡 [Maestro Universal] Disparo efetuado via: ${origem} | Alvo: ${isP ? 'Prestador' : 'Cliente'}`);
-};
-window.abaAtual = 'home';
-
-// 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
-window.addEventListener('userProfileLoaded', (e) => {
-    window.userProfile = e.detail;
-    if (window.userProfile) {
-        Object.defineProperty(window.userProfile, 'saldo', {
-            get: function() { return this.wallet_balance || 0; },
-            configurable: true
-        });
-        console.log("✅ Polyfill de Saldo injetado via Evento.");
-    }
-});
-// ============================================================================
-// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
-// ============================================================================
-function switchTab(tabName, isAutoBoot = false) {
- // ✨ V153: Sincronia de Histórico - Abre o Sininho sem apagar as mensagens
-    if (tabName === 'notificacoes') {
-        // 🛰️ V157: Avisa ao banco e ao navegador que o usuário limpou o Sininho AGORA
-    const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
-    if (badge) badge.classList.add('hidden');
-
-    // Grava a hora da limpeza no Navegador e no Banco
-    const agora = Date.now();
-    localStorage.setItem('maestro_last_sync', agora);
-    
-    // Atualiza o perfil do usuário no Firestore para o Maestro saber que ele está "em dia"
-    const { doc, updateDoc } = window.firebaseModules;
-    updateDoc(doc(window.db, "usuarios", auth.currentUser.uid), {
-        last_notif_read: agora // Nova trava de segurança no banco
-    }).catch(e => console.warn("Erro ao atualizar trava de leitura."));
-        // 2. Carrega as mensagens do histórico para o usuário ver
-        if (typeof window.carregarHistoricoNotificacoes === 'function') {
-            window.carregarHistoricoNotificacoes();
-        } else {
-            console.warn("⚠️ Motor de Histórico não carregado.");
-        }
-    }
-
-    // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
-    if (isAutoBoot && window.atlivioBootConcluido) return;
-
-    // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
-    const mapa = { 
-        'home': 'home',
-        'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
-        'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
-        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', 
-        'b2b_gestao': 'b2b_gestao', // 🚀 ROTA OFICIAL: Central de Inteligência Atlas
-        'oportunidades': 'oportunidades',
-        'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
-        'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
-        'canal': 'canal', 'tutorials': 'canal',
-        'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
-    };
-
-    const nomeLimpo = mapa[tabName] || tabName;
-    const perfil = window.userProfile;
-    const isPrestador = perfil?.is_provider || false;
-
-    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Atualizada V60)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    
-    // 💼 GESTÃO ATLAS: Agora 'b2b_gestao' é oficialmente uma área de Cliente.
-    const requerCliente = ['contratar', 'vaga', 'b2b_gestao'].includes(tabName);
-
-   // 🛡️ NAVEGAÇÃO LIVRE: O Maestro agora permite a transição entre abas sem forçar troca de perfil.
-    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        console.log("ℹ️ [Maestro] Navegação cross-profile permitida.");
-    }
-
-    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
-    // 📍 REGISTRO CONTEXTUAL FINAL: Memoriza a aba ativa saneada para o sistema de notificações
-    window.abaAtual = nomeLimpo;
-
-    // 🧹 LIMPEZA TOTAL (V61): Respeita o novo container B2B
-    document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
-        // Usamos style.setProperty para garantir que o navegador não force a exibição
-        el.style.setProperty('display', 'none', 'important');
+async function switchMissionTab(tab) {
+    currentTab = tab;
+   // Reset de botões (Incluindo a nova aba B2B na faxina visual)
+    ['missions', 'b2b_pendente', 'submissions', 'payments'].forEach(t => {
+        const btn = document.getElementById(`btn-tab-${t}`);
+        if(btn) btn.className = "text-gray-400 font-bold uppercase text-[9px] pb-2 border-b-2 border-transparent transition";
     });
 
-    const alvo = document.getElementById(`sec-${nomeLimpo}`);
-    if(alvo) {
-        alvo.classList.remove('hidden');
-        alvo.style.display = 'block';
+    const activeBtn = document.getElementById(`btn-tab-${tab}`);
+    if(activeBtn) activeBtn.className = "text-blue-500 font-bold uppercase text-[9px] pb-2 border-b-2 border-blue-500 transition";
+
+    const btnAdd = document.getElementById('btn-list-add');
+    const header = document.getElementById('list-header');
+
+    if(tab === 'missions') {
+        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA MISSÃO"; btnAdd.onclick = () => abrirCriadorMissaoAtlas(); }
+        header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadMissionsManagement();
+    } else if(tab === 'b2b_pendente') {
+        // 🤝 ABA B2B: Oculta o botão de criar (pois aqui você só aprova o que os outros criaram)
+        if(btnAdd) { btnAdd.style.display = 'none'; }
+        header.innerHTML = `<th class="p-3">EMPRESA</th><th class="p-3">MISSÃO</th><th class="p-3">VALOR/MOEDA</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadB2BPendingMissions(); // Chamaremos esta função no próximo passo
+    } else if(tab === 'submissions') {
+        if(btnAdd) { btnAdd.style.display = 'none'; }
+        header.innerHTML = `<th class="p-3">MISSÃO</th><th class="p-3">USUÁRIO</th><th class="p-3">PROVA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadSubmissions();
     } else {
-        console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
+        // ABA DE PAGAMENTOS
+        if(btnAdd) { btnAdd.style.display = 'none'; }
+        header.innerHTML = `<th class="p-3">USUÁRIO</th><th class="p-3">VALOR</th><th class="p-3">CHAVE PIX</th><th class="p-3 text-right">AÇÕES</th>`;
+        await loadMissionsPayments(); // Nova função
     }
-
-    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
-    if(activeBtn) activeBtn.classList.add('active');
-
-    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
-
-    // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
-    if(nomeLimpo === 'home') {
-        const homeContent = document.getElementById('home-content');
-        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
-            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
-        }
-    }
-    if(nomeLimpo === 'servicos') {
-        if(window.carregarServicos) window.carregarServicos();
-        if(tabName === 'contratar') setTimeout(() => { if(window.switchServiceSubTab) window.switchServiceSubTab('contratar'); }, 100);
-    }
-    if(nomeLimpo === 'empregos') {
-        if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-    }
-    if(nomeLimpo === 'loja' && window.carregarProdutos) window.carregarProdutos();
-    if(nomeLimpo === 'ganhar') {
-        if(window.carregarCarteira) window.carregarCarteira();
-    }
-    // 🌍 GATILHO ATLAS VIVO (V62): Sincronia Híbrida B2C/B2B
-    // Gil, aqui garantimos que o motor de missões se adapte ao perfil atual toda vez que a aba abrir.
-    if(['missoes', 'b2b_gestao'].includes(nomeLimpo)) {
-        if(window.initMissions) {
-            window.initMissions(); // Reinicia o motor do zero para limpar lixo de memória
-            if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
-            console.log("🛰️ Atlas Vivo: Motor Híbrido Sincronizado.");
-        }
-    }
-    if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
-    if(nomeLimpo === 'canal') {
-        // Apenas esconde o modal, sem disparar switchTab novamente
-        const modal = document.getElementById('modal-trava-perfil');
-        if (modal) modal.classList.add('hidden'); 
-        
-        import('./modules/canal.js?v=' + Date.now())
-            .then(m => { if(m.init) m.init(); })
-            .catch(e => console.error("Erro ao carregar módulo canal:", e));
-         }
-       }
-
-function switchServiceSubTab(subTab) {
-    console.log("🔍 Sub-aba Cliente:", subTab);
-    
-    // 🛡️ LISTA DE SEGURANÇA: Esconde tudo antes de mostrar a nova
-    const views = ['contratar', 'andamento', 'historico'];
-    const subContainers = ['meus-pedidos-andamento', 'meus-pedidos-historico'];
-
-    views.forEach(t => {
-        const el = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`subtab-${t}-btn`);
-        if(el) el.classList.add('hidden');
-        if(btn) btn.classList.remove('active');
-    });
-
-    // Mostra apenas o alvo
-    const target = document.getElementById(`view-${subTab}`);
-    const targetBtn = document.getElementById(`subtab-${subTab}-btn`);
-    if(target) target.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
-    
-    // 🧹 LIMPEZA DE VAZAMENTO: Se não for a aba dela, garante que o container interno suma
-    subContainers.forEach(id => {
-        const container = document.getElementById(id);
-        if(container) {
-            // Se a aba atual NÃO for a dona do container, esconde o conteúdo interno
-            const dono = id.includes(subTab);
-            container.style.display = dono ? 'block' : 'none';
-        }
-    });
-
-    if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-    if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
 }
 
-function switchProviderSubTab(subTab) {
-    console.log("🔍 Sub-aba Prestador:", subTab);
-    ['radar', 'ativos', 'historico'].forEach(t => {
-        const el = document.getElementById(`pview-${t}`);
-        const btn = document.getElementById(`ptab-${t}-btn`);
-        if(el && t !== subTab) el.classList.add('hidden');
-        if(btn) btn.classList.toggle('active', t === subTab);
-    });
-    const target = document.getElementById(`pview-${subTab}`);
-    if(target) target.classList.remove('hidden');
-
-    if(subTab === 'ativos' && window.carregarPedidosPrestador) window.carregarPedidosPrestador();
-    if(subTab === 'historico' && window.carregarHistoricoPrestador) window.carregarHistoricoPrestador();
-}
-console.log("✅ App Carregado: Sistema Híbrido Online.");
-
-// ============================================================================
-// 6. MONITORAMENTO DE LOGIN E CONTROLE DO RADAR (CORREÇÃO VITAL)
-// ============================================================================
-
-async function carregarInterface(user) {
-    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Garante carga única e evita loops)
-    if (window.atlivioBootConcluido) return;
-    window.atlivioBootConcluido = true;
-
-   console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
-
-    // 🛰️ V180: IGNIÇÃO FINAL DO RÁDIO (FCM)
-    // Usamos o motor original com um delay estratégico para evitar conflitos de permissão.
-    // A trava 'radioSoldado' impede que o sistema tente soldar o token várias vezes.
-    if (!window.radioSoldadoNestaSessao) {
-        window.radioSoldadoNestaSessao = true;
-        setTimeout(() => {
-            if (typeof window.capturarEnderecoNotificacao === 'function') {
-                console.log("🛰️ [Antena] Solicitando endereço digital (FCM) via App Flow...");
-                window.capturarEnderecoNotificacao(user.uid);
-            }
-        }, 7000); // 7 segundos garante que até celulares lentos já processaram o login
-    }
-    // Identifica perfil para o Guia Inteligente
-    if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
+// --- ABA 1: GERENCIAR MISSÕES ---
+async function loadMissionsManagement() {
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center p-10"><div class="loader mx-auto border-blue-500"></div></td></tr>`;
     
-    // 🚀 [Maestro] DESTRAVAMENTO VISUAL: Mata o loader e libera o container
-    const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
-    if(loader) {
-        loader.classList.add('hidden');
-        loader.style.display = 'none';
-    }
-
-    document.getElementById('auth-container')?.classList.add('hidden');
-    const mainApp = document.getElementById('app-container');
-    if(mainApp) {
-        mainApp.classList.remove('hidden');
-        mainApp.style.display = 'block';
+    try {
+        const q = query(collection(window.db, "missions"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        allLoadedMissions = []; // Limpa cache local
+        tbody.innerHTML = "";
         
-        // 🛡️ MATRIZ DE IDENTIDADE REATIVA (V64 - CONTROLE DE ACESSO)
-        // Gil, esta função mapeia quais abas cada perfil tem o direito de enxergar.
-        const sincronizarDnaInterface = (perfilData) => {
-            const isC = perfilData?.perfil === 'cliente';
-            const isP = perfilData?.perfil === 'prestador';
-            
-            // Lista de IDs das abas que devem ser controladas
-            const abas = {
-                b2b: document.getElementById('tab-b2b_gestao'),
-                loja: document.getElementById('tab-loja'),
-                missoes: document.getElementById('tab-missoes')
-            };
+        if(snap.empty) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhuma missão ativa. Crie uma!</td></tr>`; return; }
 
-            // 1. Gestão B2B: Só para Cliente
-            if (abas.b2b) {
-                const mostrar = isC;
-                abas.b2b.classList.toggle('hidden', !mostrar);
-                abas.b2b.style.display = mostrar ? 'block' : 'none';
-            }
+        snap.forEach(d => {
+            const m = d.data();
+            m.id = d.id; // Guarda ID
+            allLoadedMissions.push(m);
 
-            // 2. Loja de Produtos: Só para Cliente (Resolve o seu Problema 02)
-            if (abas.loja) {
-                const mostrar = isC;
-                abas.loja.classList.toggle('hidden', !mostrar);
-                abas.loja.style.display = mostrar ? 'block' : 'none';
-            }
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                    <td class="p-3 font-bold text-white">${m.title}</td>
+                    <td class="p-3 text-xs uppercase text-gray-400">${m.type || 'Geral'}</td>
+                    <td class="p-3 text-emerald-400 font-mono">R$ ${m.reward}</td>
+                    <td class="p-3 text-right flex justify-end gap-2">
+                        <button onclick="window.editarMissao('${d.id}')" class="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold transition">✏️ EDITAR</button>
+                        <button onclick="window.excluirMissao('${d.id}')" class="text-red-500 hover:text-red-400 font-bold text-xs border border-red-900/50 bg-red-900/20 px-3 py-1 rounded">🗑️</button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('list-count').innerText = `${snap.size} missões ativas`;
+    } catch(e) { console.error(e); }
+}
 
-            // 3. Micro Tarefas: Só para Prestador
-            if (abas.missoes) {
-                const mostrar = isP;
-                abas.missoes.classList.toggle('hidden', !mostrar);
-                abas.missoes.style.display = mostrar ? 'block' : 'none';
-            }
-            
-            console.log(`🧬 DNA Sincronizado: Visão [${perfilData?.perfil?.toUpperCase() || 'AGUARDANDO'}]`);
+// 🤝 ABA B2B: BUSCA MISSÕES CRIADAS POR EMPRESAS (AGUARDANDO CURADORIA)
+async function loadB2BPendingMissions() {
+    const tbody = document.getElementById('list-body');
+    const badge = document.getElementById('badge-b2b-count');
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center p-10"><div class="loader mx-auto border-amber-500"></div></td></tr>`;
+    
+    try {
+        // 🔍 FILTRO RIGIDO: Busca apenas missões de empresas que ainda não foram publicadas
+        const q = query(collection(window.db, "missions"), where("status", "==", "pending_b2b"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
+        
+        if(snap.empty) { 
+            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">Nenhuma solicitação B2B pendente.</td></tr>`; 
+            if(badge) badge.classList.add('hidden');
+            return; 
+        }
+
+        // Atualiza o contador vermelho (Badge)
+        if(badge) {
+            badge.innerText = snap.size;
+            badge.classList.remove('hidden');
+        }
+
+        snap.forEach(d => {
+            const m = d.data();
+            const moedaIcon = m.pay_type === 'atlix' ? '🪙' : '💰';
+            const corValor = m.pay_type === 'atlix' ? 'text-amber-400' : 'text-emerald-400';
+
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-amber-900/10 transition">
+                    <td class="p-3">
+                        <p class="text-white font-bold text-xs uppercase">${m.b2b_name || 'Empresa B2B'}</p>
+                        <p class="text-[8px] text-gray-500">ID: ${d.id.slice(0,8)}</p>
+                    </td>
+                    <td class="p-3">
+                        <p class="text-gray-300 text-xs font-medium">${m.title}</p>
+                    </td>
+                    <td class="p-3">
+                        <span class="${corValor} font-mono font-bold text-xs">${moedaIcon} ${m.reward}</span>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="window.publicarMissaoB2B('${d.id}')" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg transition active:scale-95">
+                            ✅ PUBLICAR NO MAPA
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('list-count').innerText = `${snap.size} solicitações aguardando`;
+    } catch(e) { 
+        console.error("Erro B2B Load:", e); 
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 text-xs">Erro ao carregar (Pode faltar Índice no Firebase).</td></tr>`;
+    }
+}
+
+// 🔨 O MARTELO DO GIL: PUBLICA A MISSÃO B2B E EXECUTA A REGRA FINANCEIRA
+async function publicarMissaoB2B(missionId) {
+    if(!confirm("🚀 DESEJA PUBLICAR ESTA MISSÃO NO RADAR GLOBAL?\n\nIsso mudará o status para 'active' e ela aparecerá para todos os usuários.")) return;
+
+    try {
+        const missionRef = doc(window.db, "missions", missionId);
+        const missionSnap = await getDoc(missionRef);
+        
+        if (!missionSnap.exists()) throw "Missão não encontrada no banco.";
+        const m = missionSnap.data();
+
+        // 🛡️ TRAVA DE SEGURANÇA: Só publica se for B2B Pendente
+        if (m.status !== 'pending_b2b') throw "Esta missão já foi processada ou não é B2B.";
+
+        const isReal = m.pay_type === 'real';
+        const valorRecompensa = parseFloat(m.reward || 0);
+
+        // 🔄 PREPARAÇÃO DO PAYLOAD DE ATIVAÇÃO
+        let updateData = {
+            status: 'active', // Agora ela aparece no radar
+            published_at: serverTimestamp(),
+            curated_by: 'admin_gil'
         };
 
-        // Disparo imediato e ouvinte de evento para garantir escala industrial
-        sincronizarDnaInterface(window.userProfile);
-        window.addEventListener('userProfileLoaded', (e) => sincronizarDnaInterface(e.detail));
-    }
-
-    // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
-    const toggle = document.getElementById('online-toggle');
-    if (toggle) {
-        // Remove clones anteriores para evitar duplicação de eventos
-        const novoToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(novoToggle, toggle);
-
-        novoToggle.addEventListener('change', (e) => {
-         if (e.target.checked) {
-                console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
-                window.radarIniciado = false; 
-                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            } else {
-                console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
-                if (window.pararRadarFisico) window.pararRadarFisico();
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }   
-        });
-
-       // 🚀 INICIALIZAÇÃO INTELIGENTE V23: Sem timeouts que atropelam o services.js
-        if (novoToggle.checked && window.iniciarRadarPrestador) {
-             window.iniciarRadarPrestador(user.uid);
-        } else if (!novoToggle.checked && window.pararRadarFisico) {
-            window.pararRadarFisico();
-        }
-    }
-
-    // 🎨 MAESTRO GRID V62: Corrige o vazamento horizontal e organiza em cards (Mobile e PC)
-    const styleFix = document.createElement('style');
-    styleFix.innerHTML = `
-        /* 📱 Mobile: Força uma única coluna e impede o transbordamento horizontal */
-        #notif-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 100%;
-            overflow-x: hidden !important; /* Mata o carrossel quebrado */
-            padding: 10px 5px;
+        // 💰 REGRA DE EXTERMÍNIO B2B (MÁGICA DO LUCRO)
+        if (isReal) {
+            // Se a missão é em R$, a empresa já pagou (Valor + Taxa) no ato da reserva.
+            // Aqui a Atlivio "extermina" a parte dela da reserva e deixa apenas o valor do usuário.
+            // O lucro real já foi contado no sys_finance lá na recarga da empresa.
+            console.log("✂️ Exterminando taxa Atlivio e liberando valor líquido para o radar.");
         }
 
-        /* 💻 Desktop (PC): Transforma em Grid de 2 colunas para aproveitar espaço */
-        @media (min-width: 1024px) {
-            #notif-list-container {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-            }
+        await updateDoc(missionRef, updateData);
+
+        // 📢 NOTIFICAÇÃO PARA A EMPRESA (O CLIENTE B2B)
+        if (m.b2b_owner_uid) {
+            await addDoc(collection(window.db, "notifications"), {
+                uid: m.b2b_owner_uid,
+                message: `✅ Sua missão "${m.title}" foi aprovada e já está ativa no radar!`,
+                type: 'success',
+                read: false,
+                created_at: serverTimestamp()
+            });
         }
 
-        /* ⚓ Scrollbar Industrial para a seção de notificações */
-        #sec-notificacoes {
-            max-height: 85vh;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            padding-bottom: 50px;
-            scrollbar-width: thin;
-            scrollbar-color: #3b82f6 #0f172a;
-        }
-        #sec-notificacoes::-webkit-scrollbar { width: 6px; }
-        #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        alert("✅ MISSÃO PUBLICADA COM SUCESSO!\nOs usuários já podem coletar os dados.");
         
-        /* Ajuste fino nos cards para não esticarem o layout */
-        #notif-list-container > div {
-            width: 100% !important;
-            box-sizing: border-box;
-        }
-    `;
-    document.head.appendChild(styleFix);
+        // Recarrega a lista para sumir o que você já aprovou
+        loadB2BPendingMissions();
 
-    // ============================================================================
-    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
-    // ============================================================================
-    if (window.switchTab) {
-        console.log("🎯 [Maestro] Analisando intenção do usuário...");
-        
-        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
-        setTimeout(() => {
-            // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
-            window.switchTab('home', true); 
-
-            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
-            let userIntent = window.userProfile?.user_intent || "";
-            if (userIntent === "home" || isToggling) userIntent = ""; 
-            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
-
-            if (userIntent && userIntent !== "") {
-                console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
-                
-                // ⏱️ DELAY DE SANEAMENTO: 800ms para estabilizar o DOM duplicado
-                setTimeout(() => {
-                    // 🗺️ MAPA DE TRADUÇÃO (Ignora IDs fantasmas e foca no aprovado)
-                    const mapaFiel = {
-                        'ganhar': 'missoes', 
-                        'loja': 'loja',      
-                        'produtos': 'loja',  // Redireciona lixo para o ID oficial
-                        'servicos': 'servicos'
-                    };
-                    
-                    const destinoOficial = mapaFiel[userIntent] || userIntent;
-                    window.switchTab(destinoOficial);
-                }, 800); 
-
-            } else {
-                console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-                window.switchTab('home');
-                window.renderizarTourBoasVindas(); 
-            }
-        }, 600); // Fecha o setTimeout principal de 600ms
+    } catch(e) {
+        console.error("Erro na publicação B2B:", e);
+        alert("❌ FALHA NA PUBLICAÇÃO:\n" + e);
     }
-} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
-// 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
-// 🎨 INTERFACE HOME V50: Intenção (Topo) + Exploração (Base)
-window.renderizarTourBoasVindas = function() {
-    const container = document.getElementById('home-content');
-    if (!container) return;
+}
 
-    container.innerHTML = `
-        <div class="animate-fadeIn p-6 space-y-8 w-full max-w-sm mx-auto pb-20">
-            <div class="space-y-2 text-center">
-                <h2 class="text-4xl font-black text-blue-900 italic tracking-tighter uppercase">Atlívio</h2>
-                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
-                <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">O que você busca agora?</p>
-            </div>
+// ✅ FUNÇÃO DE PREPARAÇÃO PARA EDIÇÃO
+function editarMissao(id) {
+    const mission = allLoadedMissions.find(m => m.id === id);
+    if(mission) {
+        abrirNovaMissao(mission);
+    }
+}
 
-            <div class="grid gap-4">
-                <button onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl">🛠️</div>
-                    <div><p class="font-black text-blue-900 uppercase text-xs">Preciso Contratar</p></div>
-                </button>
+// 🚀 CRIADOR DE MISSÕES ATLAS V2026.PRO
+// Gil, mudamos o nome para abrirCriadorMissaoAtlas para o Core.js te encontrar
+async function abrirCriadorMissaoAtlas(dados = null) {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    modal.classList.remove('hidden');
+    
+    // Configura botão X (com a vacina do core.js isso já deve funcionar, mas reforçamos)
+    const btnClose = document.getElementById('btn-close-modal');
+    if(btnClose) btnClose.onclick = () => modal.classList.add('hidden');
 
-                <button onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
-                    <div><p class="font-black text-emerald-700 uppercase text-xs">Renda Extra</p></div>
-                </button>
-
-                <button onclick="window.finalizarTourMusculado('empregos', ['clt'])" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl">💼</div>
-                    <div><p class="font-black text-orange-700 uppercase text-xs">Buscar Emprego</p></div>
-                </button>
-            </div>
-
-            <div class="space-y-4 pt-4 border-t border-gray-100">
-                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">🔎 Quer conhecer mais?</p>
-                
-                <div class="grid gap-2">
-                    <button onclick="window.switchTab('canal')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">📺 Conheça a ATLIVIO</span>
-                        <span class="text-blue-600 font-black">→</span>
-                    </button>
-
-                    <button onclick="window.switchTab('loja')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🛍️ Ver Produtos e Benefícios</span>
-                        <span class="text-emerald-600 font-black">→</span>
-                    </button>
-
-                    <button onclick="window.switchTab('oportunidades')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🎯 Oportunidades em Alta</span>
-                        <span class="text-orange-600 font-black">→</span>
-                    </button>
+    content.innerHTML = `
+        <div class="space-y-4">
+            <h3 class="text-xl font-bold text-white mb-4">${dados ? 'Editar Missão' : 'Nova Micro Tarefa'}</h3>
+            <input type="hidden" id="mis-id" value="${dados?.id || ''}">
+            
+           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Título da Missão</label>
+                    <input id="mis-title" value="${dados?.title || ''}" class="w-full p-2 rounded bg-white text-black font-bold border border-slate-700" placeholder="Ex: Verificar Fachada">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">ID Vídeo Tutorial (Veo 3)</label>
+                    <input id="mis-video-id" value="${dados?.video_id || ''}" class="w-full p-2 rounded bg-white text-black font-mono text-xs border border-slate-700" placeholder="ID do YouTube">
                 </div>
             </div>
+            
+            <div>
+                <label class="text-[10px] text-gray-400 font-bold uppercase">Instruções para o Usuário</label>
+                <textarea id="mis-desc" class="w-full p-2 rounded bg-white text-black text-sm" rows="2" placeholder="Explique o passo a passo...">${dados?.description || ''}</textarea>
+            </div>
+            
+           <div class="p-4 bg-slate-800 rounded-2xl border border-blue-500/20 space-y-3">
+                <div class="flex justify-between items-center">
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📍 Localização Atlas Vivo</p>
+                    <button onclick="window.obterLocalizacaoAutomatica()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase transition flex items-center gap-1 shadow-lg">
+                        <span class="text-xs">🎯</span> Pegar GPS Atual
+                    </button>
+                </div>
+
+                <div class="relative group">
+                    <input type="text" id="mis-address-search" placeholder="Ou digite o endereço (Rua, Número, Cidade)..." class="w-full p-2.5 pl-9 rounded-xl bg-slate-900 text-white text-xs border border-slate-700 focus:border-blue-500 outline-none transition">
+                    <span class="absolute left-3 top-2.5 text-gray-500">🔍</span>
+                    <button onclick="window.converterEnderecoEmGps()" class="absolute right-2 top-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-[8px] font-bold uppercase transition">Converter</button>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="space-y-1">
+                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Latitude</label>
+                        <input id="mis-lat" value="${dados?.latitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Longitude</label>
+                        <input id="mis-lng" value="${dados?.longitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
+                    </div>
+                   <div class="space-y-1">
+                        <label class="text-[8px] text-blue-400 font-bold uppercase ml-1">Distância Máxima (Ex: 5000 para 5km)</label>
+                        <input id="mis-radius" value="${dados?.radius || 500}" type="number" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-slate-800" placeholder="Ex: 1000">
+                    </div>
+                </div>
+                <p class="text-[8px] text-gray-500 italic">* Se for missão online (sem local fixo), deixe Latitude e Longitude vazios.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Valor da Recompensa</label>
+                    <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-2 rounded bg-white text-black font-black text-green-700" placeholder="0.00">
+                </div>
+                <div>
+                    <label class="text-[10px] text-gray-400 font-bold uppercase">Tipo de Pagamento</label>
+                    <select id="mis-pay-type" class="w-full p-2 rounded bg-white text-black font-bold">
+                        <option value="atlix" ${dados?.pay_type === 'atlix' ? 'selected' : ''}>🪙 ATLIX (Bônus)</option>
+                        <option value="real" ${dados?.pay_type === 'real' ? 'selected' : ''}>💰 REAL (Dinheiro)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="window.salvarMissao()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold uppercase shadow-lg transition transform active:scale-95">
+                ${dados ? '💾 SALVAR ALTERAÇÕES' : '🚀 CRIAR MISSÃO'}
+            </button>
+       </div>
+    `;
+
+    // 🛰️ DESPERTADOR GOOGLE V2026: Liga o sensor 200ms após o modal abrir para garantir que o HTML exista
+    setTimeout(() => {
+        if (window.iniciarAutocompleteMissions) window.iniciarAutocompleteMissions();
+    }, 200);
+}
+
+async function salvarMissao() {
+    // Captura de IDs e Valores do Novo Formulário
+    const id = document.getElementById('mis-id').value;
+    const title = document.getElementById('mis-title').value;
+    const desc = document.getElementById('mis-desc').value;
+    const reward = document.getElementById('mis-reward').value;
+    const videoId = document.getElementById('mis-video-id').value;
+    
+    // Captura Atlas Vivo
+    const lat = document.getElementById('mis-lat').value;
+    const lng = document.getElementById('mis-lng').value;
+    const radius = document.getElementById('mis-radius').value;
+    
+    // Captura Moeda
+    const payType = document.getElementById('mis-pay-type').value;
+
+    if(!title || !reward) return alert("Erro: Título e Valor são obrigatórios.");
+
+    // 🏗️ PAYLOAD V2026: Estrutura preparada para escala de milhões de usuários
+    const payload = {
+        title, 
+        description: desc, 
+        reward: parseFloat(reward), 
+        video_id: videoId || null,
+       latitude: lat ? parseFloat(lat) : null,
+        longitude: lng ? parseFloat(lng) : null,
+        // Gil, garantimos que o raio seja lido como número inteiro puro (Metros)
+        radius: radius ? Number(radius) : 50,
+        pay_type: payType, // Define se paga em ATLIX ou REAL
+        updated_at: serverTimestamp(), 
+        active: true
+    };
+
+    try {
+        if (id) {
+            // EDITAR
+            await updateDoc(doc(window.db, "missions", id), payload);
+            alert("✅ Missão atualizada!");
+        } else {
+            // CRIAR
+            payload.created_at = serverTimestamp();
+            await addDoc(collection(window.db, "missions"), payload);
+            alert("✅ Missão criada!");
+        }
+        
+        document.getElementById('modal-editor').classList.add('hidden');
+        loadMissionsManagement();
+    } catch(e) { alert(e.message); }
+}
+
+async function excluirMissao(id) {
+    if(confirm("Excluir esta missão?")) {
+        await deleteDoc(doc(window.db, "missions", id));
+        loadMissionsManagement();
+    }
+}
+
+// --- ABA 2: ANALISAR ENVIOS (MANTIDO) ---
+async function loadSubmissions() {
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center"><div class="loader mx-auto border-blue-500"></div></td></tr>`;
+
+    try {
+        const q = query(collection(window.db, "mission_submissions"), orderBy("created_at", "desc"), limit(50));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
+
+        if(snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-gray-500">Nenhum envio para analisar.</td></tr>`;
+            document.getElementById('list-count').innerText = "0 envios";
+            return;
+        }
+
+        document.getElementById('list-count').innerText = `${snap.size} envios`;
+
+        snap.forEach(d => {
+            const data = d.data();
+            let statusBadge = `<span class="bg-yellow-900 text-yellow-400 px-2 py-1 rounded text-[9px] uppercase border border-yellow-700">⏳ PENDENTE</span>`;
+            if(data.status === 'approved') statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
+            if(data.status === 'rejected') statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
+
+          // Gil, agora a foto abre em um modal flutuante para não falhar o carregamento
+            let provaLink = '<span class="text-gray-600 text-[10px]">SEM FOTO</span>';
+            if(data.proof_url) {
+                provaLink = `
+                    <div class="relative group cursor-pointer" onclick="window.visualizarProva('${data.proof_url}')">
+                        <img src="${data.proof_url}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 transition-all">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity">
+                            <span class="text-white text-[10px] font-bold">VER</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
+                    <td class="p-3 text-white font-bold text-sm">${data.mission_title || 'Missão'}</td>
+                    <td class="p-3 text-gray-400 text-xs">${data.user_name || data.user_email || 'Usuário'}</td>
+                    <td class="p-3">${provaLink}</td>
+                    <td class="p-3">${statusBadge}</td>
+                    <td class="p-3 text-right">
+                        ${data.status === 'pending' ? `
+                            <button onclick="window.aprovarMissao('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-[10px] font-bold mr-2 shadow">PAGAR R$ ${data.reward}</button>
+                            <button onclick="window.rejeitarMissao('${d.id}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-[10px] font-bold shadow">RECUSAR</button>
+                        ` : '<span class="text-gray-600 text-[10px]">Processado</span>'}
+                    </td>
+                </tr>
+            `;
+        });
+    } catch(e) { console.error(e); }
+}
+
+// 💰 V2026.PRO: Motor de Aprovação Híbrido (ATLIX Automático vs REAL na Fila)
+async function aprovarMissao(docId, userId, valor) {
+    // Primeiro, recuperamos os dados da submissão para saber o pay_type
+    try {
+        const subSnap = await getDoc(doc(window.db, "mission_submissions", docId));
+        if (!subSnap.exists()) return alert("Erro: Envio não encontrado.");
+        const subData = subSnap.data();
+        const tipoMoeda = subData.pay_type || 'atlix'; // Padrão é ATLIX se estiver vazio
+
+        if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
+
+       if (tipoMoeda === 'atlix') {
+            // 🛡️ LIQUIDAÇÃO ATLIX: Tira da reserva da empresa e paga o bônus ao usuário
+            await runTransaction(window.db, async (transaction) => {
+                const userRef = doc(window.db, "usuarios", userId);
+                const subRef = doc(window.db, "mission_submissions", docId);
+                const userDoc = await transaction.get(userRef);
+
+                // 1. Se for B2B, libera o valor que estava "preso" na reserva da empresa
+                if (subData.b2b_owner_uid) {
+                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
+                    transaction.update(b2bRef, { wallet_reserved: increment(-valor) });
+                }
+
+                // 2. Deposita o bônus na carteira do executor
+                if (userDoc.exists()) {
+                    transaction.update(userRef, { 
+                        wallet_bonus: increment(valor), 
+                        updated_at: serverTimestamp() 
+                    });
+                }
+
+                // 3. Marca como finalizado
+                transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
+            });
+
+            // 📝 Registro no Extrato Financeiro com DNA ATLIX
+            await addDoc(collection(window.db, "extrato_financeiro"), {
+                uid: userId,
+                valor: parseFloat(valor),
+                tipo: "💰 MISSÃO_CONCLUÍDA",
+                descricao: `Você ganhou por: ${subData.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX" // 🚀 O Carimbo de Moeda Bônus
+            });
+
+            await addDoc(collection(window.db, "notifications"), {
+                uid: userId, 
+                message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
+                read: false, type: 'success', created_at: serverTimestamp()
+            });
+            alert("✅ Pago automaticamente em ATLIX!");
+
+       } else {
+            // --- FLUXO B: PAGAMENTO EM REAL (EXTERMÍNIO DE TAXA + FILA PIX) ---
+            await runTransaction(window.db, async (transaction) => {
+                const subRef = doc(window.db, "mission_submissions", docId);
+
+                // ✂️ EXTERMÍNIO: Se for B2B, limpamos o valor TOTAL (Taxa + Recompensa) da reserva.
+                // A Atlivio já lucrou na recarga, então aqui apenas removemos a custódia.
+                if (subData.b2b_owner_uid && subData.total_with_fee) {
+                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
+                    transaction.update(b2bRef, { wallet_reserved: increment(-subData.total_with_fee) });
+                }
+
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
+            });
+
+            await addDoc(collection(window.db, "notifications"), {
+                uid: userId, 
+                message: `✅ Sua missão de R$ ${valor} foi aprovada! O pagamento via PIX será realizado em breve.`, 
+                read: false, type: 'info', created_at: serverTimestamp()
+            });
+
+            // Gil, aqui damos o "toque" no Dashboard: Se a função de recarregar o Assistant existir, chamamos ela
+            if (window.initDashboard) {
+                console.log("🔔 Missões: Notificando Dashboard sobre novo PIX...");
+                window.initDashboard(); 
+            }
+
+            alert("⚠️ Aprovada! O pagamento em REAL foi enviado para sua fila de PIX no Dashboard.");
+        }
+
+        // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
+        loadSubmissions();
+
+    } catch(e) {
+        console.error("Erro na Aprovação:", e);
+        alert("❌ Falha técnica: " + e.message);
+    }
+}
+
+async function rejeitarMissao(docId) {
+    if(!confirm("Rejeitar esta missão?")) return;
+    await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
+    loadSubmissions();
+}
+
+// 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026
+// Gil, esta função liga as sugestões inteligentes do Google ao seu campo de busca
+window.iniciarAutocompleteMissions = () => {
+    const input = document.getElementById('mis-address-search');
+    // Verifica se o input existe e se o script do Google no admin.html carregou
+    if (!input || !window.google) return console.warn("🛰️ Google Maps SDK não detectado ou campo ausente.");
+
+    // Configura o Autocomplete focado em endereços brasileiros
+    const options = {
+        componentRestrictions: { country: "br" },
+        fields: ["geometry", "formatted_address"],
+        types: ["address"]
+    };
+
+    const auto = new google.maps.places.Autocomplete(input, options);
+
+    // 🎯 O GOLPE DE MESTRE: Quando você clica na sugestão, ele preenche os números sozinho!
+    auto.addListener("place_changed", () => {
+        const place = auto.getPlace();
+        if (!place.geometry || !place.geometry.location) {
+            return alert("Local não encontrado. Selecione uma opção da lista sugestiva.");
+        }
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Alimenta os campos de coordenadas automaticamente
+        document.getElementById('mis-lat').value = lat.toFixed(6);
+        document.getElementById('mis-lng').value = lng.toFixed(6);
+        
+        console.log("📍 Endereço Geocodificado:", place.formatted_address);
+    });
+};
+
+// 📡 MOTOR DE GEOLOCALIZAÇÃO FÍSICA
+// Pega a sua posição exata pelo GPS do seu notebook ou celular atual
+window.obterLocalizacaoAutomatica = () => {
+    if (!navigator.geolocation) return alert("Seu navegador não tem sensor de GPS.");
+    
+    const btn = event.currentTarget;
+    btn.innerText = "🛰️ BUSCANDO...";
+
+    navigator.geolocation.getCurrentPosition((pos) => {
+        document.getElementById('mis-lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('mis-lng').value = pos.coords.longitude.toFixed(6);
+        btn.innerText = "✅ LOCALIZADO";
+        setTimeout(() => { btn.innerText = "🎯 PEGAR GPS ATUAL"; }, 2000);
+    }, (err) => {
+        alert("Erro no GPS: " + err.message);
+        btn.innerText = "🎯 PEGAR GPS ATUAL";
+    }, { enableHighAccuracy: true });
+};
+
+// 💡 PONTE DE AUXÍLIO
+window.converterEnderecoEmGps = () => {
+    alert("💡 Dica do Maestro: Basta digitar o endereço no campo de busca acima e clicar na sugestão que aparecer!");
+};
+
+// 📸 MOTOR VISUALIZADOR DE PROVAS
+window.visualizarProva = (url) => {
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    
+    modal.classList.remove('hidden');
+    content.innerHTML = `
+        <div class="flex flex-col items-center">
+            <h3 class="text-white font-bold mb-4 uppercase text-xs tracking-widest">Auditoria de Imagem</h3>
+            <div class="bg-slate-900 p-2 rounded-2xl border border-white/10 shadow-2xl">
+                <img src="${url}" class="max-w-full max-h-[70vh] rounded-xl shadow-lg">
+            </div>
+            <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="mt-6 bg-white text-black px-8 py-2 rounded-full font-black text-xs uppercase shadow-xl hover:bg-gray-200 transition">Fechar Visualização</button>
         </div>
     `;
 };
 
-// ⚡ FUNÇÃO DE FINALIZAÇÃO (Ponte entre UI e Ad-Engine)
-window.finalizarTourMusculado = (escolha, tags) => {
-    console.log("🎯 Finalizando Tour Musculado para:", escolha);
-    window.registrarEventoMaestro({ 
-        tipo: "tour_final", 
-        escolha: escolha, 
-        tags: tags 
-    });
-    window.switchTab(escolha);
-};
-
-// 🛰️ DISPATCHER AD-ENGINE V35 (CONTROLE DE ESCALA)
-let lastEventTime = 0;
-window.registrarEventoMaestro = async function(dadosEvento) {
-    const agora = Date.now();
-    if (agora - lastEventTime < 2000 && dadosEvento.tipo !== 'tour_final') return; 
-    lastEventTime = agora;
-
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return;
+// 💸 MOTOR DE PAGAMENTOS: Carrega a fila de PIX dentro da aba Micro Tarefas
+async function loadMissionsPayments() {
+    const tbody = document.getElementById('list-body');
+    tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center"><div class="loader mx-auto border-emerald-500"></div></td></tr>`;
 
     try {
-        const { doc, updateDoc, addDoc, collection, increment, arrayUnion } = window.firebaseModules;
-        const userRef = doc(window.db, "usuarios", uid);
-        let payload = { "updated_at": new Date() };
+        const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        tbody.innerHTML = "";
 
-       if (dadosEvento.tipo === "navegacao") {
-            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
-        }
-
-        if (dadosEvento.tipo === "tour_final") {
-            payload.user_intent = dadosEvento.escolha;
-            payload.tour_complete = true;
-            payload.tags_interesse = arrayUnion(...dadosEvento.tags);
-            // Inicializa scores básicos para o robô 47 não ver zeros
-            payload[`behavior.${dadosEvento.escolha}.score`] = 10; 
-            payload[`behavior.tags_count`] = dadosEvento.tags.length;
+        if(snap.empty) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-gray-500 italic uppercase text-[10px]">Nenhum PIX pendente. Fila limpa!</td></tr>`;
+            return;
         }
 
-        await updateDoc(userRef, payload);
+        for (const d of snap.docs) {
+            const data = d.data();
+            // Busca a chave PIX no perfil do usuário para garantir
+            const uSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", data.user_id)));
+            const userPix = !uSnap.empty ? (uSnap.docs[0].data().pix_key || uSnap.docs[0].data().chave_pix) : 'Não cadastrada';
 
-        // LOG DE AUDITORIA (ROBÔ 47)
-        await addDoc(collection(window.db, "events"), { 
-            uid, 
-            tipo: dadosEvento.tipo, 
-            aba: dadosEvento.aba || dadosEvento.escolha, 
-            timestamp: new Date() 
-        });
+           // 🏷️ IDENTIFICADOR DE ORIGEM: Verifica se a missão é B2B ou sua (ROOT)
+            const etiquetaOrigem = data.b2b_owner_uid 
+                ? `<span class="bg-amber-900/40 text-amber-500 border border-amber-800 text-[7px] px-1 rounded ml-1 font-black">B2B: ${data.b2b_name || 'EMPRESA'}</span>`
+                : `<span class="bg-blue-900/40 text-blue-500 border border-blue-800 text-[7px] px-1 rounded ml-1 font-black">ROOT</span>`;
 
-    } catch (e) {
-        console.warn("⚠️ Telemetria: Criando estrutura behavior...", e.message);
-        // Se falhar o updateDoc por falta do campo behavior, o Ad-Engine cria via transação ou setDoc se necessário, 
-        // mas o Firebase costuma aceitar Dot Notation para criar sub-campos.
-    }
-};
-
-// Válvula de compatibilidade para o Tour
-window.salvarIntencaoMaestro = (escolha) => {
-    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
-    window.switchTab(escolha);
-};
-auth.onAuthStateChanged(async (user) => {
-   if (user) {
-        console.log("🔐 Autenticado com Sucesso V12");
-
-        // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
-        // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        // 🎼 MAESTRO V27 (Sincronia Harmônica): 
-        // Aguarda 2 segundos para o Firebase validar os tokens de segurança.
-        // Isso silencia os erros de permissão no console e estabiliza o boot.
-        setTimeout(() => {
-            console.log("🎼 Maestro: Tokens validados. Iniciando motores de fundo...");
-            if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
-            if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
-            if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
-            if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
-        }, 2000);
-        /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
-        /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
-        // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
-       /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 (AUTO-PILOTO) */
-        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-        // A. VIGIA DE REGRAS GLOBAIS (Configura uma vez, roda por meses)
-        onSnapshot(doc(window.db, "settings", "financeiro"), (snap) => {
-            if (snap.exists()) {
-                const config = snap.data();
-                // Se você ativar o aviso no Admin, o App mostra para todos automaticamente
-                if (config.aviso_marketing_ativo) {
-                    window.mostrarBarraNotificacao("campanha_mensal", {
-                        type: 'gift',
-                        action: config.aba_destino || 'ganhar',
-                        message: config.texto_marketing || "Confira as novidades da Atlivio!"
-                    });
-                }
-            }
-        });
-
-        // B. VIGIA DE COMPORTAMENTO (Sugere Missões se o usuário estiver parado na Home)
-        setTimeout(() => {
-            if (window.abaAtual === 'home' && window.mostrarBarraNotificacao) {
-                window.mostrarBarraNotificacao("auto_ajuda", {
-                    type: 'marketing',
-                    action: 'missoes',
-                    message: "Dica: Você sabia que pode começar a lucrar agora mesmo cumprindo micro-tarefas? ⚡"
-                });
-            }
-        }, 300000); // Aparece após 5 minutos de inatividade na Home
-        /* ---------------------------------------------------- */
-
-        // 🛡️ Trava de Segurança Antecipada
-        if (window.verificarSentenca) {
-            const banido = await window.verificarSentenca(user.uid);
-            if (banido) return; 
+            tbody.innerHTML += `
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
+                    <td class="p-3">
+                        <div class="flex items-center">
+                            <p class="text-white font-bold text-xs">${data.mission_title}</p>
+                            ${etiquetaOrigem}
+                        </div>
+                        <p class="text-[9px] text-gray-500">${data.user_name || 'Usuário'}</p>
+                    </td>
+                    <td class="p-3 text-emerald-400 font-black text-xs">R$ ${data.reward}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-mono text-gray-400 bg-black/30 p-1 rounded">${userPix}</span>
+                            <button onclick="navigator.clipboard.writeText('${userPix}'); alert('Copiada!')" class="text-[10px] bg-slate-700 px-2 py-1 rounded">📋</button>
+                        </div>
+                    </td>
+                    <td class="p-3 text-right">
+                        <button onclick="window.finalizarPagamentoComprovante('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg transition">Pagar e Anexar ✅</button>
+                    </td>
+                </tr>
+            `;
         }
-
-       // 🔔 CRM DE NOTIFICAÇÕES V61: Inicia o sistema com trava de memória.
-        if (typeof window.iniciarSistemaNotificacoes === 'function') {
-            // Só ativa o motor se o boot ainda não foi concluído para evitar re-injeção de alertas antigos
-            if (!window.atlivioBootConcluido) {
-                window.iniciarSistemaNotificacoes();
-            }
-        }
-
-        // 🎁 Fluxos de Boas-vindas
-        if (typeof checkOnboarding === 'function') {
-            checkOnboarding(user); 
-        }
-        
-        // 💰 PRIORIDADE FINANCEIRA: Ativa o rastreador de PIX antes de montar a tela
-        if (typeof iniciarMonitoramentoCarteira === 'function') {
-            console.log("💰 [Maestro] Motor Financeiro: Ativando radar de saldo real-time...");
-            iniciarMonitoramentoCarteira(); // Liga a escuta do banco de dados para o saldo
-        }
-
-        // 🖥️ BOOT DA INTERFACE: Chama a montagem visual apenas se o sistema ainda não subiu
-        if (!window.atlivioBootConcluido) {
-            window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
-        }
-
-    } else { // 🚪 Caso o usuário saia da conta ou não esteja logado:
-        console.log("🚪 Usuário Desconectado.");
-        document.getElementById('auth-container')?.classList.remove('hidden');
-        document.getElementById('app-container')?.classList.add('hidden');
-        
-        // Desliga o Radar fisicamente
-        if (window.pararRadarFisico) window.pararRadarFisico();
-    }
-});
-// 🩹 Saneamento V2026: Exportações movidas para o final do arquivo para evitar conflitos.
-
-// 🧭 NOVAS FUNÇÕES DO TOUR
-if (typeof renderizarTourBoasVindas === 'function') {
-    window.renderizarTourBoasVindas = renderizarTourBoasVindas;
+        document.getElementById('list-count').innerText = `${snap.size} pagamentos pendentes`;
+    } catch(e) { console.error(e); }
 }
-// 🔒 PRIVACIDADE DE GANHOS (ESTILO BANCÁRIO)
-window.togglePrivacyHome = () => {
-    const elEarnings = document.getElementById('user-earnings-home');
-    const elBalance = document.getElementById('user-balance-home');
-    const eye = document.getElementById('eye-icon-home');
-    const svg = document.getElementById('svg-eye');
+
+// 📤 MOTOR DE FINALIZAÇÃO COM COMPROVANTE (VERSÃO COMPRIMIDA V2026)
+// 💰 MOTOR DE PAGAMENTO FINAL (DNA CHAT + CORREÇÃO FOTO DUPLA)
+window.finalizarPagamentoComprovante = async (docId) => {
+    // Primeiro pedimos a confirmação para não travar o seletor de arquivos
+    if(!confirm("⚠️ Confirma que o PIX já foi feito no banco?\nClique em OK para escolher o comprovante.")) return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
     
-    if (!elEarnings || !elBalance) return;
-    const isHidden = elEarnings.getAttribute('data-hidden') === 'true';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
 
-    if (isHidden) {
-        // ✨ Sincronia V63: Exibe os valores com a nova identidade ATLIX ao clicar no "olhinho"
-        const ganhos = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
-        const saldo = (window.userProfile?.wallet_total_power || 0).toFixed(2).replace('.', ',');
-        
-        // ✨ Sincronia V72: Ganhos em R$ e Saldo em Moeda Dourada ao revelar
-        elEarnings.innerText = `R$ ${ganhos}`;
-        elBalance.innerHTML = `${saldo} 🪙`;
-        
-        elEarnings.setAttribute('data-hidden', 'false');
-        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-        eye.classList.remove('opacity-60');
-    } else {
-        // OCULTAR VALORES
-        // 🔒 Mantém o padrão de segurança visual
-        elEarnings.innerText = 'R$ ••••';
-        elBalance.innerText = '🪙 ••••';
-        
-        elEarnings.setAttribute('data-hidden', 'true');
-        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-        eye.classList.add('opacity-60');
-    }
-};
-// --- FIM DO MAESTRO ---
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 TURBO (Escala Global)
-let disjuntorVigilante = false; 
+        // Feedback visual no console e tela
+        console.log("📑 Comprimindo comprovante...");
 
-// Usamos window para garantir que a proteção seja soberana
-window.addEventListener('click', (e) => {
-    // ⚡ FILTRO ATÔMICO: Se o disjuntor estiver ativo, mata o clique na hora
-    if (disjuntorVigilante) {
-        e.stopImmediatePropagation(); // 🛑 Comando mais forte do JS: impede que qualquer outro script ouça o clique
-        e.preventDefault();
-        return;
-    }
+        try {
+            // MOTOR DE COMPRESSÃO: Reduz o print do banco para caber no Firestore
+            const bitmap = await createImageBitmap(file);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Reduzimos para 1000px de largura (suficiente para ler comprovante)
+            const scale = 1000 / Math.max(bitmap.width, bitmap.height);
+            canvas.width = bitmap.width * scale;
+            canvas.height = bitmap.height * scale;
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            
+            // Converte para JPEG leve (qualidade 0.6)
+            const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.6));
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+           reader.onloadend = async () => {
+                const base64Img = reader.result;
+                console.log("🚀 Iniciando Transação Contábil Atlivio...");
 
-    // ⚡ LOCALIZADOR: Acha o botão de switchTab
-    // 🕵️ O Vigilante agora vigia os dois tipos de botões de navegação do sistema
-    const btn = e.target.closest('button[onclick*="switchTab"], button[onclick*="finalizarTourMusculado"]');
-    if (!btn) return;
+               // ⚡ TRANSAÇÃO ATÔMICA: Garante que o débito na empresa e o crédito no usuário ocorram juntos
+                await runTransaction(window.db, async (transaction) => {
+                    const subRef = doc(window.db, "mission_submissions", docId);
+                    const subSnap = await transaction.get(subRef);
+                    if (!subSnap.exists()) throw "Registro não encontrado";
+                    
+                    const mData = subSnap.data();
+                    const valorPago = parseFloat(mData.reward);
+                    const uidUsuario = mData.user_id;
 
-    // ⚡ ANALISADOR: Extrai a aba alvo
-    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
-    if (!match) return;
-    const abaAlvo = match[1];
+                    // 1. Marca missão como paga e anexa a prova física (Comprovante)
+                    transaction.update(subRef, {
+                        status: 'paid_real',
+                        receipt_url: base64Img,
+                        paid_at: serverTimestamp()
+                    });
 
-    // ⚡ IDENTIFICADOR: Quem é o usuário?
-    const isPrestador = window.userProfile?.is_provider === true;
-    
-    // Suas regras de negócio exatas:
-    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
-    
-    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/GERENCIAR
-    // Gil, removemos 'b2b_gestao' daqui para que a aba não suma, o motor interno do missions.js cuidará da trava de perfil.
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
+                    // 2. DÉBITO NA EMPRESA: Tira o valor do lucro acumulado do Dashboard
+                    const cofreRef = doc(window.db, "sys_finance", "receita_total");
+                    transaction.update(cofreRef, {
+                        total_acumulado: increment(-valorPago),
+                        ultima_atualizacao: serverTimestamp()
+                    });
 
-    // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
-    const textoBotao = btn.innerText.toUpperCase();
-    const comandoHtml = btn.getAttribute('onclick') || "";
+                    // 3. LIVRO RAZÃO (sys_ledger): Histórico imutável de saída da empresa
+                    const ledgerRef = doc(collection(window.db, "sys_ledger"));
+                    transaction.set(ledgerRef, {
+                        origem: "SAIDA_MISSAO_PIX",
+                        valor: -valorPago,
+                        usuario_pago: uidUsuario,
+                        missao_id: docId,
+                        timestamp: serverTimestamp()
+                    });
 
-    // 🧠 Lógica de Sentinela V3.1 (Alta Precisão):
-    
-    // 1. Bloqueia Cliente se tentar entrar em abas de trabalho (missoes, radar, ativos)
-    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    
-    // 2. Bloqueia Prestador se:
-    // - A aba for Loja ou Contratar
-    // - OU se o texto do botão contiver "CONTRATAR"
-    // - OU se o botão disparar o Tour de 'contratante'
-    const bloqueioPrestador = (isPrestador && (
-        exclusivasCliente.includes(abaAlvo) || 
-        textoBotao.includes("CONTRATAR") || 
-        comandoHtml.includes("'contratante'")
-    ));
+                    // 4. CRÉDITO NO EXTRATO DO USUÁRIO: (DNA IDENTICO AO CHAT.JS)
+                    const userExtratoRef = doc(collection(window.db, "extrato_financeiro"));
+                    transaction.set(userExtratoRef, {
+                        uid: uidUsuario,
+                        valor: valorPago, // Gravando como número puro igual ao chat
+                        tipo: "GANHO_SERVIÇO ✅", // Gil, usamos o mesmo texto do chat para o wallet não bugar
+                        descricao: `Missão concluída: ${mData.mission_title}`,
+                        timestamp: serverTimestamp(),
+                        moeda: "BRL" // 🚀 Identifica como Dinheiro Real (PIX)
+                    });
+                });
 
-    if (bloqueioCliente || bloqueioPrestador) {
-        // ⛔ INTERCEPTAÇÃO SOBERANA
-        e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
-        e.preventDefault();
-
-        // 🏗️ DISPARO DO MODAL
-        const modal = document.getElementById('modal-troca-identidade');
-        const txt = document.getElementById('txt-perfil-atual');
-        
-        if (modal && txt) {
-            // Só mexe no texto se o modal estiver fechado
-            if (modal.classList.contains('hidden')) {
-                txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-                modal.classList.remove('hidden');
-            }
+                alert("💸 PAGAMENTO FINALIZADO!\nO cofre da empresa foi debitado e o usuário recebeu o comprovante.");
+                if(window.loadMissionsPayments) window.loadMissionsPayments();
+                if(window.initDashboard) window.initDashboard(); 
+            };
+        } catch(err) { 
+            console.error(err);
+            alert("❌ Erro ao processar imagem."); 
         }
+    };
+    // Dispara a galeria de fotos após a lógica estar montada
+    input.click();
+};
 
-        // 🛡️ TRAVA ANTI-SPAM (400ms)
-        disjuntorVigilante = true;
-        setTimeout(() => { disjuntorVigilante = false; }, 400);
-        
-        console.warn(`[🛡️ Vigilante V3] Clique em ${abaAlvo} bloqueado com sucesso.`);
-    }
-}, { capture: true }); // O segredo da velocidade está no 'capture: true'
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
+window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
+window.publicarMissaoB2B = publicarMissaoB2B; // 🚀 Soldado!
+window.loadMissionsPayments = loadMissionsPayments; // ✅ Soldado!
+window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
+window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
+window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
+window.converterEnderecoEmGps = converterEnderecoEmGps;
+window.visualizarProva = visualizarProva;
 
-// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
-// Gil, centralizamos aqui todas as funções que o HTML (onclick) precisa enxergar.
-window.switchTab = switchTab;
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.maestroUniversal = maestroUniversal;
-window.registrarEventoMaestro = registrarEventoMaestro;
-window.carregarInterface = carregarInterface;
-
-console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
+console.log("🚀 [Missions Admin] Sistema Atlas Vivo com Inteligência Google Soldado!");
