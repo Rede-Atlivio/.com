@@ -494,6 +494,16 @@ async function carregarInterface(user) {
             }
         }, 600); // Fecha o setTimeout principal de 600ms
     }
+    // ⏱️ VÁLVULA DE ESCAPE V60: Garante que o usuário veja o app mesmo se houver atraso no banco
+    setTimeout(() => {
+        const loaderOverlay = document.getElementById('transition-overlay');
+        if (loaderOverlay && !loaderOverlay.classList.contains('hidden')) {
+            console.warn("⚠️ [Segurança] Boot demorou demais. Forçando exibição da interface...");
+            loaderOverlay.classList.add('hidden');
+            const mApp = document.getElementById('app-container');
+            if(mApp) mApp.classList.remove('hidden');
+        }
+    }, 4000);
 } // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 // 🎨 INTERFACE HOME V50: Intenção (Topo) + Exploração (Base)
