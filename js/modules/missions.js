@@ -53,7 +53,16 @@ async function carregarMissoes() {
             return;
         }
 
-        container.innerHTML = ""; // Limpa loader
+        // Gil, injetamos o botão de marketing no topo da lista de missões
+container.innerHTML = `
+    <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-white border-2 border-dashed border-blue-200 p-4 rounded-3xl flex items-center gap-3 mb-6 shadow-sm active:scale-95 transition">
+        <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-xl">🏢</div>
+        <div class="text-left">
+            <p class="text-[10px] font-black text-blue-900 uppercase leading-none">Micro Tarefas para Empresas?</p>
+            <p class="text-[8px] text-gray-400 font-bold uppercase mt-1">Veja como o Atlas escala seu negócio ➜</p>
+        </div>
+    </button>
+`;
 
        snap.forEach(doc => {
             const m = doc.data();
