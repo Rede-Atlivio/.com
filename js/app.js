@@ -78,9 +78,7 @@ import './auth.js';
 import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
-// Gil, mudamos para importar a função de ligar (init) de cada um, em vez de carregar o arquivo todo de uma vez.
-import { initMissions } from './modules/missions.js'; 
-import { initB2B } from './modules/atlas_b2b.js';
+import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
@@ -235,26 +233,12 @@ function switchTab(tabName, isAutoBoot = false) {
     if(nomeLimpo === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
     }
-    // Gil, aqui o Portal Camaleão decide o conteúdo baseado no perfil (DNA) do usuário
+    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
     if(nomeLimpo === 'missoes') {
-        const isCli = window.userProfile?.perfil === 'cliente';
-        
-        if (isCli) {
-            // Se for Cliente, limpa as missões do prestador e liga a Gestão B2B
-            const containerM = document.getElementById('lista-missoes');
-            if(containerM) containerM.innerHTML = ""; 
-            if(typeof window.initB2B === 'function') window.initB2B();
-            console.log("💼 Portal Atlas: Modo Gestão B2B Ativado.");
-        } else {
-            // Se for Prestador, liga o radar de tarefas e o histórico de ganhos
-            if(window.carregarMissoes) window.carregarMissoes(); 
-            if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
-            console.log("🛰️ Portal Atlas: Radar de Micro Tarefas Ativado.");
-        }
+        if(window.carregarMissoes) window.carregarMissoes(); 
+        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas(); // 🚀 Carrega os comprovantes
+        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
     }
-    
-    // Gil, o gatilho antigo do B2B foi removido daqui pois agora ele roda dentro do Portal Camaleão (aba missoes)
-    
     if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
     if(nomeLimpo === 'canal') {
         // Apenas esconde o modal, sem disparar switchTab novamente
@@ -343,56 +327,19 @@ async function carregarInterface(user) {
     // Identifica perfil para o Guia Inteligente
     if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
     
-   // 🚀 [Maestro] DESTRAVAMENTO VISUAL
+    // 🚀 [Maestro] DESTRAVAMENTO VISUAL: Mata o loader e libera o container
     const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
-    if(loader) { loader.classList.add('hidden'); loader.style.display = 'none'; }
-
-    // 🛡️ MATRIZ DE IDENTIDADE V75: Garante que as abas certas apareçam para o perfil certo.
-    const sincronizarDnaInterface = (perfilData) => {
-        const perfil = perfilData?.perfil; 
-        const abaB2B = document.getElementById('tab-b2b_gestao');
-        const abaMissoes = document.getElementById('tab-missoes');
-
-        if (!perfil) return console.log("🧬 DNA em processamento...");
-
-        // Gil, usamos o setProperty com 'important' para vencer qualquer trava do CSS
-        // Gil, aqui aplicamos a técnica do Robô 18: força máxima para o botão aparecer no menu
-        if (perfil === 'cliente') {
-            console.log("💎 DNA Cliente: Liberando Gestão B2B...");
-            if(abaMissoes) abaMissoes.style.setProperty('display', 'none', 'important');
-            if(abaB2B) {
-                abaB2B.style.setProperty('display', 'flex', 'important');
-                abaB2B.style.setProperty('visibility', 'visible', 'important');
-                abaB2B.style.setProperty('opacity', '1', 'important');
-            }
-            if(typeof window.initB2B === 'function') window.initB2B(); 
-        } 
-        else if (perfil === 'prestador') {
-            console.log("🛠️ DNA Prestador: Liberando Micro Tarefas...");
-            if(abaB2B) abaB2B.style.setProperty('display', 'none', 'important');
-            if(abaMissoes) {
-                abaMissoes.style.setProperty('display', 'flex', 'important');
-                abaMissoes.style.setProperty('visibility', 'visible', 'important');
-                abaMissoes.style.setProperty('opacity', '1', 'important');
-            }
-            if(window.carregarMissoes) window.carregarMissoes();
-        }
-    };
+    if(loader) {
+        loader.classList.add('hidden');
+        loader.style.display = 'none';
+    }
 
     document.getElementById('auth-container')?.classList.add('hidden');
     const mainApp = document.getElementById('app-container');
     if(mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
-        // Tenta sincronizar agora, mas só se já tiver carregado na memória
-        if(window.userProfile) sincronizarDnaInterface(window.userProfile);
     }
-
-    // 📡 ESCUTA REATIVA: Se o Firebase demorar alguns milisegundos, este comando 'atira' a aba certa assim que o DNA chegar.
-    window.addEventListener('userProfileLoaded', (e) => {
-        console.log("📡 DNA Recebido via sinal do Banco de Dados.");
-        sincronizarDnaInterface(e.detail);
-    });
 
     // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
     const toggle = document.getElementById('online-toggle');
@@ -505,16 +452,6 @@ async function carregarInterface(user) {
             }
         }, 600); // Fecha o setTimeout principal de 600ms
     }
-    // ⏱️ VÁLVULA DE ESCAPE V60: Garante que o usuário veja o app mesmo se houver atraso no banco
-    setTimeout(() => {
-        const loaderOverlay = document.getElementById('transition-overlay');
-        if (loaderOverlay && !loaderOverlay.classList.contains('hidden')) {
-            console.warn("⚠️ [Segurança] Boot demorou demais. Forçando exibição da interface...");
-            loaderOverlay.classList.add('hidden');
-            const mApp = document.getElementById('app-container');
-            if(mApp) mApp.classList.remove('hidden');
-        }
-    }, 4000);
 } // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
 // 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
 // 🎨 INTERFACE HOME V50: Intenção (Topo) + Exploração (Base)
@@ -787,14 +724,14 @@ window.addEventListener('click', (e) => {
     const isPrestador = window.userProfile?.is_provider === true;
     
     // Suas regras de negócio exatas:
-    // Gil, removemos 'missoes' desta lista para que Clientes também possam entrar na aba e ver sua Gestão B2B
-    const exclusivasPrestador = ['radar', 'ativos', 'extra', 'tarefas'];
+    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
+    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
     
+    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
     // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
-   // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
-    // Gil, adicionamos 'b2b_gestao' aqui para o segurança saber que Prestador não entra nela.
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing', 'b2b_gestao'];
-    
+    // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
+    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
+
     // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
     const textoBotao = btn.innerText.toUpperCase();
     const comandoHtml = btn.getAttribute('onclick') || "";
