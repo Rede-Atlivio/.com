@@ -78,7 +78,9 @@ import './auth.js';
 import './modules/auth_sms.js';
 import './modules/services.js';
 import './modules/jobs.js';
-import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
+// Gil, aqui importamos as funções de inicialização de cada arquivo separado para evitar conflito de abas
+import { initMissions } from './modules/missions.js'; 
+import { initB2B } from './modules/atlas_b2b.js'; // 💼 Importa o cérebro exclusivo do Cliente
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
