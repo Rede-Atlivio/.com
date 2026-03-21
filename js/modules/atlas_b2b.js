@@ -1,3 +1,7 @@
+// 🛡️ TRAVA ANTI-VAZAMENTO: Se não for cliente, o módulo B2B se auto-desliga
+if (window.userProfile && window.userProfile.perfil !== 'cliente') {
+    console.warn("🚫 [B2B] Acesso negado: Perfil não compatível.");
+}
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
