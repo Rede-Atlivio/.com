@@ -82,6 +82,7 @@ import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas 
 import './modules/opportunities.js';
 import './modules/chat.js';
 import './modules/reviews.js';
+import './modules/atlas_b2b.js'; // 🛰️ IMPORTANTE: Adiciona o Gerente da Inteligência Atlas
 // Importa a carteira e extrai a função de monitoramento
 import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
 
