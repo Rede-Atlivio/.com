@@ -474,28 +474,30 @@ window.renderizarTourBoasVindas = function() {
                 <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">O que você busca agora?</p>
             </div>
 
-            <div class="grid gap-3">
-                <button onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
+           <div class="grid gap-3">
+                <button id="btn-contratar-home" onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl">🛠️</div>
                     <div><p class="font-black text-blue-900 uppercase text-[11px]">Preciso Contratar</p></div>
                 </button>
 
-                <button onclick="window.switchTab('b2b_gestao')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
+                <button id="btn-atlas-home" onclick="window.switchTab('b2b_gestao')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
                     <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-blue-100">
                         <span class="animate-spin-slow">🌍</span>
                     </div>
                     <div>
-                        <p class="font-black text-black uppercase text-[11px]">Gestão Atlas</p> <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Crie missões para sua empresa</p> </div>
+                        <p class="font-black text-black uppercase text-[11px]">Gestão Atlas</p> 
+                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Crie missões para sua empresa</p> 
+                    </div>
                 </button>
 
-                <button onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
+                <button id="btn-renda-home" onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
-                    <div><p class="font-black text-emerald-700 uppercase text-xs">Renda Extra</p></div>
+                    <div><p class="font-black text-emerald-700 uppercase text-[11px]">Renda Extra</p></div>
                 </button>
 
-                <button onclick="window.finalizarTourMusculado('empregos', ['clt'])" class="bg-white border-2 border-orange-100 p-5 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
+                <button id="btn-emprego-home" onclick="window.finalizarTourMusculado('empregos', ['clt'])" class="bg-white border-2 border-orange-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
                     <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl">💼</div>
-                    <div><p class="font-black text-orange-700 uppercase text-xs">Buscar Emprego</p></div>
+                    <div><p class="font-black text-orange-700 uppercase text-[11px]">Buscar Emprego</p></div>
                 </button>
             </div>
 
