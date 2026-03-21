@@ -235,11 +235,22 @@ function switchTab(tabName, isAutoBoot = false) {
     if(nomeLimpo === 'ganhar') {
         if(window.carregarCarteira) window.carregarCarteira();
     }
-    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
+    // Gil, aqui o Portal Camaleão decide o conteúdo baseado no perfil (DNA) do usuário
     if(nomeLimpo === 'missoes') {
-        if(window.carregarMissoes) window.carregarMissoes(); 
-        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
-        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
+        const isCli = window.userProfile?.perfil === 'cliente';
+        
+        if (isCli) {
+            // Se for Cliente, limpa as missões do prestador e liga a Gestão B2B
+            const containerM = document.getElementById('lista-missoes');
+            if(containerM) containerM.innerHTML = ""; 
+            if(typeof window.initB2B === 'function') window.initB2B();
+            console.log("💼 Portal Atlas: Modo Gestão B2B Ativado.");
+        } else {
+            // Se for Prestador, liga o radar de tarefas e o histórico de ganhos
+            if(window.carregarMissoes) window.carregarMissoes(); 
+            if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas();
+            console.log("🛰️ Portal Atlas: Radar de Micro Tarefas Ativado.");
+        }
     }
     
     // 💼 GATILHO GESTÃO ATLAS: Ativa o motor financeiro assim que a aba é aberta
