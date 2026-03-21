@@ -360,7 +360,9 @@ async function carregarInterface(user) {
         } 
         else if (perfil === 'prestador') {
             // Prestador vê Micro Tarefas e esconde Gestão Atlas
-            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); }
+            if(abaB2B) { abaB2B.style.setProperty('display', 'none', 'important'); 
+            const sB = document.getElementById('sec-b2b_gestao'); 
+            if(sB) sB.innerHTML = ''; }
             if(abaMissoes) { abaMissoes.style.setProperty('display', 'flex', 'important'); }
             if(typeof initMissions === 'function') initMissions();
         }
