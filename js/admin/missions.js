@@ -215,11 +215,16 @@ async function publicarMissaoB2B(missionId) {
         const isReal = m.pay_type === 'real';
         const valorRecompensa = parseFloat(m.reward || 0);
 
+       // 🧠 CONSULTA AO BANCO CENTRAL: Busca se a aprovação deve ser automática ou manual
+        const ecoSnap = await getDoc(doc(window.db, "settings", "global_economy"));
+        const autoApprove = ecoSnap.exists() ? ecoSnap.data().aprovacao_automatica_b2b : false;
+
         // 🔄 PREPARAÇÃO DO PAYLOAD DE ATIVAÇÃO
         let updateData = {
-            status: 'active', // Agora ela aparece no radar
+            status: 'active', // Agora ela aparece no radar para todos
+            auto_approve: autoApprove, // Define se o B2B pode pagar o usuário sozinho
             published_at: serverTimestamp(),
-            curated_by: 'admin_gil'
+            curated_by: 'atlivio_master_system'
         };
 
         // 💰 REGRA DE EXTERMÍNIO B2B (MÁGICA DO LUCRO)
