@@ -973,6 +973,10 @@ window.registrarMovimentacao = window.registrarMovimentacao;
 window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
 window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
 window.filtrarGanhos = filtrarGanhos;
+
+// 🏦 CONEXÕES BANCO CENTRAL V2026: Libera os novos motores para o App
+window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; 
+window.iniciarSincroniaB2B = iniciarSincroniaB2B;
 // 🎯 V2026.FIX: Expõe a função para que o botão "Meta" no HTML volte a funcionar
 window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
