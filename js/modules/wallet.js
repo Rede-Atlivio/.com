@@ -491,10 +491,10 @@ function atualizarInterfaceGanhar(saldo) {
     }
 }
 export async function carregarCarteira() {
-    iniciarRegrasFinanceiras(); // 🚀 Inicia o robô de regras
+    iniciarRegrasFinanceiras(); // Mantém regras de validade e taxas originais
+    iniciarSincroniaB2B();      // Ativa novas regras de conversão B2B isoladamente
     iniciarMonitoramentoCarteira();
 }
-
 // ============================================================================
 // 2. LÓGICA DE TRAVA (ANTI-CALOTE) - V10.0
 // ============================================================================
