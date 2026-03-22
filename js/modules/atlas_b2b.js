@@ -277,14 +277,37 @@ window.proximoPassoWizard = (passo) => {
     }
 };
 
-// 📡 MOTOR DE GEOLOCALIZAÇÃO ATLIVIO
+// 📡 MOTOR DE CAPTURA SATELITAL: Pega a posição real do dispositivo do Cliente
 window.obterLocalizacaoAutomatica = () => {
-    if (!navigator.geolocation) return alert("Sensor GPS não detectado.");
+    if (!navigator.geolocation) return alert("Seu navegador não possui sensores de GPS.");
+    
+    // Feedback visual imediato no botão
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "⏳ SINCRONIZANDO...";
+    btn.disabled = true;
+
     navigator.geolocation.getCurrentPosition((pos) => {
+        // Grava as coordenadas com precisão de 6 casas decimais (Padrão Militar)
         document.getElementById('b2b-lat').value = pos.coords.latitude.toFixed(6);
         document.getElementById('b2b-lng').value = pos.coords.longitude.toFixed(6);
+        
+        btn.innerHTML = "✅ LOCALIZADO";
+        btn.classList.replace('bg-blue-600', 'bg-emerald-600');
+        
+        // Libera o avanço para o Passo 3
         window.liberarBotaoInvestimento();
-    }, () => alert("Ative o GPS para localizar seu ponto."));
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.classList.replace('bg-emerald-600', 'bg-blue-600');
+            btn.disabled = false;
+        }, 3000);
+    }, (err) => {
+        alert("🚩 Falha no Satélite: Certifique-se de que o GPS está ativado e o navegador tem permissão.");
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, { enableHighAccuracy: true });
 };
 
 // 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026: Inteligência de Geocodificação ATLIVIO
