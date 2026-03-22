@@ -105,32 +105,38 @@
         }
 
         /* 🛰️ POSICIONAMENTO E DESIGN DAS SUGESTÕES GOOGLE (ATLIVIO ELITE) */
+        /* Gil, forçamos a visibilidade total com display block e cores vibrantes */
         .pac-container {
-            z-index: 9999 !important; /* Força a lista a ficar na frente de qualquer modal */
-            background-color: #0f172a !important; /* Fundo Slate-950 igual ao sistema */
-            border: 1px solid rgba(34, 211, 238, 0.2) !important; /* Borda Cyan suave */
+            z-index: 99999 !important; 
+            background-color: #0f172a !important; 
+            border: 2px solid #22d3ee !important; /* Borda Cyan vibrante para destacar */
             border-radius: 12px !important;
             margin-top: 5px !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
-            font-family: inherit !important;
+            display: block !important; /* Garante que não fique escondido */
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8) !important;
+            width: auto !important;
+            min-width: 300px !important;
         }
         .pac-item {
-            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
-            padding: 10px !important;
-            color: #94a3b8 !important; /* Texto cinza claro */
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 12px !important;
+            color: #f8fafc !important; /* Texto branco */
             cursor: pointer !important;
-        }
-        .pac-item:hover {
-            background-color: rgba(34, 211, 238, 0.1) !important; /* Destaque ao passar o mouse */
-        }
-        .pac-item-query {
-            color: #f8fafc !important; /* Texto principal branco */
             font-size: 14px !important;
         }
-        .pac-matched {
-            color: #22d3ee !important; /* Cor Cyan nas letras digitadas */
+        .pac-item:hover {
+            background-color: #1e293b !important; 
         }
-        .hdpi .pac-icon { display: none !important; } /* Limpa ícones padrão do Google */
+        .pac-item-query {
+            color: #ffffff !important; 
+            font-weight: bold !important;
+        }
+        .pac-matched {
+            color: #22d3ee !important; 
+            font-weight: 900 !important;
+        }
+        /* Remove o ícone de 'alfinete' feio do Google que buga no dark mode */
+        .pac-icon { display: none !important; }
 
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
