@@ -276,7 +276,7 @@ window.capturarLocalizacaoWizard = () => {
     });
 };
 
-// 💰 PASSO 3: CONFIGURAÇÃO DE INVESTIMENTO
+// 💰 PASSO 3: INVESTIMENTO - Finalização com a identidade visual da ATLIVIO
 window.finalizarLocalWizard = () => {
     const lat = document.getElementById('b2b-lat').value;
     const lng = document.getElementById('b2b-lng').value;
@@ -284,46 +284,48 @@ window.finalizarLocalWizard = () => {
 
     window.wizardB2BData.latitude = parseFloat(lat);
     window.wizardB2BData.longitude = parseFloat(lng);
-    window.wizardB2BData.radius = 500; // Raio padrão de 500 metros
+    window.wizardB2BData.radius = 500;
 
     const content = document.getElementById('modal-content');
     content.innerHTML = `
-        <div class="space-y-6 animate-fadeIn pb-6">
+        <div class="max-w-[450px] mx-auto animate-fadeIn space-y-8">
             <div class="text-center">
-                <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 3: Investimento</h3>
-                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Quanto você pagará por esta informação?</p>
+                <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">Passo 3: Investimento</h3>
+                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">Custo de Aquisição de Dados</p>
             </div>
 
-            <div class="p-5 bg-slate-900/80 rounded-3xl border border-white/5 space-y-4">
+            <div class="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-6">
                 <div class="relative">
-                    <span class="absolute left-4 top-4 text-emerald-600 font-black text-xl">R$</span>
-                    <input type="number" id="b2b-reward" value="5.00" min="3" step="0.50" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-4 pl-12 rounded-2xl bg-slate-950 text-emerald-400 text-2xl font-black border border-white/10 outline-none focus:border-blue-500 transition">
+                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-4 mb-2 block">Valor por Coleta Realizada</label>
+                    <div class="relative">
+                        <span class="absolute left-5 top-5 text-emerald-500 font-black text-2xl">R$</span>
+                        <input type="number" id="b2b-reward" value="5.00" min="3" step="0.50" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-6 pl-16 rounded-[1.5rem] bg-black text-emerald-400 text-4xl font-black border-2 border-emerald-500/20 outline-none focus:border-emerald-500 transition-all shadow-inner">
+                    </div>
                 </div>
 
-                <div class="p-4 bg-black/40 rounded-2xl space-y-2 border border-white/5">
-                    <div class="flex justify-between text-[9px] font-bold uppercase text-gray-500">
-                        <span>Recompensa (Prestador):</span>
-                        <span id="preview-user" class="text-white">R$ 5,00</span>
+                <div class="p-5 bg-black/40 rounded-3xl space-y-3 border border-white/5">
+                    <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tight text-gray-500">
+                        <span>💰 Recompensa (Prestador)</span>
+                        <span id="preview-user" class="text-white font-mono">R$ 5,00</span>
                     </div>
-                    <div class="flex justify-between text-[9px] font-bold uppercase text-gray-500">
-                        <span>Taxa Atlivio (100%):</span>
-                        <span id="preview-tax" class="text-blue-400">R$ 5,00</span>
+                    <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tight text-gray-500">
+                        <span>🛡️ Taxa Administrativa (100%)</span>
+                        <span id="preview-tax" class="text-blue-400 font-mono">R$ 5,00</span>
                     </div>
                     <div class="h-[1px] bg-white/10 my-1"></div>
-                    <div class="flex justify-between text-[11px] font-black uppercase text-gray-400">
-                        <span>Investimento Total:</span>
-                        <span id="preview-total" class="text-emerald-500">R$ 10,00</span>
+                    <div class="flex justify-between items-center text-xs font-black uppercase tracking-widest text-gray-300">
+                        <span>TOTAL A RESERVAR</span>
+                        <span id="preview-total" class="text-emerald-500 text-lg font-mono">R$ 10,00</span>
                     </div>
                 </div>
             </div>
 
-            <button onclick="window.processarReservaB2B()" id="btn-confirmar-b2b" class="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-emerald-900/20 active:scale-95 transition">
-                Confirmar e Reservar Saldo ✅
+            <button onclick="window.processarReservaB2B()" id="btn-confirmar-b2b" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] active:scale-95 transition-all">
+                Finalizar e Ativar Operação ✅
             </button>
         </div>
     `;
 };
-
 // 🤖 CALCULADORA DINÂMICA
 window.atualizarPreviewFinanceiro = () => {
     const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
