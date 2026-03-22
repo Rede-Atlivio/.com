@@ -247,8 +247,10 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
+            // 🚀 GRAVAÇÃO COM DNA B2B: Agora a submissão nasce vinculada ao dono
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
+                b2b_owner_uid: b2bOwnerId || null, // Carimbo do Dono (Essencial para Auditoria B2B)
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: tipoPagamento,
