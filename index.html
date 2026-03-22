@@ -104,41 +104,37 @@
             -webkit-text-fill-color: white !important;
         }
 
-        /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO (V3 - ESTÁVEL) */
+       /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO - VERSÃO GHOST (ESTABILIZADA) */
         .pac-container {
             z-index: 999999 !important;
             background-color: #0f172a !important;
             border: 1px solid rgba(34, 211, 238, 0.3) !important;
-            border-radius: 16px !important;
-            margin-top: 8px !important;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-            font-family: inherit !important;
-            overflow: hidden !important;
+            border-radius: 12px !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+            display: block !important; /* Força a volta das sugestões */
         }
         .pac-item {
-            padding: 12px 16px !important;
+            padding: 10px 14px !important;
+            color: #94a3b8 !important;
             border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
             cursor: pointer !important;
-            color: #94a3b8 !important;
-            transition: all 0.2s ease;
         }
         .pac-item:hover { background-color: rgba(34, 211, 238, 0.1) !important; }
-        .pac-item-query { color: #f8fafc !important; font-size: 15px !important; }
+        .pac-item-query { color: #f8fafc !important; }
         .pac-matched { color: #22d3ee !important; font-weight: 900 !important; }
-
-        /* 🚫 CAMUFLAGEM DO LOGO (Engana o Google para a lista não sumir) */
-        .pac-logo { background-image: none !important; padding: 0 !important; }
-        .pac-logo:after { content: "" !important; display: none !important; }
+        
+        /* 👻 CAMUFLAGEM PACÍFICA: Google vê o logo, mas o humano não vê a linha azul */
+        .pac-logo { 
+            background-image: none !important; 
+            background: transparent !important;
+            height: 1px !important; /* Quase nada, para não bloquear o Passo 3 */
+        }
         .pac-icon { display: none !important; }
 
-        /* 🛡️ PROTEÇÃO DO INPUT DE VALOR: Impede linhas fantasmas no Passo 3 */
-        #b2b-reward, #b2b-reward:focus, #b2b-reward:active {
-            outline: none !important;
-            box-shadow: none !important;
-            -webkit-appearance: none !important;
-            border: 2px solid rgba(16, 185, 129, 0.2) !important;
-        }
-
+        /* 🛡️ BLINDAGEM DE VALOR (Passo 3) */
+        #b2b-reward { outline: none !important; box-shadow: none !important; border: 2px solid rgba(16, 185, 129, 0.3) !important; }
+        
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0); }
