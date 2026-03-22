@@ -287,16 +287,42 @@ window.obterLocalizacaoAutomatica = () => {
     }, () => alert("Ative o GPS para localizar seu ponto."));
 };
 
-// 🚀 MOTOR AUTOCOMPLETE GOOGLE (Lançado ao abrir o Passo 2)
+// 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026: Inteligência de Geocodificação ATLIVIO
 window.iniciarAutocompleteB2B = () => {
     const input = document.getElementById('mis-address-search');
-    if (!input || !window.google) return;
-    const auto = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: "br" }, fields: ["geometry"], types: ["address"] });
+    
+    // 🛡️ Segurança: Verifica se o Google SDK e o campo existem na tela
+    if (!input || !window.google) {
+        return console.warn("🛰️ Atlas B2B: Google Maps SDK não detectado.");
+    }
+
+    // Configura o Autocomplete focado 100% em endereços reais no Brasil
+    const options = {
+        componentRestrictions: { country: "br" },
+        fields: ["geometry", "formatted_address"],
+        types: ["address"]
+    };
+
+    const auto = new google.maps.places.Autocomplete(input, options);
+
+    // 🎯 O GOLPE DE MESTRE: Transforma a seleção do endereço em coordenadas precisas
     auto.addListener("place_changed", () => {
         const place = auto.getPlace();
-        if (!place.geometry) return;
-        document.getElementById('b2b-lat').value = place.geometry.location.lat().toFixed(6);
-        document.getElementById('b2b-lng').value = place.geometry.location.lng().toFixed(6);
+        
+        if (!place.geometry || !place.geometry.location) {
+            return alert("📍 Local não identificado. Selecione uma opção da lista sugerida!");
+        }
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        // Alimenta os sensores invisíveis do formulário
+        document.getElementById('b2b-lat').value = lat.toFixed(6);
+        document.getElementById('b2b-lng').value = lng.toFixed(6);
+        
+        console.log("✅ Geocodificação Concluída:", place.formatted_address);
+        
+        // Destrava o fluxo para o próximo passo (Investimento)
         window.liberarBotaoInvestimento();
     });
 };
