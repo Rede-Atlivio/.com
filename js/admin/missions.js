@@ -448,28 +448,39 @@ async function aprovarMissao(docId, userId, valor) {
 
         if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
 
-       if (tipoMoeda === 'atlix') {
-            // 🛡️ LIQUIDAÇÃO ATLIX: Tira da reserva da empresa e paga o bônus ao usuário
+      if (tipoMoeda === 'atlix') {
+            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Paga usuário, Baixa reserva e Extrai Lucro Gil
             await runTransaction(window.db, async (transaction) => {
                 const userRef = doc(window.db, "usuarios", userId);
                 const subRef = doc(window.db, "mission_submissions", docId);
-                const userDoc = await transaction.get(userRef);
+                const cofreRef = doc(window.db, "sys_finance", "receita_total");
+                
+                // 1. Identifica o valor unitário reservado (Recompensa + Sua Taxa)
+                // Usamos o campo 'total_with_fee' que salvamos na criação
+                const valorTotalReservado = subData.unit_total_with_fee || valor; 
+                const suaTaxaLucro = valorTotalReservado - valor;
 
-                // 1. Se for B2B, libera o valor que estava "preso" na reserva da empresa
+                // 2. Se for B2B, limpa a custódia da empresa
                 if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
-                    transaction.update(b2bRef, { wallet_reserved: increment(-valor) });
+                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 2. Deposita o bônus na carteira do executor
-                if (userDoc.exists()) {
-                    transaction.update(userRef, { 
-                        wallet_bonus: increment(valor), 
-                        updated_at: serverTimestamp() 
+                // 3. 📈 REGISTRO DE LUCRO ATLIVIO: Sua parte vai para o Dashboard agora!
+                if (suaTaxaLucro > 0) {
+                    transaction.update(cofreRef, { 
+                        total_acumulado: increment(suaTaxaLucro),
+                        ultima_atualizacao: serverTimestamp() 
                     });
                 }
 
-                // 3. Marca como finalizado
+                // 4. Deposita os ATLIX na carteira do explorador
+                transaction.update(userRef, { 
+                    wallet_bonus: increment(valor), 
+                    updated_at: serverTimestamp() 
+                });
+
+                // 5. Marca como finalizado
                 transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
             });
 
