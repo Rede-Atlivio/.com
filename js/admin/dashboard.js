@@ -146,9 +146,15 @@ export async function init() {
                 <h3 class="text-lg font-black text-white" id="kpi-balance">R$ 0,00</h3>
             </div>
             <div class="glass-panel p-4 border-t-2 border-red-500">
-                <p class="text-[8px] uppercase font-bold text-red-500">🔥 Risco / Dívida</p>
-                <h3 class="text-lg font-black text-red-400" id="kpi-dividas">R$ 0,00</h3>
-            </div>
+                <p class="text-[8px] uppercase font-bold text-red-500">🔥 Risco / Dívida</p>
+                <h3 class="text-lg font-black text-red-400" id="kpi-dividas">R$ 0,00</h3>
+            </div>
+
+            <div class="glass-panel p-4 border-t-2 border-amber-500 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+                <p class="text-[8px] uppercase font-black text-amber-500">💎 Receita Atlivio</p>
+                <h3 class="text-lg font-black text-white" id="kpi-taxas-total">R$ 0,00</h3>
+                <p class="text-[6px] text-gray-500 uppercase">Lucro de Intermediação</p>
+            </div>
             <div class="glass-panel p-4 border-t-2 border-orange-500 bg-orange-500/5">
                 <p class="text-[8px] uppercase font-bold text-orange-400">⏳ Expira (30 dias)</p>
                 <h3 class="text-lg font-black text-orange-400" id="kpi-expiracao">R$ 0,00</h3>
