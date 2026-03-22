@@ -152,8 +152,14 @@ window.vereditoB2B = async (docId, status) => {
             status_history: status === 'rejected' ? 'Aguardando revisão do Admin' : 'Aprovado pelo Cliente',
             reviewed_at: serverTimestamp() // Registra o momento da análise do cliente
         });
-        alert("✅ Veredito registrado com sucesso.");
-        window.carregarAuditoriaB2B();
+        // 💰 MOTOR FINANCEIRO B2B: Se o cliente aprovou, disparar liquidação de saldo
+        if (status === 'approved') {
+            await window.liquidarPagamentoB2B(docId);
+        } else {
+            alert("⚖️ DISPUTA ABERTA: O envio foi movido para auditoria do Admin para análise final.");
+        }
+        
+        window.carregarAuditoriaB2B(); // Atualiza a lista removendo o card processado
     } catch (e) { alert("Erro ao processar veredito."); }
 };
 
