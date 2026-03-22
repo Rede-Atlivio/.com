@@ -121,7 +121,7 @@ export async function init() {
             </div>
         </div>
 
-        <div id="grade-kpis-dashboard" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 animate-fade">
+        <div id="grade-kpis-dashboard" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-6 animate-fade">
             <div class="glass-panel p-4 border-t-2 border-blue-500">
                 <p class="text-[8px] uppercase font-bold text-gray-500">👥 Base Total</p>
                 <h3 class="text-lg font-black text-white" id="kpi-users">--</h3>
