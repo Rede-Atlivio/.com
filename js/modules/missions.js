@@ -163,23 +163,40 @@ function verTutorialMissao(videoId) {
     }
 }
 
-// 📸 MOTOR DE EXECUÇÃO V2026: Escudo de Duplicidade & Câmera
+// 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
-    // Gil, aqui o robô verifica se o usuário já tem algum envio (pendente ou pago) para este ID de missão
-    const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
-    // Bloqueia o clique e mostra o loader no botão para o usuário saber que estamos validando
     const btn = document.querySelector(`button[onclick*="${id}"]`);
+    if(!btn) return;
     const originalText = btn.innerText;
     btn.disabled = true;
-    btn.innerText = "🔍 VALIDANDO...";
+    btn.innerText = "🔍 RESERVANDO VAGA...";
 
     try {
-        const qCheck = query(
-            collection(window.db, "mission_submissions"), 
-            where("user_id", "==", auth.currentUser.uid),
-            where("mission_id", "==", id)
-        );
+        // 🛡️ TRANSAÇÃO DE VAGA: Verifica se tem vaga e reserva em 1 milésimo de segundo
+        const missionRef = doc(window.db, "missions", id);
+        
+        await runTransaction(window.db, async (transaction) => {
+            const mSnap = await transaction.get(missionRef);
+            const m = mSnap.data();
+
+            if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
+            
+            // 🔍 Check de duplicidade: Usuário já fez?
+            const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
+            const sCheck = await getDocs(qCheck);
+            if (!sCheck.empty) throw "Você já realizou esta missão!";
+
+            // ✅ TUDO OK: Reserva a vaga diminuindo o disponível e aumentando o 'realizando'
+            transaction.update(missionRef, {
+                slots_disponiveis: increment(-1),
+                pessoas_realizando: increment(1)
+            });
+        });
+
+        // Se chegou aqui, a vaga é DELE. Agora verificamos o GPS e abrimos a câmera
+        const qCheck = { empty: true }; // Dummy para manter compatibilidade com o resto do código original
         const snapCheck = await getDocs(qCheck);
 
         // 🛡️ TRAVA DE SEGURANÇA: Se encontrar qualquer registro, barra a participação
