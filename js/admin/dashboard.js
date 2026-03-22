@@ -286,6 +286,17 @@ export async function init() {
             }
         });
 
+        // 🛰️ SENSOR DE RECEITA: Escuta o cofre de taxas acumuladas (Chat + B2B)
+        onSnapshot(doc(db, "sys_finance", "fees_b2b"), (snapFees) => {
+            if (snapFees.exists()) {
+                const totalAcumulado = snapFees.data().total_taxas_acumulado || 0;
+                const elTaxas = document.getElementById('kpi-taxas-total');
+                if (elTaxas) {
+                    elTaxas.innerText = `R$ ${totalAcumulado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+                }
+            }
+        });
+
         // 🚀 LOG DE ÚLTIMOS LUCROS (TAXAS)
         const qTaxas = query(collection(db, "extrato_financeiro"), orderBy("timestamp", "desc"), limit(5));
         onSnapshot(qTaxas, (snapTaxas) => {
