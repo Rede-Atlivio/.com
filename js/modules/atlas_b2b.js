@@ -160,7 +160,51 @@ window.vereditoB2B = async (docId, status) => {
         }
         
         window.carregarAuditoriaB2B(); // Atualiza a lista removendo o card processado
-    } catch (e) { alert("Erro ao processar veredito."); }
+   } catch (e) { 
+        console.error("Erro no veredito:", e);
+        alert("Falha técnica ao registrar veredito."); 
+    }
+};
+
+// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO: Transfere o valor reservado para o executor
+window.liquidarPagamentoB2B = async (submissionId) => {
+    try {
+        const subRef = doc(db, "mission_submissions", submissionId);
+        const subSnap = await getDoc(subRef);
+        const data = subSnap.data();
+
+        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
+        if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
+
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
+            const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
+
+            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-data.reward),
+                updated_at: serverTimestamp()
+            });
+
+            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
+            if (data.pay_type === 'atlix') {
+                transaction.update(userRef, { 
+                    wallet_bonus: increment(data.reward),
+                    updated_at: serverTimestamp()
+                });
+                // Marca como pago totalmente
+                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
+            } else {
+                // 3. Se for REAL, move para a fila de PIX do Admin
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
+            }
+        });
+
+        alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
+    } catch (err) {
+        console.error("Erro na liquidação:", err);
+        alert("Erro ao processar transferência de valores.");
+    }
 };
 
 // 🪄 WIZARD ATLAS B2B: MOTOR DE CRIAÇÃO PASSO A PASSO
