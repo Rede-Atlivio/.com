@@ -59,6 +59,8 @@ export async function renderAssistant(containerId) {
         const qPixPendentes = query(collection(db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
         // 📸 Monitor de Auditoria (Missões que aguardam seu OK)
         const qMissaoAnalise = query(collection(db, "mission_submissions"), where("status", "==", "pending"));
+        // ⚖️ Monitor de Disputas B2B (Gil, aqui a IA vigia as brigas entre B2B e Usuário)
+        const qDisputasB2B = query(collection(db, "mission_submissions"), where("status", "==", "b2b_rejected"));
         
         // 🚀 MONITORAMENTO ATLIVIO (Fase 2)
         const qDisputas = query(collection(db, "orders"), where("status", "==", "dispute"));
