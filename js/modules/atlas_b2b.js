@@ -534,17 +534,22 @@ window.processarReservaB2B = async () => {
                 updated_at: serverTimestamp()
             });
 
-            // 2. Cria a Missão com Inteligência Geográfica e Escassez
+           // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Salva valores unitários para liquidação futura
+            const unitWithFee = totalNecessario / slots; // Valor que a empresa paga por CADA foto (Recompensa + Taxa Atlivio)
+            
             const missionRef = doc(collection(db, "missions"));
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
+                owner_id: uid, // 🔑 ID do dono para o botão de encerrar funcionar
                 reward: reward,
+                unit_total_with_fee: unitWithFee, // 💸 Campo mestre para o estorno e lucro
+                total_with_fee: totalNecessario,
                 slots_totais: slots,
-                slots_disponiveis: slots, // Inicia com todas as vagas livres
-                pessoas_realizando: 0,    // Ninguém começou ainda
-                address: enderecoFormatado, // Salva o endereço para o Admin não ter que digitar
+                slots_disponiveis: slots,
+                pessoas_realizando: 0,
+                address: enderecoFormatado,
                 pay_type: 'real',
-                status: 'pending_b2b',    // Aguarda sua curadoria no Admin
+                status: 'pending_b2b',
                 active: false,
                 b2b_name: window.userProfile?.nome_fantasia || window.userProfile?.nome || "Empresa B2B",
                 created_at: serverTimestamp()
