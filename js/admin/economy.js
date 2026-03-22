@@ -99,3 +99,5 @@ window.saveEconomySettings = async () => {
 };
 
 console.log("🏦 [Economy Admin] Motor de Governança Soldado!");
+// 🔐 EXPORTAÇÃO DE SEGURANÇA: Torna a função de salvamento visível para o botão HTML
+window.saveEconomySettings = saveEconomySettings;
