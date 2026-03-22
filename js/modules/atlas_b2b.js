@@ -163,33 +163,51 @@ window.abrirWizardB2B = () => {
 
     modal.classList.remove('hidden');
     
-    // 🎨 RETOQUE VISUAL ATLAS V2026: Título Cyan e Destaque Neon nos Inputs
-    // Gil, injetamos o CSS direto aqui para garantir que o efeito seja aplicado apenas neste modal
+    // 🎨 DESIGN PREMIUM B2B: Fundo radial, Título Laranja Forte e Subtítulo Cyan Neon
     content.innerHTML = `
         <style>
-            /* 💡 EFEITO NEON NOS INPUTS: Dá profundidade e destaque ao redor do campo focado */
-            .b2b-input-premium {
-                transition: all 0.3s ease-in-out;
+            /* Define o fundo com profundidade industrial */
+            #modal-editor { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important; }
+            
+            .input-b2b-lapidado {
+                background-color: #0f172a !important; /* Fundo escuro para contraste */
+                border: 2px solid #334155 !important; /* Borda discreta inicial */
+                color: #f8fafc !important;
+                border-radius: 1rem !important;
+                padding: 1rem !important;
+                width: 100% !important;
+                outline: none !important;
+                margin-bottom: 1.5rem !important;
+                font-size: 14px !important;
+                transition: all 0.3s ease;
             }
-            .b2b-input-premium:focus {
-                border-color: #22d3ee !important; /* Cyan */
-                box-shadow: 0 0 15px rgba(34, 211, 238, 0.4) !important;
-                background-color: #111a2e !important; /* Fundo levemente mais claro no foco */
+            /* O input "acende" em Cyan quando o usuário clica para digitar */
+            .input-b2b-lapidado:focus {
+                border-color: #22d3ee !important;
+                box-shadow: 0 0 15px rgba(34, 211, 238, 0.3) !important;
+                background-color: #111a2e !important;
             }
         </style>
 
-        <div class="space-y-6 animate-fadeIn pb-6">
-            <div class="text-center">
-                <h3 class="text-xl font-black text-cyan-400 uppercase italic tracking-tighter shadow-cyan-900/50">Passo 1: Briefing</h3>
-                <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">O que o prestador deve fazer?</p>
+        <div class="max-w-[450px] mx-auto animate-fadeIn pb-6">
+            <div class="text-center mb-8">
+                <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">
+                    Passo 1: Briefing
+                </h3>
+                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">
+                    Configuração de Missão Atlas
+                </p>
             </div>
             
-            <div class="space-y-4">
-                <input type="text" id="b2b-title" placeholder="Título (Ex: Foto da Fachada - Loja X)" class="b2b-input-premium w-full p-4 rounded-2xl bg-slate-800 text-white font-bold border border-white/10 outline-none transition-all">
-                <textarea id="b2b-desc" rows="4" placeholder="Instruções detalhadas... (Use tópicos)" class="b2b-input-premium w-full p-4 rounded-2xl bg-slate-800 text-white text-sm border border-white/10 outline-none transition-all"></textarea>
+            <div class="flex flex-col">
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-3 mb-2">Título da Ordem</label>
+                <input type="text" id="b2b-title" placeholder="Ex: Auditoria de Estoque - Loja Centro" class="input-b2b-lapidado font-bold">
+                
+                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-3 mb-2">Instruções de Coleta</label>
+                <textarea id="b2b-desc" rows="4" placeholder="Descreva exatamente o que o prestador deve fotografar..." class="input-b2b-lapidado text-sm"></textarea>
             </div>
 
-            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/30 active:scale-95 transition-all hover:bg-blue-500">
+            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] active:scale-95 transition-all">
                 Continuar para Localização ➜
             </button>
         </div>
