@@ -437,14 +437,21 @@ window.finalizarLocalWizard = () => {
                 <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">Custo de Aquisição de Dados</p>
             </div>
 
-            <div class="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-6">
-                <div class="relative">
-                    <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-4 mb-2 block">Valor por Coleta Realizada</label>
-                    <div class="relative">
-                        <span class="absolute left-5 top-5 text-emerald-500 font-black text-2xl">R$</span>
-                        <input type="number" id="b2b-reward" value="5.00" min="3" step="0.50" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-6 pl-16 rounded-[1.5rem] bg-black text-emerald-400 text-4xl font-black border-2 border-emerald-500/20 outline-none focus:border-emerald-500 transition-all shadow-inner">
+           <div class="p-6 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2 mb-2 block">Valor por Foto</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3.5 text-emerald-500 font-black text-sm">R$</span>
+                            <input type="number" id="b2b-reward" value="5.00" min="3" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-3 pl-9 rounded-xl bg-black text-emerald-400 font-black border border-emerald-500/20 outline-none focus:border-emerald-500 transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2 mb-2 block">Qtd. de Pessoas</label>
+                        <input type="number" id="b2b-slots" value="1" min="1" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-3 rounded-xl bg-black text-white font-black border border-white/10 outline-none focus:border-blue-500 transition-all">
                     </div>
                 </div>
+                <p class="text-[8px] text-gray-500 italic px-2">O sistema reserva o valor total (Qtd × Valor + Taxa).</p>
 
                 <div class="p-5 bg-black/40 rounded-3xl space-y-3 border border-white/5">
                     <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tight text-gray-500">
