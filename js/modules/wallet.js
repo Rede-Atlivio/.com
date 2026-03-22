@@ -91,6 +91,30 @@ function iniciarRegrasFinanceiras() {
 }
 
 /**
+ * 🏦 MONITOR DE ECONOMIA B2B E SAQUE (V2026)
+ * Este motor é isolado e não interfere nas regras de validade de saldo.
+ */
+function iniciarSincroniaB2B() {
+    const refEco = doc(db, "settings", "global_economy");
+    onSnapshot(refEco, (snap) => {
+        if (snap.exists()) {
+            const data = snap.data();
+            // Injeta as regras de conversão e saque no objeto global sem apagar o que já existe
+            window.CONFIG_FINANCEIRA.spread = parseFloat(data.spread_conversao || 0.8);
+            window.CONFIG_FINANCEIRA.saque_minimo = parseInt(data.saque_minimo_atlix || 50);
+            window.CONFIG_FINANCEIRA.pix_ativo = data.pagamentos_pix_ativos ?? true;
+            
+            console.log("🏦 Economia B2B Sincronizada: Saque Mínimo " + window.CONFIG_FINANCEIRA.saque_minimo + " ATLIX");
+            
+            // Atualiza o visual se o usuário estiver com o perfil aberto
+            if (window.userProfile?.wallet_bonus !== undefined) {
+                window.calcularEquivalenciaAtlix(window.userProfile.wallet_bonus);
+            }
+        }
+    });
+}
+
+/**
  * 🛡️ TRAVA DE TRABALHO V12
  * Decide se o Radar fica AZUL ou VERMELHO
  */
