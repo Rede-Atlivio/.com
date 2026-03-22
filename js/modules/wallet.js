@@ -1059,7 +1059,7 @@ window.registrarMovimentacao = window.registrarMovimentacao;
 window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
 window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
 window.filtrarGanhos = filtrarGanhos;
-
+window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
 // 🏦 CONEXÕES BANCO CENTRAL V2026: Libera os novos motores para o App
 window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; 
 window.iniciarSincroniaB2B = iniciarSincroniaB2B;
