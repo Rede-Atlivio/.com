@@ -668,9 +668,12 @@
                     <p class="text-[7px] font-bold text-gray-400 uppercase mb-1">Recargas</p>
                     <p class="text-xs font-black text-white"><span id="user-balance-real">0,00</span> 🪙</p>
                 </div>
-                <div>
-                    <p class="text-[7px] font-black text-amber-400 uppercase mb-1">Bônus</p>
-                    <p class="text-xs font-black text-amber-400"><span id="user-balance-bonus">0,00</span> 🪙</p>
+                <div class="flex flex-col">
+                    <p class="text-[7px] font-black text-amber-400 uppercase mb-1">Saldo Atlix</p>
+                    <div class="flex flex-col">
+                        <p class="text-xs font-black text-amber-400"><span id="user-balance-bonus">0,00</span> 🪙</p>
+                        <span id="txt-equivalencia-real" class="text-[8px] font-bold text-emerald-400 uppercase italic mt-0.5 animate-pulse">Calculando...</span>
+                    </div>
                 </div>
                 <div class="cursor-pointer" onclick="alert('❄️ SALDO CONGELADO:\n\nEste é o seu dinheiro real (PIX) que passou do prazo de validade.\n\nEle NÃO SUMIU, mas está bloqueado. Para resgatá-lo e voltar a usá-lo, basta realizar qualquer nova recarga na plataforma!')">
                     <p class="text-[7px] font-black text-blue-400 uppercase mb-1 flex items-center gap-1">Congelado ❄️</p>
