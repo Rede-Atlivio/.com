@@ -147,9 +147,13 @@ window.switchView = async function(viewName) {
         'view-missions', 'view-opportunities', 'view-maestro', 'view-products' 
     ];
 
+    // 🧹 FAXINA ATLIVIO: Esconde todas as divs de visualização antes de carregar a nova
     allViews.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.classList.add('hidden'); 
+        if (el) {
+            el.classList.add('hidden');
+            el.style.display = 'none'; // Força o desaparecimento para não sobrepor
+        }
     });
     
     const titleEl = document.getElementById('page-title');
