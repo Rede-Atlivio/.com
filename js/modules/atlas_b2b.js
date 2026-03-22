@@ -293,6 +293,11 @@ window.finalizarLocalWizard = () => {
 
     const content = document.getElementById('modal-content');
     content.innerHTML = `
+        <style>
+            /* Gil, forçamos o fundo radial também no Passo 3 para manter a alma da ATLIVIO acesa */
+            #modal-editor { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important; }
+        </style>
+
         <div class="max-w-[450px] mx-auto animate-fadeIn space-y-8">
             <div class="text-center">
                 <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">Passo 3: Investimento</h3>
