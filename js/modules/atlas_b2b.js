@@ -376,7 +376,7 @@ window.processarReservaB2B = async () => {
             });
         });
 
-        alert("🚀 ORDEM ENVIADA!\nO Gil analisará o local e publicará no radar em breve.");
+        alert("🚀 ORDEM ENVIADA!\nA ATLIVIO analisará o local e publicará no radar em breve.");
         document.getElementById('modal-editor').classList.add('hidden');
         window.carregarOrdensB2B();
 
