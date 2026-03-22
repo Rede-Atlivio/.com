@@ -1042,4 +1042,79 @@ window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
 
-console.log("%c✅ WALLET V63.4: Economia ATLIX e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
+/**
+ * ♻️ PROTOCOLO DE ESTORNO B2B ATLIVIO
+ * Liquida vagas ociosas de uma missão e devolve o saldo reservado para a empresa.
+ */
+window.encerrarMissaoB2BComEstorno = async (missionId) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    try {
+        const { doc, getDoc, runTransaction, serverTimestamp, increment, collection } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        const missionRef = doc(db, "missions", missionId);
+        const missionSnap = await getDoc(missionRef);
+
+        if (!missionSnap.exists()) return alert("Erro: Missão não localizada.");
+        const mData = missionSnap.data();
+
+        // 🛡️ Trava de Segurança: Apenas o dono pode encerrar
+        if (mData.owner_id !== uid) return alert("Acesso negado.");
+        if (mData.status === 'closed') return alert("Esta missão já está encerrada.");
+
+        const vagasTotais = parseInt(mData.slots_totais || 0);
+        const vagasPreenchidas = parseInt(mData.slots_ocupados || 0);
+        const vagasRestantes = vagasTotais - vagasPreenchidas;
+
+        if (vagasRestantes <= 0) {
+            // Se não há vagas sobrando, apenas fecha a missão
+            await updateDoc(missionRef, { status: 'closed', updated_at: serverTimestamp() });
+            return alert("Missão encerrada! Todas as vagas foram utilizadas.");
+        }
+
+        // 💸 Cálculo do Reembolso: Valor Unitário (Com Taxa) x Vagas Restantes
+        const valorUnitarioComTaxa = parseFloat(mData.unit_total_with_fee || 0);
+        const valorTotalEstorno = parseFloat((valorUnitarioComTaxa * vagasRestantes).toFixed(2));
+
+        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
+
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", uid);
+            
+            // 1. Devolve o dinheiro: Tira da Reserva e volta para o Saldo Real de Trabalho (Balance)
+            transaction.update(userRef, {
+                wallet_reserved: increment(-valorTotalEstorno),
+                wallet_balance: increment(valorTotalEstorno),
+                updated_at: serverTimestamp()
+            });
+
+            // 2. Mata a missão no Radar
+            transaction.update(missionRef, { 
+                status: 'closed', 
+                slots_disponiveis: 0,
+                updated_at: serverTimestamp() 
+            });
+
+            // 3. Registra no Extrato Imutável
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: valorTotalEstorno,
+                tipo: "♻️ ESTORNO_VAGAS_B2B",
+                descricao: `Reembolso de ${vagasRestantes} vaga(s) da missão: ${mData.title}`,
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX"
+            });
+        });
+
+        alert(`✅ OPERAÇÃO ENCERRADA\n\n${valorTotalEstorno.toFixed(2)} ATLIX foram estornados com sucesso.`);
+        if (window.switchTab) window.switchTab('ganhar');
+
+    } catch (e) {
+        console.error("Erro no Estorno B2B:", e);
+        alert("❌ Falha ao processar estorno. Tente novamente.");
+    }
+};
+
+console.log("%c✅ WALLET V63.4: Protocolo de Estorno B2B e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
