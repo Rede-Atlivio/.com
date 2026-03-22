@@ -35,7 +35,7 @@ export async function init() {
                     <input type="checkbox" id="conf-status-pix" checked class="chk-custom">
                 </div>
 
-                <button onclick="window.saveSettings()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-xl shadow-2xl transition uppercase tracking-widest">
+                <button onclick="window.saveEconomySettings()" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-black py-4 rounded-xl shadow-2xl transition uppercase tracking-widest">
                     Atualizar Banco Central ⚡
                 </button>
             </div>
