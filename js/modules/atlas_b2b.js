@@ -146,31 +146,47 @@ window.carregarAuditoriaB2B = async () => {
 };
 
 // 🏛️ DECISÃO DO CLIENTE (PAGAMENTO OU DISPUTA)
+/**
+ * ⚖️ VEREDITO DO CLIENTE B2B (COM CHAVE DE AUTONOMIA)
+ * Decide se o pagamento sai na hora ou se cai na fila do Admin.
+ */
 window.vereditoB2B = async (docId, status) => {
-    const acao = status === 'approved' ? 'APROVAR E PAGAR' : 'REPROVAR';
+    const acao = status === 'approved' ? 'APROVAR' : 'REPROVAR';
     if(!confirm(`Confirma ${acao}?`)) return;
 
     try {
-        // ⚖️ SISTEMA DE VEREDITO ATLIVIO: 
-        // Se aprovado, vai para processamento de pagamento. 
-        // Se reprovado, entra em 'b2b_rejected' para auditoria final do Admin.
-        await updateDoc(doc(db, "mission_submissions", docId), {
-            status: status === 'approved' ? 'approved_by_b2b' : 'b2b_rejected', 
-            status_history: status === 'rejected' ? 'Aguardando revisão do Admin' : 'Aprovado pelo Cliente',
-            reviewed_at: serverTimestamp() // Registra o momento da análise do cliente
-        });
-        // 💰 MOTOR FINANCEIRO B2B: Se o cliente aprovou, disparar liquidação de saldo
+        const { getDoc, doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🧠 Consulta a Regra Soberana do Admin (Banco Central)
+        const ecoSnap = await getDoc(doc(db, "settings", "global_economy"));
+        const podePagarDireto = ecoSnap.exists() ? ecoSnap.data().aprovacao_automatica_b2b : false;
+
         if (status === 'approved') {
-            await window.liquidarPagamentoB2B(docId);
+            if (podePagarDireto) {
+                // 🚀 MODO AUTÔNOMO: Paga o usuário agora e encerra o processo
+                await window.liquidarPagamentoB2B(docId);
+                alert("✅ APROVADO: O saldo foi transferido ao usuário e sua taxa foi liquidada.");
+            } else {
+                // ⏳ MODO MANUAL: B2B deu o OK, mas o Gil precisa dar o "Enter" final
+                await updateDoc(doc(db, "mission_submissions", docId), {
+                    status: 'approved_by_b2b',
+                    status_history: 'Aguardando liberação final do Banco Central',
+                    reviewed_at: serverTimestamp()
+                });
+                alert("⚠️ OK ENVIADO: A aprovação foi registrada. O pagamento será liberado pelo Admin Atlivio.");
+            }
         } else {
-            alert("⚖️ DISPUTA ABERTA: O envio foi movido para auditoria do Admin para análise final.");
+            // ⚖️ DISPUTA: Se o B2B reprovar, sempre cai na sua mão para evitar golpe da empresa
+            await updateDoc(doc(db, "mission_submissions", docId), {
+                status: 'b2b_rejected',
+                status_history: 'Aguardando auditoria de disputa',
+                reviewed_at: serverTimestamp()
+            });
+            alert("⚖️ DISPUTA ABERTA: O Admin analisará a evidência para dar o veredito final.");
         }
         
-        window.carregarAuditoriaB2B(); // Atualiza a lista removendo o card processado
-   } catch (e) { 
-        console.error("Erro no veredito:", e);
-        alert("Falha técnica ao registrar veredito."); 
-    }
+        window.carregarAuditoriaB2B();
+   } catch (e) { alert("Erro ao processar veredito."); }
 };
 
 // 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO: Transfere o valor reservado para o executor
