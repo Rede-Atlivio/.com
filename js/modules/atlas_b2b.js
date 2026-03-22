@@ -144,9 +144,13 @@ window.vereditoB2B = async (docId, status) => {
     if(!confirm(`Confirma ${acao}?`)) return;
 
     try {
+        // ⚖️ SISTEMA DE VEREDITO ATLIVIO: 
+        // Se aprovado, vai para processamento de pagamento. 
+        // Se reprovado, entra em 'b2b_rejected' para auditoria final do Admin.
         await updateDoc(doc(db, "mission_submissions", docId), {
-            status: status === 'approved' ? 'approved_by_b2b' : 'disputed_by_b2b',
-            approved_at: serverTimestamp()
+            status: status === 'approved' ? 'approved_by_b2b' : 'b2b_rejected', 
+            status_history: status === 'rejected' ? 'Aguardando revisão do Admin' : 'Aprovado pelo Cliente',
+            reviewed_at: serverTimestamp() // Registra o momento da análise do cliente
         });
         alert("✅ Veredito registrado com sucesso.");
         window.carregarAuditoriaB2B();
