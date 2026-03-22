@@ -224,7 +224,7 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
     }
 }
 // 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
-async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo) {
+async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo, b2bOwnerId) {
     const btn = document.querySelector(`button[onclick*="${id}"]`);
     const originalText = btn.innerText;
     
