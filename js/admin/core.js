@@ -188,9 +188,10 @@ window.switchView = async function(viewName) {
     }
     else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
     else if (viewName === 'settings') { 
-        moduleFile = './settings.js'; 
+        // 🏦 ATLIVIO ECONOMY V2026: Novo motor isolado para Governança Monetária
+        moduleFile = './economy.js'; 
         containerId = 'view-settings';
-        // 🚀 CARGA DE APOIO: Garante que o motor de bônus do automation esteja disponível
+        // Mantém a carga de apoio para bônus se necessário
         import('./automation.js?v=' + Date.now()).catch(e => console.warn("Erro ao pré-carregar automation:", e));
     }
     else if (viewName === 'support') { moduleFile = './support.js'; containerId = 'view-support'; }
