@@ -192,6 +192,11 @@ window.switchView = async function(viewName) {
         containerId = 'view-settings';
         import('./automation.js?v=' + Date.now()).catch(e => console.warn("Erro ao pré-carregar automation:", e));
     }
+    // 🏦 ROTA BANCO CENTRAL: Liga o botão ao novo motor de economia
+    else if (viewName === 'economy') { 
+        moduleFile = './economy.js'; 
+        containerId = 'view-economy';
+    }
     else if (viewName === 'economy') { 
         moduleFile = './economy.js'; 
         containerId = 'view-economy';
