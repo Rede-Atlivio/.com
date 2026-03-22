@@ -32,45 +32,53 @@ export async function init() {
     window.aprovarMissao = aprovarMissao;
     window.rejeitarMissao = rejeitarMissao;
     
-    // Inicia na aba de Gerenciar
+   // Inicia na aba de Gerenciar
     switchMissionTab('missions');
 
-    // 🧹 FAXINA DE VAGAS ATLIVIO: Libera vagas de quem travou a missão e não enviou em 30 min
-    // Isso garante que o radar esteja sempre girando e as empresas não fiquem com vagas presas
+    // 🧹 FAXINA DE VAGAS: Verifica usuários inativos a cada entrada na aba
     setTimeout(() => { if(window.limparVagasZumbisB2B) window.limparVagasZumbisB2B(); }, 2000);
 }
 
 /**
- * 🕵️ MOTOR DE INTEGRIDADE DO RADAR
- * Busca missões com pessoas "realizando" há mais de 30 minutos e as expulsa da vaga
+ * 🕵️ MOTOR DE INTEGRIDADE ATLIVIO
+ * Expulsa usuários que travam a vaga e não enviam a foto em 30 min.
  */
 window.limparVagasZumbisB2B = async () => {
     try {
+        // Busca missões que possuem ocupação ativa
         const q = query(collection(window.db, "missions"), where("pessoas_realizando", ">", 0));
         const snap = await getDocs(q);
+        
         const agora = Date.now();
-        const limite = 30 * 60 * 1000; // 30 Minutos
+        const limite = 30 * 60 * 1000; 
 
         for (const mDoc of snap.docs) {
+            // Varre tentativas que ficaram presas no status 'started'
             const qTentativas = query(collection(window.db, "missions", mDoc.id, "attempts"), where("status", "==", "started"));
             const tentSnap = await getDocs(qTentativas);
 
             for (const tDoc of tentSnap.docs) {
                 const t = tDoc.data();
                 const inicio = t.started_at?.toDate().getTime() || agora;
+                
                 if (agora - inicio > limite) {
                     await runTransaction(window.db, async (transaction) => {
+                        // Devolve a vaga ao estoque e remove o peso do contador
                         transaction.update(doc(window.db, "missions", mDoc.id), {
                             slots_disponiveis: increment(1),
                             pessoas_realizando: increment(-1),
                             updated_at: serverTimestamp()
                         });
-                        transaction.update(doc(window.db, "missions", mDoc.id, "attempts", tDoc.id), { status: 'expired' });
+                        // Invalida a tentativa do usuário
+                        transaction.update(doc(window.db, "missions", mDoc.id, "attempts", tDoc.id), { 
+                            status: 'expired',
+                            expired_at: serverTimestamp() 
+                        });
                     });
                 }
             }
         }
-    } catch(e) { console.error("Erro na faxina:", e); }
+    } catch(e) { console.error("Erro faxina:", e); }
 };
 
 async function switchMissionTab(tab) {
