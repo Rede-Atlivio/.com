@@ -237,21 +237,34 @@ window.proximoPassoWizard = (passo) => {
                     <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">Centro Geográfico da Missão</p>
                 </div>
 
-                <div class="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
-                    <div class="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto border border-blue-500/20 shadow-inner">
-                        <span class="text-3xl">📍</span>
+               <div class="p-5 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
+                    <div class="flex justify-between items-center px-2">
+                        <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📍 Ponto de Captura</p>
+                        <button onclick="window.obterLocalizacaoAutomatica()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition flex items-center gap-1 shadow-lg">
+                            🎯 GPS ATUAL
+                        </button>
                     </div>
-                    <p class="text-[11px] text-gray-400 font-medium px-4">Deseja usar sua localização atual como centro do radar para esta missão?</p>
-                    
-                    <div id="gps-action-area" class="grid grid-cols-2 gap-3 pt-2">
-                        <button onclick="window.capturarLocalizacaoWizard()" class="py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">Sim, Usar GPS</button>
-                        <button onclick="alert('Funcionalidade de mapa manual em homologação para sua região.')" class="py-4 bg-slate-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase border border-white/5 hover:bg-slate-700 transition-colors">Digitar Local</button>
+
+                    <div class="relative group">
+                        <input type="text" id="mis-address-search" placeholder="Busque por endereço, rua ou cidade..." class="w-full p-3 pl-10 rounded-xl bg-black text-white text-xs border border-white/10 focus:border-cyan-500 outline-none transition-all">
+                        <span class="absolute left-3 top-3 text-gray-500">🔍</span>
                     </div>
-                    
-                    <div id="gps-status" class="hidden animate-bounce text-[10px] font-black text-emerald-400 uppercase tracking-widest pt-2">
-                        🎯 Localização Fixada com Sucesso!
+
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="space-y-1 text-left">
+                            <label class="text-[8px] text-gray-500 font-black uppercase ml-1">Latitude</label>
+                            <input id="b2b-lat" readonly class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-white/5" placeholder="0.0000">
+                        </div>
+                        <div class="space-y-1 text-left">
+                            <label class="text-[8px] text-gray-500 font-black uppercase ml-1">Longitude</label>
+                            <input id="b2b-lng" readonly class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-white/5" placeholder="0.0000">
+                        </div>
+                        <div class="space-y-1 text-left">
+                            <label class="text-[8px] text-cyan-400 font-black uppercase ml-1">Raio (Metros)</label>
+                            <input id="b2b-radius" type="number" value="500" oninput="window.validarRaioB2B(this)" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-white/5 focus:border-cyan-500 outline-none" placeholder="Ex: 500">
+                        </div>
                     </div>
-                    <input type="hidden" id="b2b-lat"><input type="hidden" id="b2b-lng">
+                    <p class="text-[8px] text-gray-500 italic px-2">* Missão Online? Deixe Latitude/Longitude vazios e Raio em 0.</p>
                 </div>
 
                 <button id="btn-next-3" disabled onclick="window.finalizarLocalWizard()" class="w-full py-5 bg-slate-800 text-gray-600 rounded-2xl font-black text-[11px] uppercase cursor-not-allowed border border-white/5 transition-all shadow-md">
