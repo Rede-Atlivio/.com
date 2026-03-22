@@ -104,7 +104,7 @@
             -webkit-text-fill-color: white !important;
         }
 
-        /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO (V3 - ESTÁVEL) */
+       /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO (V4 - CAMUFLAGEM TOTAL) */
         .pac-container {
             z-index: 999999 !important;
             background-color: #0f172a !important;
@@ -112,7 +112,6 @@
             border-radius: 16px !important;
             margin-top: 8px !important;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
-            font-family: inherit !important;
             overflow: hidden !important;
         }
         .pac-item {
@@ -120,25 +119,32 @@
             border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
             cursor: pointer !important;
             color: #94a3b8 !important;
-            transition: all 0.2s ease;
         }
         .pac-item:hover { background-color: rgba(34, 211, 238, 0.1) !important; }
         .pac-item-query { color: #f8fafc !important; font-size: 15px !important; }
         .pac-matched { color: #22d3ee !important; font-weight: 900 !important; }
 
-        /* 🚫 CAMUFLAGEM DO LOGO (Engana o Google para a lista não sumir) */
-        .pac-logo { background-image: none !important; padding: 0 !important; }
-        .pac-logo:after { content: "" !important; display: none !important; }
+        /* 🚫 EXTERMÍNIO DA LINHA FANTASMA: Torna o elemento transparente e sem cliques */
+        .pac-logo, .pac-logo:after, .pac-logo:before { 
+            background-image: none !important; 
+            height: 0px !important; 
+            min-height: 0px !important;
+            padding: 0 !important; 
+            margin: 0 !important;
+            opacity: 0 !important; /* Invisível */
+            pointer-events: none !important; /* Mouse atravessa */
+            border: none !important;
+        }
         .pac-icon { display: none !important; }
 
-        /* 🛡️ PROTEÇÃO DO INPUT DE VALOR: Impede linhas fantasmas no Passo 3 */
+        /* 🛡️ PROTEÇÃO DO INPUT DE VALOR: Bloqueia bordas azuis e linhas no Passo 3 */
         #b2b-reward, #b2b-reward:focus, #b2b-reward:active {
             outline: none !important;
             box-shadow: none !important;
-            -webkit-appearance: none !important;
             border: 2px solid rgba(16, 185, 129, 0.2) !important;
+            -webkit-appearance: none !important;
+            background-clip: padding-box; /* Impede vazamento de borda */
         }
-
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0); }
