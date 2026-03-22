@@ -210,6 +210,7 @@ window.switchView = async function(viewName) {
         const el = document.getElementById(containerId);
         if(el) {
             el.classList.remove('hidden');
+            el.style.display = 'block'; // Ativa o bloco da aba selecionada
         } else {
             console.error(`❌ ERRO FATAL: Container HTML '${containerId}' não encontrado! Verifique admin.html`);
             const fallback = document.getElementById('view-list');
