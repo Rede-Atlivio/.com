@@ -359,6 +359,9 @@ window.liberarBotaoInvestimento = () => {
 
 // 💰 PASSO 3: INVESTIMENTO - Finalização com a identidade visual da ATLIVIO
 window.finalizarLocalWizard = () => {
+    // 💣 OPERAÇÃO GHOST: Destrói o container do Google para limpar a linha lixo no Passo 3
+    document.querySelectorAll('.pac-container').forEach(el => el.remove());
+
     const latStr = document.getElementById('b2b-lat').value;
     const lngStr = document.getElementById('b2b-lng').value;
     const radStr = document.getElementById('b2b-radius').value;
