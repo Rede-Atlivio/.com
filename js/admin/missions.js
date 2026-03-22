@@ -404,14 +404,15 @@ async function loadSubmissions() {
                 statusBadge = `<span class="bg-orange-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase animate-pulse shadow-lg">⚖️ DISPUTA B2B</span>`;
             }
 
-          // Gil, agora a foto abre em um modal flutuante para não falhar o carregamento
-            let provaLink = '<span class="text-gray-600 text-[10px]">SEM FOTO</span>';
-           if(data.proof_url) {
-                // ⚡ PERFORMANCE: Usamos loading="lazy" para o navegador não travar ao processar o Base64
+          // 🔗 OTIMIZAÇÃO SUPREMA ATLIVIO: Substitui imagem por link de auditoria
+            let provaLink = '<span class="text-gray-600 text-[9px] font-bold">🚫 SEM PROVA</span>';
+            
+            if(data.proof_url) {
                 provaLink = `
-                    <div class="relative group cursor-pointer" onclick="window.visualizarProva('${data.proof_url}')">
-                        <img src="${data.proof_url}" loading="lazy" class="w-10 h-10 object-cover rounded-lg border border-slate-700 hover:scale-110 transition-transform">
-                    </div>
+                    <button onclick="window.visualizarProva('${data.proof_url}')" class="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white px-3 py-1.5 rounded-lg border border-blue-500/20 transition-all group">
+                        <span class="text-[10px] font-black uppercase tracking-tighter">👁️ Abrir Prova</span>
+                        <span class="bg-blue-600 text-white text-[8px] px-1 rounded opacity-50 group-hover:opacity-100">DOC</span>
+                    </button>
                 `;
             }
             tbody.innerHTML += `
