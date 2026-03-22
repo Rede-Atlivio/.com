@@ -98,11 +98,40 @@
             transition: background-color 5000s ease-in-out 0s;
         }
 
-        /* AUTO-PREENCHIMENTO NO ONBOARDING */
+       /* AUTO-PREENCHIMENTO NO ONBOARDING */
         #modal-onboarding input:-webkit-autofill {
             -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
             -webkit-text-fill-color: white !important;
         }
+
+        /* 🛰️ POSICIONAMENTO E DESIGN DAS SUGESTÕES GOOGLE (ATLIVIO ELITE) */
+        .pac-container {
+            z-index: 9999 !important; /* Força a lista a ficar na frente de qualquer modal */
+            background-color: #0f172a !important; /* Fundo Slate-950 igual ao sistema */
+            border: 1px solid rgba(34, 211, 238, 0.2) !important; /* Borda Cyan suave */
+            border-radius: 12px !important;
+            margin-top: 5px !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+            font-family: inherit !important;
+        }
+        .pac-item {
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 10px !important;
+            color: #94a3b8 !important; /* Texto cinza claro */
+            cursor: pointer !important;
+        }
+        .pac-item:hover {
+            background-color: rgba(34, 211, 238, 0.1) !important; /* Destaque ao passar o mouse */
+        }
+        .pac-item-query {
+            color: #f8fafc !important; /* Texto principal branco */
+            font-size: 14px !important;
+        }
+        .pac-matched {
+            color: #22d3ee !important; /* Cor Cyan nas letras digitadas */
+        }
+        .hdpi .pac-icon { display: none !important; } /* Limpa ícones padrão do Google */
+
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
             0%, 100% { transform: translateY(0); }
