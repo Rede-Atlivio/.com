@@ -67,8 +67,8 @@ export async function renderAssistant(containerId) {
         const dozeHorasAtras = new Date(Date.now() - (12 * 60 * 60 * 1000));
         const qAtrasados = query(collection(db, "orders"), where("status", "==", "in_progress"), where("real_start", "<=", Timestamp.fromDate(dozeHorasAtras)));
 
-        // Execução Global das Contagens
-        const [snapUsers, snapProv, snapAnalise, snapTickets, snapNotif, snapDisputas, snapAtrasados, snapPix, snapMisAnalise] = await Promise.all([
+        // Execução Global das Contagens (V2026.B2B_Update)
+        const [snapUsers, snapProv, snapAnalise, snapTickets, snapNotif, snapDisputas, snapAtrasados, snapPix, snapMisAnalise, snapDisputasB2B] = await Promise.all([
             getCountFromServer(qUsersToday),
             getCountFromServer(qProvToday),
             getCountFromServer(qAnalise),
@@ -77,7 +77,8 @@ export async function renderAssistant(containerId) {
             getCountFromServer(qDisputas),
             getCountFromServer(qAtrasados),
             getCountFromServer(qPixPendentes),
-            getCountFromServer(qMissaoAnalise)
+            getCountFromServer(qMissaoAnalise),
+            getCountFromServer(qDisputasB2B)
         ]);
 
         const newUsers = snapUsers.data().count;
