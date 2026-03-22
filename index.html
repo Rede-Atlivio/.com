@@ -137,13 +137,20 @@
             font-weight: 900 !important;
         }
         
-        /* 🚫 EXTERMÍNIO: Remove o ícone de 'alfinete' E o 'powered by Google' fixo */
-        .pac-icon, .pac-logo:after, .pac-logo:before { 
-            display: none !important; 
-            content: none !important; /* Gil, isso impede que o logo se reconstrua */
-            visibility: hidden !important;
+        /* 🚫 BLINDAGEM ATLIVIO: Mata o logo, a marca d'água e qualquer linha fantasma do Google */
+        .pac-logo, .pac-logo:after, .pac-logo:before, .pac-icon { 
+            display: none !important; 
+            content: none !important;
             height: 0 !important;
             width: 0 !important;
+            visibility: hidden !important;
+            border: none !important;
+        }
+
+        /* Garante que o input de recompensa nunca aceite bordas ou sequestros do Google */
+        #b2b-reward {
+            outline: none !important;
+            box-shadow: none !important;
         }
 
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
