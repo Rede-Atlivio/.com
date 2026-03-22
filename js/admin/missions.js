@@ -377,7 +377,8 @@ async function loadSubmissions() {
     tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center"><div class="loader mx-auto border-blue-500"></div></td></tr>`;
 
     try {
-        const q = query(collection(window.db, "mission_submissions"), orderBy("created_at", "desc"), limit(50));
+        // 🚀 OTIMIZAÇÃO ATLIVIO: Limite reduzido para evitar travamento de memória com Base64
+        const q = query(collection(window.db, "mission_submissions"), orderBy("created_at", "desc"), limit(15));
         const snap = await getDocs(q);
         tbody.innerHTML = "";
 
