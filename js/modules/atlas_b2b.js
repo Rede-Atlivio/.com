@@ -83,7 +83,7 @@ window.carregarOrdensB2B = async () => {
                 <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm space-y-3">
                     <div class="flex justify-between items-start">
                         <span class="text-[7px] font-black bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase tracking-widest">ID: ${doc.id.slice(0,8)}</span>
-                        <span class="text-[8px] font-black uppercase ${statusColor}">${m.status === 'active' ? '● Ativa no Radar' : '⏳ Aguardando Gil'}</span>
+                        <span class="text-[8px] font-black uppercase ${statusColor}">${m.status === 'active' ? '● Ativa no Radar' : '⏳ Aguardando...'}</span>
                     </div>
                     <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
                     <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
