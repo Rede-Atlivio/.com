@@ -629,21 +629,27 @@ window.converterEnderecoEmGps = () => {
     alert("💡 Dica do Maestro: Basta digitar o endereço no campo de busca acima e clicar na sugestão que aparecer!");
 };
 
-// 📸 MOTOR VISUALIZADOR DE PROVAS
-window.visualizarProva = (url) => {
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
+// 🚀 MOTOR DE ISOLAMENTO ATLIVIO: Abre a imagem Base64 em uma nova aba limpa
+window.abrirProvaNovaAba = (base64) => {
+    // Cria uma nova janela/aba
+    const novaAba = window.open();
     
-    modal.classList.remove('hidden');
-    content.innerHTML = `
-        <div class="flex flex-col items-center">
-            <h3 class="text-white font-bold mb-4 uppercase text-xs tracking-widest">Auditoria de Imagem</h3>
-            <div class="bg-slate-900 p-2 rounded-2xl border border-white/10 shadow-2xl">
-                <img src="${url}" class="max-w-full max-h-[70vh] rounded-xl shadow-lg">
-            </div>
-            <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="mt-6 bg-white text-black px-8 py-2 rounded-full font-black text-xs uppercase shadow-xl hover:bg-gray-200 transition">Fechar Visualização</button>
-        </div>
-    `;
+    // Injeta um HTML minimalista para a imagem não pesar na aba principal
+    novaAba.document.write(`
+        <html>
+            <head>
+                <title>Auditoria Atlivio - Evidência</title>
+                <style>
+                    body { background: #020617; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+                    img { max-width: 95%; max-height: 95vh; border-radius: 20px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 4px solid #1e293b; }
+                </style>
+            </head>
+            <body>
+                <img src="${base64}" />
+            </body>
+        </html>
+    `);
+    novaAba.document.close();
 };
 
 // 💸 MOTOR DE PAGAMENTOS: Carrega a fila de PIX dentro da aba Micro Tarefas
