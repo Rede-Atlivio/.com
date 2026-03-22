@@ -496,15 +496,19 @@ window.atualizarPreviewFinanceiro = () => {
 };
 
 // ⚡ MOTOR DE RESERVA (O CORAÇÃO DO B2B)
+// ⚡ MOTOR DE RESERVA V2026: Multi-vagas e Auto-Geocodificação
 window.processarReservaB2B = async () => {
     const reward = parseFloat(document.getElementById('b2b-reward').value);
+    const slots = parseInt(document.getElementById('b2b-slots').value) || 1;
+    const enderecoFormatado = document.getElementById('mis-address-search')?.value || "";
+
     if(reward < 3) return alert("O valor mínimo é R$ 3,00");
 
     const btn = document.getElementById('btn-confirmar-b2b');
     btn.disabled = true;
     btn.innerText = "⏳ RESERVANDO SALDO...";
 
-    const totalNecessario = reward * 2;
+    const totalNecessario = window.wizardB2BData.total_with_fee;
     const uid = auth.currentUser.uid;
     const userRef = doc(db, "usuarios", uid);
 
@@ -516,45 +520,50 @@ window.processarReservaB2B = async () => {
             const bal = userSnap.data().wallet_balance || 0;
             if (bal < totalNecessario) throw "Saldo insuficiente! Faça uma recarga para continuar.";
 
-            // 1. Debita o saldo disponível e move para o reservado
+            // 1. Debita o valor total (Vagas x [Valor+Taxa]) e move para reserva
             transaction.update(userRef, {
                 wallet_balance: increment(-totalNecessario),
                 wallet_reserved: increment(totalNecessario),
                 updated_at: serverTimestamp()
             });
 
-            // 2. Cria o documento da Missão (Ordem de Serviço)
+            // 2. Cria a Missão com Inteligência Geográfica e Escassez
             const missionRef = doc(collection(db, "missions"));
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
                 reward: reward,
-                total_with_fee: totalNecessario,
+                slots_totais: slots,
+                slots_disponiveis: slots, // Inicia com todas as vagas livres
+                pessoas_realizando: 0,    // Ninguém começou ainda
+                address: enderecoFormatado, // Salva o endereço para o Admin não ter que digitar
                 pay_type: 'real',
-                status: 'pending_b2b', // Aguarda Gil aprovar no Admin
+                status: 'pending_b2b',    // Aguarda sua curadoria no Admin
                 active: false,
+                b2b_name: window.userProfile?.nome_fantasia || window.userProfile?.nome || "Empresa B2B",
                 created_at: serverTimestamp()
             });
 
-            // 3. Registra no extrato da empresa
+            // 3. Livro Razão B2B
             const extratoRef = doc(collection(db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: uid,
                 valor: -totalNecessario,
                 tipo: "RESERVA_B2B 🔒",
-                descricao: `Reserva: ${window.wizardB2BData.title}`,
+                descricao: `Reserva: ${slots}x ${window.wizardB2BData.title}`,
                 moeda: "BRL",
                 timestamp: serverTimestamp()
             });
         });
 
-        alert("🚀 ORDEM ENVIADA!\nA ATLIVIO analisará o local e publicará no radar em breve.");
+        alert("🚀 OPERAÇÃO LANÇADA!\nO endereço e as coordenadas foram configurados. A ATLIVIO publicará no radar após breve revisão.");
         document.getElementById('modal-editor').classList.add('hidden');
         window.carregarOrdensB2B();
 
     } catch (e) {
-        alert("❌ ERRO: " + e);
+        console.error("Erro Reserva B2B:", e);
+        alert("❌ FALHA NA RESERVA: " + e);
         btn.disabled = false;
-        btn.innerText = "Confirmar e Reservar Saldo ✅";
+        btn.innerText = "Finalizar e Ativar Operação ✅";
     }
 };
 
