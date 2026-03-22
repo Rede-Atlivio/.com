@@ -466,12 +466,16 @@ async function aprovarMissao(docId, userId, valor) {
                     transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 3. 📈 REGISTRO DE LUCRO ATLIVIO: Sua parte vai para o Dashboard agora!
+                // 📊 CONTABILIDADE DE TAXAS B2B (ISOLADO DO CAIXA REAL)
+                // Gil, aqui criamos um balde separado só para você ver quanto faturou de taxa.
+                // Isso NÃO mexe no saldo de recargas do sys_finance/receita_total.
                 if (suaTaxaLucro > 0) {
-                    transaction.update(cofreRef, { 
-                        total_acumulado: increment(suaTaxaLucro),
+                    const taxaB2BRef = doc(window.db, "sys_finance", "fees_b2b");
+                    transaction.set(taxaB2BRef, { 
+                        total_taxas_acumulado: increment(suaTaxaLucro),
+                        quantidade_transacoes: increment(1),
                         ultima_atualizacao: serverTimestamp() 
-                    });
+                    }, { merge: true });
                 }
 
                 // 4. Deposita os ATLIX na carteira do explorador
