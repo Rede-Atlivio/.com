@@ -405,7 +405,29 @@ async function carregarMissoesRealizadas() {
 
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
-console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
+// ⏲️ MOTOR DE RECUPERAÇÃO ATLIVIO: Devolve a vaga se o explorador desistir
+window.iniciarCronometroDesistencia = (missionId) => {
+    // Definimos 20 minutos de prazo para tirar a foto e enviar
+    setTimeout(async () => {
+        const aindaFazendo = localStorage.getItem(`fazendo_${missionId}`);
+        
+        if (aindaFazendo) {
+            const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const missionRef = doc(window.db, "missions", missionId);
+            
+            // Devolve a vaga para o mapa e limpa o contador de "realizando"
+            await updateDoc(missionRef, {
+                slots_disponiveis: increment(1),
+                pessoas_realizando: increment(-1)
+            });
+            
+            localStorage.removeItem(`fazendo_${missionId}`);
+            console.log("♻️ Vaga devolvida ao radar por inatividade.");
+        }
+    }, 20 * 60 * 1000); 
+};
+
+console.log("🚀 [Missions] Sistema de Escassez e Vagas Temporárias Soldado!");
 // ⏲️ SENTINELA DE DESISTÊNCIA: Devolve a vaga se o usuário sumir
 window.iniciarCronometroDesistencia = (missionId) => {
     console.log(`⏱️ Cronômetro de 20min iniciado para missão: ${missionId}`);
