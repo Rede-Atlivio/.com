@@ -275,34 +275,46 @@ window.proximoPassoWizard = (passo) => {
     }
 };
 
-window.capturarLocalizacaoWizard = () => {
-    const btn = document.querySelector('#gps-action-area button');
-    btn.innerText = "⏳ BUSCANDO...";
-    
+// 📡 MOTOR DE GEOLOCALIZAÇÃO ATLIVIO
+window.obterLocalizacaoAutomatica = () => {
+    if (!navigator.geolocation) return alert("Sensor GPS não detectado.");
     navigator.geolocation.getCurrentPosition((pos) => {
-        document.getElementById('b2b-lat').value = pos.coords.latitude;
-        document.getElementById('b2b-lng').value = pos.coords.longitude;
-        document.getElementById('gps-status').classList.remove('hidden');
-        document.getElementById('gps-action-area').classList.add('hidden');
-        
-        const btnNext = document.getElementById('btn-next-3');
-        btnNext.disabled = false;
-        btnNext.className = "w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition";
-    }, (err) => {
-        alert("Ative o GPS para prosseguir.");
-        btn.innerText = "Sim, Usar GPS";
+        document.getElementById('b2b-lat').value = pos.coords.latitude.toFixed(6);
+        document.getElementById('b2b-lng').value = pos.coords.longitude.toFixed(6);
+        window.liberarBotaoInvestimento();
+    }, () => alert("Ative o GPS para localizar seu ponto."));
+};
+
+// 🚀 MOTOR AUTOCOMPLETE GOOGLE (Lançado ao abrir o Passo 2)
+window.iniciarAutocompleteB2B = () => {
+    const input = document.getElementById('mis-address-search');
+    if (!input || !window.google) return;
+    const auto = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: "br" }, fields: ["geometry"], types: ["address"] });
+    auto.addListener("place_changed", () => {
+        const place = auto.getPlace();
+        if (!place.geometry) return;
+        document.getElementById('b2b-lat').value = place.geometry.location.lat().toFixed(6);
+        document.getElementById('b2b-lng').value = place.geometry.location.lng().toFixed(6);
+        window.liberarBotaoInvestimento();
     });
+};
+
+window.validarRaioB2B = (input) => { if(input.value < 0) input.value = 0; window.liberarBotaoInvestimento(); };
+
+window.liberarBotaoInvestimento = () => {
+    const btn = document.getElementById('btn-next-3');
+    if(btn) { btn.disabled = false; btn.className = "w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all"; }
 };
 
 // 💰 PASSO 3: INVESTIMENTO - Finalização com a identidade visual da ATLIVIO
 window.finalizarLocalWizard = () => {
-    const lat = document.getElementById('b2b-lat').value;
-    const lng = document.getElementById('b2b-lng').value;
-    if(!lat || !lng) return alert("Selecione o local no mapa!");
+    const latStr = document.getElementById('b2b-lat').value;
+    const lngStr = document.getElementById('b2b-lng').value;
+    const radStr = document.getElementById('b2b-radius').value;
 
-    window.wizardB2BData.latitude = parseFloat(lat);
-    window.wizardB2BData.longitude = parseFloat(lng);
-    window.wizardB2BData.radius = 500;
+    window.wizardB2BData.latitude = latStr ? parseFloat(latStr) : null;
+    window.wizardB2BData.longitude = lngStr ? parseFloat(lngStr) : null;
+    window.wizardB2BData.radius = radStr ? Number(radStr) : 0;
 
     const content = document.getElementById('modal-content');
     content.innerHTML = `
