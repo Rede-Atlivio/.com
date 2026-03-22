@@ -104,40 +104,45 @@
             -webkit-text-fill-color: white !important;
         }
 
-      /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO - V5 RESSURREIÇÃO */
+     /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO - V5 RESSURREIÇÃO (TOTAL BRILHO) */
         .pac-container {
-            z-index: 999999 !important;
-            background-color: #0f172a !important;
-            border: 1px solid rgba(34, 211, 238, 0.4) !important;
-            border-radius: 14px !important;
-            margin-top: 6px !important;
+            /* Subimos o z-index para o nível máximo da galáxia para não ficar "atrás" do modal */
+            z-index: 1000000000 !important; 
+            background-color: #1e293b !important; /* Slate-800: Um pouco mais claro para dar contraste */
+            border: 2px solid #22d3ee !important; /* Cyan vibrante para destacar no escuro */
+            border-radius: 16px !important;
+            margin-top: 10px !important;
             display: block !important;
             visibility: visible !important;
             height: auto !important;
-            min-height: 150px !important; /* FORÇA ABERTURA DA LISTA */
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6) !important;
+            min-height: 150px !important; 
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.2) !important; /* Glow suave em volta da lista */
         }
         .pac-item {
-            padding: 12px 16px !important;
-            color: #f8fafc !important;
-            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            padding: 14px 20px !important;
+            color: #cbd5e1 !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
             cursor: pointer !important;
         }
-        .pac-item:hover { background-color: rgba(34, 211, 238, 0.15) !important; }
-        .pac-item-query { color: #ffffff !important; font-weight: bold !important; }
+        .pac-item:hover { background-color: rgba(34, 211, 238, 0.2) !important; }
+        .pac-item-query { color: #ffffff !important; font-weight: 900 !important; font-size: 15px !important; }
         .pac-matched { color: #22d3ee !important; font-weight: 900 !important; }
         
-        /* 👻 CAMUFLAGEM SEGURA: O logo existe, mas é quase invisível */
+        /* 👻 CAMUFLAGEM SEGURA: O logo existe para não bugar, mas some na visão */
         .pac-logo { 
-            background-color: transparent !important;
-            opacity: 0.05 !important; 
-            height: 10px !important;
+            background-image: none !important;
+            opacity: 0 !important; 
+            height: 0px !important;
             pointer-events: none !important;
         }
         .pac-icon { display: none !important; }
 
-        /* 🛡️ BLINDAGEM DE VALOR (Passo 3) */
-        #b2b-reward { outline: none !important; box-shadow: none !important; }
+        /* 🛡️ BLINDAGEM DE VALOR (Passo 3): Garante limpeza absoluta */
+        #b2b-reward { 
+            outline: none !important; 
+            box-shadow: none !important; 
+            border: 2px solid rgba(16, 185, 129, 0.5) !important; 
+        }
         
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
