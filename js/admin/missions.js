@@ -32,9 +32,46 @@ export async function init() {
     window.aprovarMissao = aprovarMissao;
     window.rejeitarMissao = rejeitarMissao;
     
-    // Inicia na aba de Gerenciar (já que você quer editar)
+    // Inicia na aba de Gerenciar
     switchMissionTab('missions');
+
+    // 🧹 FAXINA DE VAGAS ATLIVIO: Libera vagas de quem travou a missão e não enviou em 30 min
+    // Isso garante que o radar esteja sempre girando e as empresas não fiquem com vagas presas
+    setTimeout(() => { if(window.limparVagasZumbisB2B) window.limparVagasZumbisB2B(); }, 2000);
 }
+
+/**
+ * 🕵️ MOTOR DE INTEGRIDADE DO RADAR
+ * Busca missões com pessoas "realizando" há mais de 30 minutos e as expulsa da vaga
+ */
+window.limparVagasZumbisB2B = async () => {
+    try {
+        const q = query(collection(window.db, "missions"), where("pessoas_realizando", ">", 0));
+        const snap = await getDocs(q);
+        const agora = Date.now();
+        const limite = 30 * 60 * 1000; // 30 Minutos
+
+        for (const mDoc of snap.docs) {
+            const qTentativas = query(collection(window.db, "missions", mDoc.id, "attempts"), where("status", "==", "started"));
+            const tentSnap = await getDocs(qTentativas);
+
+            for (const tDoc of tentSnap.docs) {
+                const t = tDoc.data();
+                const inicio = t.started_at?.toDate().getTime() || agora;
+                if (agora - inicio > limite) {
+                    await runTransaction(window.db, async (transaction) => {
+                        transaction.update(doc(window.db, "missions", mDoc.id), {
+                            slots_disponiveis: increment(1),
+                            pessoas_realizando: increment(-1),
+                            updated_at: serverTimestamp()
+                        });
+                        transaction.update(doc(window.db, "missions", mDoc.id, "attempts", tDoc.id), { status: 'expired' });
+                    });
+                }
+            }
+        }
+    } catch(e) { console.error("Erro na faxina:", e); }
+};
 
 async function switchMissionTab(tab) {
     currentTab = tab;
