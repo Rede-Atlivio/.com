@@ -533,9 +533,45 @@ async function aprovarMissao(docId, userId, valor) {
 
 async function rejeitarMissao(docId) {
     if(!confirm("Rejeitar esta missão?")) return;
-    await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected' });
+    await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected', rejected_at: serverTimestamp() });
     loadSubmissions();
 }
+
+// 🔨 MARTELO DO ADMIN: O B2B recusou, mas você achou que a prova é válida
+window.anularRecusaB2B = async (docId, userId, valor) => {
+    if(!confirm(`⚠️ JUSTIÇA ATLIVIO: Deseja anular a recusa do B2B e forçar o pagamento de R$ ${valor} ao usuário?`)) return;
+    // Gil, ao anular, chamamos o motor de aprovação padrão que já lida com as carteiras
+    await window.aprovarMissao(docId, userId, valor);
+};
+
+// 🔨 MARTELO DO ADMIN: Você analisou e concorda que a prova é RUIM (O B2B tem razão)
+window.confirmarRecusaB2B = async (docId) => {
+    if(!confirm("🔨 Confirmar reprovação final? O valor reservado voltará para o saldo da empresa.")) return;
+
+    try {
+        await runTransaction(window.db, async (transaction) => {
+            const subRef = doc(window.db, "mission_submissions", docId);
+            const subSnap = await transaction.get(subRef);
+            if (!subSnap.exists()) throw "Registro não encontrado";
+            const data = subSnap.data();
+
+            // 1. Devolve o dinheiro da reserva para o saldo disponível da empresa
+            if (data.b2b_owner_uid && data.reward) {
+                const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
+                transaction.update(b2bRef, { 
+                    wallet_reserved: increment(-data.reward),
+                    wallet_balance: increment(data.reward)
+                });
+            }
+
+            // 2. Marca como reprovado permanentemente
+            transaction.update(subRef, { status: 'rejected', admin_decision: 'confirmed_b2b_rejection', updated_at: serverTimestamp() });
+        });
+        
+        alert("✅ Conflito resolvido: Dinheiro devolvido à empresa.");
+        loadSubmissions();
+    } catch(e) { alert("Erro ao processar resolução."); }
+};
 
 // 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026
 // Gil, esta função liga as sugestões inteligentes do Google ao seu campo de busca
