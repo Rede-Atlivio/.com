@@ -224,23 +224,28 @@ window.proximoPassoWizard = (passo) => {
         window.wizardB2BData.description = desc;
         window.wizardB2BData.b2b_owner_uid = auth.currentUser.uid;
 
-       // PASSO 2: LOCALIZAÇÃO - Sincronizado com a nova identidade Premium
-       document.getElementById('modal-content').innerHTML = `
+      // PASSO 2: LOCALIZAÇÃO - Sincronizado com a nova identidade Premium e Fundo Radial
+        document.getElementById('modal-content').innerHTML = `
+            <style>
+                /* Garante que o Passo 2 herde o fundo com profundidade industrial da ATLIVIO */
+                #modal-editor { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%) !important; }
+            </style>
+
             <div class="max-w-[450px] mx-auto animate-fadeIn space-y-6 text-center">
                 <div class="mb-8">
                     <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">Passo 2: Localização</h3>
                     <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">Centro Geográfico da Missão</p>
                 </div>
 
-                <div class="p-8 bg-slate-900/40 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
-                    <div class="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto border border-blue-500/20">
+                <div class="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
+                    <div class="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center mx-auto border border-blue-500/20 shadow-inner">
                         <span class="text-3xl">📍</span>
                     </div>
                     <p class="text-[11px] text-gray-400 font-medium px-4">Deseja usar sua localização atual como centro do radar para esta missão?</p>
                     
                     <div id="gps-action-area" class="grid grid-cols-2 gap-3 pt-2">
                         <button onclick="window.capturarLocalizacaoWizard()" class="py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg active:scale-95 transition-all">Sim, Usar GPS</button>
-                        <button onclick="alert('Funcionalidade de mapa manual em homologação para sua região.')" class="py-4 bg-slate-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase border border-white/5">Digitar Local</button>
+                        <button onclick="alert('Funcionalidade de mapa manual em homologação para sua região.')" class="py-4 bg-slate-800 text-gray-500 rounded-2xl font-black text-[10px] uppercase border border-white/5 hover:bg-slate-700 transition-colors">Digitar Local</button>
                     </div>
                     
                     <div id="gps-status" class="hidden animate-bounce text-[10px] font-black text-emerald-400 uppercase tracking-widest pt-2">
@@ -249,7 +254,7 @@ window.proximoPassoWizard = (passo) => {
                     <input type="hidden" id="b2b-lat"><input type="hidden" id="b2b-lng">
                 </div>
 
-                <button id="btn-next-3" disabled onclick="window.finalizarLocalWizard()" class="w-full py-5 bg-slate-800 text-gray-600 rounded-2xl font-black text-[11px] uppercase cursor-not-allowed border border-white/5 transition-all">
+                <button id="btn-next-3" disabled onclick="window.finalizarLocalWizard()" class="w-full py-5 bg-slate-800 text-gray-600 rounded-2xl font-black text-[11px] uppercase cursor-not-allowed border border-white/5 transition-all shadow-md">
                     Definir Investimento ➜
                 </button>
             </div>
