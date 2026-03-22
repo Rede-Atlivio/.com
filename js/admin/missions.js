@@ -404,14 +404,13 @@ async function loadSubmissions() {
                 statusBadge = `<span class="bg-orange-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase animate-pulse shadow-lg">⚖️ DISPUTA B2B</span>`;
             }
 
-          // 🔗 OTIMIZAÇÃO SUPREMA ATLIVIO: Substitui imagem por link de auditoria
-            let provaLink = '<span class="text-gray-600 text-[9px] font-bold">🚫 SEM PROVA</span>';
+          // 🚀 ULTRA-PERFORMANCE ATLIVIO: Abre a prova em nova aba para não travar o Admin
+            let provaLink = '<span class="text-gray-600 text-[9px] font-bold uppercase">Sem Foto</span>';
             
             if(data.proof_url) {
                 provaLink = `
-                    <button onclick="window.visualizarProva('${data.proof_url}')" class="flex items-center gap-2 bg-blue-600/10 hover:bg-blue-600 text-blue-400 hover:text-white px-3 py-1.5 rounded-lg border border-blue-500/20 transition-all group">
-                        <span class="text-[10px] font-black uppercase tracking-tighter">👁️ Abrir Prova</span>
-                        <span class="bg-blue-600 text-white text-[8px] px-1 rounded opacity-50 group-hover:opacity-100">DOC</span>
+                    <button onclick="window.abrirProvaNovaAba('${data.proof_url}')" class="bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white px-3 py-2 rounded-xl border border-white/5 transition-all flex items-center gap-2 group shadow-lg">
+                        <span class="text-[10px] font-black uppercase tracking-widest">Ver Evidência ↗</span>
                     </button>
                 `;
             }
