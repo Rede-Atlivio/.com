@@ -689,9 +689,15 @@ async function loadMissionsPayments() {
             const userPix = !uSnap.empty ? (uSnap.docs[0].data().pix_key || uSnap.docs[0].data().chave_pix) : 'Não cadastrada';
 
            // 🏷️ IDENTIFICADOR DE ORIGEM: Verifica se a missão é B2B ou sua (ROOT)
-            const etiquetaOrigem = data.b2b_owner_uid 
-                ? `<span class="bg-amber-900/40 text-amber-500 border border-amber-800 text-[7px] px-1 rounded ml-1 font-black">B2B: ${data.b2b_name || 'EMPRESA'}</span>`
-                : `<span class="bg-blue-900/40 text-blue-500 border border-blue-800 text-[7px] px-1 rounded ml-1 font-black">ROOT</span>`;
+            // 🏷️ IDENTIFICADOR DE NATUREZA: Diferencia Foto de Missão de Saque de Saldo
+            let etiquetaOrigem = '';
+            if (data.is_saque) {
+                etiquetaOrigem = `<span class="bg-purple-900/40 text-purple-400 border border-purple-800 text-[7px] px-1 rounded ml-1 font-black">🏧 RESGATE SALDO</span>`;
+            } else {
+                etiquetaOrigem = data.b2b_owner_uid 
+                    ? `<span class="bg-amber-900/40 text-amber-500 border border-amber-800 text-[7px] px-1 rounded ml-1 font-black">B2B: ${data.b2b_name || 'EMPRESA'}</span>`
+                    : `<span class="bg-blue-900/40 text-blue-500 border border-blue-800 text-[7px] px-1 rounded ml-1 font-black">ROOT</span>`;
+            }
 
             tbody.innerHTML += `
                 <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition">
