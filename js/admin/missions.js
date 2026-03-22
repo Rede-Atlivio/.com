@@ -406,17 +406,14 @@ async function loadSubmissions() {
 
           // Gil, agora a foto abre em um modal flutuante para não falhar o carregamento
             let provaLink = '<span class="text-gray-600 text-[10px]">SEM FOTO</span>';
-            if(data.proof_url) {
+           if(data.proof_url) {
+                // ⚡ PERFORMANCE: Usamos loading="lazy" para o navegador não travar ao processar o Base64
                 provaLink = `
                     <div class="relative group cursor-pointer" onclick="window.visualizarProva('${data.proof_url}')">
-                        <img src="${data.proof_url}" class="w-12 h-12 object-cover rounded-lg border border-slate-700 transition-all">
-                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-lg transition-opacity">
-                            <span class="text-white text-[10px] font-bold">VER</span>
-                        </div>
+                        <img src="${data.proof_url}" loading="lazy" class="w-10 h-10 object-cover rounded-lg border border-slate-700 hover:scale-110 transition-transform">
                     </div>
                 `;
             }
-
             tbody.innerHTML += `
                 <tr class="border-b border-slate-800 hover:bg-slate-800/50">
                     <td class="p-3 text-white font-bold text-sm">${data.mission_title || 'Missão'}</td>
