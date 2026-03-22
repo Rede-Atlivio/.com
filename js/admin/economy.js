@@ -66,41 +66,35 @@ async function loadEconomySettings() {
 }
 
 // 💾 SALVAR POLÍTICA MONETÁRIA (Ação do Botão Azul no Admin)
-window.saveSettings = async () => {
-    const btn = event.currentTarget;
-    const txtOriginal = btn.innerText;
-    btn.innerText = "⏳ ATUALIZANDO BANCO..."; btn.disabled = true;
+/**
+ * 🏦 SALVAMENTO EXCLUSIVO BANCO CENTRAL
+ * Salva apenas as taxas e regras B2B, sem mexer nas configurações gerais.
+ */
+window.saveEconomySettings = async () => {
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerText = "GRAVANDO NO BANCO...";
 
     try {
-        // Captura de dados da nova interface
-        const taxaB2B = document.getElementById('conf-taxa-b2b').value;
-        const spreadAtlix = document.getElementById('conf-spread-atlix').value;
-        const saqueMin = document.getElementById('conf-saque-minimo').value;
-        const statusPix = document.getElementById('conf-status-pix').checked;
-        const valBonus = document.getElementById('conf-validade-bonus').value;
-        const msgGlobal = document.getElementById('conf-global-msg').value;
-
+        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
         const payload = {
-            taxa_b2b_atlivio: Number(taxaB2B),
-            spread_conversao: Number(spreadAtlix),
-            saque_minimo_atlix: Number(saqueMin),
-            pagamentos_pix_ativos: statusPix,
-            validade_bonus_meses: Number(valBonus),
-            global_msg: msgGlobal,
-            updated_at: serverTimestamp(),
-            last_change_by: "Admin Atlivio"
+            taxa_lucro_b2b: parseFloat(document.getElementById('conf-taxa-b2b').value || 100),
+            spread_conversao: parseFloat(document.getElementById('conf-spread-atlix').value || 0.8),
+            saque_minimo_atlix: parseInt(document.getElementById('conf-saque-minimo').value || 50),
+            pagamentos_pix_ativos: document.getElementById('conf-status-pix').checked,
+            updated_at: serverTimestamp()
         };
 
-        // Gravação na nova coleção master de economia
         await setDoc(doc(window.db, "settings", "global_economy"), payload, { merge: true });
-
-        alert("✅ POLÍTICA MONETÁRIA ATUALIZADA!\n\nLucro B2B, Spread de Saque e Regras de Segurança estão em vigor.");
+        alert("✅ POLÍTICA MONETÁRIA ATUALIZADA!\nAs novas taxas já estão valendo para todos os usuários.");
         
-    } catch(e) {
-        alert("❌ Erro ao salvar economia: " + e.message);
+    } catch (e) {
+        console.error("Erro Economia:", e);
+        alert("❌ Falha ao salvar: " + e.message);
     } finally {
-        btn.innerText = txtOriginal;
         btn.disabled = false;
+        btn.innerText = "Atualizar Banco Central ⚡";
     }
 };
 
