@@ -122,8 +122,15 @@ export async function renderAssistant(containerId) {
                 statusColor = "border-l-4 border-emerald-500"; icon = "💵";
             }
             if (totalMisAnalise > 0) {
-                insights.push(`📸 <b>MISSÕES:</b> ${totalMisAnalise} envios aguardando auditoria.`);
+                insights.push(`📸 <b>MISSÕES:</b> ${totalMisAnalise} envios aguardando sua auditoria.`);
                 if(totalPix === 0) statusColor = "border-l-4 border-blue-400";
+            }
+            // Alerta Crítico de Disputa B2B
+            const totalDisputasB2B = snapDisputasB2B.data().count;
+            if (totalDisputasB2B > 0) {
+                insights.push(`🚨 <b>DISPUTA B2B:</b> ${totalDisputasB2B} envios recusados pelo cliente. Dê o veredito!`);
+                statusColor = "border-l-4 border-orange-600";
+                icon = "⚖️";
             }
             if (pendingAnalise > 0) {
                 insights.push(`⚠️ <b>PRESTADORES:</b> ${pendingAnalise} perfis para aprovar.`);
