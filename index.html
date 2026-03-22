@@ -124,8 +124,9 @@
             cursor: pointer !important;
             font-size: 14px !important;
         }
+        /* Gil, removemos o hover para evitar linhas fixas residuais */
         .pac-item:hover {
-            background-color: #1e293b !important; 
+            background-color: transparent !important; 
         }
         .pac-item-query {
             color: #ffffff !important; 
@@ -135,8 +136,15 @@
             color: #22d3ee !important; 
             font-weight: 900 !important;
         }
-        /* Remove o ícone de 'alfinete' feio do Google que buga no dark mode */
-        .pac-icon { display: none !important; }
+        
+        /* 🚫 EXTERMÍNIO: Remove o ícone de 'alfinete' E o 'powered by Google' fixo */
+        .pac-icon, .pac-logo:after, .pac-logo:before { 
+            display: none !important; 
+            content: none !important; /* Gil, isso impede que o logo se reconstrua */
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+        }
 
         /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
         @keyframes bounce-subtle {
