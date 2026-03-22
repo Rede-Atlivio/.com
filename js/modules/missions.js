@@ -104,8 +104,16 @@ container.innerHTML = `
                             </p>
                         </div>
                     </div>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="flex h-2 w-2 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
+                        <p class="text-[9px] font-black uppercase tracking-widest ${m.slots_disponiveis > 0 ? 'text-emerald-400' : 'text-red-400'}">
+                            ${m.slots_disponiveis > 0 ? `${m.slots_disponiveis} Vagas Restantes` : 'Missão Esgotada'}
+                        </p>
+                        ${m.pessoas_realizando > 0 ? `<span class="text-[8px] text-amber-500 font-bold ml-auto">⚠️ ${m.pessoas_realizando} realizando agora</span>` : ''}
+                    </div>
                     
-                    <h3 class="font-black text-slate-800 text-sm uppercase mb-1">${m.title}</h3>
+                    <h3 class="font-black text-white text-sm uppercase mb-1">${m.title}</h3>
                     <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
 
                     <div class="flex gap-2">
