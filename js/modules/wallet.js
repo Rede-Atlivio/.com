@@ -930,6 +930,33 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
         return { success: false, error: e };
     }
 };
+/**
+ * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO
+ * Transforma saldo de missões em percepção de valor real (Spread).
+ */
+window.calcularEquivalenciaAtlix = (saldoAtlix) => {
+    const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
+    const valorReal = (saldoAtlix * spread).toFixed(2);
+    const el = document.getElementById('txt-equivalencia-real');
+    const elBtnSaque = document.getElementById('btn-solicitar-saque');
+    
+    if (el) { el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; }
+
+    // Trava de segurança: O botão de saque só ativa se atingir o mínimo configurado no Admin
+    if (elBtnSaque) {
+        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
+        if (saldoAtlix >= min) {
+            elBtnSaque.disabled = false;
+            elBtnSaque.classList.remove('opacity-50', 'grayscale');
+            elBtnSaque.innerText = "SACAR PARA PIX 💸";
+        } else {
+            elBtnSaque.disabled = true;
+            elBtnSaque.classList.add('opacity-50', 'grayscale');
+            elBtnSaque.innerText = `FALTAM ${(min - saldoAtlix).toFixed(0)} ATLIX PARA SAQUE`;
+        }
+    }
+};
+
 // ============================================================================
 // 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
 // Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
