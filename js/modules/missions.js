@@ -210,7 +210,8 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
                 return;
             }
             
-           await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file);
+          // Passa o ID do dono da empresa para o motor de processamento
+           await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId);
             currentInput.value = ""; // Limpa após o processamento
         };
 
