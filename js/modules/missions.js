@@ -156,7 +156,7 @@ function verTutorialMissao(videoId) {
 }
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escudo de Duplicidade & Câmera
-async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento) {
+async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
     // Gil, aqui o robô verifica se o usuário já tem algum envio (pendente ou pago) para este ID de missão
     const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
