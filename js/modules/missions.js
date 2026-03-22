@@ -290,6 +290,14 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 status: 'pending',
                 created_at: serverTimestamp()
             });
+            // ✅ CONFIRMAÇÃO DE ENTREGA: Remove o usuário do contador de "realizando"
+            const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const missionRef = doc(window.db, "missions", id);
+            await updateDoc(missionRef, { pessoas_realizando: increment(-1) });
+            
+            // Limpa o rastro local para o cronômetro não devolver a vaga por erro
+            localStorage.removeItem(`fazendo_${id}`);
+
             alert("✅ SUCESSO! Sua prova foi enviada para análise.");
             btn.innerText = "✅ ENVIADO";
         };
