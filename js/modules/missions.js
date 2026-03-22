@@ -394,3 +394,26 @@ async function carregarMissoesRealizadas() {
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
 console.log("🚀 [Missions] Sistema Atlas Vivo 100% Soldado e Visível!");
+// ⏲️ SENTINELA DE DESISTÊNCIA: Devolve a vaga se o usuário sumir
+window.iniciarCronometroDesistencia = (missionId) => {
+    console.log(`⏱️ Cronômetro de 20min iniciado para missão: ${missionId}`);
+    
+    // Se após 20 minutos o usuário não tiver enviado, devolvemos a vaga
+    setTimeout(async () => {
+        const { doc, getDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // Verifica se a missão ainda está marcada como "em progresso" para este usuário
+        // (Aqui usamos uma flag temporária no localStorage)
+        const aindaFazendo = localStorage.getItem(`fazendo_${missionId}`);
+        
+        if (aindaFazendo) {
+            const missionRef = doc(window.db, "missions", missionId);
+            await updateDoc(missionRef, {
+                slots_disponiveis: increment(1),
+                pessoas_realizando: increment(-1)
+            });
+            localStorage.removeItem(`fazendo_${missionId}`);
+            console.log("♻️ Vaga devolvida por inatividade.");
+        }
+    }, 20 * 60 * 1000); // 20 minutos
+};
