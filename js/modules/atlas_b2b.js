@@ -272,6 +272,8 @@ window.proximoPassoWizard = (passo) => {
                 </button>
             </div>
         `;
+        // 🛰️ DESPERTADOR GOOGLE: Ativa a busca de endereços 200ms após o HTML carregar
+        setTimeout(() => { if(window.iniciarAutocompleteB2B) window.iniciarAutocompleteB2B(); }, 200);
     }
 };
 
