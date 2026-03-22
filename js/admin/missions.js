@@ -809,7 +809,7 @@ window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
-window.visualizarProva = visualizarProva;
+window.abrirProvaNovaAba = abrirProvaNovaAba;
 
 // ⚖️ NOVOS MOTORES DE JUSTIÇA B2B
 window.anularRecusaB2B = anularRecusaB2B;
