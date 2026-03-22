@@ -127,7 +127,7 @@ export async function init() {
                 <h3 class="text-lg font-black text-white" id="kpi-users">--</h3>
             </div>
             <div id="card-financeiro-atlivio" class="glass-panel p-4 border-t-2 border-emerald-500 bg-emerald-500/5 transition-all duration-500">
-                <p class="text-[8px] uppercase font-bold text-emerald-400" id="lbl-lucro-real">💰 Lucro Real (PIX)</p>
+                <p class="text-[8px] uppercase font-bold text-emerald-400" id="lbl-lucro-real">🏦 CAIXA PIX (BANCÁRIO)</p>
                 <h3 class="text-lg font-black text-emerald-400" id="kpi-cofre">R$ 0,00</h3>
                 <canvas id="miniChartCaixa" style="max-height: 30px; width: 100%;"></canvas>
                 <div id="mini-log-lucros" class="mt-1 h-8 overflow-hidden text-[7px]"></div>
