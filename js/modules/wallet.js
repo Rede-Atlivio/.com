@@ -990,7 +990,7 @@ window.processarSolicitacaoSaque = async () => {
 
     // 🛡️ Trava de Segurança: Saldo insuficiente
     if (saldoAtlix < minSaque) {
-        return alert(`🛑 Piso de Saque não atingido.\n\nVocê tem ${saldoAtlix.toFixed(2)} ATLIX, mas o Banco Central exige no mínimo ${minSaque} ATLIX para realizar a conversão.`);
+        return alert(`🛑 Piso de Saque não atingido.\n\nVocê tem ${saldoAtlix.toFixed(2)} ATLIX, você precisa de no mínimo ${minSaque} ATLIX para realizar a conversão.`);
     }
 
     const valorEmReal = (saldoAtlix * spread).toFixed(2);
