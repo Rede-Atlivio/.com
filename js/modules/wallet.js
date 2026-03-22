@@ -818,10 +818,96 @@ window.filtrarGanhos = async (periodo) => {
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
             elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
-        }
+       }
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
         elEarnings.innerText = "0,00";
+    }
+};
+
+/**
+ * 🔍 EXTRATO INTELIGENTE V2026
+ * Abre um modal com a auditoria detalhada de ganhos e saques.
+ */
+window.abrirRelatorioDetalhado = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    // Feedback visual de carregamento
+    const btnOriginal = event.currentTarget.innerHTML;
+    event.currentTarget.innerText = "🔍 ANALISANDO...";
+
+    try {
+        const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const snap = await getDocs(query(collection(db, "extrato_financeiro"), where("uid", "==", uid)));
+
+        let totais = { servicos: 0, missoes: 0, saques: 0 };
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            const valor = parseFloat(t.valor || 0);
+            const tipo = t.tipo || "";
+
+            if (valor > 0) {
+                // Separação por DNA da transação
+                if (tipo.includes('GANHO_SERVIÇO') || tipo.includes('FEE')) totais.servicos += valor;
+                else if (tipo.includes('MISSÃO') || t.moeda === 'ATLIX') totais.missoes += valor;
+            } else if (tipo.includes('SAQUE') || tipo.includes('CONVERSÃO')) {
+                totais.saques += Math.abs(valor);
+            }
+        });
+
+        // 🏗️ Injeção Visual no Modal (Usando a estrutura de modal que você já tem no App)
+        const modalContent = `
+            <div class="p-6 space-y-6 text-slate-800">
+                <div class="text-center">
+                    <h3 class="text-xl font-black uppercase italic tracking-tighter">Auditoria de Ganhos</h3>
+                    <p class="text-[10px] text-gray-400 uppercase font-bold">Desempenho Geral na Atlivio</p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3">
+                    <div class="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-[9px] font-black text-emerald-600 uppercase">Ganhos em Serviços</p>
+                            <p class="text-[8px] text-emerald-400 uppercase leading-none">Intermediação via Chat</p>
+                        </div>
+                        <span class="font-black text-emerald-700">R$ ${totais.servicos.toFixed(2).replace('.', ',')}</span>
+                    </div>
+
+                    <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-[9px] font-black text-amber-600 uppercase">Ganhos em Missões</p>
+                            <p class="text-[8px] text-amber-400 uppercase leading-none">B2B & Atlas Vivo</p>
+                        </div>
+                        <span class="font-black text-amber-700">${totais.missoes.toFixed(2).replace('.', ',')} 🪙</span>
+                    </div>
+
+                    <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+                        <div>
+                            <p class="text-[9px] font-black text-blue-600 uppercase">Total Resgatado</p>
+                            <p class="text-[8px] text-blue-400 uppercase leading-none">Saques PIX Concluídos</p>
+                        </div>
+                        <span class="font-black text-blue-700">R$ ${totais.saques.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+
+                <button onclick="window.fecharModalUniversal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg">Fechar Auditoria</button>
+            </div>
+        `;
+
+        // Aqui você usa a função de abrir modal do seu App
+        if (window.abrirModalApp) {
+            window.abrirModalApp(modalContent);
+        } else {
+            alert(`--- RELATÓRIO ATLIVIO ---\n\nServiços: R$ ${totais.servicos.toFixed(2)}\nMissões: ${totais.missoes.toFixed(2)} ATLIX\nResgatado: R$ ${totais.saques.toFixed(2)}`);
+        }
+
+    } catch (e) {
+        console.error("Erro no Relatório:", e);
+        alert("Falha ao gerar relatório.");
+    } finally {
+        // Volta o botão ao normal
+        document.querySelectorAll('.btn-detalhes-extrato').forEach(b => b.innerHTML = 'Ver Detalhes 📊');
     }
 };
 async function definirMetaDiaria() {
