@@ -207,7 +207,11 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             return;
         }
 
-       // Se passar na trava, segue o fluxo normal
+       // 🛰️ Marcador de Execução: Impede que a vaga fique presa se o app fechar
+        localStorage.setItem(`fazendo_${id}`, "true");
+        window.iniciarCronometroDesistencia(id);
+
+        // Se passar na trava, segue o fluxo normal
         // Gil, pedimos o OK primeiro para garantir que o sistema não "atropele" a câmera
         if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) {
             btn.disabled = false;
