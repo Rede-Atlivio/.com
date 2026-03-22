@@ -797,14 +797,18 @@ window.finalizarPagamentoComprovante = async (docId) => {
     input.click();
 };
 
-// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (FINAL)
+// 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (CONEXÃO TOTAL B2B)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
-window.publicarMissaoB2B = publicarMissaoB2B; // 🚀 Soldado!
-window.loadMissionsPayments = loadMissionsPayments; // ✅ Soldado!
+window.publicarMissaoB2B = publicarMissaoB2B; 
+window.loadMissionsPayments = loadMissionsPayments; 
 window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
 window.visualizarProva = visualizarProva;
 
-console.log("🚀 [Missions Admin] Sistema Atlas Vivo com Inteligência Google Soldado!");
+// ⚖️ NOVOS MOTORES DE JUSTIÇA B2B
+window.anularRecusaB2B = anularRecusaB2B;
+window.confirmarRecusaB2B = confirmarRecusaB2B;
+
+console.log("🚀 [Missions Admin] Sistema de Auditoria de Dois Níveis Soldado!");
