@@ -391,9 +391,17 @@ async function loadSubmissions() {
 
         snap.forEach(d => {
             const data = d.data();
+           // 🚥 MOTOR DE STATUS ATLIVIO: Identifica disputas iniciadas pelo B2B
             let statusBadge = `<span class="bg-yellow-900 text-yellow-400 px-2 py-1 rounded text-[9px] uppercase border border-yellow-700">⏳ PENDENTE</span>`;
-            if(data.status === 'approved') statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
-            if(data.status === 'rejected') statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
+            
+            if(data.status === 'approved' || data.status === 'paid_real' || data.status === 'paid_atlix') {
+                statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
+            } else if(data.status === 'rejected') {
+                statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
+            } else if(data.status === 'b2b_rejected') {
+                // Alerta visual de disputa para o Admin intervir
+                statusBadge = `<span class="bg-orange-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase animate-pulse shadow-lg">⚖️ DISPUTA B2B</span>`;
+            }
 
           // Gil, agora a foto abre em um modal flutuante para não falhar o carregamento
             let provaLink = '<span class="text-gray-600 text-[10px]">SEM FOTO</span>';
