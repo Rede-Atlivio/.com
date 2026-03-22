@@ -87,9 +87,16 @@ window.carregarOrdensB2B = async () => {
                     </div>
                     <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
                     <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
-                    <div class="flex justify-between items-center pt-2 border-t border-gray-50">
-                        <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
-                        <span class="text-[8px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
+                    <div class="flex justify-between items-center pt-2 border-t border-gray-50 gap-2">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
+                            <span class="text-[7px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
+                        </div>
+                        ${m.status !== 'closed' ? `
+                            <button onclick="window.encerrarMissaoB2BComEstorno('${doc.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border border-red-100">
+                                ⛔ Encerrar e Reembolsar
+                            </button>
+                        ` : '<span class="text-[8px] font-black text-gray-300 uppercase">Encerrada</span>'}
                     </div>
                 </div>
             `;
