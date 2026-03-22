@@ -479,10 +479,20 @@ window.finalizarLocalWizard = () => {
 // 🤖 CALCULADORA DINÂMICA
 window.atualizarPreviewFinanceiro = () => {
     const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
-    const total = val * 2; // Regra de 100% de taxa
-    document.getElementById('preview-user').innerText = `R$ ${val.toFixed(2)}`;
-    document.getElementById('preview-tax').innerText = `R$ ${val.toFixed(2)}`;
-    document.getElementById('preview-total').innerText = `R$ ${total.toFixed(2)}`;
+    const slots = parseInt(document.getElementById('b2b-slots').value) || 1;
+    
+    // Regra: (Valor do Usuário + Taxa Atlivio) × Quantidade de Pessoas
+    const recompensaTotalUsuarios = val * slots;
+    const taxaTotalAtlivio = val * slots; // Mantendo 100% de taxa sobre o valor bruto
+    const totalGeral = recompensaTotalUsuarios + taxaTotalAtlivio;
+
+    document.getElementById('preview-user').innerText = `R$ ${recompensaTotalUsuarios.toFixed(2)}`;
+    document.getElementById('preview-tax').innerText = `R$ ${taxaTotalAtlivio.toFixed(2)}`;
+    document.getElementById('preview-total').innerText = `R$ ${totalGeral.toFixed(2)}`;
+    
+    // Guarda na memória temporária para o processamento final
+    window.wizardB2BData.slots_totais = slots;
+    window.wizardB2BData.total_with_fee = totalGeral;
 };
 
 // ⚡ MOTOR DE RESERVA (O CORAÇÃO DO B2B)
