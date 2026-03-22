@@ -224,15 +224,13 @@ window.proximoPassoWizard = (passo) => {
         window.wizardB2BData.description = desc;
         window.wizardB2BData.b2b_owner_uid = auth.currentUser.uid;
 
-        // PASSO 2: LOCALIZAÇÃO E ALVO (SIMULADO VIA COORDENADAS)
+       // PASSO 2: LOCALIZAÇÃO - Sincronizado com a nova identidade Premium
         document.getElementById('modal-content').innerHTML = `
-            <div class="space-y-6 animate-fadeIn pb-6">
-                <div class="text-center">
-                    <h3 class="text-xl font-black text-white uppercase italic tracking-tighter">Passo 2: Localização</h3>
-                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-widest">Onde a missão deve ser realizada?</p>
-                </div>
+            <div class="max-w-[450px] mx-auto animate-fadeIn space-y-6 text-center">
+                <h3 class="text-2xl font-black text-orange-400 uppercase italic" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">Passo 2: Localização</h3>
+                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] -mt-4">Centro Geográfico da Missão</p>
 
-                <div class="p-8 bg-slate-800 rounded-[2.5rem] border border-blue-500/30 text-center space-y-4">
+                <div class="p-8 bg-slate-900/50 rounded-[2.5rem] border border-blue-500/30 space-y-4 shadow-xl">
                     <div class="text-4xl">📍</div>
                     <p class="text-xs text-gray-300">Deseja usar sua localização atual como centro do radar para esta missão?</p>
                     <div class="grid grid-cols-2 gap-2" id="gps-action-area">
