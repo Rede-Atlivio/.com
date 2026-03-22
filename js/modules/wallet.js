@@ -977,6 +977,64 @@ window.filtrarGanhos = filtrarGanhos;
 // 🏦 CONEXÕES BANCO CENTRAL V2026: Libera os novos motores para o App
 window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; 
 window.iniciarSincroniaB2B = iniciarSincroniaB2B;
+
+/**
+ * 💸 MOTOR DE SAQUE ATLIVIO V2026
+ * Converte saldo de missões em Reais e envia para a fila do Admin.
+ */
+window.processarSolicitacaoSaque = async () => {
+    const uid = auth.currentUser?.uid;
+    const saldoAtlix = window.userProfile?.wallet_bonus || 0;
+    const minSaque = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
+    const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
+
+    // 🛡️ Trava de Segurança: Saldo insuficiente
+    if (saldoAtlix < minSaque) {
+        return alert(`🛑 Piso de Saque não atingido.\n\nVocê tem ${saldoAtlix.toFixed(2)} ATLIX, mas o Banco Central exige no mínimo ${minSaque} ATLIX para realizar a conversão.`);
+    }
+
+    const valorEmReal = (saldoAtlix * spread).toFixed(2);
+
+    if (!confirm(`🚀 CONVERSÃO ATLIX PARA PIX\n\nSaldo: ${saldoAtlix.toFixed(2)} ATLIX\nSpread: ${spread}\nReceber: R$ ${valorEmReal}\n\nDeseja realizar o resgate agora?`)) return;
+
+    try {
+        const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 1. Débito no Cofre de Bônus do Usuário
+        await updateDoc(doc(db, "usuarios", uid), {
+            wallet_bonus: increment(-saldoAtlix),
+            updated_at: serverTimestamp()
+        });
+
+        // 2. Protocolo de Conversão no Extrato
+        await addDoc(collection(db, "extrato_financeiro"), {
+            uid: uid,
+            valor: -saldoAtlix,
+            tipo: "🔄 CONVERSÃO_SAQUE",
+            descricao: `Resgate de ${saldoAtlix.toFixed(2)} ATLIX p/ R$ ${valorEmReal}`,
+            timestamp: serverTimestamp(),
+            moeda: "ATLIX"
+        });
+
+        // 3. Injeção na Fila Financeira do Admin (Gil aprova)
+        await addDoc(collection(db, "mission_submissions"), {
+            user_id: uid,
+            user_name: window.userProfile?.nome || "Explorador Atlivio",
+            mission_title: "💰 SOLICITAÇÃO DE SAQUE (CONVERSÃO ATLIX)",
+            reward: parseFloat(valorEmReal), // Valor já em REAL para o Gil pagar
+            pay_type: 'real',
+            status: 'pending', // Aparece na aba de missões/envios pendentes
+            created_at: serverTimestamp(),
+            is_saque: true // Etiqueta técnica
+        });
+
+        alert("✅ SOLICITAÇÃO ENVIADA!\n\nSeu saldo foi debitado e o pedido de PIX foi enviado ao financeiro. Prazo: 24h.");
+        
+    } catch (e) {
+        console.error("Erro Saque:", e);
+        alert("❌ Falha técnica ao processar conversão. O saldo continua seguro na sua conta.");
+    }
+};
 // 🎯 V2026.FIX: Expõe a função para que o botão "Meta" no HTML volte a funcionar
 window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
