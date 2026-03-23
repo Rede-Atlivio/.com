@@ -268,10 +268,11 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🚀 GRAVAÇÃO COM DNA B2B: Agora a submissão nasce vinculada ao dono
+            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                b2b_owner_uid: b2bOwnerId || null, // Carimbo do Dono (Essencial para Auditoria B2B)
+                owner_id: b2bOwnerId || null, // DNA Novo (Usado pela Auditoria)
+                b2b_owner_uid: b2bOwnerId || null, // DNA Antigo (Mantido para compatibilidade)
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: tipoPagamento,
