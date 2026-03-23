@@ -570,10 +570,12 @@ window.processarReservaB2B = async () => {
                 slots_totais: slots,
                 slots_disponiveis: slots,
                 pessoas_realizando: 0,
-                address: enderecoFormatado,
+               address: enderecoFormatado,
                 pay_type: 'real',
-                status: 'pending_b2b',
-                active: false,
+                // 🚀 STATUS DINÂMICO: Se Radar Auto estiver ON, nasce 'active'. Se não, 'pending_b2b'
+                status: radarAutomatico ? 'active' : 'pending_b2b',
+                active: radarAutomatico ? true : false,
+                published_at: radarAutomatico ? serverTimestamp() : null,
                 b2b_name: window.userProfile?.nome_fantasia || window.userProfile?.nome || "Empresa B2B",
                 created_at: serverTimestamp()
             });
