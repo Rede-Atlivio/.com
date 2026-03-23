@@ -1198,7 +1198,13 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
             });
         });
 
-        alert(`✅ OPERAÇÃO ENCERRADA\n\n${valorTotalEstorno.toFixed(2)} ATLIX foram estornados com sucesso.`);
+       // 🔄 Sincronia Imediata: Atualiza a memória local para refletir o estorno sem recarregar
+        if(window.userProfile) {
+            window.userProfile.wallet_reserved -= valorTotalEstorno;
+            window.userProfile.wallet_balance += valorTotalEstorno;
+        }
+
+        alert(`✅ OPERAÇÃO FINALIZADA: ${valorTotalEstorno.toFixed(2)} ATLIX retornaram ao seu saldo disponível.`);
         if (window.switchTab) window.switchTab('ganhar');
 
     } catch (e) {
