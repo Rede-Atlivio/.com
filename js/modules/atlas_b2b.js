@@ -168,14 +168,14 @@ window.vereditoB2B = async (docId, status) => {
                 // 🚀 MODO AUTÔNOMO: Paga o usuário agora e encerra o processo
                 await window.liquidarPagamentoB2B(docId);
                 alert("✅ APROVADO: O saldo foi transferido ao usuário e sua taxa foi liquidada.");
-            } else {
-                // ⏳ MODO MANUAL: B2B deu o OK, mas o Gil precisa dar o "Enter" final
+           } else {
+                // ⏳ MODO MANUAL: Verificação de segurança adicional ativada no Banco Central
                 await updateDoc(doc(db, "mission_submissions", docId), {
                     status: 'approved_by_b2b',
-                    status_history: 'Aguardando liberação final do Banco Central',
+                    status_history: 'Aguardando validação do sistema central',
                     reviewed_at: serverTimestamp()
                 });
-                alert("⚠️ OK ENVIADO: A aprovação foi registrada. O pagamento será liberado pelo Admin Atlivio.");
+                alert("✔️ APROVAÇÃO REGISTRADA: O pagamento passará pela validação final do sistema Atlivio para ser liberado.");
             }
         } else {
             // ⚖️ DISPUTA: Se o B2B reprovar, sempre cai na sua mão para evitar golpe da empresa
