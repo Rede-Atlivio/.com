@@ -147,12 +147,20 @@ window.switchView = async function(viewName) {
         'view-missions', 'view-opportunities', 'view-maestro', 'view-products' 
     ];
 
-    // 🧹 FAXINA ATLIVIO: Esconde todas as divs de visualização antes de carregar a nova
+    // 🧹 FAXINA ATÔMICA ATLIVIO: Garante que nenhuma aba sobreponha a outra
+    // Primeiro: localiza TUDO que tem ID começando com 'view-' e mata a visibilidade
+    const viewsNoDOM = document.querySelectorAll('[id^="view-"]');
+    viewsNoDOM.forEach(v => {
+        v.classList.add('hidden');
+        v.style.setProperty('display', 'none', 'important'); // Bloqueio nível 1
+    });
+
+    // Segundo: certifica que as abas registradas no roteador também sumam
     allViews.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.classList.add('hidden');
-            el.style.display = 'none'; // Força o desaparecimento para não sobrepor
+            el.style.setProperty('display', 'none', 'important'); // Bloqueio nível 2
         }
     });
     
