@@ -330,7 +330,7 @@ window.rejeitarOrdemB2B = async (missionId) => {
         const totalEstorno = m.total_with_fee || 0;
         const b2bUid = m.owner_id || m.b2b_owner_uid;
 
-        await runTransaction(window.db, async (transaction) => {
+       await runTransaction(window.db, async (transaction) => {
             // 1. Localiza a empresa
             const b2bRef = doc(window.db, "usuarios", b2bUid);
             
@@ -341,8 +341,13 @@ window.rejeitarOrdemB2B = async (missionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 3. Deleta a missão rejeitada para limpar o banco
-            transaction.delete(missionRef);
+            // 3. 🛡️ PRESERVAÇÃO: Não deleta, apenas marca como rejeitada e grava o motivo
+            transaction.update(missionRef, {
+                status: 'rejected',
+                rejection_reason: motivo,
+                active: false,
+                updated_at: serverTimestamp()
+            });
 
             // 4. Registra no extrato da empresa a devolução
             const extratoRef = doc(collection(window.db, "extrato_financeiro"));
