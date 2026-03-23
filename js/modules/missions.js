@@ -397,49 +397,22 @@ async function carregarMissoesRealizadas() {
 
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
-// ⏲️ MOTOR DE RECUPERAÇÃO ATLIVIO: Devolve a vaga se o explorador desistir
+// ⏲️ SENTINELA DE DESISTÊNCIA: Devolve a vaga ao radar se o usuário não enviar a prova em 20 min
 window.iniciarCronometroDesistencia = (missionId) => {
-    // Definimos 20 minutos de prazo para tirar a foto e enviar
     setTimeout(async () => {
         const aindaFazendo = localStorage.getItem(`fazendo_${missionId}`);
-        
         if (aindaFazendo) {
             const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             const missionRef = doc(window.db, "missions", missionId);
-            
-            // Devolve a vaga para o mapa e limpa o contador de "realizando"
             await updateDoc(missionRef, {
                 slots_disponiveis: increment(1),
-                pessoas_realizando: increment(-1)
+                pessoas_realizando: increment(-1),
+                updated_at: serverTimestamp()
             });
-            
             localStorage.removeItem(`fazendo_${missionId}`);
-            console.log("♻️ Vaga devolvida ao radar por inatividade.");
+            console.log("♻️ Vaga devolvida ao radar Atlivio por inatividade.");
         }
     }, 20 * 60 * 1000); 
 };
 
-console.log("🚀 [Missions] Sistema de Escassez e Vagas Temporárias Soldado!");
-// ⏲️ SENTINELA DE DESISTÊNCIA: Devolve a vaga se o usuário sumir
-window.iniciarCronometroDesistencia = (missionId) => {
-    console.log(`⏱️ Cronômetro de 20min iniciado para missão: ${missionId}`);
-    
-    // Se após 20 minutos o usuário não tiver enviado, devolvemos a vaga
-    setTimeout(async () => {
-        const { doc, getDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        // Verifica se a missão ainda está marcada como "em progresso" para este usuário
-        // (Aqui usamos uma flag temporária no localStorage)
-        const aindaFazendo = localStorage.getItem(`fazendo_${missionId}`);
-        
-        if (aindaFazendo) {
-            const missionRef = doc(window.db, "missions", missionId);
-            await updateDoc(missionRef, {
-                slots_disponiveis: increment(1),
-                pessoas_realizando: increment(-1)
-            });
-            localStorage.removeItem(`fazendo_${missionId}`);
-            console.log("♻️ Vaga devolvida por inatividade.");
-        }
-    }, 20 * 60 * 1000); // 20 minutos
-};
+console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
