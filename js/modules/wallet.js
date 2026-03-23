@@ -1142,12 +1142,16 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
         const missionRef = doc(db, "missions", missionId);
         const missionSnap = await getDoc(missionRef);
 
-        if (!missionSnap.exists()) return alert("Erro: Missão não localizada.");
+       if (!missionSnap.exists()) return alert("Erro: Ordem não localizada no sistema.");
         const mData = missionSnap.data();
 
-        // 🛡️ Trava de Segurança: Apenas o dono pode encerrar
-        if (mData.owner_id !== uid) return alert("Acesso negado.");
-        if (mData.status === 'closed') return alert("Esta missão já está encerrada.");
+        // 🛡️ BARREIRA DE SEGURANÇA ATLIVIO: Bloqueia se já foi processada, encerrada ou rejeitada
+        if (mData.owner_id !== uid) return alert("Acesso negado: Você não é o proprietário desta ordem.");
+        
+        if (mData.status === 'closed' || mData.status === 'rejected') {
+            alert("✔️ Esta ordem já foi finalizada e o saldo devidamente processado pelo sistema.");
+            return;
+        }
 
         const vagasTotais = parseInt(mData.slots_totais || 0);
         const vagasPreenchidas = parseInt(mData.slots_ocupados || 0);
