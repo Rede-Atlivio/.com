@@ -114,11 +114,13 @@ window.carregarOrdensB2B = async () => {
                             <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
                             <span class="text-[7px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
                         </div>
-                        ${m.status !== 'closed' ? `
+                       ${(m.status === 'active' || m.status === 'pending_b2b') ? `
                             <button onclick="window.encerrarMissaoB2BComEstorno('${doc.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border border-red-100">
                                 ⛔ Encerrar e Reembolsar
                             </button>
-                        ` : '<span class="text-[8px] font-black text-gray-300 uppercase">Encerrada</span>'}
+                        ` : `
+                            <span class="text-[8px] font-black text-gray-300 uppercase italic">Fluxo Finalizado</span>
+                        `}
                     </div>
                 </div>
             `;
