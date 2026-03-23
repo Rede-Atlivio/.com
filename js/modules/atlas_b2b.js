@@ -592,7 +592,11 @@ window.processarReservaB2B = async () => {
             });
         });
 
-        alert("🚀 OPERAÇÃO LANÇADA!\nO endereço e as coordenadas foram configurados. A ATLIVIO publicará no radar após breve revisão.");
+        const msgSucesso = radarAutomatico 
+            ? "🚀 OPERAÇÃO ATIVA!\nSua missão já está visível no radar para todos os usuários."
+            : "✅ OPERAÇÃO LANÇADA!\nSua missão foi enviada para análise e será publicada no radar em instantes.";
+        
+        alert(msgSucesso);
         document.getElementById('modal-editor').classList.add('hidden');
         window.carregarOrdensB2B();
 
