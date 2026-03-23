@@ -311,6 +311,69 @@ async function publicarMissaoB2B(missionId) {
     }
 }
 
+/**
+ * ⛔ MOTOR DE ESTORNO B2B (REJEIÇÃO DE ORDEM)
+ * Cancela a missão pendente e devolve o valor da wallet_reserved para wallet_balance da empresa.
+ */
+window.rejeitarOrdemB2B = async (missionId) => {
+    const motivo = prompt("Informe o motivo da rejeição (será enviado para a empresa):");
+    if (!motivo) return;
+
+    if (!confirm("⚠️ CONFIRMAR REJEIÇÃO?\nO saldo reservado será devolvido integralmente para a empresa e a missão será excluída.")) return;
+
+    try {
+        const missionRef = doc(window.db, "missions", missionId);
+        const missionSnap = await getDoc(missionRef);
+        if (!missionSnap.exists()) throw "Ordem não encontrada.";
+        
+        const m = missionSnap.data();
+        const totalEstorno = m.total_with_fee || 0;
+        const b2bUid = m.owner_id || m.b2b_owner_uid;
+
+        await runTransaction(window.db, async (transaction) => {
+            // 1. Localiza a empresa
+            const b2bRef = doc(window.db, "usuarios", b2bUid);
+            
+            // 2. Devolve o dinheiro (Tira da reserva e volta pro saldo)
+            transaction.update(b2bRef, {
+                wallet_reserved: increment(-totalEstorno),
+                wallet_balance: increment(totalEstorno),
+                updated_at: serverTimestamp()
+            });
+
+            // 3. Deleta a missão rejeitada para limpar o banco
+            transaction.delete(missionRef);
+
+            // 4. Registra no extrato da empresa a devolução
+            const extratoRef = doc(collection(window.db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: b2bUid,
+                valor: totalEstorno,
+                tipo: "ESTORNO_B2B 🔄",
+                descricao: `Ordem Rejeitada: ${m.title}. Motivo: ${motivo}`,
+                moeda: "BRL",
+                timestamp: serverTimestamp()
+            });
+        });
+
+        // 📢 Notifica a empresa
+        await addDoc(collection(window.db, "notifications"), {
+            uid: b2bUid,
+            message: `❌ Sua missão "${m.title}" foi rejeitada. Motivo: ${motivo}. O saldo foi estornado.`,
+            type: 'alert',
+            read: false,
+            created_at: serverTimestamp()
+        });
+
+        alert("✅ Ordem cancelada e saldo estornado com sucesso!");
+        loadB2BPendingMissions();
+
+    } catch (e) {
+        console.error("Erro ao rejeitar:", e);
+        alert("Erro no processamento: " + e);
+    }
+};
+
 // ✅ FUNÇÃO DE PREPARAÇÃO PARA EDIÇÃO
 function editarMissao(id) {
     const mission = allLoadedMissions.find(m => m.id === id);
