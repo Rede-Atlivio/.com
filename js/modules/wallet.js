@@ -1101,14 +1101,15 @@ window.processarSolicitacaoSaque = async () => {
             updated_at: serverTimestamp()
         });
 
-        // Grava no histórico como ATLIX saindo
+        // 📝 Registro de Débito para Auditoria: Identifica como ATLIX CRÉDITOS
         await addDoc(collection(db, "extrato_financeiro"), {
             uid: uid,
-            valor: -saldoRealTrabalho,
+            valor: -saldoConversivel,
             tipo: "🏧 SOLICITAÇÃO_SAQUE",
-            descricao: `Conversão de ${saldoRealTrabalho.toFixed(2)} ATLIX para PIX`,
+            descricao: `Resgate de ${saldoConversivel.toFixed(2)} ATLIX (Créditos de Trabalho)`,
             timestamp: serverTimestamp(),
-            moeda: "ATLIX" 
+            moeda: "ATLIX",
+            status: "processando"
         });
 
         // Envia para o Gil pagar (Assistant vai ler isso)
