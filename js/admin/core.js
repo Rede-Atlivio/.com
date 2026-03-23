@@ -216,9 +216,10 @@ window.switchView = async function(viewName) {
     // 3. MOSTRAR CONTAINER
     if(containerId) {
         const el = document.getElementById(containerId);
-        if(el) {
+       if(el) {
             el.classList.remove('hidden');
-            el.style.display = 'block'; // Ativa o bloco da aba selecionada
+            el.style.setProperty('display', 'block', 'important'); // Ativa APENAS a correta
+            console.log(`✅ Interface liberada: ${containerId}`);
         } else {
             console.error(`❌ ERRO FATAL: Container HTML '${containerId}' não encontrado! Verifique admin.html`);
             const fallback = document.getElementById('view-list');
