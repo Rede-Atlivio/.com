@@ -588,13 +588,13 @@ window.processarReservaB2B = async () => {
                 created_at: serverTimestamp()
             });
 
-            // 3. Livro Razão B2B
+           // 3. Livro Razão B2B: Sincronizado com slotsVal
             const extratoRef = doc(collection(db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: uid,
                 valor: -totalNecessario,
                 tipo: "RESERVA_B2B 🔒",
-                descricao: `Reserva: ${slots}x ${window.wizardB2BData.title}`,
+                descricao: `Reserva: ${slotsVal}x ${window.wizardB2BData.title}`,
                 moeda: "BRL",
                 timestamp: serverTimestamp()
             });
