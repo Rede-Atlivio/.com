@@ -77,11 +77,32 @@ window.carregarOrdensB2B = async () => {
         }
 
         lista.innerHTML = "";
-        snap.forEach(doc => {
+       snap.forEach(doc => {
             const m = doc.data();
-            const statusColor = m.status === 'active' ? 'text-emerald-500' : 'text-amber-500';
+            // 🚥 LOGICA DE CORES ATLIVIO V2026
+            let statusColor = 'text-amber-500';
+            let statusTexto = '⏳ Aguardando...';
+            let alertMsg = '';
+
+            if (m.status === 'active') {
+                statusColor = 'text-emerald-500';
+                statusTexto = '● Ativa no Radar';
+            } else if (m.status === 'rejected') {
+                statusColor = 'text-red-500';
+                statusTexto = '❌ Rejeitada';
+                // 🗣️ Exibe o motivo da Atlivio se existir
+                alertMsg = `<div class="mt-2 p-2 bg-red-50 rounded-xl border border-red-100 text-[9px] text-red-600 font-medium italic">Motivo: ${m.rejection_reason || 'Violação dos termos.'}</div>`;
+            }
+
             lista.innerHTML += `
                 <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm space-y-3">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[7px] font-black bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase tracking-widest">ID: ${doc.id.slice(0,8)}</span>
+                        <span class="text-[8px] font-black uppercase ${statusColor}">${statusTexto}</span>
+                    </div>
+                    <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
+                    <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
+                    ${alertMsg}
                     <div class="flex justify-between items-start">
                         <span class="text-[7px] font-black bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase tracking-widest">ID: ${doc.id.slice(0,8)}</span>
                         <span class="text-[8px] font-black uppercase ${statusColor}">${m.status === 'active' ? '● Ativa no Radar' : '⏳ Aguardando...'}</span>
