@@ -1143,8 +1143,24 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
     try {
         const { doc, getDoc, runTransaction, serverTimestamp, increment, collection } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
+        // 🛰️ CONSULTA EM TEMPO REAL ANTES DA AÇÃO
         const missionRef = doc(db, "missions", missionId);
         const missionSnap = await getDoc(missionRef);
+
+        if (!missionSnap.exists()) return alert("Erro: Ordem não localizada.");
+        const mData = missionSnap.data();
+
+        // 🛡️ TRAVA ATÔMICA ATLIVIO: Se o Admin já rejeitou ou a missão fechou, para tudo!
+        if (mData.status === 'rejected' || mData.status === 'closed') {
+            console.warn("🚫 Tentativa de estorno duplicado bloqueada.");
+            alert("✔️ Esta ordem já foi processada e o saldo estornado anteriormente pela Atlivio.");
+            // Recarrega a lista local para sumir o botão agora que o erro foi pego
+            if(window.carregarOrdensB2B) window.carregarOrdensB2B();
+            return;
+        }
+
+        // 🛡️ Trava de Segurança: Apenas o dono pode encerrar
+        if (mData.owner_id !== uid) return alert("Acesso negado.");
 
        if (!missionSnap.exists()) return alert("Erro: Ordem não localizada no sistema.");
         const mData = missionSnap.data();
