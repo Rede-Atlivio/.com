@@ -19,9 +19,15 @@ export async function init() {
                 <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
                 <button onclick="window.switchMissionTab('payments')" id="btn-tab-payments" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">💸 Pagamentos PIX</button>
             </div>
-            <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-full border border-blue-500/20">
-                <span class="text-[7px] font-black text-blue-400 uppercase italic">Criação Auto B2B:</span>
-                <input type="checkbox" id="check-auto-publish" onchange="window.toggleAutoPublishB2B()" class="w-3 h-3 accent-blue-500">
+           <div class="flex items-center gap-4 bg-slate-900/80 px-4 py-1.5 rounded-2xl border border-white/5 shadow-inner">
+                <div class="flex items-center gap-2 border-r border-white/10 pr-4">
+                    <span class="text-[7px] font-black text-amber-500 uppercase">Radar Auto:</span>
+                    <input type="checkbox" id="check-auto-publish" onchange="window.toggleGovernançaB2B('auto_publish_b2b')" class="w-3 h-3 accent-amber-500 cursor-pointer">
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-[7px] font-black text-emerald-500 uppercase">Pagamento Auto:</span>
+                    <input type="checkbox" id="check-auto-approve" onchange="window.toggleGovernançaB2B('aprovacao_automatica_b2b')" class="w-3 h-3 accent-emerald-500 cursor-pointer">
+                </div>
             </div>
         </div>
     `;
