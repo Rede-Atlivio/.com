@@ -40,7 +40,26 @@ export async function init() {
     window.aprovarMissao = aprovarMissao;
     window.rejeitarMissao = rejeitarMissao;
     
-   // Inicia na aba de Gerenciar
+   // ⚙️ Sincroniza a Chave de Autonomia ao carregar
+    const syncChave = async () => {
+        const ecoSnap = await getDoc(doc(window.db, "settings", "global_economy"));
+        if(ecoSnap.exists() && document.getElementById('check-auto-publish')) {
+            document.getElementById('check-auto-publish').checked = ecoSnap.data().auto_publish_b2b || false;
+        }
+    };
+    syncChave();
+
+    // ⚡ Gatilho de Alteração da Chave
+    window.toggleAutoPublishB2B = async () => {
+        const isChecked = document.getElementById('check-auto-publish').checked;
+        await updateDoc(doc(window.db, "settings", "global_economy"), { 
+            auto_publish_b2b: isChecked,
+            updated_at: serverTimestamp() 
+        });
+        alert(isChecked ? "🚀 MODO AUTÔNOMO: Missões B2B agora entram direto no radar!" : "🔒 MODO CURADORIA: Você precisará aprovar cada missão B2B.");
+    };
+
+    // Inicia na aba de Gerenciar
     switchMissionTab('missions');
 
     // 🧹 FAXINA DE VAGAS: Verifica usuários inativos a cada entrada na aba
