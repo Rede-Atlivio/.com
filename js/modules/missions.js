@@ -193,19 +193,11 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
                 slots_disponiveis: increment(-1),
                 pessoas_realizando: increment(1)
             });
-        });
+       });
 
-        // Se chegou aqui, a vaga é DELE. Agora verificamos o GPS e abrimos a câmera
-        const qCheck = { empty: true }; // Dummy para manter compatibilidade com o resto do código original
-        const snapCheck = await getDocs(qCheck);
-
-        // 🛡️ TRAVA DE SEGURANÇA: Se encontrar qualquer registro, barra a participação
-        if (!snapCheck.empty) {
-            alert(`⚠️ OPS! Você já participou desta missão.\n\nCada missão só pode ser realizada uma única vez por usuário.`);
-            btn.disabled = false;
-            btn.innerText = originalText;
-            return;
-        }
+        // 🛰️ Vaga garantida. O sistema agora prepara a interface de captura.
+        localStorage.setItem(`fazendo_${id}`, "true");
+        window.iniciarCronometroDesistencia(id);
 
        // 🛰️ Marcador de Execução: Impede que a vaga fique presa se o app fechar
         localStorage.setItem(`fazendo_${id}`, "true");
