@@ -8,14 +8,22 @@ export async function init() {
     // 1. Cria a Navegação Interna (Sub-abas)
     const subNav = document.createElement('div');
     subNav.className = "flex gap-4 mb-6 border-b border-slate-800 pb-2";
-   subNav.innerHTML = `
-        <button onclick="window.switchMissionTab('missions')" id="btn-tab-missions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📋 Missões</button>
-        <button onclick="window.switchMissionTab('b2b_pendente')" id="btn-tab-b2b_pendente" class="text-amber-500 font-black uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition relative">
-            🤝 B2B Pendente
-            <span id="badge-b2b-count" class="hidden absolute -top-1 -right-2 bg-red-600 text-white text-[7px] px-1 rounded-full animate-pulse">0</span>
-        </button>
-        <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
-        <button onclick="window.switchMissionTab('payments')" id="btn-tab-payments" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">💸 Pagamentos PIX</button>
+  subNav.innerHTML = `
+        <div class="flex justify-between items-center w-full">
+            <div class="flex gap-4">
+                <button onclick="window.switchMissionTab('missions')" id="btn-tab-missions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📋 Missões</button>
+                <button onclick="window.switchMissionTab('b2b_pendente')" id="btn-tab-b2b_pendente" class="text-amber-500 font-black uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition relative">
+                    🤝 B2B Pendente
+                    <span id="badge-b2b-count" class="hidden absolute -top-1 -right-2 bg-red-600 text-white text-[7px] px-1 rounded-full animate-pulse">0</span>
+                </button>
+                <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
+                <button onclick="window.switchMissionTab('payments')" id="btn-tab-payments" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">💸 Pagamentos PIX</button>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1 rounded-full border border-blue-500/20">
+                <span class="text-[7px] font-black text-blue-400 uppercase italic">Criação Auto B2B:</span>
+                <input type="checkbox" id="check-auto-publish" onchange="window.toggleAutoPublishB2B()" class="w-3 h-3 accent-blue-500">
+            </div>
+        </div>
     `;
     
     // Insere antes da tabela se não existir
