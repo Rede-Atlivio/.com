@@ -523,30 +523,31 @@ window.atualizarPreviewFinanceiro = () => {
 // ⚡ MOTOR DE RESERVA (O CORAÇÃO DO B2B)
 // ⚡ MOTOR DE RESERVA V2026: Multi-vagas e Auto-Geocodificação
 window.processarReservaB2B = async () => {
-    const reward = parseFloat(document.getElementById('b2b-reward').value);
-    const slots = parseInt(document.getElementById('b2b-slots').value) || 1;
+    // 📥 CAPTURA ÚNICA E SEGURA DOS VALORES
+    const rewardVal = parseFloat(document.getElementById('b2b-reward')?.value || 0);
+    const slotsVal = parseInt(document.getElementById('b2b-slots')?.value || 1);
     const enderecoFormatado = document.getElementById('mis-address-search')?.value || "";
 
-    if(reward < 3) return alert("O valor mínimo é R$ 3,00");
+    if(rewardVal < 3) return alert("O valor mínimo de recompensa é R$ 3,00");
 
     const btn = document.getElementById('btn-confirmar-b2b');
-    btn.disabled = true;
-    btn.innerText = "⏳ RESERVANDO SALDO...";
+    if(btn) {
+        btn.disabled = true;
+        btn.innerText = "⏳ RESERVANDO SALDO...";
+    }
 
-   const reward = parseFloat(document.getElementById('b2b-reward').value || 0);
-    const slots = parseInt(document.getElementById('b2b-slots').value || 1);
-    
-    // 🛡️ RECALCULO DE SEGURANÇA: Garante que o valor nunca seja 'undefined'
-    const recompensaTotal = reward * slots;
-    const taxaAtlivio = reward * slots; // Sua regra de 100% de taxa
+    // 🛡️ CÁLCULO DE SEGURANÇA: Evita erro de 'undefined' no Firestore
+    const recompensaTotal = rewardVal * slotsVal;
+    const taxaAtlivio = rewardVal * slotsVal; // Regra Atlivio: 100% de taxa sobre o valor do user
     const totalNecessario = recompensaTotal + taxaAtlivio;
     
-    const uid = auth.currentUser.uid;
+    const uid = auth.currentUser?.uid;
+    if(!uid) return alert("Erro: Usuário não autenticado.");
     const userRef = doc(db, "usuarios", uid);
 
-    // 🧠 CONSULTA DE AUTONOMIA: Verifica se o Gil liberou o Radar Automático
+    // 🧠 CONSULTA DE AUTONOMIA: Verifica se a missão entra direto ou vai para curadoria
     const ecoSnap = await getDoc(doc(db, "settings", "global_economy"));
-    const radarAutomatico = ecoSnap.exists() ? ecoSnap.data().auto_publish_b2b : false;
+    const radarAutomatico = ecoSnap.exists() ? (ecoSnap.data().auto_publish_b2b || false) : false;
 
     try {
         await runTransaction(db, async (transaction) => {
