@@ -556,9 +556,10 @@ window.processarReservaB2B = async () => {
             const unitWithFee = totalNecessario / slots; // Valor que a empresa paga por CADA foto (Recompensa + Taxa Atlivio)
             
             const missionRef = doc(collection(db, "missions"));
+           // 🔐 Gravação Soberana: Garante que o owner_id seja o UID de quem paga a missão
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
-                owner_id: uid, // 🔑 ID do dono para o botão de encerrar funcionar
+                owner_id: auth.currentUser.uid, 
                 reward: reward,
                 unit_total_with_fee: unitWithFee, // 💸 Campo mestre para o estorno e lucro
                 total_with_fee: totalNecessario,
