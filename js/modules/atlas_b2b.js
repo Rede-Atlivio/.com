@@ -537,6 +537,10 @@ window.processarReservaB2B = async () => {
     const uid = auth.currentUser.uid;
     const userRef = doc(db, "usuarios", uid);
 
+    // 🧠 CONSULTA DE AUTONOMIA: Verifica se o Gil liberou o Radar Automático
+    const ecoSnap = await getDoc(doc(db, "settings", "global_economy"));
+    const radarAutomatico = ecoSnap.exists() ? ecoSnap.data().auto_publish_b2b : false;
+
     try {
         await runTransaction(db, async (transaction) => {
             const userSnap = await transaction.get(userRef);
