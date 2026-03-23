@@ -5,8 +5,8 @@ if (window.userProfile && window.userProfile.perfil !== 'cliente') {
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B (V63 - ESCALA INDUSTRIAL)
-// Gil, este arquivo cuida apenas de quem CONTRATA inteligência.
+// 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B - ATLIVIO V2026
+// Este motor gerencia a criação e auditoria de ordens estratégicas.
 export async function initB2B() {
    const container = document.getElementById('sec-b2b_gestao');
     if (!container) return;
