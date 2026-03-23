@@ -533,7 +533,14 @@ window.processarReservaB2B = async () => {
     btn.disabled = true;
     btn.innerText = "⏳ RESERVANDO SALDO...";
 
-    const totalNecessario = window.wizardB2BData.total_with_fee;
+   const reward = parseFloat(document.getElementById('b2b-reward').value || 0);
+    const slots = parseInt(document.getElementById('b2b-slots').value || 1);
+    
+    // 🛡️ RECALCULO DE SEGURANÇA: Garante que o valor nunca seja 'undefined'
+    const recompensaTotal = reward * slots;
+    const taxaAtlivio = reward * slots; // Sua regra de 100% de taxa
+    const totalNecessario = recompensaTotal + taxaAtlivio;
+    
     const uid = auth.currentUser.uid;
     const userRef = doc(db, "usuarios", uid);
 
