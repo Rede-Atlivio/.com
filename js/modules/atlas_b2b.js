@@ -297,9 +297,10 @@ window.proximoPassoWizard = (passo) => {
         const desc = document.getElementById('b2b-desc').value;
         if (!title || !desc) return alert("Preencha o título e a descrição!");
 
-        window.wizardB2BData.title = title;
+       window.wizardB2BData.title = title;
         window.wizardB2BData.description = desc;
-        window.wizardB2BData.b2b_owner_uid = auth.currentUser.uid;
+        // 🆔 DNA UNIFICADO: Salvando como owner_id para compatibilidade com o motor de estorno
+        window.wizardB2BData.owner_id = auth.currentUser.uid;
 
       // PASSO 2: LOCALIZAÇÃO - Sincronizado com a nova identidade Premium e Fundo Radial
         document.getElementById('modal-content').innerHTML = `
