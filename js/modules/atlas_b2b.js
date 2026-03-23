@@ -84,15 +84,20 @@ window.carregarOrdensB2B = async () => {
             let statusTexto = '⏳ Aguardando...';
             let alertMsg = '';
 
-            if (m.status === 'active') {
-                statusColor = 'text-emerald-500';
-                statusTexto = '● Ativa no Radar';
-            } else if (m.status === 'rejected') {
-                statusColor = 'text-red-500';
-                statusTexto = '❌ Rejeitada';
-                // 🗣️ Exibe o motivo da Atlivio se existir
-                alertMsg = `<div class="mt-2 p-2 bg-red-50 rounded-xl border border-red-100 text-[9px] text-red-600 font-medium italic">Motivo: ${m.rejection_reason || 'Violação dos termos.'}</div>`;
-            }
+            // Substituiremos a lógica de decisão por esta:
+if (m.status === 'active') {
+    statusColor = 'text-emerald-500';
+    statusTexto = '● Ativa no Radar';
+} else if (m.status === 'rejected') {
+    statusColor = 'text-red-500';
+    statusTexto = '❌ Ordem Rejeitada'; // <--- Isso resolve o seu print!
+} else if (m.status === 'pending_b2b') {
+    statusColor = 'text-amber-500';
+    statusTexto = '⏳ Em Análise';
+} else {
+    statusColor = 'text-gray-400';
+    statusTexto = 'Finalizada';
+}
 
             lista.innerHTML += `
                 <div class="bg-white p-5 rounded-[2rem] border border-gray-100 shadow-sm space-y-3">
