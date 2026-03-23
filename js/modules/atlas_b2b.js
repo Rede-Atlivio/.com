@@ -609,7 +609,14 @@ window.processarReservaB2B = async () => {
 
     } catch (e) {
         console.error("Erro Reserva B2B:", e);
-        alert("❌ FALHA NA RESERVA: " + e);
+        
+        // 🗣️ TRADUTOR DE ERROS ATLIVIO
+        let msgAmigavel = "Não foi possível completar a reserva agora.";
+        if (e.toString().includes("insuficiente")) msgAmigavel = "Saldo insuficiente! Recarregue sua carteira para lançar esta missão.";
+        else if (e.toString().includes("undefined")) msgAmigavel = "Erro nos valores informados. Por favor, reinicie o assistente de criação.";
+
+        alert(`⚠️ OPS! \n\n${msgAmigavel}`);
+        
         btn.disabled = false;
         btn.innerText = "Finalizar e Ativar Operação ✅";
     }
