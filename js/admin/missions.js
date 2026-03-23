@@ -46,25 +46,33 @@ export async function init() {
     window.aprovarMissao = aprovarMissao;
     window.rejeitarMissao = rejeitarMissao;
     
-   // ⚙️ Sincroniza a Chave de Autonomia ao carregar
-    const syncChave = async () => {
+  // ⚙️ Sincronia de Governança B2B (Radar e Cofre)
+    const sincronizarGovernança = async () => {
         const ecoSnap = await getDoc(doc(window.db, "settings", "global_economy"));
-        if(ecoSnap.exists() && document.getElementById('check-auto-publish')) {
-            document.getElementById('check-auto-publish').checked = ecoSnap.data().auto_publish_b2b || false;
+        if(ecoSnap.exists()) {
+            const data = ecoSnap.data();
+            if(document.getElementById('check-auto-publish')) document.getElementById('check-auto-publish').checked = data.auto_publish_b2b || false;
+            if(document.getElementById('check-auto-approve')) document.getElementById('check-auto-approve').checked = data.aprovacao_automatica_b2b || false;
         }
     };
-    syncChave();
+    sincronizarGovernança();
 
-    // ⚡ Gatilho de Alteração da Chave
-    window.toggleAutoPublishB2B = async () => {
-        const isChecked = document.getElementById('check-auto-publish').checked;
+    // ⚡ Motor de Governança Independente
+    window.toggleGovernançaB2B = async (campo) => {
+        const el = campo === 'auto_publish_b2b' ? 'check-auto-publish' : 'check-auto-approve';
+        const isChecked = document.getElementById(el).checked;
+        
         await updateDoc(doc(window.db, "settings", "global_economy"), { 
-            auto_publish_b2b: isChecked,
+            [campo]: isChecked,
             updated_at: serverTimestamp() 
         });
-        alert(isChecked ? "🚀 MODO AUTÔNOMO: Missões B2B agora entram direto no radar!" : "🔒 MODO CURADORIA: Você precisará aprovar cada missão B2B.");
-    };
 
+        const msg = campo === 'auto_publish_b2b' 
+            ? (isChecked ? "📡 RADAR: Missões B2B agora entram direto!" : "🔒 RADAR: Você deve publicar manualmente.")
+            : (isChecked ? "💰 COFRE: Empresas agora pagam usuários direto!" : "⚖️ COFRE: Você deve dar a palavra final no pagamento.");
+        
+        alert(msg);
+    };
     // Inicia na aba de Gerenciar
     switchMissionTab('missions');
 
