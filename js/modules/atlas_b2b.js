@@ -110,10 +110,11 @@ window.carregarAuditoriaB2B = async () => {
     const container = document.getElementById('sub-view-container');
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
-    try {
+   try {
+        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
         const q = query(
             collection(db, "mission_submissions"),
-            where("b2b_owner_uid", "==", auth.currentUser.uid),
+            where("owner_id", "==", auth.currentUser.uid),
             where("status", "==", "pending"),
             orderBy("created_at", "desc")
         );
