@@ -251,8 +251,12 @@ export function iniciarMonitoramentoCarteira() {
 
     console.log("📡 Carteira V10: Conectando ao Banco...");
 
-    unsubscribeWallet = onSnapshot(ref, async (docSnap) => {
-        if (docSnap.exists()) {
+   unsubscribeWallet = onSnapshot(ref, async (docSnap) => {
+        // 🛡️ FILTRO DE ORIGEM: Ignora atualizações de cache (locais) e foca apenas no Servidor
+        // Isso impede que o 'onSnapshot' dispare duas vezes (uma no clique e outra na confirmação).
+        if (docSnap.metadata.hasPendingWrites) return;
+
+        if (docSnap.exists()) {
             let data = docSnap.data();
             
             // 🛡️ INTERFACE V2026: O saneamento agora é gerido pelo 'unsubscribeLedger' de forma independente
