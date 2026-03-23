@@ -232,9 +232,12 @@ async function loadB2BPendingMissions() {
                     <td class="p-3">
                         <span class="${corValor} font-mono font-bold text-xs">${moedaIcon} ${m.reward}</span>
                     </td>
-                    <td class="p-3 text-right">
+                    <td class="p-3 text-right flex justify-end gap-2">
+                        <button onclick="window.rejeitarOrdemB2B('${d.id}')" class="bg-slate-800 hover:bg-red-900 text-red-500 px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition border border-red-900/30">
+                            REJEITAR
+                        </button>
                         <button onclick="window.publicarMissaoB2B('${d.id}')" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg transition active:scale-95">
-                            ✅ PUBLICAR NO MAPA
+                            PUBLICAR
                         </button>
                     </td>
                 </tr>
