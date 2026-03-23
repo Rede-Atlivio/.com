@@ -63,9 +63,10 @@ window.carregarOrdensB2B = async () => {
     lista.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
+        // 🛰️ Busca otimizada: Procura missões onde o usuário é o dono (owner_id)
         const q = query(
             collection(db, "missions"), 
-            where("b2b_owner_uid", "==", auth.currentUser.uid),
+            where("owner_id", "==", auth.currentUser.uid),
             orderBy("created_at", "desc")
         );
         const snap = await getDocs(q);
