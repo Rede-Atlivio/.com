@@ -1079,12 +1079,14 @@ window.processarSolicitacaoSaque = async () => {
     }
 
     const uid = auth.currentUser?.uid;
-    const saldoRealTrabalho = window.userProfile?.wallet_balance || 0;
+    // 🛡️ FILTRO DE MOEDA REAL: O saque agora ignora o wallet_bonus (Marketing)
+    const saldoConversivel = parseFloat(window.userProfile?.wallet_balance || 0);
     const minSaque = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
 
-    if (saldoRealTrabalho < minSaque) {
-        return alert(`🛑 Saldo Insuficiente para Saque.\n\nVocê tem ${saldoRealTrabalho.toFixed(2)} ATLIX de saldo real.\nO bônus de marketing não é conversível.`);
+    // 🚫 Verificação de Elegibilidade de Saque
+    if (saldoConversivel < minSaque) {
+        return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nVocê possui ${saldoConversivel.toFixed(2)} ATLIX conversíveis.\nO valor mínimo para resgate é de ${minSaque} ATLIX.\n\nLembre-se: Bônus de marketing não podem ser sacados.`);
     }
 
     const valorRealBruto = (saldoRealTrabalho * spread).toFixed(2);
