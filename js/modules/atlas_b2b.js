@@ -564,19 +564,19 @@ window.processarReservaB2B = async () => {
                 updated_at: serverTimestamp()
             });
 
-           // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Salva valores unitários para liquidação futura
-            const unitWithFee = totalNecessario / slots; // Valor que a empresa paga por CADA foto (Recompensa + Taxa Atlivio)
+          // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Sincroniza com os novos nomes de variáveis (rewardVal / slotsVal)
+            const unitWithFee = totalNecessario / slotsVal; 
             
             const missionRef = doc(collection(db, "missions"));
-           // 🔐 Gravação Soberana: Garante que o owner_id seja o UID de quem paga a missão
+            // 🔐 Gravação Soberana: Unifica owner_id e status dinâmico para escala industrial
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
                 owner_id: auth.currentUser.uid, 
-                reward: reward,
-                unit_total_with_fee: unitWithFee, // 💸 Campo mestre para o estorno e lucro
+                reward: rewardVal,
+                unit_total_with_fee: unitWithFee, 
                 total_with_fee: totalNecessario,
-                slots_totais: slots,
-                slots_disponiveis: slots,
+                slots_totais: slotsVal,
+                slots_disponiveis: slotsVal,
                 pessoas_realizando: 0,
                address: enderecoFormatado,
                 pay_type: 'real',
