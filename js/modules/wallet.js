@@ -1039,10 +1039,12 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
     // 🚫 Verificação de Elegibilidade de Saque
     if (saldoConversivel < minSaque) {
         return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nVocê possui ${saldoConversivel.toFixed(2)} ATLIX conversíveis.\nO valor mínimo para resgate é de ${minSaque} ATLIX.\n\nLembre-se: Bônus de marketing não podem ser sacados.`);
-    }
+   }
 
-    const valorRealBruto = (saldoRealTrabalho * spread).toFixed(2);
-    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoRealTrabalho.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma a operação?`)) return;
+    // 💰 Cálculo do valor em Reais baseado no Saldo de Recargas e taxa de conversão (Spread)
+    const valorRealBruto = (saldoConversivel * spread).toFixed(2);
+    
+    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoConversivel.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma a operação?`)) return;
 
     try {
         const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
