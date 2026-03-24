@@ -532,24 +532,60 @@ window.atualizarMiniGraficoCaixa = (dados) => {
 // =============================================================================
 
 /**
- * 📅 FILTRAGEM TEMPORAL DE LUCROS
- * Permite alternar a visão entre o mês atual e o acumulado do ano.
+ * 📅 MOTOR DE INTELIGÊNCIA TEMPORAL (BANCO CENTRAL)
+ * Gil, esta função calcula o lucro real da Atlivio somando as taxas por período.
  */
 window.filtrarPeriodoFinanceiro = async (periodo) => {
     const btnMes = document.getElementById('btn-filtro-mes');
     const btnAno = document.getElementById('btn-filtro-ano');
+    const elLucro = document.getElementById('kpi-taxas-total');
     
-    // Ajuste Visual dos Botões
-    if(periodo === 'mes') {
-        btnMes.className = "bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg transition";
-        btnAno.className = "bg-slate-800 text-gray-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-slate-700 transition";
-    } else {
-        btnAno.className = "bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg transition";
-        btnMes.className = "bg-slate-800 text-gray-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-slate-700 transition";
-    }
+    if(!elLucro) return;
+    elLucro.innerText = "⏳ ...";
 
-    console.log(`📡 Filtrando Banco Central para: ${periodo.toUpperCase()}`);
-    // Gil, a lógica de soma por data será injetada no PASSO 5 para não sobrecarregar agora.
+    // 🎨 Feedback Visual nos Botões
+    const ativo = "bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg transition scale-105";
+    const inativo = "bg-slate-800 text-gray-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-slate-700 transition";
+    
+    btnMes.className = periodo === 'mes' ? ativo : inativo;
+    btnAno.className = periodo === 'ano' ? ativo : inativo;
+
+    try {
+        const { collection, query, where, getDocs, Timestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        let dataInicio = new Date();
+        if (periodo === 'mes') {
+            dataInicio.setDate(1); // Primeiro dia do mês atual
+        } else {
+            dataInicio.setMonth(0, 1); // Primeiro dia do ano (Janeiro)
+        }
+        dataInicio.setHours(0,0,0,0);
+
+        // 📡 BUSCA DINÂMICA: Varre o extrato financeiro em busca de taxas (Lucro Gil)
+        const q = query(
+            collection(window.db, "extrato_financeiro"), 
+            where("timestamp", ">=", Timestamp.fromDate(dataInicio))
+        );
+
+        const snap = await getDocs(q);
+        let somaLucroTotal = 0;
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            // Gil, aqui capturamos apenas o que é TAXA ou GANHO da Atlivio
+            if (t.tipo && (t.tipo.includes("TAXA") || t.tipo.includes("RESERVA") || t.tipo.includes("COMISSÃO"))) {
+                somaLucroTotal += Math.abs(parseFloat(t.valor || 0));
+            }
+        });
+
+        // 💎 Atualiza o KPI "Receita Atlivio" com o valor filtrado
+        elLucro.innerText = `R$ ${somaLucroTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        console.log(`✅ Lucro ${periodo.toUpperCase()} recalculado: R$ ${somaLucroTotal}`);
+
+    } catch (e) {
+        console.error("Erro ao filtrar período:", e);
+        elLucro.innerText = "Erro";
+    }
 };
 
 /**
