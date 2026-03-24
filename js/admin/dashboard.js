@@ -113,7 +113,7 @@ export async function init() {
                         <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Fila de Pagamentos PIX 💰</h3>
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pague no seu banco e confirme aqui para limpar a fila.</p>
                     </div>
-                    <button onclick="window.fecharMesaPix()" class="bg-slate-800 text-gray-400 px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:text-white transition">✖ Voltar ao Painel</button>
+                    <span class="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-1 rounded-lg font-black uppercase animate-pulse">Monitoramento Real-time</span>
                 </div>
                 <div id="feedback-mesa-pix" class="space-y-3"></div>
             </div>
