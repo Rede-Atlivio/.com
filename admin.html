@@ -274,30 +274,13 @@
 
    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCXX6zD4m2Yr8k9WcoRgIkbUWui11-zUpg&libraries=places&loading=async" async defer></script>
 
-        <script type="module">
-        // 🛡️ Importação mestre para a Assistant (Corrigido 'as' e dentro do module)
+       <script type="module">
+        // 🛡️ Importação mestre para a Assistant e módulos globais
         import * as fv from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        window.firebaseModules = fv;
+        window.firebaseModules = fv; // Disponibiliza o Firebase para outros arquivos do Admin
 
-        // 🚀 Carregamento do Core do Admin
+        // 🚀 Carregamento do motor principal do painel administrativo
         import './js/admin/core.js?v=2026_V60';
-        
-        // 🚀 MAESTRO VIDEO BRIDGE: Abre vídeos no admin
-        window.assistirVideoAdmin = (videoId) => {
-            const modal = document.getElementById('modal-video-maestro');
-            const frame = document.getElementById('player-maestro-frame');
-            if(modal && frame) {
-                frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-                modal.classList.remove('hidden');
-            }
-        };
-
-        // Aguarda um pouco para os ícones serem desenhados na tela
-        setTimeout(() => { 
-            if (typeof lucide !== 'undefined') lucide.createIcons(); 
-        }, 500);
-   <script type="module">
-        // 🛡️ Importação mestre para a Assistant
         import * as fv from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         window.firebaseModules = fv;
 
