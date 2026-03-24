@@ -239,9 +239,13 @@ export async function init() {
 
         usersSnap.forEach(uDoc => {
             const uData = uDoc.data();
-            const valBal = Number(uData.wallet_balance || 0); // Dinheiro Real
-            const valBonus = Number(uData.wallet_bonus || 0); // Dinheiro Presente
-            const valRes = Number(uData.wallet_reserved || 0); // Dinheiro em Custódia
+            const valBal = Number(uData.wallet_balance || 0); 
+            const valBonus = Number(uData.wallet_bonus || 0); 
+            const valRes = Number(uData.wallet_reserved || 0);
+            const valFrozen = Number(uData.wallet_frozen || 0); // ❄️ Captura o congelado
+
+            // 🧊 Soma os congelados
+            somaFrozenTotal += valFrozen;
             
             // 💰 1. Soma Patrimônio Real dos Clientes
             if (valBal > 0) somaSaldoPositivo += valBal;
