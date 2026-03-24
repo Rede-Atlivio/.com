@@ -141,9 +141,14 @@ export async function init() {
                 <p class="text-[8px] uppercase font-bold text-blue-400">🔒 Em Custódia</p>
                 <h3 class="text-lg font-black text-white" id="kpi-custodia">R$ 0,00</h3>
             </div>
-            <div class="glass-panel p-4 border-t-2 border-slate-500">
-                <p class="text-[8px] uppercase font-bold text-gray-400">💳 Saldo Clientes</p>
+           <div class="glass-panel p-4 border-t-2 border-slate-500">
+                <p class="text-[8px] uppercase font-bold text-gray-400">💳 Saldo Disponível</p>
                 <h3 class="text-lg font-black text-white" id="kpi-balance">R$ 0,00</h3>
+            </div>
+            <div class="glass-panel p-4 border-t-2 border-cyan-500 bg-cyan-500/5">
+                <p class="text-[8px] uppercase font-bold text-cyan-400">❄️ Congelados (>1 Ano)</p>
+                <h3 class="text-lg font-black text-white" id="kpi-frozen">R$ 0,00</h3>
+                <p class="text-[6px] text-gray-500 uppercase">Aguardando Recarga</p>
             </div>
             <div class="glass-panel p-4 border-t-2 border-red-500">
                 <p class="text-[8px] uppercase font-bold text-red-500">🔥 Risco / Dívida</p>
