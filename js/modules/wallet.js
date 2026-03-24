@@ -360,6 +360,49 @@ export function iniciarMonitoramentoCarteira() {
         }
     });
 }
+
+/**
+ * 🚀 MOTOR DE RECEBIMENTO COM VALIDADE (RESSURREIÇÃO)
+ * Esta função é o coração do seu modelo: Recarga derrete o gelo e vira Saldo Real.
+ */
+window.receberSaldoComValidade = async (valor, tipo = "PIX", descricao = "Recarga via App") => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    try {
+        const { doc, runTransaction, serverTimestamp } = window.firebaseModules;
+        
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", uid);
+            const userSnap = await transaction.get(userRef);
+            if (!userSnap.exists()) throw "Usuário não existe";
+
+            const data = userSnap.data();
+            const frozenAtual = parseFloat(data.wallet_frozen || 0);
+
+            // 1. A MÁGICA: Saldo Real Novo + Tudo que estava congelado
+            const novoAporteReal = parseFloat(valor) + frozenAtual;
+
+            // 2. Atualiza os cofres: Balance sobe, Frozen zera
+            transaction.update(userRef, {
+                wallet_balance: increment(novoAporteReal),
+                wallet_frozen: 0,
+                updated_at: serverTimestamp()
+            });
+
+            // 3. Oficializa no Ledger (Dando 12 meses de vida para o saldo novo + resgatado)
+            // Chamamos a função de lote que já existe no seu arquivo
+            await window.oficializarLoteExterno(novoAporteReal, tipo, descricao);
+        });
+
+        console.log(`✅ Ressurreição Concluída: R$ ${valor} recarregados e saldo congelado recuperado.`);
+        return { success: true };
+    } catch (e) {
+        console.error("❌ Erro no Recebimento:", e);
+        return { success: false, error: e };
+    }
+};
+
 //PONTO CRÍTICO: NOVAS LINHAS 125 A 146 - ATUALIZAÇÃO COM NOVOS CAMPOS - TRINDADE FINANCEIRA
 // Atualize a função atualizarInterfaceCarteira para mostrar os 3 cofres sincronizados com o banco
 function atualizarInterfaceCarteira(saldoTotal) {
