@@ -1092,9 +1092,12 @@ window.processarSolicitacaoSaque = async function() {
     }
 };
 
-// 🛰️ BRIDGE DE MÓDULOS ATLIVIO: Centraliza o Firebase para todos os motores
+/**
+ * 🛰️ BRIDGE DE MÓDULOS ATLIVIO
+ * Centraliza o acesso às ferramentas do Firebase para todos os motores financeiros.
+ */
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
+window.firebaseModules = firestoreFull; // Registra os módulos no motor central
 
 // 🚀 SOLDAGEM GLOBAL: Libera as funções para o index.html e outros módulos
 window.carregarCarteira = carregarCarteira;
