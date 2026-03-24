@@ -1025,9 +1025,13 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
  * Transforma saldo de missões em percepção de valor real (Spread).
  */
 window.calcularEquivalenciaAtlix = (saldoAtlix) => {
+    // 🛡️ Segurança: Garante que o saldo seja tratado como número
+    const saldoLimpo = parseFloat(saldoAtlix || 0);
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
-    const valorReal = (saldoAtlix * spread).toFixed(2);
+    const valorReal = (saldoLimpo * spread).toFixed(2);
+    
     const el = document.getElementById('txt-equivalencia-real');
+    const elBtnSaque = document.getElementById('btn-solicitar-saque');
     const elBtnSaque = document.getElementById('btn-solicitar-saque');
     
     if (el) { el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; }
