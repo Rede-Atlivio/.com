@@ -1235,25 +1235,26 @@ console.log("%c✅ WALLET V63.4: Protocolo de Estorno B2B e Conexões Globais At
  * Explica de forma leiga e direta cada compartimento financeiro.
  */
 window.abrirGuiaCarteira = () => {
+    // 🎨 AJUSTE DE CONTRASTE: Usamos fundo sólido e texto mais escuro para leitura perfeita
     const modalContent = `
-        <div class="p-6 space-y-6 text-slate-800 animate-fadeIn">
+        <div class="p-6 space-y-6 text-slate-950 animate-fadeIn bg-white rounded-3xl border border-gray-100 shadow-inner">
             <div class="text-center">
-                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-100 shadow-sm">
                     <span class="text-3xl">🏦</span>
                 </div>
-                <h3 class="text-xl font-black uppercase italic tracking-tighter">Guia Financeiro</h3>
-                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Entenda seus créditos Atlivio</p>
+                <h3 class="text-2xl font-black text-slate-950 uppercase italic tracking-tighter shadow-sm">Guia Financeiro</h3>
+                <p class="text-[11px] text-gray-500 uppercase font-bold tracking-widest leading-none mt-1">Entenda seus créditos Atlivio</p>
             </div>
 
-            <div class="space-y-4">
-                <div class="flex gap-4 items-start">
-                    <span class="text-2xl">💰</span>
+            <div class="space-y-5">
+                <div class="flex gap-4 items-start bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
+                    <span class="text-3xl">💰</span>
                     <div>
-                        <p class="text-xs font-black uppercase text-slate-900">Atlix Recargas</p>
-                        <p class="text-[10px] text-gray-500 leading-tight">É o dinheiro que você adicionou via PIX. Ele é o único que pode ser sacado de volta para sua conta bancária após o trabalho.</p>
+                        <p class="text-xs font-black uppercase text-slate-950">Atlix Recargas</p>
+                        <p class="text-[11px] text-slate-700 leading-snug">É o dinheiro que você adicionou via PIX. Ele é o único que pode ser sacado de volta para sua conta bancária após o trabalho.</p>
                     </div>
                 </div>
-
+                
                 <div class="flex gap-4 items-start">
                     <span class="text-2xl">🎁</span>
                     <div>
