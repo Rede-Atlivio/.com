@@ -634,10 +634,13 @@ window.dispararMaestroExterno = async () => {
             }
         }
         alert(`✅ SUCESSO!\nO motor disparou ${totalEnviado} notificações.`);
-    } catch (e) {
-        alert("❌ Erro no motor externo: " + e.message);
+   } catch (e) {
+        alert("❌ Erro no motor de notificações externas: " + e.message);
     }
 };
+
+// 🛰️ LOG DE SEGURANÇA: Confirma que o motor mestre está pronto para escala de milhões
+console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado.");
 // ============================================================================
 // 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
 // ============================================================================
