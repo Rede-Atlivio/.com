@@ -1025,22 +1025,34 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
  * Transforma saldo de missões em percepção de valor real (Spread).
  */
 window.calcularEquivalenciaAtlix = (saldoAtlix) => {
-    // 🛡️ Segurança: Garante que o saldo seja tratado como número
+    // 🛡️ Segurança: Garante que o saldo seja tratado como número para o cálculo
     const saldoLimpo = parseFloat(saldoAtlix || 0);
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
     const valorReal = (saldoLimpo * spread).toFixed(2);
     
     const el = document.getElementById('txt-equivalencia-real');
     const elBtnSaque = document.getElementById('btn-solicitar-saque');
-    const elBtnSaque = document.getElementById('btn-solicitar-saque');
     
-    if (el) { el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; }
+    // Atualiza o texto de estimativa PIX abaixo do Saldo de Recargas
+    if (el) { 
+        el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; 
+        el.classList.remove('animate-pulse'); // Para de piscar após calcular
+    }
 
-    // Trava de segurança: O botão de saque só ativa se atingir o mínimo configurado no Admin
+    // 🛡️ TRAVA DE SAQUE: O botão só libera se o Saldo de Recargas for >= Mínimo
     if (elBtnSaque) {
         const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
-        if (saldoAtlix >= min) {
+        if (saldoLimpo >= min) {
             elBtnSaque.disabled = false;
+            elBtnSaque.classList.remove('opacity-50', 'grayscale');
+            elBtnSaque.innerHTML = `<span>SOLICITAR RESGATE PIX 💸</span>`;
+        } else {
+            elBtnSaque.disabled = true;
+            elBtnSaque.classList.add('opacity-50', 'grayscale');
+            elBtnSaque.innerHTML = `<span>🔒 Mínimo ${min} ATLIX para Saque</span>`;
+        }
+    }
+};
             elBtnSaque.classList.remove('opacity-50', 'grayscale');
             elBtnSaque.innerText = "SACAR PARA PIX 💸";
         } else {
