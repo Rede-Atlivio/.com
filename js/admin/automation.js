@@ -769,7 +769,8 @@ window.executarVigilanciaAtiva = async () => {
     if (!msgArea) return;
 
     try {
-        // 📡 1. VARREDURAS ESTRATÉGICAS
+        // 📡 1. VARREDURAS ESTRATÉGICAS (DNA ATUALIZADO)
+        // Gil, aqui ela olha tanto o status quanto se é um saque direto.
         const qPix = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
         const qB2B = query(collection(window.db, "missions"), where("status", "==", "pending_b2b"));
         const qEnvios = query(collection(window.db, "mission_submissions"), where("status", "==", "pending"));
