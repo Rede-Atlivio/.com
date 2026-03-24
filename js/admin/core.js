@@ -133,28 +133,34 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// ROTEADOR MESTRE ATLIVIO (ESTABILIDADE V2026)
+// ROTEADOR MESTRE V2026 (ESTABILIDADE TOTAL)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Navegando para: ${viewName}`);
     
-    // 🧹 FAXINA CIRÚRGICA: Esconde as abas mas preserva o esqueleto do Admin
-    const todasViews = document.querySelectorAll('[id^="view-"]');
-    todasViews.forEach(v => {
+    // Lista de todas as salas (views) registradas no sistema de escala
+    const allViews = [
+        'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
+        'view-settings', 'view-support', 'view-audit', 'view-tutorials',
+        'view-missions', 'view-opportunities', 'view-maestro', 'view-products',
+        'view-canal_atlivio' // Rota para o conteúdo do app do cliente
+    ];
+
+    // 🧹 FAXINA SELETIVA: Esconde apenas as views internas. 
+    // A Assistant agora é soberana e fica fora deste loop de limpeza.
+    const viewsNoDOM = document.querySelectorAll('[id^="view-"]');
+    viewsNoDOM.forEach(v => {
         v.classList.add('hidden');
-        v.style.display = 'none'; 
+        v.style.setProperty('display', 'none', 'important'); 
     });
 
-    // 🛡️ REPARO DE RADAR: Se voltar para o Dashboard, garante que a Assistant seja notada pelo sistema
-    if (viewName === 'dashboard') {
-        setTimeout(() => {
-            if (window.executarVigilanciaAtiva) {
-                console.log("🛰️ Reativando inteligência da Assistant...");
-                window.executarVigilanciaAtiva();
-            }
-        }, 100);
-    }
+    // 🛡️ SINCRONIA DE RADAR: Reativa a Assistant em cada troca de aba para garantir dados frescos
+    setTimeout(() => {
+        if (window.executarVigilanciaAtiva) {
+            window.executarVigilanciaAtiva();
+        }
+    }, 150);
     
     const titleEl = document.getElementById('page-title');
     if(titleEl) titleEl.innerText = viewName.toUpperCase();
