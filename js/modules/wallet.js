@@ -1044,48 +1044,7 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
         return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nVocê possui ${saldoConversivel.toFixed(2)} ATLIX conversíveis.\nO valor mínimo para resgate é de ${minSaque} ATLIX.\n\nLembre-se: Bônus de marketing não podem ser sacados.`);
     }
 
-    // 💰 Cálculo do valor em Reais baseado no Saldo de Recargas e taxa de conversão (Spread)
-    const valorRealBruto = (saldoConversivel * spread).toFixed(2);
-    
-    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoConversivel.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma a operação?`)) return;
-
-    try {
-        const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        // 📉 Atualiza o saldo do usuário: Retira os créditos convertidos do cofre de recargas
-        await updateDoc(doc(db, "usuarios", uid), {
-            wallet_balance: increment(-saldoConversivel),
-            updated_at: serverTimestamp()
-        });
-
-        // 📝 Registro de Débito para Auditoria: Identifica como ATLIX CRÉDITOS
-        await addDoc(collection(db, "extrato_financeiro"), {
-            uid: uid,
-            valor: -saldoConversivel,
-            tipo: "🏧 SOLICITAÇÃO_SAQUE",
-            descricao: `Resgate de ${saldoConversivel.toFixed(2)} ATLIX (Créditos de Trabalho)`,
-            timestamp: serverTimestamp(),
-            moeda: "ATLIX",
-            status: "processando"
-        });
-
-        // Envia para o Gil pagar (Assistant vai ler isso)
-        await addDoc(collection(db, "mission_submissions"), {
-            user_id: uid,
-            user_name: window.userProfile?.nome || "Usuário",
-            mission_title: "🏧 RESGATE DE SALDO ATLIX",
-            reward: parseFloat(valorRealBruto),
-            pay_type: 'real',
-            status: 'approved_pending_pix', // Já cai na fila de pagamento
-            is_saque: true,
-            created_at: serverTimestamp()
-        });
-
-        alert("✅ SOLICITAÇÃO ENVIADA!\nO Banco Central processará seu PIX em breve.");
-        
-   } catch (e) { 
-            console.error("Erro no processamento:", e);
-        }
+    // 🏦 Sincronização de cálculo visual concluída.
     }
 };
 
