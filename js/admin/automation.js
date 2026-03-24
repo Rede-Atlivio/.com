@@ -757,74 +757,59 @@ window.resgatarRoteiroDoBanco = async function() {
 };
 
 /**
- * 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (VERSÃO BLINDADA V2026)
- * Gil, esta versão resolve o erro de 'null' esperando o carregamento do HTML.
+ * 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (VERSÃO BLINDADA V66)
+ * Esta versão garante botões reais e o botão de LIMPEZA sempre visível.
  */
 window.executarVigilanciaAtiva = async () => {
-    // 🛡️ Garante que temos o Firebase e o Banco
     const fv = window.firebaseModules;
     const db = window.db;
-    if (!fv || !db) return;
+    const msgArea = document.getElementById('assistant-msg');
 
-    // 🎯 Captura da Área da Assistant com Retentativa
-    let msgArea = document.getElementById('assistant-msg');
-    
-    // Se não achou de primeira (delay de renderização), tenta novamente em 1 segundo
-    if (!msgArea) {
-        setTimeout(window.executarVigilanciaAtiva, 1000);
-        return;
-    }
+    if (!msgArea || !fv || !db) return; // Se não tem o alvo ou banco, silencia para não dar erro
 
     try {
-        // 📡 VARREDURAS CONSOLIDADAS
+        // Busca Saques Pendentes e Curadorias Pendentes
         const qPix = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "approved_pending_pix"));
-        const qCuradoriaB2B = fv.query(fv.collection(db, "missions"), fv.where("status", "==", "pending_b2b"));
-        const qCuradoriaUser = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
+        const qCur = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
 
-        const [snapPix, snapB2B, snapUser] = await Promise.all([
-            fv.getDocs(qPix), fv.getDocs(qCuradoriaB2B), fv.getDocs(qCuradoriaUser)
-        ]);
+        const [snapPix, snapCur] = await Promise.all([fv.getDocs(qPix), fv.getDocs(qCur)]);
 
-        let alertas = [];
-        let botoes = [];
+        let botoesHtml = "";
+        let textoStatus = "Sistema Estabilizado.";
 
-        // 💰 Agrupamento de Saques (Dashboard)
-        if (snapPix.size > 0) {
-            alertas.push(`${snapPix.size} saques`);
-            botoes.push(`<button onclick="window.switchView('dashboard')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:scale-105 transition">PAGAR AGORA 💸</button>`);
+        if (snapPix.size > 0 || snapCur.size > 0) {
+            textoStatus = `Detectado: ${snapPix.size} saques | ${snapCur.size} curadorias.`;
+            
+            if (snapPix.size > 0) {
+                botoesHtml += `<button onclick="window.switchView('finance')" class="bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition-all">Pagar Agora 💸</button>`;
+            }
+            if (snapCur.size > 0) {
+                botoesHtml += `<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition-all ml-1">Analisar 📸</button>`;
+            }
         }
 
-        // 📸 Agrupamento de Curadoria (Missões)
-        const totalCuradoria = snapB2B.size + snapUser.size;
-        if (totalCuradoria > 0) {
-            alertas.push(`${totalCuradoria} curadorias`);
-            botoes.push(`<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:scale-105 transition">ANALISAR 📸</button>`);
-        }
-
-        // 🏁 INJEÇÃO NA TELA
-        if (alertas.length > 0) {
-            msgArea.innerHTML = `
-                <div class="flex flex-col gap-1.5 animate-fade">
-                    <span class="text-indigo-200 font-bold italic">"Gil, identifiquei pendências: ${alertas.join(' | ')}."</span>
-                    <div class="flex gap-2">${botoes.join('')}</div>
+        // Injeção com Botão de Limpeza Fixo conforme exigido pelo Gil
+        msgArea.innerHTML = `
+            <div class="flex flex-col gap-2.5 animate-fade">
+                <span class="text-indigo-200 font-bold italic leading-tight">"${textoStatus}"</span>
+                <div class="flex items-center gap-2">
+                    ${botoesHtml}
+                    <button onclick="window.dispararLimpezaGlobal()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase border border-amber-500/30 transition shadow-md flex items-center gap-1">
+                        <i data-lucide="refresh-ccw" class="w-3 h-3"></i> LIMPEZA
+                    </button>
                 </div>
-            `;
-        } else {
-            msgArea.innerHTML = `"Sistema em 100%. Nenhuma pendência crítica encontrada."`;
-        }
+            </div>
+        `;
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
     } catch (e) {
-        console.error("❌ Erro na Vigilância:", e);
+        console.warn("⚠️ Vigilância em espera: " + e.message);
     }
 };
 
-// 🛰️ Início automático com trava de segurança
-setTimeout(() => {
-    if (typeof window.executarVigilanciaAtiva === 'function') window.executarVigilanciaAtiva();
-}, 2000);
-
-// 🛰️ DISPARADOR AUTOMÁTICO: Faz a Assistant "acordar" a cada 30 segundos
+// 🛰️ Ciclo de Vida: Tenta rodar agora e repete a cada 30 segundos
 if (!window.intervaloVigilancia) {
-    window.executarVigilanciaAtiva(); // Roda imediato ao carregar
+    window.executarVigilanciaAtiva();
     window.intervaloVigilancia = setInterval(window.executarVigilanciaAtiva, 30000);
 }
