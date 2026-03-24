@@ -121,30 +121,24 @@
             </div>
         </header>
 
-        <div class="flex-1 overflow-hidden relative flex flex-col">
-            <div class="px-6 pt-6 flex-shrink-0">
-                <div id="dash-assistant-area" class="bg-slate-900 border border-indigo-500/30 rounded-2xl p-4 shadow-xl flex items-center justify-between">
+        <div class="flex-1 overflow-hidden relative">
+            <div id="view-dashboard" class="relative w-full h-full overflow-y-auto p-6 custom-scrollbar hidden">
+                
+                <!-- 🧠 ASSISTANT RESTAURADA AO DASHBOARD -->
+                <div id="dash-assistant-area" class="bg-slate-900 border border-indigo-500/30 rounded-2xl p-4 shadow-xl flex items-center justify-between mb-6">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(79,70,229,0.4)]">
                             <i data-lucide="brain-circuit" class="text-white w-5 h-5"></i>
                         </div>
                         <div id="assistant-container">
                             <h4 class="text-[10px] font-black text-white uppercase tracking-widest leading-none italic">Inteligência Operacional</h4>
-                            <div id="assistant-msg" class="text-[11px] text-indigo-300 mt-1 italic leading-tight">Sincronizando radares de auditoria...</div>
+                            <div id="assistant-msg" class="text-[11px] text-indigo-300 mt-1 italic leading-tight">Sincronizando radares...</div>
                         </div>
                     </div>
                     <div class="flex items-center gap-3 bg-black/30 px-3 py-2 rounded-xl border border-white/5">
-                         <div class="flex flex-col items-end">
-                             <span class="text-[7px] font-bold text-gray-500 uppercase tracking-tighter">Status Rede</span>
-                             <span id="mini-status-txt" class="text-[9px] font-black text-emerald-400 uppercase tracking-tighter">Online</span>
-                         </div>
-                         <div id="status-robo-led" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] border border-slate-950"></div>
+                         <div id="status-robo-led" class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
                     </div>
                 </div>
-            </div>
-
-            <div class="flex-1 overflow-hidden relative mt-2">
-                <div id="view-dashboard" class="relative w-full h-full overflow-y-auto p-6 custom-scrollbar hidden">
 
                 <div id="dashboard-main-content" class="space-y-6"></div>
 
