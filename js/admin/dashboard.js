@@ -107,13 +107,7 @@ export async function init() {
                         <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Fila de Pagamentos PIX 💰</h3>
                         <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pague no seu banco e confirme aqui para limpar a fila.</p>
                     </div>
-                   <div class="flex items-center gap-3">
-                        <span class="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-1 rounded-lg font-black uppercase animate-pulse">Monitoramento Real-time</span>
-                        <!-- 🚀 BOTÃO DE FECHAR MESA (VOLTAR PARA GRÁFICOS) -->
-                        <button onclick="window.switchView('dashboard')" class="bg-slate-800 hover:bg-red-600 text-white p-2 rounded-xl transition-all shadow-lg border border-white/5">
-                            <i data-lucide="x" class="w-4 h-4"></i>
-                        </button>
-                    </div>
+                    <span class="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-1 rounded-lg font-black uppercase animate-pulse">Monitoramento Real-time</span>
                 </div>
                 <div id="feedback-mesa-pix" class="space-y-3"></div>
             </div>
