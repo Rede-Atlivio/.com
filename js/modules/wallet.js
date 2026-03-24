@@ -384,15 +384,26 @@ window.receberSaldoComValidade = async (valor, tipo = "PIX", descricao = "Recarg
             // 1. A MÁGICA: Saldo Real Novo + Tudo que estava congelado
             const novoAporteReal = parseFloat(valor) + frozenAtual;
 
-            // 2. Atualiza os cofres: Balance sobe, Frozen zera
+           // 2. Atualiza os cofres: Balance sobe, Frozen zera
             transaction.update(userRef, {
                 wallet_balance: increment(novoAporteReal),
                 wallet_frozen: 0,
                 updated_at: serverTimestamp()
             });
 
-            // 3. Oficializa no Ledger (Dando 12 meses de vida para o saldo novo + resgatado)
-            // Chamamos a função de lote que já existe no seu arquivo
+            // 3. 📝 REGISTRO NO EXTRATO: Se houve saldo congelado recuperado, avisa o usuário
+            if (frozenAtual > 0) {
+                const extratoResgateRef = doc(collection(db, "extrato_financeiro"));
+                transaction.set(extratoResgateRef, {
+                    uid: uid,
+                    valor: frozenAtual,
+                    tipo: "🔥 SALDO RECUPERADO",
+                    descricao: `Recarga realizada! Seu saldo de ${frozenAtual.toFixed(2)} ATLIX saiu do gelo.`,
+                    timestamp: serverTimestamp()
+                });
+            }
+
+            // 4. Oficializa no Ledger (Dando 12 meses de vida para o saldo novo + resgatado)
             await window.oficializarLoteExterno(novoAporteReal, tipo, descricao);
         });
 
