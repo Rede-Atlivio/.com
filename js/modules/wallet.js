@@ -1095,24 +1095,6 @@ window.processarSolicitacaoSaque = async function() {
 };
 
 /**
- * 🛰️ BRIDGE DE MÓDULOS ATLIVIO
- * Centraliza o acesso às ferramentas do Firebase para todos os motores financeiros.
- */
-import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-window.firebaseModules = firestoreFull; // Registra os módulos no motor central
-
-// 🚀 SOLDAGEM GLOBAL ATLIVIO V2026: Libera acesso total para a Interface (HTML)
-window.carregarCarteira = carregarCarteira;
-window.pagarComAtlix = window.pagarComAtlix;
-window.filtrarGanhos = filtrarGanhos;
-window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
-window.processarSolicitacaoSaque = window.processarSolicitacaoSaque; // Libera o saque
-window.abrirGuiaCarteira = window.abrirGuiaCarteira; // Libera o guia
-window.switchTab = window.switchTab || function(tab) { console.log("Troca de aba:", tab); }; // Evita erro de navegação
-
-console.log("%c✅ SISTEMA FINANCEIRO ATLIVIO: Sincronia concluída.", "color: #10b981; font-weight: bold;");
-
-/**
  * ♻️ PROTOCOLO DE ESTORNO B2B ATLIVIO
  * Liquida vagas ociosas de uma missão e devolve o saldo reservado para a empresa.
  */
@@ -1286,3 +1268,15 @@ window.abrirGuiaCarteira = () => {
         };
     }
 };
+// 🚀 SOLDAGEM GLOBAL ATLIVIO V2026 (FINAL DO ARQUIVO)
+window.carregarCarteira = carregarCarteira;
+window.pagarComAtlix = pagarComAtlix;
+window.filtrarGanhos = filtrarGanhos;
+window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
+window.processarSolicitacaoSaque = window.processarSolicitacaoSaque; 
+window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; // 🔓 RESOLVE O "CALCULANDO"
+window.abrirGuiaCarteira = window.abrirGuiaCarteira; 
+window.encerrarMissaoB2BComEstorno = window.encerrarMissaoB2BComEstorno;
+window.switchTab = window.switchTab || function(tab) { console.log("Aba:", tab); };
+
+console.log("%c✅ SISTEMA FINANCEIRO ATLIVIO: Sincronia concluída na última linha.", "color: #10b981; font-weight: bold;");
