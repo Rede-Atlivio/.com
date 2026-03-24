@@ -106,9 +106,9 @@ function iniciarSincroniaB2B() {
             
             console.log("🏦 Economia B2B Sincronizada: Saque Mínimo " + window.CONFIG_FINANCEIRA.saque_minimo + " ATLIX");
             
-            // Atualiza o visual se o usuário estiver com o perfil aberto
-            if (window.userProfile?.wallet_bonus !== undefined) {
-                window.calcularEquivalenciaAtlix(window.userProfile.wallet_bonus);
+           // 🎯 AJUSTE DE MIRA: Calcula saque apenas sobre RECARGAS (wallet_balance)
+            if (window.userProfile?.wallet_balance !== undefined) {
+                window.calcularEquivalenciaAtlix(window.userProfile.wallet_balance);
             }
         }
     });
