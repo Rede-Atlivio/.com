@@ -203,8 +203,9 @@ export function iniciarMonitoramentoCarteira() {
                 }));
             });
 
-           // 1. Ajusta os cofres principais
-            tarefas.push(fv.updateDoc(ref, {
+          // 1. Ajusta os cofres principais (Uso do UID local da função)
+            const userRefParaSaneamento = fv.doc(db, "usuarios", uid);
+            tarefas.push(fv.updateDoc(userRefParaSaneamento, {
                 wallet_balance: fv.increment(-saldoExpiradoPix),
                 wallet_bonus: fv.increment(-saldoExpiradoBonus),
                 wallet_frozen: fv.increment(saldoExpiradoPix),
