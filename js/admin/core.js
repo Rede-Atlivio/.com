@@ -655,8 +655,10 @@ console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado.");
 // Somente exportamos aqui para garantir que todas as funções (como switchView)
 // já tenham sido processadas e existam na memória do navegador.
 
-window.auth = auth; // Exporta o motor de login
-window.db = db; // Exporta o banco de dados Firestore
-window.switchView = switchView; // Exporta o roteador para a Assistant usar
+// 🌍 CENTRAL DE CONECTIVIDADE (FINAL)
+// Gil, exportamos aqui para que a Assistant possa usar o comando 'switchView' nos botões.
+window.auth = auth;
+window.db = db;
+window.switchView = switchView; 
 
-console.log("🏁 Core Atlivio V60: Sistema de Roteamento e Exportações OK.");
+console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
