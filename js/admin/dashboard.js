@@ -90,12 +90,6 @@ window.confirmarPagamentoRealizado = async (docId) => {
     }
 };
 
-// 🔙 VOLTAR PARA O DASHBOARD NORMAL
-window.fecharMesaPix = () => {
-    document.getElementById('mesa-pix-pendente').classList.add('hidden');
-    document.getElementById('grade-kpis-dashboard').classList.remove('hidden');
-};
-
 export async function init() {
     // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
     const container = document.getElementById('dashboard-main-content');
