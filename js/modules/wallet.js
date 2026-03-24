@@ -1086,8 +1086,7 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
    } catch (e) { 
             console.error("Erro no processamento:", e);
         }
-    }
-};
+   };
 
 // 🏧 MÓDULO DE DISTRIBUIÇÃO GLOBAL ATLIVIO
 // Conecta os motores internos aos botões da interface (index.html)
