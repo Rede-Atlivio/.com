@@ -637,15 +637,13 @@ async function aprovarMissao(docId, userId, valor) {
                 }
 
                 // 📊 CONTABILIDADE DE TAXAS B2B (ISOLADO DO CAIXA REAL)
-                // Gil, aqui criamos um balde separado só para você ver quanto faturou de taxa.
-                // Isso NÃO mexe no saldo de recargas do sys_finance/receita_total.
+                // 📊 BALDE DE TAXAS CENTRALIZADO (ATLIVIO STATS)
                 if (suaTaxaLucro > 0) {
-                    const taxaB2BRef = doc(window.db, "sys_finance", "fees_b2b");
-                    transaction.set(taxaB2BRef, { 
-                        total_taxas_acumulado: increment(suaTaxaLucro),
-                        quantidade_transacoes: increment(1),
+                    const statsRef = doc(window.db, "sys_finance", "stats");
+                    transaction.update(statsRef, { 
+                        total_revenue: increment(suaTaxaLucro),
                         ultima_atualizacao: serverTimestamp() 
-                    }, { merge: true });
+                    });
                 }
 
                 // 4. Deposita os ATLIX na carteira do explorador
