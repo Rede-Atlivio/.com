@@ -135,34 +135,28 @@ function lockAdmin() {
 }
 
 // ============================================================================
-// ROTEADOR BLINDADO (ATUALIZADO COM PRODUTOS)
+// ROTEADOR MESTRE ATLIVIO (ESTABILIDADE V2026)
 // ============================================================================
 window.switchView = async function(viewName) {
     window.activeView = viewName;
-    console.log(`🚀 Carregando: ${viewName}`);
+    console.log(`🚀 Navegando para: ${viewName}`);
     
-    const allViews = [
-        'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
-        'view-settings', 'view-support', 'view-audit', 'view-tutorials',
-        'view-missions', 'view-opportunities', 'view-maestro', 'view-products' 
-    ];
-
-    // 🧹 FAXINA ATÔMICA ATLIVIO: Garante que nenhuma aba sobreponha a outra
-    // Primeiro: localiza TUDO que tem ID começando com 'view-' e mata a visibilidade
-    const viewsNoDOM = document.querySelectorAll('[id^="view-"]');
-    viewsNoDOM.forEach(v => {
+    // 🧹 FAXINA CIRÚRGICA: Esconde as abas mas preserva o esqueleto do Admin
+    const todasViews = document.querySelectorAll('[id^="view-"]');
+    todasViews.forEach(v => {
         v.classList.add('hidden');
-        v.style.setProperty('display', 'none', 'important'); // Bloqueio nível 1
+        v.style.display = 'none'; 
     });
 
-    // Segundo: certifica que as abas registradas no roteador também sumam
-    allViews.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.classList.add('hidden');
-            el.style.setProperty('display', 'none', 'important'); // Bloqueio nível 2
-        }
-    });
+    // 🛡️ REPARO DE RADAR: Se voltar para o Dashboard, garante que a Assistant seja notada pelo sistema
+    if (viewName === 'dashboard') {
+        setTimeout(() => {
+            if (window.executarVigilanciaAtiva) {
+                console.log("🛰️ Reativando inteligência da Assistant...");
+                window.executarVigilanciaAtiva();
+            }
+        }, 100);
+    }
     
     const titleEl = document.getElementById('page-title');
     if(titleEl) titleEl.innerText = viewName.toUpperCase();
