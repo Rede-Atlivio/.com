@@ -1092,14 +1092,17 @@ window.processarSolicitacaoSaque = async function() {
     }
 };
 
-// 🚀 SOLDAGEM GLOBAL ATLIVIO V2026: Conecta os motores aos botões do HTML
-window.definirMetaDiaria = definirMetaDiaria;
-window.carregarHistoricoCarteira = carregarHistoricoCarteira;
-window.pagarComAtlix = window.pagarComAtlix;
-window.switchTab = window.switchTab || function(t) { console.log("Navegando:", t); };
-// 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
+// 🛰️ BRIDGE DE MÓDULOS ATLIVIO: Centraliza o Firebase para todos os motores
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
+
+// 🚀 SOLDAGEM GLOBAL: Libera as funções para o index.html e outros módulos
+window.carregarCarteira = carregarCarteira;
+window.pagarComAtlix = window.pagarComAtlix;
+window.filtrarGanhos = filtrarGanhos;
+window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
+// Garante que o switchTab (navegação) não quebre se o app.js demorar a carregar
+window.switchTab = window.switchTab || function(tab) { console.warn("Ponte de navegação ATLIVIO em sincronização..."); };
 
 /**
  * ♻️ PROTOCOLO DE ESTORNO B2B ATLIVIO
