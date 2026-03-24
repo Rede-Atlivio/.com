@@ -106,9 +106,9 @@ function iniciarSincroniaB2B() {
             
             console.log("🏦 Economia B2B Sincronizada: Saque Mínimo " + window.CONFIG_FINANCEIRA.saque_minimo + " ATLIX");
             
-            // Atualiza o visual se o usuário estiver com o perfil aberto
-            if (window.userProfile?.wallet_bonus !== undefined) {
-                window.calcularEquivalenciaAtlix(window.userProfile.wallet_bonus);
+           // 🎯 AJUSTE DE MIRA: Calcula saque apenas sobre RECARGAS (wallet_balance)
+            if (window.userProfile?.wallet_balance !== undefined) {
+                window.calcularEquivalenciaAtlix(window.userProfile.wallet_balance);
             }
         }
     });
@@ -694,9 +694,9 @@ function verificarFaixaBonus(valorBonus) {
             banner.innerHTML = `
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🎁</span>
-                    <div>
+                   <div>
                         <p class="text-[9px] opacity-80 uppercase font-black">Presente de Boas-Vindas</p>
-                        <p class="text-xs font-bold uppercase tracking-wider">VOCÊ GANHOU R$ ${valorBonus.toFixed(2).replace('.', ',')} PARA USAR AGORA!</p>
+                        <p class="text-xs font-bold uppercase tracking-wider">VOCÊ GANHOU ${valorBonus.toFixed(2).replace('.', ',')} ATLIX 🪙 PARA USAR AGORA!</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -1021,92 +1021,52 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
     }
 };
 /**
- * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO
- * Transforma saldo de missões em percepção de valor real (Spread).
+ * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO V2026
+ * Transforma saldo de recargas em percepção de valor para saque PIX.
  */
 window.calcularEquivalenciaAtlix = (saldoAtlix) => {
-    const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
-    const valorReal = (saldoAtlix * spread).toFixed(2);
-    const el = document.getElementById('txt-equivalencia-real');
-    const elBtnSaque = document.getElementById('btn-solicitar-saque');
-    
-    if (el) { el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; }
+    // 🛡️ Segurança: Garante que o valor recebido seja numérico para o cálculo
+    const saldoLimpo = parseFloat(saldoAtlix || 0);
 
-    // Trava de segurança: O botão de saque só ativa se atingir o mínimo configurado no Admin
-    if (elBtnSaque) {
-        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
-        if (saldoAtlix >= min) {
-            elBtnSaque.disabled = false;
-            elBtnSaque.classList.remove('opacity-50', 'grayscale');
-            elBtnSaque.innerText = "SACAR PARA PIX 💸";
-        } else {
-            elBtnSaque.disabled = true;
-            elBtnSaque.classList.add('opacity-50', 'grayscale');
-            elBtnSaque.innerText = `FALTAM ${(min - saldoAtlix).toFixed(0)} ATLIX PARA SAQUE`;
-        }
-    }
-};
-
-// ============================================================================
-// 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
-// Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
-// ============================================================================
-// 🚀 EXPORTAÇÕES GLOBAIS V201 (REFORMA ECONÔMICA)
-// 🚀 EXPORTAÇÕES GLOBAIS V2026.VALIDADE (Sincronizadas)
-window.CONFIG_FINANCEIRA = CONFIG_FINANCEIRA; // Expondo o objeto de regras
-window.carregarCarteira = carregarCarteira;
-window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
-window.podeTrabalhar = podeTrabalhar;
-window.pagarComAtlix = window.pagarComAtlix;
-window.processarCobrancaTaxa = processarCobrancaTaxa;
-window.registrarMovimentacao = window.registrarMovimentacao;
-window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
-window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
-window.filtrarGanhos = filtrarGanhos;
-window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
-// 🏦 CONEXÕES BANCO CENTRAL V2026: Libera os novos motores para o App
-window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; 
-window.iniciarSincroniaB2B = iniciarSincroniaB2B;
-
-/**
- * 💸 MOTOR DE SAQUE ATLIVIO V2026 - CORRIGIDO
- * APENAS saldo de trabalho (wallet_balance) pode ser convertido.
- */
-window.processarSolicitacaoSaque = async () => {
-    // 🛡️ TRAVA DO ADMIN: Verifica se você desligou o PIX no Banco Central
+    // 🛡️ TRAVA DO BANCO CENTRAL: Verifica se os resgates estão liberados
     if (window.CONFIG_FINANCEIRA?.pix_ativo === false) {
-        return alert("⚠️ CONVERSÃO TEMPORARIAMENTE INDISPONÍVEL\nO Banco Central Atlivio está em manutenção programada.");
+        return; // Sai sem erro se o motor estiver em manutenção
     }
 
     const uid = auth.currentUser?.uid;
-    const saldoRealTrabalho = window.userProfile?.wallet_balance || 0;
+    // 🛡️ FILTRO DE MOEDA REAL: O saque agora ignora o wallet_bonus (Marketing)
+    const saldoConversivel = parseFloat(window.userProfile?.wallet_balance || 0);
     const minSaque = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
 
-    if (saldoRealTrabalho < minSaque) {
-        return alert(`🛑 Saldo Insuficiente para Saque.\n\nVocê tem ${saldoRealTrabalho.toFixed(2)} ATLIX de saldo real.\nO bônus de marketing não é conversível.`);
+    // 🚫 Verificação de Elegibilidade de Saque
+    if (saldoConversivel < minSaque) {
+        return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nVocê possui ${saldoConversivel.toFixed(2)} ATLIX conversíveis.\nO valor mínimo para resgate é de ${minSaque} ATLIX.\n\nLembre-se: Bônus de marketing não podem ser sacados.`);
     }
 
-    const valorRealBruto = (saldoRealTrabalho * spread).toFixed(2);
-    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoRealTrabalho.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma a operação?`)) return;
+    // 💰 Cálculo do valor em Reais baseado no Saldo de Recargas e taxa de conversão (Spread)
+    const valorRealBruto = (saldoConversivel * spread).toFixed(2);
+    
+    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoConversivel.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma a operação?`)) return;
 
     try {
         const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // Debita o saldo REAL de trabalho
+        // 📉 Atualiza o saldo do usuário: Retira os créditos convertidos do cofre de recargas
         await updateDoc(doc(db, "usuarios", uid), {
-            wallet_balance: increment(-saldoRealTrabalho),
+            wallet_balance: increment(-saldoConversivel),
             updated_at: serverTimestamp()
         });
 
-        // Grava no histórico como ATLIX saindo
+        // 📝 Registro de Débito para Auditoria: Identifica como ATLIX CRÉDITOS
         await addDoc(collection(db, "extrato_financeiro"), {
             uid: uid,
-            valor: -saldoRealTrabalho,
+            valor: -saldoConversivel,
             tipo: "🏧 SOLICITAÇÃO_SAQUE",
-            descricao: `Conversão de ${saldoRealTrabalho.toFixed(2)} ATLIX para PIX`,
+            descricao: `Resgate de ${saldoConversivel.toFixed(2)} ATLIX (Créditos de Trabalho)`,
             timestamp: serverTimestamp(),
-            moeda: "ATLIX" 
+            moeda: "ATLIX",
+            status: "processando"
         });
 
         // Envia para o Gil pagar (Assistant vai ler isso)
@@ -1123,11 +1083,20 @@ window.processarSolicitacaoSaque = async () => {
 
         alert("✅ SOLICITAÇÃO ENVIADA!\nO Banco Central processará seu PIX em breve.");
         
-    } catch (e) { alert("Erro ao processar saque."); }
+   } catch (e) { 
+            console.error("Erro no processamento:", e);
+        }
+    }
 };
-// 🎯 V2026.FIX: Expõe a função para que o botão "Meta" no HTML volte a funcionar
+
+// 🏧 MÓDULO DE DISTRIBUIÇÃO GLOBAL ATLIVIO
+// Conecta os motores internos aos botões da interface (index.html)
+// 🚀 EXPORTAÇÃO MESTRE V2026: Libera acesso para o Index.html e Radar
 window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
+window.processarSolicitacaoSaque = window.processarSolicitacaoSaque;
+window.pagarComAtlix = window.pagarComAtlix;
+window.switchTab = window.switchTab || function(tab) { console.warn("Ponte aguardando sistema mestre..."); };
 // 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
@@ -1227,3 +1196,82 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
 };
 
 console.log("%c✅ WALLET V63.4: Protocolo de Estorno B2B e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
+/**
+ * 📖 GUIA DA CARTEIRA ATLIVIO V2026
+ * Explica de forma leiga e direta cada compartimento financeiro.
+ */
+window.abrirGuiaCarteira = () => {
+    // 🎨 AJUSTE DE CONTRASTE: Usamos fundo sólido e texto mais escuro para leitura perfeita
+    const modalContent = `
+        <div class="p-6 space-y-6 text-slate-950 animate-fadeIn bg-white rounded-3xl border border-gray-100 shadow-inner">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3 border border-blue-100 shadow-sm">
+                    <span class="text-3xl">🏦</span>
+                </div>
+                <h3 class="text-2xl font-black text-slate-950 uppercase italic tracking-tighter shadow-sm">Guia Financeiro</h3>
+                <p class="text-[11px] text-gray-500 uppercase font-bold tracking-widest leading-none mt-1">Entenda seus créditos Atlivio</p>
+            </div>
+
+           <div class="space-y-5">
+                <div class="flex gap-4 items-start bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
+                    <span class="text-2xl">💰</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-950">Atlix Recargas</p>
+                        <p class="text-[10px] text-slate-600 leading-tight">Dinheiro que você adicionou VIA RECARGA PIX. É o **único** que pode ser sacado para sua conta via SAQUE PIX.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start p-2">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-amber-600">Atlix Bônus</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">São presentes da Atlivio ou prêmios de missões. Você usa para contratar serviços dentro do app, mas **eles não podem ser convertidos em PIX.**</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start p-2">
+                    <span class="text-2xl">❄️</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-blue-500">Atlix Congelado</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Saldos de recargas que passaram da validade. Eles ficam guardados aqui. Para descongelar e usar, basta fazer qualquer nova recarga.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start p-2 border-t border-gray-50 pt-4">
+                    <span class="text-2xl">🔒</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-700">Em Custódia</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Dinheiro "preso" em um serviço que você contratou. Garante o pagamento do prestador após voce liberar o pagamento de missões ou serviços.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start p-2">
+                    <span class="text-2xl">📈</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-emerald-600">Seus Ganhos</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Soma de tudo o que você faturou trabalhando ou cumprindo missões.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button id="btn-fechar-guia" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg transform active:scale-95 transition-all mt-4">
+                Entendi, Voltar
+            </button>
+        </div>
+    `;
+
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    
+    if (modal && content) {
+        content.innerHTML = modalContent;
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
+
+        // 🔗 Soldagem do Clique: Força o fechamento do modal ao clicar no botão
+        document.getElementById('btn-fechar-guia').onclick = () => {
+            modal.classList.add('hidden');
+            modal.style.setProperty('display', 'none', 'important');
+        };
+    }
+};
