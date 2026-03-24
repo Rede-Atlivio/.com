@@ -1023,28 +1023,42 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
     }
 };
 /**
- * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO V2026
- * Transforma saldo de recargas em percepção de valor para saque PIX.
+ * 🔄 MOTOR DE CONVERSÃO PERSISTENTE V2026
+ * Vence a briga com o Radar e garante que o valor apareça na tela.
  */
 window.calcularEquivalenciaAtlix = (saldoAtlix) => {
-    // 🛡️ Segurança: Garante que o valor recebido seja numérico para o cálculo
-    const saldoLimpo = parseFloat(saldoAtlix || 0);
-
-    // 🛡️ TRAVA DO BANCO CENTRAL: Verifica se os resgates estão liberados
-    if (window.CONFIG_FINANCEIRA?.pix_ativo === false) {
-        return; // Sai sem erro se o motor estiver em manutenção
-    }
-
-    const uid = auth.currentUser?.uid;
-    // 🛡️ FILTRO DE MOEDA REAL: O saque agora ignora o wallet_bonus (Marketing)
-    const saldoConversivel = parseFloat(window.userProfile?.wallet_balance || 0);
-    const minSaque = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
+    const sReal = parseFloat(window.userProfile?.wallet_balance || 0);
+    const valorConvertido = (sReal * spread).toFixed(2).replace('.', ',');
 
-    // 🚫 Verificação de Elegibilidade de Saque
-    if (saldoConversivel < minSaque) {
-        return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nVocê possui ${saldoConversivel.toFixed(2)} ATLIX conversíveis.\nO valor mínimo para resgate é de ${minSaque} ATLIX.\n\nLembre-se: Bônus de marketing não podem ser sacados.`);
-    }
+    const renderizar = () => {
+        const el = document.getElementById('txt-equivalencia-real');
+        const btnSaque = document.getElementById('btn-solicitar-saque');
+        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
+
+        if (el) {
+            el.innerText = `≃ R$ ${valorConvertido} para saque`;
+            el.classList.remove('animate-pulse'); // Para a animação de carregamento
+        }
+
+        // 🏧 Gerenciamento inteligente do botão de saque
+        if (btnSaque) {
+            if (sReal >= min && window.CONFIG_FINANCEIRA?.pix_ativo !== false) {
+                btnSaque.disabled = false;
+                btnSaque.classList.remove('opacity-50', 'grayscale');
+                btnSaque.innerHTML = "SACAR PARA PIX 💸";
+            } else {
+                btnSaque.disabled = true;
+                btnSaque.classList.add('opacity-50', 'grayscale');
+                btnSaque.innerHTML = sReal < min ? `FALTAM ${(min - sReal).toFixed(0)} ATLIX` : "MANUTENÇÃO";
+            }
+        }
+    };
+
+    // 🚀 EXECUÇÃO TRIPLA: Garante que o valor apareça mesmo se a aba demorar a carregar
+    renderizar(); // 1. Tenta agora
+    setTimeout(renderizar, 500);  // 2. Tenta em meio segundo (após o sistema de abas)
+    setTimeout(renderizar, 2000); // 3. Tentativa final de segurança
 };
 
 /**
