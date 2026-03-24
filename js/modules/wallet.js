@@ -1283,11 +1283,15 @@ window.abrirGuiaCarteira = () => {
         </div>
     `;
 
-    // Verifica se a função de abrir modal do seu App existe
-    if (window.abrirModalApp) {
-        window.abrirModalApp(modalContent);
+    // 🚀 INJETOR DIRETO NO MODAL ATLIVIO
+    const modal = document.getElementById('modal-editor');
+    const content = document.getElementById('modal-content');
+    
+    if (modal && content) {
+        content.innerHTML = modalContent;
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
     } else {
-        // Fallback caso o motor de modal não tenha carregado
-        alert("Consulte o Guia Financeiro no menu de configurações.");
+        alert("Guia Financeiro: Adicionando fundos via recarga liberam o saldo de recargas.");
     }
 };
