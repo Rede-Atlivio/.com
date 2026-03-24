@@ -1230,3 +1230,64 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
 };
 
 console.log("%c✅ WALLET V63.4: Protocolo de Estorno B2B e Conexões Globais Ativadas.", "color: #10b981; font-weight: bold;");
+/**
+ * 📖 GUIA DA CARTEIRA ATLIVIO V2026
+ * Explica de forma leiga e direta cada compartimento financeiro.
+ */
+window.abrirGuiaCarteira = () => {
+    const modalContent = `
+        <div class="p-6 space-y-6 text-slate-800 animate-fadeIn">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span class="text-3xl">🏦</span>
+                </div>
+                <h3 class="text-xl font-black uppercase italic tracking-tighter">Guia Financeiro</h3>
+                <p class="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Entenda seus créditos Atlivio</p>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">💰</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-900">Atlix Recargas</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">É o dinheiro que você adicionou via PIX. Ele é o único que pode ser sacado de volta para sua conta bancária após o trabalho.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-amber-600">Atlix Bônus</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">São presentes da Atlivio ou prêmios de missões. Você usa para contratar serviços dentro do app, mas eles não podem ser convertidos em PIX.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">❄️</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-blue-500">Atlix Congelado</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Saldos de recargas que passaram da validade. Eles ficam guardados aqui. Para descongelar e usar, basta fazer qualquer nova recarga.</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start">
+                    <span class="text-2xl">🔒</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-slate-700">Em Custódia</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Valor reservado para garantir que o prestador receba. Quando o serviço termina, esse valor sai daqui e vai para o ganhador.</p>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="window.fecharModalUniversal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg transform active:scale-95 transition-all">Entendi, Voltar</button>
+        </div>
+    `;
+
+    // Verifica se a função de abrir modal do seu App existe
+    if (window.abrirModalApp) {
+        window.abrirModalApp(modalContent);
+    } else {
+        // Fallback caso o motor de modal não tenha carregado
+        alert("Consulte o Guia Financeiro no menu de configurações.");
+    }
+};
