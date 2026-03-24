@@ -21,58 +21,56 @@ window.toggleFeed = (uid) => {
     }
 };
 
-// 💰 V2026: FUNÇÃO PARA REVELAR A MESA DE PIX PENDENTE
-// Gil, essa função será chamada quando você clicar no alerta do Assistant
+/**
+ * 🏧 MOTOR DO BANCO CENTRAL: MESA DE TRABALHO FIXA
+ * Esta função apenas preenche a lista, sem esconder os gráficos.
+ */
 window.abrirMesaTrabalhoPix = async () => {
-    const mesa = document.getElementById('mesa-pix-pendente');
-    const graficos = document.getElementById('grade-kpis-dashboard');
     const feedback = document.getElementById('feedback-mesa-pix');
-    
-    if(!mesa || !graficos) return;
+    if(!feedback) return;
 
-    // Esconde os gráficos e mostra a lista de pagamentos
-    graficos.classList.add('hidden');
-    mesa.classList.remove('hidden');
-    feedback.innerHTML = `<div class="p-10 text-center"><div class="loader mx-auto border-emerald-500"></div><p class="text-[10px] text-gray-500 mt-2">Buscando chaves PIX...</p></div>`;
+    // Loader minimalista para não dar tranco visual
+    feedback.innerHTML = `<div class="p-4 text-center"><div class="loader mx-auto border-emerald-500 w-5 h-5"></div></div>`;
 
     try {
-        // Busca apenas quem está com status de PIX Pendente
+        const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 📡 Busca em tempo real na fila de PIX
         const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("approved_at", "desc"));
         const snap = await getDocs(q);
         
         if(snap.empty) {
-            feedback.innerHTML = `<p class="text-center py-20 text-gray-500 text-xs italic uppercase">Nenhum PIX aguardando na fila. Céu limpo! ☀️</p>`;
+            feedback.innerHTML = `<p class="text-center py-10 text-gray-500 text-[10px] italic uppercase tracking-widest opacity-50">☀️ Banco Central: Fila de PIX vazia.</p>`;
             return;
         }
 
         feedback.innerHTML = ""; // Limpa loader
         
-      for (const d of snap.docs) {
+        for (const d of snap.docs) {
             const m = d.data();
-            const idDoc = d.id;
-            
-            // Gil, as missões às vezes não salvam a chave PIX no envio, então vamos buscar direto no perfil do dono da missão
-            const userSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", m.user_id)));
-            const userData = !userSnap.empty ? userSnap.docs[0].data() : {};
-            const chavePixReal = m.pix_key || userData.pix_key || userData.chave_pix || 'Não informada';
+            // Busca dados do usuário (Chave PIX)
+            const uSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", m.user_id)));
+            const u = !uSnap.empty ? uSnap.docs[0].data() : {};
+            const pix = m.pix_key || u.pix_key || u.chave_pix || 'NÃO CADASTRADA';
 
             feedback.innerHTML += `
-                <div class="bg-slate-800/50 border border-emerald-500/20 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 animate-fade mb-3">
-                    <div class="flex-1 text-left">
-                        <p class="text-[9px] font-black text-emerald-400 uppercase leading-none mb-1">Missão: ${m.mission_title || 'Tarefa'}</p>
-                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'} ──▶ R$ ${m.reward}</h5>
-                        <p class="text-[10px] text-gray-500 font-mono select-all mt-1 italic">CHAVE PIX: ${chavePixReal}</p>
+                <div class="bg-slate-800/40 border border-emerald-500/10 p-4 rounded-2xl flex justify-between items-center gap-4 animate-fade mb-2 hover:border-emerald-500/30 transition-all">
+                    <div class="text-left">
+                        <p class="text-[8px] font-black text-emerald-500 uppercase mb-1">${m.is_saque ? '🏧 RESGATE DE SALDO' : '🎯 MISSÃO B2B'}</p>
+                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'} ──▶ <span class="text-emerald-400">R$ ${parseFloat(m.reward).toFixed(2)}</span></h5>
+                        <p class="text-[9px] text-gray-500 font-mono mt-1 italic">PIX: ${pix}</p>
                     </div>
                     <div class="flex gap-2">
-                        <button onclick="navigator.clipboard.writeText('${chavePixReal}'); alert('Chave Copiada!')" class="bg-slate-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase hover:bg-slate-600 transition">📋 Copiar Chave</button>
-                        <button onclick="window.confirmarPagamentoRealizado('${idDoc}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg active:scale-95 transition">✅ Confirmar Envio do PIX</button>
+                        <button onclick="navigator.clipboard.writeText('${pix}'); alert('Copiado!')" class="bg-slate-700 text-white p-2 rounded-lg text-[9px] font-black uppercase hover:bg-slate-600 transition">📋 Copiar</button>
+                        <button onclick="window.finalizarPagamentoComprovanteDashboard('${d.id}')" class="bg-emerald-600 text-white px-3 py-2 rounded-lg text-[9px] font-black uppercase shadow-lg active:scale-95 hover:bg-emerald-500 transition">✅ Pagar</button>
                     </div>
                 </div>
             `;
         }
 
     } catch(e) {
-        feedback.innerHTML = `<p class="text-red-500 text-center text-[10px]">Erro ao carregar fila: ${e.message}</p>`;
+        console.error("Erro na Mesa de PIX:", e);
+        feedback.innerHTML = `<p class="text-red-500 text-[9px] uppercase font-bold text-center">Erro na conexão financeira.</p>`;
     }
 };
 
