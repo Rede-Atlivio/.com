@@ -16,8 +16,7 @@ export async function init() {
                     🤝 B2B Pendente
                     <span id="badge-b2b-count" class="hidden absolute -top-1 -right-2 bg-red-600 text-white text-[7px] px-1 rounded-full animate-pulse">0</span>
                 </button>
-                <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
-                <button onclick="window.switchMissionTab('payments')" id="btn-tab-payments" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">💸 Pagamentos PIX</button>
+               <button onclick="window.switchMissionTab('submissions')" id="btn-tab-submissions" class="text-gray-400 font-bold uppercase text-[9px] hover:text-white pb-2 border-b-2 border-transparent transition">📸 Envios</button>
             </div>
            <div class="flex items-center gap-4 bg-slate-900/80 px-4 py-1.5 rounded-2xl border border-white/5 shadow-inner">
                 <div class="flex items-center gap-2 border-r border-white/10 pr-4">
