@@ -121,6 +121,14 @@ export async function init() {
             </div>
         </div>
 
+        <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
+            <h3 class="text-[10px] font-black text-gray-500 uppercase ml-2">Fluxo de Caixa</h3>
+            <div class="flex gap-2">
+                <button onclick="window.filtrarPeriodoFinanceiro('mes')" id="btn-filtro-mes" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase shadow-lg transition">Mês Atual</button>
+                <button onclick="window.filtrarPeriodoFinanceiro('ano')" id="btn-filtro-ano" class="bg-slate-800 text-gray-400 px-3 py-1 rounded-lg text-[9px] font-black uppercase hover:bg-slate-700 transition">Acumulado Ano</button>
+            </div>
+        </div>
+
         <div id="grade-kpis-dashboard" class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-6 animate-fade">
             <div class="glass-panel p-4 border-t-2 border-blue-500">
                 <p class="text-[8px] uppercase font-bold text-gray-500">👥 Base Total</p>
