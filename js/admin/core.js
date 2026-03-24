@@ -209,7 +209,9 @@ window.switchView = async function(viewName) {
     }
     else if (viewName === 'support') { moduleFile = './support.js'; containerId = 'view-support'; }
     else if (viewName === 'audit') { moduleFile = './audit.js'; containerId = 'view-audit'; }
-    else if (viewName === 'tutorials') { moduleFile = './canal.js'; containerId = 'view-tutorials'; }
+    // 📺 Gestão de Conteúdo: Separação entre App do Cliente e Tutoriais Internos
+    else if (viewName === 'canal_atlivio') { moduleFile = './canal.js'; containerId = 'view-canal_atlivio'; }
+    else if (viewName === 'tutorials') { moduleFile = './tutorials_admin.js'; containerId = 'view-tutorials'; }
 
     // 3. MOSTRAR CONTAINER
     if(containerId) {
