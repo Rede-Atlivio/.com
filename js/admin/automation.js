@@ -788,16 +788,11 @@ window.executarVigilanciaAtiva = async () => {
             }
         }
 
-        // Injeção com Botão de Limpeza Fixo conforme exigido pelo Gil
+        // Injeção Oficial Atlivio: Apenas Dados Reais e Atalhos Necessários
         msgArea.innerHTML = `
-            <div class="flex flex-col gap-2.5 animate-fade">
+            <div class="flex flex-col gap-1.5 animate-fade">
                 <span class="text-indigo-200 font-bold italic leading-tight">"${textoStatus}"</span>
-                <div class="flex items-center gap-2">
-                    ${botoesHtml}
-                    <button onclick="window.dispararLimpezaGlobal()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase border border-amber-500/30 transition shadow-md flex items-center gap-1">
-                        <i data-lucide="refresh-ccw" class="w-3 h-3"></i> LIMPEZA
-                    </button>
-                </div>
+                <div class="flex items-center gap-2">${botoesHtml}</div>
             </div>
         `;
         
