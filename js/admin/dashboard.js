@@ -229,13 +229,13 @@ export async function init() {
         // =================================================================================
         const usersSnap = await getDocs(collection(db, "usuarios"));
         
-        let somaSaldoPositivo = 0;
+       let somaSaldoPositivo = 0;
         let somaDividasNegativas = 0;
         let somaCustodiaTotal = 0;
+        let somaFrozenTotal = 0; // ❄️ Acumulador de Inatividade
         let trafficStats = {}; 
         let userSourceMap = {};
-
-        let somaBonusTotal = 0; // Novo acumulador de investimento
+        let somaBonusTotal = 0;
 
         usersSnap.forEach(uDoc => {
             const uData = uDoc.data();
