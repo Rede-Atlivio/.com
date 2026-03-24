@@ -1021,13 +1021,16 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
     }
 };
 /**
- * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO
- * Transforma saldo de missões em percepção de valor real (Spread).
+ * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO V2026
+ * Transforma saldo de recargas em percepção de valor para saque PIX.
  */
+window.calcularEquivalenciaAtlix = (saldoAtlix) => {
+    // 🛡️ Segurança: Garante que o valor recebido seja numérico para o cálculo
+    const saldoLimpo = parseFloat(saldoAtlix || 0);
 
-    // 🛡️ TRAVA DO ADMIN: Verifica se você desligou o PIX no Banco Central
+    // 🛡️ TRAVA DO BANCO CENTRAL: Verifica se os resgates estão liberados
     if (window.CONFIG_FINANCEIRA?.pix_ativo === false) {
-        return alert("⚠️ CONVERSÃO TEMPORARIAMENTE INDISPONÍVEL\nO Banco Central Atlivio está em manutenção programada.");
+        return; // Sai sem erro se o motor estiver em manutenção
     }
 
     const uid = auth.currentUser?.uid;
