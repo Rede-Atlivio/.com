@@ -336,7 +336,8 @@ export async function init() {
         // ✅ INJEÇÃO V604: Alimenta os 6 cards com a realidade do banco de dados
         if(document.getElementById('kpi-users')) document.getElementById('kpi-users').innerText = usersSnap.size;
         if(document.getElementById('kpi-custodia')) document.getElementById('kpi-custodia').innerText = `R$ ${somaCustodiaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-        if(document.getElementById('kpi-balance')) document.getElementById('kpi-balance').innerText = `R$ ${somaSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+       if(document.getElementById('kpi-balance')) document.getElementById('kpi-balance').innerText = `R$ ${somaSaldoPositivo.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        if(document.getElementById('kpi-frozen')) document.getElementById('kpi-frozen').innerText = `R$ ${somaFrozenTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-dividas')) document.getElementById('kpi-dividas').innerText = `R$ ${somaDividasNegativas.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-investimento')) document.getElementById('kpi-investimento').innerText = `R$ ${somaBonusTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
         if(document.getElementById('kpi-expiracao')) document.getElementById('kpi-expiracao').innerText = `R$ 0,00`; // Placeholder funcional
