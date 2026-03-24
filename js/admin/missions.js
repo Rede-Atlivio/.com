@@ -833,8 +833,7 @@ window.abrirProvaNovaAba = (base64) => {
 // 🔐 SOLDAGEM GLOBAL ADMIN V2026.PRO (CONEXÃO TOTAL B2B)
 window.abrirCriadorMissaoAtlas = abrirCriadorMissaoAtlas;
 window.publicarMissaoB2B = publicarMissaoB2B; 
-window.loadMissionsPayments = loadMissionsPayments; 
-window.finalizarPagamentoComprovante = finalizarPagamentoComprovante;
+// As funções de pagamento foram migradas para o Banco Central (Dashboard.js)
 window.abrirNovaMissao = abrirCriadorMissaoAtlas; 
 window.obterLocalizacaoAutomatica = obterLocalizacaoAutomatica;
 window.converterEnderecoEmGps = converterEnderecoEmGps;
