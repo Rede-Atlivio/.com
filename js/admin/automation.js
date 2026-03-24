@@ -755,65 +755,73 @@ window.resgatarRoteiroDoBanco = async function() {
         alert("Erro técnico ao buscar dados.");
     }
 };
+
 /**
- * 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (SENTINELA V2026)
- * Gil, este motor foi reconstruído para garantir que ele ache o HTML da Assistant.
+ * 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (VERSÃO BLINDADA V2026)
+ * Gil, esta versão resolve o erro de 'null' esperando o carregamento do HTML.
  */
 window.executarVigilanciaAtiva = async () => {
-    // 🛡️ Garante que os módulos do Firebase estejam prontos
-    const fv = window.firebaseModules || await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    // 🛡️ Garante que temos o Firebase e o Banco
+    const fv = window.firebaseModules;
     const db = window.db;
+    if (!fv || !db) return;
 
-    // 🎯 LOCALIZAÇÃO CRÍTICA: Onde a Assistant fala no seu Admin
-    const msgArea = document.getElementById('assistant-msg');
+    // 🎯 Captura da Área da Assistant com Retentativa
+    let msgArea = document.getElementById('assistant-msg');
+    
+    // Se não achou de primeira (delay de renderização), tenta novamente em 1 segundo
     if (!msgArea) {
-        console.error("❌ ERRO: Elemento 'assistant-msg' não encontrado no HTML!");
+        setTimeout(window.executarVigilanciaAtiva, 1000);
         return;
     }
 
     try {
-        // 📡 BUSCA NAS FILAS (Saques, Missões e Pendências)
+        // 📡 VARREDURAS CONSOLIDADAS
         const qPix = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "approved_pending_pix"));
-        const qB2B = fv.query(fv.collection(db, "missions"), fv.where("status", "==", "pending_b2b"));
-        const qEnvios = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
+        const qCuradoriaB2B = fv.query(fv.collection(db, "missions"), fv.where("status", "==", "pending_b2b"));
+        const qCuradoriaUser = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
 
-        const [snapPix, snapB2B, snapEnvios] = await Promise.all([
-            fv.getDocs(qPix), fv.getDocs(qB2B), fv.getDocs(qEnvios)
+        const [snapPix, snapB2B, snapUser] = await Promise.all([
+            fv.getDocs(qPix), fv.getDocs(qCuradoriaB2B), fv.getDocs(qCuradoriaUser)
         ]);
 
         let alertas = [];
         let botoes = [];
 
-        // 💰 Consolidação de Saques
+        // 💰 Agrupamento de Saques (Dashboard)
         if (snapPix.size > 0) {
-            alertas.push(`${snapPix.size} saques no Dashboard`);
-            botoes.push(`<button onclick="window.switchView('dashboard'); window.abrirMesaTrabalhoPix();" class="bg-emerald-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition">PAGAR AGORA 💸</button>`);
+            alertas.push(`${snapPix.size} saques`);
+            botoes.push(`<button onclick="window.switchView('dashboard')" class="bg-emerald-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:scale-105 transition">PAGAR AGORA 💸</button>`);
         }
 
-        // 📸 Consolidação de Curadoria
-        const totalCuradoria = snapB2B.size + snapEnvios.size;
+        // 📸 Agrupamento de Curadoria (Missões)
+        const totalCuradoria = snapB2B.size + snapUser.size;
         if (totalCuradoria > 0) {
-            alertas.push(`${totalCuradoria} itens para curadoria`);
-            botoes.push(`<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition">ABRIR CURADORIA 📸</button>`);
+            alertas.push(`${totalCuradoria} curadorias`);
+            botoes.push(`<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase shadow-lg hover:scale-105 transition">ANALISAR 📸</button>`);
         }
 
-        // 🏁 EXIBIÇÃO FINAL
+        // 🏁 INJEÇÃO NA TELA
         if (alertas.length > 0) {
             msgArea.innerHTML = `
-                <div class="flex flex-col gap-2 animate-fade">
-                    <p class="text-[11px] text-indigo-200 font-bold italic leading-none">"Gil, identifiquei pendências: ${alertas.join(' | ')}."</p>
-                    <div class="flex gap-2 mt-1">${botoes.join('')}</div>
+                <div class="flex flex-col gap-1.5 animate-fade">
+                    <span class="text-indigo-200 font-bold italic">"Gil, identifiquei pendências: ${alertas.join(' | ')}."</span>
+                    <div class="flex gap-2">${botoes.join('')}</div>
                 </div>
             `;
-            console.log("✅ Assistant: Mensagem e botões injetados com sucesso.");
         } else {
-            msgArea.innerHTML = `<p class="text-[11px] text-emerald-400 italic">"Sistema em 100%. Nenhuma pendência detectada."</p>`;
+            msgArea.innerHTML = `"Sistema em 100%. Nenhuma pendência crítica encontrada."`;
         }
 
     } catch (e) {
-        console.error("❌ Falha na Vigilância da Assistant:", e);
+        console.error("❌ Erro na Vigilância:", e);
     }
 };
+
+// 🛰️ Início automático com trava de segurança
+setTimeout(() => {
+    if (typeof window.executarVigilanciaAtiva === 'function') window.executarVigilanciaAtiva();
+}, 2000);
 
 // 🛰️ DISPARADOR AUTOMÁTICO: Faz a Assistant "acordar" a cada 30 segundos
 if (!window.intervaloVigilancia) {
