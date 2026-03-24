@@ -694,9 +694,9 @@ function verificarFaixaBonus(valorBonus) {
             banner.innerHTML = `
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🎁</span>
-                    <div>
+                   <div>
                         <p class="text-[9px] opacity-80 uppercase font-black">Presente de Boas-Vindas</p>
-                        <p class="text-xs font-bold uppercase tracking-wider">VOCÊ GANHOU R$ ${valorBonus.toFixed(2).replace('.', ',')} PARA USAR AGORA!</p>
+                        <p class="text-xs font-bold uppercase tracking-wider">VOCÊ GANHOU ${valorBonus.toFixed(2).replace('.', ',')} ATLIX 🪙 PARA USAR AGORA!</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
