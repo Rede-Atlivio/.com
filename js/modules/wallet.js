@@ -1278,13 +1278,14 @@ window.abrirGuiaCarteira = () => {
                         <p class="text-[10px] text-gray-500 leading-tight">Valor reservado para garantir que o prestador receba. Quando o serviço termina, esse valor sai daqui e vai para o ganhador.</p>
                     </div>
                 </div>
-            </div>
+           </div>
 
-            <button onclick="window.fecharModalUniversal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg transform active:scale-95 transition-all">Entendi, Voltar</button>
+            <button id="btn-fechar-guia" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg transform active:scale-95 transition-all mt-4">
+                Entendi, Voltar
+            </button>
         </div>
     `;
 
-    // 🚀 INJETOR DIRETO NO MODAL ATLIVIO
     const modal = document.getElementById('modal-editor');
     const content = document.getElementById('modal-content');
     
@@ -1292,7 +1293,11 @@ window.abrirGuiaCarteira = () => {
         content.innerHTML = modalContent;
         modal.classList.remove('hidden');
         modal.style.setProperty('display', 'flex', 'important');
-    } else {
-        alert("Guia Financeiro: Adicionando fundos via recarga liberam o saldo de recargas.");
+
+        // 🔗 Soldagem do Clique: Força o fechamento do modal ao clicar no botão
+        document.getElementById('btn-fechar-guia').onclick = () => {
+            modal.classList.add('hidden');
+            modal.style.setProperty('display', 'none', 'important');
+        };
     }
 };
