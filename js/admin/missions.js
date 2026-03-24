@@ -279,12 +279,20 @@ async function publicarMissaoB2B(missionId) {
             curated_by: 'atlivio_master_system'
         };
 
-        // 💰 REGRA DE EXTERMÍNIO B2B (MÁGICA DO LUCRO)
+       // 💰 REGRA DE LUCRO B2B ATLIVIO
         if (isReal) {
-            // Se a missão é em R$, a empresa já pagou (Valor + Taxa) no ato da reserva.
-            // Aqui a Atlivio "extermina" a parte dela da reserva e deixa apenas o valor do usuário.
-            // O lucro real já foi contado no sys_finance lá na recarga da empresa.
-            console.log("✂️ Exterminando taxa Atlivio e liberando valor líquido para o radar.");
+            const valorTotalComTaxa = parseFloat(m.total_with_fee || 0);
+            const lucroDaOperacao = valorTotalComTaxa - valorRecompensa;
+
+            if (lucroDaOperacao > 0) {
+                // Registra o lucro real da Atlivio no Balde de Taxas (stats)
+                const statsRef = doc(window.db, "sys_finance", "stats");
+                await updateDoc(statsRef, {
+                    total_revenue: increment(lucroDaOperacao),
+                    ultima_atualizacao: serverTimestamp()
+                });
+                console.log(`📈 Lucro de R$ ${lucroDaOperacao.toFixed(2)} enviado para o Balde de Taxas.`);
+            }
         }
 
         await updateDoc(missionRef, updateData);
