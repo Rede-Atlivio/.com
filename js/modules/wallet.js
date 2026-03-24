@@ -1024,71 +1024,7 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
  * 🔄 MOTOR DE CONVERSÃO VISUAL ATLIVIO
  * Transforma saldo de missões em percepção de valor real (Spread).
  */
-window.calcularEquivalenciaAtlix = (saldoAtlix) => {
-    // 🛡️ Segurança: Garante que o saldo seja tratado como número para o cálculo
-    const saldoLimpo = parseFloat(saldoAtlix || 0);
-    const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
-    const valorReal = (saldoLimpo * spread).toFixed(2);
-    
-    const el = document.getElementById('txt-equivalencia-real');
-    const elBtnSaque = document.getElementById('btn-solicitar-saque');
-    
-    // Atualiza o texto de estimativa PIX abaixo do Saldo de Recargas
-    if (el) { 
-        el.innerText = `≃ R$ ${valorReal.replace('.', ',')} para saque`; 
-        el.classList.remove('animate-pulse'); // Para de piscar após calcular
-    }
 
-    // 🛡️ TRAVA DE SAQUE: O botão só libera se o Saldo de Recargas for >= Mínimo
-    if (elBtnSaque) {
-        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
-        if (saldoLimpo >= min) {
-            elBtnSaque.disabled = false;
-            elBtnSaque.classList.remove('opacity-50', 'grayscale');
-            elBtnSaque.innerHTML = `<span>SOLICITAR RESGATE PIX 💸</span>`;
-        } else {
-            elBtnSaque.disabled = true;
-            elBtnSaque.classList.add('opacity-50', 'grayscale');
-            elBtnSaque.innerHTML = `<span>🔒 Mínimo ${min} ATLIX para Saque</span>`;
-        }
-    }
-};
-            elBtnSaque.classList.remove('opacity-50', 'grayscale');
-            elBtnSaque.innerText = "SACAR PARA PIX 💸";
-        } else {
-            elBtnSaque.disabled = true;
-            elBtnSaque.classList.add('opacity-50', 'grayscale');
-            elBtnSaque.innerText = `FALTAM ${(min - saldoAtlix).toFixed(0)} ATLIX PARA SAQUE`;
-        }
-    }
-};
-
-// ============================================================================
-// 🚀 EXPORTAÇÕES GLOBAIS V63.4 (ECONOMIA ATLIX)
-// Garante que todas as funções financeiras sejam acessíveis por todo o sistema.
-// ============================================================================
-// 🚀 EXPORTAÇÕES GLOBAIS V201 (REFORMA ECONÔMICA)
-// 🚀 EXPORTAÇÕES GLOBAIS V2026.VALIDADE (Sincronizadas)
-window.CONFIG_FINANCEIRA = CONFIG_FINANCEIRA; // Expondo o objeto de regras
-window.carregarCarteira = carregarCarteira;
-window.iniciarMonitoramentoCarteira = iniciarMonitoramentoCarteira;
-window.podeTrabalhar = podeTrabalhar;
-window.pagarComAtlix = window.pagarComAtlix;
-window.processarCobrancaTaxa = processarCobrancaTaxa;
-window.registrarMovimentacao = window.registrarMovimentacao;
-window.receberSaldoComValidade = window.receberSaldoComValidade; // Nova API de Validade
-window.receberRecompensaMissao = window.receberRecompensaMissao; // Motor do Atlas Vivo
-window.filtrarGanhos = filtrarGanhos;
-window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
-// 🏦 CONEXÕES BANCO CENTRAL V2026: Libera os novos motores para o App
-window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; 
-window.iniciarSincroniaB2B = iniciarSincroniaB2B;
-
-/**
- * 💸 MOTOR DE SAQUE ATLIVIO V2026 - CORRIGIDO
- * APENAS saldo de trabalho (wallet_balance) pode ser convertido.
- */
-window.processarSolicitacaoSaque = async () => {
     // 🛡️ TRAVA DO ADMIN: Verifica se você desligou o PIX no Banco Central
     if (window.CONFIG_FINANCEIRA?.pix_ativo === false) {
         return alert("⚠️ CONVERSÃO TEMPORARIAMENTE INDISPONÍVEL\nO Banco Central Atlivio está em manutenção programada.");
