@@ -1048,14 +1048,58 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
     }
 };
 
-// 🏧 MÓDULO DE DISTRIBUIÇÃO GLOBAL ATLIVIO
-// Conecta os motores internos aos botões da interface (index.html)
-// 🚀 EXPORTAÇÃO MESTRE V2026: Libera acesso para o Index.html e Radar
+/**
+ * 🏧 MOTOR DE RESGATE PIX V2026 - ATLIVIO
+ * Processa a conversão de Saldo de Recargas para Dinheiro Real.
+ */
+window.processarSolicitacaoSaque = async function() {
+    if (window.CONFIG_FINANCEIRA?.pix_ativo === false) {
+        return alert("⚠️ CONVERSÃO INDISPONÍVEL\nO Banco Central está em manutenção.");
+    }
+
+    const uid = auth.currentUser?.uid;
+    const saldoConversivel = parseFloat(window.userProfile?.wallet_balance || 0);
+    const minSaque = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
+    const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
+
+    if (saldoConversivel < minSaque) {
+        return alert(`🛑 LIMITE MÍNIMO NÃO ATINGIDO\n\nO valor mínimo para resgate é de ${minSaque} ATLIX.`);
+    }
+
+    const valorRealBruto = (saldoConversivel * spread).toFixed(2);
+    if (!confirm(`🚀 SOLICITAR RESGATE\n\nConverter: ${saldoConversivel.toFixed(2)} ATLIX\nReceber: R$ ${valorRealBruto}\n\nConfirma?`)) return;
+
+    try {
+        const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        await updateDoc(doc(db, "usuarios", uid), {
+            wallet_balance: increment(-saldoConversivel),
+            updated_at: serverTimestamp()
+        });
+
+        await addDoc(collection(db, "extrato_financeiro"), {
+            uid: uid, valor: -saldoConversivel, tipo: "🏧 SOLICITAÇÃO_SAQUE",
+            descricao: `Resgate de ${saldoConversivel.toFixed(2)} ATLIX`,
+            timestamp: serverTimestamp(), moeda: "ATLIX", status: "processando"
+        });
+
+        await addDoc(collection(db, "mission_submissions"), {
+            user_id: uid, user_name: window.userProfile?.nome || "Usuário",
+            mission_title: "🏧 RESGATE DE SALDO ATLIX", reward: parseFloat(valorRealBruto),
+            pay_type: 'real', status: 'approved_pending_pix', is_saque: true, created_at: serverTimestamp()
+        });
+
+        alert("✅ SOLICITAÇÃO ENVIADA!");
+    } catch (e) { 
+        console.error("Erro no saque:", e); 
+    }
+};
+
+// 🚀 SOLDAGEM GLOBAL ATLIVIO V2026: Conecta os motores aos botões do HTML
 window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
-window.processarSolicitacaoSaque = window.processarSolicitacaoSaque;
 window.pagarComAtlix = window.pagarComAtlix;
-window.switchTab = window.switchTab || function(tab) { console.warn("Ponte aguardando sistema mestre..."); };
+window.switchTab = window.switchTab || function(t) { console.log("Navegando:", t); };
 // 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
