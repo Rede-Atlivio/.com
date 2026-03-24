@@ -890,13 +890,95 @@ window.filtrarGanhos = async (periodo) => {
  * 🔍 EXTRATO INTELIGENTE V2026
  * Abre um modal com a auditoria detalhada de ganhos e saques.
  */
+/**
+ * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
+ * Separa os ganhos reais dos ganhos em bônus e rastreia saques.
+ */
 window.abrirRelatorioDetalhado = async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    // Feedback visual de carregamento
-    const btnOriginal = event.currentTarget.innerHTML;
-    event.currentTarget.innerText = "🔍 ANALISANDO...";
+    // 🎨 Feedback Visual
+    const btnRef = event.currentTarget;
+    const txtOriginal = btnRef.innerHTML;
+    btnRef.innerText = "🔍 ANALISANDO...";
+
+    try {
+        const { collection, query, where, getDocs } = window.firebaseModules;
+        const snap = await getDocs(query(collection(db, "extrato_financeiro"), where("uid", "==", uid)));
+
+        let totais = { real: 0, bonus: 0, saques: 0 };
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            const valor = parseFloat(t.valor || 0);
+            const tipo = t.tipo || "";
+            const moeda = t.moeda || "";
+
+            if (valor > 0) {
+                // 💎 DNA FINANCEIRO: Separa o que é Real do que é Bônus
+                if (moeda === "ATLIX" || tipo.includes("MISSÃO") || tipo.includes("BÔNUS")) {
+                    totais.bonus += valor;
+                } else {
+                    totais.real += valor;
+                }
+            } else if (tipo.includes("SAQUE") || tipo.includes("CONVERSÃO")) {
+                totais.saques += Math.abs(valor);
+            }
+        });
+
+        const modalContent = `
+            <div class="p-6 space-y-5 text-slate-900 bg-white rounded-3xl animate-fade">
+                <div class="text-center border-b border-gray-100 pb-4">
+                    <h3 class="text-xl font-black uppercase italic tracking-tighter">Relatório de Performance</h3>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Auditoria de Créditos Atlivio</p>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <div>
+                            <p class="text-[10px] font-black text-emerald-600 uppercase">Ganhos Reais</p>
+                            <p class="text-[8px] text-emerald-400 uppercase">Trabalho & Chat</p>
+                        </div>
+                        <span class="text-sm font-black text-emerald-700">R$ ${totais.real.toFixed(2).replace('.', ',')}</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                        <div>
+                            <p class="text-[10px] font-black text-amber-600 uppercase">Ganhos em Missões</p>
+                            <p class="text-[8px] text-amber-400 uppercase">Micro Tarefas (ATLIX)</p>
+                        </div>
+                        <span class="text-sm font-black text-amber-700">${totais.bonus.toFixed(2).replace('.', ',')} 🪙</span>
+                    </div>
+
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-600 uppercase">Total Sacado</p>
+                            <p class="text-[8px] text-slate-400 uppercase">Resgates PIX Efetuados</p>
+                        </div>
+                        <span class="text-sm font-black text-slate-700">R$ ${totais.saques.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+
+                <button onclick="window.fecharModalApp()" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all">
+                    Entendido, Voltar
+                </button>
+            </div>
+        `;
+
+        if (window.abrirModalApp) {
+            window.abrirModalApp(modalContent);
+        } else {
+            alert(`--- RELATÓRIO ATLIVIO ---\n\nReal: R$ ${totais.real.toFixed(2)}\nMissões: ${totais.bonus.toFixed(2)} 🪙\nSaques: R$ ${totais.saques.toFixed(2)}`);
+        }
+
+    } catch (e) {
+        console.error("Erro Relatório:", e);
+        alert("Erro ao processar auditoria.");
+    } finally {
+        btnRef.innerHTML = txtOriginal;
+    }
+};
 
     try {
         const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
