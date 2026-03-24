@@ -144,15 +144,10 @@ async function switchMissionTab(tab) {
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">EMPRESA</th><th class="p-3">MISSÃO</th><th class="p-3">VALOR/MOEDA</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadB2BPendingMissions(); // Chamaremos esta função no próximo passo
-    } else if(tab === 'submissions') {
+   } else if(tab === 'submissions') {
         if(btnAdd) { btnAdd.style.display = 'none'; }
         header.innerHTML = `<th class="p-3">MISSÃO</th><th class="p-3">USUÁRIO</th><th class="p-3">PROVA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
         await loadSubmissions();
-    } else {
-        // ABA DE PAGAMENTOS
-        if(btnAdd) { btnAdd.style.display = 'none'; }
-        header.innerHTML = `<th class="p-3">USUÁRIO</th><th class="p-3">VALOR</th><th class="p-3">CHAVE PIX</th><th class="p-3 text-right">AÇÕES</th>`;
-        await loadMissionsPayments(); // Nova função
     }
 }
 
