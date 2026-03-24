@@ -1099,13 +1099,16 @@ window.processarSolicitacaoSaque = async function() {
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = firestoreFull; // Registra os módulos no motor central
 
-// 🚀 SOLDAGEM GLOBAL: Libera as funções para o index.html e outros módulos
+// 🚀 SOLDAGEM GLOBAL ATLIVIO V2026: Libera acesso total para a Interface (HTML)
 window.carregarCarteira = carregarCarteira;
 window.pagarComAtlix = window.pagarComAtlix;
 window.filtrarGanhos = filtrarGanhos;
 window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
-// Garante que o switchTab (navegação) não quebre se o app.js demorar a carregar
-window.switchTab = window.switchTab || function(tab) { console.warn("Ponte de navegação ATLIVIO em sincronização..."); };
+window.processarSolicitacaoSaque = window.processarSolicitacaoSaque; // Libera o saque
+window.abrirGuiaCarteira = window.abrirGuiaCarteira; // Libera o guia
+window.switchTab = window.switchTab || function(tab) { console.log("Troca de aba:", tab); }; // Evita erro de navegação
+
+console.log("%c✅ SISTEMA FINANCEIRO ATLIVIO: Sincronia concluída.", "color: #10b981; font-weight: bold;");
 
 /**
  * ♻️ PROTOCOLO DE ESTORNO B2B ATLIVIO
