@@ -1026,27 +1026,42 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
  * 🔄 MOTOR DE CONVERSÃO PERSISTENTE V2026
  * Vence a briga com o Radar e garante que o valor apareça na tela.
  */
+/**
+ * 🔄 MOTOR DE CONVERSÃO E DESBLOQUEIO V2026.PRO
+ * Esta função agora força a ativação do botão ignorando bloqueios de abas.
+ */
 window.calcularEquivalenciaAtlix = (saldoAtlix) => {
     const spread = window.CONFIG_FINANCEIRA?.spread || 0.8;
     const sReal = parseFloat(window.userProfile?.wallet_balance || 0);
     const valorConvertido = (sReal * spread).toFixed(2).replace('.', ',');
 
-    const renderizar = () => {
+    const renderizarEPurificar = () => {
         const el = document.getElementById('txt-equivalencia-real');
         const btnSaque = document.getElementById('btn-solicitar-saque');
-        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 50;
+        const min = window.CONFIG_FINANCEIRA?.saque_minimo || 60; // Alinhado com o saque mínimo lido no log
 
         if (el) {
             el.innerText = `≃ R$ ${valorConvertido} para saque`;
-            el.classList.remove('animate-pulse'); // Para a animação de carregamento
+            el.classList.remove('animate-pulse');
         }
 
-        // 🏧 Gerenciamento inteligente do botão de saque
         if (btnSaque) {
             if (sReal >= min && window.CONFIG_FINANCEIRA?.pix_ativo !== false) {
+                // 🔥 FORÇA BRUTA: Remove qualquer trava física ou de estilo
                 btnSaque.disabled = false;
-                btnSaque.classList.remove('opacity-50', 'grayscale');
+                btnSaque.style.opacity = "1";
+                btnSaque.style.filter = "none";
+                btnSaque.style.pointerEvents = "auto";
+                btnSaque.classList.remove('opacity-50', 'grayscale', 'pointer-events-none');
                 btnSaque.innerHTML = "SACAR PARA PIX 💸";
+                
+                // Soldagem de emergência do clique caso o HTML tenha perdido o vínculo
+                btnSaque.onclick = (e) => {
+                    e.preventDefault();
+                    if (typeof window.processarSolicitacaoSaque === 'function') {
+                        window.processarSolicitacaoSaque();
+                    }
+                };
             } else {
                 btnSaque.disabled = true;
                 btnSaque.classList.add('opacity-50', 'grayscale');
@@ -1055,10 +1070,10 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
         }
     };
 
-    // 🚀 EXECUÇÃO TRIPLA: Garante que o valor apareça mesmo se a aba demorar a carregar
-    renderizar(); // 1. Tenta agora
-    setTimeout(renderizar, 500);  // 2. Tenta em meio segundo (após o sistema de abas)
-    setTimeout(renderizar, 2000); // 3. Tentativa final de segurança
+    // 🚀 CICLO DE PERSISTÊNCIA: 0ms, 500ms e 2000ms
+    renderizarEPurificar();
+    setTimeout(renderizarEPurificar, 500);
+    setTimeout(renderizarEPurificar, 2000);
 };
 
 /**
