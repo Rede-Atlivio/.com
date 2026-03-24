@@ -1198,24 +1198,24 @@ window.abrirGuiaCarteira = () => {
                 <p class="text-[11px] text-gray-500 uppercase font-bold tracking-widest leading-none mt-1">Entenda seus créditos Atlivio</p>
             </div>
 
-            <div class="space-y-5">
+           <div class="space-y-5">
                 <div class="flex gap-4 items-start bg-blue-50/50 p-3 rounded-2xl border border-blue-100">
-                    <span class="text-3xl">💰</span>
+                    <span class="text-2xl">💰</span>
                     <div>
                         <p class="text-xs font-black uppercase text-slate-950">Atlix Recargas</p>
-                        <p class="text-[11px] text-slate-700 leading-snug">É o dinheiro que você adicionou via PIX. Ele é o único que pode ser sacado de volta para sua conta bancária após o trabalho.</p>
-                    </div>
-                </div>
-                
-                <div class="flex gap-4 items-start">
-                    <span class="text-2xl">🎁</span>
-                    <div>
-                        <p class="text-xs font-black uppercase text-amber-600">Atlix Bônus</p>
-                        <p class="text-[10px] text-gray-500 leading-tight">São presentes da Atlivio ou prêmios de missões. Você usa para contratar serviços dentro do app, mas eles não podem ser convertidos em PIX.</p>
+                        <p class="text-[10px] text-slate-600 leading-tight">Dinheiro que você adicionou VIA RECARGA PIX. É o **único** que pode ser sacado para sua conta via SAQUE PIX.</p>
                     </div>
                 </div>
 
-                <div class="flex gap-4 items-start">
+                <div class="flex gap-4 items-start p-2">
+                    <span class="text-2xl">🎁</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-amber-600">Atlix Bônus</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">São presentes da Atlivio ou prêmios de missões. Você usa para contratar serviços dentro do app, mas **eles não podem ser convertidos em PIX.**</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 items-start p-2">
                     <span class="text-2xl">❄️</span>
                     <div>
                         <p class="text-xs font-black uppercase text-blue-500">Atlix Congelado</p>
@@ -1223,14 +1223,22 @@ window.abrirGuiaCarteira = () => {
                     </div>
                 </div>
 
-                <div class="flex gap-4 items-start">
+                <div class="flex gap-4 items-start p-2 border-t border-gray-50 pt-4">
                     <span class="text-2xl">🔒</span>
                     <div>
                         <p class="text-xs font-black uppercase text-slate-700">Em Custódia</p>
-                        <p class="text-[10px] text-gray-500 leading-tight">Valor reservado para garantir que o prestador receba. Quando o serviço termina, esse valor sai daqui e vai para o ganhador.</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Dinheiro "preso" em um serviço que você contratou. Garante o pagamento do prestador após voce liberar o pagamento de missões ou serviços.</p>
                     </div>
                 </div>
-           </div>
+
+                <div class="flex gap-4 items-start p-2">
+                    <span class="text-2xl">📈</span>
+                    <div>
+                        <p class="text-xs font-black uppercase text-emerald-600">Seus Ganhos</p>
+                        <p class="text-[10px] text-gray-500 leading-tight">Soma de tudo o que você faturou trabalhando ou cumprindo missões.</p>
+                    </div>
+                </div>
+            </div>
 
             <button id="btn-fechar-guia" class="w-full py-4 bg-slate-950 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg transform active:scale-95 transition-all mt-4">
                 Entendi, Voltar
