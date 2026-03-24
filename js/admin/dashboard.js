@@ -108,7 +108,7 @@ export async function init() {
 
        // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
     container.innerHTML += `
-        <div id="mesa-pix-pendente" class="hidden animate-fade mb-6">
+        <div id="mesa-pix-pendente" class="animate-fade mb-6">
             <div class="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 shadow-2xl">
                 <div class="flex justify-between items-center mb-6">
                     <div>
