@@ -1091,14 +1091,12 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
 
 // 🏧 MÓDULO DE DISTRIBUIÇÃO GLOBAL ATLIVIO
 // Conecta os motores internos aos botões da interface (index.html)
+// 🚀 EXPORTAÇÃO MESTRE V2026: Libera acesso para o Index.html e Radar
+window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 window.processarSolicitacaoSaque = window.processarSolicitacaoSaque;
 window.pagarComAtlix = window.pagarComAtlix;
-
-// 🛰️ PONTE DE NAVEGAÇÃO: Corrige o erro 'ReferenceError: switchTab is not defined'
-if (typeof window.switchTab !== 'function') {
-    window.switchTab = (tab) => { console.log("🔄 Navegando para:", tab); };
-}
+window.switchTab = window.switchTab || function(tab) { console.warn("Ponte aguardando sistema mestre..."); };
 // 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
