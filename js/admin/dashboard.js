@@ -598,4 +598,74 @@ window.abrirMesaTrabalhoPix = async () => {
         }
     } catch(e) { console.error("Erro Banco Central:", e); }
 };
+
+/**
+ * 📤 FINALIZAÇÃO DE SAQUE COM COMPROVANTE (MESA DASHBOARD)
+ * Abre a galeria, comprime a imagem e executa a baixa contábil.
+ */
+window.finalizarPagamentoComprovanteDashboard = async (docId) => {
+    if(!confirm("⚠️ Banco Central: Confirma que o PIX já foi feito?\nClique em OK para selecionar o comprovante.")) return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+
+        console.log("📑 Banco Central: Processando comprovante...");
+
+        try {
+            // MOTOR DE COMPRESSÃO ATLIVIO (Reduz peso para o banco)
+            const bitmap = await createImageBitmap(file);
+            const canvas = document.createElement('canvas');
+            const scale = 800 / Math.max(bitmap.width, bitmap.height);
+            canvas.width = bitmap.width * scale;
+            canvas.height = bitmap.height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+            
+            const base64Img = canvas.toDataURL('image/jpeg', 0.6);
+
+            const { doc, runTransaction, serverTimestamp, collection } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            
+            await runTransaction(window.db, async (transaction) => {
+                const subRef = doc(window.db, "mission_submissions", docId);
+                const subSnap = await transaction.get(subRef);
+                if (!subSnap.exists()) throw "Registro sumiu do banco!";
+                
+                const data = subSnap.data();
+                const valor = parseFloat(data.reward);
+
+                // 1. Baixa no Status e Anexo de Comprovante
+                transaction.update(subRef, {
+                    status: 'paid_real',
+                    receipt_url: base64Img,
+                    finalized_at: serverTimestamp()
+                });
+
+                // 2. Débito no Caixa Geral (receita_total)
+                const cofreRef = doc(window.db, "sys_finance", "receita_total");
+                transaction.update(cofreRef, {
+                    total_acumulado: increment(-valor),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            });
+
+            alert("💸 BANCO CENTRAL: Pagamento liquidado com sucesso!");
+            window.abrirMesaTrabalhoPix(); // Atualiza a fila
+            
+        } catch(err) { 
+            console.error(err);
+            alert("❌ Erro no Banco Central: " + err.message); 
+        }
+    };
+    input.click();
+};
+
+// 🔐 SOLDAGEM FINAL DAS PONTES DO BANCO CENTRAL
+window.confirmarPagamentoRealizado = window.finalizarPagamentoComprovanteDashboard;
+window.abrirMesaTrabalhoPix = window.abrirMesaTrabalhoPix;
+
 console.log("🚀 [Dashboard] Motor Financeiro e Gráficos de Fluxo Soldados!");
