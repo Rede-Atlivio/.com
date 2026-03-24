@@ -755,3 +755,70 @@ window.resgatarRoteiroDoBanco = async function() {
         alert("Erro técnico ao buscar dados.");
     }
 };
+// ============================================================================
+// 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (SENTINELA V2026) - PASSO 4
+// ============================================================================
+
+/**
+ * Gil, este motor varre o banco e resume os problemas em botões únicos.
+ * Ele evita criar 10 linhas para 10 missões, concentrando tudo em um aviso.
+ */
+window.executarVigilanciaAtiva = async () => {
+    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const msgArea = document.getElementById('assistant-msg');
+    if (!msgArea) return;
+
+    try {
+        // 📡 1. VARREDURAS ESTRATÉGICAS
+        const qPix = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
+        const qB2B = query(collection(window.db, "missions"), where("status", "==", "pending_b2b"));
+        const qEnvios = query(collection(window.db, "mission_submissions"), where("status", "==", "pending"));
+
+        const [snapPix, snapB2B, snapEnvios] = await Promise.all([
+            getDocs(qPix), getDocs(qB2B), getDocs(qEnvios)
+        ]);
+
+        let alertas = [];
+        let botoes = [];
+
+        // 💰 CONSOLIDAÇÃO DE PAGAMENTOS (PIX)
+        if (!snapPix.empty) {
+            alertas.push(`${snapPix.size} saques pendentes`);
+            // Botão leva ao Dashboard e abre a mesa
+            botoes.push(`<button onclick="window.switchView('dashboard');" class="bg-emerald-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition">PAGAR AGORA 💸</button>`);
+        }
+
+        // 📸 CONSOLIDAÇÃO DE CURADORIA (Missões B2B + Fotos de Usuários)
+        const totalCuradoria = snapB2B.size + snapEnvios.size;
+        if (totalCuradoria > 0) {
+            alertas.push(`${totalCuradoria} itens para curadoria`);
+            // Botão leva para a aba de Missões (Micro Tarefas)
+            botoes.push(`<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition">ABRIR CURADORIA 📸</button>`);
+        }
+
+        // ❄️ MONITORAMENTO DE CONGELADOS
+        const valorFrozen = window.userProfile?.wallet_frozen || 0;
+        if (valorFrozen > 0) {
+            alertas.push(`R$ ${valorFrozen.toFixed(2)} congelados`);
+        }
+
+        // 🏁 RENDERIZAÇÃO DA MENSAGEM (ÚNICA LINHA)
+        if (alertas.length > 0) {
+            msgArea.innerHTML = `
+                <div class="flex flex-col gap-2 animate-fade">
+                    <p class="text-[11px] text-indigo-200 font-medium italic">"Gil, identifiquei: ${alertas.join(' | ')}."</p>
+                    <div class="flex gap-2">${botoes.join('')}</div>
+                </div>
+            `;
+        } else {
+            msgArea.innerHTML = `<p class="text-[11px] text-emerald-400 italic font-medium">"Atlivio operando em 100%. Nenhuma pendência crítica."</p>`;
+        }
+
+    } catch (e) { console.error("Erro na Vigilância Assistant:", e); }
+};
+
+// 🛰️ DISPARADOR AUTOMÁTICO: Faz a Assistant "acordar" a cada 30 segundos
+if (!window.intervaloVigilancia) {
+    window.executarVigilanciaAtiva(); // Roda imediato ao carregar
+    window.intervaloVigilancia = setInterval(window.executarVigilanciaAtiva, 30000);
+}
