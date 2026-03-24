@@ -175,20 +175,17 @@ export async function renderAssistant(containerId) {
                         </div>
                     </div>
                     
-                    <div class="flex flex-col gap-2 text-xs text-gray-300 max-h-[120px] overflow-y-auto custom-scrollbar pr-2 w-full">
+                    <div class="flex flex-col gap-2 text-xs text-gray-300 max-h-[100px] overflow-y-auto custom-scrollbar pr-2 w-full">
                         ${insights.map(i => {
                             let actionBtn = "";
-                            // 💸 Lógica de Botão para PIX
+                            
+                            // 💸 PIX: Abre a mesa de trabalho no próprio Dashboard
                             if (i.includes("URGENTE:")) {
-                                actionBtn = `<button onclick="window.switchView('finance')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg transition-all uppercase ml-auto">PAGAR 💸</button>`;
+                                actionBtn = `<button onclick="window.switchView('pix_workdesk')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg transition-all uppercase ml-auto">ABRIR FILA 💸</button>`;
                             }
-                            // 📸 Lógica de Botão para MISSÕES
-                            else if (i.includes("MISSÕES:")) {
-                                actionBtn = `<button onclick="window.switchView('missions')" class="bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg transition-all uppercase ml-auto">ANALISAR 📸</button>`;
-                            }
-                            // ⚖️ Lógica de Botão para DISPUTA B2B
-                            else if (i.includes("DISPUTA B2B:")) {
-                                actionBtn = `<button onclick="window.switchView('missions')" class="bg-orange-600 hover:bg-orange-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg transition-all uppercase ml-auto">VEREDITO ⚖️</button>`;
+                            // 📸 MISSÕES: Leva para a aba de Auditoria
+                            else if (i.includes("MISSÕES:") || i.includes("DISPUTA B2B:")) {
+                                actionBtn = `<button onclick="window.switchView('missions')" class="bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black px-2 py-1 rounded shadow-lg transition-all uppercase ml-auto">IR PARA LISTA 📸</button>`;
                             }
 
                             return `
@@ -199,13 +196,6 @@ export async function renderAssistant(containerId) {
                                 </div>
                             `;
                         }).join('')}
-                        
-                        <!-- 🧹 BOTÃO DE LIMPEZA GLOBAL (Sempre Visível se houver pendências) -->
-                        <div class="mt-2 pt-2 border-t border-white/10 flex justify-end">
-                            <button onclick="window.dispararLimpezaGlobal()" class="bg-amber-600/20 hover:bg-amber-600 text-amber-500 hover:text-white px-3 py-1.5 rounded-lg text-[9px] font-black uppercase border border-amber-500/30 transition flex items-center gap-1 shadow-sm">
-                                <i data-lucide="refresh-ccw" class="w-3 h-3"></i> LIMPEZA DO SISTEMA
-                            </button>
-                        </div>
                     </div>
 
                     <div class="flex gap-2 mt-4">
