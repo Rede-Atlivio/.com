@@ -1083,10 +1083,14 @@ window.calcularEquivalenciaAtlix = (saldoAtlix) => {
 
         alert("✅ SOLICITAÇÃO ENVIADA!\nO Banco Central processará seu PIX em breve.");
         
-    } catch (e) { alert("Erro ao processar saque."); }
+   } catch (e) { 
+            console.error("Erro no processamento:", e);
+        }
+    }
 };
-// 🚀 SOLDAGEM GLOBAL ATLIVIO: Conecta os motores do JavaScript aos botões da interface
-window.definirMetaDiaria = definirMetaDiaria;
+
+// 🏧 MÓDULO DE DISTRIBUIÇÃO GLOBAL ATLIVIO
+// Conecta os motores internos aos botões da interface (index.html)
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
 window.processarSolicitacaoSaque = window.processarSolicitacaoSaque;
 window.pagarComAtlix = window.pagarComAtlix;
