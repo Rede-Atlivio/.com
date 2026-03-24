@@ -155,12 +155,12 @@ window.switchView = async function(viewName) {
         v.style.setProperty('display', 'none', 'important'); 
     });
 
-    // 🛡️ SINCRONIA DE RADAR: Reativa a Assistant em cada troca de aba para garantir dados frescos
-    setTimeout(() => {
-        if (window.executarVigilanciaAtiva) {
-            window.executarVigilanciaAtiva();
-        }
-    }, 150);
+   // 🛡️ PROTEÇÃO: A vigilância só roda se o elemento existir na tela (Dashboard Ativo)
+    if (viewName === 'dashboard' || viewName === 'pix_workdesk') {
+        setTimeout(() => {
+            if (window.executarVigilanciaAtiva) window.executarVigilanciaAtiva();
+        }, 300);
+    }
     
     const titleEl = document.getElementById('page-title');
     if(titleEl) titleEl.innerText = viewName.toUpperCase();
