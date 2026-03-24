@@ -296,7 +296,13 @@
         setTimeout(() => { 
             if (typeof lucide !== 'undefined') lucide.createIcons(); 
         }, 500);
-    </script>
+   <script type="module">
+        // 🛡️ Importação mestre para a Assistant
+        import * as fv from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        window.firebaseModules = fv;
+
+        // 🚀 Carregamento do Core do Admin
+        import './js/admin/core.js?v=2026_V60';
         
         // 🚀 MAESTRO VIDEO BRIDGE: Abre vídeos no admin
         window.assistirVideoAdmin = (videoId) => {
@@ -313,5 +319,6 @@
             if (typeof lucide !== 'undefined') lucide.createIcons(); 
         }, 500);
     </script>
+</body>
 </body>
 
