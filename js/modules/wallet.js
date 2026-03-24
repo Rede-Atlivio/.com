@@ -1049,9 +1049,9 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
     try {
         const { collection, addDoc, doc, updateDoc, increment, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
         
-        // Debita o saldo REAL de trabalho
+        // 📉 Atualiza o saldo do usuário: Retira os créditos convertidos do cofre de recargas
         await updateDoc(doc(db, "usuarios", uid), {
-            wallet_balance: increment(-saldoRealTrabalho),
+            wallet_balance: increment(-saldoConversivel),
             updated_at: serverTimestamp()
         });
 
