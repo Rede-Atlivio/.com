@@ -275,33 +275,30 @@
    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCXX6zD4m2Yr8k9WcoRgIkbUWui11-zUpg&libraries=places&loading=async" async defer></script>
 
        <script type="module">
-        // 🛡️ Importação mestre para a Assistant e módulos globais
+ 
+           // 🛡️ Importação mestre para a Assistant e módulos globais
         import * as fv from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         window.firebaseModules = fv; // Disponibiliza o Firebase para outros arquivos do Admin
 
         // 🚀 Carregamento do motor principal do painel administrativo
         import './js/admin/core.js?v=2026_V60';
-        import * as fv from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        window.firebaseModules = fv;
-
-        // 🚀 Carregamento do Core do Admin
-        import './js/admin/core.js?v=2026_V60';
         
-        // 🚀 MAESTRO VIDEO BRIDGE: Abre vídeos no admin
+        // 🚀 MAESTRO VIDEO BRIDGE: Abre vídeos instrutivos dentro do painel
         window.assistirVideoAdmin = (videoId) => {
             const modal = document.getElementById('modal-video-maestro');
             const frame = document.getElementById('player-maestro-frame');
             if(modal && frame) {
+                // Injeta o vídeo do YouTube no player do Admin
                 frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-                modal.classList.remove('hidden');
+                modal.classList.remove('hidden'); // Mostra a janela do vídeo
             }
         };
 
-        // Aguarda um pouco para os ícones serem desenhados na tela
+        // 🎨 Renderiza os ícones da interface após o carregamento inicial
         setTimeout(() => { 
             if (typeof lucide !== 'undefined') lucide.createIcons(); 
         }, 500);
     </script>
 </body>
-</body>
+</html>
 
