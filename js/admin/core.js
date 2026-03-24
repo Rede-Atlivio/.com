@@ -14,12 +14,10 @@ provider.setCustomParameters({ prompt: 'select_account' });
 provider.setCustomParameters({ prompt: 'select_account' });
 const ADMIN_EMAIL = "contatogilborges@gmail.com";
 
-// EXPOR GLOBAIS
-window.auth = auth;
-window.db = db;
+// 🌍 CONFIGURAÇÃO INICIAL DE DADOS
+// Estas variáveis não dependem de funções e podem ficar aqui no topo
 window.currentDataMode = 'real';
 window.activeView = 'dashboard';
-
 // ============================================================================
 // INICIALIZAÇÃO SEGURA
 // ============================================================================
@@ -640,3 +638,14 @@ window.dispararMaestroExterno = async () => {
         alert("❌ Erro no motor externo: " + e.message);
     }
 };
+// ============================================================================
+// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
+// ============================================================================
+// Somente exportamos aqui para garantir que todas as funções (como switchView)
+// já tenham sido processadas e existam na memória do navegador.
+
+window.auth = auth; // Exporta o motor de login
+window.db = db; // Exporta o banco de dados Firestore
+window.switchView = switchView; // Exporta o roteador para a Assistant usar
+
+console.log("🏁 Core Atlivio V60: Sistema de Roteamento e Exportações OK.");
