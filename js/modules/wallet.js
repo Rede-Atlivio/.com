@@ -1082,9 +1082,16 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
         
     } catch (e) { alert("Erro ao processar saque."); }
 };
-// 🎯 V2026.FIX: Expõe a função para que o botão "Meta" no HTML volte a funcionar
+// 🚀 SOLDAGEM GLOBAL ATLIVIO: Conecta os motores do JavaScript aos botões da interface
 window.definirMetaDiaria = definirMetaDiaria;
 window.carregarHistoricoCarteira = carregarHistoricoCarteira;
+window.processarSolicitacaoSaque = window.processarSolicitacaoSaque;
+window.pagarComAtlix = window.pagarComAtlix;
+
+// 🛰️ PONTE DE NAVEGAÇÃO: Corrige o erro 'ReferenceError: switchTab is not defined'
+if (typeof window.switchTab !== 'function') {
+    window.switchTab = (tab) => { console.log("🔄 Navegando para:", tab); };
+}
 // 🛰️ BRIDGE DE MÓDULOS: Garante que o motor de saneamento tenha acesso às ferramentas do Firebase
 import * as firestoreFull from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 window.firebaseModules = { ...window.firebaseModules, ...firestoreFull };
