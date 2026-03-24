@@ -1343,6 +1343,7 @@ window.abrirGuiaCarteira = () => {
 };
 // 🚀 SOLDAGEM GLOBAL ATLIVIO V2026 (FINAL DO ARQUIVO)
 window.carregarCarteira = carregarCarteira;
+window.receberSaldoComValidade = window.receberSaldoComValidade; // 🔑 CHAVE DA RESSURREIÇÃO
 window.pagarComAtlix = pagarComAtlix;
 window.filtrarGanhos = filtrarGanhos;
 window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
