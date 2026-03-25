@@ -21,21 +21,7 @@ window.toggleFeed = (uid) => {
     }
 };
 
-// 🏛️ FINALIZA O PROCESSO: MOVE DA FILA PARA O HISTÓRICO
-window.confirmarPagamentoRealizado = async (docId) => {
-    if(!confirm("Você confirma que já realizou o PIX no banco? Esta ação é irreversível.")) return;
-    
-    try {
-        await updateDoc(doc(window.db, "mission_submissions", docId), {
-            status: 'paid_real',
-            finalized_at: serverTimestamp()
-        });
-        alert("✅ Pagamento registrado com sucesso!");
-        window.abrirMesaTrabalhoPix(); // Recarrega a mesa
-    } catch(e) {
-        alert("Erro ao finalizar: " + e.message);
-    }
-};
+// 🏛️ Processamento de Pagamentos migrado para FINANCE.JS
 
 export async function init() {
     // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
