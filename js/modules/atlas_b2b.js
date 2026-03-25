@@ -530,22 +530,26 @@ window.finalizarLocalWizard = () => {
         </div>
     `;
 };
-// 🤖 CALCULADORA DINÂMICA
-window.atualizarPreviewFinanceiro = () => {
+// 🤖 CALCULADORA DINÂMICA V2026 (CONECTADA AO BANCO CENTRAL)
+window.atualizarPreviewFinanceiro = async () => {
     const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
     const slots = parseInt(document.getElementById('b2b-slots').value) || 1;
     
-    // Regra: (Valor do Usuário + Taxa Atlivio) × Quantidade de Pessoas
+    // 🏦 BUSCA TAXA REAL NO BANCO CENTRAL
+    const configSnap = await getDoc(doc(db, "settings", "financeiro"));
+    const taxaConfig = configSnap.exists() ? (configSnap.data().taxa_lucro_b2b || 0) : 0;
+
     const recompensaTotalUsuarios = val * slots;
-    const taxaTotalAtlivio = val * slots; // Mantendo 100% de taxa sobre o valor bruto
+    // Gil, agora o cálculo usa os seus 70% (ou o que você definir)
+    const taxaTotalAtlivio = recompensaTotalUsuarios * (taxaConfig / 100);
     const totalGeral = recompensaTotalUsuarios + taxaTotalAtlivio;
 
     document.getElementById('preview-user').innerText = `R$ ${recompensaTotalUsuarios.toFixed(2)}`;
-    document.getElementById('preview-tax').innerText = `R$ ${taxaTotalAtlivio.toFixed(2)}`;
+    document.getElementById('preview-tax').innerText = `R$ ${taxaTotalAtlivio.toFixed(2)} (${taxaConfig}%)`;
     document.getElementById('preview-total').innerText = `R$ ${totalGeral.toFixed(2)}`;
     
-    // Guarda na memória temporária para o processamento final
     window.wizardB2BData.slots_totais = slots;
+    window.wizardB2BData.taxa_aplicada = taxaConfig;
     window.wizardB2BData.total_with_fee = totalGeral;
 };
 
