@@ -172,14 +172,6 @@ window.switchView = async function(viewName) {
     if (viewName === 'dashboard') { 
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
-        // Reseta a mesa de PIX para não abrir o Dashboard com a lista de pagamentos por cima dos gráficos
-        if(window.fecharMesaPix) window.fecharMesaPix();
-    }
-    // Rota Especial para a Mesa de Trabalho PIX (Chamada pelo Assistant ou Botões de Tickets)
-    else if (viewName === 'pix_workdesk') {
-        moduleFile = './dashboard.js';
-        containerId = 'view-dashboard';
-        window.activeView = 'dashboard'; // Mantém o contexto no dashboard para os gráficos voltarem depois
     }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
