@@ -1,6 +1,10 @@
-// 🛡️ TRAVA ANTI-VAZAMENTO: Se não for cliente, o módulo B2B se auto-desliga
+// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Se não for cliente, o sistema redireciona para a troca de perfil
 if (window.userProfile && window.userProfile.perfil !== 'cliente') {
-    console.warn("🚫 [B2B] Acesso negado: Perfil não compatível.");
+    console.warn("🚫 [B2B] Acesso restrito a empresas. Solicitando troca de identidade...");
+    // 🚀 GATILHO DE CONVERSÃO: Se o prestador tentar "forçar" a entrada, o modal de troca sobe automaticamente
+    if (typeof window.abrirTrocaPerfilB2B === 'function') {
+        window.abrirTrocaPerfilB2B();
+    }
 }
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
