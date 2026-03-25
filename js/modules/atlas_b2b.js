@@ -264,14 +264,7 @@ window.liquidarPagamentoB2B = async (submissionId) => {
         alert("Erro ao processar transferência de valores.");
     }
 };
-
-        alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
-    } catch (err) {
-        console.error("Erro na liquidação:", err);
-        alert("Erro ao processar transferência de valores.");
-    }
-};
-
+      
 // 🪄 WIZARD ATLAS B2B: MOTOR DE CRIAÇÃO PASSO A PASSO
 window.wizardB2BData = {}; // Memória temporária da missão
 
