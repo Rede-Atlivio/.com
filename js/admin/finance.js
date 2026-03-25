@@ -9,7 +9,28 @@ import { collection, getDocs, doc, updateDoc, query, orderBy, limit, where, serv
 export async function init() {
     const container = document.getElementById('view-finance');
     
+    // ✅ INJEÇÃO V700: Mesa de Trabalho Retrátil (Gaveta) no topo do Financeiro
     container.innerHTML = `
+        <div id="gaveta-pix-finance" class="mb-8 animate-fade">
+            <div id="moldura-gaveta" class="bg-slate-900 border-2 border-slate-800 rounded-[2rem] overflow-hidden transition-all duration-500 shadow-2xl">
+                <div onclick="window.toggleGavetaPix()" class="p-6 flex justify-between items-center cursor-pointer hover:bg-white/5 transition">
+                    <div class="flex items-center gap-4">
+                        <div id="icon-gaveta-pix" class="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-xl shadow-lg">💰</div>
+                        <div>
+                            <h3 class="text-white font-black uppercase text-xs tracking-widest italic">Mesa de Trabalho PIX</h3>
+                            <p id="status-gaveta-pix" class="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Sincronizando fila bancária...</p>
+                        </div>
+                    </div>
+                    <span id="seta-gaveta" class="text-gray-500 transition-transform duration-300">▼</span>
+                </div>
+                <div id="conteudo-gaveta-pix" class="hidden border-t border-white/5 p-6 bg-black/20">
+                    <div id="lista-pix-pendente-real" class="space-y-3 min-h-[100px]">
+                        <p class="text-center text-gray-700 text-[10px] uppercase py-8">Buscando ordens...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8 animate-fade">
             <div class="glass-panel p-6 border-l-4 border-emerald-500 relative overflow-hidden">
                 <p class="text-[10px] uppercase font-bold text-emerald-400 mb-1">💰 SALDO REAL (PIX)</p>
