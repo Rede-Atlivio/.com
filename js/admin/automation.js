@@ -799,44 +799,6 @@ window.executarVigilanciaAtiva = async () => {
         console.warn("⚠️ Assistant em espera: " + e.message);
     }
 };
-    if (!msgArea || !fv || !db) return; // Se não tem o alvo ou banco, silencia para não dar erro
-
-    try {
-        // Busca Saques Pendentes e Curadorias Pendentes
-        const qPix = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "approved_pending_pix"));
-        const qCur = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
-
-        const [snapPix, snapCur] = await Promise.all([fv.getDocs(qPix), fv.getDocs(qCur)]);
-
-        let botoesHtml = "";
-        let textoStatus = "Sistema Estabilizado.";
-
-       if (snapPix.size > 0 || snapCur.size > 0) {
-            textoStatus = `Detectado: ${snapPix.size} saques | ${snapCur.size} curadorias.`;
-            
-            if (snapPix.size > 0) {
-                // Redirecionamento simplificado para foco na gestão de pagamentos
-                botoesHtml += `<button onclick="window.switchView('pix_workdesk')" class="bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition-all">Abrir Fila 💰</button>`;
-            }
-            if (snapCur.size > 0) {
-                botoesHtml += `<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition-all ml-1">Analisar 📸</button>`;
-            }
-        }
-
-        // Injeção Oficial Atlivio: Apenas Dados Reais e Atalhos Necessários
-        msgArea.innerHTML = `
-            <div class="flex flex-col gap-1.5 animate-fade">
-                <span class="text-indigo-200 font-bold italic leading-tight">"${textoStatus}"</span>
-                <div class="flex items-center gap-2">${botoesHtml}</div>
-            </div>
-        `;
-        
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-
-    } catch (e) {
-        console.warn("⚠️ Vigilância em espera: " + e.message);
-    }
-};
 
 // 🛰️ Ciclo de Vida: Tenta rodar agora e repete a cada 30 segundos
 if (!window.intervaloVigilancia) {
