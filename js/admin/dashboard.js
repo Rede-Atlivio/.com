@@ -41,25 +41,11 @@ export async function init() {
     // Define que os dados do dashboard (KPIs e Gráficos) entrarão apenas nesta div, preservando o Sentinela no topo
     const container = document.getElementById('dashboard-main-content');
     
-   // ✅ SANEAMENTO V605: Garante que o Dashboard inicie limpo para receber os novos KPIs
-    // Removemos a verificação de widgets legados para evitar o erro "Unexpected token"
+  // ✅ SANEAMENTO V606: Limpeza total de injeções dinâmicas de mesa para estabilidade da interface
     container.innerHTML = "";
 
-       // Inicia a injeção do HTML. Repare que NÃO tem ponto e vírgula no final da linha, pois o texto continua.
+    // Inicia a injeção do dashboard focada exclusivamente no Fluxo de Caixa e KPIs
     container.innerHTML += `
-        <div id="mesa-pix-pendente" class="animate-fade mb-6">
-            <div class="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 shadow-2xl">
-                <div class="flex justify-between items-center mb-6">
-                    <div>
-                        <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Fila de Pagamentos PIX 💰</h3>
-                        <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Pague no seu banco e confirme aqui para limpar a fila.</p>
-                    </div>
-                    <span class="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-1 rounded-lg font-black uppercase animate-pulse">Monitoramento Real-time</span>
-                </div>
-                <div id="feedback-mesa-pix" class="space-y-3"></div>
-            </div>
-        </div>
-
         <div class="flex justify-between items-center mb-4 bg-slate-900/50 p-2 rounded-2xl border border-white/5">
             <h3 class="text-[10px] font-black text-gray-500 uppercase ml-2">Fluxo de Caixa</h3>
             <div class="flex gap-2">
