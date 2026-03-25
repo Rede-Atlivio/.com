@@ -772,10 +772,8 @@ window.addEventListener('click', (e) => {
     const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
     
     // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
-    // 🏷️ Áreas exclusivas para quem quer COMPRAR (Barra o Prestador)
-    // 🛡️ Lista unificada para bloquear o Prestador em todas as frentes de consumo
-    // Gil, incluímos b2b_gestao para que o prestador seja barrado pelo modal de troca de perfil
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing', 'b2b_gestao'];
+    // 🛡️ O Vigilante agora permite o clique em 'b2b_gestao' para que a Ponte B2B decida o acesso.
+    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
     // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
     const textoBotao = btn.innerText.toUpperCase();
     const comandoHtml = btn.getAttribute('onclick') || "";
