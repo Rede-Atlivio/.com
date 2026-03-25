@@ -1,24 +1,23 @@
-// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Proteção Inteligente contra Acessos Indevidos
+// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Proteção por DNA de Perfil (is_provider)
 window.verificarAcessoB2B = () => {
-    // 🚦 SINAL VERDE: Se o perfil ainda não carregou, o sistema aguarda em silêncio
-    if (!window.userProfile || !window.userProfile.perfil) return true;
+    // 🚦 SINAL VERDE: Aguarda o perfil existir na memória
+    if (!window.userProfile) return true;
 
-    const perfil = window.userProfile.perfil;
+    // 🕵️ A VERDADE DO BANCO: is_provider true = Prestador | is_provider false = Cliente
+    const ehPrestador = window.userProfile.is_provider === true;
     
-    // 🚫 BLOQUEIO ATIVO: Se o sensor confirmar que você NÃO é cliente, dispara o modal
-    if (perfil !== 'cliente') {
-        console.warn("🚫 [B2B] Acesso Restrito: Identidade de Prestador detectada.");
-        // Chama o gatilho de conversão do app.js
+    // 🚫 BLOQUEIO: Se for um prestador tentando acessar área de gestão B2B
+    if (ehPrestador) {
+        console.warn("🚫 [B2B] Bloqueio Preventivo: Prestadores precisam alternar para Perfil Cliente.");
         if (typeof window.abrirTrocaPerfilB2B === 'function') {
             window.abrirTrocaPerfilB2B();
         }
         return false;
     }
     
-    console.log("🏢 [B2B] Acesso Autorizado: Identidade de Cliente confirmada.");
+    console.log("🏢 [B2B] Identidade validada: Acesso liberado para Gestor.");
     return true;
 };
-
 // 🛰️ ESCUTA ATIVA: Dispara a verificação apenas quando o sensor confirmar o carregamento
 window.addEventListener('userProfileLoaded', () => {
     window.verificarAcessoB2B();
