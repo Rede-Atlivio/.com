@@ -521,20 +521,8 @@ window.filtrarPeriodoFinanceiro = async (periodo) => {
     }
 };
 
-/**
- * 🏧 MESA DE TRABALHO PIX (BANCO CENTRAL)
- * Carrega a fila de pagamentos pendentes integrada ao Dashboard.
- */
-window.abrirMesaTrabalhoPix = async () => {
-    const mesa = document.getElementById('mesa-pix-pendente');
-    const grade = document.getElementById('grade-kpis-dashboard');
-    const feed = document.getElementById('feedback-mesa-pix');
-    
-    if(!mesa || !grade) return;
-    
-    grade.classList.add('hidden');
-    mesa.classList.remove('hidden');
-    feed.innerHTML = `<div class="p-10 text-center"><div class="loader mx-auto border-emerald-500"></div></div>`;
+// Operação Mesa PIX desativada para simplificação da interface
+window.abrirMesaTrabalhoPix = () => { console.log("Mesa PIX inativa."); };
 
     try {
         const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
