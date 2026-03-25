@@ -521,8 +521,9 @@ window.filtrarPeriodoFinanceiro = async (periodo) => {
     }
 };
 
-// Operação Mesa PIX desativada para simplificação da interface
-window.abrirMesaTrabalhoPix = () => { console.log("Mesa PIX inativa."); };
+// ✅ MESA PIX TOTALMENTE REMOVIDA
+window.abrirMesaTrabalhoPix = () => { return false; };
+window.fecharMesaPix = () => { return false; };
 
     try {
         const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
