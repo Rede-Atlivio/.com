@@ -507,14 +507,14 @@ window.finalizarLocalWizard = () => {
                 </div>
                 <p class="text-[8px] text-gray-500 italic px-2">O sistema reserva o valor total (Qtd × Valor + Taxa).</p>
 
-                <div class="p-5 bg-black/40 rounded-3xl space-y-3 border border-white/5">
+               <div class="p-5 bg-black/40 rounded-3xl space-y-3 border border-white/5">
                     <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tight text-gray-500">
-                        <span>💰 Recompensa (Prestador)</span>
-                        <span id="preview-user" class="text-white font-mono">R$ 5,00</span>
+                        <span>💰 Valor Líquido</span>
+                        <span id="preview-user" class="text-white font-mono">R$ 0,00</span>
                     </div>
                     <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-tight text-gray-500">
-                        <span>🛡️ Taxa Administrativa (100%)</span>
-                        <span id="preview-tax" class="text-blue-400 font-mono">R$ 5,00</span>
+                        <span>🛡️ Taxa de Intermediação</span>
+                        <span id="preview-tax" class="text-blue-400 font-mono">R$ 0,00</span>
                     </div>
                     <div class="h-[1px] bg-white/10 my-1"></div>
                     <div class="flex justify-between items-center text-xs font-black uppercase tracking-widest text-gray-300">
