@@ -525,11 +525,14 @@ window.finalizarLocalWizard = () => {
                 </div>
             </div>
 
-            <button onclick="window.processarReservaB2B()" id="btn-confirmar-b2b" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] active:scale-95 transition-all">
+          <button onclick="window.processarReservaB2B()" id="btn-confirmar-b2b" class="w-full py-5 bg-emerald-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_15px_30px_-10px_rgba(16,185,129,0.4)] active:scale-95 transition-all">
                 Finalizar e Ativar Operação ✅
             </button>
         </div>
     `;
+
+    // 🚀 SINCRONIA IMEDIATA: Dispara o cálculo assim que o Passo 3 abre para evitar valores zerados
+    window.atualizarPreviewFinanceiro();
 };
 // 🤖 CALCULADORA DINÂMICA V2026 (CONECTADA AO BANCO CENTRAL)
 window.atualizarPreviewFinanceiro = async () => {
