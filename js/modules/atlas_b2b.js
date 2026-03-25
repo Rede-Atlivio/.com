@@ -18,10 +18,6 @@ window.verificarAcessoB2B = () => {
     console.log("🏢 [B2B] Identidade validada: Acesso liberado para Gestor.");
     return true;
 };
-// 🛰️ ESCUTA ATIVA: Dispara a verificação apenas quando o sensor confirmar o carregamento
-window.addEventListener('userProfileLoaded', () => {
-    window.verificarAcessoB2B();
-});
 
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
