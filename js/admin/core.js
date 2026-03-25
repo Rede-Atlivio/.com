@@ -155,10 +155,17 @@ window.switchView = async function(viewName) {
         v.style.setProperty('display', 'none', 'important'); 
     });
 
-   // 🛡️ PROTEÇÃO: A vigilância só roda se o elemento existir na tela (Dashboard Ativo)
-    if (viewName === 'dashboard' || viewName === 'pix_workdesk') {
+   // 🛡️ PROTEÇÃO: Ativação Automática da Assistant e Vigilância no Dashboard
+    if (viewName === 'dashboard') {
         setTimeout(() => {
-            if (window.executarVigilanciaAtiva) window.executarVigilanciaAtiva();
+            // Liga a inteligência da Assistant
+            if (typeof window.renderAssistant === 'function') {
+                window.renderAssistant('assistant-container');
+            }
+            // Liga o motor de busca de pendências
+            if (typeof window.executarVigilanciaAtiva === 'function') {
+                window.executarVigilanciaAtiva();
+            }
         }, 300);
     }
     
