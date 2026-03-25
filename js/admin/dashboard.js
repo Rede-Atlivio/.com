@@ -521,44 +521,9 @@ window.filtrarPeriodoFinanceiro = async (periodo) => {
     }
 };
 
-// ✅ MESA PIX TOTALMENTE REMOVIDA
-window.abrirMesaTrabalhoPix = () => { return false; };
+// ✅ SANEAMENTO V608: Mesa PIX Dinâmica removida e funções desativadas para escala
+window.abrirMesaTrabalhoPix = () => { console.log("Mesa PIX desativada."); };
 window.fecharMesaPix = () => { return false; };
-
-    try {
-        const { collection, query, where, orderBy, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("created_at", "desc"));
-        const snap = await getDocs(q);
-
-        if(snap.empty) {
-            feed.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] italic uppercase">Céu limpo! Nenhum PIX na fila. ☀️</p>`;
-            return;
-        }
-
-        feed.innerHTML = "";
-        for (const d of snap.docs) {
-            const m = d.data();
-            // Busca a chave PIX no perfil do usuário por segurança
-            const uSnap = await getDocs(query(collection(window.db, "usuarios"), where("uid", "==", m.user_id)));
-            const userPix = !uSnap.empty ? (uSnap.docs[0].data().pix_key || uSnap.docs[0].data().chave_pix) : 'Não cadastrada';
-
-            feed.innerHTML += `
-                <div class="bg-slate-800/50 border border-emerald-500/20 p-4 rounded-2xl flex justify-between items-center gap-4 animate-fadeIn mb-3">
-                    <div class="text-left">
-                        <p class="text-[8px] font-black text-emerald-400 uppercase mb-1">${m.is_saque ? '🏧 RESGATE DE SALDO' : '🎯 MISSÃO B2B'}</p>
-                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'} ──▶ R$ ${m.reward.toFixed(2)}</h5>
-                        <p class="text-[9px] text-gray-500 font-mono mt-1">PIX: ${userPix}</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="navigator.clipboard.writeText('${userPix}'); alert('Copiado!')" class="bg-slate-700 text-white px-3 py-2 rounded-xl text-[9px] font-black uppercase">📋 Copiar</button>
-                        <button onclick="window.finalizarPagamentoComprovanteDashboard('${d.id}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg active:scale-95">✅ Pagar</button>
-                    </div>
-                </div>
-            `;
-        }
-    } catch(e) { console.error("Erro Banco Central:", e); }
-};
-
 /**
  * 📤 FINALIZAÇÃO DE SAQUE COM COMPROVANTE (MESA DASHBOARD)
  * Abre a galeria, comprime a imagem e executa a baixa contábil.
