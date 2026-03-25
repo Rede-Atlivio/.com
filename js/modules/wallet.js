@@ -300,12 +300,23 @@ export function iniciarMonitoramentoCarteira() {
             }
 
             // 2. SENSOR DE BÔNUS (Novo: Detecta se o Admin ou Boas-vindas deu dinheiro)
-            if (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido) {
-                const difBonus = sBonus - window.ultimoSaldoBonusConhecido;
-                if (difBonus >= 0.01) {
-                    console.log(`🎁 [Maestro] Bônus detectado (R$ ${difBonus}). Carimbando Ledger...`);
-                    // Chama a mesma função oficializadora, mas avisando que o tipo é BONUS
-                    window.oficializarLoteExterno(difBonus, "BONUS", "Bônus ou Premiação");
+            // 2. ⚡ SENSOR DE LIQUIDAÇÃO DIGITAL (Detecta Ganhos B2B e Prêmios)
+            // Gil, este sensor vigia tanto o saldo real quanto o bônus para carimbar o Ledger na hora.
+            const ganhoRealB2B = (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido);
+            const ganhoBonusB2B = (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido);
+
+            if (ganhoRealB2B || ganhoBonusB2B) {
+                const valorGanho = ganhoRealB2B ? (sReal - window.ultimoSaldoConhecido) : (sBonus - window.ultimoSaldoBonusConhecido);
+                const tipoCarga = ganhoRealB2B ? "PIX" : "BONUS";
+                
+                // 🛡️ Filtro de Segurança: Só oficializa se não for resgate de saldo congelado (que já foi tratado acima)
+                const frozenAtual = parseFloat(data.wallet_frozen || 0);
+                if (!(ganhoRealB2B && Math.abs(valorGanho - frozenAtual) < 0.01)) {
+                    console.log(`💰 [Maestro] Ganho Detectado: ${valorGanho} (${tipoCarga}). Oficializando validade...`);
+                    window.oficializarLoteExterno(valorGanho, tipoCarga, "Recebimento de Missão ou Tarefa");
+                    
+                    // 🔊 Feedback Sonoro opcional de "Dinheiro na Conta" pode ser disparado aqui
+                    if (window.tocarSomNotificacao) window.tocarSomNotificacao('cash');
                 }
             }
 
