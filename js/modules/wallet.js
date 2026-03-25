@@ -1363,14 +1363,15 @@ window.abrirGuiaCarteira = () => {
 };
 // 🚀 SOLDAGEM GLOBAL ATLIVIO V2026 (FINAL DO ARQUIVO)
 window.carregarCarteira = carregarCarteira;
-window.receberSaldoComValidade = window.receberSaldoComValidade; // 🔑 CHAVE DA RESSURREIÇÃO
+window.receberSaldoComValidade = receberSaldoComValidade; // 🔑 CHAVE DA RESSURREIÇÃO
 window.pagarComAtlix = pagarComAtlix;
 window.filtrarGanhos = filtrarGanhos;
 window.abrirRelatorioDetalhado = window.abrirRelatorioDetalhado;
 window.processarSolicitacaoSaque = window.processarSolicitacaoSaque; 
 window.calcularEquivalenciaAtlix = window.calcularEquivalenciaAtlix; // 🔓 RESOLVE O "CALCULANDO"
-window.abrirGuiaCarteira = window.abrirGuiaCarteira; 
-window.encerrarMissaoB2BComEstorno = window.encerrarMissaoB2BComEstorno;
+window.abrirGuiaCarteira = abrirGuiaCarteira; 
+window.definirMetaDiaria = definirMetaDiaria; // 🎯 FIX: Ativa o botão de meta diária na Home
+window.encerrarMissaoB2BComEstorno = encerrarMissaoB2BComEstorno;
 window.switchTab = window.switchTab || function(tab) { console.log("Aba:", tab); };
 
 console.log("%c✅ SISTEMA FINANCEIRO ATLIVIO: Sincronia concluída na última linha.", "color: #10b981; font-weight: bold;");
