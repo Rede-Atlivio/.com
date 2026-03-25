@@ -271,11 +271,14 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
+            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
+            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
+
             // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: b2bOwnerId || null, // DNA Novo (Usado pela Auditoria)
-                b2b_owner_uid: b2bOwnerId || null, // DNA Antigo (Mantido para compatibilidade)
+                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
+                b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: tipoPagamento,
