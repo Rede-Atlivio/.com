@@ -19,13 +19,11 @@ window.verificarAcessoB2B = () => {
     return true;
 };
 
-// 🛰️ ESCUTA ATIVA: Dispara a verificação assim que o perfil terminar de carregar do banco
+// 🛰️ ESCUTA ATIVA: Dispara a verificação apenas quando o sensor confirmar o carregamento
 window.addEventListener('userProfileLoaded', () => {
     window.verificarAcessoB2B();
 });
 
-// Tenta uma verificação de segurança imediata (caso o perfil já esteja na memória)
-window.verificarAcessoB2B();
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
