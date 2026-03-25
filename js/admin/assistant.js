@@ -18,11 +18,10 @@ window.limparNotificacoes = async () => {
 
     await batch.commit();
     
-    // Recarrega a secretária
-    const { renderAssistant } = await import('./assistant.js?v=' + Date.now());
-    renderAssistant('assistant-container');
+    // ✅ SANEAMENTO V609: Recarrega a inteligência local sem redundância de importação
+    await renderAssistant('assistant-container');
     
-    // Feedback visual
+    // Feedback visual imediato para o administrador
     alert("✨ Todas as notificações foram marcadas como lidas!");
     location.reload(); // Recarrega para limpar visualmente
 };
