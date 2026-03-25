@@ -223,13 +223,7 @@ window.switchView = async function(viewName) {
     if (moduleFile) {
         try {
             const module = await import(`${moduleFile}?v=${Date.now()}`);
-            if (module.init) await module.init(viewName);
-            
-            // Gil, se a rota for 'pix_workdesk', forçamos o motor a abrir a lista de pagamentos na hora
-            if (viewName === 'pix_workdesk' && window.abrirMesaTrabalhoPix) {
-                console.log("💰 Maestro: Ativando Mesa de Trabalho PIX...");
-                window.abrirMesaTrabalhoPix();
-            }
+           if (module.init) await module.init(viewName);
 
             // GATILHO MAESTRO V2.0: Sincroniza a interface visual
             if (viewName === 'maestro') {
