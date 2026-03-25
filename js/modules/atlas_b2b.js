@@ -555,8 +555,7 @@ window.atualizarPreviewFinanceiro = async () => {
     window.wizardB2BData.total_with_fee = totalGeral;
 };
 
-// ⚡ MOTOR DE RESERVA (O CORAÇÃO DO B2B)
-// ⚡ MOTOR DE RESERVA V2026: Multi-vagas e Auto-Geocodificação
+// ⚡ MOTOR DE RESERVA V2026: Sincronia Total com Banco Central
 window.processarReservaB2B = async () => {
     // 📥 CAPTURA ÚNICA E SEGURA DOS VALORES
     const rewardVal = parseFloat(document.getElementById('b2b-reward')?.value || 0);
@@ -571,11 +570,16 @@ window.processarReservaB2B = async () => {
         btn.innerText = "⏳ RESERVANDO SALDO...";
     }
 
-    // 🛡️ CÁLCULO DE SEGURANÇA: Evita erro de 'undefined' no Firestore
+    // 🛡️ BUSCA DE TAXA SOBERANA (Gaveta Global Economy)
+    const configSnap = await getDoc(doc(db, "settings", "global_economy"));
+    const taxaOficial = (configSnap.exists() && configSnap.data().taxa_lucro_b2b !== undefined) 
+        ? Number(configSnap.data().taxa_lucro_b2b) 
+        : 0;
+
+    // 💰 CÁLCULO DINÂMICO DE DÉBITO
     const recompensaTotal = rewardVal * slotsVal;
-    const taxaAtlivio = rewardVal * slotsVal; // Regra Atlivio: 100% de taxa sobre o valor do user
-    const totalNecessario = recompensaTotal + taxaAtlivio;
-    
+    const taxaAtlivioReal = recompensaTotal * (taxaOficial / 100); 
+    const totalNecessario = recompensaTotal + taxaAtlivioReal;
     const uid = auth.currentUser?.uid;
     if(!uid) return alert("Erro: Usuário não autenticado.");
     const userRef = doc(db, "usuarios", uid);
