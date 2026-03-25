@@ -124,33 +124,11 @@
         <div class="flex-1 overflow-hidden relative">
             <div id="view-dashboard" class="relative w-full h-full overflow-y-auto p-6 custom-scrollbar hidden">
                 
-              <!-- 🧠 CONTAINER DA ASSISTANT: IA operacional e alertas financeiros -->
-                <div id="assistant-container" class="w-full mb-6"></div>
+             <!-- 🧠 ÁREA DA ASSISTANT REAL -->
+                <div id="assistant-container" class="w-full"></div>
+                <div id="dashboard-main-content" class="space-y-6"></div>
 
-                <!-- 🏧 MESA DE PAGAMENTOS FIXA: Estrutura imortal para gestão de PIX -->
-                <div id="mesa-pix-pendente" class="animate-fade mb-6 hidden">
-                    <div class="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 shadow-2xl">
-                        <div class="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 class="text-xl font-black text-white italic uppercase tracking-tighter">Fila de Pagamentos PIX 💰</h3>
-                                <p class="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Confirme o pagamento para liberar o fluxo.</p>
-                            </div>
-                            <div class="flex items-center gap-3">
-                                <span class="text-[8px] bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-1 rounded-lg font-black uppercase">Real-time</span>
-                                <button onclick="window.abrirMesaTrabalhoPix()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black px-4 py-2 rounded-xl shadow-lg transition-all active:scale-95 uppercase">
-                                    Atualizar Lista
-                                </button>
-                            </div>
-                        </div>
-                        <!-- ⚡ FILA DINÂMICA: Os dados dos saques aparecem neste container abaixo -->
-                        <div id="feedback-mesa-pix" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <!-- 📊 DASHBOARD CONTENT: KPIs e Gráficos operacionais -->
-                <div id="dashboard-main-content" class="space-y-6"></div>
-
-                <div id="sentinela-bottom-zone" class="mt-12 pt-8 border-t border-slate-800/50 space-y-4">
+                <div id="sentinela-bottom-zone" class="mt-12 pt-8 border-t border-slate-800/50 space-y-4">
                     <div id="radar-control-bar" class="flex items-center justify-between bg-slate-900/50 border border-slate-800 px-4 py-2 rounded-xl">
                         <div class="flex items-center gap-4">
                             <span id="status-robo-txt" class="text-[10px] font-black text-gray-500 uppercase italic">Radar Sentinela</span>
