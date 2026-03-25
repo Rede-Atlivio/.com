@@ -1,24 +1,3 @@
-// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Proteção por DNA de Perfil (is_provider)
-window.verificarAcessoB2B = () => {
-    // 🚦 SINAL VERDE: Aguarda o perfil existir na memória
-    if (!window.userProfile) return true;
-
-    // 🕵️ A VERDADE DO BANCO: is_provider true = Prestador | is_provider false = Cliente
-    const ehPrestador = window.userProfile.is_provider === true;
-    
-    // 🚫 BLOQUEIO: Se for um prestador tentando acessar área de gestão B2B
-    if (ehPrestador) {
-        console.warn("🚫 [B2B] Bloqueio Preventivo: Prestadores precisam alternar para Perfil Cliente.");
-        if (typeof window.abrirTrocaPerfilB2B === 'function') {
-            window.abrirTrocaPerfilB2B();
-        }
-        return false;
-    }
-    
-    console.log("🏢 [B2B] Identidade validada: Acesso liberado para Gestor.");
-    return true;
-};
-
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
