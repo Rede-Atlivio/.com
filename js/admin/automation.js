@@ -756,12 +756,49 @@ window.resgatarRoteiroDoBanco = async function() {
     }
 };
 
-// ✅ SANEAMENTO V607: Função desativada e limpa de erros de sintaxe
-window.executarVigilanciaAtiva = () => {
-    // Função vazia para evitar quebras no sistema de roteamento
-    console.log("Vigilância inativa.");
-};
+/**
+ * 🤖 MOTOR DE INTELIGÊNCIA DA ASSISTANT (RESTAURADO)
+ * Gil, esta função mantém os botões de alerta vivos, mas sem a mesa fixa.
+ */
+window.executarVigilanciaAtiva = async () => {
+    const fv = window.firebaseModules;
+    const db = window.db;
+    const msgArea = document.getElementById('assistant-msg');
 
+    if (!msgArea || !fv || !db) return;
+
+    try {
+        // 🛰️ A IA vigia saques e missões pendentes
+        const qPix = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "approved_pending_pix"));
+        const qCur = fv.query(fv.collection(db, "mission_submissions"), fv.where("status", "==", "pending"));
+
+        const [snapPix, snapCur] = await Promise.all([fv.getDocs(qPix), fv.getDocs(qCur)]);
+
+        let botoesHtml = "";
+        let textoStatus = "Sistema Atlivio Estabilizado.";
+
+        if (snapPix.size > 0 || snapCur.size > 0) {
+            textoStatus = `Atenção: ${snapPix.size} saques pendentes detectados.`;
+            
+            if (snapPix.size > 0) {
+                // Mantém o botão que leva para a aba de finanças (onde você paga)
+                botoesHtml += `<button onclick="window.switchView('finance')" class="bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition-all">Pagar Agora 💸</button>`;
+            }
+            if (snapCur.size > 0) {
+                botoesHtml += `<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition-all ml-1">Analisar 📸</button>`;
+            }
+        }
+
+        msgArea.innerHTML = `
+            <div class="flex flex-col gap-1.5 animate-fade">
+                <span class="text-indigo-200 font-bold italic leading-tight">"${textoStatus}"</span>
+                <div class="flex items-center gap-2">${botoesHtml}</div>
+            </div>
+        `;
+    } catch (e) {
+        console.warn("⚠️ Assistant em espera: " + e.message);
+    }
+};
     if (!msgArea || !fv || !db) return; // Se não tem o alvo ou banco, silencia para não dar erro
 
     try {
