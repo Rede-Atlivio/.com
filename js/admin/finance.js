@@ -453,3 +453,54 @@ window.filterFinanceList = filterFinanceList; // Expõe para a busca em tempo re
 setTimeout(() => { 
     if (typeof lucide !== 'undefined') lucide.createIcons(); 
 }, 1000);
+// 🔘 CONTROLE DA GAVETA RETRÁTIL
+window.toggleGavetaPix = () => {
+    const conteudo = document.getElementById('conteudo-gaveta-pix');
+    const seta = document.getElementById('seta-gaveta');
+    const isHidden = conteudo.classList.contains('hidden');
+    conteudo.classList.toggle('hidden');
+    seta.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    if (isHidden) window.carregarFilaPixReal();
+};
+
+// 🏦 MOTOR DE CARREGAMENTO DA FILA (MIGRAÇÃO COMPLETA)
+window.carregarFilaPixReal = async () => {
+    const feed = document.getElementById('lista-pix-pendente-real');
+    if(!feed) return;
+    try {
+        const { collection, query, where, getDocs, orderBy } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const q = query(collection(window.db, "mission_submissions"), where("status", "==", "approved_pending_pix"), orderBy("created_at", "desc"));
+        const snap = await getDocs(q);
+        
+        // Atualiza cabeçalho da gaveta
+        const statusTxt = document.getElementById('status-gaveta-pix');
+        const moldura = document.getElementById('moldura-gaveta');
+        const icone = document.getElementById('icon-gaveta-pix');
+
+        if(snap.size > 0) {
+            statusTxt.innerText = `${snap.size} Pagamentos aguardando liberação`;
+            statusTxt.classList.replace('text-gray-500', 'text-emerald-400');
+            moldura.classList.replace('border-slate-800', 'border-emerald-500/50');
+            icone.classList.replace('bg-slate-800', 'bg-emerald-500');
+            icone.classList.add('animate-pulse');
+        }
+
+        if(snap.empty) {
+            feed.innerHTML = `<p class="text-center py-10 text-gray-600 text-[10px] uppercase italic">Fila Limpa ☀️</p>`;
+            return;
+        }
+
+        feed.innerHTML = "";
+        snap.forEach(d => {
+            const m = d.data();
+            feed.innerHTML += `
+                <div class="bg-slate-800/50 border border-emerald-500/20 p-4 rounded-2xl flex justify-between items-center animate-fade">
+                    <div class="text-left">
+                        <p class="text-[8px] font-black text-emerald-400 uppercase">${m.is_saque ? '🏧 RESGATE' : '🎯 MISSÃO'}</p>
+                        <h5 class="text-xs font-bold text-white">${m.user_name || 'Usuário'} ──▶ R$ ${parseFloat(m.reward).toFixed(2)}</h5>
+                    </div>
+                    <button onclick="window.confirmarPagamentoRealizado('${d.id}')" class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase shadow-lg">PAGAR ✅</button>
+                </div>`;
+        });
+    } catch(e) { console.error("Erro na fila:", e); }
+};
