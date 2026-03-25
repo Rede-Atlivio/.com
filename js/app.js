@@ -830,16 +830,16 @@ window.registrarEventoMaestro = registrarEventoMaestro;
 window.carregarInterface = carregarInterface;
 
 console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
-// 🛰️ PONTE ATLAS B2B: Decide se troca o perfil ou se entra direto na aba
+// 🛰️ PONTE ATLAS B2B: Sincronizada com o DNA is_provider (V70)
 window.abrirTrocaPerfilB2B = () => {
     document.getElementById('modal-marketing-b2b').classList.add('hidden');
     
-    const perfil = window.userProfile?.perfil;
+    // 🕵️ Identifica a verdade: Se is_provider for FALSE, o usuário é um CLIENTE
+    const isClienteReal = window.userProfile?.is_provider === false;
 
-    // Se já for cliente, vai direto para a Gestão Atlas
-    if (perfil === 'cliente') {
+    // Se for cliente, libera o acesso direto à Gestão Atlas
+    if (isClienteReal) {
         window.switchTab('b2b_gestao');
-        // Inicializa o motor se for a primeira vez
         if (window.initB2B) window.initB2B(); 
     } else {
         // Se for prestador, abre o modal de troca que você já tem
