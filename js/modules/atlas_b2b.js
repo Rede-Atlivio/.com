@@ -256,6 +256,14 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 paid_at: serverTimestamp(),
                 liquidacao_tipo: 'interna_digital'
             });
+        }); // 👈 O erro estava aqui: este fechamento da Transaction é vital.
+
+        alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
+    } catch (err) {
+        console.error("Erro na liquidação:", err);
+        alert("Erro ao processar transferência de valores.");
+    }
+};
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
