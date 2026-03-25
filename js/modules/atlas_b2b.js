@@ -1,23 +1,31 @@
-// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Detecta o perfil em tempo real para proteger o ecossistema B2B
+// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Proteção Inteligente contra Acessos Indevidos
 window.verificarAcessoB2B = () => {
-    // Busca a informação mais fresca possível do objeto de perfil
-    const perfil = window.userProfile?.perfil;
+    // 🚦 SINAL VERDE: Se o perfil ainda não carregou, o sistema aguarda em silêncio
+    if (!window.userProfile || !window.userProfile.perfil) return true;
+
+    const perfil = window.userProfile.perfil;
     
-    // Se o perfil for de PRESTADOR, bloqueia o acesso e chama o modal de troca
-    if (perfil && perfil !== 'cliente') {
-        console.warn("🚫 [B2B] Bloqueio preventivo: Perfil Prestador detectado.");
-        // Conecta com a função que você já tem no app.js
+    // 🚫 BLOQUEIO ATIVO: Se o sensor confirmar que você NÃO é cliente, dispara o modal
+    if (perfil !== 'cliente') {
+        console.warn("🚫 [B2B] Acesso Restrito: Identidade de Prestador detectada.");
+        // Chama o gatilho de conversão do app.js
         if (typeof window.abrirTrocaPerfilB2B === 'function') {
             window.abrirTrocaPerfilB2B();
         }
         return false;
     }
+    
+    console.log("🏢 [B2B] Acesso Autorizado: Identidade de Cliente confirmada.");
     return true;
 };
 
-// Dispara a proteção imediatamente e se mantém atento a mudanças de perfil
+// 🛰️ ESCUTA ATIVA: Dispara a verificação assim que o perfil terminar de carregar do banco
+window.addEventListener('userProfileLoaded', () => {
+    window.verificarAcessoB2B();
+});
+
+// Tenta uma verificação de segurança imediata (caso o perfil já esteja na memória)
 window.verificarAcessoB2B();
-window.addEventListener('userProfileLoaded', window.verificarAcessoB2B);
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
