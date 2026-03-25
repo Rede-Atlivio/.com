@@ -777,11 +777,12 @@ window.executarVigilanciaAtiva = async () => {
         let botoesHtml = "";
         let textoStatus = "Sistema Estabilizado.";
 
-        if (snapPix.size > 0 || snapCur.size > 0) {
+       if (snapPix.size > 0 || snapCur.size > 0) {
             textoStatus = `Detectado: ${snapPix.size} saques | ${snapCur.size} curadorias.`;
             
             if (snapPix.size > 0) {
-                botoesHtml += `<button onclick="window.switchView('finance')" class="bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition-all">Pagar Agora 💸</button>`;
+                // Redirecionamento simplificado para foco na gestão de pagamentos
+                botoesHtml += `<button onclick="window.switchView('pix_workdesk')" class="bg-emerald-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-emerald-500 transition-all">Abrir Fila 💰</button>`;
             }
             if (snapCur.size > 0) {
                 botoesHtml += `<button onclick="window.switchView('missions')" class="bg-blue-600 text-white px-2 py-1.5 rounded-lg text-[9px] font-black uppercase shadow-lg hover:bg-blue-500 transition-all ml-1">Analisar 📸</button>`;
