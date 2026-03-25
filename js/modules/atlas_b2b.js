@@ -1,11 +1,17 @@
-// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Se não for cliente, o sistema redireciona para a troca de perfil
-if (window.userProfile && window.userProfile.perfil !== 'cliente') {
-    console.warn("🚫 [B2B] Acesso restrito a empresas. Solicitando troca de identidade...");
-    // 🚀 GATILHO DE CONVERSÃO: Se o prestador tentar "forçar" a entrada, o modal de troca sobe automaticamente
-    if (typeof window.abrirTrocaPerfilB2B === 'function') {
-        window.abrirTrocaPerfilB2B();
+// 🛡️ TRAVA ANTI-VAZAMENTO ATLIVIO: Detecta o perfil em tempo real para proteger o ecossistema B2B
+const verificarAcessoB2B = () => {
+    const perfil = window.userProfile?.perfil;
+    // Se o perfil já carregou e não é cliente, barra e convida para a troca
+    if (perfil && perfil !== 'cliente') {
+        console.warn("🚫 [B2B] Acesso restrito. Perfil atual:", perfil);
+        if (typeof window.abrirTrocaPerfilB2B === 'function') window.abrirTrocaPerfilB2B();
+        return false;
     }
-}
+    return true;
+};
+// Executa a verificação imediata e monitora o carregamento do perfil
+verificarAcessoB2B();
+window.addEventListener('userProfileLoaded', verificarAcessoB2B);
 import { db, auth } from '../config.js';
 import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
