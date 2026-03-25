@@ -384,6 +384,8 @@ window.proximoPassoWizard = (passo) => {
         setTimeout(() => { if(window.iniciarAutocompleteB2B) window.iniciarAutocompleteB2B(); }, 200);
     }
 };
+// Dispara o cálculo imediato para sincronizar com o Banco Central
+    window.atualizarPreviewFinanceiro();
 
 // 📡 MOTOR DE CAPTURA SATELITAL: Pega a posição real do dispositivo do Cliente
 window.obterLocalizacaoAutomatica = () => {
