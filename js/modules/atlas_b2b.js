@@ -535,10 +535,12 @@ window.atualizarPreviewFinanceiro = async () => {
     const val = parseFloat(document.getElementById('b2b-reward').value) || 0;
     const slots = parseInt(document.getElementById('b2b-slots').value) || 1;
     
-    // 🏦 BUSCA TAXA REAL NO BANCO CENTRAL
-    const configSnap = await getDoc(doc(db, "settings", "financeiro"));
-    const taxaConfig = configSnap.exists() ? (configSnap.data().taxa_lucro_b2b || 0) : 0;
-
+   // 🏦 SINCRONIA TOTAL: O código não assume valores. Ele lê o que você definiu no Admin.
+    const configSnap = await getDoc(doc(db, "settings", "global_economy"));
+    // Se o campo não existir, a taxa é 0. O Admin é o único soberano.
+    const taxaConfig = (configSnap.exists() && configSnap.data().taxa_lucro_b2b !== undefined) 
+        ? Number(configSnap.data().taxa_lucro_b2b) 
+        : 0;
     const recompensaTotalUsuarios = val * slots;
     // Gil, agora o cálculo usa os seus 70% (ou o que você definir)
     const taxaTotalAtlivio = recompensaTotalUsuarios * (taxaConfig / 100);
