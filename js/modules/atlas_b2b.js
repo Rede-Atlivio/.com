@@ -381,11 +381,10 @@ window.proximoPassoWizard = (passo) => {
             </div>
         `;
         // 🛰️ DESPERTADOR GOOGLE: Ativa a busca de endereços 200ms após o HTML carregar
+       // 🛰️ DESPERTADOR GOOGLE: Ativa a busca de endereços 200ms após o HTML carregar
         setTimeout(() => { if(window.iniciarAutocompleteB2B) window.iniciarAutocompleteB2B(); }, 200);
     }
 };
-// Dispara o cálculo imediato para sincronizar com o Banco Central
-    window.atualizarPreviewFinanceiro();
 
 // 📡 MOTOR DE CAPTURA SATELITAL: Pega a posição real do dispositivo do Cliente
 window.obterLocalizacaoAutomatica = () => {
