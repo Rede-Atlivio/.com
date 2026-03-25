@@ -756,14 +756,8 @@ window.resgatarRoteiroDoBanco = async function() {
     }
 };
 
-/**
- * 🤖 MOTOR DE INTELIGÊNCIA CONSOLIDADA (VERSÃO BLINDADA V66)
- * Esta versão garante botões reais e o botão de LIMPEZA sempre visível.
- */
-window.executarVigilanciaAtiva = async () => {
-    const fv = window.firebaseModules;
-    const db = window.db;
-    const msgArea = document.getElementById('assistant-msg');
+// Vigilância de interface removida
+window.executarVigilanciaAtiva = () => { return; };
 
     if (!msgArea || !fv || !db) return; // Se não tem o alvo ou banco, silencia para não dar erro
 
