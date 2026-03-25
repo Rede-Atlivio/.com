@@ -756,8 +756,11 @@ window.resgatarRoteiroDoBanco = async function() {
     }
 };
 
-// Vigilância de interface removida
-window.executarVigilanciaAtiva = () => { return; };
+// ✅ SANEAMENTO V607: Função desativada e limpa de erros de sintaxe
+window.executarVigilanciaAtiva = () => {
+    // Função vazia para evitar quebras no sistema de roteamento
+    console.log("Vigilância inativa.");
+};
 
     if (!msgArea || !fv || !db) return; // Se não tem o alvo ou banco, silencia para não dar erro
 
