@@ -893,7 +893,8 @@ window.filtrarGanhos = async (periodo) => {
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
             elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
-        } 
+         } 
+       }     
     } catch (e) { // O navegador estava reclamando aqui porque o 'try' lá de cima não foi fechado com }
         console.error("Erro ao filtrar ganhos:", e);
         if (elEarnings) elEarnings.innerText = "0,00";
