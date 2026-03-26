@@ -124,7 +124,7 @@ container.innerHTML = `
                         ` : ''}
 
                        ${isMobile ? `
-                           <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}', '${m.owner_id || m.b2b_owner_uid || ''}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">
+                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}', '${m.b2b_owner_uid || ''}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">
                                 Realizar Missão ➜
                             </button>
                         ` : `
@@ -269,25 +269,18 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
-       reader.onloadend = async () => {
+        reader.onloadend = async () => {
             const base64data = reader.result;
-            
-            // 🛡️ DNA SIMPLIFICADO: Prioriza o ID que já vem no botão para não travar a execução
-            const donoFinal = (b2bOwnerId && b2bOwnerId !== "undefined") ? b2bOwnerId : "";
+            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
+            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-           // 🛡️ BUSCA DE DADOS MESTRE: Recupera os valores de taxa da missão original para o Revenue
-            const mSnapParaHistorico = await getDoc(doc(db, "missions", id));
-            const mDataFin = mSnapParaHistorico.exists() ? mSnapParaHistorico.data() : {};
-
-            // 🚀 GRAVAÇÃO COM DNA FINANCEIRO COMPLETO ATLIVIO
+            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, 
+                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
                 b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
                 reward: recompensa,
-                // Gil, injetamos o custo unitário com taxa para o Admin saber quanto enviar ao Revenue
-                unit_total_with_fee: mDataFin.unit_total_with_fee || recompensa,
                 pay_type: tipoPagamento,
                 user_id: auth.currentUser.uid,
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
@@ -378,10 +371,10 @@ async function carregarMissoesRealizadas() {
             container.innerHTML = "";
             snap.forEach(doc => {
                 const m = doc.data();
-               const statusMap = {
+                const statusMap = {
                     'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
-                    'paid_real': { txt: 'CRÉDITO REAL ✅', css: 'text-emerald-500 bg-emerald-500/10' },
-                    'paid_atlix': { txt: 'CRÉDITO BÔNUS ✅', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
+                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
                     'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
                 };
                 const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
