@@ -386,11 +386,9 @@ async function carregarMissoesRealizadas() {
                         </div>
                         <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
                         
-                        ${m.status === 'paid_real' && m.receipt_url ? `
-                            <button onclick="window.abrirComprovantePIX('${m.receipt_url}')" class="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 py-2.5 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-100 transition flex items-center justify-center gap-2">
-                                📄 Ver Comprovante PIX
-                            </button>
-                        ` : ''}
+                        <div class="w-full bg-slate-50 py-2 rounded-lg text-center">
+                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Liquidação Digital Automática</p>
+                        </div>
                     </div>
                 `;
             });
