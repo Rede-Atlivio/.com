@@ -220,10 +220,11 @@ export async function init() {
             }
         });
 
-        // 🛰️ SENSOR DE RECEITA: Escuta o cofre de taxas acumuladas (Chat + B2B)
-        onSnapshot(doc(db, "sys_finance", "fees_b2b"), (snapFees) => {
+       // 🛰️ SENSOR DE RECEITA REAL-TIME: Escuta o cofre unificado de taxas (Chat + B2B Digital)
+        // Gil, conectamos este sensor ao documento 'stats' que é onde o lucro digital agora cai.
+        onSnapshot(doc(db, "sys_finance", "stats"), (snapFees) => {
             if (snapFees.exists()) {
-                const totalAcumulado = snapFees.data().total_taxas_acumulado || 0;
+                const totalAcumulado = snapFees.data().total_revenue || 0;
                 const elTaxas = document.getElementById('kpi-taxas-total');
                 if (elTaxas) {
                     elTaxas.innerText = `R$ ${totalAcumulado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
