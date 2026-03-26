@@ -109,7 +109,7 @@ if (m.status === 'active') {
                     <div class="flex justify-between items-center pt-2 border-t border-gray-50 gap-2">
                         <div class="flex flex-col">
                             <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
-                            <span class="text-[7px] font-black text-blue-400 uppercase italic">Crédito ATLIX</span>
+                            <span class="text-[7px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
                         </div>
                        ${(m.status === 'active' || m.status === 'pending_b2b') ? `
                             <button onclick="window.encerrarMissaoB2BComEstorno('${doc.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border border-red-100">
@@ -231,22 +231,19 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 2. ⚡ LIQUIDAÇÃO DIGITAL DIRETA: Transfere o crédito para o saldo do usuário
-            // Gil, não existe mais fila de espera. O sistema identifica o balde (Real ou Bônus) e paga na hora.
-            const campoDestino = (data.pay_type === 'real') ? 'wallet_balance' : 'wallet_bonus';
-            const statusPagamento = (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix';
-
-            transaction.update(userRef, { 
-                [campoDestino]: increment(data.reward),
-                updated_at: serverTimestamp()
-            });
-
-            // 3. 📝 FINALIZAÇÃO: Marca a prova como liquidada digitalmente
-            transaction.update(subRef, { 
-                status: statusPagamento, 
-                paid_at: serverTimestamp(),
-                liquidacao_tipo: 'interna_digital'
-            });
+            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
+            if (data.pay_type === 'atlix') {
+                transaction.update(userRef, { 
+                    wallet_bonus: increment(data.reward),
+                    updated_at: serverTimestamp()
+                });
+                // Marca como pago totalmente
+                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
+            } else {
+                // 3. Se for REAL, move para a fila de PIX do Admin
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
+            }
+        });
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
