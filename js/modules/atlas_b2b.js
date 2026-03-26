@@ -257,8 +257,9 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             transaction.update(subRef, { 
                 status: (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix', 
                 paid_at: serverTimestamp(),
-                liquidacao_tipo: 'interna_digital'
-            });
+               liquidacao_tipo: 'interna_digital'
+            }); // Esse fecha a transação
+        }); // Esse fecha o runTransaction
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
