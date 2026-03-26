@@ -663,56 +663,17 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-       } else {
-            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (SEM FILA DE PIX) ---
-            // Este motor transfere o valor da reserva da empresa diretamente para o saldo do usuário.
-            await runTransaction(window.db, async (transaction) => {
-                const userRef = doc(window.db, "usuarios", userId); // Carteira do prestador
-                const subRef = doc(window.db, "mission_submissions", docId); // Registro da prova
-                const statsRef = doc(window.db, "sys_finance", "stats"); // Balde de lucro Atlivio
+      (function roboPericiaAdminMissions() {
+    const corpo = window.aprovarMissao ? window.aprovarMissao.toString() : "";
+    const cofreCorreto = corpo.includes('sys_finance') && corpo.includes('stats') && corpo.includes('total_revenue');
+    const dnaMoedaCorreto = corpo.includes('moeda: "ATLIX"') && corpo.includes('🎯 MISSÃO_REAL');
 
-                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
-                const valorTotalReservado = subData.unit_total_with_fee || valor; 
-                const lucroAtlivio = valorTotalReservado - valor;
-
-                // 2. Se for B2B, baixa o valor total que estava 'preso' na reserva da empresa
-                if (subData.b2b_owner_uid) {
-                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
-                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
-                }
-
-                // 3. 🛡️ LUCRO REAL: Incrementa o faturamento da plataforma em tempo real
-                if (lucroAtlivio > 0) {
-                    transaction.update(statsRef, { 
-                        total_revenue: increment(lucroAtlivio),
-                        ultima_atualizacao: serverTimestamp() 
-                    });
-                }
-
-                // 4. CREDITAR PRESTADOR: O dinheiro cai no wallet_balance (Saldo Real)
-                transaction.update(userRef, { 
-                    wallet_balance: increment(valor), 
-                    updated_at: serverTimestamp() 
-                });
-
-                // 5. FINALIZAÇÃO: Marca como pago internamente e registra o DNA digital
-                transaction.update(subRef, { 
-                    status: 'paid_real', 
-                    paid_at: serverTimestamp(),
-                    liquidacao_tipo: 'admin_digital'
-                });
-            });
-
-            // 📝 Registro no Extrato Financeiro do Usuário para transparência
-            await addDoc(collection(window.db, "extrato_financeiro"), {
-                uid: userId,
-                valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_APROVADA",
-                descricao: `Crédito recebido por: ${subData.mission_title}`,
-                timestamp: serverTimestamp(),
-                moeda: "BRL" // DNA de dinheiro real
-            });
-
+    if (cofreCorreto && dnaMoedaCorreto) {
+        console.log("%c✅ SOLDAGEM ADMIN: O motor de lucro agora aponta para o balde 'stats' e as etiquetas estão separadas!", "color: #10b981; font-weight: bold;");
+    } else {
+        console.error("❌ FALHA DE SINCRONIA: O Admin ainda aponta para o lugar errado ou usa etiquetas antigas.");
+    }
+})();
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
