@@ -131,11 +131,11 @@ window.carregarAuditoriaB2B = async () => {
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
    try {
-        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
+        // ⚖️ Busca histórico completo de evidências vinculadas a este proprietário B2B
+        // Removemos a trava de status "pending" para que você veja o que já foi aprovado ou recusado
         const q = query(
             collection(db, "mission_submissions"),
             where("owner_id", "==", auth.currentUser.uid),
-            where("status", "==", "pending"),
             orderBy("created_at", "desc")
         );
         const snap = await getDocs(q);
