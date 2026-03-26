@@ -272,13 +272,8 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
        reader.onloadend = async () => {
             const base64data = reader.result;
             
-            // 🛡️ NOVO SENSOR DE DNA: Busca na missão original para garantir que o dono nunca seja vazio
-            let donoFinal = b2bOwnerId;
-            if(!donoFinal || donoFinal === "" || donoFinal === "undefined") {
-                const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-                const mSnap = await getDoc(doc(db, "missions", id));
-                donoFinal = mSnap.exists() ? mSnap.data().owner_id : "";
-            }
+            // 🛡️ DNA SIMPLIFICADO: Prioriza o ID que já vem no botão para não travar a execução
+            const donoFinal = (b2bOwnerId && b2bOwnerId !== "undefined") ? b2bOwnerId : "";
 
            // 🛡️ BUSCA DE DADOS MESTRE: Recupera os valores de taxa da missão original para o Revenue
             const mSnapParaHistorico = await getDoc(doc(db, "missions", id));
