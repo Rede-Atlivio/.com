@@ -363,15 +363,16 @@ export function iniciarMonitoramentoCarteira() {
                 // 🏷️ V117: Alinha a meta visual com os ganhos reais (R$)
                 txtMeta.innerText = `Meta: R$ ${metaDefinida.toFixed(2).replace('.', ',')}`;
                 // 📈 V116: Garante que se o ganho for igual ou maior que a meta, a barra encha 100%
-                const ganhoParaMeta = sEarnings; 
-                const porcentagem = metaDefinida > 0 ? Math.min((ganhoParaMeta / metaDefinida) * 100, 100) : 0;
-                barMeta.style.width = `${porcentagem}%`;
-                barMeta.className = porcentagem >= 100 ? "bg-emerald-500 h-full transition-all duration-700" : "bg-blue-500 h-full transition-all duration-700";
-            }
-            carregarHistoricoCarteira(uid);
+            const ganhoParaMeta = sEarnings; 
+            const porcentagem = metaDefinida > 0 ? Math.min((ganhoParaMeta / metaDefinida) * 100, 100) : 0;
+            barMeta.style.width = `${porcentagem}%`;
+            barMeta.className = porcentagem >= 100 ? "bg-emerald-500 h-full transition-all duration-700" : "bg-blue-500 h-full transition-all duration-700";
         }
-    });
-}
+        // 📖 Carrega a lista visual de transações para o usuário
+        carregarHistoricoCarteira(uid);
+    }
+}); // ⇠ FALTAVA ESSE FECHAMENTO DO ONSNAPSHOT DA CARTEIRA
+} // ⇠ FALTAVA ESSE FECHAMENTO DA FUNÇÃO iniciarMonitoramentoCarteira
 
 /**
  * 🚀 MOTOR DE RECEBIMENTO COM VALIDADE (RESSURREIÇÃO)
