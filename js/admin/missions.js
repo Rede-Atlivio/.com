@@ -663,17 +663,66 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-     // 📝 Registro de notificação padrão
+    // Finaliza o fluxo de bônus
+        } else {
+            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (DINHEIRO) ---
+            await runTransaction(window.db, async (transaction) => {
+                const userRef = doc(window.db, "usuarios", userId); 
+                const subRef = doc(window.db, "mission_submissions", docId);
+                const statsRef = doc(window.db, "sys_finance", "stats");
+
+                // 1. Identifica o custo total (Recompensa + Taxa da Plataforma)
+                const valorTotalReservado = subData.unit_total_with_fee || valor; 
+                const lucroAtlivio = valorTotalReservado - valor;
+
+                // 2. Libera a reserva da empresa (Total com Taxa)
+                if (subData.b2b_owner_uid) {
+                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
+                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
+                }
+
+                // 3. 💎 COFRE CENTRAL: Registra o lucro real no documento 'stats'
+                if (lucroAtlivio > 0) {
+                    transaction.update(statsRef, { 
+                        total_revenue: increment(lucroAtlivio),
+                        ultima_atualizacao: serverTimestamp() 
+                    });
+                }
+
+                // 4. CREDITAR EXPLORADOR: Dinheiro cai no saldo real (wallet_balance)
+                transaction.update(userRef, { 
+                    wallet_balance: increment(valor), 
+                    updated_at: serverTimestamp() 
+                });
+
+                // 5. FINALIZAÇÃO: DNA digital gravado
+                transaction.update(subRef, { 
+                    status: 'paid_real', 
+                    paid_at: serverTimestamp(),
+                    liquidacao_tipo: 'admin_digital'
+                });
+            });
+
+            // 📝 Registro no Extrato: Usamos a tag '🎯 MISSÃO_REAL'
+            await addDoc(collection(window.db, "extrato_financeiro"), {
+                uid: userId,
+                valor: parseFloat(valor),
+                tipo: "🎯 MISSÃO_REAL",
+                descricao: `Remuneração: ${subData.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "BRL" 
+            });
+
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
-                message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
+                message: `✅ Missão aprovada! R$ ${valor} creditados em seu saldo real.`, 
                 read: false, type: 'success', created_at: serverTimestamp()
             });
 
-            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da plataforma foi computado.");
+            alert("✅ SUCESSO: Liquidação em dinheiro concluída e lucro mapeado.");
         }
 
-        // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
+        // Recarrega a lista de envios para atualizar a tela
         loadSubmissions();
 
     } catch(e) {
