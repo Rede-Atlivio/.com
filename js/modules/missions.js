@@ -85,10 +85,9 @@ container.innerHTML = `
             // 🛡️ SENSOR DE DISPOSITIVO: Verifica se é Celular ou PC
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            // 💰 V2026.PRO: Identifica a moeda de recompensa
-            const isRealMoney = m.pay_type === 'real';
-            const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
-            const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
+            // 🪙 DNA DIGITAL: Todas as missões agora são liquidadas em Créditos Digitais
+            const labelMoeda = 'CRÉDITOS ATLIVIO 🪙';
+            const colorMoeda = 'text-amber-400';
 
             // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
             container.innerHTML += `
