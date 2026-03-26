@@ -612,54 +612,50 @@ async function aprovarMissao(docId, userId, valor) {
 
         if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
 
-      if (tipoMoeda === 'atlix') {
-            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Paga usuário, Baixa reserva e Extrai Lucro Gil
+     if (tipoMoeda === 'atlix') {
+            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Motor unificado para Bônus
             await runTransaction(window.db, async (transaction) => {
                 const userRef = doc(window.db, "usuarios", userId);
                 const subRef = doc(window.db, "mission_submissions", docId);
-                const cofreRef = doc(window.db, "sys_finance", "receita_total");
                 
-                // 1. Identifica o valor unitário reservado (Recompensa + Sua Taxa)
-                // Usamos o campo 'total_with_fee' que salvamos na criação
+                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
                 const valorTotalReservado = subData.unit_total_with_fee || valor; 
-                const suaTaxaLucro = valorTotalReservado - valor;
+                const lucroAtlivio = valorTotalReservado - valor;
 
-                // 2. Se for B2B, limpa a custódia da empresa
+                // 2. Se for B2B, limpa a reserva da empresa
                 if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
                     transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 📊 CONTABILIDADE DE TAXAS B2B (ISOLADO DO CAIXA REAL)
-                // 📊 BALDE DE TAXAS CENTRALIZADO (ATLIVIO STATS)
-                if (suaTaxaLucro > 0) {
+                // 3. 💎 COFRE CENTRAL: O lucro da Atlivio vai para o balde oficial 'stats'
+                if (lucroAtlivio > 0) {
                     const statsRef = doc(window.db, "sys_finance", "stats");
                     transaction.update(statsRef, { 
-                        total_revenue: increment(suaTaxaLucro),
+                        total_revenue: increment(lucroAtlivio),
                         ultima_atualizacao: serverTimestamp() 
                     });
                 }
 
-                // 4. Deposita os ATLIX na carteira do explorador
+                // 4. CREDITAR EXPLORADOR: Deposita os bônus na carteira
                 transaction.update(userRef, { 
                     wallet_bonus: increment(valor), 
                     updated_at: serverTimestamp() 
                 });
 
-                // 5. Marca como finalizado
+                // 5. FINALIZAÇÃO: Marca como aprovado e pago
                 transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
             });
 
-            // 📝 Registro no Extrato Financeiro com DNA ATLIX
+            // 📝 Registro no Extrato Financeiro: Força DNA 'ATLIX' para não sujar o gráfico de reais
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_CONCLUÍDA",
-                descricao: `Você ganhou por: ${subData.mission_title}`,
+                tipo: "💰 MISSÃO_ATLIX", // Tag exclusiva para filtro do Wallet
+                descricao: `Ganho digital: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "ATLIX" // 🚀 O Carimbo de Moeda Bônus
+                moeda: "ATLIX"
             });
-
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
