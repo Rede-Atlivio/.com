@@ -225,9 +225,11 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
+           // 1. Libera a reserva TOTAL (Prêmio do usuário + Taxa da Atlivio)
+            // Gil, usamos o 'unit_total_with_fee' para limpar a reserva por completo
+            const valorParaLimpar = data.unit_total_with_fee || data.reward;
             transaction.update(b2bRef, { 
-                wallet_reserved: increment(-data.reward),
+                wallet_reserved: increment(-valorParaLimpar),
                 updated_at: serverTimestamp()
             });
 
