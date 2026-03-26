@@ -612,50 +612,54 @@ async function aprovarMissao(docId, userId, valor) {
 
         if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
 
-     if (tipoMoeda === 'atlix') {
-            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Motor unificado para Bônus
+      if (tipoMoeda === 'atlix') {
+            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Paga usuário, Baixa reserva e Extrai Lucro Gil
             await runTransaction(window.db, async (transaction) => {
                 const userRef = doc(window.db, "usuarios", userId);
                 const subRef = doc(window.db, "mission_submissions", docId);
+                const cofreRef = doc(window.db, "sys_finance", "receita_total");
                 
-                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
+                // 1. Identifica o valor unitário reservado (Recompensa + Sua Taxa)
+                // Usamos o campo 'total_with_fee' que salvamos na criação
                 const valorTotalReservado = subData.unit_total_with_fee || valor; 
-                const lucroAtlivio = valorTotalReservado - valor;
+                const suaTaxaLucro = valorTotalReservado - valor;
 
-                // 2. Se for B2B, limpa a reserva da empresa
+                // 2. Se for B2B, limpa a custódia da empresa
                 if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
                     transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 3. 💎 COFRE CENTRAL: O lucro da Atlivio vai para o balde oficial 'stats'
-                if (lucroAtlivio > 0) {
+                // 📊 CONTABILIDADE DE TAXAS B2B (ISOLADO DO CAIXA REAL)
+                // 📊 BALDE DE TAXAS CENTRALIZADO (ATLIVIO STATS)
+                if (suaTaxaLucro > 0) {
                     const statsRef = doc(window.db, "sys_finance", "stats");
                     transaction.update(statsRef, { 
-                        total_revenue: increment(lucroAtlivio),
+                        total_revenue: increment(suaTaxaLucro),
                         ultima_atualizacao: serverTimestamp() 
                     });
                 }
 
-                // 4. CREDITAR EXPLORADOR: Deposita os bônus na carteira
+                // 4. Deposita os ATLIX na carteira do explorador
                 transaction.update(userRef, { 
                     wallet_bonus: increment(valor), 
                     updated_at: serverTimestamp() 
                 });
 
-                // 5. FINALIZAÇÃO: Marca como aprovado e pago
+                // 5. Marca como finalizado
                 transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
             });
 
-            // 📝 Registro no Extrato Financeiro: Força DNA 'ATLIX' para não sujar o gráfico de reais
+            // 📝 Registro no Extrato Financeiro com DNA ATLIX
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_ATLIX", // Tag exclusiva para filtro do Wallet
-                descricao: `Ganho digital: ${subData.mission_title}`,
+                tipo: "💰 MISSÃO_CONCLUÍDA",
+                descricao: `Você ganhou por: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "ATLIX"
+                moeda: "ATLIX" // 🚀 O Carimbo de Moeda Bônus
             });
+
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
@@ -663,25 +667,25 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-    // Finaliza o fluxo de bônus
-        } else {
-            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (DINHEIRO) ---
+       } else {
+            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (SEM FILA DE PIX) ---
+            // Este motor transfere o valor da reserva da empresa diretamente para o saldo do usuário.
             await runTransaction(window.db, async (transaction) => {
-                const userRef = doc(window.db, "usuarios", userId); 
-                const subRef = doc(window.db, "mission_submissions", docId);
-                const statsRef = doc(window.db, "sys_finance", "stats");
+                const userRef = doc(window.db, "usuarios", userId); // Carteira do prestador
+                const subRef = doc(window.db, "mission_submissions", docId); // Registro da prova
+                const statsRef = doc(window.db, "sys_finance", "stats"); // Balde de lucro Atlivio
 
-                // 1. Identifica o custo total (Recompensa + Taxa da Plataforma)
+                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
                 const valorTotalReservado = subData.unit_total_with_fee || valor; 
                 const lucroAtlivio = valorTotalReservado - valor;
 
-                // 2. Libera a reserva da empresa (Total com Taxa)
+                // 2. Se for B2B, baixa o valor total que estava 'preso' na reserva da empresa
                 if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
                     transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 3. 💎 COFRE CENTRAL: Registra o lucro real no documento 'stats'
+                // 3. 🛡️ LUCRO REAL: Incrementa o faturamento da plataforma em tempo real
                 if (lucroAtlivio > 0) {
                     transaction.update(statsRef, { 
                         total_revenue: increment(lucroAtlivio),
@@ -689,13 +693,13 @@ async function aprovarMissao(docId, userId, valor) {
                     });
                 }
 
-                // 4. CREDITAR EXPLORADOR: Dinheiro cai no saldo real (wallet_balance)
+                // 4. CREDITAR PRESTADOR: O dinheiro cai no wallet_balance (Saldo Real)
                 transaction.update(userRef, { 
                     wallet_balance: increment(valor), 
                     updated_at: serverTimestamp() 
                 });
 
-                // 5. FINALIZAÇÃO: DNA digital gravado
+                // 5. FINALIZAÇÃO: Marca como pago internamente e registra o DNA digital
                 transaction.update(subRef, { 
                     status: 'paid_real', 
                     paid_at: serverTimestamp(),
@@ -703,26 +707,26 @@ async function aprovarMissao(docId, userId, valor) {
                 });
             });
 
-            // 📝 Registro no Extrato: Usamos a tag '🎯 MISSÃO_REAL'
+            // 📝 Registro no Extrato Financeiro do Usuário para transparência
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "🎯 MISSÃO_REAL",
-                descricao: `Remuneração: ${subData.mission_title}`,
+                tipo: "💰 MISSÃO_APROVADA",
+                descricao: `Crédito recebido por: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "BRL" 
+                moeda: "BRL" // DNA de dinheiro real
             });
 
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
-                message: `✅ Missão aprovada! R$ ${valor} creditados em seu saldo real.`, 
+                message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
                 read: false, type: 'success', created_at: serverTimestamp()
             });
 
-            alert("✅ SUCESSO: Liquidação em dinheiro concluída e lucro mapeado.");
+            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da Atlivio foi computado.");
         }
 
-        // Recarrega a lista de envios para atualizar a tela
+        // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
         loadSubmissions();
 
     } catch(e) {
