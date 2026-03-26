@@ -258,13 +258,15 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 3. 🛡️ LUCRO ATLIVIO: Transfere a taxa de intermediação para o faturamento global
+           // 3. 🛡️ LUCRO DA PLATAFORMA: Transfere a taxa para o balde central 'stats'
+            // Calculamos a diferença entre o que a empresa pagou e o que o usuário recebe
             const taxaIntermediacao = (data.total_with_fee || 0) - (data.reward || 0);
             if (taxaIntermediacao > 0) {
-                const globalRef = doc(db, "settings", "global_economy");
-                transaction.update(globalRef, { 
+                // Endereço unificado: sys_finance -> stats
+                const statsRef = doc(db, "sys_finance", "stats");
+                transaction.update(statsRef, { 
                     total_revenue: increment(taxaIntermediacao),
-                    last_revenue_update: serverTimestamp()
+                    ultima_atualizacao: serverTimestamp() 
                 });
             }
 
