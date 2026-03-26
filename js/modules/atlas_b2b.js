@@ -149,13 +149,13 @@ window.carregarAuditoriaB2B = async () => {
        snap.forEach(d => {
             const m = d.data();
             
-            // 🚥 MAPEAMENTO DE STATUS PARA O USUÁRIO FINAL B2B
+            // 🚥 MAPEAMENTO DE STATUS - FOCO EM CRÉDITOS DIGITAIS ATLIVIO
             const statusInfo = {
-                'pending': { label: 'Aguardando sua Análise', css: 'bg-amber-100 text-amber-600' },
-                'approved_pending_pix': { label: 'Aprovada (Na fila do Admin)', css: 'bg-blue-100 text-blue-600' },
-                'paid_real': { label: 'Liquidada ✅', css: 'bg-emerald-100 text-emerald-600' },
-                'paid_atlix': { label: 'Liquidada (Atlix) ✅', css: 'bg-emerald-100 text-emerald-600' },
-                'b2b_rejected': { label: 'Rejeitada por Você', css: 'bg-red-100 text-red-600' }
+                'pending': { label: 'Em Análise', css: 'bg-amber-100 text-amber-600' },
+                'approved_pending_pix': { label: 'Processando Crédito', css: 'bg-blue-100 text-blue-600' },
+                'paid_real': { label: 'Pago em Saldo Real ✅', css: 'bg-emerald-100 text-emerald-600' },
+                'paid_atlix': { label: 'Pago em Saldo Bônus ✅', css: 'bg-emerald-100 text-emerald-600' },
+                'b2b_rejected': { label: 'Recusada', css: 'bg-red-100 text-red-600' }
             };
             const st = statusInfo[m.status] || { label: m.status, css: 'bg-gray-100 text-gray-500' };
 
