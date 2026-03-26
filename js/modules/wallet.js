@@ -890,20 +890,18 @@ window.filtrarGanhos = async (periodo) => {
                                 periodo === 'total' ? "Ganhos Totais" : `Ganhos ${periodo} dias`;
         }
 
-         // 🏠 Sincroniza o Card da Home (Se estiver visível)
-       // 🏠 Sincroniza o Card da Home (Se estiver visível)
+         // 🏠 SINCRONIA HOME: Atualiza o card principal se ele estiver ativo na tela
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
             elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
         }
 
-        // 🛡️ FIM DO BLOCO DE PROCESSAMENTO (SOMA E FILTRO)
-    } catch (e) { 
-        // 🚨 CAPTURA DE FALHAS: Se o banco de dados falhar, o gráfico não quebra o app
-        console.error("Erro ao filtrar ganhos:", e);
+    } catch (error) { 
+        // 🚨 PROTEÇÃO DE INTERFACE: Impede que erro de rede trave o App
+        console.error("🎯 [Filtrar Ganhos] Falha na soma de extrato:", error);
         if (elEarnings) elEarnings.innerText = "0,00";
     }
-}; // 🔐 FECHAMENTO DA FUNÇÃO filtrarGanhos
+}; // 🔐 FIM DA FUNÇÃO window.filtrarGanhos
 
 /**
  * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
