@@ -126,29 +126,19 @@ if (m.status === 'active') {
 };
 
 // ⚖️ MOTOR DE AUDITORIA B2B (EXCLUSIVO)
-// Este motor busca tanto o que precisa ser aprovado quanto o que já foi pago
 window.carregarAuditoriaB2B = async () => {
     const container = document.getElementById('sub-view-container');
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
-    try {
-        const uid = auth.currentUser.uid;
-        const subRef = collection(db, "mission_submissions");
-        
-        // 🛰️ BUSCA MESTRE: Filtro direto por dono (Removido orderBy para evitar erro de índice)
-        // Isso fará as missões "Em Análise" e "Pagas" aparecerem na hora!
+   try {
+        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
         const q = query(
-            subRef, 
-            where("owner_id", "==", uid)
+            collection(db, "mission_submissions"),
+            where("owner_id", "==", auth.currentUser.uid),
+            where("status", "==", "pending"),
+            orderBy("created_at", "desc")
         );
-        
-        let snap = await getDocs(q);
-
-        // 🩹 COMPATIBILIDADE: Se a conta for antiga, busca pelo campo b2b_owner_uid
-        if (snap.empty) {
-            const qLegacy = query(subRef, where("b2b_owner_uid", "==", uid));
-            snap = await getDocs(qLegacy);
-        }
+        const snap = await getDocs(q);
 
         if (snap.empty) {
             container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Nenhuma evidência para auditar.</p>`;
@@ -156,39 +146,21 @@ window.carregarAuditoriaB2B = async () => {
         }
 
         container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
-       snap.forEach(d => {
+        snap.forEach(d => {
             const m = d.data();
-            
-            // 🚥 MAPEAMENTO DE STATUS - FOCO EM CRÉDITOS DIGITAIS ATLIVIO
-            const statusInfo = {
-                'pending': { label: 'Em Análise', css: 'bg-amber-100 text-amber-600' },
-                'approved_pending_pix': { label: 'Processando Crédito', css: 'bg-blue-100 text-blue-600' },
-                'paid_real': { label: 'Pago em Saldo Real ✅', css: 'bg-emerald-100 text-emerald-600' },
-                'paid_atlix': { label: 'Pago em Saldo Bônus ✅', css: 'bg-emerald-100 text-emerald-600' },
-                'b2b_rejected': { label: 'Recusada', css: 'bg-red-100 text-red-600' }
-            };
-            const st = statusInfo[m.status] || { label: m.status, css: 'bg-gray-100 text-gray-500' };
-
             document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
                     <div class="flex justify-between items-center">
                         <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title}</h4>
-                        <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${st.css}">
-                            ● ${st.label}
+                        <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${m.gps_status === 'match' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            ${m.gps_status === 'match' ? 'GPS OK' : 'GPS SUSPEITO'}
                         </span>
                     </div>
                     <img src="${m.proof_url}" class="w-full h-48 object-cover rounded-[2rem] border border-gray-100">
-                    
-                    ${m.status === 'pending' ? `
-                        <div class="flex gap-2">
-                            <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase">Reprovar</button>
-                            <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200">Aprovar e Pagar</button>
-                        </div>
-                    ` : `
-                        <div class="text-center p-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                             <p class="text-[8px] font-black text-slate-400 uppercase italic">Ação concluída em: ${m.paid_at?.toDate().toLocaleDateString() || m.approved_at?.toDate().toLocaleDateString() || 'Processado'}</p>
-                        </div>
-                    `}
+                    <div class="flex gap-2">
+                        <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase">Reprovar</button>
+                        <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200">Aprovar e Pagar</button>
+                    </div>
                 </div>
             `;
         });
@@ -253,10 +225,9 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-            // 1. Libera a reserva total da empresa (Valor do prêmio + Taxa da plataforma)
-            const valorParaLimpar = data.total_with_fee || data.reward;
+            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
             transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorParaLimpar),
+                wallet_reserved: increment(-data.reward),
                 updated_at: serverTimestamp()
             });
 
@@ -269,15 +240,13 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-           // 3. 🛡️ LUCRO DA PLATAFORMA: Transfere a taxa para o balde central 'stats'
-            // Calculamos a diferença entre o que a empresa pagou e o que o usuário recebe
+            // 3. 🛡️ LUCRO ATLIVIO: Transfere a taxa de intermediação para o faturamento global
             const taxaIntermediacao = (data.total_with_fee || 0) - (data.reward || 0);
             if (taxaIntermediacao > 0) {
-                // Endereço unificado: sys_finance -> stats
-                const statsRef = doc(db, "sys_finance", "stats");
-                transaction.update(statsRef, { 
+                const globalRef = doc(db, "settings", "global_economy");
+                transaction.update(globalRef, { 
                     total_revenue: increment(taxaIntermediacao),
-                    ultima_atualizacao: serverTimestamp() 
+                    last_revenue_update: serverTimestamp()
                 });
             }
 
@@ -287,7 +256,6 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 paid_at: serverTimestamp(),
                 liquidacao_tipo: 'interna_digital'
             });
-        }); // 👈 O erro estava aqui: este fechamento da Transaction é vital.
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
@@ -295,7 +263,7 @@ window.liquidarPagamentoB2B = async (submissionId) => {
         alert("Erro ao processar transferência de valores.");
     }
 };
-      
+
 // 🪄 WIZARD ATLAS B2B: MOTOR DE CRIAÇÃO PASSO A PASSO
 window.wizardB2BData = {}; // Memória temporária da missão
 
