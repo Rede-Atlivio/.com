@@ -667,25 +667,22 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-       } else {
-            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (SEM FILA DE PIX) ---
-            // Este motor transfere o valor da reserva da empresa diretamente para o saldo do usuário.
+      } else {
+            // --- FLUXO B: LIQUIDAÇÃO EM SALDO DE CARTEIRA (CARIMBO REAL) ---
+            // Gil, esse motor transfere o valor "preso" na empresa direto para o saldo sacável do usuário.
             await runTransaction(window.db, async (transaction) => {
-                const userRef = doc(window.db, "usuarios", userId); // Carteira do prestador
-                const subRef = doc(window.db, "mission_submissions", docId); // Registro da prova
-                const statsRef = doc(window.db, "sys_finance", "stats"); // Balde de lucro Atlivio
+                const userRef = doc(window.db, "usuarios", userId);
+                const subRef = doc(window.db, "mission_submissions", docId);
+                const statsRef = doc(window.db, "sys_finance", "stats");
 
-                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
                 const valorTotalReservado = subData.unit_total_with_fee || valor; 
                 const lucroAtlivio = valorTotalReservado - valor;
 
-                // 2. Se for B2B, baixa o valor total que estava 'preso' na reserva da empresa
                 if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
                     transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                // 3. 🛡️ LUCRO REAL: Incrementa o faturamento da plataforma em tempo real
                 if (lucroAtlivio > 0) {
                     transaction.update(statsRef, { 
                         total_revenue: increment(lucroAtlivio),
@@ -693,17 +690,17 @@ async function aprovarMissao(docId, userId, valor) {
                     });
                 }
 
-                // 4. CREDITAR PRESTADOR: O dinheiro cai no wallet_balance (Saldo Real)
+                // CREDITAR USUÁRIO: Cai no Saldo Real (Balance)
                 transaction.update(userRef, { 
                     wallet_balance: increment(valor), 
                     updated_at: serverTimestamp() 
                 });
 
-                // 5. FINALIZAÇÃO: Marca como pago internamente e registra o DNA digital
+                // FINALIZAÇÃO DIGITAL
                 transaction.update(subRef, { 
                     status: 'paid_real', 
                     paid_at: serverTimestamp(),
-                    liquidacao_tipo: 'admin_digital'
+                    liquidacao_tipo: 'interna_digital_instantanea'
                 });
             });
 
