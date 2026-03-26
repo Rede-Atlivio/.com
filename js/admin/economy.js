@@ -53,7 +53,9 @@ async function loadEconomySettings() {
             const data = dGlobal.data();
             
             // Sincroniza os novos campos injetados no admin.html
-            if(document.getElementById('conf-taxa-b2b')) document.getElementById('conf-taxa-b2b').value = data.taxa_b2b_atlivio || 100;
+            // Sincroniza os novos campos com o DNA oficial do banco
+            // Gil, unificamos o nome para 'taxa_lucro_b2b' para bater com o salvamento
+            if(document.getElementById('conf-taxa-b2b')) document.getElementById('conf-taxa-b2b').value = data.taxa_lucro_b2b || 100;
             if(document.getElementById('conf-spread-atlix')) document.getElementById('conf-spread-atlix').value = data.spread_conversao || 0.8;
             if(document.getElementById('conf-saque-minimo')) document.getElementById('conf-saque-minimo').value = data.saque_minimo_atlix || 50;
             if(document.getElementById('conf-status-pix')) document.getElementById('conf-status-pix').checked = data.pagamentos_pix_ativos ?? true;
