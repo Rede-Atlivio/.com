@@ -135,18 +135,18 @@ window.carregarAuditoriaB2B = async () => {
         const uid = auth.currentUser.uid;
         const subRef = collection(db, "mission_submissions");
         
-        // 🛰️ BUSCA MESTRE: Tenta buscar pelo owner_id (DNA V2026)
+        // 🛰️ BUSCA MESTRE: Filtro direto por dono (Removido orderBy para evitar erro de índice)
+        // Isso fará as missões "Em Análise" e "Pagas" aparecerem na hora!
         const q = query(
             subRef, 
-            where("owner_id", "==", uid),
-            orderBy("created_at", "desc")
+            where("owner_id", "==", uid)
         );
         
         let snap = await getDocs(q);
 
-        // 🩹 COMPATIBILIDADE: Se não achar nada, tenta pelo campo antigo b2b_owner_uid
+        // 🩹 COMPATIBILIDADE: Se a conta for antiga, busca pelo campo b2b_owner_uid
         if (snap.empty) {
-            const qLegacy = query(subRef, where("b2b_owner_uid", "==", uid), orderBy("created_at", "desc"));
+            const qLegacy = query(subRef, where("b2b_owner_uid", "==", uid));
             snap = await getDocs(qLegacy);
         }
 
