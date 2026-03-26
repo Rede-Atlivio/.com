@@ -126,19 +126,29 @@ if (m.status === 'active') {
 };
 
 // ⚖️ MOTOR DE AUDITORIA B2B (EXCLUSIVO)
+// Este motor busca tanto o que precisa ser aprovado quanto o que já foi pago
 window.carregarAuditoriaB2B = async () => {
     const container = document.getElementById('sub-view-container');
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
-   try {
-        // ⚖️ Busca histórico completo de evidências vinculadas a este proprietário B2B
-        // Removemos a trava de status "pending" para que você veja o que já foi aprovado ou recusado
+    try {
+        const uid = auth.currentUser.uid;
+        const subRef = collection(db, "mission_submissions");
+        
+        // 🛰️ BUSCA MESTRE: Tenta buscar pelo owner_id (DNA V2026)
         const q = query(
-            collection(db, "mission_submissions"),
-            where("owner_id", "==", auth.currentUser.uid),
+            subRef, 
+            where("owner_id", "==", uid),
             orderBy("created_at", "desc")
         );
-        const snap = await getDocs(q);
+        
+        let snap = await getDocs(q);
+
+        // 🩹 COMPATIBILIDADE: Se não achar nada, tenta pelo campo antigo b2b_owner_uid
+        if (snap.empty) {
+            const qLegacy = query(subRef, where("b2b_owner_uid", "==", uid), orderBy("created_at", "desc"));
+            snap = await getDocs(qLegacy);
+        }
 
         if (snap.empty) {
             container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Nenhuma evidência para auditar.</p>`;
