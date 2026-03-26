@@ -890,16 +890,19 @@ window.filtrarGanhos = async (periodo) => {
         }
 
          // 🏠 Sincroniza o Card da Home (Se estiver visível)
+       // 🏠 Sincroniza o Card da Home (Se estiver visível)
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
             elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
-         } 
-       }     
-    } catch (e) { // O navegador estava reclamando aqui porque o 'try' lá de cima não foi fechado com }
+        }
+
+        // 🛡️ FIM DO BLOCO DE PROCESSAMENTO (SOMA E FILTRO)
+    } catch (e) { 
+        // 🚨 CAPTURA DE FALHAS: Se o banco de dados falhar, o gráfico não quebra o app
         console.error("Erro ao filtrar ganhos:", e);
         if (elEarnings) elEarnings.innerText = "0,00";
     }
-}; // Esse fecha a função window.filtrarGanhos
+}; // 🔐 FECHAMENTO DA FUNÇÃO filtrarGanhos
 
 /**
  * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
