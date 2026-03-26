@@ -663,24 +663,14 @@ async function aprovarMissao(docId, userId, valor) {
             });
             alert("✅ Pago automaticamente em ATLIX!");
 
-      (function roboPericiaAdminMissions() {
-    const corpo = window.aprovarMissao ? window.aprovarMissao.toString() : "";
-    const cofreCorreto = corpo.includes('sys_finance') && corpo.includes('stats') && corpo.includes('total_revenue');
-    const dnaMoedaCorreto = corpo.includes('moeda: "ATLIX"') && corpo.includes('🎯 MISSÃO_REAL');
-
-    if (cofreCorreto && dnaMoedaCorreto) {
-        console.log("%c✅ SOLDAGEM ADMIN: O motor de lucro agora aponta para o balde 'stats' e as etiquetas estão separadas!", "color: #10b981; font-weight: bold;");
-    } else {
-        console.error("❌ FALHA DE SINCRONIA: O Admin ainda aponta para o lugar errado ou usa etiquetas antigas.");
-    }
-})();
+     // 📝 Registro de notificação padrão
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
                 read: false, type: 'success', created_at: serverTimestamp()
             });
 
-            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da Atlivio foi computado.");
+            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da plataforma foi computado.");
         }
 
         // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
