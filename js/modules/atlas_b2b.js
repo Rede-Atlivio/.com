@@ -231,19 +231,22 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
-            if (data.pay_type === 'atlix') {
-                transaction.update(userRef, { 
-                    wallet_bonus: increment(data.reward),
-                    updated_at: serverTimestamp()
-                });
-                // Marca como pago totalmente
-                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
-            } else {
-                // 3. Se for REAL, move para a fila de PIX do Admin
-                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
-            }
-        });
+            // 2. ⚡ LIQUIDAÇÃO DIGITAL DIRETA: Transfere o crédito para o saldo do usuário
+            // Gil, não existe mais fila de espera. O sistema identifica o balde (Real ou Bônus) e paga na hora.
+            const campoDestino = (data.pay_type === 'real') ? 'wallet_balance' : 'wallet_bonus';
+            const statusPagamento = (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix';
+
+            transaction.update(userRef, { 
+                [campoDestino]: increment(data.reward),
+                updated_at: serverTimestamp()
+            });
+
+            // 3. 📝 FINALIZAÇÃO: Marca a prova como liquidada digitalmente
+            transaction.update(subRef, { 
+                status: statusPagamento, 
+                paid_at: serverTimestamp(),
+                liquidacao_tipo: 'interna_digital'
+            });
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
