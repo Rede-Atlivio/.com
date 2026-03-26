@@ -146,21 +146,39 @@ window.carregarAuditoriaB2B = async () => {
         }
 
         container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
-        snap.forEach(d => {
+       snap.forEach(d => {
             const m = d.data();
+            
+            // 🚥 MAPEAMENTO DE STATUS PARA O USUÁRIO FINAL B2B
+            const statusInfo = {
+                'pending': { label: 'Aguardando sua Análise', css: 'bg-amber-100 text-amber-600' },
+                'approved_pending_pix': { label: 'Aprovada (Na fila do Admin)', css: 'bg-blue-100 text-blue-600' },
+                'paid_real': { label: 'Liquidada ✅', css: 'bg-emerald-100 text-emerald-600' },
+                'paid_atlix': { label: 'Liquidada (Atlix) ✅', css: 'bg-emerald-100 text-emerald-600' },
+                'b2b_rejected': { label: 'Rejeitada por Você', css: 'bg-red-100 text-red-600' }
+            };
+            const st = statusInfo[m.status] || { label: m.status, css: 'bg-gray-100 text-gray-500' };
+
             document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
                     <div class="flex justify-between items-center">
                         <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title}</h4>
-                        <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${m.gps_status === 'match' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                            ${m.gps_status === 'match' ? 'GPS OK' : 'GPS SUSPEITO'}
+                        <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${st.css}">
+                            ● ${st.label}
                         </span>
                     </div>
                     <img src="${m.proof_url}" class="w-full h-48 object-cover rounded-[2rem] border border-gray-100">
-                    <div class="flex gap-2">
-                        <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase">Reprovar</button>
-                        <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200">Aprovar e Pagar</button>
-                    </div>
+                    
+                    ${m.status === 'pending' ? `
+                        <div class="flex gap-2">
+                            <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase">Reprovar</button>
+                            <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200">Aprovar e Pagar</button>
+                        </div>
+                    ` : `
+                        <div class="text-center p-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                             <p class="text-[8px] font-black text-slate-400 uppercase italic">Ação concluída em: ${m.paid_at?.toDate().toLocaleDateString() || m.approved_at?.toDate().toLocaleDateString() || 'Processado'}</p>
+                        </div>
+                    `}
                 </div>
             `;
         });
