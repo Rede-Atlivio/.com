@@ -609,135 +609,56 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💰 V2026.PRO: Motor de Aprovação Híbrido (ATLIX Automático vs REAL na Fila)
+// 💰 MOTOR DE LIQUIDAÇÃO UNIFICADO ATLIVIO V2026
+// Esta função faz exatamente o que o B2B faz: Liquida o digital e computa o lucro.
 async function aprovarMissao(docId, userId, valor) {
-    // Primeiro, recuperamos os dados da submissão para saber o pay_type
     try {
-        const subSnap = await getDoc(doc(window.db, "mission_submissions", docId));
+        const subRef = doc(window.db, "mission_submissions", docId);
+        const subSnap = await getDoc(subRef);
         if (!subSnap.exists()) return alert("Erro: Envio não encontrado.");
-        const subData = subSnap.data();
-        const tipoMoeda = subData.pay_type || 'atlix'; // Padrão é ATLIX se estiver vazio
+        const data = subSnap.data();
 
-        if(!confirm(`Aprovar missão de R$ ${valor} (${tipoMoeda.toUpperCase()})?`)) return;
+        if(!confirm(`Confirmar PAGAMENTO ATLIX de R$ ${valor}?`)) return;
 
-      if (tipoMoeda === 'atlix') {
-            // 🛡️ LIQUIDAÇÃO ATLIX V2026: Paga usuário, Baixa reserva e Extrai Lucro Gil
-            await runTransaction(window.db, async (transaction) => {
-                const userRef = doc(window.db, "usuarios", userId);
-                const subRef = doc(window.db, "mission_submissions", docId);
-                const cofreRef = doc(window.db, "sys_finance", "receita_total");
-                
-                // 1. Identifica o valor unitário reservado (Recompensa + Sua Taxa)
-                // Usamos o campo 'total_with_fee' que salvamos na criação
-                const valorTotalReservado = subData.unit_total_with_fee || valor; 
-                const suaTaxaLucro = valorTotalReservado - valor;
+        await runTransaction(window.db, async (transaction) => {
+            const userRef = doc(window.db, "usuarios", userId);
+            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid || data.owner_id);
+            const statsRef = doc(window.db, "sys_finance", "stats");
 
-                // 2. Se for B2B, limpa a custódia da empresa
-                if (subData.b2b_owner_uid) {
-                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
-                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
-                }
+            // 1. Identifica o valor TOTAL que foi preso (Recompensa + Taxa)
+            const valorTotalReservado = data.unit_total_with_fee || valor; 
+            const lucroAtlivio = valorTotalReservado - valor;
 
-                // 📊 CONTABILIDADE DE TAXAS B2B (ISOLADO DO CAIXA REAL)
-                // 📊 BALDE DE TAXAS CENTRALIZADO (ATLIVIO STATS)
-                if (suaTaxaLucro > 0) {
-                    const statsRef = doc(window.db, "sys_finance", "stats");
-                    transaction.update(statsRef, { 
-                        total_revenue: increment(suaTaxaLucro),
-                        ultima_atualizacao: serverTimestamp() 
-                    });
-                }
+            // 2. Tira da CUSTÓDIA do B2B
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-valorTotalReservado) 
+            });
 
-                // 4. Deposita os ATLIX na carteira do explorador
-                transaction.update(userRef, { 
-                    wallet_bonus: increment(valor), 
-                    updated_at: serverTimestamp() 
+            // 3. Paga o PRESTADOR (Direto no Balance - Saldo Real)
+            transaction.update(userRef, { 
+                wallet_balance: increment(valor), 
+                updated_at: serverTimestamp() 
+            });
+
+            // 4. Envia a TAXA para a ATLIVIO (Total Revenue)
+            if (lucroAtlivio > 0) {
+                transaction.update(statsRef, { 
+                    total_revenue: increment(lucroAtlivio),
+                    ultima_atualizacao: serverTimestamp() 
                 });
+            }
 
-                // 5. Marca como finalizado
-                transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
+            // 5. Finaliza o Documento
+            transaction.update(subRef, { 
+                status: 'paid_real', 
+                paid_at: serverTimestamp(),
+                liquidacao_tipo: 'digital_direta_admin'
             });
+        });
 
-           // 📝 Registro no Extrato Financeiro: Força DNA 'ATLIX' para isolar do gráfico de reais
-            await addDoc(collection(window.db, "extrato_financeiro"), {
-                uid: userId,
-                valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_ATLIX", // Tag exclusiva reconhecida pelo novo Wallet.js
-                descricao: `Ganho digital: ${subData.mission_title}`,
-                timestamp: serverTimestamp(),
-                moeda: "ATLIX" 
-            });
-
-            await addDoc(collection(window.db, "notifications"), {
-                uid: userId, 
-                message: `💰 Missão Aprovada! R$ ${valor} em bônus ATLIX creditados.`, 
-                read: false, type: 'success', created_at: serverTimestamp()
-            });
-            alert("✅ Pago automaticamente em ATLIX!");
-
-      } else {
-            // --- FLUXO B: LIQUIDAÇÃO EM SALDO DE CARTEIRA (CARIMBO REAL) ---
-            // Gil, esse motor transfere o valor "preso" na empresa direto para o saldo sacável do usuário.
-            await runTransaction(window.db, async (transaction) => {
-                const userRef = doc(window.db, "usuarios", userId);
-                const subRef = doc(window.db, "mission_submissions", docId);
-                const statsRef = doc(window.db, "sys_finance", "stats");
-
-                const valorTotalReservado = subData.unit_total_with_fee || valor; 
-                const lucroAtlivio = valorTotalReservado - valor;
-
-                if (subData.b2b_owner_uid) {
-                    const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
-                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
-                }
-
-                if (lucroAtlivio > 0) {
-                    transaction.update(statsRef, { 
-                        total_revenue: increment(lucroAtlivio),
-                        ultima_atualizacao: serverTimestamp() 
-                    });
-                }
-
-                // CREDITAR USUÁRIO: Cai no Saldo Real (Balance)
-                transaction.update(userRef, { 
-                    wallet_balance: increment(valor), 
-                    updated_at: serverTimestamp() 
-                });
-
-                // FINALIZAÇÃO DIGITAL
-                transaction.update(subRef, { 
-                    status: 'paid_real', 
-                    paid_at: serverTimestamp(),
-                    liquidacao_tipo: 'interna_digital_instantanea'
-                });
-            });
-
-            // 📝 Registro no Extrato: Usamos a tag '🎯 MISSÃO_REAL'
-            // Isso impede que o valor entre no gráfico de 'Ganhos em Reais' (Chat) do Wallet.js
-            await addDoc(collection(window.db, "extrato_financeiro"), {
-                uid: userId,
-                valor: parseFloat(valor),
-                tipo: "🎯 CRÉDITO_MISSÃO",
-                descricao: `Remuneração: ${subData.mission_title}`,
-                timestamp: serverTimestamp(),
-                moeda: "ATLIX" 
-            });
-            await addDoc(collection(window.db, "notifications"), {
-                uid: userId, 
-                message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
-                read: false, type: 'success', created_at: serverTimestamp()
-            });
-
-            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da Atlivio foi computado.");
-        }
-
-        // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
+        alert("✅ PAGAMENTO REALIZADO: Crédito enviado ao prestador e taxa computada.");
         loadSubmissions();
-
-    } catch(e) {
-        console.error("Erro na Aprovação:", e);
-        alert("❌ Falha técnica: " + e.message);
-    }
+    } catch(e) { alert("Erro na aprovação: " + e.message); }
 }
 
 async function rejeitarMissao(docId) {
