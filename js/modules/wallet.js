@@ -899,12 +899,7 @@ window.filtrarGanhos = async (periodo) => {
         if (elEarnings) elEarnings.innerText = "0,00";
     }
 }; // Esse fecha a função window.filtrarGanhos
-};
 
-/**
- * 🔍 EXTRATO INTELIGENTE V2026
- * Abre um modal com a auditoria detalhada de ganhos e saques.
- */
 /**
  * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
  * Separa os ganhos reais dos ganhos em bônus e rastreia saques.
