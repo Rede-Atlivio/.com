@@ -661,10 +661,37 @@ async function aprovarMissao(docId, userId, valor) {
     } catch(e) { alert("Erro na aprovação: " + e.message); }
 }
 
+// ⛔ MOTOR DE RECUSA ESTRUTURAL
+// Não mexe no dinheiro (fica na custódia) mas devolve a vaga ao radar global.
 async function rejeitarMissao(docId) {
-    if(!confirm("Rejeitar esta missão?")) return;
-    await updateDoc(doc(window.db, "mission_submissions", docId), { status: 'rejected', rejected_at: serverTimestamp() });
-    loadSubmissions();
+    if(!confirm("REJEITAR PROVA? \n\nO prestador não será pago, o dinheiro continua na custódia e a VAGA VOLTARÁ ao radar.")) return;
+
+    try {
+        const subRef = doc(window.db, "mission_submissions", docId);
+        const subSnap = await getDoc(subRef);
+        const data = subSnap.data();
+        const missionId = data.mission_id;
+
+        await runTransaction(window.db, async (transaction) => {
+            const missionRef = doc(window.db, "missions", missionId);
+            
+            // 1. Marca a prova como REJEITADA
+            transaction.update(subRef, { 
+                status: 'rejected', 
+                rejected_at: serverTimestamp() 
+            });
+
+            // 2. DEVOLVE A VAGA: Aumenta disponível e diminui quem está realizando
+            transaction.update(missionRef, {
+                slots_disponiveis: increment(1),
+                pessoas_realizando: increment(-1),
+                updated_at: serverTimestamp()
+            });
+        });
+
+        alert("❌ PROVA REJEITADA: A vaga foi devolvida ao radar com sucesso.");
+        loadSubmissions();
+    } catch(e) { alert("Erro ao rejeitar: " + e.message); }
 }
 
 // 🔨 MARTELO DO ADMIN: O B2B recusou, mas você achou que a prova é válida
