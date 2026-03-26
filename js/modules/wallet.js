@@ -849,17 +849,14 @@ window.filtrarGanhos = async (periodo) => {
             const tipo = t.tipo || "";
             const valor = parseFloat(t.valor || 0);
 
-          if (valor > 0) {
-                // 🧬 DNA FINANCEIRO ATLIVIO: Separação rigorosa de Missões e Chat
+           if (valor > 0) {
+                // 🧬 REGRA MASTER: Prioridade para o DNA da moeda gravado no documento
                 const moedaDoBanco = t.moeda || ""; 
-                const etiqueta = tipo.toUpperCase();
 
-                // Se a etiqueta contiver MISSÃO ou a moeda for ATLIX, vai para o balde de bônus
-                if (moedaDoBanco === 'ATLIX' || etiqueta.includes('MISSÃO')) {
-                    somaAX += valor; 
+                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO')) {
+                    somaAX += valor; // 🪙 Cai no balde de Bônus (Dourado)
                 } else {
-                    // Só entra como Ganhos em Reais o que NÃO for missão (Serviços/Mão de Obra)
-                    somaReal += valor; 
+                    somaReal += valor; // 💰 Cai no balde de Real (Verde)
                 }
             }
         });
