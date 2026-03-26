@@ -707,16 +707,16 @@ async function aprovarMissao(docId, userId, valor) {
                 });
             });
 
-            // 📝 Registro no Extrato Financeiro do Usuário para transparência
+            // 📝 Registro no Extrato: Usamos a tag '🎯 MISSÃO_REAL'
+            // Isso impede que o valor entre no gráfico de 'Ganhos em Reais' (Chat) do Wallet.js
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_APROVADA",
-                descricao: `Crédito recebido por: ${subData.mission_title}`,
+                tipo: "🎯 MISSÃO_REAL",
+                descricao: `Remuneração: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "BRL" // DNA de dinheiro real
+                moeda: "BRL" 
             });
-
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
                 message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
