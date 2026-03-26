@@ -892,8 +892,8 @@ window.filtrarGanhos = async (periodo) => {
         // 🏠 Sincroniza o Card da Home (Se estiver visível)
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
-            elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
-       }
+           elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
+        } // Esse fecha o if(elHome)
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
         elEarnings.innerText = "0,00";
