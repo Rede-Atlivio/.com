@@ -135,9 +135,17 @@ async function switchMissionTab(tab) {
     const btnAdd = document.getElementById('btn-list-add');
     const header = document.getElementById('list-header');
 
-    if(tab === 'missions') {
-        if(btnAdd) { btnAdd.style.display = 'block'; btnAdd.innerHTML = "+ NOVA MISSÃO"; btnAdd.onclick = () => abrirCriadorMissaoAtlas(); }
-        header.innerHTML = `<th class="p-3">TÍTULO</th><th class="p-3">TIPO</th><th class="p-3">VALOR</th><th class="p-3 text-right">AÇÕES</th>`;
+   if(tab === 'missions') {
+        if(btnAdd) { 
+            btnAdd.style.display = 'block'; 
+            btnAdd.innerHTML = "+ NOVA MISSÃO"; 
+            btnAdd.onclick = () => window.abrirCriadorMissaoAtlas(); 
+        }
+        header.innerHTML = `
+            <th class="p-3 text-[9px] uppercase">Título</th>
+            <th class="p-3 text-[9px] uppercase">Tipo</th>
+            <th class="p-3 text-[9px] uppercase">Recompensa</th>
+            <th class="p-3 text-right text-[9px] uppercase">Gestão</th>`;
         await loadMissionsManagement();
     } else if(tab === 'b2b_pendente') {
         // 🤝 ABA B2B: Oculta o botão de criar (pois aqui você só aprova o que os outros criaram)
