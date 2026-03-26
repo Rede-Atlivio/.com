@@ -668,33 +668,62 @@ async function aprovarMissao(docId, userId, valor) {
             alert("✅ Pago automaticamente em ATLIX!");
 
        } else {
-            // --- FLUXO B: PAGAMENTO EM REAL (EXTERMÍNIO DE TAXA + FILA PIX) ---
+            // --- FLUXO B: LIQUIDAÇÃO DIGITAL EM SALDO REAL (SEM FILA DE PIX) ---
+            // Este motor transfere o valor da reserva da empresa diretamente para o saldo do usuário.
             await runTransaction(window.db, async (transaction) => {
-                const subRef = doc(window.db, "mission_submissions", docId);
+                const userRef = doc(window.db, "usuarios", userId); // Carteira do prestador
+                const subRef = doc(window.db, "mission_submissions", docId); // Registro da prova
+                const statsRef = doc(window.db, "sys_finance", "stats"); // Balde de lucro Atlivio
 
-                // ✂️ EXTERMÍNIO: Se for B2B, limpamos o valor TOTAL (Taxa + Recompensa) da reserva.
-                // A Atlivio já lucrou na recarga, então aqui apenas removemos a custódia.
-                if (subData.b2b_owner_uid && subData.total_with_fee) {
+                // 1. Identifica o custo total da vaga (Recompensa + Taxa Atlivio)
+                const valorTotalReservado = subData.unit_total_with_fee || valor; 
+                const lucroAtlivio = valorTotalReservado - valor;
+
+                // 2. Se for B2B, baixa o valor total que estava 'preso' na reserva da empresa
+                if (subData.b2b_owner_uid) {
                     const b2bRef = doc(window.db, "usuarios", subData.b2b_owner_uid);
-                    transaction.update(b2bRef, { wallet_reserved: increment(-subData.total_with_fee) });
+                    transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
                 }
 
-                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
+                // 3. 🛡️ LUCRO REAL: Incrementa o faturamento da plataforma em tempo real
+                if (lucroAtlivio > 0) {
+                    transaction.update(statsRef, { 
+                        total_revenue: increment(lucroAtlivio),
+                        ultima_atualizacao: serverTimestamp() 
+                    });
+                }
+
+                // 4. CREDITAR PRESTADOR: O dinheiro cai no wallet_balance (Saldo Real)
+                transaction.update(userRef, { 
+                    wallet_balance: increment(valor), 
+                    updated_at: serverTimestamp() 
+                });
+
+                // 5. FINALIZAÇÃO: Marca como pago internamente e registra o DNA digital
+                transaction.update(subRef, { 
+                    status: 'paid_real', 
+                    paid_at: serverTimestamp(),
+                    liquidacao_tipo: 'admin_digital'
+                });
+            });
+
+            // 📝 Registro no Extrato Financeiro do Usuário para transparência
+            await addDoc(collection(window.db, "extrato_financeiro"), {
+                uid: userId,
+                valor: parseFloat(valor),
+                tipo: "💰 MISSÃO_APROVADA",
+                descricao: `Crédito recebido por: ${subData.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "BRL" // DNA de dinheiro real
             });
 
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
-                message: `✅ Sua missão de R$ ${valor} foi aprovada! O pagamento via PIX será realizado em breve.`, 
-                read: false, type: 'info', created_at: serverTimestamp()
+                message: `✅ Sua missão foi aprovada! R$ ${valor} foram creditados no seu saldo disponível.`, 
+                read: false, type: 'success', created_at: serverTimestamp()
             });
 
-            // Gil, aqui damos o "toque" no Dashboard: Se a função de recarregar o Assistant existir, chamamos ela
-            if (window.initDashboard) {
-                console.log("🔔 Missões: Notificando Dashboard sobre novo PIX...");
-                window.initDashboard(); 
-            }
-
-            alert("⚠️ Aprovada! O pagamento em REAL foi enviado para sua fila de PIX no Dashboard.");
+            alert("✅ SUCESSO: O pagamento foi liquidado digitalmente e o lucro da Atlivio foi computado.");
         }
 
         // Recarrega a lista de envios para sumir o botão de aprovação que já foi clicado
