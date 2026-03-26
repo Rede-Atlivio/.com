@@ -200,7 +200,7 @@ window.filterFinanceList = () => {
                         <p class="text-xs font-black text-purple-400">${balBonus.toFixed(2)}</p>
                     </div>
                     <div class="bg-black/20 p-2 rounded border border-white/5 text-center">
-                        <p class="text-[7px] text-gray-500 font-bold uppercase">Lock (Cust)</p>
+                        <p class="text-[7px] text-gray-500 font-bold uppercase">Custódia</p>
                         <p class="text-xs font-black text-amber-400">${balReserved.toFixed(2)}</p>
                     </div>
                 </div>
