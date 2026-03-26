@@ -195,7 +195,11 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             });
        });
 
-        // 🛰️ Vaga garantida. Iniciando Sentinela de 20min para evitar reserva infinita.
+        // 🛰️ Vaga garantida. O sistema agora prepara a interface de captura.
+        localStorage.setItem(`fazendo_${id}`, "true");
+        window.iniciarCronometroDesistencia(id);
+
+       // 🛰️ Marcador de Execução: Impede que a vaga fique presa se o app fechar
         localStorage.setItem(`fazendo_${id}`, "true");
         window.iniciarCronometroDesistencia(id);
 
