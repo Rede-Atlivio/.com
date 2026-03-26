@@ -849,17 +849,20 @@ window.filtrarGanhos = async (periodo) => {
             const tipo = t.tipo || "";
             const valor = parseFloat(t.valor || 0);
 
-           if (valor > 0) {
-                // 🧬 REGRA MASTER: Prioridade para o DNA da moeda gravado no documento
+          if (valor > 0) {
+                // 🧬 DNA FINANCEIRO ATLIVIO: Lógica de separação para gráfico limpo
                 const moedaDoBanco = t.moeda || ""; 
+                const etiqueta = (t.tipo || "").toUpperCase(); // Lê o recibo em letras grandes
 
-                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO')) {
-                    somaAX += valor; // 🪙 Cai no balde de Bônus (Dourado)
+                // Se o recibo diz "MISSÃO" (não importa se é real ou atlix) vai para o balde de missões
+                // Isso impede que o prêmio da microtarefa suje o gráfico de faturamento de Chat
+                if (moedaDoBanco === 'ATLIX' || etiqueta.includes('MISSÃO')) {
+                    somaAX += valor; // 🪙 Balde de Missões/Digital
                 } else {
-                    somaReal += valor; // 💰 Cai no balde de Real (Verde)
+                    // Se NÃO é missão, então é faturamento real de prestação de serviço (Chat)
+                    somaReal += valor; // 💰 Balde de Chat/Trabalho Real
                 }
             }
-        });
 
      // 💰 V2026.ULTRA: Sincronização de Ganhos com Interface Unificada
         if (periodo === 'hoje') window.ultimoSaldoGanhosCalculado = somaReal;
