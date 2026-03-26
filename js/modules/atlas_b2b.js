@@ -225,41 +225,25 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-           // 1. Libera a reserva TOTAL (Prêmio do usuário + Taxa da Atlivio)
-            // Gil, usamos o 'unit_total_with_fee' para limpar a reserva por completo
-            const valorParaLimpar = data.unit_total_with_fee || data.reward;
+            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
             transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorParaLimpar),
+                wallet_reserved: increment(-data.reward),
                 updated_at: serverTimestamp()
             });
 
-           // 2. ⚡ LIQUIDAÇÃO DIGITAL: Transfere o valor líquido para o prestador
-            // Identifica se cai no saldo real ou bônus (Atlix)
-            const campoSaldo = (data.pay_type === 'real') ? 'wallet_balance' : 'wallet_bonus';
-            
-            transaction.update(userRef, { 
-                [campoSaldo]: increment(data.reward),
-                updated_at: serverTimestamp()
-            });
-
-           // 3. 🛡️ LUCRO DA PLATAFORMA: Transfere a taxa para o balde central 'stats'
-            const taxaIntermediacao = (data.total_with_fee || 0) - (data.reward || 0);
-            if (taxaIntermediacao > 0) {
-                // Gil, mudamos para o endereço oficial que o Dashboard lê: sys_finance -> stats
-                const statsRef = doc(db, "sys_finance", "stats");
-                transaction.update(statsRef, { 
-                    total_revenue: increment(taxaIntermediacao),
-                    ultima_atualizacao: serverTimestamp() 
+            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
+            if (data.pay_type === 'atlix') {
+                transaction.update(userRef, { 
+                    wallet_bonus: increment(data.reward),
+                    updated_at: serverTimestamp()
                 });
+                // Marca como pago totalmente
+                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
+            } else {
+                // 3. Se for REAL, move para a fila de PIX do Admin
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
             }
-
-            // 4. FINALIZAÇÃO: Marca como pago internamente (Sem fila de PIX)
-            transaction.update(subRef, { 
-                status: (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix', 
-                paid_at: serverTimestamp(),
-               liquidacao_tipo: 'interna_digital'
-            }); // Esse fecha a transação
-        }); // Esse fecha o runTransaction
+        });
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
