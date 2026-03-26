@@ -650,14 +650,14 @@ async function aprovarMissao(docId, userId, valor) {
                 transaction.update(subRef, { status: 'approved', paid_at: serverTimestamp() });
             });
 
-            // 📝 Registro no Extrato Financeiro com DNA ATLIX
+           // 📝 Registro no Extrato Financeiro: Força DNA 'ATLIX' para isolar do gráfico de reais
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "💰 MISSÃO_CONCLUÍDA",
-                descricao: `Você ganhou por: ${subData.mission_title}`,
+                tipo: "💰 MISSÃO_ATLIX", // Tag exclusiva reconhecida pelo novo Wallet.js
+                descricao: `Ganho digital: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "ATLIX" // 🚀 O Carimbo de Moeda Bônus
+                moeda: "ATLIX" 
             });
 
             await addDoc(collection(window.db, "notifications"), {
