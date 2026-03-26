@@ -889,16 +889,17 @@ window.filtrarGanhos = async (periodo) => {
                                 periodo === 'total' ? "Ganhos Totais" : `Ganhos ${periodo} dias`;
         }
 
-        // 🏠 Sincroniza o Card da Home (Se estiver visível)
+         // 🏠 Sincroniza o Card da Home (Se estiver visível)
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
-           elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
-        } // Esse fecha o if(elHome)
-    } catch (e) {
+            elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
+        } 
+    } catch (e) { // O navegador estava reclamando aqui porque o 'try' lá de cima não foi fechado com }
         console.error("Erro ao filtrar ganhos:", e);
-        elEarnings.innerText = "0,00";
+        if (elEarnings) elEarnings.innerText = "0,00";
     }
-};
+}; // Esse fecha a função window.filtrarGanhos
+
 
 /**
  * 🔍 EXTRATO INTELIGENTE V2026
