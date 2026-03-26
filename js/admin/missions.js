@@ -712,10 +712,10 @@ async function aprovarMissao(docId, userId, valor) {
             await addDoc(collection(window.db, "extrato_financeiro"), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "🎯 MISSÃO_REAL",
+                tipo: "🎯 CRÉDITO_MISSÃO",
                 descricao: `Remuneração: ${subData.mission_title}`,
                 timestamp: serverTimestamp(),
-                moeda: "BRL" 
+                moeda: "ATLIX" 
             });
             await addDoc(collection(window.db, "notifications"), {
                 uid: userId, 
