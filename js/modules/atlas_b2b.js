@@ -109,7 +109,7 @@ if (m.status === 'active') {
                     <div class="flex justify-between items-center pt-2 border-t border-gray-50 gap-2">
                         <div class="flex flex-col">
                             <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
-                            <span class="text-[7px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
+                            <span class="text-[7px] font-black text-blue-500 uppercase italic tracking-tighter">Liquidado em Carteira</span>
                         </div>
                        ${(m.status === 'active' || m.status === 'pending_b2b') ? `
                             <button onclick="window.encerrarMissaoB2BComEstorno('${doc.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border border-red-100">
