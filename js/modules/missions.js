@@ -269,16 +269,22 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
+       reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
-            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
+            
+            // 🛡️ NOVO SENSOR DE DNA: Busca na missão original para garantir que o dono nunca seja vazio
+            let donoFinal = b2bOwnerId;
+            if(!donoFinal || donoFinal === "" || donoFinal === "undefined") {
+                const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const mSnap = await getDoc(doc(db, "missions", id));
+                donoFinal = mSnap.exists() ? mSnap.data().owner_id : "";
+            }
 
             // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
-                b2b_owner_uid: donoFinal, 
+                owner_id: donoFinal, // UID da empresa para Auditoria
+                b2b_owner_uid: donoFinal, // UID da empresa para Financeiro
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: tipoPagamento,
