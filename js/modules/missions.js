@@ -370,10 +370,10 @@ async function carregarMissoesRealizadas() {
             container.innerHTML = "";
             snap.forEach(doc => {
                 const m = doc.data();
-                const statusMap = {
+               const statusMap = {
                     'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
-                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
-                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'paid_real': { txt: 'CRÉDITO LIBERADO ✅', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'paid_atlix': { txt: 'BÔNUS LIBERADO 🎁', css: 'text-emerald-500 bg-emerald-500/10' },
                     'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
                 };
                 const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
