@@ -899,7 +899,7 @@ window.filtrarGanhos = async (periodo) => {
         if (elEarnings) elEarnings.innerText = "0,00";
     }
 }; // Esse fecha a função window.filtrarGanhos
-
+};
 
 /**
  * 🔍 EXTRATO INTELIGENTE V2026
