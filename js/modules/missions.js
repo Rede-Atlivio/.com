@@ -280,13 +280,19 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 donoFinal = mSnap.exists() ? mSnap.data().owner_id : "";
             }
 
-            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
+           // 🛡️ BUSCA DE DADOS MESTRE: Recupera os valores de taxa da missão original para o Revenue
+            const mSnapParaHistorico = await getDoc(doc(db, "missions", id));
+            const mDataFin = mSnapParaHistorico.exists() ? mSnapParaHistorico.data() : {};
+
+            // 🚀 GRAVAÇÃO COM DNA FINANCEIRO COMPLETO ATLIVIO
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, // UID da empresa para Auditoria
-                b2b_owner_uid: donoFinal, // UID da empresa para Financeiro
+                owner_id: donoFinal, 
+                b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
                 reward: recompensa,
+                // Gil, injetamos o custo unitário com taxa para o Admin saber quanto enviar ao Revenue
+                unit_total_with_fee: mDataFin.unit_total_with_fee || recompensa,
                 pay_type: tipoPagamento,
                 user_id: auth.currentUser.uid,
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
