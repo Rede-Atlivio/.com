@@ -275,36 +275,29 @@ export function iniciarMonitoramentoCarteira() {
             const powerCalculado = sReal + sBonus;
 
          // 🚀 MAESTRO SENSORIAL V2026.5: Sensor Híbrido (Detecta PIX e BÔNUS)
-// 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
-if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
-    const diferenca = sReal - window.ultimoSaldoConhecido;
-    const frozenAtual = parseFloat(data.wallet_frozen || 0);
-    const reservedAtual = parseFloat(data.wallet_reserved || 0); // Captura a reserva atual para o cálculo
-    const variacaoReserva = (window.ultimaReservaConhecida || 0) - reservedAtual; // Calcula se saiu dinheiro da reserva
-    const isEstornoInterno = Math.abs((sReal - window.ultimoSaldoConhecido) - variacaoReserva) < 0.1; // Define se é estorno ou PIX
-    const fv = window.firebaseModules; // Definido aqui para usar em ambos os blocos abaixo
-    
-    // 🛡️ REGRA DA ORIGEM: Só soma no SYS FINANCE se for recarga PIX real (externa)
-    if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
-        // 🏦 SYS FINANCE: Balde Bruto das Entradas Externas
-        await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
-            total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
-            ultima_atualizacao: fv.serverTimestamp() 
-        });
-        
-        window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
-    }
+            // 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
+            if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
+                const diferenca = sReal - window.ultimoSaldoConhecido;
+                const frozenAtual = parseFloat(data.wallet_frozen || 0);
 
-    // 🛡️ REGRA DO FROZEN: Se houver saldo congelado, resgata para o balance
-    if (frozenAtual > 0) {
-        await fv.updateDoc(fv.doc(db, "usuarios", uid), {
-            wallet_balance: fv.increment(frozenAtual),
-            wallet_frozen: 0,
-            updated_at: fv.serverTimestamp()
-        });
-        window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
-    }
-}
+                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
+                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+                    const fv = window.firebaseModules;
+                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
+
+                    if (frozenAtual > 0) {
+                        const fv = window.firebaseModules;
+                        await fv.updateDoc(fv.doc(db, "usuarios", uid), {
+                            wallet_balance: fv.increment(frozenAtual),
+                            wallet_frozen: 0,
+                            updated_at: fv.serverTimestamp()
+                        });
+                        window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
+                    }
+                    window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
+                }
+            }
 
             // 2. SENSOR DE BÔNUS (Novo: Detecta se o Admin ou Boas-vindas deu dinheiro)
             if (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido) {
@@ -849,12 +842,10 @@ window.filtrarGanhos = async (periodo) => {
                 // 🧬 REGRA MASTER: Prioridade para o DNA da moeda gravado no documento
                 const moedaDoBanco = t.moeda || ""; 
 
-               // 🧬 REGRA MASTER V2026: Filtra por Moeda, Ícone de Bônus ou Tag de Missão
-                // Gil, incluímos o '🎯' aqui para que os ganhos de missão NUNCA sujem seu gráfico de Chat Real.
-                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO') || tipo.includes('🎯')) {
-                    somaAX += valor; // 🪙 Balde de Missões/Digital (Lado Direito)
+                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO')) {
+                    somaAX += valor; // 🪙 Cai no balde de Bônus (Dourado)
                 } else {
-                    somaReal += valor; // 💰 Balde de Trabalho Real/Chat (Lado Esquerdo)
+                    somaReal += valor; // 💰 Cai no balde de Real (Verde)
                 }
             }
         });
@@ -1240,40 +1231,22 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
             return alert("Missão encerrada! Todas as vagas foram utilizadas.");
         }
 
-        // 🛡️ AJUSTE DE ESTORNO JUSTO: Reembolsa apenas o que SOBROU na custódia do usuário
-        // Não baseamos mais no cálculo de vagas, mas sim no que o B2B ainda tem "preso" para esta missão específica
+        // 💸 Cálculo do Reembolso: Valor Unitário (Com Taxa) x Vagas Restantes
         const valorUnitarioComTaxa = parseFloat(mData.unit_total_with_fee || 0);
         const valorTotalEstorno = parseFloat((valorUnitarioComTaxa * vagasRestantes).toFixed(2));
-        
-        // 🛡️ Proteção extra: O estorno nunca pode ser maior do que o que o usuário realmente tem na custódia
-        const saldoReservadoB2B = parseFloat(window.userProfile?.wallet_reserved || 0);
-        const valorFinalEstorno = Math.min(valorTotalEstorno, saldoReservadoB2B);
 
-        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nO valor de ${valorFinalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
+        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
             
-            // 📏 CÁLCULO DE RETENÇÃO: Devolve o prêmio ao B2B, a Atlivio liquida a taxa no faturamento
-            const premioPorVaga = parseFloat(mData.reward || 0);
-            const totalPremiosParaDevolver = parseFloat((premioPorVaga * vagasRestantes).toFixed(2));
-            const taxaParaAtlivio = parseFloat((valorFinalEstorno - totalPremiosParaDevolver).toFixed(2));
-
-            // 1. 🔄 REGRA DO ESTORNO: Esvazia a reserva TOTAL, mas devolve apenas o saldo das missões ao B2B
+            // 1. Devolve o dinheiro: Tira da Reserva e volta para o Saldo Real de Trabalho (Balance)
             transaction.update(userRef, {
-                wallet_reserved: fv.increment(-valorFinalEstorno), // Limpa o que estava preso
-                wallet_balance: fv.increment(totalPremiosParaDevolver), // Devolve o valor das missões
-                updated_at: fv.serverTimestamp()
+                wallet_reserved: increment(-valorTotalEstorno),
+                wallet_balance: increment(valorTotalEstorno),
+                updated_at: serverTimestamp()
             });
 
-            // 2. 💰 REGRA DA TAXA: A taxa das vagas canceladas vira lucro imediato (TOTAL REVENUE)
-            if (taxaParaAtlivio > 0) {
-                const statsRef = fv.doc(db, "sys_finance", "stats");
-                transaction.update(statsRef, { 
-                    total_revenue: fv.increment(taxaParaAtlivio),
-                    ultima_atualizacao: fv.serverTimestamp()
-                });
-            }
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
                 status: 'closed', 
