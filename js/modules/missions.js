@@ -284,26 +284,23 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.onloadend = async () => {
             const base64data = reader.result;
             
-            // 🏷️ FERRAMENTAS DE GRAVAÇÃO: Busca as chaves de acesso ao banco de dados
-            const { doc, getDoc, collection, addDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-            // 💰 VALIDAÇÃO FINANCEIRA: Verifica o valor da recompensa no momento exato do envio
+            // 💰 VALIDAÇÃO FINANCEIRA: Busca o valor oficial da vaga diretamente no banco de dados para evitar fraudes
             const mDoc = await getDoc(doc(db, "missions", id));
             const unitTotal = mDoc.exists() ? (mDoc.data().unit_total_with_fee || recompensa) : recompensa;
             
-            // 🔑 IDENTIFICAÇÃO DA EMPRESA: Localiza quem é o dono desta missão para garantir o seu lucro
+            // 🔑 IDENTIFICAÇÃO DA EMPRESA: Recupera o ID do dono através de múltiplas camadas de segurança
             const inputCam = document.getElementById('camera-input');
             const donoFinal = b2bOwnerId || inputCam.dataset.owner || localStorage.getItem(`owner_${id}`);
 
-            // 🛡️ FILTRO ANTI-ERRO: Impede o envio se o sistema perder a ligação com a empresa dona
+            // 🛡️ FILTRO ANTI-ERRO: Bloqueia o envio se a identidade da empresa estiver ausente (protege o fluxo financeiro)
             if (!donoFinal || donoFinal === "undefined" || donoFinal === "null") {
-                alert("Atenção: A conexão com a empresa expirou. Tente abrir a missão novamente.");
+                alert("Erro: Link com a empresa perdido. Reinicie a missão.");
                 btn.disabled = false;
                 btn.innerText = "Realizar Missão ➜";
                 return;
             }
 
-            // 📝 REGISTRO OFICIAL: Salva a prova da missão no banco de dados da Atlivio
+            // 📝 REGISTRO OFICIAL: Grava a prova final no banco de dados da Atlivio com DNA financeiro carimbado
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
                 owner_id: donoFinal,
