@@ -667,15 +667,25 @@ async function aprovarMissao(docId, userId, valor) {
                 });
             }
 
-            // 4. Registro no EXTRATO (DNA ATLIX - Separação de Ganhos)
-            const extratoRef = doc(collection(window.db, "extrato_financeiro"));
-            transaction.set(extratoRef, {
+            // 4. 📝 REGRA DA TRANSPARÊNCIA: Histórico imutável para os dois lados
+            // Crédito para o Prestador
+            transaction.set(doc(collection(window.db, "extrato_financeiro")), {
                 uid: userId,
                 valor: parseFloat(valor),
-                tipo: "🎯 MISSÃO_ATLIX", 
-                descricao: `Recompensa: ${data.mission_title}`,
-                timestamp: serverTimestamp(),
-                moeda: "ATLIX"
+                tipo: "🎯 MISSÃO_CONCLUÍDA",
+                descricao: `Recebido: ${data.mission_title}`,
+                moeda: "ATLIX",
+                timestamp: serverTimestamp()
+            });
+
+            // Débito total para o B2B (Missão + Taxa)
+            transaction.set(doc(collection(window.db, "extrato_financeiro")), {
+                uid: b2bId,
+                valor: -valorTotalReservado,
+                tipo: "💸 PAGAMENTO_MISSÃO",
+                descricao: `Taxa + Prêmio: ${data.mission_title}`,
+                moeda: "ATLIX",
+                timestamp: serverTimestamp()
             });
 
             // 5. Finaliza a prova
