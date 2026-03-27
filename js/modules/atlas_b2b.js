@@ -131,10 +131,11 @@ window.carregarAuditoriaB2B = async () => {
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
    try {
-        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
+        // ⚖️ FILTRO DE SEGURANÇA B2B: Só mostra provas das missões que ESTE B2B criou
+        // Gil, usamos 'b2b_owner_uid' para garantir que um empresário não veja a foto do outro.
         const q = query(
             collection(db, "mission_submissions"),
-            where("owner_id", "==", auth.currentUser.uid),
+            where("b2b_owner_uid", "==", auth.currentUser.uid),
             where("status", "==", "pending"),
             orderBy("created_at", "desc")
         );
