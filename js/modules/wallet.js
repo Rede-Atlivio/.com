@@ -913,12 +913,12 @@ window.filtrarGanhos = async (periodo) => {
  * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
  * Separa os ganhos reais dos ganhos em bônus e rastreia saques.
  */
-window.abrirRelatorioDetalhado = async () => {
+window.abrirRelatorioDetalhado = async (e) => { // Adicionado 'e' para capturar o evento de clique de forma segura
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🎨 Feedback Visual
-    const btnRef = event.currentTarget;
+    // 🎨 Feedback Visual de carregamento
+    const btnRef = e ? e.currentTarget : null; // Validação para não quebrar se for chamado sem evento
     const txtOriginal = btnRef.innerHTML;
     btnRef.innerText = "🔍 ANALISANDO...";
 
