@@ -609,8 +609,8 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💰 MOTOR DE LIQUIDAÇÃO UNIFICADO ATLIVIO V2026
-// Esta função faz exatamente o que o B2B faz: Liquida o digital e computa o lucro.
+// 💰 MOTOR DE LIQUIDAÇÃO ATLIX V2026.PRO
+// Gil, esse motor liquida a custódia, paga o usuário e alimenta seu cofre.
 async function aprovarMissao(docId, userId, valor) {
     try {
         const subRef = doc(window.db, "mission_submissions", docId);
@@ -618,70 +618,83 @@ async function aprovarMissao(docId, userId, valor) {
         if (!subSnap.exists()) return alert("Erro: Envio não encontrado.");
         const data = subSnap.data();
 
-        if(!confirm(`Confirmar PAGAMENTO ATLIX de R$ ${valor}?`)) return;
+        if(!confirm(`Confirmar PAGAMENTO ATLIX de ${valor}?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
             const userRef = doc(window.db, "usuarios", userId);
             const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid || data.owner_id);
             const statsRef = doc(window.db, "sys_finance", "stats");
 
-            // 1. Identifica o valor TOTAL que foi preso (Recompensa + Taxa)
+            // 📐 CÁLCULO DE PRECISÃO: Prêmio + Taxas
             const valorTotalReservado = data.unit_total_with_fee || valor; 
-            const lucroAtlivio = valorTotalReservado - valor;
+            const taxaAtlivio = valorTotalReservado - valor;
 
-            // 2. Tira da CUSTÓDIA do B2B
+            const b2bSnap = await transaction.get(b2bRef);
+            const custodiaAtual = b2bSnap.data().wallet_reserved || 0;
+
+            // 🛡️ TRAVA ANTI-NEGATIVO
+            if (custodiaAtual < valorTotalReservado) {
+                throw "CUSTÓDIA INSUFICIENTE: A empresa não tem saldo preso para este pagamento.";
+            }
+
+            // 1. Baixa na CUSTÓDIA do B2B
             transaction.update(b2bRef, { 
                 wallet_reserved: increment(-valorTotalReservado) 
             });
 
-            // 3. Paga o PRESTADOR (Direto no Balance - Saldo Real)
+            // 2. Crédito ao PRESTADOR (Wallet Balance)
             transaction.update(userRef, { 
                 wallet_balance: increment(valor), 
                 updated_at: serverTimestamp() 
             });
 
-            // 4. Envia a TAXA para a ATLIVIO (Total Revenue)
-            if (lucroAtlivio > 0) {
+            // 3. Crédito ao COFRE ATLIVIO (Total Revenue)
+            if (taxaAtlivio > 0) {
                 transaction.update(statsRef, { 
-                    total_revenue: increment(lucroAtlivio),
+                    total_revenue: increment(taxaAtlivio),
                     ultima_atualizacao: serverTimestamp() 
                 });
             }
 
-            // 5. Finaliza o Documento
+            // 4. Registro no EXTRATO (DNA ATLIX - Separação de Ganhos)
+            const extratoRef = doc(collection(window.db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: userId,
+                valor: parseFloat(valor),
+                tipo: "🎯 MISSÃO_ATLIX", 
+                descricao: `Recompensa: ${data.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX"
+            });
+
+            // 5. Finaliza a prova
             transaction.update(subRef, { 
                 status: 'paid_real', 
                 paid_at: serverTimestamp(),
-                liquidacao_tipo: 'digital_direta_admin'
+                liquidacao: 'atlix_direto'
             });
         });
 
-        alert("✅ PAGAMENTO REALIZADO: Crédito enviado ao prestador e taxa computada.");
+        alert("✅ PAGAMENTO ATLIX CONCLUÍDO!");
         loadSubmissions();
-    } catch(e) { alert("Erro na aprovação: " + e.message); }
+    } catch(e) { alert("❌ FALHA: " + e); }
 }
 
-// ⛔ MOTOR DE RECUSA ESTRUTURAL
-// Não mexe no dinheiro (fica na custódia) mas devolve a vaga ao radar global.
+// ⛔ MOTOR DE REJEIÇÃO (DEVOLVE VAGA E MANTÉM CUSTÓDIA)
 async function rejeitarMissao(docId) {
-    if(!confirm("REJEITAR PROVA? \n\nO prestador não será pago, o dinheiro continua na custódia e a VAGA VOLTARÁ ao radar.")) return;
+    if(!confirm("REJEITAR PROVA? \n\nA vaga voltará ao radar e o saldo continuará na custódia da empresa.")) return;
 
     try {
         const subRef = doc(window.db, "mission_submissions", docId);
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
-        const missionId = data.mission_id;
 
         await runTransaction(window.db, async (transaction) => {
-            const missionRef = doc(window.db, "missions", missionId);
+            const missionRef = doc(window.db, "missions", data.mission_id);
             
-            // 1. Marca a prova como REJEITADA
-            transaction.update(subRef, { 
-                status: 'rejected', 
-                rejected_at: serverTimestamp() 
-            });
+            transaction.update(subRef, { status: 'rejected', rejected_at: serverTimestamp() });
 
-            // 2. DEVOLVE A VAGA: Aumenta disponível e diminui quem está realizando
+            // ♻️ DEVOLUÇÃO AUTOMÁTICA DE VAGA
             transaction.update(missionRef, {
                 slots_disponiveis: increment(1),
                 pessoas_realizando: increment(-1),
@@ -689,18 +702,16 @@ async function rejeitarMissao(docId) {
             });
         });
 
-        alert("❌ PROVA REJEITADA: A vaga foi devolvida ao radar com sucesso.");
+        alert("❌ PROVA REJEITADA. Vaga liberada no radar.");
         loadSubmissions();
-    } catch(e) { alert("Erro ao rejeitar: " + e.message); }
+    } catch(e) { alert("Erro: " + e.message); }
 }
 
-// 🔨 MARTELO DO ADMIN: O B2B recusou, mas você achou que a prova é válida
+// 🔨 MARTELO DO ADMIN
 window.anularRecusaB2B = async (docId, userId, valor) => {
-    if(!confirm(`⚠️ JUSTIÇA ATLIVIO: Deseja anular a recusa do B2B e forçar o pagamento de R$ ${valor} ao usuário?`)) return;
-    // Gil, ao anular, chamamos o motor de aprovação padrão que já lida com as carteiras
+    if(!confirm(`⚠️ JUSTIÇA ATLIVIO: Deseja forçar o pagamento de ATLIX ${valor}?`)) return;
     await window.aprovarMissao(docId, userId, valor);
 };
-
 // 🔨 MARTELO DO ADMIN: Você analisou e concorda que a prova é RUIM (O B2B tem razão)
 window.confirmarRecusaB2B = async (docId) => {
     if(!confirm("🔨 Confirmar reprovação final? O valor reservado voltará para o saldo da empresa.")) return;
