@@ -1236,22 +1236,21 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
         const valorUnitarioComTaxa = parseFloat(mData.unit_total_with_fee || 0);
         const valorTotalEstorno = parseFloat((valorUnitarioComTaxa * vagasRestantes).toFixed(2));
         
-        // Proteção extra: O estorno nunca pode ser maior do que o que o usuário tem reservado
+        // 🛡️ Proteção extra: O estorno nunca pode ser maior do que o que o usuário realmente tem na custódia
         const saldoReservadoB2B = parseFloat(window.userProfile?.wallet_reserved || 0);
         const valorFinalEstorno = Math.min(valorTotalEstorno, saldoReservadoB2B);
 
-        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
+        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nO valor de ${valorFinalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
             
-            // 1. Devolve o dinheiro: Tira da Reserva e volta para o Saldo Real de Trabalho (Balance)
+            // 1. Devolve o dinheiro: USA O VALOR FINAL SANEADO (valorFinalEstorno)
             transaction.update(userRef, {
-                wallet_reserved: increment(-valorTotalEstorno),
-                wallet_balance: increment(valorTotalEstorno),
+                wallet_reserved: increment(-valorFinalEstorno),
+                wallet_balance: increment(valorFinalEstorno),
                 updated_at: serverTimestamp()
             });
-
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
                 status: 'closed', 
