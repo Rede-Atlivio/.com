@@ -151,13 +151,11 @@ window.carregarAuditoriaB2B = async () => {
 
         snap.forEach(d => {
             const m = d.data();
-            // Injeta diretamente no balde recém-criado
+            // Injeta o card de evidência diretamente no container de grade
             gridAuditoria.innerHTML += `
-            const m = d.data();
-            document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title}</h4>
+                        <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title || 'Missão sem Título'}</h4>
                         <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${m.gps_status === 'match' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
                             ${m.gps_status === 'match' ? 'GPS OK' : 'GPS SUSPEITO'}
                         </span>
