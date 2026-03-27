@@ -300,7 +300,7 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B
                 mission_title: titulo,
                 reward: recompensa,
-                pay_type: tipoPagamento,
+                pay_type: 'atlix', // 🪙 Padronização Master: Todas as missões liquidam em moeda interna
                 user_id: auth.currentUser.uid,
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
                 proof_url: base64data,
