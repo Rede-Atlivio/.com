@@ -211,59 +211,70 @@ window.vereditoB2B = async (docId, status) => {
    } catch (e) { alert("Erro ao processar veredito."); }
 };
 
-// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO: Transfere o valor reservado para o executor
+// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO V2026.PRO
 window.liquidarPagamentoB2B = async (submissionId) => {
     try {
         const subRef = doc(db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
 
-        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
         if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
 
         await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
-            const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
+            const userRef = doc(db, "usuarios", data.user_id);
+            const b2bRef = doc(db, "usuarios", data.b2b_owner_uid);
+            const statsRef = doc(db, "sys_finance", "stats");
 
-            // 1. Libera a reserva TOTAL do Cliente (Prêmio + Taxas)
-            const valorTotalParaDarBaixa = data.unit_total_with_fee || data.reward;
-            transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorTotalParaDarBaixa),
-                updated_at: serverTimestamp()
-            });
+            // AJUSTE 1: Calcula valor total (Prêmio + Sua Taxa)
+            const valorTotalReservado = data.unit_total_with_fee || data.reward; 
+            const lucroAtlivio = valorTotalReservado - data.reward;
 
-            // 2. ⚡ LIQUIDAÇÃO DIGITAL: Transfere o crédito direto para o executor
-            // Gil, o sistema agora decide o balde (Real ou Bônus) e paga no ato da aprovação.
-            const campoDestino = (data.pay_type === 'real') ? 'wallet_balance' : 'wallet_bonus';
-            const novoStatus = (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix';
+            const b2bSnap = await transaction.get(b2bRef);
+            const custodiaAtual = b2bSnap.data().wallet_reserved || 0;
 
+            // TRAVA ANTI-NEGATIVO
+            if (custodiaAtual < valorTotalReservado) throw "CUSTÓDIA INSUFICIENTE.";
+
+            // 1. Limpa a reserva do B2B (Total: Prêmio + Taxa)
+            transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
+
+            // 2. Paga o executor (Sempre ATLIX sacável)
             transaction.update(userRef, { 
-                [campoDestino]: increment(data.reward),
-                updated_at: serverTimestamp()
+                wallet_balance: increment(data.reward), 
+                updated_at: serverTimestamp() 
             });
 
-            // 3. 🛡️ LUCRO ATLIVIO: Alimenta o Dashboard Global (sys_finance -> stats)
-            const lucroPlataforma = (data.unit_total_with_fee || 0) - (data.reward || 0);
-            if (lucroPlataforma > 0) {
-                const statsRef = doc(db, "sys_finance", "stats");
+            // 3. Alimenta o seu lucro no stats (Cofre Gil)
+            if (lucroAtlivio > 0) {
                 transaction.update(statsRef, { 
-                    total_revenue: increment(lucroPlataforma),
+                    total_revenue: increment(lucroAtlivio),
                     ultima_atualizacao: serverTimestamp() 
                 });
             }
 
-            // 4. FINALIZAÇÃO: Marca a prova como liquidada
+            // AJUSTE HISTÓRICO: Grava o ganho do prestador para ele ver no extrato
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: data.user_id,
+                valor: parseFloat(data.reward),
+                tipo: "🎯 MISSÃO_ATLIX", // Tag que o Wallet.js usa para não sujar o gráfico de chat
+                descricao: `Recompensa: ${data.mission_title}`,
+                timestamp: serverTimestamp(),
+                moeda: "ATLIX"
+            });
+
+            // 4. Marca como pago
             transaction.update(subRef, { 
-                status: novoStatus, 
+                status: (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix', 
                 paid_at: serverTimestamp(),
-                liquidacao_tipo: 'digital_direta'
+                liquidacao_tipo: 'interna_digital'
             });
         });
 
-        alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
+        alert("✅ PAGAMENTO PROCESSADO: Saldo transferido e lucro computado!");
     } catch (err) {
-        console.error("Erro na liquidação:", err);
-        alert("Erro ao processar transferência de valores.");
+        console.error("Erro liquidação:", err);
+        alert("Erro: " + err);
     }
 };
 
