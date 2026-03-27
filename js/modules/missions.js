@@ -274,16 +274,27 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
-        reader.onloadend = async () => {
+       reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
-            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
+            
+            // 🛡️ REFORÇO DE DNA: Tenta pegar de todas as fontes possíveis para nunca vir nulo
+            const inputCam = document.getElementById('camera-input');
+            const donoFinal = b2bOwnerId || inputCam.dataset.owner || localStorage.getItem(`owner_${id}`);
 
-            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
+            // BLOQUEIO ANTES DO ENVIO: Se o ID não subir, a gente nem grava no banco (evita lixo)
+            if (!donoFinal || donoFinal === "undefined") {
+                console.error("ERRO DE IDENTIDADE: ID do B2B não capturado.");
+                alert("Erro técnico: Identidade da missão perdida. Por favor, tente novamente.");
+                btn.disabled = false;
+                btn.innerText = "Realizar Missão ➜";
+                return;
+            }
+
+            // 🚀 GRAVAÇÃO BLINDADA: Agora com a garantia de que o ID existe
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
-                b2b_owner_uid: donoFinal, 
+                owner_id: donoFinal, 
+                b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: tipoPagamento,
