@@ -504,17 +504,18 @@ async function salvarMissao() {
 
     if(!title || !reward) return alert("Erro: Título e Valor são obrigatórios.");
 
-    // 🏗️ PAYLOAD V2026: Estrutura preparada para escala de milhões de usuários
+   // 🏗️ PAYLOAD V2026: Estrutura com DNA de Mestre Injetado
     const payload = {
         title, 
         description: desc, 
         reward: parseFloat(reward), 
         video_id: videoId || null,
-       latitude: lat ? parseFloat(lat) : null,
+        latitude: lat ? parseFloat(lat) : null,
         longitude: lng ? parseFloat(lng) : null,
-        // Gil, garantimos que o raio seja lido como número inteiro puro (Metros)
         radius: radius ? Number(radius) : 50,
-        pay_type: payType, // Define se paga em ATLIX ou REAL
+        pay_type: 'atlix', // 🪙 Padronização Master: Admin só cria missões em ATLIX
+        owner_id: window.auth.currentUser.uid, // 🔑 Garante que o Admin seja o dono da verba
+        b2b_owner_uid: window.auth.currentUser.uid, // 🔑 Sincronia para o motor de Auditoria
         updated_at: serverTimestamp(), 
         active: true
     };
