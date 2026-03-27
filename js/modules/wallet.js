@@ -509,12 +509,12 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
             // 🔍 LOG DE SEGURANÇA: Garante que o saldo do B2B diminuiu conforme o lucro da Atlivio subiu
             console.log(`💰 Fluxo de Caixa: B2B balance atualizado para ${rPrincipal}. Lucro enviado ao Cofre: ${lucroRealParaEmpresa}`);
 
-         // 2. 🛡️ REGRA DA TAXA: Pagamentos de serviços internos alimentam apenas o TOTAL REVENUE
+         // 2. 🛡️ REGRA DA TAXA: Pagamentos de serviços internos alimentam o faturamento da plataforma
             if (lucroRealParaEmpresa > 0) {
                 const statsRefOficial = doc(db, "sys_finance", "stats");
                 transaction.update(statsRefOficial, {
-                    total_revenue: fv.increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
-                    ultima_atualizacao: fv.serverTimestamp()
+                    total_revenue: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))), // Removido o prefixo 'fv.' que causava erro, usando o módulo increment importado no topo
+                    ultima_atualizacao: serverTimestamp() // Removido o prefixo 'fv.'
                 });
                 console.log(`💎 TOTAL REVENUE ATUALIZADO: +${lucroRealParaEmpresa} (Taxa Coletada)`);
             }
