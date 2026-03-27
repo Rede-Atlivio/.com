@@ -165,10 +165,10 @@ function verTutorialMissao(videoId) {
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
     // 🛡️ MEMÓRIA DE SEGURANÇA: Garante que o ID da empresa dona da missão não se perca no processo
-    if (b2bOwnerId && b2bOwnerId !== "undefined") localStorage.setItem(`owner_${id}`, b2bOwnerId);
+    if (b2bOwnerId && b2bOwnerId !== "undefined" && b2bOwnerId !== "null") localStorage.setItem(`owner_${id}`, b2bOwnerId);
 
-    // 🏗️ IMPORTAÇÃO SOB DEMANDA: Carrega as ferramentas do banco de dados apenas quando necessário para economizar memória
-    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment, updateDoc, addDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    // 🏗️ IMPORTAÇÃO SOB DEMANDA: Carrega as ferramentas de banco de dados e gravação de forma segura
+    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment, updateDoc, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
     const btn = document.querySelector(`button[onclick*="${id}"]`);
     if(!btn) return;
