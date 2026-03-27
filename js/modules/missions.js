@@ -180,24 +180,29 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
         // 🛡️ TRANSAÇÃO DE VAGA: Verifica se tem vaga e reserva em 1 milésimo de segundo
         const missionRef = doc(window.db, "missions", id);
         
+      // 🛡️ MOTOR DE RESERVA INTELIGENTE: Verifica se o usuário já possui uma vaga garantida antes de tentar tirar uma nova
         await runTransaction(window.db, async (transaction) => {
             const mSnap = await transaction.get(missionRef);
             const m = mSnap.data();
 
-            if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
-            
-            // 🔍 Check de duplicidade: Usuário já fez?
-            const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
-            const sCheck = await getDocs(qCheck);
-            if (!sCheck.empty) throw "Você já realizou esta missão!";
+            // 🔍 VERIFICAÇÃO DE POSSE: Se o usuário já está no meio do processo, ele não precisa tirar outra vaga
+            const jaEstaFazendo = localStorage.getItem(`fazendo_${id}`);
 
-            // ✅ TUDO OK: Reserva a vaga diminuindo o disponível e aumentando o 'realizando'
-            transaction.update(missionRef, {
-                slots_disponiveis: increment(-1),
-                pessoas_realizando: increment(1)
-            });
+            if (!jaEstaFazendo) {
+                if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
+                
+                // 🔍 DUPLICIDADE: Impede que o mesmo usuário ganhe duas vezes na mesma missão
+                const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
+                const sCheck = await getDocs(qCheck);
+                if (!sCheck.empty) throw "Você já realizou esta missão!";
+
+                // 📉 ABATE DE VAGA: Reserva o slot no banco de dados e move o usuário para o estado de 'Realizando'
+                transaction.update(missionRef, {
+                    slots_disponiveis: increment(-1),
+                    pessoas_realizando: increment(1)
+                });
+            }
        });
-
         // 🛰️ Vaga garantida. O sistema agora prepara a interface de captura.
         localStorage.setItem(`fazendo_${id}`, "true");
         window.iniciarCronometroDesistencia(id);
