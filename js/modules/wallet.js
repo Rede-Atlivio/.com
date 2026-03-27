@@ -274,33 +274,17 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-         // 🚀 SENSOR DE ORIGEM V2026.7: Separa Pix, Estorno e ignora Recusa
+         // 🚀 MAESTRO SENSORIAL V2026.5: Sensor Híbrido (Detecta PIX e BÔNUS)
+            // 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
-                const reservedAtual = parseFloat(data.wallet_reserved || 0);
-                
-                // 🛡️ CADEADO FINANCEIRO: Identifica se o dinheiro veio da própria reserva
-                const variacaoReserva = window.ultimaReservaConhecida - reservedAtual;
-                const isEstornoInterno = Math.abs(diferenca - variacaoReserva) < 0.1;
 
-                if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
+                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
+                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
                     const fv = window.firebaseModules;
-                    // 🏦 SYS FINANCE: Entrada de Capital Externo (PIX)
-                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
-                        total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
-                        ultima_atualizacao: fv.serverTimestamp() 
-                    });
-                } // Fecha o if do cálculo de SYS FINANCE
-            } // Fecha o if do sensor de saldo positivo
-
-            // 🧠 SINCRONIZAÇÃO DE MEMÓRIA: Garante que o sistema não processe a mesma mudança duas vezes
-            window.ultimoSaldoConhecido = sReal;
-            window.ultimoSaldoBonusConhecido = sBonus;
-            window.ultimaReservaConhecida = reservedAtual;
-        } // Fecha o if (docSnap.exists)
-    }); // Fecha o onSnapshot corretamente com parêntese e chave, resolvendo o erro de sintaxe
-} // Fecha a função iniciarMonitoramentoCarteira
+                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
 
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
@@ -325,10 +309,9 @@ export function iniciarMonitoramentoCarteira() {
                 }
             }
 
-           // 🧠 Sincroniza memórias incluindo a Reserva para o Cadeado Anti-Estorno funcionar
+            // Atualiza as memórias de comparação para a próxima mudança de saldo
             window.ultimoSaldoConhecido = sReal;
             window.ultimoSaldoBonusConhecido = sBonus;
-            window.ultimaReservaConhecida = parseFloat(data.wallet_reserved || 0);
 
             // Alinha o perfil global (Essencial para milhões de usuários)
             window.userProfile = window.userProfile || {};
@@ -504,24 +487,19 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
                 rBonus -= restante;
             }
 
-           // 1. 🛡️ ABATE REAL: Atualiza os cofres do B2B garantindo que o saldo gasto saia do sistema
+            // 1. Atualiza os Cofres do Usuário (Sincronizado)
             transaction.update(userRef, {
-                wallet_balance: parseFloat(rPrincipal.toFixed(2)), // Remove o dinheiro real gasto
-                wallet_bonus: parseFloat(rBonus.toFixed(2)),       // Remove o bônus gasto
+                wallet_balance: rPrincipal,
+                wallet_bonus: rBonus,
                 updated_at: serverTimestamp()
             });
 
-            // 🔍 LOG DE SEGURANÇA: Garante que o saldo do B2B diminuiu conforme o lucro da Atlivio subiu
-            console.log(`💰 Fluxo de Caixa: B2B balance atualizado para ${rPrincipal}. Lucro enviado ao Cofre: ${lucroRealParaEmpresa}`);
-
-         // 2. 🛡️ REGRA DA TAXA: Pagamentos de serviços internos alimentam o faturamento da plataforma
+            // 2. 🛡️ TRAVA CONTÁBIL: Só incrementa o faturamento se houver valor REAL envolvido
             if (lucroRealParaEmpresa > 0) {
-                const statsRefOficial = doc(db, "sys_finance", "stats");
-                transaction.update(statsRefOficial, {
-                    total_revenue: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))), // Removido o prefixo 'fv.' que causava erro, usando o módulo increment importado no topo
-                    ultima_atualizacao: serverTimestamp() // Removido o prefixo 'fv.'
+                transaction.update(cofreRef, {
+                    total_acumulado: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
+                    ultima_atualizacao: serverTimestamp()
                 });
-                console.log(`💎 TOTAL REVENUE ATUALIZADO: +${lucroRealParaEmpresa} (Taxa Coletada)`);
             }
 
             // 3. Registra no Ledger (Extrato Imutável)
@@ -918,12 +896,12 @@ window.filtrarGanhos = async (periodo) => {
  * 🔍 AUDITORIA DE CARTEIRA V2026 (PASSO 5)
  * Separa os ganhos reais dos ganhos em bônus e rastreia saques.
  */
-window.abrirRelatorioDetalhado = async (e) => { // Adicionado 'e' para capturar o evento de clique de forma segura
+window.abrirRelatorioDetalhado = async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    // 🎨 Feedback Visual de carregamento
-    const btnRef = e ? e.currentTarget : null; // Validação para não quebrar se for chamado sem evento
+    // 🎨 Feedback Visual
+    const btnRef = event.currentTarget;
     const txtOriginal = btnRef.innerHTML;
     btnRef.innerText = "🔍 ANALISANDO...";
 
@@ -1268,27 +1246,13 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
-            const statsRef = doc(db, "sys_finance", "stats");
-
-            // 📏 CÁLCULO DE RETENÇÃO: Devolve o prêmio ao B2B, Atlivio retém a taxa
-            const premioPorVaga = parseFloat(mData.reward || 0);
-            const totalPremiosParaDevolver = parseFloat((premioPorVaga * vagasRestantes).toFixed(2));
-            const taxaParaGil = parseFloat((valorFinalEstorno - totalPremiosParaDevolver).toFixed(2));
-
-            // 1. 🔄 MOVIMENTAÇÃO: Limpa a reserva TOTAL, devolve apenas o PRÊMIO
+            
+            // 1. Devolve o dinheiro: USA O VALOR FINAL SANEADO (valorFinalEstorno)
             transaction.update(userRef, {
                 wallet_reserved: increment(-valorFinalEstorno),
-                wallet_balance: increment(totalPremiosParaDevolver),
+                wallet_balance: increment(valorFinalEstorno),
                 updated_at: serverTimestamp()
             });
-
-            // 2. 💰 REGRA DA TAXA: Lucro retido vai para TOTAL REVENUE
-            if (taxaParaGil > 0) {
-                transaction.update(statsRef, { 
-                    total_revenue: increment(taxaParaGil),
-                    ultima_atualizacao: serverTimestamp()
-                });
-            }
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
                 status: 'closed', 
