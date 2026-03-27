@@ -100,8 +100,8 @@ container.innerHTML = `
                         <div class="text-right">
                             <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
                             <p class="text-xl font-black text-white tracking-tighter">
-                                R$ ${Number(m.reward).toFixed(2).replace('.', ',')}
-                            </p>
+                                ${Number(m.reward).toFixed(2).replace('.', ',')} AX
+                            </p>
                         </div>
                     </div>
 
