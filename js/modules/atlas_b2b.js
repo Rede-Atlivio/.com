@@ -101,9 +101,9 @@ if (m.status === 'active') {
                         <span class="text-[7px] font-black bg-gray-100 px-2 py-1 rounded text-gray-500 uppercase tracking-widest">ID: ${doc.id.slice(0,8)}</span>
                         <span class="text-[8px] font-black uppercase ${statusColor}">${statusTexto}</span>
                     </div>
-                    ${alertMsg}
                     <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
                     <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
+                    ${alertMsg}
                     <div class="flex justify-between items-center pt-2 border-t border-gray-50 gap-2">
                         <div class="flex flex-col">
                             <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
