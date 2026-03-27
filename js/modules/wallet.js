@@ -274,20 +274,27 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-         // 🚀 MAESTRO SENSORIAL V2026.5: Sensor Híbrido (Detecta PIX e BÔNUS)
-            // 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
+         // 🚀 MAESTRO SENSORIAL V2026.6: Sensor de Entrada Externa (Pix para SYS FINANCE)
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
+                const reservedAtual = parseFloat(data.wallet_reserved || 0);
+                
+                /* 🛡️ REGRA DA ORIGEM: 
+                   Se o saldo subiu MAS a reserva desceu na mesma proporção, é REEMBOLSO (Ignora).
+                   Se o saldo subiu sem mexer na reserva e não é degelo (frozen), é PIX EXTERNO. */
+                const isEstornoInterno = Math.abs(diferenca - (window.ultimaReservaConhecida - reservedAtual)) < 0.05;
 
-                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
-                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+                if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
                     const fv = window.firebaseModules;
-                    // 💰 REGRA DE OURO: O lucro da entrada de Pix vai para o cofre central 'stats'
-                    await fv.updateDoc(fv.doc(db, "sys_finance", "stats"), { 
-                        total_revenue: fv.increment(parseFloat(diferenca.toFixed(2))), 
+                    // 🏦 SYS FINANCE: Recebe o aporte bruto das recargas dos usuários
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
+                        total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
                         ultima_atualizacao: fv.serverTimestamp() 
                     });
+                    console.log(`🏦 SYS FINANCE ATUALIZADO: +${diferenca} (Recarga Pix Detectada)`);
+                }
+            }
 
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
