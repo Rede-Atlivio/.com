@@ -265,43 +265,48 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         btn.disabled = true;
         btn.innerText = "⏳ COMPRIMINDO...";
 
+        // 📸 PROCESSAMENTO DE IMAGEM: Prepara a foto para envio rápido
         const bitmap = await createImageBitmap(arquivo);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        const scale = 1200 / Math.max(bitmap.width, bitmap.height);
+        // Reduzimos para 800px para garantir que a foto chegue rápido mesmo em internet 3G/4G
+        const scale = 800 / Math.max(bitmap.width, bitmap.height);
         canvas.width = bitmap.width * scale;
         canvas.height = bitmap.height * scale;
         ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         
-        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
+        // Comprimimos a foto em 60% de qualidade para não travar o banco de dados
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.6));
         btn.innerText = "🚀 ENVIANDO PROVA...";
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
-       reader.onloadend = async () => {
-           const base64data = reader.result;
-            // 🛡️ TRAVA DE LIQUIDAÇÃO: Captura o valor real da reserva (Prêmio + Taxa) no ato do envio
+        reader.onloadend = async () => {
+            const base64data = reader.result;
+            
+            // 🏷️ FERRAMENTAS DE GRAVAÇÃO: Busca as chaves de acesso ao banco de dados
+            const { doc, getDoc, collection, addDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+
+            // 💰 VALIDAÇÃO FINANCEIRA: Verifica o valor da recompensa no momento exato do envio
             const mDoc = await getDoc(doc(db, "missions", id));
             const unitTotal = mDoc.exists() ? (mDoc.data().unit_total_with_fee || recompensa) : recompensa;
             
-            // 🛡️ REFORÇO DE DNA: Tenta pegar de todas as fontes possíveis para nunca vir nulo
+            // 🔑 IDENTIFICAÇÃO DA EMPRESA: Localiza quem é o dono desta missão para garantir o seu lucro
             const inputCam = document.getElementById('camera-input');
             const donoFinal = b2bOwnerId || inputCam.dataset.owner || localStorage.getItem(`owner_${id}`);
 
-            // BLOQUEIO ANTES DO ENVIO: Se o ID não subir, a gente nem grava no banco (evita lixo)
-            if (!donoFinal || donoFinal === "undefined") {
-                console.error("ERRO DE IDENTIDADE: ID do B2B não capturado.");
-                alert("Erro técnico: Identidade da missão perdida. Por favor, tente novamente.");
+            // 🛡️ FILTRO ANTI-ERRO: Impede o envio se o sistema perder a ligação com a empresa dona
+            if (!donoFinal || donoFinal === "undefined" || donoFinal === "null") {
+                alert("Atenção: A conexão com a empresa expirou. Tente abrir a missão novamente.");
                 btn.disabled = false;
                 btn.innerText = "Realizar Missão ➜";
                 return;
             }
 
-          // 🚀 GRAVAÇÃO BLINDADA: Carimba o DNA Financeiro (Preço + Taxa) para a liquidação futura
-            // 🚀 CORREÇÃO: Usa o fv (firebaseModules) para garantir que o addDoc dispare de verdade
-            await window.firebaseModules.addDoc(window.firebaseModules.collection(db, "mission_submissions"), {
+            // 📝 REGISTRO OFICIAL: Salva a prova da missão no banco de dados da Atlivio
+            await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, 
+                owner_id: donoFinal,
                 b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
                 // 🔑 REGRA DO ABATE: Salva o custo real que deve sair da reserva do B2B (unitTotal)
