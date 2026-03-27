@@ -720,18 +720,31 @@ window.carregarAuditoriaB2B = carregarAuditoriaB2B;
         const vagasDisponiveis = m.slots_disponiveis || 0;
         if(vagasDisponiveis <= 0) throw "Não há saldo para estornar.";
 
-        const custoUnitarioTotal = m.unit_total_with_fee || m.reward;
-        const totalParaDevolver = parseFloat((vagasDisponiveis * custoUnitarioTotal).toFixed(2));
+       // 🛡️ NOVA REGRA: Devolve apenas o REWARD (valor da missão), a TAXA fica retida pela Atlivio
+        const premioSimples = m.reward; 
+        const custoTotalReserva = m.unit_total_with_fee || m.reward;
+        const totalParaDevolver = parseFloat((vagasDisponiveis * premioSimples).toFixed(2));
+        const totalParaSairDaReserva = parseFloat((vagasDisponiveis * custoTotalReserva).toFixed(2));
+        const taxaRetida = parseFloat((totalParaSairDaReserva - totalParaDevolver).toFixed(2));
 
         await runTransaction(db, async (transaction) => {
             const b2bRef = doc(db, "usuarios", auth.currentUser.uid);
+            const statsRef = doc(db, "sys_finance", "stats");
 
-            // 🔄 MOVIMENTAÇÃO DE VOLTA: Sai da Reserva -> Volta pro Balanço
+            // 🔄 ESTORNO PARCIAL: Devolve o prêmio ao B2B, mas limpa a reserva total
             transaction.update(b2bRef, {
-                wallet_reserved: increment(-totalParaDevolver),
-                wallet_balance: increment(totalParaDevolver),
+                wallet_reserved: increment(-totalParaSairDaReserva), // Limpa o total reservado das vagas
+                wallet_balance: increment(totalParaDevolver), // Devolve apenas o valor das missões
                 updated_at: serverTimestamp()
             });
+
+            // 💰 LUCRO RETIDO: Taxa das vagas canceladas vai para o faturamento
+            if (taxaRetida > 0) {
+                transaction.update(statsRef, {
+                    total_revenue: increment(taxaRetida),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
 
             // 🏁 Encerra a missão
             transaction.update(mRef, { status: 'closed', active: false, slots_disponiveis: 0 });
