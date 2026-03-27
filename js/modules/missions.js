@@ -411,8 +411,8 @@ async function carregarMissoesRealizadas() {
                         </div>
                         <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
                         
-                        <div class="w-full bg-slate-50 py-2 rounded-lg text-center">
-                            <p class="text-[8px] font-black text-slate-400 uppercase tracking-tighter">Liquidação Digital Automática</p>
+                       <div class="w-full bg-blue-50/50 py-2 rounded-lg text-center border border-blue-100/50">
+                            <p class="text-[8px] font-black text-blue-500 uppercase tracking-tighter italic">Pagamento via Créditos ATLIX 🪙</p>
                         </div>
                     </div>
                 `;
