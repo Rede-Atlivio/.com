@@ -177,10 +177,9 @@ window.vereditoB2B = async (docId, status) => {
     if(!confirm(`Confirma ${acao}?`)) return;
 
     try {
-        const { getDoc, doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        // 🧠 Consulta a Regra Soberana do Admin (Banco Central)
-        const ecoSnap = await getDoc(doc(db, "settings", "global_economy"));
+        // 🧠 Consulta o Banco Central (Documento global_economy)
+        // Gil, aqui ele checa o Checkbox "Pagamento Auto" que você marcou no Admin
+        const ecoSnap = await getDoc(doc(window.db, "settings", "global_economy"));
         const podePagarDireto = ecoSnap.exists() ? ecoSnap.data().aprovacao_automatica_b2b : false;
 
         if (status === 'approved') {
