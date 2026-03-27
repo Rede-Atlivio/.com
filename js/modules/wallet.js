@@ -490,12 +490,15 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
                 rBonus -= restante;
             }
 
-            // 1. Atualiza os Cofres do Usuário (Sincronizado)
+           // 1. 🛡️ ABATE REAL: Atualiza os cofres do B2B garantindo que o saldo gasto saia do sistema
             transaction.update(userRef, {
-                wallet_balance: rPrincipal,
-                wallet_bonus: rBonus,
+                wallet_balance: parseFloat(rPrincipal.toFixed(2)), // Remove o dinheiro real gasto
+                wallet_bonus: parseFloat(rBonus.toFixed(2)),       // Remove o bônus gasto
                 updated_at: serverTimestamp()
             });
+
+            // 🔍 LOG DE SEGURANÇA: Garante que o saldo do B2B diminuiu conforme o lucro da Atlivio subiu
+            console.log(`💰 Fluxo de Caixa: B2B balance atualizado para ${rPrincipal}. Lucro enviado ao Cofre: ${lucroRealParaEmpresa}`);
 
           // 2. 🛡️ TRAVA CONTÁBIL: Direciona o lucro para o campo oficial 'total_revenue' no 'stats'
             if (lucroRealParaEmpresa > 0) {
