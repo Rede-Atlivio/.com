@@ -218,7 +218,10 @@ window.liquidarPagamentoB2B = async (submissionId) => {
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
 
-        if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
+        // 🛡️ TRAVA DE SEGURANÇA B2B: Garante que o DNA da prova está completo
+        if (!data.user_id || !data.b2b_owner_uid) {
+            throw "Esta prova possui um formato antigo e não pode ser liquidada automaticamente. Por favor, contate o suporte Atlivio.";
+        }
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", data.user_id);
