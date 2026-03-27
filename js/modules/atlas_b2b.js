@@ -140,12 +140,19 @@ window.carregarAuditoriaB2B = async () => {
         const snap = await getDocs(q);
 
         if (snap.empty) {
-            container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Nenhuma evidência para auditar.</p>`;
+            container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter italic">Nenhuma evidência para auditar no momento.</p>`;
             return;
         }
 
-        container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
+        // 🏗️ Injeta o container de grade primeiro para garantir que o JS encontre o ID abaixo
+        container.innerHTML = `<div class="grid grid-cols-1 gap-6 pb-20" id="lista-auditoria-cards"></div>`;
+        
+        const gridAuditoria = document.getElementById('lista-auditoria-cards');
+
         snap.forEach(d => {
+            const m = d.data();
+            // Injeta diretamente no balde recém-criado
+            gridAuditoria.innerHTML += `
             const m = d.data();
             document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
