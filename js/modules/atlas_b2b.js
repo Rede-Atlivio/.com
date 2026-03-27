@@ -706,8 +706,8 @@ window.initB2B = initB2B;
 window.carregarOrdensB2B = carregarOrdensB2B;
 window.carregarAuditoriaB2B = carregarAuditoriaB2B;
 
-// window.encerrarMissaoB2BComEstorno = async (missionId) => {
-    if (!confirm("⚠️ REEMBOLSAR VAGAS?\nO valor total reservado das vagas restantes voltará para seu saldo disponível.")) return;
+window.encerrarMissaoB2BComEstorno = async (missionId) => {
+    if (!confirm("⚠️ REEMBOLSAR VAGAS?\nO valor das missões voltará para seu saldo. A taxa da plataforma será retida pela Atlivio.")) return;
 
     try {
         const mRef = doc(db, "missions", missionId);
