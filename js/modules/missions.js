@@ -224,9 +224,15 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             const currentInput = e.target;
             
             if (!file) {
+                // ♻️ O usuário abriu a câmera mas não tirou foto? Devolvemos a vaga na hora!
+                const missionRef = doc(window.db, "missions", id);
+                await updateDoc(missionRef, {
+                    slots_disponiveis: increment(1),
+                    pessoas_realizando: increment(-1)
+                });
                 btn.disabled = false;
                 btn.innerText = originalText;
-                currentInput.value = ""; // Limpa o cache do evento
+                currentInput.value = ""; 
                 return;
             }
             
