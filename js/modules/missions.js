@@ -164,6 +164,9 @@ function verTutorialMissao(videoId) {
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
+    // 🛡️ BOLSO DE SEGURANÇA: Salva o ID do B2B imediatamente para não perder durante a abertura da câmera
+    if (b2bOwnerId) localStorage.setItem(`owner_${id}`, b2bOwnerId);
+
     const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
     const btn = document.querySelector(`button[onclick*="${id}"]`);
