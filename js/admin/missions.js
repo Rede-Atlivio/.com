@@ -734,13 +734,28 @@ window.confirmarRecusaB2B = async (docId) => {
             if (!subSnap.exists()) throw "Registro não encontrado";
             const data = subSnap.data();
 
-            // 1. Devolve o dinheiro da reserva para o saldo disponível da empresa
-            if (data.b2b_owner_uid && data.reward) {
+           // 🛡️ REGRA DO ESTORNO: Devolve o prêmio ao B2B, mas a Atlivio retém a taxa
+            if (data.b2b_owner_uid) {
                 const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
+                const statsRef = doc(window.db, "sys_finance", "stats");
+                
+                const custoTotal = parseFloat(data.unit_total_with_fee || data.reward);
+                const premioDevolvido = parseFloat(data.reward);
+                const taxaRetida = parseFloat((custoTotal - premioDevolvido).toFixed(2));
+
+                // 1. Limpa a reserva TOTAL e devolve apenas o prêmio líquido
                 transaction.update(b2bRef, { 
-                    wallet_reserved: increment(-data.reward),
-                    wallet_balance: increment(data.reward)
+                    wallet_reserved: increment(-custoTotal),
+                    wallet_balance: increment(premioDevolvido)
                 });
+
+                // 2. 💰 REGRA DA TAXA: A comissão da vaga recusada vai para o seu lucro
+                if (taxaRetida > 0) {
+                    transaction.update(statsRef, { 
+                        total_revenue: increment(taxaRetida),
+                        ultima_atualizacao: serverTimestamp()
+                    });
+                }
             }
 
             // 2. Marca como reprovado permanentemente
