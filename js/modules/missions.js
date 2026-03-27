@@ -85,9 +85,10 @@ container.innerHTML = `
             // 🛡️ SENSOR DE DISPOSITIVO: Verifica se é Celular ou PC
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            // 🪙 DNA DIGITAL: Todas as missões agora são liquidadas em Créditos Digitais
-            const labelMoeda = 'CRÉDITOS ATLIVIO 🪙';
-            const colorMoeda = 'text-amber-400';
+            // 💰 V2026.PRO: Identifica a moeda de recompensa
+            const isRealMoney = m.pay_type === 'real';
+            const labelMoeda = isRealMoney ? 'PAGAMENTO EM PIX 💰' : 'CRÉDITOS ATLIX 🪙';
+            const colorMoeda = isRealMoney ? 'text-emerald-500' : 'text-amber-500';
 
             // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
             container.innerHTML += `
@@ -97,7 +98,7 @@ container.innerHTML = `
                             ${iconAtlas}
                         </div>
                         <div class="text-right">
-                            <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5 italic">RECOMPENSA ATLIX</p>
+                            <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
                             <p class="text-xl font-black text-white tracking-tighter">
                                 R$ ${Number(m.reward).toFixed(2).replace('.', ',')}
                             </p>
@@ -123,7 +124,7 @@ container.innerHTML = `
                         ` : ''}
 
                        ${isMobile ? `
-                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}', '${m.b2b_owner_uid || m.owner_id || ''}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">
+                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}', '${m.b2b_owner_uid || ''}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">
                                 Realizar Missão ➜
                             </button>
                         ` : `
@@ -164,11 +165,7 @@ function verTutorialMissao(videoId) {
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
-    // 🛡️ MEMÓRIA DE SEGURANÇA: Garante que o ID da empresa dona da missão não se perca no processo
-    if (b2bOwnerId && b2bOwnerId !== "undefined" && b2bOwnerId !== "null") localStorage.setItem(`owner_${id}`, b2bOwnerId);
-
-    // 🏗️ IMPORTAÇÃO SOB DEMANDA: Carrega as ferramentas de banco de dados e gravação de forma segura
-    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment, updateDoc, addDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
     const btn = document.querySelector(`button[onclick*="${id}"]`);
     if(!btn) return;
@@ -180,29 +177,24 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
         // 🛡️ TRANSAÇÃO DE VAGA: Verifica se tem vaga e reserva em 1 milésimo de segundo
         const missionRef = doc(window.db, "missions", id);
         
-      // 🛡️ MOTOR DE RESERVA INTELIGENTE: Verifica se o usuário já possui uma vaga garantida antes de tentar tirar uma nova
         await runTransaction(window.db, async (transaction) => {
             const mSnap = await transaction.get(missionRef);
             const m = mSnap.data();
 
-            // 🔍 VERIFICAÇÃO DE POSSE: Se o usuário já está no meio do processo, ele não precisa tirar outra vaga
-            const jaEstaFazendo = localStorage.getItem(`fazendo_${id}`);
+            if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
+            
+            // 🔍 Check de duplicidade: Usuário já fez?
+            const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
+            const sCheck = await getDocs(qCheck);
+            if (!sCheck.empty) throw "Você já realizou esta missão!";
 
-            if (!jaEstaFazendo) {
-                if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
-                
-                // 🔍 DUPLICIDADE: Impede que o mesmo usuário ganhe duas vezes na mesma missão
-                const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
-                const sCheck = await getDocs(qCheck);
-                if (!sCheck.empty) throw "Você já realizou esta missão!";
-
-                // 📉 ABATE DE VAGA: Reserva o slot no banco de dados e move o usuário para o estado de 'Realizando'
-                transaction.update(missionRef, {
-                    slots_disponiveis: increment(-1),
-                    pessoas_realizando: increment(1)
-                });
-            }
+            // ✅ TUDO OK: Reserva a vaga diminuindo o disponível e aumentando o 'realizando'
+            transaction.update(missionRef, {
+                slots_disponiveis: increment(-1),
+                pessoas_realizando: increment(1)
+            });
        });
+
         // 🛰️ Vaga garantida. O sistema agora prepara a interface de captura.
         localStorage.setItem(`fazendo_${id}`, "true");
         window.iniciarCronometroDesistencia(id);
@@ -233,15 +225,9 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             const currentInput = e.target;
             
             if (!file) {
-                // ♻️ O usuário abriu a câmera mas não tirou foto? Devolvemos a vaga na hora!
-                const missionRef = doc(window.db, "missions", id);
-                await updateDoc(missionRef, {
-                    slots_disponiveis: increment(1),
-                    pessoas_realizando: increment(-1)
-                });
                 btn.disabled = false;
                 btn.innerText = originalText;
-                currentInput.value = ""; 
+                currentInput.value = ""; // Limpa o cache do evento
                 return;
             }
             
@@ -270,57 +256,38 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         btn.disabled = true;
         btn.innerText = "⏳ COMPRIMINDO...";
 
-        // 📸 PROCESSAMENTO DE IMAGEM: Prepara a foto para envio rápido
         const bitmap = await createImageBitmap(arquivo);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        // Reduzimos para 800px para garantir que a foto chegue rápido mesmo em internet 3G/4G
-        const scale = 800 / Math.max(bitmap.width, bitmap.height);
+        const scale = 1200 / Math.max(bitmap.width, bitmap.height);
         canvas.width = bitmap.width * scale;
         canvas.height = bitmap.height * scale;
         ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
         
-        // Comprimimos a foto em 60% de qualidade para não travar o banco de dados
-        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.6));
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
         btn.innerText = "🚀 ENVIANDO PROVA...";
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            
-            // 💰 VALIDAÇÃO FINANCEIRA: Busca o valor oficial da vaga diretamente no banco de dados para evitar fraudes
-            const mDoc = await getDoc(doc(db, "missions", id));
-            const unitTotal = mDoc.exists() ? (mDoc.data().unit_total_with_fee || recompensa) : recompensa;
-            
-            // 🔑 IDENTIFICAÇÃO DA EMPRESA: Recupera o ID do dono através de múltiplas camadas de segurança
-            const inputCam = document.getElementById('camera-input');
-            const donoFinal = b2bOwnerId || inputCam.dataset.owner || localStorage.getItem(`owner_${id}`);
+            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
+            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-            // 🛡️ FILTRO ANTI-ERRO: Bloqueia o envio se a identidade da empresa estiver ausente (protege o fluxo financeiro)
-            if (!donoFinal || donoFinal === "undefined" || donoFinal === "null") {
-                alert("Erro: Link com a empresa perdido. Reinicie a missão.");
-                btn.disabled = false;
-                btn.innerText = "Realizar Missão ➜";
-                return;
-            }
-
-            // 📝 REGISTRO OFICIAL: Grava a prova final no banco de dados da Atlivio com DNA financeiro carimbado
+            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal,
+                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
                 b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
-                // 🔑 REGRA DO ABATE: Salva o custo real que deve sair da reserva do B2B (unitTotal)
-                unit_total_with_fee: parseFloat(unitTotal), 
-                reward: parseFloat(recompensa), // Valor líquido que o usuário vai receber
-                pay_type: 'atlix', // 🪙 ATLIX: Moeda interna para proteger o faturamento
-                user_id: auth.currentUser.uid, // ID de quem realizou a tarefa
+                reward: recompensa,
+                pay_type: tipoPagamento,
+                user_id: auth.currentUser.uid,
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
-                proof_url: base64data, // Foto comprimida em Base64
-                location: window.currentMissionLocation || null, // Coordenadas GPS da captura
-                status: 'pending', // Status inicial para análise do B2B ou Admin
-                created_at: serverTimestamp() // Carimbo de tempo oficial do servidor
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                status: 'pending',
+                created_at: serverTimestamp()
             });
             // ✅ CONFIRMAÇÃO DE ENTREGA: Remove o usuário do contador de "realizando"
             const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
@@ -404,10 +371,10 @@ async function carregarMissoesRealizadas() {
             container.innerHTML = "";
             snap.forEach(doc => {
                 const m = doc.data();
-               const statusMap = {
+                const statusMap = {
                     'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
-                    'paid_real': { txt: 'CRÉDITO LIBERADO ✅', css: 'text-emerald-500 bg-emerald-500/10' },
-                    'paid_atlix': { txt: 'BÔNUS LIBERADO 🎁', css: 'text-emerald-500 bg-emerald-500/10' },
+                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
+                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
                     'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
                 };
                 const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
@@ -420,9 +387,11 @@ async function carregarMissoesRealizadas() {
                         </div>
                         <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
                         
-                       <div class="w-full bg-blue-50/50 py-2 rounded-lg text-center border border-blue-100/50">
-                            <p class="text-[8px] font-black text-blue-500 uppercase tracking-tighter italic">Pagamento via Créditos ATLIX 🪙</p>
-                        </div>
+                        ${m.status === 'paid_real' && m.receipt_url ? `
+                            <button onclick="window.abrirComprovantePIX('${m.receipt_url}')" class="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 py-2.5 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-100 transition flex items-center justify-center gap-2">
+                                📄 Ver Comprovante PIX
+                            </button>
+                        ` : ''}
                     </div>
                 `;
             });
