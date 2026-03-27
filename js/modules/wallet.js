@@ -1251,12 +1251,26 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
             
-            // 1. Devolve o dinheiro: USA O VALOR FINAL SANEADO (valorFinalEstorno)
+            // 📏 CÁLCULO DE RETENÇÃO: Devolve o prêmio ao B2B, a Atlivio liquida a taxa no faturamento
+            const premioPorVaga = parseFloat(mData.reward || 0);
+            const totalPremiosParaDevolver = parseFloat((premioPorVaga * vagasRestantes).toFixed(2));
+            const taxaParaAtlivio = parseFloat((valorFinalEstorno - totalPremiosParaDevolver).toFixed(2));
+
+            // 1. 🔄 REGRA DO ESTORNO: Esvazia a reserva TOTAL, mas devolve apenas o saldo das missões ao B2B
             transaction.update(userRef, {
-                wallet_reserved: increment(-valorFinalEstorno),
-                wallet_balance: increment(valorFinalEstorno),
-                updated_at: serverTimestamp()
+                wallet_reserved: fv.increment(-valorFinalEstorno), // Limpa o que estava preso
+                wallet_balance: fv.increment(totalPremiosParaDevolver), // Devolve o valor das missões
+                updated_at: fv.serverTimestamp()
             });
+
+            // 2. 💰 REGRA DA TAXA: A taxa das vagas canceladas vira lucro imediato (TOTAL REVENUE)
+            if (taxaParaAtlivio > 0) {
+                const statsRef = fv.doc(db, "sys_finance", "stats");
+                transaction.update(statsRef, { 
+                    total_revenue: fv.increment(taxaParaAtlivio),
+                    ultima_atualizacao: fv.serverTimestamp()
+                });
+            }
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
                 status: 'closed', 
