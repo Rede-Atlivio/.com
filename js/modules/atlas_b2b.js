@@ -238,12 +238,15 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             // TRAVA ANTI-NEGATIVO
             if (custodiaAtual < valorTotalReservado) throw "CUSTÓDIA INSUFICIENTE.";
 
-            // 1. Limpa a reserva do B2B (Total: Prêmio + Taxa)
-            transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalReservado) });
+           // 1. 🛡️ ABATE DE RESERVA: Remove o custo total (Prêmio + Taxa) da reserva da empresa
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-parseFloat(valorTotalReservado.toFixed(2))),
+                updated_at: serverTimestamp() 
+            });
 
-            // 2. Paga o executor (Sempre ATLIX sacável)
+            // 2. 💰 PAGAMENTO DO PRESTADOR: Credita apenas o prêmio líquido na carteira do usuário
             transaction.update(userRef, { 
-                wallet_balance: increment(data.reward), 
+                wallet_balance: increment(parseFloat(data.reward.toFixed(2))), 
                 updated_at: serverTimestamp() 
             });
 
