@@ -302,6 +302,7 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 owner_id: donoFinal, 
                 b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B localizarem a prova
                 mission_title: titulo,
+                unit_total_with_fee: unitTotal, // 🔑 Regra do Abate: Carimba o custo total na prova
                 reward: recompensa,
                 pay_type: 'atlix', // 🪙 Padronização Master: Todas as missões liquidam em moeda interna
                 user_id: auth.currentUser.uid, // ID de quem realizou a tarefa
