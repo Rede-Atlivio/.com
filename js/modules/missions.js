@@ -278,7 +278,10 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         const reader = new FileReader();
         reader.readAsDataURL(blob);
        reader.onloadend = async () => {
-            const base64data = reader.result;
+           const base64data = reader.result;
+            // 🛡️ TRAVA DE LIQUIDAÇÃO: Captura o valor real da reserva (Prêmio + Taxa) no ato do envio
+            const mDoc = await getDoc(doc(db, "missions", id));
+            const unitTotal = mDoc.exists() ? (mDoc.data().unit_total_with_fee || recompensa) : recompensa;
             
             // 🛡️ REFORÇO DE DNA: Tenta pegar de todas as fontes possíveis para nunca vir nulo
             const inputCam = document.getElementById('camera-input');
