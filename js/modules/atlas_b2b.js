@@ -195,16 +195,15 @@ window.vereditoB2B = async (docId, status) => {
                 });
                 alert("✔️ APROVAÇÃO REGISTRADA: O pagamento passará pela validação final do sistema Atlivio para ser liberado.");
             }
-        } else {
-            // ⚖️ DISPUTA: Se o B2B reprovar, sempre cai na sua mão para evitar golpe da empresa
+       } else {
+            // ⚖️ REPROVAÇÃO B2B: Dinheiro NÃO SAI da reserva. Apenas abre disputa.
             await updateDoc(doc(db, "mission_submissions", docId), {
                 status: 'b2b_rejected',
-                status_history: 'Aguardando auditoria de disputa',
+                status_history: 'Reprovado pelo B2B - Aguardando Auditoria',
                 reviewed_at: serverTimestamp()
             });
-            alert("⚖️ DISPUTA ABERTA: O Admin analisará a evidência para dar o veredito final.");
+            alert("⚖️ REPROVAÇÃO REGISTRADA: A prova foi invalidada. O saldo permanece reservado até a decisão final do Admin.");
         }
-        
         window.carregarAuditoriaB2B();
    } catch (e) { alert("Erro ao processar veredito."); }
 };
