@@ -621,8 +621,15 @@ async function aprovarMissao(docId, userId, valor) {
         if(!confirm(`Confirmar PAGAMENTO ATLIX de ${valor}?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
+            // 🛡️ SEGURANÇA ATLIVIO: Recupera e valida os IDs antes de criar as referências
+            const b2bId = data.b2b_owner_uid || data.owner_id;
+            
+            if (!userId || !b2bId) {
+                throw "ERRO CRÍTICO: ID do usuário ou do B2B não localizado na prova.";
+            }
+
             const userRef = doc(window.db, "usuarios", userId);
-            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid || data.owner_id);
+            const b2bRef = doc(window.db, "usuarios", b2bId);
             const statsRef = doc(window.db, "sys_finance", "stats");
 
             // 📐 CÁLCULO DE PRECISÃO: Prêmio + Taxas
