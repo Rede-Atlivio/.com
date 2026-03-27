@@ -104,10 +104,12 @@ if (m.status === 'active') {
                     <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
                     <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
                     ${alertMsg}
+                    <h4 class="text-blue-900 font-black uppercase text-xs">${m.title}</h4>
+                    <p class="text-[9px] text-gray-400 leading-tight">${m.description}</p>
                     <div class="flex justify-between items-center pt-2 border-t border-gray-50 gap-2">
                         <div class="flex flex-col">
                             <span class="text-[10px] font-bold text-emerald-600">R$ ${m.reward.toFixed(2)}</span>
-                            <span class="text-[7px] font-black text-blue-500 uppercase italic tracking-tighter">Liquidado em Carteira</span>
+                            <span class="text-[7px] font-black text-gray-400 uppercase">${m.pay_type === 'real' ? 'Dinheiro' : 'Atlix'}</span>
                         </div>
                        ${(m.status === 'active' || m.status === 'pending_b2b') ? `
                             <button onclick="window.encerrarMissaoB2BComEstorno('${doc.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all border border-red-100">
@@ -129,33 +131,27 @@ window.carregarAuditoriaB2B = async () => {
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
    try {
-        // ⚖️ FILTRO DE SEGURANÇA B2B: Só mostra provas das missões que ESTE B2B criou
-        // Gil, usamos 'b2b_owner_uid' para garantir que um empresário não veja a foto do outro.
+        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
         const q = query(
             collection(db, "mission_submissions"),
-            where("b2b_owner_uid", "==", auth.currentUser.uid),
+            where("owner_id", "==", auth.currentUser.uid),
             where("status", "==", "pending"),
             orderBy("created_at", "desc")
         );
         const snap = await getDocs(q);
 
         if (snap.empty) {
-            container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter italic">Nenhuma evidência para auditar no momento.</p>`;
+            container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Nenhuma evidência para auditar.</p>`;
             return;
         }
 
-        // 🏗️ Injeta o container de grade primeiro para garantir que o JS encontre o ID abaixo
-        container.innerHTML = `<div class="grid grid-cols-1 gap-6 pb-20" id="lista-auditoria-cards"></div>`;
-        
-        const gridAuditoria = document.getElementById('lista-auditoria-cards');
-
+        container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
         snap.forEach(d => {
             const m = d.data();
-            // Injeta o card de evidência diretamente no container de grade
-            gridAuditoria.innerHTML += `
+            document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
                     <div class="flex justify-between items-center">
-                        <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title || 'Missão sem Título'}</h4>
+                        <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title}</h4>
                         <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${m.gps_status === 'match' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
                             ${m.gps_status === 'match' ? 'GPS OK' : 'GPS SUSPEITO'}
                         </span>
@@ -181,9 +177,10 @@ window.vereditoB2B = async (docId, status) => {
     if(!confirm(`Confirma ${acao}?`)) return;
 
     try {
-        // 🧠 Consulta o Banco Central (Documento global_economy)
-        // Gil, aqui ele checa o Checkbox "Pagamento Auto" que você marcou no Admin
-        const ecoSnap = await getDoc(doc(window.db, "settings", "global_economy"));
+        const { getDoc, doc, updateDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        
+        // 🧠 Consulta a Regra Soberana do Admin (Banco Central)
+        const ecoSnap = await getDoc(doc(db, "settings", "global_economy"));
         const podePagarDireto = ecoSnap.exists() ? ecoSnap.data().aprovacao_automatica_b2b : false;
 
         if (status === 'approved') {
@@ -200,102 +197,58 @@ window.vereditoB2B = async (docId, status) => {
                 });
                 alert("✔️ APROVAÇÃO REGISTRADA: O pagamento passará pela validação final do sistema Atlivio para ser liberado.");
             }
-       } else {
-            // ⚖️ REPROVAÇÃO B2B: Dinheiro NÃO SAI da reserva. Apenas abre disputa.
+        } else {
+            // ⚖️ DISPUTA: Se o B2B reprovar, sempre cai na sua mão para evitar golpe da empresa
             await updateDoc(doc(db, "mission_submissions", docId), {
                 status: 'b2b_rejected',
-                status_history: 'Reprovado pelo B2B - Aguardando Auditoria',
+                status_history: 'Aguardando auditoria de disputa',
                 reviewed_at: serverTimestamp()
             });
-            alert("⚖️ REPROVAÇÃO REGISTRADA: A prova foi invalidada. O saldo permanece reservado até a decisão final do Admin.");
+            alert("⚖️ DISPUTA ABERTA: O Admin analisará a evidência para dar o veredito final.");
         }
+        
         window.carregarAuditoriaB2B();
    } catch (e) { alert("Erro ao processar veredito."); }
 };
 
-// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO V2026.PRO - ALINHADO ÀS REGRAS DE OURO
+// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO: Transfere o valor reservado para o executor
 window.liquidarPagamentoB2B = async (submissionId) => {
     try {
         const subRef = doc(db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
-        if (!subSnap.exists()) throw "Prova não encontrada.";
         const data = subSnap.data();
 
-        // 🛡️ DNA Check
-        if (!data.user_id || !data.b2b_owner_uid) throw "DNA da prova incompleto.";
+        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
+        if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
 
         await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, "usuarios", data.user_id);
-            const b2bRef = doc(db, "usuarios", data.b2b_owner_uid);
-            const statsRef = doc(db, "sys_finance", "stats");
+            const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
+            const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-            // 📐 Cálculos Precisos
-            const custoTotalVaga = parseFloat(data.unit_total_with_fee || data.reward);
-            const premioLiquido = parseFloat(data.reward);
-            const taxaAtlivio = parseFloat((custoTotalVaga - premioLiquido).toFixed(2));
-
-            const b2bSnap = await transaction.get(b2bRef);
-            const reservaAtual = b2bSnap.data().wallet_reserved || 0;
-
-            if (reservaAtual < custoTotalVaga) throw "CUSTÓDIA INSUFICIENTE NO B2B.";
-
-            // 1. 📉 B2B: Retira o valor TOTAL (Missão + Taxa) da RESERVA
-            transaction.update(b2bRef, {
-                wallet_reserved: increment(-custoTotalVaga),
+            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-data.reward),
                 updated_at: serverTimestamp()
             });
 
-            // 2. 📈 PRESTADOR: Recebe o prêmio no BALANCE (Disponível para saque)
-            transaction.update(userRef, {
-                wallet_balance: increment(premioLiquido),
-                updated_at: serverTimestamp()
-            });
-
-            // 3. 💰 COFRE ATLIVIO: Taxa entra no faturamento oficial
-            if (taxaAtlivio > 0) {
-                transaction.update(statsRef, {
-                    total_revenue: increment(taxaAtlivio),
-                    ultima_atualizacao: serverTimestamp()
+            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
+            if (data.pay_type === 'atlix') {
+                transaction.update(userRef, { 
+                    wallet_bonus: increment(data.reward),
+                    updated_at: serverTimestamp()
                 });
+                // Marca como pago totalmente
+                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
+            } else {
+                // 3. Se for REAL, move para a fila de PIX do Admin
+                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
             }
-
-            // 4. 📝 HISTÓRICO DUPLO: Registro imutável para ambos
-            const extratoRef = doc(collection(db, "extrato_financeiro"));
-            
-            // Registro para o Prestador
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: data.user_id,
-                valor: premioLiquido,
-                tipo: "🎯 MISSÃO_CONCLUÍDA",
-                descricao: `Recebido: ${data.mission_title}`,
-                moeda: "ATLIX",
-                timestamp: serverTimestamp()
-            });
-
-            // Registro para o B2B (Saída de taxa e pagamento)
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: data.b2b_owner_uid,
-                valor: -custoTotalVaga,
-                tipo: "💸 PAGAMENTO_MISSÃO",
-                descricao: `Pago ao usuário por: ${data.mission_title}`,
-                moeda: "ATLIX",
-                timestamp: serverTimestamp()
-            });
-
-            // 5. ✅ FINALIZAÇÃO DA PROVA
-            transaction.update(subRef, {
-                status: 'paid_atlix',
-                paid_at: serverTimestamp(),
-                liquidacao_final: true
-            });
         });
 
-        alert("✅ PAGAMENTO PROCESSADO COM SUCESSO!");
-        if(window.carregarAuditoriaB2B) window.carregarAuditoriaB2B();
-
+        alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
     } catch (err) {
         console.error("Erro na liquidação:", err);
-        alert("❌ FALHA FINANCEIRA: " + err);
+        alert("Erro ao processar transferência de valores.");
     }
 };
 
@@ -646,23 +599,22 @@ window.processarReservaB2B = async () => {
                 updated_at: serverTimestamp()
             });
 
-         // 2. 🛡️ CRIAÇÃO BLINDADA B2B: DNA unificado para Radar e Auditoria
+          // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Sincroniza com os novos nomes de variáveis (rewardVal / slotsVal)
             const unitWithFee = totalNecessario / slotsVal; 
             
             const missionRef = doc(collection(db, "missions"));
-            // 🔐 Gravação Soberana: Unifica os IDs e trava a moeda em ATLIX
+            // 🔐 Gravação Soberana: Unifica owner_id e status dinâmico para escala industrial
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
-                owner_id: auth.currentUser.uid, // Referência para o motor financeiro
-                b2b_owner_uid: auth.currentUser.uid, // Referência para o Radar (Fim do erro de Identidade)
-                reward: rewardVal, // Valor líquido que o usuário recebe
-                unit_total_with_fee: unitWithFee, // Custo total por vaga (Prêmio + Taxa Gil)
-                total_with_fee: totalNecessario, // Investimento total da empresa
+                owner_id: auth.currentUser.uid, 
+                reward: rewardVal,
+                unit_total_with_fee: unitWithFee, 
+                total_with_fee: totalNecessario,
                 slots_totais: slotsVal,
                 slots_disponiveis: slotsVal,
                 pessoas_realizando: 0,
-                address: enderecoFormatado,
-                pay_type: 'atlix', // 🪙 Moeda Interna Oficial Atlivio
+               address: enderecoFormatado,
+                pay_type: 'real',
                 // 🚀 STATUS DINÂMICO: Se Radar Auto estiver ON, nasce 'active'. Se não, 'pending_b2b'
                 status: radarAutomatico ? 'active' : 'pending_b2b',
                 active: radarAutomatico ? true : false,
@@ -710,61 +662,5 @@ window.processarReservaB2B = async () => {
 window.initB2B = initB2B;
 window.carregarOrdensB2B = carregarOrdensB2B;
 window.carregarAuditoriaB2B = carregarAuditoriaB2B;
-
-window.encerrarMissaoB2BComEstorno = async (missionId) => {
-    if (!confirm("⚠️ REEMBOLSAR VAGAS?\nO valor das missões voltará para seu saldo. A taxa da plataforma será retida pela Atlivio.")) return;
-
-    try {
-        const mRef = doc(db, "missions", missionId);
-        const mSnap = await getDoc(mRef);
-        const m = mSnap.data();
-        
-        const vagasDisponiveis = m.slots_disponiveis || 0;
-        if(vagasDisponiveis <= 0) throw "Não há saldo para estornar.";
-
-       // 🛡️ NOVA REGRA: Devolve apenas o REWARD (valor da missão), a TAXA fica retida pela Atlivio
-        const premioSimples = m.reward; 
-        const custoTotalReserva = m.unit_total_with_fee || m.reward;
-        const totalParaDevolver = parseFloat((vagasDisponiveis * premioSimples).toFixed(2));
-        const totalParaSairDaReserva = parseFloat((vagasDisponiveis * custoTotalReserva).toFixed(2));
-        const taxaRetida = parseFloat((totalParaSairDaReserva - totalParaDevolver).toFixed(2));
-
-        await runTransaction(db, async (transaction) => {
-            const b2bRef = doc(db, "usuarios", auth.currentUser.uid);
-            const statsRef = doc(db, "sys_finance", "stats");
-
-            // 🔄 ESTORNO PARCIAL: Devolve o prêmio ao B2B, mas limpa a reserva total
-            transaction.update(b2bRef, {
-                wallet_reserved: increment(-totalParaSairDaReserva), // Limpa o total reservado das vagas
-                wallet_balance: increment(totalParaDevolver), // Devolve apenas o valor das missões
-                updated_at: serverTimestamp()
-            });
-
-            // 💰 LUCRO RETIDO: Taxa das vagas canceladas vai para o faturamento
-            if (taxaRetida > 0) {
-                transaction.update(statsRef, {
-                    total_revenue: increment(taxaRetida),
-                    ultima_atualizacao: serverTimestamp()
-                });
-            }
-
-            // 🏁 Encerra a missão
-            transaction.update(mRef, { status: 'closed', active: false, slots_disponiveis: 0 });
-
-            // 📝 Extrato do Reembolso
-            transaction.set(doc(collection(db, "extrato_financeiro")), {
-                uid: auth.currentUser.uid,
-                valor: totalParaDevolver,
-                tipo: "♻️ ESTORNO_VAGAS_B2B",
-                descricao: `Saldo devolvido da missão: ${m.title}`,
-                moeda: "ATLIX",
-                timestamp: serverTimestamp()
-            });
-        });
-
-        alert(`✅ SUCESSO! ${totalParaDevolver} ATLIX retornaram ao seu saldo.`);
-        window.carregarOrdensB2B();
-    } catch (e) { alert("Erro: " + e); }
-};
 
 console.log("💼 [Atlas B2B] Módulo Financeiro e Checkout Soldado!");
