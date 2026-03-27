@@ -693,4 +693,59 @@ window.initB2B = initB2B;
 window.carregarOrdensB2B = carregarOrdensB2B;
 window.carregarAuditoriaB2B = carregarAuditoriaB2B;
 
+// ♻️ MOTOR DE ENCERRAMENTO COM CAPTURA DE TAXA
+window.encerrarMissaoB2BComEstorno = async (missionId) => {
+    if (!confirm("⚠️ DESEJA ENCERRAR?\nAs vagas não preenchidas serão reembolsadas para seu saldo. A taxa de serviço Atlivio será retida pelo processamento.")) return;
+
+    try {
+        const mRef = doc(db, "missions", missionId);
+        const mSnap = await getDoc(mRef);
+        const m = mSnap.data();
+        
+        const vagasDisponiveis = m.slots_disponiveis || 0;
+        if(vagasDisponiveis <= 0) throw "Não há vagas para estornar.";
+
+        const premioUnitario = m.reward;
+        const custoUnitarioComTaxa = m.unit_total_with_fee;
+        const taxaPorVaga = custoUnitarioComTaxa - premioUnitario;
+
+        const valorParaB2B = vagasDisponiveis * premioUnitario; // Reembolso honesto
+        const valorParaGil = vagasDisponiveis * taxaPorVaga; // Sua comissão fica no cofre
+
+        await runTransaction(db, async (transaction) => {
+            const b2bRef = doc(db, "usuarios", auth.currentUser.uid);
+            const statsRef = doc(db, "sys_finance", "stats");
+
+            // 1. 🛡️ Limpa a reserva total do B2B, mas só devolve o prêmio
+            transaction.update(b2bRef, {
+                wallet_reserved: increment(-(vagasDisponiveis * custoUnitarioComTaxa)),
+                wallet_balance: increment(valorParaB2B)
+            });
+
+            // 2. 💰 Captura a taxa para o Cofre Atlivio
+            transaction.update(statsRef, {
+                total_revenue: increment(valorParaGil),
+                ultima_atualizacao: serverTimestamp()
+            });
+
+            // 3. 🏁 Inativa a missão
+            transaction.update(mRef, { status: 'closed', active: false, slots_disponiveis: 0 });
+            
+            // 4. 📝 Extrato com valor real
+            const extRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extRef, {
+                uid: auth.currentUser.uid,
+                valor: valorParaB2B,
+                tipo: "♻️ ESTORNO_VAGAS_B2B",
+                descricao: `Reembolso de ${vagasDisponiveis} vagas da missão: ${m.title}`,
+                moeda: "ATLIX",
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert(`✅ SUCESSO!\n\nEstornado para você: ${valorParaB2B} ATLIX\nTaxa Atlivio coletada: ${valorParaGil} ATLIX`);
+        window.carregarOrdensB2B();
+    } catch (e) { alert("Erro: " + e); }
+};
+
 console.log("💼 [Atlas B2B] Módulo Financeiro e Checkout Soldado!");
