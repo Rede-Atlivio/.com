@@ -332,6 +332,12 @@ export function iniciarMonitoramentoCarteira() {
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
             window.userProfile.wallet_frozen = parseFloat(data.wallet_frozen || 0); 
             window.userProfile.wallet_earnings = sEarnings;
+
+            // 📜 Carrega o histórico visual após atualizar os saldos
+            carregarHistoricoCarteira(uid);
+        } // <--- Fecha o if (docSnap.exists)
+    }); // <--- FECHA O ONSNAPSHOT (Aqui acaba o erro SyntaxError)
+} // <--- FECHA A FUNÇÃO iniciarMonitoramentoCarteira
             
             const saldoExibicao = powerCalculado;
             // ✅ Interfaces usam agora o campo oficial de Poder de Compra
