@@ -211,76 +211,89 @@ window.vereditoB2B = async (docId, status) => {
    } catch (e) { alert("Erro ao processar veredito."); }
 };
 
-// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO V2026.PRO
+// 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO V2026.PRO - ALINHADO ÀS REGRAS DE OURO
 window.liquidarPagamentoB2B = async (submissionId) => {
     try {
         const subRef = doc(db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
+        if (!subSnap.exists()) throw "Prova não encontrada.";
         const data = subSnap.data();
 
-        // 🛡️ TRAVA DE SEGURANÇA B2B: Garante que o DNA da prova está completo
-        if (!data.user_id || !data.b2b_owner_uid) {
-            throw "Esta prova possui um formato antigo e não pode ser liquidada automaticamente. Por favor, contate o suporte Atlivio.";
-        }
+        // 🛡️ DNA Check
+        if (!data.user_id || !data.b2b_owner_uid) throw "DNA da prova incompleto.";
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", data.user_id);
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid);
             const statsRef = doc(db, "sys_finance", "stats");
 
-            // AJUSTE 1: Calcula valor total (Prêmio + Sua Taxa)
-            const valorTotalReservado = data.unit_total_with_fee || data.reward; 
-            const lucroAtlivio = valorTotalReservado - data.reward;
+            // 📐 Cálculos Precisos
+            const custoTotalVaga = parseFloat(data.unit_total_with_fee || data.reward);
+            const premioLiquido = parseFloat(data.reward);
+            const taxaAtlivio = parseFloat((custoTotalVaga - premioLiquido).toFixed(2));
 
             const b2bSnap = await transaction.get(b2bRef);
-            const custodiaAtual = b2bSnap.data().wallet_reserved || 0;
+            const reservaAtual = b2bSnap.data().wallet_reserved || 0;
 
-            // TRAVA ANTI-NEGATIVO
-            if (custodiaAtual < valorTotalReservado) throw "CUSTÓDIA INSUFICIENTE.";
+            if (reservaAtual < custoTotalVaga) throw "CUSTÓDIA INSUFICIENTE NO B2B.";
 
-           // 1. 🛡️ ABATE DE RESERVA: Remove o custo total (Prêmio + Taxa) da reserva da empresa
-            transaction.update(b2bRef, { 
-                wallet_reserved: increment(-parseFloat(valorTotalReservado.toFixed(2))),
-                updated_at: serverTimestamp() 
+            // 1. 📉 B2B: Retira o valor TOTAL (Missão + Taxa) da RESERVA
+            transaction.update(b2bRef, {
+                wallet_reserved: increment(-custoTotalVaga),
+                updated_at: serverTimestamp()
             });
 
-            // 2. 💰 PAGAMENTO DO PRESTADOR: Credita apenas o prêmio líquido na carteira do usuário
-            transaction.update(userRef, { 
-                wallet_balance: increment(parseFloat(data.reward.toFixed(2))), 
-                updated_at: serverTimestamp() 
+            // 2. 📈 PRESTADOR: Recebe o prêmio no BALANCE (Disponível para saque)
+            transaction.update(userRef, {
+                wallet_balance: increment(premioLiquido),
+                updated_at: serverTimestamp()
             });
 
-            // 3. Alimenta o seu lucro no stats (Cofre Gil)
-            if (lucroAtlivio > 0) {
-                transaction.update(statsRef, { 
-                    total_revenue: increment(lucroAtlivio),
-                    ultima_atualizacao: serverTimestamp() 
+            // 3. 💰 COFRE ATLIVIO: Taxa entra no faturamento oficial
+            if (taxaAtlivio > 0) {
+                transaction.update(statsRef, {
+                    total_revenue: increment(taxaAtlivio),
+                    ultima_atualizacao: serverTimestamp()
                 });
             }
 
-            // AJUSTE HISTÓRICO: Grava o ganho do prestador para ele ver no extrato
+            // 4. 📝 HISTÓRICO DUPLO: Registro imutável para ambos
             const extratoRef = doc(collection(db, "extrato_financeiro"));
-            transaction.set(extratoRef, {
+            
+            // Registro para o Prestador
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: data.user_id,
-                valor: parseFloat(data.reward),
-                tipo: "🎯 MISSÃO_ATLIX", // Tag que o Wallet.js usa para não sujar o gráfico de chat
-                descricao: `Recompensa: ${data.mission_title}`,
-                timestamp: serverTimestamp(),
-                moeda: "ATLIX"
+                valor: premioLiquido,
+                tipo: "🎯 MISSÃO_CONCLUÍDA",
+                descricao: `Recebido: ${data.mission_title}`,
+                moeda: "ATLIX",
+                timestamp: serverTimestamp()
             });
 
-            // 4. Marca como pago
-            transaction.update(subRef, { 
-                status: (data.pay_type === 'real') ? 'paid_real' : 'paid_atlix', 
+            // Registro para o B2B (Saída de taxa e pagamento)
+            transaction.set(doc(collection(db, "extrato_financeiro")), {
+                uid: data.b2b_owner_uid,
+                valor: -custoTotalVaga,
+                tipo: "💸 PAGAMENTO_MISSÃO",
+                descricao: `Pago ao usuário por: ${data.mission_title}`,
+                moeda: "ATLIX",
+                timestamp: serverTimestamp()
+            });
+
+            // 5. ✅ FINALIZAÇÃO DA PROVA
+            transaction.update(subRef, {
+                status: 'paid_atlix',
                 paid_at: serverTimestamp(),
-                liquidacao_tipo: 'interna_digital'
+                liquidacao_final: true
             });
         });
 
-        alert("✅ PAGAMENTO PROCESSADO: Saldo transferido e lucro computado!");
+        alert("✅ PAGAMENTO PROCESSADO COM SUCESSO!");
+        if(window.carregarAuditoriaB2B) window.carregarAuditoriaB2B();
+
     } catch (err) {
-        console.error("Erro liquidação:", err);
-        alert("Erro: " + err);
+        console.error("Erro na liquidação:", err);
+        alert("❌ FALHA FINANCEIRA: " + err);
     }
 };
 
