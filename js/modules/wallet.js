@@ -291,11 +291,16 @@ export function iniciarMonitoramentoCarteira() {
                         total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
                         ultima_atualizacao: fv.serverTimestamp() 
                     });
-                }
-            }
-            // 🧠 Sincroniza memórias para o próximo ciclo
+                } // Fecha o if do cálculo de SYS FINANCE
+            } // Fecha o if do sensor de saldo positivo
+
+            // 🧠 SINCRONIZAÇÃO DE MEMÓRIA: Garante que o sistema não processe a mesma mudança duas vezes
             window.ultimoSaldoConhecido = sReal;
-            window.ultimaReservaConhecida = parseFloat(data.wallet_reserved || 0);
+            window.ultimoSaldoBonusConhecido = sBonus;
+            window.ultimaReservaConhecida = reservedAtual;
+        } // Fecha o if (docSnap.exists)
+    }); // Fecha o onSnapshot corretamente com parêntese e chave, resolvendo o erro de sintaxe
+} // Fecha a função iniciarMonitoramentoCarteira
 
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
