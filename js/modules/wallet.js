@@ -274,27 +274,28 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-         // 🚀 MAESTRO SENSORIAL V2026.6: Sensor de Entrada Externa (Pix para SYS FINANCE)
+         // 🚀 SENSOR DE ORIGEM V2026.7: Separa Pix, Estorno e ignora Recusa
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
                 const reservedAtual = parseFloat(data.wallet_reserved || 0);
                 
-                /* 🛡️ REGRA DA ORIGEM: 
-                   Se o saldo subiu MAS a reserva desceu na mesma proporção, é REEMBOLSO (Ignora).
-                   Se o saldo subiu sem mexer na reserva e não é degelo (frozen), é PIX EXTERNO. */
-                const isEstornoInterno = Math.abs(diferenca - (window.ultimaReservaConhecida - reservedAtual)) < 0.05;
+                // 🛡️ CADEADO FINANCEIRO: Identifica se o dinheiro veio da própria reserva
+                const variacaoReserva = window.ultimaReservaConhecida - reservedAtual;
+                const isEstornoInterno = Math.abs(diferenca - variacaoReserva) < 0.1;
 
                 if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
                     const fv = window.firebaseModules;
-                    // 🏦 SYS FINANCE: Recebe o aporte bruto das recargas dos usuários
+                    // 🏦 SYS FINANCE: Entrada de Capital Externo (PIX)
                     await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
                         total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
                         ultima_atualizacao: fv.serverTimestamp() 
                     });
-                    console.log(`🏦 SYS FINANCE ATUALIZADO: +${diferenca} (Recarga Pix Detectada)`);
                 }
             }
+            // 🧠 Sincroniza memórias para o próximo ciclo
+            window.ultimoSaldoConhecido = sReal;
+            window.ultimaReservaConhecida = parseFloat(data.wallet_reserved || 0);
 
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
