@@ -517,7 +517,10 @@ async function salvarMissao() {
         owner_id: window.auth.currentUser.uid, // 🔑 Garante que o Admin seja o dono da verba
         b2b_owner_uid: window.auth.currentUser.uid, // 🔑 Sincronia para o motor de Auditoria
         updated_at: serverTimestamp(), 
-        active: true
+        active: true,
+        slots_totais: 100, // Define um estoque inicial para missões do Admin
+        slots_disponiveis: 100,
+        pessoas_realizando: 0
     };
 
     try {
