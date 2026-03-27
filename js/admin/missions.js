@@ -465,12 +465,12 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                     <label class="text-[10px] text-gray-400 font-bold uppercase">Valor da Recompensa</label>
                     <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-2 rounded bg-white text-black font-black text-green-700" placeholder="0.00">
                 </div>
-                <div>
+               <div>
                     <label class="text-[10px] text-gray-400 font-bold uppercase">Tipo de Pagamento</label>
-                    <select id="mis-pay-type" class="w-full p-2 rounded bg-white text-black font-bold">
-                        <option value="atlix" ${dados?.pay_type === 'atlix' ? 'selected' : ''}>🪙 ATLIX (Bônus)</option>
-                        <option value="real" ${dados?.pay_type === 'real' ? 'selected' : ''}>💰 REAL (Dinheiro)</option>
-                    </select>
+                    <div class="w-full p-2 rounded bg-slate-100 text-black font-black flex items-center gap-2">
+                        <span>🪙</span> ATLIX (Moeda Interna)
+                        <input type="hidden" id="mis-pay-type" value="atlix">
+                    </div>
                 </div>
             </div>
             
