@@ -1263,13 +1263,27 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
-            
-            // 1. Devolve o dinheiro: USA O VALOR FINAL SANEADO (valorFinalEstorno)
+            const statsRef = doc(db, "sys_finance", "stats");
+
+            // 📏 CÁLCULO DE RETENÇÃO: Devolve o prêmio ao B2B, Atlivio retém a taxa
+            const premioPorVaga = parseFloat(mData.reward || 0);
+            const totalPremiosParaDevolver = parseFloat((premioPorVaga * vagasRestantes).toFixed(2));
+            const taxaParaGil = parseFloat((valorFinalEstorno - totalPremiosParaDevolver).toFixed(2));
+
+            // 1. 🔄 MOVIMENTAÇÃO: Limpa a reserva TOTAL, devolve apenas o PRÊMIO
             transaction.update(userRef, {
                 wallet_reserved: increment(-valorFinalEstorno),
-                wallet_balance: increment(valorFinalEstorno),
+                wallet_balance: increment(totalPremiosParaDevolver),
                 updated_at: serverTimestamp()
             });
+
+            // 2. 💰 REGRA DA TAXA: Lucro retido vai para TOTAL REVENUE
+            if (taxaParaGil > 0) {
+                transaction.update(statsRef, { 
+                    total_revenue: increment(taxaParaGil),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
                 status: 'closed', 
