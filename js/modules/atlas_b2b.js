@@ -225,24 +225,36 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-            // 1. Libera a reserva do B2B (Dá baixa no valor que estava 'preso')
-            transaction.update(b2bRef, { 
-                wallet_reserved: increment(-data.reward),
-                updated_at: serverTimestamp()
-            });
+           // 1. REGRA DO ABATE: Remove o valor total (Missão + Taxa) da reserva do B2B
+            // O valorUnitarioComTaxa deve vir da missão para garantir o lucro da Atlivio
+            const valorDebitoTotal = data.unit_total_with_fee || data.reward; 
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-valorDebitoTotal),
+                updated_at: serverTimestamp()
+            });
 
-            // 2. Se for pagamento em ATLIX (Bônus), credita na hora para o usuário
-            if (data.pay_type === 'atlix') {
-                transaction.update(userRef, { 
-                    wallet_bonus: increment(data.reward),
-                    updated_at: serverTimestamp()
-                });
-                // Marca como pago totalmente
-                transaction.update(subRef, { status: 'paid_atlix', paid_at: serverTimestamp() });
-            } else {
-                // 3. Se for REAL, move para a fila de PIX do Admin
-                transaction.update(subRef, { status: 'approved_pending_pix', approved_at: serverTimestamp() });
-            }
+            // 2. REGRA DO CRÉDITO: O prestador recebe o valor líquido em sua carteira de trabalho
+            transaction.update(userRef, { 
+                wallet_balance: increment(data.reward),
+                updated_at: serverTimestamp()
+            });
+
+            // 3. REGRA DA TAXA: A diferença vai para o lucro acumulado da Atlivio (Total Revenue)
+            const lucroAtlivio = valorDebitoTotal - data.reward;
+            if (lucroAtlivio > 0) {
+                const statsRef = doc(db, "sys_finance", "stats");
+                transaction.update(statsRef, { 
+                    total_revenue: increment(lucroAtlivio),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
+
+            // 4. FINALIZAÇÃO: Marca como pago via Crédito Atlix no banco
+            transaction.update(subRef, { 
+                status: 'paid_atlix', 
+                paid_at: serverTimestamp(),
+                taxa_atlivio_liquidada: lucroAtlivio
+            });
         });
 
         alert("✅ PAGAMENTO PROCESSADO: O saldo foi transferido com sucesso.");
