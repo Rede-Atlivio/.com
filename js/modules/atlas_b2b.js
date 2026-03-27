@@ -628,15 +628,17 @@ window.processarReservaB2B = async () => {
                 updated_at: serverTimestamp()
             });
 
-          // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Sincroniza com os novos nomes de variáveis (rewardVal / slotsVal)
+         // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Sincroniza o DNA para o Radar e Auditoria
             const unitWithFee = totalNecessario / slotsVal; 
             
             const missionRef = doc(collection(db, "missions"));
-            // 🔐 Gravação Soberana: Unifica owner_id e status dinâmico para escala industrial
+            // 🔐 Gravação Soberana: Unifica os IDs para o Missions.js encontrar
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
-                owner_id: auth.currentUser.uid, 
+                owner_id: auth.currentUser.uid, // ID para controle financeiro
+                b2b_owner_uid: auth.currentUser.uid, // 🔑 ID ESSENCIAL para o Missions.js e Auditoria
                 reward: rewardVal,
+                pay_type: 'atlix', // 🪙 Forçamos ATLIX aqui também para matar o "Real" de vez
                 unit_total_with_fee: unitWithFee, 
                 total_with_fee: totalNecessario,
                 slots_totais: slotsVal,
