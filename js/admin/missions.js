@@ -734,47 +734,38 @@ window.anularRecusaB2B = async (docId, userId, valor) => {
     await window.aprovarMissao(docId, userId, valor);
 };
 // 🔨 MARTELO DO ADMIN: Você analisou e concorda que a prova é RUIM (O B2B tem razão)
+// 🔨 MARTELO DO ADMIN: Valida que a prova é RUIM. 
+// O dinheiro NÃO VOLTA pro B2B, ele continua reservado para a missão e a VAGA é devolvida ao Radar.
 window.confirmarRecusaB2B = async (docId) => {
-    if(!confirm("🔨 Confirmar reprovação final? O valor reservado voltará para o saldo da empresa.")) return;
+    if(!confirm("🔨 VALIDAR RECUSA? \n\nA prova será descartada, o dinheiro continuará reservado e a vaga voltará ao radar para outro usuário.")) return;
 
     try {
+        const subRef = doc(window.db, "mission_submissions", docId);
+        const subSnap = await getDoc(subRef);
+        const data = subSnap.data();
+
         await runTransaction(window.db, async (transaction) => {
-            const subRef = doc(window.db, "mission_submissions", docId);
-            const subSnap = await transaction.get(subRef);
-            if (!subSnap.exists()) throw "Registro não encontrado";
-            const data = subSnap.data();
+            const missionRef = doc(window.db, "missions", data.mission_id);
+            
+            // 1. Marca a prova como rejeitada definitivamente pelo Admin
+            transaction.update(subRef, { 
+                status: 'rejected', 
+                admin_decision: 'confirmed_b2b_rejection',
+                updated_at: serverTimestamp() 
+            });
 
-           // 🛡️ REGRA DO ESTORNO: Devolve o prêmio ao B2B, mas a Atlivio retém a taxa
-            if (data.b2b_owner_uid) {
-                const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
-                const statsRef = doc(window.db, "sys_finance", "stats");
-                
-                const custoTotal = parseFloat(data.unit_total_with_fee || data.reward);
-                const premioDevolvido = parseFloat(data.reward);
-                const taxaRetida = parseFloat((custoTotal - premioDevolvido).toFixed(2));
-
-                // 1. Limpa a reserva TOTAL e devolve apenas o prêmio líquido
-                transaction.update(b2bRef, { 
-                    wallet_reserved: increment(-custoTotal),
-                    wallet_balance: increment(premioDevolvido)
-                });
-
-                // 2. 💰 REGRA DA TAXA: A comissão da vaga recusada vai para o seu lucro
-                if (taxaRetida > 0) {
-                    transaction.update(statsRef, { 
-                        total_revenue: increment(taxaRetida),
-                        ultima_atualizacao: serverTimestamp()
-                    });
-                }
-            }
-
-            // 2. Marca como reprovado permanentemente
-            transaction.update(subRef, { status: 'rejected', admin_decision: 'confirmed_b2b_rejection', updated_at: serverTimestamp() });
+            // 2. ♻️ DEVOLUÇÃO DA VAGA: O dinheiro continua em 'wallet_reserved' do B2B
+            // porque a missão ainda está ativa aguardando alguém fazer certo.
+            transaction.update(missionRef, {
+                slots_disponiveis: increment(1),
+                pessoas_realizando: increment(-1),
+                updated_at: serverTimestamp()
+            });
         });
-        
-        alert("✅ Conflito resolvido: Dinheiro devolvido à empresa.");
+
+        alert("✅ RECUSA VALIDADA: A vaga foi devolvida ao radar e o saldo permanece reservado para a missão.");
         loadSubmissions();
-    } catch(e) { alert("Erro ao processar resolução."); }
+    } catch(e) { console.error(e); alert("Erro ao processar recusa."); }
 };
 
 // 🚀 MOTOR AUTOCOMPLETE GOOGLE V2026
