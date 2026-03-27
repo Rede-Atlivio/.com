@@ -494,10 +494,11 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
                 updated_at: serverTimestamp()
             });
 
-            // 2. 🛡️ TRAVA CONTÁBIL: Só incrementa o faturamento se houver valor REAL envolvido
+          // 2. 🛡️ TRAVA CONTÁBIL: Direciona o lucro para o campo oficial 'total_revenue' no 'stats'
             if (lucroRealParaEmpresa > 0) {
-                transaction.update(cofreRef, {
-                    total_acumulado: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
+                const statsRefOficial = doc(db, "sys_finance", "stats");
+                transaction.update(statsRefOficial, {
+                    total_revenue: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
                     ultima_atualizacao: serverTimestamp()
                 });
             }
