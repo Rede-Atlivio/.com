@@ -296,15 +296,16 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 return;
             }
 
-          // 🚀 GRAVAÇÃO BLINDADA: Agora com a garantia de que o ID existe e a moeda é ATLIX
+          // 🚀 GRAVAÇÃO BLINDADA: Carimba o DNA Financeiro (Preço + Taxa) para a liquidação futura
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
                 owner_id: donoFinal, 
-                b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B localizarem a prova
+                b2b_owner_uid: donoFinal, 
                 mission_title: titulo,
-                unit_total_with_fee: unitTotal, // 🔑 Regra do Abate: Carimba o custo total na prova
-                reward: recompensa,
-                pay_type: 'atlix', // 🪙 Padronização Master: Todas as missões liquidam em moeda interna
+                // 🔑 REGRA DO ABATE: Salva o custo real que deve sair da reserva do B2B (unitTotal)
+                unit_total_with_fee: parseFloat(unitTotal), 
+                reward: parseFloat(recompensa), // Valor líquido que o usuário vai receber
+                pay_type: 'atlix', // 🪙 ATLIX: Moeda interna para proteger o faturamento
                 user_id: auth.currentUser.uid, // ID de quem realizou a tarefa
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
                 proof_url: base64data, // Foto comprimida em Base64
