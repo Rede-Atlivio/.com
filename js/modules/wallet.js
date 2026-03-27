@@ -279,8 +279,11 @@ export function iniciarMonitoramentoCarteira() {
 if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
     const diferenca = sReal - window.ultimoSaldoConhecido;
     const frozenAtual = parseFloat(data.wallet_frozen || 0);
+    const reservedAtual = parseFloat(data.wallet_reserved || 0); // Captura a reserva atual para o cálculo
+    const variacaoReserva = (window.ultimaReservaConhecida || 0) - reservedAtual; // Calcula se saiu dinheiro da reserva
+    const isEstornoInterno = Math.abs((sReal - window.ultimoSaldoConhecido) - variacaoReserva) < 0.1; // Define se é estorno ou PIX
     const fv = window.firebaseModules; // Definido aqui para usar em ambos os blocos abaixo
-
+    
     // 🛡️ REGRA DA ORIGEM: Só soma no SYS FINANCE se for recarga PIX real (externa)
     if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
         // 🏦 SYS FINANCE: Balde Bruto das Entradas Externas
