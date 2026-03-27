@@ -319,9 +319,10 @@ export function iniciarMonitoramentoCarteira() {
                 }
             }
 
-            // Atualiza as memórias de comparação para a próxima mudança de saldo
+           // 🧠 Sincroniza memórias incluindo a Reserva para o Cadeado Anti-Estorno funcionar
             window.ultimoSaldoConhecido = sReal;
             window.ultimoSaldoBonusConhecido = sBonus;
+            window.ultimaReservaConhecida = parseFloat(data.wallet_reserved || 0);
 
             // Alinha o perfil global (Essencial para milhões de usuários)
             window.userProfile = window.userProfile || {};
