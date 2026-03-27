@@ -274,27 +274,19 @@ export function iniciarMonitoramentoCarteira() {
             const sEarnings = parseFloat(data.wallet_earnings || 0);
             const powerCalculado = sReal + sBonus;
 
-         // 🚀 SENSOR DE ORIGEM V2026.7: Separa Pix, Estorno e evita duplicidade no SYS FINANCE
+         // 🚀 MAESTRO SENSORIAL V2026.5: Sensor Híbrido (Detecta PIX e BÔNUS)
+            // 1. SENSOR DE PIX REAL (Mantendo sua regra original intocada)
             if (window.ultimoSaldoConhecido !== undefined && sReal > window.ultimoSaldoConhecido) {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
-                const reservedAtual = parseFloat(data.wallet_reserved || 0);
-                
-                // 🛡️ CADEADO FINANCEIRO: Verifica se o saldo subiu porque a reserva desceu (Estorno Interno)
-                const variacaoReserva = (window.ultimaReservaConhecida || 0) - reservedAtual;
-                const isEstornoInterno = Math.abs(diferenca - variacaoReserva) < 0.1;
 
-                // 🛡️ REGRA DA ORIGEM: Só envia para o SYS FINANCE se for dinheiro novo (PIX) e não for degelo (Frozen)
-                if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
+                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
+                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
                     const fv = window.firebaseModules;
-                    // 🏦 SYS FINANCE: Registra entrada bruta externa no cofre da Atlivio
-                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
-                        total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
-                        ultima_atualizacao: fv.serverTimestamp() 
-                    });
-                }
+                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
 
-                if (frozenAtual > 0) {
+                    if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
                         await fv.updateDoc(fv.doc(db, "usuarios", uid), {
                             wallet_balance: fv.increment(frozenAtual),
@@ -303,12 +295,11 @@ export function iniciarMonitoramentoCarteira() {
                         });
                         window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
                     }
-                   // Oficializa o lote de entrada no histórico de validade
                     window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
                 }
-            } // <--- Esta chave fecha o sensor de saldo positivo
+            }
 
-            // 2. SENSOR DE BÔNUS (Detecta se o Admin ou Boas-vindas creditou saldo)
+            // 2. SENSOR DE BÔNUS (Novo: Detecta se o Admin ou Boas-vindas deu dinheiro)
             if (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido) {
                 const difBonus = sBonus - window.ultimoSaldoBonusConhecido;
                 if (difBonus >= 0.01) {
@@ -332,12 +323,6 @@ export function iniciarMonitoramentoCarteira() {
             window.userProfile.wallet_reserved = parseFloat(data.wallet_reserved || 0);
             window.userProfile.wallet_frozen = parseFloat(data.wallet_frozen || 0); 
             window.userProfile.wallet_earnings = sEarnings;
-
-            // 📜 Carrega o histórico visual após atualizar os saldos
-            carregarHistoricoCarteira(uid);
-        } // <--- Fecha o if (docSnap.exists)
-    }); // <--- FECHA O ONSNAPSHOT (Aqui acaba o erro SyntaxError)
-} // <--- FECHA A FUNÇÃO iniciarMonitoramentoCarteira
             
             const saldoExibicao = powerCalculado;
             // ✅ Interfaces usam agora o campo oficial de Poder de Compra
