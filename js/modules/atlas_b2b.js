@@ -628,24 +628,23 @@ window.processarReservaB2B = async () => {
                 updated_at: serverTimestamp()
             });
 
-         // 2. 🛡️ CRIAÇÃO BLINDADA B2B: Sincroniza o DNA para o Radar e Auditoria
+         // 2. 🛡️ CRIAÇÃO BLINDADA B2B: DNA unificado para Radar e Auditoria
             const unitWithFee = totalNecessario / slotsVal; 
             
             const missionRef = doc(collection(db, "missions"));
-            // 🔐 Gravação Soberana: Unifica os IDs para o Missions.js encontrar
+            // 🔐 Gravação Soberana: Unifica os IDs e trava a moeda em ATLIX
             transaction.set(missionRef, {
                 ...window.wizardB2BData,
-                owner_id: auth.currentUser.uid, // ID para controle financeiro
-                b2b_owner_uid: auth.currentUser.uid, // 🔑 ID ESSENCIAL para o Missions.js e Auditoria
-                reward: rewardVal,
-                pay_type: 'atlix', // 🪙 Forçamos ATLIX aqui também para matar o "Real" de vez
-                unit_total_with_fee: unitWithFee, 
-                total_with_fee: totalNecessario,
+                owner_id: auth.currentUser.uid, // Referência para o motor financeiro
+                b2b_owner_uid: auth.currentUser.uid, // Referência para o Radar (Fim do erro de Identidade)
+                reward: rewardVal, // Valor líquido que o usuário recebe
+                unit_total_with_fee: unitWithFee, // Custo total por vaga (Prêmio + Taxa Gil)
+                total_with_fee: totalNecessario, // Investimento total da empresa
                 slots_totais: slotsVal,
                 slots_disponiveis: slotsVal,
                 pessoas_realizando: 0,
-               address: enderecoFormatado,
-                pay_type: 'real',
+                address: enderecoFormatado,
+                pay_type: 'atlix', // 🪙 Moeda Interna Oficial Atlivio
                 // 🚀 STATUS DINÂMICO: Se Radar Auto estiver ON, nasce 'active'. Se não, 'pending_b2b'
                 status: radarAutomatico ? 'active' : 'pending_b2b',
                 active: radarAutomatico ? true : false,
