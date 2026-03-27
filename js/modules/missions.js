@@ -297,7 +297,8 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             }
 
           // 🚀 GRAVAÇÃO BLINDADA: Carimba o DNA Financeiro (Preço + Taxa) para a liquidação futura
-            await addDoc(collection(db, "mission_submissions"), {
+            // 🚀 CORREÇÃO: Usa o fv (firebaseModules) para garantir que o addDoc dispare de verdade
+            await window.firebaseModules.addDoc(window.firebaseModules.collection(db, "mission_submissions"), {
                 mission_id: id,
                 owner_id: donoFinal, 
                 b2b_owner_uid: donoFinal, 
