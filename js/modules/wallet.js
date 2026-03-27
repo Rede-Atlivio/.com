@@ -1231,9 +1231,14 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
             return alert("Missão encerrada! Todas as vagas foram utilizadas.");
         }
 
-        // 💸 Cálculo do Reembolso: Valor Unitário (Com Taxa) x Vagas Restantes
+        // 🛡️ AJUSTE DE ESTORNO JUSTO: Reembolsa apenas o que SOBROU na custódia do usuário
+        // Não baseamos mais no cálculo de vagas, mas sim no que o B2B ainda tem "preso" para esta missão específica
         const valorUnitarioComTaxa = parseFloat(mData.unit_total_with_fee || 0);
         const valorTotalEstorno = parseFloat((valorUnitarioComTaxa * vagasRestantes).toFixed(2));
+        
+        // Proteção extra: O estorno nunca pode ser maior do que o que o usuário tem reservado
+        const saldoReservadoB2B = parseFloat(window.userProfile?.wallet_reserved || 0);
+        const valorFinalEstorno = Math.min(valorTotalEstorno, saldoReservadoB2B);
 
         if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
 
