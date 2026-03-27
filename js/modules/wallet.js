@@ -842,10 +842,12 @@ window.filtrarGanhos = async (periodo) => {
                 // 🧬 REGRA MASTER: Prioridade para o DNA da moeda gravado no documento
                 const moedaDoBanco = t.moeda || ""; 
 
-                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO')) {
-                    somaAX += valor; // 🪙 Cai no balde de Bônus (Dourado)
+               // 🧬 REGRA MASTER V2026: Filtra por Moeda, Ícone de Bônus ou Tag de Missão
+                // Gil, incluímos o '🎯' aqui para que os ganhos de missão NUNCA sujem seu gráfico de Chat Real.
+                if (moedaDoBanco === 'ATLIX' || tipo.includes('🪙') || tipo.includes('MISSÃO') || tipo.includes('🎯')) {
+                    somaAX += valor; // 🪙 Balde de Missões/Digital (Lado Direito)
                 } else {
-                    somaReal += valor; // 💰 Cai no balde de Real (Verde)
+                    somaReal += valor; // 💰 Balde de Trabalho Real/Chat (Lado Esquerdo)
                 }
             }
         });
