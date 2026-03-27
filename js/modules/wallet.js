@@ -303,11 +303,12 @@ export function iniciarMonitoramentoCarteira() {
                         });
                         window.registrarMovimentacao(frozenAtual, "🔥 SALDO RESGATADO", "Seu saldo anterior foi recuperado!");
                     }
+                   // Oficializa o lote de entrada no histórico de validade
                     window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
                 }
-            }
+            } // <--- Esta chave fecha o sensor de saldo positivo
 
-            // 2. SENSOR DE BÔNUS (Novo: Detecta se o Admin ou Boas-vindas deu dinheiro)
+            // 2. SENSOR DE BÔNUS (Detecta se o Admin ou Boas-vindas creditou saldo)
             if (window.ultimoSaldoBonusConhecido !== undefined && sBonus > window.ultimoSaldoBonusConhecido) {
                 const difBonus = sBonus - window.ultimoSaldoBonusConhecido;
                 if (difBonus >= 0.01) {
