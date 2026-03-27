@@ -280,11 +280,18 @@ export function iniciarMonitoramentoCarteira() {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
 
-                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
-                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+               // 🛡️ REGRA DA ORIGEM: Só soma no SYS FINANCE se for recarga PIX real (externa)
+                // Se for estorno (diferença veio da reserva), o Cadeado isEstornoInterno bloqueia a soma.
+                if (diferenca >= 1.00 && !isEstornoInterno && Math.abs(diferenca - frozenAtual) > 0.01) {
                     const fv = window.firebaseModules;
-                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
-                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
+                    // 🏦 SYS FINANCE: Balde Bruto das Entradas Externas (Para conciliação bancária)
+                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { 
+                        total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), 
+                        ultima_atualizacao: fv.serverTimestamp() 
+                    });
+                    
+                    window.oficializarLoteExterno(diferenca, "PIX", "Recarga Integrada");
+                }
 
                     if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
