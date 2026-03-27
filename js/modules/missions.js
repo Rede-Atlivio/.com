@@ -293,20 +293,20 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 return;
             }
 
-            // 🚀 GRAVAÇÃO BLINDADA: Agora com a garantia de que o ID existe
+          // 🚀 GRAVAÇÃO BLINDADA: Agora com a garantia de que o ID existe e a moeda é ATLIX
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
                 owner_id: donoFinal, 
-                b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B
+                b2b_owner_uid: donoFinal, // Campo essencial para o Admin e B2B localizarem a prova
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: 'atlix', // 🪙 Padronização Master: Todas as missões liquidam em moeda interna
-                user_id: auth.currentUser.uid,
+                user_id: auth.currentUser.uid, // ID de quem realizou a tarefa
                 user_name: window.userProfile?.nome || "Usuário Atlivio",
-                proof_url: base64data,
-                location: window.currentMissionLocation || null,
-                status: 'pending',
-                created_at: serverTimestamp()
+                proof_url: base64data, // Foto comprimida em Base64
+                location: window.currentMissionLocation || null, // Coordenadas GPS da captura
+                status: 'pending', // Status inicial para análise do B2B ou Admin
+                created_at: serverTimestamp() // Carimbo de tempo oficial do servidor
             });
             // ✅ CONFIRMAÇÃO DE ENTREGA: Remove o usuário do contador de "realizando"
             const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
