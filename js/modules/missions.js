@@ -274,21 +274,21 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
             const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-            // 🚀 GRAVAÇÃO COM DNA UNIFICADO ATLIVIO V2026
-            await addDoc(collection(db, "mission_submissions"), {
-                mission_id: id,
-                owner_id: donoFinal, // 🛡️ Blindado: Não aceita mais null
-                b2b_owner_uid: donoFinal, 
-                mission_title: titulo,
-                reward: recompensa,
-                pay_type: tipoPagamento,
-                user_id: auth.currentUser.uid,
-                user_name: window.userProfile?.nome || "Usuário Atlivio",
-                proof_url: base64data,
-                location: window.currentMissionLocation || null,
-                status: 'pending',
-                created_at: serverTimestamp()
-            });
+           // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                owner_id: donoFinal, 
+                b2b_owner_uid: donoFinal, // Chave mestre para o débito na reserva
+                mission_title: titulo,
+                reward: recompensa,
+                pay_type: 'atlix', // Força o sistema a reconhecer como crédito interno
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Usuário Atlivio",
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                status: 'pending', // Aguarda aprovação para mover da reserva para o prestador
+                created_at: serverTimestamp()
+            });
             // ✅ CONFIRMAÇÃO DE ENTREGA: Remove o usuário do contador de "realizando"
             const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             const missionRef = doc(window.db, "missions", id);
