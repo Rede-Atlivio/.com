@@ -613,74 +613,83 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN: Sincronizado com Atlas B2B
-async function aprovarMissao(submissionId, userId, reward) {
+// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN: Transfere o valor reservado para o executor
+// Gil, esta é a mesma função soberana usada no B2B, agora sob comando do Admin Central.
+window.aprovarMissao = async (submissionId) => {
     try {
         const subRef = doc(window.db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
+        if (!subSnap.exists()) throw "Submissão não encontrada.";
         const data = subSnap.data();
 
+        // 🛰️ BUSCA DE VALOR BRUTO: Vamos na missão original buscar o valor real pago (Prêmio + Taxa)
+        const missionRef = doc(window.db, "missions", data.mission_id);
+        const missionSnap = await getDoc(missionRef);
+        const valorRealB2B = missionSnap.exists() ? Number(missionSnap.data().unit_total_with_fee) : Number(data.reward);
+
         if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos na submissão.";
-        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar pagamento de ${data.reward} AX?`)) return;
+        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar liquidação de R$ ${data.reward} AX?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
-            const userRef = doc(window.db, "usuarios", data.user_id); 
-            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
+            const userRef = doc(window.db, "usuarios", data.user_id); // Executor (Recebe prêmio)
+            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid); // Empresa (Sai da reserva)
             const statsRef = doc(window.db, "sys_finance", "stats");
 
-            // 📐 REGRA DO ABATE: Busca o valor bruto (Com Taxa)
-            const valorDebitoTotal = Number(data.unit_total_with_fee || data.reward); 
-            const lucroAtlivio = valorDebitoTotal - data.reward;
-
-            // 1. Remove o valor total da reserva do B2B
+            // 1. REGRA DO ABATE REAL: Remove o valor TOTAL (Prêmio + Taxa) da reserva do B2B
+            const valorParaAbater = Number(valorRealB2B);
             transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorDebitoTotal),
+                wallet_reserved: increment(-valorParaAbater),
                 updated_at: serverTimestamp()
             });
 
-            // 2. Crédito Líquido para o Prestador
+            // 2. REGRA DO CRÉDITO LÍQUIDO: O prestador recebe o prêmio (Ex: R$ 5,00)
             transaction.update(userRef, { 
-                wallet_balance: increment(data.reward),
+                wallet_balance: increment(Number(data.reward)),
                 updated_at: serverTimestamp()
             });
-
-            // 3. REGRA DO LUCRO: Alimenta o faturamento da plataforma
-            if (lucroAtlivio > 0) {
+            
+            // 3. REGRA DA TAXA (COFRE ATLIVIO): Captura a comissão da plataforma
+            const valorBrutoB2B = Number(valorRealB2B); 
+            const premioUsuario = Number(data.reward);
+            const lucroRealValidado = Number((valorBrutoB2B - premioUsuario).toFixed(2));
+            
+            if (lucroRealValidado > 0 && lucroRealValidado < valorBrutoB2B) {
                 transaction.update(statsRef, { 
-                    total_revenue: increment(lucroAtlivio),
+                    total_revenue: increment(lucroRealValidado),
                     ultima_atualizacao: serverTimestamp()
                 });
+                console.log(`✅ [COFRE ADMIN] Taxa de R$ ${lucroRealValidado} capturada.`);
             }
 
-            // 4. FINALIZAÇÃO: Encerra o ciclo da submissão
+            // 4. FINALIZAÇÃO: Encerra a submissão e registra quem autorizou
             transaction.update(subRef, { 
                 status: 'paid_atlix', 
                 paid_at: serverTimestamp(),
-                taxa_atlivio_liquidada: lucroAtlivio,
-                finalizado_por: 'admin_central'
+                taxa_atlivio_liquidada: (lucroRealValidado > 0) ? lucroRealValidado : 0,
+                autorizado_por: 'ADMIN_CENTRAL_JUSTIÇA'
             });
 
-            // 5. EXTRATOS (Ledger)
+            // 5. REGISTRO NO LIVRO RAZÃO (Extratos)
             const extratoRefUser = doc(collection(window.db, "extrato_financeiro"));
             transaction.set(extratoRefUser, {
                 uid: data.user_id, valor: data.reward, tipo: "🎯 MISSÃO_APROVADA",
-                descricao: `Prova aceita: ${data.mission_title}`, moeda: "ATLIX", timestamp: serverTimestamp()
+                descricao: `Recebido por: ${data.mission_title}`, moeda: "ATLIX", timestamp: serverTimestamp()
             });
 
             const extratoRefB2B = doc(collection(window.db, "extrato_financeiro"));
             transaction.set(extratoRefB2B, {
-                uid: data.b2b_owner_uid, valor: -valorDebitoTotal, tipo: "💸 DÉBITO_MISSÃO",
-                descricao: `Pagamento: ${data.mission_title}`, moeda: "BRL", timestamp: serverTimestamp()
+                uid: data.b2b_owner_uid, valor: -valorParaAbater, tipo: "💸 DÉBITO_MISSÃO",
+                descricao: `Liquidado: ${data.mission_title}`, moeda: "BRL", timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ OPERAÇÃO LIQUIDADA COM SUCESSO!");
-        loadSubmissions();
+        alert("✅ OPERAÇÃO LIQUIDADA: O saldo foi transferido e as taxas foram coletadas.");
+        loadSubmissions(); // Recarrega a lista
     } catch (err) {
         console.error("Erro na liquidação Admin:", err);
-        alert("❌ ERRO: " + err);
+        alert("❌ ERRO NO MOTOR: " + err);
     }
-}
+};
 
 // ⛔ MOTOR DE REJEIÇÃO (DEVOLVE VAGA E MANTÉM CUSTÓDIA)
 async function rejeitarMissao(docId) {
