@@ -696,7 +696,94 @@ window.processarReservaB2B = async () => {
         btn.innerText = "Finalizar e Ativar Operação ✅";
     }
 };
+// 🔄 MOTOR DE ESTORNO B2B: Encerra a missão e devolve o saldo proporcional ao cliente
+window.encerrarMissaoB2BComEstorno = async (missionId) => {
+    // 🛡️ CONFIRMAÇÃO DE SEGURANÇA: Evita cliques acidentais em operações financeiras
+    if (!confirm("⚠️ ATENÇÃO: Deseja encerrar esta missão? As vagas não preenchidas serão reembolsadas com o abatimento da taxa de intermediação.")) return;
 
+    try {
+        const missionRef = doc(db, "missions", missionId);
+        const missionSnap = await getDoc(missionRef);
+        
+        if (!missionSnap.exists()) throw "Missão não localizada no radar.";
+        const m = missionSnap.data();
+
+        // 🛑 TRAVA DE STATUS: Só estorna se a missão não estiver expirada ou já finalizada
+        if (m.status !== 'active' && m.status !== 'pending_b2b') {
+            return alert("Esta missão já se encontra em estado finalizado.");
+        }
+
+        const uid = auth.currentUser.uid;
+        const userRef = doc(db, "usuarios", uid);
+        const statsRef = doc(db, "sys_finance", "stats");
+
+        // 🧮 CÁLCULO DE ENGENHARIA FINANCEIRA ATLIVIO
+        const vagasRestantes = Number(m.slots_disponiveis || 0);
+        
+        if (vagasRestantes <= 0) {
+            // Se não há vagas, apenas desativa a missão sem mexer no financeiro
+            await updateDoc(missionRef, { status: 'completed', active: false, updated_at: serverTimestamp() });
+            return alert("Missão encerrada! Todas as vagas já haviam sido preenchidas.");
+        }
+
+        // Recupera o valor que o cliente pagou por CADA vaga (Preço + Taxa)
+        const valorUnitarioComTaxa = Number(m.unit_total_with_fee);
+        // Recupera quanto o usuário ganharia (O valor líquido da recompensa)
+        const recompensaLiquidaUnitaria = Number(m.reward);
+        
+        // 💎 A MINA DE OURO: A taxa que a Atlivio retém por cada vaga cancelada
+        const taxaUnitariaAtlivio = valorUnitarioComTaxa - recompensaLiquidaUnitaria;
+        
+        // 💰 TOTAIS DA OPERAÇÃO
+        const montanteTotalReserva = valorUnitarioComTaxa * vagasRestantes; // O que sai da reserva
+        const lucroPlataformaTotal = taxaUnitariaAtlivio * vagasRestantes; // O que vai pro seu bolso (Revenue)
+        const estornoClienteFinal = recompensaLiquidaUnitaria * vagasRestantes; // O que volta pro saldo do cliente
+
+        // ⚡ INÍCIO DA TRANSAÇÃO ATÔMICA: Ou faz tudo, ou não faz nada
+        await runTransaction(db, async (transaction) => {
+            // 1. ATUALIZAÇÃO DA MISSÃO: Carimba como encerrada pelo dono
+            transaction.update(missionRef, {
+                status: 'closed_by_owner',
+                active: false,
+                slots_disponiveis: 0,
+                encerrada_em: serverTimestamp()
+            });
+
+            // 2. MOVIMENTAÇÃO BANCÁRIA DO USUÁRIO: Tira da reserva e devolve o líquido
+            transaction.update(userRef, {
+                wallet_reserved: increment(-montanteTotalReserva), // Esvazia a reserva das vagas mortas
+                wallet_balance: increment(estornoClienteFinal),    // Devolve apenas o valor da recompensa
+                updated_at: serverTimestamp()
+            });
+
+            // 3. COFRE ATLIVIO: Captura as taxas das vagas que não foram usadas
+            if (lucroPlataformaTotal > 0) {
+                transaction.update(statsRef, {
+                    total_revenue: increment(lucroPlataformaTotal),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
+
+            // 4. LIVRO RAZÃO: Registro histórico do estorno
+            const extratoRef = doc(collection(db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: uid,
+                valor: estornoClienteFinal,
+                tipo: "ESTORNO_B2B 🔓",
+                descricao: `Reembolso de ${vagasRestantes} vagas: ${m.title}`,
+                moeda: "BRL",
+                timestamp: serverTimestamp()
+            });
+        });
+
+        alert(`✅ OPERAÇÃO ENCERRADA!\n\nReembolso: R$ ${estornoClienteFinal.toFixed(2)}\nTaxas retidas: R$ ${lucroPlataformaTotal.toFixed(2)}`);
+        window.carregarOrdensB2B(); // Atualiza a lista na tela
+
+    } catch (e) {
+        console.error("Erro no Estorno:", e);
+        alert("Erro crítico ao processar estorno. Operação cancelada.");
+    }
+};
 // 🔐 SOLDAGEM GLOBAL: Entrega as chaves para o app.js
 window.initB2B = initB2B;
 window.carregarOrdensB2B = carregarOrdensB2B;
