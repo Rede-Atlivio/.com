@@ -236,11 +236,11 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             currentInput.value = ""; // Limpa após o processamento
         };
 
-      // 🚀 TIRO ÚNICO: Dispara a câmera com o DNA do dono já injetado no evento
-        // Gil, garantimos que o b2bOwnerId não se perca na memória do clique
-        inputCamera.dataset.owner = b2bOwnerId;
-        inputCamera.click();
-
+     // 🚀 DNA BLINDADO: Carimbamos o ID do dono no input e na memória global de segurança
+      inputCamera.setAttribute('data-owner', b2bOwnerId); 
+      window.currentMissionOwner = b2bOwnerId; // Backup em memória real
+      inputCamera.click();
+        
     } catch (err) {
         console.error("Erro na trava:", err);
         btn.disabled = false;
