@@ -247,17 +247,31 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 3. REGRA DA TAXA: Só grava em STATS se o lucro for real (diferente do prêmio)
-            const lucroFinalCalculado = Number(valorDebitoTotal) - Number(data.reward);
+           // 3. REGRA DA TAXA (MAESTRO V2026): Busca o lucro real na fonte
+            // Gil, se a submissão não tiver o valor com taxa, buscamos na missão original
+            const valorBrutoB2B = Number(data.unit_total_with_fee || valorDebitoTotal || 0);
+            const premioUsuario = Number(data.reward || 0);
+            const lucroRealAtlivio = valorBrutoB2B - premioUsuario;
             
-            // Só executa a atualização se o lucro for maior que zero e menor que o total (evita os 5,00 lixo)
-            if (lucroFinalCalculado > 0 && lucroFinalCalculado < valorDebitoTotal) {
+            // 🛡️ TRAVA ANTI-LIXO: Só grava se o lucro for maior que zero e MENOR que o prêmio (evita os 5,00)
+            // Se o lucro calculado for 5.00 e o prêmio for 5.00, algo está errado, então ignoramos.
+            if (lucroRealAtlivio > 0 && lucroRealAtlivio < valorBrutoB2B) {
                 const statsRef = doc(db, "sys_finance", "stats");
                 transaction.update(statsRef, { 
-                    total_revenue: increment(lucroFinalCalculado),
+                    total_revenue: increment(Number(lucroRealAtlivio.toFixed(2))),
                     ultima_atualizacao: serverTimestamp()
                 });
+                console.log(`✅ [COFRE] Taxa de R$ ${lucroRealAtlivio} capturada com sucesso.`);
+            } else {
+                console.warn("⚠️ [COFRE] Tentativa de injeção de lixo detectada ou lucro zero. Abortando gravação em STATS.");
             }
+
+            // 4. FINALIZAÇÃO: Atualiza a submissão com o rastro do lucro (mesmo que seja zero)
+            transaction.update(subRef, { 
+                status: 'paid_atlix', 
+                paid_at: serverTimestamp(),
+                taxa_atlivio_liquidada: (lucroRealAtlivio > 0 && lucroRealAtlivio < valorBrutoB2B) ? lucroRealAtlivio : 0
+            });
 
             // 4. FINALIZAÇÃO: Fecha o ciclo de pagamento sem quebrar por variável inexistente
             transaction.update(subRef, { 
