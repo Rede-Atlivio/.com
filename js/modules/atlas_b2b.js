@@ -247,15 +247,22 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-            // 3. REGRA DA TAXA: A diferença vai para o lucro acumulado da Atlivio (Total Revenue)
-            const lucroAtlivio = valorDebitoTotal - data.reward;
-            if (lucroAtlivio > 0) {
-                const statsRef = doc(db, "sys_finance", "stats");
-                transaction.update(statsRef, { 
-                    total_revenue: increment(lucroAtlivio),
-                    ultima_atualizacao: serverTimestamp()
-                });
-            }
+            // 3. REGRA DA TAXA (LIMPEZA): Só grava se o lucro for real e o destino for 'stats'
+            // Gil, calculamos o lucro garantindo que ele não seja o valor total da missão por erro de campo
+            const lucroRealAtlivio = Number(valorDebitoTotal) - Number(data.reward);
+            
+            // Trava: se o lucro calculado for igual à recompensa, significa que o valor total não foi lido. 
+            // Não gravamos nada para não sujar o banco com os 5,00 do prestador.
+            if (lucroRealAtlivio > 0 && lucroRealAtlivio < valorDebitoTotal) {
+                const statsRef = doc(db, "sys_finance", "stats");
+                transaction.update(statsRef, { 
+                    total_revenue: increment(lucroRealAtlivio),
+                    ultima_atualizacao: serverTimestamp()
+                });
+                console.log("📈 Sucesso: Taxa de " + lucroRealAtlivio + " enviada para STATS.");
+            } else {
+                console.warn("⚠️ Alerta: Lucro inválido ou não detectado. Gravação em STATS abortada.");
+            }
 
             // 4. FINALIZAÇÃO: Marca como pago via Crédito Atlix no banco
             transaction.update(subRef, { 
