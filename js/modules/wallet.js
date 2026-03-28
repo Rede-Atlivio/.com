@@ -1002,8 +1002,10 @@ window.oficializarLoteExterno = async (valor, tipoCarga = "PIX", descCustom = ""
     const uid = auth.currentUser?.uid;
     if (!uid) return;
 
-    const config = window.CONFIG_FINANCEIRA;
-    // Seleciona o prazo: se for BONUS usa a regra de 6 meses, se for PIX usa 12 meses (conforme seu Admin)
+   // 🛡️ SEGURANÇA ATLIVIO: Garante que o motor não quebre se o Admin demorar a responder
+    const config = window.CONFIG_FINANCEIRA || {};
+    
+    // ⏱️ Fallback de Segurança: Se o banco falhar, assume 6 meses para bônus e 12 para PIX
     const meses = tipoCarga === "BONUS" 
         ? parseInt(config.validade_bonus_meses || 6) 
         : parseInt(config.validade_pix_meses || 12);
