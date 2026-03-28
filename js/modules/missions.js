@@ -1,7 +1,7 @@
 import { db, auth } from '../config.js';
 import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const styleAtlas = document.createElement('style');
+const styleAtlas = document.createElement('stayle');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }  
@@ -298,13 +298,13 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             const missionRef = doc(window.db, "missions", id);
             await updateDoc(missionRef, { pessoas_realizando: increment(-1) });
             
-           // Limpa o rastro local para o cronômetro não devolver a vaga por erro
+            // Limpa o rastro local para o cronômetro não devolver a vaga por erro
             localStorage.removeItem(`fazendo_${id}`);
 
             alert("✅ SUCESSO! Sua prova foi enviada para análise.");
             btn.innerText = "✅ ENVIADO";
-        }; // 🛡️ Fecha o processo de leitura do arquivo (FileReader)
-    } catch (err) { // 🛡️ Captura falhas na compressão ou comunicação com o banco
+        };
+    } catch (err) {
         alert("❌ Falha no envio.");
         btn.disabled = false;
         btn.innerText = originalText;
