@@ -271,17 +271,18 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🛡️ SEGURANÇA ATLIVIO: Recuperação forçada do DNA do Proprietário
-            // Buscamos o ID do dono diretamente do atributo do botão se o parâmetro falhar
-            const backupOwner = document.querySelector(`button[onclick*="${id}"]`)?.getAttribute('data-owner');
-            const donoFinal = b2bOwnerId || backupOwner || document.getElementById('camera-input').dataset.owner;
+           // 🛡️ RECUPERAÇÃO DE DNA ATLIVIO: Busca o dono real da verba no documento da missão
+            // Consultamos o banco para garantir que o owner_id nunca vá vazio para a prova
+            const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const missionSnap = await getDoc(doc(db, "missions", id));
+            const realOwner = missionSnap.exists() ? missionSnap.data().owner_id : null;
+            const donoFinal = realOwner || b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
             // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
-            // Garantimos que owner_id e b2b_owner_uid nunca sejam gravados vazios
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, // 🔑 DNA Essencial para aparecer na Auditoria
-                b2b_owner_uid: donoFinal, // 💰 DNA Financeiro para o débito da reserva
+                owner_id: donoFinal, // 🔑 DNA Verificado: Essencial para aparecer na Auditoria
+                b2b_owner_uid: donoFinal, // 💰 DNA Financeiro: Para o débito automático da reserva
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: 'atlix', // Força o sistema a reconhecer como crédito interno
