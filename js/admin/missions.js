@@ -613,95 +613,73 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💰 MOTOR DE LIQUIDAÇÃO ATLIX V2026.PRO
-// Gil, esse motor liquida a custódia, paga o usuário e alimenta seu cofre.
-async function aprovarMissao(docId, userId, valor) {
+// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN: Sincronizado com Atlas B2B
+async function aprovarMissao(submissionId, userId, reward) {
     try {
-        const subRef = doc(window.db, "mission_submissions", docId);
+        const subRef = doc(window.db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
-        if (!subSnap.exists()) return alert("Erro: Envio não encontrado.");
         const data = subSnap.data();
 
-        if(!confirm(`Confirmar PAGAMENTO ATLIX de ${valor}?`)) return;
+        if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos na submissão.";
+        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar pagamento de ${data.reward} AX?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
-            // 🛡️ SEGURANÇA ATLIVIO: Recupera e valida os IDs antes de criar as referências
-            const b2bId = data.b2b_owner_uid || data.owner_id;
-            
-            if (!userId || !b2bId) {
-                throw "ERRO CRÍTICO: ID do usuário ou do B2B não localizado na prova.";
-            }
-
-            const userRef = doc(window.db, "usuarios", userId);
-            const b2bRef = doc(window.db, "usuarios", b2bId);
+            const userRef = doc(window.db, "usuarios", data.user_id); 
+            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
             const statsRef = doc(window.db, "sys_finance", "stats");
 
-            // 📐 CÁLCULO DE PRECISÃO: Prêmio + Taxas
-            const valorTotalReservado = data.unit_total_with_fee || valor; 
-            const taxaAtlivio = valorTotalReservado - valor;
+            // 📐 REGRA DO ABATE: Busca o valor bruto (Com Taxa)
+            const valorDebitoTotal = Number(data.unit_total_with_fee || data.reward); 
+            const lucroAtlivio = valorDebitoTotal - data.reward;
 
-            const b2bSnap = await transaction.get(b2bRef);
-            const custodiaAtual = b2bSnap.data().wallet_reserved || 0;
-
-            // 🛡️ TRAVA ANTI-NEGATIVO
-            if (custodiaAtual < valorTotalReservado) {
-                throw "CUSTÓDIA INSUFICIENTE: A empresa não tem saldo preso para este pagamento.";
-            }
-
-            // 1. Baixa na CUSTÓDIA do B2B
+            // 1. Remove o valor total da reserva do B2B
             transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorTotalReservado) 
+                wallet_reserved: increment(-valorDebitoTotal),
+                updated_at: serverTimestamp()
             });
 
-            // 2. Crédito ao PRESTADOR (Wallet Balance)
+            // 2. Crédito Líquido para o Prestador
             transaction.update(userRef, { 
-                wallet_balance: increment(valor), 
-                updated_at: serverTimestamp() 
+                wallet_balance: increment(data.reward),
+                updated_at: serverTimestamp()
             });
 
-            // 3. Crédito ao COFRE ATLIVIO (Total Revenue)
-            if (taxaAtlivio > 0) {
+            // 3. REGRA DO LUCRO: Alimenta o faturamento da plataforma
+            if (lucroAtlivio > 0) {
                 transaction.update(statsRef, { 
-                    total_revenue: increment(taxaAtlivio),
-                    ultima_atualizacao: serverTimestamp() 
+                    total_revenue: increment(lucroAtlivio),
+                    ultima_atualizacao: serverTimestamp()
                 });
             }
 
-            // 4. 📝 REGRA DA TRANSPARÊNCIA: Histórico imutável para os dois lados
-            // Crédito para o Prestador
-            transaction.set(doc(collection(window.db, "extrato_financeiro")), {
-                uid: userId,
-                valor: parseFloat(valor),
-                tipo: "🎯 MISSÃO_CONCLUÍDA",
-                descricao: `Recebido: ${data.mission_title}`,
-                moeda: "ATLIX",
-                timestamp: serverTimestamp()
+            // 4. FINALIZAÇÃO: Encerra o ciclo da submissão
+            transaction.update(subRef, { 
+                status: 'paid_atlix', 
+                paid_at: serverTimestamp(),
+                taxa_atlivio_liquidada: lucroAtlivio,
+                finalizado_por: 'admin_central'
             });
 
-            // Débito total para o B2B (Missão + Taxa)
-            transaction.set(doc(collection(window.db, "extrato_financeiro")), {
-                uid: b2bId,
-                valor: -valorTotalReservado,
-                tipo: "💸 PAGAMENTO_MISSÃO",
-                descricao: `Taxa + Prêmio: ${data.mission_title}`,
-                moeda: "ATLIX",
-                timestamp: serverTimestamp()
+            // 5. EXTRATOS (Ledger)
+            const extratoRefUser = doc(collection(window.db, "extrato_financeiro"));
+            transaction.set(extratoRefUser, {
+                uid: data.user_id, valor: data.reward, tipo: "🎯 MISSÃO_APROVADA",
+                descricao: `Prova aceita: ${data.mission_title}`, moeda: "ATLIX", timestamp: serverTimestamp()
             });
 
-            // 5. REGRA DA LIQUIDAÇÃO ATLIVIO: Transforma em Crédito Atlix e encerra o ciclo
-            // Removemos qualquer menção a 'paid_real' para não confundir o Robô de Saque
-            transaction.update(subRef, { 
-                status: 'paid_atlix', 
-                paid_at: serverTimestamp(),
-                moeda: 'ATLIX',
-                liquidacao: 'digital_direta_atlivio',
-                taxa_operacional: taxaAtlivio
-            });
+            const extratoRefB2B = doc(collection(window.db, "extrato_financeiro"));
+            transaction.set(extratoRefB2B, {
+                uid: data.b2b_owner_uid, valor: -valorDebitoTotal, tipo: "💸 DÉBITO_MISSÃO",
+                descricao: `Pagamento: ${data.mission_title}`, moeda: "BRL", timestamp: serverTimestamp()
+            });
         });
 
-        alert("✅ PAGAMENTO ATLIX CONCLUÍDO!");
+        alert("✅ OPERAÇÃO LIQUIDADA COM SUCESSO!");
         loadSubmissions();
-    } catch(e) { alert("❌ FALHA: " + e); }
+    } catch (err) {
+        console.error("Erro na liquidação Admin:", err);
+        alert("❌ ERRO: " + err);
+    }
 }
 
 // ⛔ MOTOR DE REJEIÇÃO (DEVOLVE VAGA E MANTÉM CUSTÓDIA)
