@@ -236,10 +236,12 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             currentInput.value = ""; // Limpa após o processamento
         };
 
-     // 🚀 DNA BLINDADO: Carimbamos o ID do dono no input e na memória global de segurança
-      inputCamera.setAttribute('data-owner', b2bOwnerId); 
-      window.currentMissionOwner = b2bOwnerId; // Backup em memória real
-      inputCamera.click();
+     // 🚀 DNA BLINDADO V2026: Salvamos o ID do dono no elemento e na memória
+        // Isso garante que mesmo que o navegador resetar a função, o ID está fisicamente no input
+        inputCamera.setAttribute('data-owner', b2bOwnerId);
+        window.ultimoDonoLogado = b2bOwnerId; 
+        
+        inputCamera.click();
         
     } catch (err) {
         console.error("Erro na trava:", err);
