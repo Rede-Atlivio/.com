@@ -346,7 +346,7 @@ window.carregarMissoes = carregarMissoes;
 window.renderizarMissaoCards = carregarMissoes; 
 window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
 window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
-window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
+// window.abrirComprovantePIX removido (Fluxo PIX encerrado)
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
