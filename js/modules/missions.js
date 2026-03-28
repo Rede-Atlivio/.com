@@ -275,9 +275,9 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
             const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-       // 🚀 DNA REFORÇADO V2026: Recupera o ID do dono que injetamos no input da câmera
-        // Gil, aqui pegamos o ID que o botão passou para o 'data-owner'. Se ele estiver vazio, o código para aqui e avisa.
-        const donoValidado = b2bOwnerId || document.getElementById('camera-input').getAttribute('data-owner');
+       // 🚀 DNA REFORÇADO: Recuperação de Segurança do Atributo Físico
+        const inputCam = document.getElementById('camera-input');
+        const donoValidado = b2bOwnerId || inputCam.getAttribute('data-owner') || inputCam.dataset.owner;
         
         if (!donoValidado || donoValidado === "") {
             console.error("🚩 ERRO CRÍTICO: ID do Dono da Missão não encontrado no DNA do processo.");
