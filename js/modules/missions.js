@@ -271,15 +271,18 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
-            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
+            // 🛡️ SEGURANÇA ATLIVIO: Recuperação forçada do DNA do Proprietário
+            // Buscamos o ID do dono diretamente do atributo do botão se o parâmetro falhar
+            const backupOwner = document.querySelector(`button[onclick*="${id}"]`)?.getAttribute('data-owner');
+            const donoFinal = b2bOwnerId || backupOwner || document.getElementById('camera-input').dataset.owner;
 
-           // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
-            await addDoc(collection(db, "mission_submissions"), {
-                mission_id: id,
-                owner_id: donoFinal, 
-                b2b_owner_uid: donoFinal, // Chave mestre para o débito na reserva
-                mission_title: titulo,
+            // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
+            // Garantimos que owner_id e b2b_owner_uid nunca sejam gravados vazios
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                owner_id: donoFinal, // 🔑 DNA Essencial para aparecer na Auditoria
+                b2b_owner_uid: donoFinal, // 💰 DNA Financeiro para o débito da reserva
+                mission_title: titulo,
                 reward: recompensa,
                 pay_type: 'atlix', // Força o sistema a reconhecer como crédito interno
                 user_id: auth.currentUser.uid,
