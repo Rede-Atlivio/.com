@@ -571,7 +571,7 @@ async function loadSubmissions() {
            // 🚥 MOTOR DE STATUS ATLIVIO: Identifica disputas iniciadas pelo B2B
             let statusBadge = `<span class="bg-yellow-900 text-yellow-400 px-2 py-1 rounded text-[9px] uppercase border border-yellow-700">⏳ PENDENTE</span>`;
             
-            if(data.status === 'approved' || data.status === 'paid_real' || data.status === 'paid_atlix') {
+            if(data.status === 'approved' || data.status === 'paid_atlix') {
                 statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
             } else if(data.status === 'rejected') {
                 statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
