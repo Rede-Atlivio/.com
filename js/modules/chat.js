@@ -741,13 +741,13 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
             const configFinRef = doc(db, "settings", "financeiro");
             const configGlobRef = doc(db, "settings", "global");
             
-            // 🔄 SINCRONIA DE LEITURAS (Passo 1: Ordem, Config e Cofre)
-            const atlivioReceitaRef = doc(db, "sys_finance", "receita_total");
-            const [orderSnap, configFinSnap, cofreSnap] = await Promise.all([
-                transaction.get(orderRef),
-                transaction.get(configFinRef),
-                transaction.get(atlivioReceitaRef)
-            ]);
+            // 🔄 SINCRONIA DE LEITURAS (V2026): Alvo ajustado para o Cofre de Taxas (Stats)
+            const atlivioStatsRef = doc(db, "sys_finance", "stats");
+            const [orderSnap, configFinSnap, statsSnap] = await Promise.all([
+                transaction.get(orderRef),
+                transaction.get(configFinRef),
+                transaction.get(atlivioStatsRef)
+            ]);
 
             if (!orderSnap.exists()) throw "Pedido não encontrado.";
             const pedido = orderSnap.data();
