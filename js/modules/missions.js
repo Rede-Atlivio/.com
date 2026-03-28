@@ -289,7 +289,8 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         // Gil, buscamos o valor total com taxa que já está salvo no documento da missão para não ter erro no lucro
         const mDocRef = doc(window.db, "missions", id);
         const mDocSnap = await getDoc(mDocRef);
-        const unitWithFee = mDocSnap.exists() ? (mDocSnap.data().unit_total_with_fee || recompensa) : recompensa;
+        // Gil, garantimos que o valor lido é um Número para o cálculo matemático não falhar depois
+        const unitWithFee = mDocSnap.exists() ? Number(mDocSnap.data().unit_total_with_fee || recompensa) : Number(recompensa);
 
         await addDoc(collection(window.db, "mission_submissions"), {
             mission_id: id,
