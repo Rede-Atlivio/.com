@@ -285,20 +285,26 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             return alert("🚩 Falha de Sincronia: ID do Proprietário não detectado. Por favor, reinicie a missão.");
         }
 
-       // 🚀 REGISTRO OFICIAL DE PROVA: Blindagem de ID para Auditoria B2B
+       // 🚀 REGISTRO OFICIAL DE PROVA: Sincronia de Taxas para o Motor de Liquidação
+        // Gil, buscamos o valor total com taxa que já está salvo no documento da missão para não ter erro no lucro
+        const mDocRef = doc(window.db, "missions", id);
+        const mDocSnap = await getDoc(mDocRef);
+        const unitWithFee = mDocSnap.exists() ? (mDocSnap.data().unit_total_with_fee || recompensa) : recompensa;
+
         await addDoc(collection(window.db, "mission_submissions"), {
             mission_id: id,
-            b2b_owner_uid: donoValidado, // ──▶ Padronizado para o Motor Financeiro reconhecer o dono
-            mission_title: titulo, // Título para exibição no painel de auditoria
-                reward: recompensa, // Valor que será pago ao executor
-                pay_type: 'atlix', // Tipo de moeda interna Atlivio
-                user_id: auth.currentUser.uid,
-                user_name: window.userProfile?.nome || "Usuário Atlivio",
-                proof_url: base64data,
-                location: window.currentMissionLocation || null,
-                status: 'pending', // Aguarda aprovação para mover da reserva para o prestador
-                created_at: serverTimestamp()
-            });
+            b2b_owner_uid: donoValidado, // Identifica quem paga
+            mission_title: titulo,
+            reward: recompensa, // O que o usuário ganha
+            unit_total_with_fee: unitWithFee, // ──▶ CHAVE DO LUCRO: O que o B2B paga (incluindo a taxa Atlivio)
+            pay_type: 'atlix',
+            user_id: auth.currentUser.uid,
+            user_name: window.userProfile?.nome || "Usuário Atlivio",
+            proof_url: base64data,
+            location: window.currentMissionLocation || null,
+            status: 'pending',
+            created_at: serverTimestamp()
+        });
            // ✅ CONFIRMAÇÃO DE ENTREGA: Libera o slot de "processando" no banco de dados
             const { doc: docRef, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             const missionRef = docRef(window.db, "missions", id); // Usamos docRef para não conflitar com nomes globais
