@@ -280,13 +280,11 @@ export function iniciarMonitoramentoCarteira() {
                 const diferenca = sReal - window.ultimoSaldoConhecido;
                 const frozenAtual = parseFloat(data.wallet_frozen || 0);
 
-                // 🛡️ Filtro para não duplicar saldo que veio do Frozen
-                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
-                    const fv = window.firebaseModules;
-                    // 💰 REGRA DE OURO: O lucro da Atlivio sobe no Dashboard agora na entrada do Pix
-                    await fv.updateDoc(fv.doc(db, "sys_finance", "receita_total"), { total_acumulado: fv.increment(parseFloat(diferenca.toFixed(2))), ultima_atualizacao: fv.serverTimestamp() });
-
-                    if (frozenAtual > 0) {
+                // 🛡️ Filtro de Integridade: Detecta aumento real de saldo (Ignora cache e flutuação mínima)
+                if (diferenca >= 1.00 && Math.abs(diferenca - frozenAtual) > 0.01) {
+                    // Gil, a linha de injeção no 'total_acumulado' foi removida daqui.
+                    // Agora o Dashboard só sobe via Robô de Webhook (Recarga Real) ou Motores de Taxa.
+                    if (frozenAtual > 0) {
                         const fv = window.firebaseModules;
                         await fv.updateDoc(fv.doc(db, "usuarios", uid), {
                             wallet_balance: fv.increment(frozenAtual),
