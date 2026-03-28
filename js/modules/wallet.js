@@ -492,17 +492,10 @@ window.pagarComAtlix = async (valor, etiqueta, descricao) => {
                 updated_at: serverTimestamp()
             });
 
-           // 2. 🛡️ TRAVA CONTÁBIL FILTRADA: Não registra Missões B2B no balde de Recargas PIX
-            // Gil, adicionamos a trava 'etiqueta' para o sistema saber que missão não é recarga.
-            if (lucroRealParaEmpresa > 0 && !etiqueta.includes("MISSÃO")) {
-                transaction.update(cofreRef, {
-                    total_acumulado: increment(parseFloat(lucroRealParaEmpresa.toFixed(2))),
-                    ultima_atualizacao: serverTimestamp()
-                });
-                console.log("📈 Contabilidade: Recarga/Serviço real detectado e somado.");
-            } else {
-                console.log("♻️ Contabilidade: Fluxo de Missão detectado. Ignorando balde de Recargas.");
-            }
+           // 2. 🛡️ FILTRO DE FLUXO INTERNO (V2026)
+            // Gil, removemos a injeção no 'total_acumulado' para blindar o balde de Recargas PIX.
+            // O lucro de serviços e missões agora é gerido pelos motores de liquidação específicos.
+            console.log("♻️ Contabilidade: Débito processado via FIFO. Injeção em Recargas suspensa.");
 
             // 3. Registra no Ledger (Extrato Imutável)
             const extratoRef = doc(collection(db, "extrato_financeiro"));
