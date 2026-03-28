@@ -280,10 +280,11 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // Gil, usamos o 'ultimoDonoLogado' porque foi o que salvamos na função anterior
             const donoValidado = b2bOwnerId || window.ultimoDonoLogado || document.getElementById('camera-input').getAttribute('data-owner');
 
-           // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro Único de Prova (Blindado)
-            await addDoc(collection(db, "mission_submissions"), {
-                mission_id: id,
-                owner_id: donoValidado || "", // ──▶ DNA para o índice do Firebase
+          // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro Único de Prova (Blindado com window.db)
+            // Gil, usamos window.db para garantir que a conexão com o banco não se perca durante o upload
+            await addDoc(collection(window.db, "mission_submissions"), {
+                mission_id: id,
+                owner_id: donoValidado || "", // ──▶ DNA que vincula a tarefa ao empresário correto
                 mission_title: titulo, // Título da missão para o histórico
                 reward: recompensa, // Valor que será pago ao executor
                 pay_type: 'atlix', // Tipo de moeda interna Atlivio
