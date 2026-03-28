@@ -857,10 +857,16 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 wallet_earnings: increment(ganhoLiquidoRealMétrica)
             });
 
-           // 💰 EXTERMÍNIO DE CRÉDITO: O lucro da Atlivio já foi registrado na entrada (Recarga).
-            // Ao finalizar o serviço, apenas subtraímos do usuário sem inflar o Dashboard novamente.
+           // 💎 CAPTURA DE LUCRO (V2026): A taxa do serviço é enviada para o cofre de taxas (STATS)
+            if (receitaPlataforma > 0) {
+                transaction.update(atlivioStatsRef, {
+                    total_revenue: increment(Number(receitaPlataforma.toFixed(2))),
+                    ultima_atualizacao: serverTimestamp()
+                });
+                console.log(`✅ [COFRE CHAT] Receita de R$ ${receitaPlataforma} consolidada em STATS.`);
+            }
 
-            // REGISTRO 1 (MÉTRICA SITE): Alimenta o "Hoje" e "Total" com o lucro líquido
+            // REGISTRO 1 (MÉTRICA SITE): Alimenta o "Hoje" e "Total" com o lucro líquido
             transaction.set(doc(collection(db, "extrato_financeiro")), {
                 uid: pedido.provider_id,
                 tipo: "GANHO_SERVIÇO ✅",
