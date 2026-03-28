@@ -285,27 +285,20 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             return alert("🚩 Falha de Sincronia: ID do Proprietário não detectado. Por favor, reinicie a missão.");
         }
 
-       // 🚀 REGISTRO OFICIAL DE PROVA: Sincronia de Taxas para o Motor de Liquidação
-        // Gil, buscamos o valor total com taxa que já está salvo no documento da missão para não ter erro no lucro
-        const mDocRef = doc(window.db, "missions", id);
-        const mDocSnap = await getDoc(mDocRef);
-        // Gil, garantimos que o valor lido é um Número para o cálculo matemático não falhar depois
-        const unitWithFee = mDocSnap.exists() ? Number(mDocSnap.data().unit_total_with_fee || recompensa) : Number(recompensa);
-
+       // 🚀 REGISTRO OFICIAL DE PROVA: Blindagem de ID para Auditoria B2B
         await addDoc(collection(window.db, "mission_submissions"), {
             mission_id: id,
-            b2b_owner_uid: donoValidado, // Identifica quem paga
-            mission_title: titulo,
-            reward: recompensa, // O que o usuário ganha
-            unit_total_with_fee: unitWithFee, // ──▶ CHAVE DO LUCRO: O que o B2B paga (incluindo a taxa Atlivio)
-            pay_type: 'atlix',
-            user_id: auth.currentUser.uid,
-            user_name: window.userProfile?.nome || "Usuário Atlivio",
-            proof_url: base64data,
-            location: window.currentMissionLocation || null,
-            status: 'pending',
-            created_at: serverTimestamp()
-        });
+            b2b_owner_uid: donoValidado, // ──▶ Padronizado para o Motor Financeiro reconhecer o dono
+            mission_title: titulo, // Título para exibição no painel de auditoria
+                reward: recompensa, // Valor que será pago ao executor
+                pay_type: 'atlix', // Tipo de moeda interna Atlivio
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Usuário Atlivio",
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                status: 'pending', // Aguarda aprovação para mover da reserva para o prestador
+                created_at: serverTimestamp()
+            });
            // ✅ CONFIRMAÇÃO DE ENTREGA: Libera o slot de "processando" no banco de dados
             const { doc: docRef, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             const missionRef = docRef(window.db, "missions", id); // Usamos docRef para não conflitar com nomes globais
@@ -324,8 +317,21 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
     }
 }
 
-// 🛡️ DNA FINANCEIRO ATLIVIO: Função removida (PIX para missões desativado).
-// Agora o fluxo é 100% via Créditos Atlix internos.
+// 📄 VISUALIZADOR DE COMPROVANTE (MATA-SUPORTE)
+// Gil, esta função abre a imagem do PIX que você anexou no Admin para o usuário conferir.
+window.abrirComprovantePIX = (url) => {
+    if (!url) return alert("Aguardando processamento do comprovante...");
+    
+    const win = window.open();
+    win.document.write(`
+        <html>
+            <head><title>Comprovante Atlivio</title></head>
+            <body style="margin:0; background:#0f172a; display:flex; justify-content:center; align-items:center;">
+                <img src="${url}" style="max-width:100%; max-height:100vh; border-radius:12px; shadow:0 0 20px rgba(0,0,0,0.5);">
+            </body>
+        </html>
+    `);
+};
 
 // 📐 FÓRMULA MATEMÁTICA DE PROXIMIDADE (HAVERSINE)
 // Gil, esta função calcula a distância exata entre dois pontos no globo terrestre
@@ -346,7 +352,7 @@ window.carregarMissoes = carregarMissoes;
 window.renderizarMissaoCards = carregarMissoes; 
 window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
 window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
-// window.abrirComprovantePIX removido (Fluxo PIX encerrado)
+window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
@@ -375,10 +381,10 @@ async function carregarMissoesRealizadas() {
             container.innerHTML = "";
             snap.forEach(doc => {
                 const m = doc.data();
-               const statusMap = {
+                const statusMap = {
                     'pending': { txt: 'EM ANÁLISE ⏳', css: 'text-amber-500 bg-amber-500/10' },
-                    'paid_atlix': { txt: 'CRÉDITO LIBERADO 🪙', css: 'text-emerald-500 bg-emerald-500/10' },
-                    'approved_by_b2b': { txt: 'APROVADA ⚖️', css: 'text-blue-500 bg-blue-500/10' },
+                    'approved_pending_pix': { txt: 'APROVADA (PIX PENDENTE) 💸', css: 'text-blue-500 bg-blue-500/10' },
+                    'paid_real': { txt: 'PAGO VIA PIX ✅', css: 'text-emerald-500 bg-emerald-500/10' },
                     'rejected': { txt: 'RECUSADA ❌', css: 'text-red-500 bg-red-500/10' }
                 };
                 const st = statusMap[m.status] || { txt: m.status, css: 'text-gray-500 bg-gray-500/10' };
@@ -391,10 +397,10 @@ async function carregarMissoesRealizadas() {
                         </div>
                         <p class="text-[9px] text-gray-400 italic mb-3">Recompensa: R$ ${Number(m.reward).toFixed(2).replace('.', ',')}</p>
                         
-                       ${m.status === 'paid_atlix' ? `
-                            <div class="w-full bg-slate-50 text-slate-400 py-2.5 rounded-xl font-black text-[7px] uppercase flex items-center justify-center gap-2 border border-slate-100">
-                                ⚖️ Liquidado via Créditos Atlix
-                            </div>
+                        ${m.status === 'paid_real' && m.receipt_url ? `
+                            <button onclick="window.abrirComprovantePIX('${m.receipt_url}')" class="w-full bg-emerald-50 text-emerald-600 border border-emerald-100 py-2.5 rounded-xl font-black text-[9px] uppercase hover:bg-emerald-100 transition flex items-center justify-center gap-2">
+                                📄 Ver Comprovante PIX
+                            </button>
                         ` : ''}
                     </div>
                 `;
