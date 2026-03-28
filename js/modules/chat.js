@@ -828,22 +828,21 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 // DÉFICIT REAL V12: Calcula o lastro antes de verificar o déficit
                 const sobraRealCustodia = resCliente - valorTaxaAtlivioP;
                 const deficitTotal = sobraRealCustodia < 0 ? Math.abs(sobraRealCustodia) : 0;
-                const saldoCofreAtual = cofreSnap.exists() ? (cofreSnap.data().total_acumulado || 0) : 0;
+                const saldoStatsAtual = statsSnap.exists() ? (statsSnap.data().total_revenue || 0) : 0;
 
-                if (deficitTotal > 0 && saldoCofreAtual < deficitTotal) {
-                    throw `Liquidação Negada: A plataforma não possui saldo no cofre (R$ ${saldoCofreAtual.toFixed(2)}) para completar o pagamento integral (Déficit: R$ ${deficitTotal.toFixed(2)}).`;
-                }
-                
-                // CORREÇÃO CIRÚRGICA: Garante que o prestador receba a reserva do cliente
-                valorParaInjetarNoSaldo = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
+                if (deficitTotal > 0 && saldoStatsAtual < deficitTotal) {
+                    throw `Liquidação Negada: A plataforma não possui saldo em taxas (R$ ${saldoStatsAtual.toFixed(2)}) para completar o pagamento (Déficit: R$ ${deficitTotal.toFixed(2)}).`;
+                }
+                
+                valorParaInjetarNoSaldo = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
 
-                // Se houver déficit real, a Atlivio retira do cofre para pagar o prestador
-                if (deficitTotal > 0) {
-                    transaction.update(atlivioReceitaRef, { 
-                        total_acumulado: increment(-Number(deficitTotal.toFixed(2))),
-                        ultima_atualizacao: serverTimestamp()
-                    });
-                }
+                // Se houver déficit, o abatimento ocorre no balde de TAXAS (total_revenue)
+                if (deficitTotal > 0) {
+                    transaction.update(atlivioStatsRef, { 
+                        total_revenue: increment(-Number(deficitTotal.toFixed(2))),
+                        ultima_atualizacao: serverTimestamp()
+                    });
+                }
             } else {
                 // MODO HÍBRIDO: Devolve a reserva do cliente + o troco da reserva do prestador
                 valorParaInjetarNoSaldo = Number((resCliente + (resProvider - valorTaxaAtlivioP)).toFixed(2));
