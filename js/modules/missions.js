@@ -276,12 +276,17 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
             const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-        // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro com Tripla Verificação de DNA
-            const finalOwner = b2bOwnerId || window.currentMissionOwner || document.getElementById('camera-input').getAttribute('data-owner');
+       // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro com Tripla Checagem de DNA (Oficial)
+            // Gil, usamos o 'ultimoDonoLogado' porque foi o que salvamos na função anterior
+            const donoValidado = b2bOwnerId || window.ultimoDonoLogado || document.getElementById('camera-input').getAttribute('data-owner');
 
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: finalOwner, // ──▶ Agora ele TEM que vir preenchido
+                owner_id: donoValidado || "", // ──▶ Garante que o índice composto funcione
+
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                owner_id: donoValidado || "", // ──▶ DNA garantido para o índice do Firebase
                 mission_title: titulo, // Título da missão para o histórico
                 reward: recompensa, // Valor que será pago ao executor
                 pay_type: 'atlix', // Tipo de moeda interna Atlivio
