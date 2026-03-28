@@ -688,12 +688,15 @@ async function aprovarMissao(docId, userId, valor) {
                 timestamp: serverTimestamp()
             });
 
-            // 5. Finaliza a prova
-            transaction.update(subRef, { 
-                status: 'paid_real', 
-                paid_at: serverTimestamp(),
-                liquidacao: 'atlix_direto'
-            });
+            // 5. REGRA DA LIQUIDAÇÃO ATLIVIO: Transforma em Crédito Atlix e encerra o ciclo
+            // Removemos qualquer menção a 'paid_real' para não confundir o Robô de Saque
+            transaction.update(subRef, { 
+                status: 'paid_atlix', 
+                paid_at: serverTimestamp(),
+                moeda: 'ATLIX',
+                liquidacao: 'digital_direta_atlivio',
+                taxa_operacional: taxaAtlivio
+            });
         });
 
         alert("✅ PAGAMENTO ATLIX CONCLUÍDO!");
