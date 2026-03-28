@@ -1086,10 +1086,7 @@ window.receberRecompensaMissao = async (valor, tituloMissao) => {
         return { success: false, error: e };
     }
 };
-/**
- * 🔄 MOTOR DE CONVERSÃO PERSISTENTE V2026
- * Vence a briga com o Radar e garante que o valor apareça na tela.
- */
+
 /**
  * 🔄 MOTOR DE CONVERSÃO E DESBLOQUEIO V2026.PRO
  * Esta função agora força a ativação do botão ignorando bloqueios de abas.
@@ -1237,15 +1234,28 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
 
         if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
 
-        await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, "usuarios", uid);
+       await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, "usuarios", uid);
+            const statsRef = doc(db, "sys_finance", "stats");
             
-            // 1. Devolve o dinheiro: Tira da Reserva e volta para o Saldo Real de Trabalho (Balance)
-            transaction.update(userRef, {
-                wallet_reserved: increment(-valorTotalEstorno),
-                wallet_balance: increment(valorTotalEstorno),
-                updated_at: serverTimestamp()
-            });
+            // REGRA DO ESTORNO: Devolve o prêmio ao B2B, mas liquida a Taxa para a Atlivio
+            const premioDevolvido = parseFloat((mData.reward * vagasRestantes).toFixed(2));
+            const taxaRetida = parseFloat((valorTotalEstorno - premioDevolvido).toFixed(2));
+
+            // 1. MOVIMENTAÇÃO: Tira o TOTAL da reserva, devolve o PRÊMIO ao saldo do B2B
+            transaction.update(userRef, {
+                wallet_reserved: increment(-valorTotalEstorno),
+                wallet_balance: increment(premioDevolvido),
+                updated_at: serverTimestamp()
+            });
+
+            // 2. REGRA DA TAXA: A taxa das vagas canceladas vai para o lucro da Atlivio
+            if (taxaRetida > 0) {
+                transaction.update(statsRef, {
+                    total_revenue: increment(taxaRetida),
+                    ultima_atualizacao: serverTimestamp()
+                });
+            }
 
             // 2. Mata a missão no Radar
             transaction.update(missionRef, { 
