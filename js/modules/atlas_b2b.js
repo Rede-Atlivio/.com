@@ -140,8 +140,14 @@ window.carregarAuditoriaB2B = async () => {
         );
         const snap = await getDocs(q);
 
-        if (snap.empty) {
-            container.innerHTML = `<p class="text-center py-20 text-gray-500 text-[10px] font-black uppercase tracking-tighter">Nenhuma evidência para auditar.</p>`;
+        // 🛡️ Trava de Segurança Atlivio: Evita erro se a coleção sumir ou estiver vazia
+        if (!snap || snap.empty) {
+            container.innerHTML = `
+                <div class="py-20 text-center space-y-3">
+                    <div class="text-4xl opacity-20">📡</div>
+                    <p class="text-gray-400 text-[10px] font-black uppercase tracking-widest">Radar de Auditoria Limpo</p>
+                    <p class="text-gray-500 text-[8px] italic">Nenhuma prova pendente para suas missões no momento.</p>
+                </div>`;
             return;
         }
 
