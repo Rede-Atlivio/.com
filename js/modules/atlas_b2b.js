@@ -251,9 +251,9 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-           // 3. REGRA DA TAXA (MAESTRO V2026): Blindagem Financeira
-            const valorBrutoB2B = Number(data.unit_total_with_fee || valorDebitoTotal || 0);
-            const premioUsuario = Number(data.reward || 0);
+          // 3. REGRA DA TAXA (MAESTRO V2026): Agora usando o valor real de R$ 8,50
+            const valorBrutoB2B = Number(valorRealB2B); 
+            const premioUsuario = Number(data.reward);
             const lucroRealValidado = Number((valorBrutoB2B - premioUsuario).toFixed(2));
             
             // 🛡️ TRAVA ANTI-LIXO: Só envia para STATS se o lucro for real e consistente
