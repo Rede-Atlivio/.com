@@ -275,15 +275,19 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
             const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-       // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro com Tripla Checagem de DNA (Oficial)
-            // Gil, usamos o 'ultimoDonoLogado' porque foi o que salvamos na função anterior
-            const donoValidado = b2bOwnerId || window.ultimoDonoLogado || document.getElementById('camera-input').getAttribute('data-owner');
+       // 🚀 DNA REFORÇADO V2026: Recupera o ID do dono que injetamos no input da câmera
+        // Gil, aqui pegamos o ID que o botão passou para o 'data-owner'. Se ele estiver vazio, o código para aqui e avisa.
+        const donoValidado = b2bOwnerId || document.getElementById('camera-input').getAttribute('data-owner');
+        
+        if (!donoValidado || donoValidado === "") {
+            console.error("🚩 ERRO CRÍTICO: ID do Dono da Missão não encontrado no DNA do processo.");
+            return alert("Erro de sincronização: A missão não possui um dono válido. Tente atualizar a página.");
+        }
 
-          // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro Único de Prova (Blindado com window.db)
-            // Gil, usamos window.db para garantir que a conexão com o banco não se perca durante o upload
-            await addDoc(collection(window.db, "mission_submissions"), {
-                mission_id: id,
-                owner_id: donoValidado || "", // ──▶ DNA que vincula a tarefa ao empresário correto
+        // 🚀 REGISTRO OFICIAL DE PROVA: Agora com o owner_id blindado
+        await addDoc(collection(window.db, "mission_submissions"), {
+            mission_id: id,
+            owner_id: donoValidado, // ──▶ Agora ele grava o ID real, sem aceitar o "" (vazio)
                 mission_title: titulo, // Título da missão para o histórico
                 reward: recompensa, // Valor que será pago ao executor
                 pay_type: 'atlix', // Tipo de moeda interna Atlivio
