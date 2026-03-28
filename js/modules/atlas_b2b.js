@@ -222,11 +222,15 @@ window.vereditoB2B = async (docId, status) => {
 // 💎 MOTOR DE LIQUIDAÇÃO ATLIVIO: Transfere o valor reservado para o executor
 window.liquidarPagamentoB2B = async (submissionId) => {
     try {
-        const subRef = doc(db, "mission_submissions", submissionId);
+       const subRef = doc(db, "mission_submissions", submissionId);
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
 
-        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
+        // 🛰️ BUSCA DE VALOR BRUTO: Vamos na missão original buscar os R$ 8,50 (Evita lixo)
+        const missionRef = doc(db, "missions", data.mission_id);
+        const missionSnap = await getDoc(missionRef);
+        const valorRealB2B = missionSnap.exists() ? Number(missionSnap.data().unit_total_with_fee) : Number(data.reward);
+
         if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
 
         await runTransaction(db, async (transaction) => {
