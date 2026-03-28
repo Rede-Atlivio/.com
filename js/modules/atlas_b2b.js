@@ -278,7 +278,7 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 status: 'paid_atlix', 
                 paid_at: serverTimestamp(),
                 // Se o lucro foi invalidado pela trava, grava 0 para não bugar o documento
-                taxa_atlivio_liquidada: (lucroFinalCalculado < valorDebitoTotal) ? lucroFinalCalculado : 0 
+                taxa_atlivio_liquidada: (lucroRealFinal > 0 && lucroRealFinal < valorBrutoB2B) ? lucroRealFinal : 0
             });
         });
 
