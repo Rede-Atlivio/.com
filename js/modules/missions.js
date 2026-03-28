@@ -280,8 +280,9 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         const donoValidado = b2bOwnerId || inputCam.getAttribute('data-owner') || inputCam.dataset.owner;
         
         if (!donoValidado || donoValidado === "") {
-            console.error("🚩 ERRO CRÍTICO: ID do Dono da Missão não encontrado no DNA do processo.");
-            return alert("Erro de sincronização: A missão não possui um dono válido. Tente atualizar a página.");
+            btn.disabled = false; // ──▶ Destrava o botão para o usuário tentar novamente
+            btn.innerText = originalText;
+            return alert("🚩 Falha de Sincronia: ID do Proprietário não detectado. Por favor, reinicie a missão.");
         }
 
        // 🚀 REGISTRO OFICIAL DE PROVA: Blindagem de ID para Auditoria B2B
