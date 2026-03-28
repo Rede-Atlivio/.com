@@ -154,6 +154,8 @@ window.carregarAuditoriaB2B = async () => {
         container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
         snap.forEach(d => {
             const m = d.data();
+            // 🛡️ Trava de Segurança: Ignora se a submissão não pertencer a este B2B (Double Check)
+            if (m.b2b_owner_uid !== auth.currentUser.uid) return;
             document.getElementById('lista-auditoria-cards').innerHTML += `
                 <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
                     <div class="flex justify-between items-center">
