@@ -131,13 +131,13 @@ window.carregarAuditoriaB2B = async () => {
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
    try {
-        // ⚖️ Busca evidências pendentes vinculadas ao proprietário da ordem
-        const q = query(
-            collection(db, "mission_submissions"),
-            where("owner_id", "==", auth.currentUser.uid),
-            where("status", "==", "pending"),
-            orderBy("created_at", "desc")
-        );
+      // ⚖️ Busca unificada: Filtramos por quem criou a missão (owner_id) e status pendente
+        const q = query(
+            collection(db, "mission_submissions"),
+            where("owner_id", "==", auth.currentUser.uid), // ──▶ O índice precisa bater com este campo
+            where("status", "==", "pending"),
+            orderBy("created_at", "desc") // ──▶ A ordenação exige índice composto
+        );
         const snap = await getDocs(q);
 
         if (snap.empty) {
