@@ -284,11 +284,11 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             return alert("Erro de sincronização: A missão não possui um dono válido. Tente atualizar a página.");
         }
 
-        // 🚀 REGISTRO OFICIAL DE PROVA: Agora com o owner_id blindado
+       // 🚀 REGISTRO OFICIAL DE PROVA: Blindagem de ID para Auditoria B2B
         await addDoc(collection(window.db, "mission_submissions"), {
             mission_id: id,
-            owner_id: donoValidado, // ──▶ Agora ele grava o ID real, sem aceitar o "" (vazio)
-                mission_title: titulo, // Título da missão para o histórico
+            b2b_owner_uid: donoValidado, // ──▶ Padronizado para o Motor Financeiro reconhecer o dono
+            mission_title: titulo, // Título para exibição no painel de auditoria
                 reward: recompensa, // Valor que será pago ao executor
                 pay_type: 'atlix', // Tipo de moeda interna Atlivio
                 user_id: auth.currentUser.uid,
