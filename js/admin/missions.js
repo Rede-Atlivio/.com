@@ -718,10 +718,10 @@ async function rejeitarMissao(docId) {
     } catch(e) { alert("Erro: " + e.message); }
 }
 
-// 🔨 MARTELO DO ADMIN
-window.anularRecusaB2B = async (docId, userId, valor) => {
-    if(!confirm(`⚠️ JUSTIÇA ATLIVIO: Deseja forçar o pagamento de ATLIX ${valor}?`)) return;
-    await window.aprovarMissao(docId, userId, valor);
+// 🔨 MARTELO DO ADMIN: Anula a recusa do B2B e força o pagamento usando o motor oficial
+window.anularRecusaB2B = async (docId) => {
+    // Gil, aqui apenas chamamos a função aprovarMissao acima, que já tem toda a lógica blindada.
+    await window.aprovarMissao(docId);
 };
 // 🔨 MARTELO DO ADMIN: Você analisou e concorda que a prova é RUIM (O B2B tem razão)
 // 🔨 MARTELO DO ADMIN: Valida que a prova é RUIM. 
