@@ -274,11 +274,11 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
             const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-           // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
+          // 🚀 GRAVAÇÃO ATLIVIO V2026: Registro Único de Prova
             await addDoc(collection(db, "mission_submissions"), {
                 mission_id: id,
-                owner_id: donoFinal, 
-                b2b_owner_uid: donoFinal, // Chave mestre para o débito na reserva
+                owner_id: donoFinal, // ──▶ O campo principal que o índice composto espera
+                mission_title: titulo,
                 mission_title: titulo,
                 reward: recompensa,
                 pay_type: 'atlix', // Força o sistema a reconhecer como crédito interno
