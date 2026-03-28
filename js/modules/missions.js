@@ -32,8 +32,7 @@ async function carregarMissoes() {
 
     // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
     if (!window.userLocation) {
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
+        navigator.geolocation.getCurrentPosition((pos) => {
                 window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                 carregarMissoes(); // Recarrega agora com a posição na mão
             },
