@@ -797,8 +797,9 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
             const novoSaldoC = Number((walletBalC - faltaPagar).toFixed(2));
             const bonusAtualC = parseFloat(clientSnap.data().wallet_bonus || 0);
 
+            // 🛡️ ABATE DE RESERVA ATÔMICO: Garante que a reserva morra ao liquidar
             transaction.update(clientRef, { 
-                wallet_reserved: increment(-resCliente)
+                wallet_reserved: increment(-Number(resCliente.toFixed(2))), // ◄── VÍRGULA ADICIONADA E COERÇÃO NUMÉRICA
                 wallet_balance: novoSaldoC,
                 wallet_total_power: Number((novoSaldoC + bonusAtualC).toFixed(2)),
                 wallet_earnings: 0 
