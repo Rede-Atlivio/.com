@@ -285,27 +285,40 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
             return alert("🚩 Falha de Sincronia: ID do Proprietário não detectado. Por favor, reinicie a missão.");
         }
 
-       // 🚀 REGISTRO OFICIAL DE PROVA: Sincronia de Taxas para o Motor de Liquidação
-        // Gil, buscamos o valor total com taxa que já está salvo no documento da missão para não ter erro no lucro
-        const mDocRef = doc(window.db, "missions", id);
-        const mDocSnap = await getDoc(mDocRef);
-        // Gil, garantimos que o valor lido é um Número para o cálculo matemático não falhar depois
-        const unitWithFee = mDocSnap.exists() ? Number(mDocSnap.data().unit_total_with_fee || recompensa) : Number(recompensa);
+       // 🚀 DNA FINANCEIRO V2026: Sincronia Master entre Robô e App
+        try {
+            // Gil, garantimos que o banco de dados esteja acessível
+            const database = window.db || db; 
+            const mDocRef = doc(database, "missions", id);
+            const mDocSnap = await getDoc(mDocRef);
+            
+            // Forçamos o valor total (com taxa) a ser um Número real (Double)
+            const unitWithFee = mDocSnap.exists() ? Number(mDocSnap.data().unit_total_with_fee || recompensa) : Number(recompensa);
 
-        await addDoc(collection(window.db, "mission_submissions"), {
-            mission_id: id,
-            b2b_owner_uid: donoValidado, // Identifica quem paga
-            mission_title: titulo,
-            reward: recompensa, // O que o usuário ganha
-            unit_total_with_fee: unitWithFee, // ──▶ CHAVE DO LUCRO: O que o B2B paga (incluindo a taxa Atlivio)
-            pay_type: 'atlix',
-            user_id: auth.currentUser.uid,
-            user_name: window.userProfile?.nome || "Usuário Atlivio",
-            proof_url: base64data,
-            location: window.currentMissionLocation || null,
-            status: 'pending',
-            created_at: serverTimestamp()
-        });
+            console.log("📡 [Atlivio] Registrando Prova. Valor Bruto:", unitWithFee);
+
+            await addDoc(collection(database, "mission_submissions"), {
+                mission_id: id,
+                b2b_owner_uid: String(donoValidado), // Carimbo de quem paga
+                mission_title: titulo,
+                reward: Number(recompensa), // Valor líquido para o usuário
+                unit_total_with_fee: unitWithFee, // ──▶ O que o robô injetou como 8.5
+                pay_type: 'atlix',
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Usuário Atlivio",
+                proof_url: base64data,
+                location: window.currentMissionLocation || null,
+                status: 'pending', // Fila de Auditoria
+                gps_status: 'match', // Valor inicial seguro
+                created_at: serverTimestamp()
+            });
+
+            console.log("✅ [SUCESSO] Prova gravada com DNA financeiro completo.");
+        } catch (erroDna) {
+            console.error("🚩 ERRO NO CARIMBO DA PROVA:", erroDna);
+            alert("Falha de comunicação com o cofre. Tente novamente.");
+            throw erroDna; 
+        }
            // ✅ CONFIRMAÇÃO DE ENTREGA: Libera o slot de "processando" no banco de dados
             const { doc: docRef, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             const missionRef = docRef(window.db, "missions", id); // Usamos docRef para não conflitar com nomes globais
