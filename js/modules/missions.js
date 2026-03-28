@@ -1,7 +1,7 @@
 import { db, auth } from '../config.js';
 import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const styleAtlas = document.createElement('stayle');
+const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }  
@@ -271,19 +271,15 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-           // 🛡️ RECUPERAÇÃO DE DNA ATLIVIO: Busca o dono real da verba no documento da missão
-            // Consultamos o banco para garantir que o owner_id nunca vá vazio para a prova
-            const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const missionSnap = await getDoc(doc(db, "missions", id));
-            const realOwner = missionSnap.exists() ? missionSnap.data().owner_id : null;
-            const donoFinal = realOwner || b2bOwnerId || document.getElementById('camera-input').dataset.owner;
+            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
+            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-            // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
-            await addDoc(collection(db, "mission_submissions"), {
-                mission_id: id,
-                owner_id: donoFinal, // 🔑 DNA Verificado: Essencial para aparecer na Auditoria
-                b2b_owner_uid: donoFinal, // 💰 DNA Financeiro: Para o débito automático da reserva
-                mission_title: titulo,
+           // 🚀 GRAVAÇÃO ATLIVIO V2026: Liquidação Exclusiva em Créditos
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                owner_id: donoFinal, 
+                b2b_owner_uid: donoFinal, // Chave mestre para o débito na reserva
+                mission_title: titulo,
                 reward: recompensa,
                 pay_type: 'atlix', // Força o sistema a reconhecer como crédito interno
                 user_id: auth.currentUser.uid,
