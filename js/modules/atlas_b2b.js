@@ -497,14 +497,16 @@ window.finalizarLocalWizard = () => {
             </div>
 
            <div class="p-6 bg-slate-900/60 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-4">
-               <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2 mb-2 block">Valor por Foto (AX)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-3.5 text-amber-500 font-black text-sm">🪙</span>
-                            <input type="number" id="b2b-reward" value="5.00" min="3" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-3 pl-9 rounded-xl bg-black text-amber-400 font-black border border-amber-500/20 outline-none focus:border-amber-500 transition-all">
-                        </div>
-                    </div>
+              <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2 mb-2 block">Valor por Foto (AX)</label>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-4 text-amber-500 text-lg">🪙</span>
+                            <input type="number" id="b2b-reward" value="5.00" min="3" oninput="window.atualizarPreviewFinanceiro()" 
+                                class="w-full h-14 pl-12 pr-4 rounded-2xl bg-slate-950 text-amber-400 font-black border-2 border-slate-800 focus:border-amber-500 outline-none transition-all shadow-inner text-lg"
+                                style="line-height: 1;">
+                        </div>
+                    </div>
                     <div>
                         <label class="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2 mb-2 block">Qtd. de Pessoas</label>
                         <input type="number" id="b2b-slots" value="1" min="1" oninput="window.atualizarPreviewFinanceiro()" class="w-full p-3 rounded-xl bg-black text-white font-black border border-white/10 outline-none focus:border-blue-500 transition-all">
