@@ -237,19 +237,25 @@ window.liquidarPagamentoB2B = async (submissionId) => {
             const userRef = doc(db, "usuarios", data.user_id); // Executor da missão
             const b2bRef = doc(db, "usuarios", data.b2b_owner_uid); // Cliente que paga
 
-           // 1. REGRA DO ABATE: Remove o valor total (Missão + Taxa) da reserva do B2B
-            // O valorUnitarioComTaxa deve vir da missão para garantir o lucro da Atlivio
-            const valorDebitoTotal = data.unit_total_with_fee || data.reward; 
-            transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorDebitoTotal),
-                updated_at: serverTimestamp()
-            });
+          // 1. REGRA DO ABATE REAL: Remove definitivamente o valor da reserva do B2B
+            // Gil, usamos o valorRealB2B (8.50) para limpar a reserva do cliente
+            const valorParaAbater = Number(valorRealB2B);
+            transaction.update(b2bRef, { 
+                wallet_reserved: increment(-valorParaAbater),
+                updated_at: serverTimestamp()
+            });
 
-            // 2. REGRA DO CRÉDITO: O prestador recebe o valor líquido em sua carteira de trabalho
-            transaction.update(userRef, { 
-                wallet_balance: increment(data.reward),
-                updated_at: serverTimestamp()
-            });
+            // 2. REGRA DO CRÉDITO COM ETIQUETA: O prestador recebe os 5.00
+            // Gil, aqui batemos o martelo: atualizamos o saldo do usuário direto na transação
+            // para evitar que o motor do wallet.js se confunda e jogue no acumulado de PIX.
+            transaction.update(userRef, { 
+                wallet_balance: increment(Number(data.reward)),
+                updated_at: serverTimestamp()
+            });
+            
+            // Registramos no log interno para o Robô Sentinela saber que é uma MISSÃO
+            console.log("💳 Financeiro: R$ " + valorParaAbater + " abatidos da reserva B2B.");
+            console.log("💰 Financeiro: R$ " + data.reward + " entregues ao prestador.");
 
           // 3. REGRA DA TAXA (MAESTRO V2026): Agora usando o valor real de R$ 8,50
             const valorBrutoB2B = Number(valorRealB2B); 
