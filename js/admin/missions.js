@@ -596,10 +596,10 @@ async function loadSubmissions() {
                     <td class="p-3 text-gray-400 text-xs">${data.user_name || data.user_email || 'Usuário'}</td>
                     <td class="p-3">${provaLink}</td>
                     <td class="p-3">${statusBadge}</td>
-                    <td class="p-3 text-right">
-                        ${data.status === 'pending' ? `
-                            <button onclick="window.aprovarMissao('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1 rounded text-[10px] font-bold mr-2 shadow">PAGAR R$ ${data.reward}</button>
-                            <button onclick="window.rejeitarMissao('${d.id}')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded text-[10px] font-bold shadow">RECUSAR</button>
+                   <td class="p-3 text-right">
+                        ${data.status === 'pending' ? `
+                            <button onclick="window.aprovarMissao('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-[10px] font-black mr-2 shadow uppercase tracking-tighter">LIBERAR ${data.reward} AX</button>
+                            <button onclick="window.rejeitarMissao('${d.id}')" class="bg-slate-700 hover:bg-red-600 text-white px-3 py-1 rounded text-[10px] font-black shadow uppercase tracking-tighter">RECUSAR</button>
                         ` : data.status === 'b2b_rejected' ? `
                             <div class="flex flex-col gap-1">
                                 <button onclick="window.anularRecusaB2B('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase">🔓 FORÇAR PAGAMENTO</button>
