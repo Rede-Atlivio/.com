@@ -226,7 +226,12 @@ window.liquidarPagamentoB2B = async (submissionId) => {
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
 
-        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
+        // 🛰️ BUSCA DE VALOR BRUTO: Vamos na missão original buscar os R$ 8,50
+        const missionRef = doc(db, "missions", data.mission_id);
+        const missionSnap = await getDoc(missionRef);
+        const valorRealB2B = missionSnap.exists() ? Number(missionSnap.data().unit_total_with_fee) : Number(data.reward);
+
+        // 🛡️ Segurança Atlivio: Verifica se temos os dados para não quebrar a transação
         if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
 
         await runTransaction(db, async (transaction) => {
