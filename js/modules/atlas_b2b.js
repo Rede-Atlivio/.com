@@ -226,12 +226,7 @@ window.liquidarPagamentoB2B = async (submissionId) => {
         const subSnap = await getDoc(subRef);
         const data = subSnap.data();
 
-        // 🛰️ BUSCA DE VALOR BRUTO: Vamos na missão original buscar os R$ 8,50
-        const missionRef = doc(db, "missions", data.mission_id);
-        const missionSnap = await getDoc(missionRef);
-        const valorRealB2B = missionSnap.exists() ? Number(missionSnap.data().unit_total_with_fee) : Number(data.reward);
-
-        // 🛡️ Segurança Atlivio: Verifica se temos os dados para não quebrar a transação
+        // 🛡️ Segurança: Verifica se existe saldo reservado e dados do dono
         if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos.";
 
         await runTransaction(db, async (transaction) => {
@@ -252,9 +247,9 @@ window.liquidarPagamentoB2B = async (submissionId) => {
                 updated_at: serverTimestamp()
             });
 
-          // 3. REGRA DA TAXA (MAESTRO V2026): Agora com o valor de R$ 8,50 confirmado
-            const valorBrutoB2B = Number(valorRealB2B); 
-            const premioUsuario = Number(data.reward);
+           // 3. REGRA DA TAXA (MAESTRO V2026): Blindagem Financeira
+            const valorBrutoB2B = Number(data.unit_total_with_fee || valorDebitoTotal || 0);
+            const premioUsuario = Number(data.reward || 0);
             const lucroRealValidado = Number((valorBrutoB2B - premioUsuario).toFixed(2));
             
             // 🛡️ TRAVA ANTI-LIXO: Só envia para STATS se o lucro for real e consistente
