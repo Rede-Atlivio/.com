@@ -131,13 +131,13 @@ window.carregarAuditoriaB2B = async () => {
     container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-amber-500"></div></div>`;
 
    try {
-      // ⚖️ Busca unificada: Filtramos por quem criou a missão (owner_id) e status pendente
-        const q = query(
-            collection(db, "mission_submissions"),
-            where("owner_id", "==", auth.currentUser.uid), // ──▶ O índice precisa bater com este campo
-            where("status", "==", "pending"),
-            orderBy("created_at", "desc") // ──▶ A ordenação exige índice composto
-        );
+     // ⚖️ Busca unificada: Filtramos pelo UID do dono B2B para garantir que ele só veja as provas das próprias missões
+        const q = query(
+            collection(db, "mission_submissions"),
+            where("b2b_owner_uid", "==", auth.currentUser.uid), // ──▶ Usando b2b_owner_uid para match com a liquidação
+            where("status", "==", "pending"), // ──▶ Somente o que ainda não foi auditado
+            orderBy("created_at", "desc") // ──▶ Exibe as submissões mais recentes primeiro
+        );
         const snap = await getDocs(q);
 
         // 🛡️ Trava de Segurança Atlivio: Evita erro se a coleção sumir ou estiver vazia
