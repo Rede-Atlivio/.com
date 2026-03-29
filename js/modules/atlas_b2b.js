@@ -437,6 +437,8 @@ window.proximoPassoWizard = (passo) => {
             level: level,
             questions: questionsArray,
             example_image: exampleImg || null,
+            slots_totais: slotsTotais,
+            slots_disponiveis: slotsTotais,
             owner_id: auth.currentUser.uid
         };
 
