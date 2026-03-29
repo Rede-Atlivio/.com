@@ -643,9 +643,7 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN: Transfere o valor reservado para o executor
-// Gil, esta é a mesma função soberana usada no B2B, agora sob comando do Admin Central.
-// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN V2026 (HÍBRIDO)
+// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN V2026 (REORDENADO - ANTI-CONFLITO)
 window.aprovarMissao = async (submissionId) => {
     try {
         const subRef = doc(window.db, "mission_submissions", submissionId);
@@ -658,51 +656,56 @@ window.aprovarMissao = async (submissionId) => {
         if (!missionSnap.exists()) throw "Missão original não localizada.";
         const mData = missionSnap.data();
 
-        // 🛡️ IDENTIFICAÇÃO DE ORIGEM: É B2B ou é Admin?
-        // Gil, se o dono da missão for o sistema ou o admin, não tem taxa nem reserva de empresa.
+        // 🛡️ IDENTIFICAÇÃO DE ORIGEM
         const isB2B = data.b2b_owner_uid && data.b2b_owner_uid !== "atlivio_master";
         
         if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar pagamento de R$ ${data.reward} AX para ${data.user_name}?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
+            // --- 📍 FASE 1: TODAS AS LEITURAS (Obrigatório vir antes das escritas) ---
             const userRef = doc(window.db, "usuarios", data.user_id);
+            const b2bRef = isB2B ? doc(window.db, "usuarios", data.b2b_owner_uid) : null;
             
-            // 1. REGRA DO CRÉDITO: O prestador sempre recebe o prêmio
+            // Realiza os "gets" dentro da transação para travar os documentos
+            await transaction.get(userRef); 
+            let b2bExists = false;
+            if (b2bRef) {
+                const b2bSnap = await transaction.get(b2bRef);
+                b2bExists = b2bSnap.exists();
+            }
+
+            // --- 📍 FASE 2: TODAS AS ESCRITAS (Updates e Sets) ---
+            
+            // 1. Crédito ao Prestador
             transaction.update(userRef, { 
                 wallet_balance: increment(Number(data.reward)),
                 updated_at: serverTimestamp()
             });
 
-            // 2. REGRA DO DÉBITO (APENAS SE FOR B2B)
-            if (isB2B) {
-                const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
+            // 2. Regras para B2B (Débito e Taxas)
+            if (isB2B && b2bExists) {
                 const valorRealB2B = Number(mData.unit_total_with_fee || data.reward);
                 
-                // Tenta validar se a conta B2B existe antes de atualizar
-                const b2bSnap = await transaction.get(b2bRef);
-                if (b2bSnap.exists()) {
-                    transaction.update(b2bRef, { 
-                        wallet_reserved: increment(-valorRealB2B),
-                        updated_at: serverTimestamp()
-                    });
-                    
-                    // Coleta de Taxa para o Cofre (Revenue)
-                    const lucroReal = Number((valorRealB2B - data.reward).toFixed(2));
-                    if (lucroReal > 0) {
-                        const statsRef = doc(window.db, "sys_finance", "stats");
-                        transaction.update(statsRef, { total_revenue: increment(lucroReal) });
-                    }
+                transaction.update(b2bRef, { 
+                    wallet_reserved: increment(-valorRealB2B),
+                    updated_at: serverTimestamp()
+                });
+                
+                const lucroReal = Number((valorRealB2B - data.reward).toFixed(2));
+                if (lucroReal > 0) {
+                    const statsRef = doc(window.db, "sys_finance", "stats");
+                    transaction.update(statsRef, { total_revenue: increment(lucroReal) });
                 }
             }
 
-            // 3. FINALIZAÇÃO DA SUBMISSÃO
+            // 3. Finalização do Status
             transaction.update(subRef, { 
                 status: 'paid_atlix', 
                 paid_at: serverTimestamp(),
                 autorizado_por: 'ADMIN_CENTRAL'
             });
 
-            // 4. REGISTRO NO EXTRATO DO USUÁRIO
+            // 4. Registro no Extrato
             const extratoRef = doc(collection(window.db, "extrato_financeiro"));
             transaction.set(extratoRef, {
                 uid: data.user_id, 
@@ -714,8 +717,8 @@ window.aprovarMissao = async (submissionId) => {
             });
         });
 
-        alert("✅ PAGAMENTO REALIZADO!\nO usuário recebeu o saldo com sucesso.");
-        loadSubmissions(); // Recarrega a tabela
+        alert("✅ OPERAÇÃO CONCLUÍDA!\nO fluxo financeiro foi liquidado sem erros.");
+        loadSubmissions();
     } catch (err) {
         console.error("Erro na liquidação:", err);
         alert("❌ FALHA NO MOTOR: " + err);
