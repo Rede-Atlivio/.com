@@ -251,26 +251,6 @@ window.iniciarRotativoSocial = () => {
     }, 5000); // Troca a cada 5 segundos para dar tempo de leitura
 };
 
-// 📽️ MOTOR DE VÍDEO VEO 3: Experiência Ultra-Limpa (Sem poluição de canais)
-function verTutorialMissao(videoId) {
-    if (!videoId) return;
-    
-    const modal = document.getElementById('modal-video-maestro');
-    const frame = document.getElementById('player-maestro-frame');
-    
-    if (modal && frame) {
-        // Usamos o domínio nocookie para reduzir a carga de scripts do YouTube
-       // Gil, forçamos o controls=0 para ele não ter onde pendurar a barra de "Mais Vídeos"
-        // E usamos o loop para ele não parar e mostrar lixo no final
-        const cleanUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&rel=0&modestbranding=1&showinfo=0&iv_load_policy=3&disablekb=1&fs=0&widget_referrer=${encodeURIComponent(window.location.origin)}&origin=${window.location.origin}`;
-        
-        frame.src = cleanUrl;
-        modal.classList.remove('hidden');
-        modal.style.setProperty('display', 'flex', 'important');
-    } else {
-        window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
-    }
-}
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Sensor Mobile
