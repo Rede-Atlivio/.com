@@ -176,9 +176,17 @@ async function carregarMissoes() {
                         </div>
                     </div>
 
-                    <div class="space-y-1.5 mb-5 px-1">
+                   <div class="space-y-1.5 mb-5 px-1">
                         <h4 class="text-[13px] font-black text-white uppercase tracking-tight leading-tight">${m.title}</h4>
-                        <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium">${m.description}</p>
+                        <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
+                        
+                        <!-- 🖼️ MODELO B: Linha exclusiva de instrução visual -->
+                        ${m.example_url ? `
+                            <button onclick="window.verModeloMissao('${m.example_url}')" 
+                                    class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+                                🖼️ Ver Modelo de Execução
+                            </button>
+                        ` : ''}
                     </div>
 
                     <div class="flex items-center gap-3">
@@ -568,6 +576,20 @@ window.abrirModalChecklist = (perguntas, callback) => {
 
     document.body.appendChild(overlay);
     renderPergunta();
+};
+
+// 🖼️ MOTOR DE VISUALIZAÇÃO DE MODELO V2026 (MAESTRO)
+window.verModeloMissao = (url) => {
+    const modal = document.getElementById('modal-video-maestro');
+    const container = modal?.querySelector('div.bg-black');
+    if (!modal || !container) return alert("Erro visual: Modal não carregado.");
+    container.innerHTML = `
+        <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden')" class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-bold">×</button>
+        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4">
+        <div class="absolute bottom-6 left-0 right-0 text-center"><span class="bg-black/80 text-white text-[9px] font-black px-5 py-2 rounded-full uppercase">Siga este modelo exatamente</span></div>
+    `;
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display', 'flex', 'important');
 };
 
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
