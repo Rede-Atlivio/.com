@@ -264,14 +264,13 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
     }
 }
 // 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
-async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo, b2bOwnerId) {
+async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo, b2bOwnerId, respostas = {}) {
     const btn = document.querySelector(`button[onclick*="${id}"]`);
-    const originalText = btn.innerText;
     
     try {
-        btn.disabled = true;
-        btn.innerText = "⏳ COMPRIMINDO...";
+        if(btn) btn.innerText = "⏳ PROCESSANDO...";
 
+        // 📸 Compressão Inteligente (Mantendo sua lógica de 1200px)
         const bitmap = await createImageBitmap(arquivo);
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -279,56 +278,51 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         canvas.width = bitmap.width * scale;
         canvas.height = bitmap.height * scale;
         ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        
-        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.7));
-        btn.innerText = "🚀 ENVIANDO PROVA...";
+        const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.8));
 
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = async () => {
             const base64data = reader.result;
-            // 🛰️ RECUPERAÇÃO DE DNA: Se o b2bOwnerId falhou na função, buscamos no dataset do input
-            const donoFinal = b2bOwnerId || document.getElementById('camera-input').dataset.owner;
 
-       // 🚀 DNA REFORÇADO: Recuperação de Segurança do Atributo Físico
-        const inputCam = document.getElementById('camera-input');
-        const donoValidado = b2bOwnerId || inputCam.getAttribute('data-owner') || inputCam.dataset.owner;
-        
-        if (!donoValidado || donoValidado === "") {
-            btn.disabled = false; // ──▶ Destrava o botão para o usuário tentar novamente
-            btn.innerText = originalText;
-            return alert("🚩 Falha de Sincronia: ID do Proprietário não detectado. Por favor, reinicie a missão.");
-        }
+            // 📏 Cálculo de Distância Real para Auditoria
+            let distanciaFinal = 0;
+            const mSnap = await getDoc(doc(db, "missions", id));
+            if (mSnap.exists() && window.currentMissionLocation) {
+                const mData = mSnap.data();
+                distanciaFinal = calcularDistancia(window.currentMissionLocation.lat, window.currentMissionLocation.lng, mData.latitude, mData.longitude) * 1000;
+            }
 
-       // 🚀 REGISTRO OFICIAL DE PROVA: Blindagem de ID para Auditoria B2B
-        await addDoc(collection(window.db, "mission_submissions"), {
-            mission_id: id,
-            b2b_owner_uid: donoValidado, // ──▶ Padronizado para o Motor Financeiro reconhecer o dono
-            mission_title: titulo, // Título para exibição no painel de auditoria
-                reward: recompensa, // Valor que será pago ao executor
-                pay_type: 'atlix', // Tipo de moeda interna Atlivio
-                user_id: auth.currentUser.uid,
-                user_name: window.userProfile?.nome || "Usuário Atlivio",
-                proof_url: base64data,
-                location: window.currentMissionLocation || null,
-                status: 'pending', // Aguarda aprovação para mover da reserva para o prestador
-                created_at: serverTimestamp()
-            });
-           // ✅ CONFIRMAÇÃO DE ENTREGA: Libera o slot de "processando" no banco de dados
-            const { doc: docRef, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const missionRef = docRef(window.db, "missions", id); // Usamos docRef para não conflitar com nomes globais
-            await updateDoc(missionRef, { pessoas_realizando: increment(-1) });
+            // 🚀 REGISTRO DA SUBMISSÃO PRO
+            await addDoc(collection(db, "mission_submissions"), {
+                mission_id: id,
+                b2b_owner_uid: b2bOwnerId,
+                mission_title: titulo,
+                reward: Number(recompensa),
+                pay_type: tipoPagamento || 'atlix',
+                user_id: auth.currentUser.uid,
+                user_name: window.userProfile?.nome || "Membro Atlas",
+                proof_url: base64data,
+                responses: respostas, // 📋 O Checklist respondido
+                distance_meters: distanciaFinal, // 📍 Distância exata da foto
+                status: 'pending',
+                created_at: serverTimestamp(),
+                execution_time: new Date().toISOString() // ⏱️ Timestamp Automático
+            });
+
+            // Atualiza contadores
+            const { updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            await updateDoc(doc(db, "missions", id), { pessoas_realizando: increment(-1) });
             
-            // Limpa o rastro local para o cronômetro não devolver a vaga por erro
             localStorage.removeItem(`fazendo_${id}`);
-
-            alert("✅ SUCESSO! Sua prova foi enviada para análise.");
-            btn.innerText = "✅ ENVIADO";
+            alert("✅ PROVA ENVIADA!\nSeus dados estão em auditoria.");
+            if(btn) btn.innerText = "✅ ENVIADO";
+            window.carregarMissoes(); // Recarrega o radar
         };
     } catch (err) {
-        alert("❌ Falha no envio.");
-        btn.disabled = false;
-        btn.innerText = originalText;
+        console.error(err);
+        alert("❌ Falha no envio da prova.");
+        if(btn) { btn.disabled = false; btn.innerText = "Tentar Novamente"; }
     }
 }
 
