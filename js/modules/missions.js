@@ -6,7 +6,7 @@ styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes slide-ticker { 0% { transform: translateY(100%); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100%); opacity: 0; } }
     /* Globo maior e mais nítido */
-    .globo-atlas-mini { animation: spin-slow 10s linear infinite; font-size: 28px; opacity: 0.9; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); }
+    .globo-atlas-destaque { animation: spin-slow 12s linear infinite; font-size: 42px; filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.6)); }
     /* Ticker com altura flexível para não cortar os nomes */
     .ticker-item { animation: slide-ticker 4s infinite; display: block; white-space: nowrap; }
     .card-mission { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -51,38 +51,59 @@ async function carregarMissoes() {
         // 💰 BUSCA DE DADOS FINANCEIROS PARA O TOPO
         const totalPoderCompra = (window.userProfile?.wallet_balance || 0) + (window.userProfile?.wallet_bonus || 0);
 
-       // 🏗️ MONTAGEM DO TOPO PREMIUM V2026 (Correção: Globo maior e Ticker sem cortes)
+       // 🏗️ TOPO SOBERANO V2026: Globo em Destaque + Identidade Visual + Saldo Colorido
         let htmlTopo = `
             <div class="space-y-4 mb-8 animate-fadeIn">
-                <div class="bg-gradient-to-br from-slate-900 to-black rounded-[2.5rem] p-7 border border-white/10 shadow-2xl relative overflow-hidden">
-                    <div class="absolute -top-2 -right-2 bg-blue-600/10 w-32 h-32 rounded-full blur-3xl"></div>
+                <!-- CARD MESTRE ATLAS -->
+                <div class="bg-gradient-to-br from-slate-900 via-slate-950 to-black rounded-[2.5rem] p-7 border border-white/10 shadow-2xl relative overflow-hidden">
                     
-                    <!-- Globo Atlas Mais Visível -->
-                    <div class="absolute top-6 right-6 flex flex-col items-center group">
-                        <span class="globo-atlas-mini opacity-100">🌍</span>
-                        <span class="text-[7px] font-black text-blue-500 uppercase tracking-tighter mt-1 opacity-60">Atlas Vivo</span>
+                    <!-- Efeito de Radar ao fundo -->
+                    <div class="absolute -top-4 -right-4 bg-blue-600/5 w-40 h-40 rounded-full blur-3xl animate-pulse"></div>
+
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex items-center gap-4">
+                            <span class="globo-atlas-destaque">🌍</span>
+                            <div>
+                                <h1 class="text-white font-black text-lg leading-none uppercase tracking-tighter">Radar Atlas Vivo</h1>
+                                <p class="text-blue-400 text-[9px] font-black uppercase tracking-[0.1em] opacity-80 mt-1">Missões geolocalizadas em tempo real</p>
+                            </div>
+                        </div>
                     </div>
 
-                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Poder de Compra Atual</p>
-                    <h2 class="text-4xl font-black italic tracking-tighter">
-                        <span class="text-emerald-500">${totalPoderCompra.toFixed(2)}</span>
-                        <span class="text-amber-500 text-xl ml-1 font-black">AX</span>
-                    </h2>
+                    <div class="flex justify-between items-end mt-2">
+                        <div>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Seu Saldo Disponível</p>
+                            <h2 class="text-4xl font-black italic tracking-tighter leading-none">
+                                <span class="text-emerald-500">${totalPoderCompra.toFixed(2)}</span>
+                                <span class="text-amber-500 text-xl font-black ml-1">AX</span>
+                            </h2>
+                        </div>
+                    </div>
                     
-                    <!-- Ticker com altura corrigida (h-8) para não cortar nomes -->
+                    <!-- TICKER SOCIAL INTEGRADO (Sem cortes) -->
                     <div class="mt-6 pt-4 border-t border-white/5 h-8 overflow-hidden">
                         <div id="mission-ticker" class="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
-                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
-                             <span class="ticker-item">Rede Sincronizada</span>
+                             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
+                             <span class="ticker-item font-bold">Sincronizando Rede Atlas...</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- 🏢 FAIXA DE MARKETING B2B -->
+                <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-600/10 border border-blue-500/20 p-5 rounded-[2rem] flex items-center gap-4 mb-2 transition-all active:scale-95 group">
+                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-900/40 group-hover:rotate-12 transition-transform">🏢</div>
+                    <div class="text-left">
+                        <p class="text-[11px] font-black text-white uppercase leading-tight">Sua empresa no Atlas?</p>
+                        <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wide opacity-80">Micro Tarefas Corporativas ➜</p>
+                    </div>
+                </button>
+
+                <!-- FILTROS DE CATEGORIA -->
                 <div class="flex gap-2 overflow-x-auto py-2 no-scrollbar px-1">
-                    <button onclick="window.filtrarRadar('all')" id="f-all" class="filter-active px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5 shadow-lg">🎯 Tudo</button>
-                    <button onclick="window.filtrarRadar('physical')" id="f-physical" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">📍 No Local</button>
-                    <button onclick="window.filtrarRadar('fast')" id="f-fast" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">⚡ Rápidas</button>
-                    <button onclick="window.filtrarRadar('growth')" id="f-growth" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">🎁 Bônus</button>
+                    <button onclick="window.filtrarRadar('all')" id="f-all" class="filter-active px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">🎯 Tudo</button>
+                    <button onclick="window.filtrarRadar('physical')" id="f-physical" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">📍 No Local</button>
+                    <button onclick="window.filtrarRadar('fast')" id="f-fast" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">⚡ Rápidas</button>
+                    <button onclick="window.filtrarRadar('growth')" id="f-growth" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">🎁 Bônus</button>
                 </div>
             </div>
         `;
