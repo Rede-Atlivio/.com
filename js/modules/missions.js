@@ -178,22 +178,22 @@ async function carregarMissoes() {
 
                    <div class="space-y-1.5 mb-5 px-1">
                         <h4 class="text-[13px] font-black text-white uppercase tracking-tight leading-tight">${m.title}</h4>
-                        <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
+<p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
 
-                        <!-- 🖼️ Botão de Modelo Maestro: Só aparece se houver imagem no banco -->
-                        ${m.example_image ? `
-                            <button onclick="window.verModeloMissao('${m.example_image}')" 
-                                    class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                🖼️ Ver Modelo de Execução
-                            </button>
-                        ` : ''}
+<!-- 🖼️ MODELO B: Conectado ao campo 'example_image' que vimos no seu banco -->
+${m.example_image ? `
+    <button onclick="window.verModeloMissao('${m.example_image}')" 
+            class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+        🖼️ Ver Modelo de Execução
+    </button>
+` : ''}
                     </div>
 
                     <div class="flex items-center gap-3">
                         <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5">
                             <div class="flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
-                                <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis || 0} Vagas</p>
+                                <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
                             </div>
                         </div>
                         <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
