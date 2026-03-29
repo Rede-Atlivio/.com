@@ -818,66 +818,36 @@ window.addEventListener('click', (e) => {
     }
 }, { capture: true }); // O segredo da velocidade está no 'capture: true'
 
-// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
-// Gil, centralizamos aqui todas as funções que o HTML (onclick) precisa enxergar.
-window.switchTab = switchTab;
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.maestroUniversal = maestroUniversal;
-window.registrarEventoMaestro = registrarEventoMaestro;
-window.carregarInterface = carregarInterface;
+// ============================================================================
+// 🛰️ MOTOR UNIVERSAL DE MÍDIA MAESTRO (V2026)
+// ============================================================================
 
-console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
-// 🛰️ PONTE ATLAS B2B: Sincronizada com o DNA is_provider (V70)
-window.abrirTrocaPerfilB2B = () => {
-    document.getElementById('modal-marketing-b2b').classList.add('hidden');
-    
-    // 🕵️ Identifica a verdade: Se is_provider for FALSE, o usuário é um CLIENTE
-    const isClienteReal = window.userProfile?.is_provider === false;
-
-    // Se for cliente, libera o acesso direto à Gestão Atlas
-    if (isClienteReal) {
-        window.switchTab('b2b_gestao');
-        if (window.initB2B) window.initB2B(); 
-    } else {
-        // Se for prestador, abre o modal de troca que você já tem
-        const modalTroca = document.getElementById('modal-troca-identidade');
-        const txtTroca = document.getElementById('txt-perfil-atual');
-        if (modalTroca && txtTroca) {
-            txtTroca.innerText = "PRESTADOR para CLIENTE";
-            modalTroca.classList.remove('hidden');
-        }
-    }
-};
-// 🛰️ MOTOR DE FECHAMENTO UNIVERSAL MAESTRO
+// 🌊 1. FUNÇÃO DE FECHAMENTO (O Faxineiro)
 window.fecharModalMaestro = () => {
     const modal = document.getElementById('modal-video-maestro');
     const frame = document.getElementById('player-maestro-frame');
     
-    // Se houver vídeo, mata o som e o link
-    if (frame) frame.src = '';
+    if (frame) frame.src = ''; // Mata o vídeo
     
-    // Esconde o modal com força total
-    modal.classList.add('hidden');
-    modal.style.setProperty('display', 'none', 'important');
-    
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.setProperty('display', 'none', 'important');
+    }
     console.log("🌊 [Maestro] Modal limpo e recolhido.");
 };
 
-// 🎯 CLIQUE NO FUNDO: Se clicar no escuro, fecha o modal
+// 🎯 2. CLIQUE NO FUNDO (Experiência Premium)
 document.getElementById('modal-video-maestro')?.addEventListener('click', (e) => {
     if (e.target.id === 'modal-video-maestro') window.fecharModalMaestro();
 });
 
-// 🖼️ VISUALIZADOR UNIVERSAL DE IMAGENS MAESTRO (V2026)
-// Gil, agora você pode usar isso em qualquer lugar do site!
+// 🖼️ 3. VISUALIZADOR UNIVERSAL DE IMAGENS (O Projetor)
 window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
     const modal = document.getElementById('modal-video-maestro');
     const container = modal?.querySelector('div.bg-black');
     
     if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
 
-    // Limpa o que tinha antes (vídeo ou outra foto) e injeta o novo
     container.innerHTML = `
         <button onclick="window.fecharModalMaestro()" 
                 class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
@@ -895,6 +865,35 @@ window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
     modal.style.setProperty('display', 'flex', 'important');
 };
 
-// 🔗 PONTE DE COMPATIBILIDADE
-// Mantemos este nome para o arquivo Missions não dar erro.
+// 🔗 4. PONTES DE COMPATIBILIDADE
 window.verModeloMissao = (url) => window.exibirImagemModal(url, "Modelo de Execução");
+
+// 🛰️ 5. PONTE ATLAS B2B: Sincronizada com o DNA is_provider (V70)
+window.abrirTrocaPerfilB2B = () => {
+    document.getElementById('modal-marketing-b2b')?.classList.add('hidden');
+    const isClienteReal = window.userProfile?.is_provider === false;
+
+    if (isClienteReal) {
+        window.switchTab('b2b_gestao');
+        if (window.initB2B) window.initB2B(); 
+    } else {
+        const modalTroca = document.getElementById('modal-troca-identidade');
+        const txtTroca = document.getElementById('txt-perfil-atual');
+        if (modalTroca && txtTroca) {
+            txtTroca.innerText = "PRESTADOR para CLIENTE";
+            modalTroca.classList.remove('hidden');
+        }
+    }
+};
+
+// ============================================================================
+// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
+// ============================================================================
+window.switchTab = switchTab;
+window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
+window.maestroUniversal = maestroUniversal;
+window.registrarEventoMaestro = registrarEventoMaestro;
+window.carregarInterface = carregarInterface;
+
+console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
