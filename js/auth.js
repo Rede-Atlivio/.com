@@ -106,15 +106,30 @@ getRedirectResult(auth).then(async (result) => {
                 dadosIndicacao.invited_by = refLink; // Campo oficial para sua auditoria manual
                 
                 // 🔔 AVISO AO PADRINHO: O sistema avisa ele na hora que o indicado entrou
+                // 🛰️ [V2026] GATILHO MAESTRO: Notifica o Padrinho no Banco e na Tela (Ao Vivo)
                 try {
+                    const msgSucesso = `🚀 Seu link funcionou! ${user.displayName || 'Um amigo'} acabou de se cadastrar.`;
+                    
+                    // 1. Grava no Histórico do Padrinho (Para ele ler depois no sininho)
                     await addDoc(collection(db, "notifications"), {
                         uid: refLink,
-                        message: `🚀 Seu link funcionou! ${user.displayName || 'Um amigo'} acabou de se cadastrar.`,
+                        message: msgSucesso,
                         read: false, 
                         type: 'success', 
                         created_at: serverTimestamp()
                     });
-                } catch(e) { console.warn("Erro ao notificar padrinho:", e); }
+
+                    // 2. Tenta disparar o Alerta Visual se o Padrinho estiver online agora
+                    if (window.maestroUniversal) {
+                        window.maestroUniversal("indicacao_sucesso", {
+                            id: `ref_${user.uid}`,
+                            type: 'gift',
+                            message: msgSucesso,
+                            action: 'ganhar' // Sugere que ele vá ver o saldo/missões
+                        });
+                    }
+                    console.log("🔔 [Maestro] Notificação de indicação enviada ao Padrinho.");
+                } catch(e) { console.warn("⚠️ Falha ao alertar padrinho:", e); }
             }
 
             await setDoc(userRef, {
