@@ -182,14 +182,24 @@ async function carregarMissoes() {
                     </div>
 
                     <div class="flex items-center gap-3">
-                        <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5">
+                        <!-- Bloco de Vagas + Modelo (Lado a Lado na mesma caixa) -->
+                        <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5 flex items-center justify-between">
                             <div class="flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
                                 <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
                             </div>
+                            
+                            ${m.example_url ? `
+                                <button onclick="window.verModeloMissao('${m.example_url}')" 
+                                        class="bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg text-[8px] font-black uppercase border border-blue-500/30 active:scale-90 transition-all shrink-0">
+                                    MODELO
+                                </button>
+                            ` : ''}
                         </div>
+
+                        <!-- Botão Iniciar (Intocado e seguro) -->
                         <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
-                                class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20">
+                                class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20 transition-all active:scale-95">
                             Iniciar Missão ➜
                         </button>
                     </div>
