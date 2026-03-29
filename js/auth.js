@@ -90,29 +90,40 @@ getRedirectResult(auth).then(async (result) => {
         const userRef = doc(db, "usuarios", user.uid);
         const docSnap = await getDoc(userRef);
 
-        // 🆕 Se for NOVO USUÁRIO, aplica a indicação
+       // 🆕 [V2026] CADASTRO BLINDADO: Captura o padrinho real do link de indicação
         if (!docSnap.exists()) {
-            const indicatedBy = sessionStorage.getItem("pending_ref") || localStorage.getItem("traffic_source");
-            let dadosIndicacao = {};
+            // Tenta pegar do robô de teste ou do link direto
+            const refLink = sessionStorage.getItem("atlivio_ref");
+            const trafficSource = localStorage.getItem("traffic_source") || "direto";
+            
+            let dadosIndicacao = { 
+                traffic_source: refLink ? 'afiliado' : trafficSource 
+            };
 
-            if (indicatedBy && indicatedBy !== user.uid) {
-                console.log("🔗 Usuário indicado por:", indicatedBy);
-                dadosIndicacao = { invited_by: indicatedBy, traffic_source: 'afiliado' };
-                // Notifica o Padrinho
+            // 🛡️ TRAVA ANTI-AUTO-INDICAÇÃO: Só grava se o ref não for o próprio usuário
+            if (refLink && refLink !== user.uid) {
+                console.log("🔗 [Indicação] Padrinho detectado:", refLink);
+                dadosIndicacao.invited_by = refLink; // Campo oficial para sua auditoria manual
+                
+                // 🔔 AVISO AO PADRINHO: O sistema avisa ele na hora que o indicado entrou
                 try {
                     await addDoc(collection(db, "notifications"), {
-                        uid: indicatedBy,
-                        message: `🎉 Nova indicação! ${user.displayName || 'Alguém'} entrou pelo seu link.`,
-                        read: false, type: 'success', created_at: serverTimestamp()
+                        uid: refLink,
+                        message: `🚀 Seu link funcionou! ${user.displayName || 'Um amigo'} acabou de se cadastrar.`,
+                        read: false, 
+                        type: 'success', 
+                        created_at: serverTimestamp()
                     });
-                } catch(e) {}
-            } else {
-                dadosIndicacao = { traffic_source: localStorage.getItem("traffic_source") || 'direto' };
+                } catch(e) { console.warn("Erro ao notificar padrinho:", e); }
             }
 
-            // Cria perfil inicial (o resto vem no onAuthStateChanged)
             await setDoc(userRef, {
-                uid: user.uid, email: user.email, created_at: serverTimestamp(), ...dadosIndicacao
+                uid: user.uid, 
+                email: user.email, 
+                created_at: serverTimestamp(), 
+                wallet_balance: 0.00,
+                wallet_bonus: 0.00,
+                ...dadosIndicacao
             }, { merge: true });
         }
         sessionStorage.removeItem("pending_ref");
