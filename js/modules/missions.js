@@ -201,7 +201,8 @@ function verTutorialMissao(videoId) {
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId, perguntas = []) {
     const { collection, getDocs, query, where, doc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
-    const btn = event.currentTarget;
+    // Captura o botão específico pelo ID da missão para garantir que o feedback visual funcione
+const btn = document.querySelector(`button[onclick*="${id}"]`);
     if(!btn) return;
     const originalText = btn.innerText;
     btn.disabled = true;
