@@ -849,3 +849,22 @@ window.abrirTrocaPerfilB2B = () => {
         }
     }
 };
+// 🛰️ MOTOR DE FECHAMENTO UNIVERSAL MAESTRO
+window.fecharModalMaestro = () => {
+    const modal = document.getElementById('modal-video-maestro');
+    const frame = document.getElementById('player-maestro-frame');
+    
+    // Se houver vídeo, mata o som e o link
+    if (frame) frame.src = '';
+    
+    // Esconde o modal com força total
+    modal.classList.add('hidden');
+    modal.style.setProperty('display', 'none', 'important');
+    
+    console.log("🌊 [Maestro] Modal limpo e recolhido.");
+};
+
+// 🎯 CLIQUE NO FUNDO: Se clicar no escuro, fecha o modal
+document.getElementById('modal-video-maestro')?.addEventListener('click', (e) => {
+    if (e.target.id === 'modal-video-maestro') window.fecharModalMaestro();
+});
