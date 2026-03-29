@@ -502,21 +502,28 @@ container.innerHTML = "";
 window.carregarMissoesRealizadas = carregarMissoesRealizadas;
 
 // ⏲️ SENTINELA DE DESISTÊNCIA: Devolve a vaga ao radar se o usuário não enviar a prova em 20 min
-window.iniciarCronometroDesistencia = (missionId) => {
+// ⏲️ SENTINELA DE DESISTÊNCIA DINÂMICO
+window.iniciarCronometroDesistencia = (missionId, minutos = 20) => {
+    const milissegundos = minutos * 60 * 1000;
+    
     setTimeout(async () => {
         const aindaFazendo = localStorage.getItem(`fazendo_${missionId}`);
         if (aindaFazendo) {
-            const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-            const missionRef = doc(window.db, "missions", missionId);
-            await updateDoc(missionRef, {
-                slots_disponiveis: increment(1),
-                pessoas_realizando: increment(-1),
-                updated_at: serverTimestamp()
-            });
-            localStorage.removeItem(`fazendo_${missionId}`);
-            console.log("♻️ Vaga devolvida ao radar Atlivio por inatividade.");
+            try {
+                const { doc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const missionRef = doc(window.db, "missions", missionId);
+                
+                await updateDoc(missionRef, {
+                    slots_disponiveis: increment(1),
+                    pessoas_realizando: increment(-1),
+                    updated_at: serverTimestamp()
+                });
+                
+                localStorage.removeItem(`fazendo_${missionId}`);
+                console.log(`♻️ Vaga [${missionId}] devolvida por estourar o limite de ${minutos}min.`);
+            } catch (e) { console.error("Erro ao devolver vaga automática:", e); }
         }
-    }, 20 * 60 * 1000); 
+    }, milissegundos); 
 };
 
 // 📋 MOTOR DE INTERFACE: Checklist Sim/Não
