@@ -476,7 +476,7 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                 <div class="grid grid-cols-3 gap-2">
                     <input id="mis-lat" value="${dados?.latitude || ''}" class="p-2 rounded bg-slate-900 text-emerald-500 text-[10px] font-mono border border-slate-800" placeholder="Lat">
                     <input id="mis-lng" value="${dados?.longitude || ''}" class="p-2 rounded bg-slate-900 text-emerald-500 text-[10px] font-mono border border-slate-800" placeholder="Lng">
-                    <input id="mis-radius" value="${dados?.radius || 500}" type="number" class="p-2 rounded bg-slate-900 text-white text-[10px] font-mono border border-slate-800" placeholder="Raio(m)">
+                    <input id="mis-radius" value="${dados?.radius || 500}" type="number" max="1000" class="p-2 rounded bg-slate-900 text-white text-[10px] font-mono border border-slate-800" placeholder="Máx 1000m">
                 </div>
             </div>
 
