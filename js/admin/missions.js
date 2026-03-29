@@ -540,8 +540,9 @@ async function salvarMissao() {
         } else {
             // MODO CRIAÇÃO: Adiciona campos de controle de estoque iniciais
             payload.created_at = serverTimestamp();
-            payload.slots_totais = 100; // Padrão Admin
-            payload.slots_disponiveis = 100;
+            const slotsInput = parseInt(document.getElementById('mis-slots').value) || 10;
+            payload.slots_totais = slotsInput;
+            payload.slots_disponiveis = slotsInput;
             payload.pessoas_realizando = 0;
             await addDoc(collection(window.db, "missions"), payload);
             alert("🚀 Missão lançada no Radar!");
