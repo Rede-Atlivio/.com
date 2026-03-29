@@ -402,6 +402,39 @@ window.carregarHistoricoNotificacoes = async () => {
         lista.innerHTML = '<p class="text-center text-red-400 text-xs py-10">Erro ao carregar mensagens.</p>';
     }
 };
+// 🛰️ [V2026] RÁDIO GLOBAL MAESTRO: Captura notificações de Indicação (Referral) em tempo real
+window.escutarNotificacoesGlobais = (uid) => {
+    const { collection, query, where, onSnapshot, orderBy, limit } = window.firebaseModules;
+    
+    // Ouve a coleção raiz 'notifications' onde o auth.js grava as indicações
+    const qGlobal = query(
+        collection(window.db, "notifications"),
+        where("uid", "==", uid),
+        where("read", "==", false),
+        orderBy("created_at", "desc"),
+        limit(1)
+    );
+
+    onSnapshot(qGlobal, (snap) => {
+        if (snap.empty) return;
+
+        const docNotif = snap.docs[0];
+        const dados = docNotif.data();
+
+        console.log("🎁 [Maestro Global] Nova notificação de indicação detectada!");
+
+        // Dispara o balão azul na tela do Padrinho
+        if (window.mostrarBarraNotificacao) {
+            window.mostrarBarraNotificacao(docNotif.id, {
+                id: docNotif.id,
+                type: dados.type || 'gift',
+                titulo: "SISTEMA DE INDICAÇÃO",
+                message: dados.message,
+                action: 'ganhar'
+            });
+        }
+    }, (err) => console.warn("🛰️ Rádio Global: Aguardando sinais de indicação..."));
+};
 /**
  * 🚀 TRANSMISSOR MAESTRO V50: Envia ordens para o Robô Externo (Google Cloud Functions)
  * Esta função permite que o site "grite" para o servidor e o servidor avise o usuário.
