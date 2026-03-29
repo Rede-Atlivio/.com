@@ -55,23 +55,16 @@ export async function carregarDadosPerfil() {
             badgeContainer.innerHTML = data.badges.map(b => `<span class="badge-icon" title="${b.label}">${b.icon}</span>`).join('');
         }
 
-        // 🔗 [V2026] CONTADOR DE INDICADOS: Exibe o troféu de amizades no perfil
-        const elIndicados = document.getElementById('user-referrals');
-        if(elIndicados) {
-            // Se o campo não existir no banco (usuário antigo), mostra 0
-            elIndicados.innerText = data.referral_count || 0;
+       // 🔗 [V2026] CONTADOR DE INDICADOS: Atualiza o card visual no perfil
+        const campoReferrals = document.getElementById('user-referrals');
+        if(campoReferrals) {
+            campoReferrals.innerText = data.referral_count || 0;
         }
 
-       // Capa
+        // Capa
         const bannerPreview = document.getElementById('banner-preview');
         if(bannerPreview && data.cover_image) {
             bannerPreview.src = data.cover_image;
-        }
-
-        // 🔗 [V2026] CONTADOR DE INDICADOS: Atualiza o card visual
-        const elIndicados = document.getElementById('user-referrals');
-        if(elIndicados) {
-            elIndicados.innerText = data.referral_count || 0;
         }
     }
 }
