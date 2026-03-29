@@ -294,10 +294,17 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             });
         });
 
+       // ⏱️ CAPTURA O TEMPO REAL DO DNA DA MISSÃO (Ou usa 20min como fallback de segurança)
+        const tempoMissao = m.execution_time_limit || 20;
+        
         localStorage.setItem(`fazendo_${id}`, "true");
-        window.iniciarCronometroDesistencia(id);
+        // Passamos o tempo real para o cronômetro de fundo
+        window.iniciarCronometroDesistencia(id, tempoMissao);
 
-        if (!confirm(`🚀 Iniciar Missão: ${titulo}?\n\nO sistema abrirá a câmera para a prova oficial.`)) {
+        // 📢 AVISO EDUCATIVO: O usuário agora sabe que tem pressa!
+        const msgAviso = `🚀 Iniciar Missão: ${titulo}?\n\n⏳ VOCÊ TEM ${tempoMissao} MINUTOS para enviar a foto.\n\nApós esse tempo, sua vaga será liberada para outro usuário.`;
+
+        if (!confirm(msgAviso)) {
             btn.disabled = false; btn.innerText = originalText; return;
         }
 
