@@ -1432,10 +1432,28 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
                 </div>
             </div>
 
-            <div class="space-y-3 pt-2">
-                <button onclick="window.copiarLinkAfiliado()" class="w-full border border-blue-200 bg-blue-50 text-blue-700 py-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-100 transition">
-                    🔗 Copiar Meu Link de Indicação
-                </button>
+           <!-- 🔗 [V2026] CARD DE INDICAÇÕES: Engajamento e Rastreio -->
+            <div class="space-y-4 pt-2">
+                <div class="bg-gradient-to-br from-blue-600 to-blue-800 p-5 rounded-[2rem] shadow-xl border border-blue-400/20 relative overflow-hidden">
+                    <div class="absolute right-[-10px] top-[-10px] w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+                    
+                    <div class="flex justify-between items-center relative z-10">
+                        <div>
+                            <p class="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Amigos Indicados</p>
+                            <div class="flex items-baseline gap-2">
+                                <h3 id="user-referrals" class="text-4xl font-black text-white italic tracking-tighter">0</h3>
+                                <span class="text-blue-300 text-[10px] font-bold uppercase">Cadastros</span>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-white/20">
+                            👥
+                        </div>
+                    </div>
+
+                    <button onclick="window.copiarLinkAfiliado()" class="w-full mt-4 bg-white text-blue-800 font-black text-[10px] uppercase py-3.5 rounded-xl shadow-lg active:scale-95 transition-all tracking-tight">
+                        🔗 Copiar Meu Link de Indicação
+                    </button>
+                </div>
 
                 <button onclick="logout()" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2 hover:bg-red-100 transition shadow-sm border border-red-100">
                     🚪 Encerrar Sessão (Sair)
