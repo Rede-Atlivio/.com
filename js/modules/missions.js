@@ -65,7 +65,7 @@ async function carregarMissoes() {
 <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-[0_10px_20px_rgba(37,99,235,0.4)] group-hover:scale-110 transition-transform z-10 shrink-0">🏢</div>
                     
                     <div class="z-10">
-                        <h3 class="text-[14px] font-black text-white uppercase leading-none tracking-tighter mb-1.5">Sua Empresa no Radar?</h3>
+                        <h3 class="text-[14px] font-black text-white uppercase leading-none tracking-tighter mb-1.5">Sua Empresa no Radar ?</h3>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Contrate Micro Tarefas</span>
                             <span class="text-white text-xs animate-bounce-subtle">➜</span>
