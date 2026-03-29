@@ -431,7 +431,6 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
 window.carregarMissoes = carregarMissoes;
 window.renderizarMissaoCards = carregarMissoes; 
 window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
-window.verTutorialMissao = verTutorialMissao; // ✅ Ativa o botão de tutorial
 window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
 
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
