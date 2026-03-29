@@ -90,18 +90,28 @@ window.limparVagasZumbisB2B = async () => {
         const snap = await getDocs(q);
         
         const agora = Date.now();
-        const limite = 30 * 60 * 1000; 
 
         for (const mDoc of snap.docs) {
-            // Varre tentativas que ficaram presas no status 'started'
-            const qTentativas = query(collection(window.db, "missions", mDoc.id, "attempts"), where("status", "==", "started"));
+            const mData = mDoc.data();
+            
+            // ⏱️ RECUPERA O LIMITE DO DNA DA MISSÃO (Ou usa o padrão de categoria se for antiga)
+            let tempoLimiteMissao = mData.execution_time_limit || (mData.category === 'fast' ? 5 : 20);
+            const limiteMilissegundos = tempoLimiteMissao * 60 * 1000;
+
+            // 🚀 OTIMIZAÇÃO: Busca apenas tentativas 'started' criadas ANTES do tempo limite (Evita ler tudo)
+            const qTentativas = query(
+                collection(window.db, "missions", mDoc.id, "attempts"), 
+                where("status", "==", "started")
+            );
+            
             const tentSnap = await getDocs(qTentativas);
 
             for (const tDoc of tentSnap.docs) {
                 const t = tDoc.data();
                 const inicio = t.started_at?.toDate().getTime() || agora;
                 
-                if (agora - inicio > limite) {
+                // 🧹 Só limpa se realmente estourou o tempo específico daquela missão
+                if (agora - inicio > limiteMilissegundos) {
                     await runTransaction(window.db, async (transaction) => {
                         // Devolve a vaga ao estoque e remove o peso do contador
                         transaction.update(doc(window.db, "missions", mDoc.id), {
