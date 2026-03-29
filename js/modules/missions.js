@@ -578,4 +578,25 @@ window.abrirModalChecklist = (perguntas, callback) => {
     renderPergunta();
 };
 
+//FUNÇÃO VER MODELO DE IMAGEM
+window.verModeloMissao = (url) => {
+    if (!url) return alert("Esta missão não possui foto de modelo.");
+    
+    // Reaproveitamos o modal de vídeo para mostrar a imagem com a mesma classe de luxo
+    const modal = document.getElementById('modal-video-maestro');
+    const container = modal.querySelector('div.bg-black');
+    
+    // Limpamos o conteúdo do modal (tiramos o iframe do YouTube) e colocamos a Imagem
+    container.innerHTML = `
+        <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden')" 
+                class="absolute top-6 right-6 z-[250] bg-red-600/80 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl border border-white/10">×</button>
+        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem]">
+        <div class="absolute bottom-6 left-0 right-0 text-center">
+            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-4 py-2 rounded-full uppercase border border-white/10">Sua foto deve ficar igual a esta</span>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display', 'flex', 'important');
+};
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
