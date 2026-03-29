@@ -157,9 +157,16 @@ async function carregarMissoes() {
             
             const distLabel = m.distancia < 50000 ? `📍 a ${m.distancia < 1000 ? Math.round(m.distancia) + 'm' : (m.distancia/1000).toFixed(1) + 'km'}` : '🌍 Online';
 
-            cardsHtml += `
+           cardsHtml += `
                 <div class="card-mission bg-slate-900 border border-white/5 p-5 rounded-[2.2rem] mb-4 shadow-xl relative overflow-hidden active:scale-[0.98] transition-all">
-                    <!-- Detalhe de Brilho Lateral conforme o tipo -->
+                    
+                    ${m.example_url ? `
+                        <button onclick="window.verModeloMissao('${m.example_url}')" 
+                                class="absolute top-4 right-4 z-20 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 text-blue-400 hover:text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all shadow-lg backdrop-blur-md">
+                            🖼️ Ver Modelo
+                        </button>
+                    ` : ''}
+
                     <div class="absolute left-0 top-1/4 bottom-1/4 w-[2px] ${corTema.replace('text', 'bg')} opacity-50"></div>
 
                     <div class="flex justify-between items-start mb-4">
