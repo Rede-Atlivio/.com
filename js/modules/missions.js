@@ -188,30 +188,10 @@ async function carregarMissoes() {
                                 <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                        <!-- Contador de Vagas (Agora com ID fixo para o Robô não dar erro) -->
-                        <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
-                                <p id="vagas-count" class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
-                            </div>
-                        </div>
-
-                        <div class="flex-[2] flex gap-2">
-                            <!-- Botão Modelo: Só aparece se o Admin/B2B inseriu a URL -->
-                            ${m.example_url ? `
-                                <button onclick="window.verModeloMissao('${m.example_url}')" 
-                                        class="flex-1 py-4 bg-slate-800 text-blue-400 border border-blue-500/20 rounded-2xl font-black text-[8px] uppercase transition-all active:scale-95">
-                                    🖼️ Modelo
-                                </button>
-                            ` : ''}
-
-                            <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
-                                    class="${m.example_url ? 'flex-[1.5]' : 'w-full'} py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20 transition-all active:scale-95">
-                                Iniciar ➜
-                            </button>
-                        </div>
-                    </div>
+                        <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
+                                class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20">
+                            Iniciar Missão ➜
+                        </button>
                     </div>
                 </div>
             `;
@@ -589,26 +569,5 @@ window.abrirModalChecklist = (perguntas, callback) => {
     document.body.appendChild(overlay);
     renderPergunta();
 };
-// 🖼️ VISUALIZADOR DE MODELO V2026 (MAESTRO)
-window.verModeloMissao = (url) => {
-    if (!url) return alert("Esta missão não possui foto de modelo.");
-    
-    const modal = document.getElementById('modal-video-maestro');
-    const container = modal?.querySelector('div.bg-black');
-    
-    if (!modal || !container) return alert("Erro: Estrutura de modal não encontrada no Index.");
 
-    // Injeta a imagem no lugar do Iframe do YouTube
-    container.innerHTML = `
-        <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden')" 
-                class="absolute top-6 right-6 z-[250] bg-red-600/80 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl border border-white/10 font-bold">×</button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4">
-        <div class="absolute bottom-6 left-0 right-0 text-center">
-            <span class="bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-5 py-2.5 rounded-full uppercase border border-white/10 tracking-widest shadow-2xl">Exemplo de como tirar a foto</span>
-        </div>
-    `;
-    
-    modal.classList.remove('hidden');
-    modal.style.setProperty('display', 'flex', 'important');
-};
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
