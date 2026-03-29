@@ -286,13 +286,16 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
         reader.onloadend = async () => {
             const base64data = reader.result;
 
-            // 📏 Cálculo de Distância Real para Auditoria
+           // 📏 Cálculo de Distância Real para Auditoria (Com trava de segurança)
             let distanciaFinal = 0;
-            const mSnap = await getDoc(doc(db, "missions", id));
-            if (mSnap.exists() && window.currentMissionLocation) {
-                const mData = mSnap.data();
-                distanciaFinal = calcularDistancia(window.currentMissionLocation.lat, window.currentMissionLocation.lng, mData.latitude, mData.longitude) * 1000;
-            }
+            try {
+                const mRef = doc(window.db, "missions", id);
+                const mSnap = await getDoc(mRef);
+                if (mSnap.exists() && window.currentMissionLocation && mSnap.data().latitude) {
+                    const mData = mSnap.data();
+                    distanciaFinal = calcularDistancia(window.currentMissionLocation.lat, window.currentMissionLocation.lng, mData.latitude, mData.longitude) * 1000;
+                }
+            } catch (gpsErr) { console.warn("Erro ao calcular precisão de distância, seguindo sem dado."); }
 
             // 🚀 REGISTRO DA SUBMISSÃO PRO
             await addDoc(collection(db, "mission_submissions"), {
