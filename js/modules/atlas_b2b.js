@@ -369,27 +369,23 @@ window.abrirWizardB2B = () => {
                     <input type="text" id="b2b-title" placeholder="Ex: Auditoria de Fachada" class="input-b2b-lapidado font-bold !mb-0">
                 </div>
 
-               <div class="grid grid-cols-3 gap-2">
-                <div class="col-span-1">
-                    <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Categoria</label>
-                    <select id="b2b-category" class="input-b2b-lapidado !mb-0">
-                        <option value="physical">📍 No Local</option>
-                        <option value="fast">⚡ Rápida</option>
-                    </select>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Categoria</label>
+                        <select id="b2b-category" class="input-b2b-lapidado !mb-0">
+                            <option value="physical">📍 No Local</option>
+                            <option value="fast">⚡ Rápida</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Nível Mínimo</label>
+                        <select id="b2b-level" class="input-b2b-lapidado !mb-0">
+                            <option value="1">Nível 1</option>
+                            <option value="2">Nível 2</option>
+                            <option value="3">Nível 3</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="col-span-1">
-                    <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Nível</label>
-                    <select id="b2b-level" class="input-b2b-lapidado !mb-0">
-                        <option value="1">Lvl 1</option>
-                        <option value="2">Lvl 2</option>
-                        <option value="3">Lvl 3</option>
-                    </select>
-                </div>
-                <div class="col-span-1">
-                    <label class="text-[9px] font-black text-cyan-400 uppercase ml-2 mb-1 block">Qtd Vagas</label>
-                    <input type="number" id="b2b-slots-input" value="1" min="1" class="input-b2b-lapidado !mb-0 font-black text-center" placeholder="Ex: 10">
-                </div>
-            </div>
 
                 <div>
                     <label class="text-[9px] font-black text-emerald-500 uppercase ml-2 mb-1 block">📋 Checklist (Perguntas separadas por vírgula)</label>
@@ -422,7 +418,6 @@ window.proximoPassoWizard = (passo) => {
         const level = parseInt(document.getElementById('b2b-level').value);
         const questionsRaw = document.getElementById('b2b-questions').value;
         const exampleImg = document.getElementById('b2b-example-image').value;
-        const slotsTotais = parseInt(document.getElementById('b2b-slots-input').value) || 1;
 
         if (!title || !desc) return alert("Preencha o título e as instruções!");
 
@@ -437,8 +432,6 @@ window.proximoPassoWizard = (passo) => {
             level: level,
             questions: questionsArray,
             example_image: exampleImg || null,
-            slots_totais: slotsTotais,
-            slots_disponiveis: slotsTotais,
             owner_id: auth.currentUser.uid
         };
 
