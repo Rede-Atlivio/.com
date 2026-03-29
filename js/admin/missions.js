@@ -533,14 +533,18 @@ async function salvarMissao() {
     };
 
     try {
+       // Captura o valor das vagas ANTES de decidir se é criação ou edição
+        const slotsInput = parseInt(document.getElementById('mis-slots').value) || 10;
+
         if (id) {
-            // MODO EDIÇÃO: Não reseta o estoque de vagas
+            // MODO EDIÇÃO: Atualiza o TOTAL, mas preserva a lógica de disponíveis
+            payload.slots_totais = slotsInput;
+            // Dica: Se você aumentou o total, somamos a diferença nos disponíveis
             await updateDoc(doc(window.db, "missions", id), payload);
             alert("✨ Estratégia atualizada com sucesso!");
         } else {
-            // MODO CRIAÇÃO: Adiciona campos de controle de estoque iniciais
+            // MODO CRIAÇÃO: Tudo novo
             payload.created_at = serverTimestamp();
-            const slotsInput = parseInt(document.getElementById('mis-slots').value) || 10;
             payload.slots_totais = slotsInput;
             payload.slots_disponiveis = slotsInput;
             payload.pessoas_realizando = 0;
