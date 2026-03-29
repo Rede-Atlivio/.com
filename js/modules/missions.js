@@ -5,8 +5,10 @@ const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes slide-ticker { 0% { transform: translateY(100%); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100%); opacity: 0; } }
-    .globo-atlas-mini { animation: spin-slow 12s linear infinite; font-size: 14px; opacity: 0.8; }
-    .ticker-item { animation: slide-ticker 4s infinite; }
+    /* Globo maior e mais nítido */
+    .globo-atlas-mini { animation: spin-slow 10s linear infinite; font-size: 28px; opacity: 0.9; filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5)); }
+    /* Ticker com altura flexível para não cortar os nomes */
+    .ticker-item { animation: slide-ticker 4s infinite; display: block; white-space: nowrap; }
     .card-mission { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
     .card-mission:active { scale: 0.98; opacity: 0.9; }
     .filter-active { background: #3b82f6 !important; color: white !important; shadow: 0 4px 12px rgba(59,130,246,0.4); }
@@ -49,26 +51,29 @@ async function carregarMissoes() {
         // 💰 BUSCA DE DADOS FINANCEIROS PARA O TOPO
         const totalPoderCompra = (window.userProfile?.wallet_balance || 0) + (window.userProfile?.wallet_bonus || 0);
 
-        // 🏗️ MONTAGEM DO TOPO PREMIUM V2026 (Saldo Verde/Amarelo + Selo Atlas)
+       // 🏗️ MONTAGEM DO TOPO PREMIUM V2026 (Correção: Globo maior e Ticker sem cortes)
         let htmlTopo = `
             <div class="space-y-4 mb-8 animate-fadeIn">
                 <div class="bg-gradient-to-br from-slate-900 to-black rounded-[2.5rem] p-7 border border-white/10 shadow-2xl relative overflow-hidden">
-                    <div class="absolute -top-2 -right-2 bg-blue-600/10 w-24 h-24 rounded-full blur-2xl"></div>
-                    <div class="absolute top-6 right-6 flex flex-col items-center opacity-40">
-                        <span class="globo-atlas-mini">🌍</span>
-                        <span class="text-[6px] font-black text-blue-400 uppercase tracking-tighter mt-1">Atlas Vivo</span>
+                    <div class="absolute -top-2 -right-2 bg-blue-600/10 w-32 h-32 rounded-full blur-3xl"></div>
+                    
+                    <!-- Globo Atlas Mais Visível -->
+                    <div class="absolute top-6 right-6 flex flex-col items-center group">
+                        <span class="globo-atlas-mini opacity-100">🌍</span>
+                        <span class="text-[7px] font-black text-blue-500 uppercase tracking-tighter mt-1 opacity-60">Atlas Vivo</span>
                     </div>
 
                     <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-2">Poder de Compra Atual</p>
                     <h2 class="text-4xl font-black italic tracking-tighter">
                         <span class="text-emerald-500">${totalPoderCompra.toFixed(2)}</span>
-                        <span class="text-amber-500 text-xl ml-1">AX</span>
+                        <span class="text-amber-500 text-xl ml-1 font-black">AX</span>
                     </h2>
                     
-                    <div class="mt-5 pt-4 border-t border-white/5 h-6 overflow-hidden">
-                        <div id="mission-ticker" class="text-[9px] font-bold text-emerald-400/80 uppercase tracking-widest flex items-center gap-2">
-                             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></span>
-                             <span class="ticker-item">Sincronizando rede de usuários...</span>
+                    <!-- Ticker com altura corrigida (h-8) para não cortar nomes -->
+                    <div class="mt-6 pt-4 border-t border-white/5 h-8 overflow-hidden">
+                        <div id="mission-ticker" class="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
+                             <span class="ticker-item">Rede Sincronizada</span>
                         </div>
                     </div>
                 </div>
