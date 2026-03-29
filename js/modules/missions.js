@@ -263,12 +263,25 @@ function verTutorialMissao(videoId) {
     }
 }
 
-// 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
+// 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Sensor Mobile
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId, perguntas = []) {
+    // 🛡️ SENSOR DE DISPOSITIVO: Bloqueia execução em PC para garantir integridade B2B
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Captura o botão específico pelo ID da missão
+    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    if(!btn) return;
+
+    if (!isMobile) {
+        alert("⚠️ SEGURANÇA ATLAS: Esta missão exige captura de câmera e GPS em tempo real. Por favor, acesse pelo seu CELULAR.");
+        return;
+    }
+
     const { collection, getDocs, query, where, doc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
-    // Captura o botão específico pelo ID da missão para garantir que o feedback visual funcione
-const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = "🔍 RESERVANDO...";
     if(!btn) return;
     const originalText = btn.innerText;
     btn.disabled = true;
