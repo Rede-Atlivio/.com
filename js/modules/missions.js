@@ -1,5 +1,5 @@
 import { db, auth } from '../config.js';
-import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, getDoc, doc, query, where, addDoc, updateDoc, increment, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
