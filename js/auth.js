@@ -121,14 +121,17 @@ getRedirectResult(auth).then(async (result) => {
 
                     // 2. Tenta disparar o Alerta Visual se o Padrinho estiver online agora
                     // 🚀 [V2026] CONTADOR ATÔMICO: Atualiza o ranking do Padrinho sem erro de concorrência
-                    const { increment } = window.firebaseModules;
+                   // 🛰️ [V2026] EVENTO DE INDICAÇÃO: Cria um registro que o Admin/Robô consegue processar
                     try {
-                        await updateDoc(doc(db, "usuarios", refLink), {
-                            referral_count: increment(1), // Cria ou sobe o contador +1
-                            ultima_indicacao_em: serverTimestamp() // Data da última vitória
+                        await addDoc(collection(db, "referral_events"), {
+                            padrinho_uid: refLink,
+                            indicado_uid: user.uid,
+                            indicado_nome: user.displayName || "Novo Usuário",
+                            status: "pendente", // O Admin valida depois
+                            created_at: serverTimestamp()
                         });
-                        console.log("📈 [Contador] Padrinho atualizado com sucesso.");
-                    } catch(err) { console.warn("⚠️ Não foi possível subir o contador do padrinho:", err); }
+                        console.log("📨 [Referral] Evento de indicação registrado para auditoria.");
+                    } catch(e) { console.warn("⚠️ Falha ao registrar evento de indicação:", e); }
 
                     // 2. Tenta disparar o Alerta Visual (Dopamina)
                     if (window.maestroUniversal) {
