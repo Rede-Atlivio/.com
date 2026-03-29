@@ -514,19 +514,28 @@ async function salvarMissao() {
     // Tratamento do Checklist: Transforma string separada por vírgula em Array limpo
     const questionsArray = questionsRaw ? questionsRaw.split(',').map(q => q.trim()).filter(q => q !== "") : [];
 
-    // 🏗️ PAYLOAD V2026 PRO: Objeto blindado para o Firestore
+// 🛡️ PROTEÇÃO DE RAIO: Garante que o Admin não crie raios absurdos (Máx 1000m)
+    const raioDefinitivo = radius ? Math.min(Number(radius), 1000) : 500;
+    
+    // ⏱️ LÓGICA DE TEMPO DINÂMICO: Define quanto tempo a vaga fica presa no app do usuário
+    let tempoLimiteMinutos = 30; // Padrão segurança
+    if (category === 'fast') tempoLimiteMinutos = 5;      // ⚡ 5 min para online
+    if (category === 'physical') tempoLimiteMinutos = 20;  // 📍 20 min para local
+    if (category === 'growth') tempoLimiteMinutos = 60;    // 🚀 60 min para indicações
+
     const payload = {
         title: title,
         level: level || 1,
         category: category || 'physical',
         example_image: exampleImage || null,
-        questions: questionsArray, // 📋 O novo ouro da Atlivio
+        questions: questionsArray,
         description: desc,
         reward: parseFloat(reward),
         latitude: lat ? parseFloat(lat) : null,
         longitude: lng ? parseFloat(lng) : null,
-        radius: radius ? Number(radius) : 500,
-        pay_type: payType, // Agora ele salva 'real' ou 'atlix' dependendo da sua escolha no modal
+        radius: raioDefinitivo, // 📏 Raio agora é protegido
+        execution_time_limit: tempoLimiteMinutos, // ⏱️ Novo DNA: Tempo de execução
+        pay_type: payType,
         owner_id: window.auth.currentUser.uid,
         b2b_owner_uid: window.auth.currentUser.uid,
         updated_at: serverTimestamp(),
