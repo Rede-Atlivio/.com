@@ -32,116 +32,149 @@ async function carregarMissoes() {
     const container = document.getElementById('lista-missoes');
     if (!container) return;
 
-    // Se o GPS global ainda não foi pego, pegamos agora para as Micro Tarefas
+    // 📍 Captura GPS inicial se necessário
     if (!window.userLocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
-                window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                carregarMissoes(); // Recarrega agora com a posição na mão
-            },
-            (err) => { console.error("GPS negado ou falhou"); },
-            { enableHighAccuracy: true }
-        );
+            window.userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            carregarMissoes();
+        }, (err) => { console.warn("GPS necessário para missões locais"); }, { enableHighAccuracy: true });
     }
-    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+
+    container.innerHTML = `<div class="py-20 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
 
     try {
-        // Busca apenas missões ativas no banco
         const q = query(collection(db, "missions"), where("active", "==", true), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
         
+        // 💰 BUSCA DE DADOS FINANCEIROS PARA O TOPO
+        const totalPoderCompra = (window.userProfile?.wallet_balance || 0) + (window.userProfile?.wallet_bonus || 0);
+
+        // 🏗️ MONTAGEM DO NOVO TOPO (UI V2026)
+        let htmlTopo = `
+            <div class="space-y-6 mb-8 animate-fadeIn">
+                <div class="bg-slate-900 rounded-[2.5rem] p-6 border border-white/5 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-4 right-6 globo-atlas-mini">🌍</div>
+                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">Poder de Compra AX</p>
+                    <h2 class="text-3xl font-black text-white italic tracking-tighter">${totalPoderCompra.toFixed(2)} <span class="text-blue-500 text-lg">AX</span></h2>
+                    
+                    <div class="mt-4 pt-3 border-t border-white/5 h-6 overflow-hidden">
+                        <div id="mission-ticker" class="text-[9px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                             <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                             <span class="ticker-item">Rede Atlas: 142 usuários online agora</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <button onclick="window.filtrarRadar('all')" id="f-all" class="filter-active px-5 py-2.5 rounded-2xl bg-slate-800 text-gray-400 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">🎯 Tudo</button>
+                    <button onclick="window.filtrarRadar('physical')" id="f-physical" class="px-5 py-2.5 rounded-2xl bg-slate-800 text-gray-400 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">📍 No Local</button>
+                    <button onclick="window.filtrarRadar('fast')" id="f-fast" class="px-5 py-2.5 rounded-2xl bg-slate-800 text-gray-400 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">⚡ Rápidas</button>
+                    <button onclick="window.filtrarRadar('growth')" id="f-growth" class="px-5 py-2.5 rounded-2xl bg-slate-800 text-gray-400 text-[10px] font-black uppercase whitespace-nowrap transition-all border border-white/5">🎁 Bônus</button>
+                </div>
+            </div>
+        `;
+
         if (snap.empty) {
-            container.innerHTML = `<p class="text-center text-gray-500 text-xs py-10 italic">Nenhuma missão disponível no seu radar agora.</p>`;
+            container.innerHTML = htmlTopo + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30">Céu limpo no seu radar.</p>`;
             return;
         }
 
-        // Gil, trocamos o pontilhado por uma borda sólida neon e um fundo sutil para dar peso de "Área de Negócios"
-container.innerHTML = `
-    <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-50/50 border-2 border-blue-400 p-5 rounded-[2rem] flex items-center gap-4 mb-8 shadow-[0_10px_20px_rgba(59,130,246,0.15)] active:scale-95 transition-all hover:bg-blue-100">
-        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-2xl shadow-sm border border-blue-100">🏢</div>
-        <div class="text-left">
-            <p class="text-[11px] font-black text-blue-900 uppercase leading-tight">Micro Tarefas para Empresas?</p>
-            <p class="text-[9px] text-blue-600 font-bold uppercase tracking-wide opacity-80">Transforme sua operação com o Atlas Vivo ➜</p>
-        </div>
-    </button>
-`;
+        let cardsHtml = "";
+        const missoesOrdenadas = [];
 
-       snap.forEach(doc => {
+        snap.forEach(doc => {
             const m = doc.data();
-            const id = doc.id;
-
-            // 🛰️ VALIDAÇÃO DE PROXIMIDADE ATLAS
-            const isLocal = m.latitude && m.longitude;
-            const raioMetros = Number(m.radius) || 0;
+            m.id = doc.id;
             
-            if (isLocal && raioMetros > 0 && window.userLocation) {
-                const distKm = calcularDistancia(window.userLocation.lat, window.userLocation.lng, m.latitude, m.longitude);
-                if ((distKm * 1000) > raioMetros) return; 
+            // Cálculo de distância para ordenação e exibição
+            if (m.latitude && m.longitude && window.userLocation) {
+                m.distancia = calcularDistancia(window.userLocation.lat, window.userLocation.lng, m.latitude, m.longitude) * 1000;
+            } else {
+                m.distancia = 999999; // Missões online vão pro final
             }
+            missoesOrdenadas.push(m);
+        });
 
-            // PADRÃO VISUAL ATLIVIO: Todas escuras com Globo girando
-           const cardClass = 'card-atlas-premium text-white';
-            const iconAtlas = '<span class="globo-atlas">🌍</span>';
-            const badgeClass = 'bg-blue-500/20 text-blue-300';
+        // Ordena por proximidade
+        missoesOrdenadas.sort((a, b) => a.distancia - b.distancia);
 
-            // 🛡️ SENSOR DE DISPOSITIVO: Verifica se é Celular ou PC
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        missoesOrdenadas.forEach(m => {
+            // Filtro Lógico
+            if (window.filtroMissaoAtual !== 'all' && m.category !== window.filtroMissaoAtual) return;
 
-           // 🪙 V2026.ATLIVIO: Unificação para Créditos de Acesso
-            // Toda missão agora gera crédito interno, independente se a origem foi B2B ou Admin
-            const labelMoeda = 'CRÉDITOS ATLIX 🪙';
-            const colorMoeda = 'text-amber-500'; // Cor padrão ouro para a moeda Atlix
+            // Diferenciação de DNA (B2B vs Atlivio)
+            const isAdmin = m.owner_id === 'atlivio_master' || m.pay_type === 'bonus';
+            const corTema = isAdmin ? 'text-purple-400' : 'text-emerald-400';
+            const bgBadge = isAdmin ? 'bg-purple-500/10' : 'bg-emerald-500/10';
+            const moedaLabel = isAdmin ? 'BÔNUS' : 'CRÉDITO';
+            
+            const distLabel = m.distancia < 50000 ? `📍 a ${m.distancia < 1000 ? Math.round(m.distancia) + 'm' : (m.distancia/1000).toFixed(1) + 'km'}` : '🌍 Online';
 
-            // 🎨 Layout Evoluído: Fixamos 'text-white' para combinar com o fundo escuro
-            container.innerHTML += `
-                <div class="${cardClass} p-5 rounded-3xl border border-white/10 shadow-xl transition-all animate-fadeIn mb-4">
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="${badgeClass} p-2 rounded-2xl text-xl flex items-center justify-center w-12 h-12 shadow-inner">
-                            ${iconAtlas}
+            cardsHtml += `
+                <div class="card-mission bg-slate-900 border border-white/5 p-5 rounded-[2rem] mb-4 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="${bgBadge} px-3 py-1 rounded-full border border-white/5">
+                            <p class="text-[7px] font-black ${corTema} uppercase tracking-widest">${moedaLabel} ATLIX</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[7px] font-black ${colorMoeda} uppercase tracking-[0.15em] mb-0.5">${labelMoeda}</p>
-                            <p class="text-xl font-black text-white tracking-tighter">
-                                ${Number(m.reward).toFixed(2).replace('.', ',')} AX
-                            </p>
+                            <h3 class="text-xl font-black text-white leading-none">${m.reward.toFixed(2)} AX</h3>
+                            <p class="text-[8px] font-bold text-gray-500 mt-1 uppercase">${distLabel}</p>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="flex h-2 w-2 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
-                        <p class="text-[9px] font-black uppercase tracking-widest ${m.slots_disponiveis > 0 ? 'text-emerald-400' : 'text-red-400'}">
-                            ${m.slots_disponiveis > 0 ? `${m.slots_disponiveis} Vagas Restantes` : 'Missão Esgotada'}
-                        </p>
-                        ${m.pessoas_realizando > 0 ? `<span class="text-[8px] text-amber-500 font-bold ml-auto">⚠️ ${m.pessoas_realizando} realizando agora</span>` : ''}
+                    <div class="space-y-1 mb-4">
+                        <h4 class="text-sm font-black text-white uppercase tracking-tighter">${m.title}</h4>
+                        <p class="text-[10px] text-gray-500 leading-tight line-clamp-2">${m.description}</p>
                     </div>
-                    
-                    <h3 class="font-black text-white text-sm uppercase mb-1">${m.title}</h3>
-                    <p class="text-[10px] text-gray-500 leading-relaxed mb-4">${m.description}</p>
 
-                    <div class="flex gap-2">
-                        ${m.video_id ? `
-                            <button onclick="window.verTutorialMissao('${m.video_id}')" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-black text-[9px] uppercase hover:bg-slate-200 transition">
-                                📖 Tutorial
-                            </button>
-                        ` : ''}
-
-                      ${isMobile ? `
-                            <button onclick="window.abrirProvaMissao('${id}', '${m.title}', ${m.reward}, '${m.pay_type || 'atlix'}', '${m.owner_id || ''}')" class="flex-[2] bg-blue-600 text-white py-3 rounded-xl font-black text-[9px] uppercase shadow-lg active:scale-95 transition-all">
-                                Realizar Missão ➜
-                            </button>
-                        ` : `
-                            <button onclick="alert('📱 Missão Exclusiva para Celular\\n\\nPara garantir a veracidade das fotos, esta tarefa só pode ser cumprida através do aplicativo no seu smartphone.')" class="flex-[2] bg-gray-700 text-gray-400 py-3 rounded-xl font-black text-[9px] uppercase cursor-not-allowed">
-                                🔒 Use o Celular
-                            </button>
-                        `}
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
+                                <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
+                            </div>
+                        </div>
+                        <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
+                                class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20">
+                            Iniciar Missão ➜
+                        </button>
                     </div>
                 </div>
             `;
         });
+
+        container.innerHTML = htmlTopo + cardsHtml;
+        window.iniciarRotativoSocial(); // Ativa o ticker animado
+
     } catch (e) {
-        console.error("Erro ao carregar missões:", e);
-        container.innerHTML = `<p class="text-center text-red-500 text-[10px]">Erro de conexão com o radar.</p>`;
+        console.error(e);
+        container.innerHTML = `<p class="text-center text-red-500 text-[10px] py-10">Radar Offline. Tente recarregar.</p>`;
     }
 }
+
+// 🛰️ Lógica de Filtro Rápido
+window.filtrarRadar = (cat) => {
+    window.filtroMissaoAtual = cat;
+    carregarMissoes();
+};
+
+// 🎭 Ticker de Prova Social Inteligente
+window.iniciarRotativoSocial = () => {
+    const msgs = [
+        "Felipe de Feira acabou de ganhar 5.00 AX",
+        "32 pessoas estão verificando fachadas agora",
+        "Rede Atlas: +R$ 12.400 distribuídos este mês",
+        "Nova missão disponível a 200m de você",
+        "Seu Nível: Iniciante (Complete 3 missões para subir)"
+    ];
+    let i = 0;
+    const el = document.getElementById('mission-ticker');
+    if(!el) return;
+    setInterval(() => {
+        i = (i + 1) % msgs.length;
+        el.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> <span class="ticker-item">${msgs[i]}</span>`;
+    }, 4000);
+};
 
 // 📽️ MOTOR DE VÍDEO VEO 3: Experiência Ultra-Limpa (Sem poluição de canais)
 function verTutorialMissao(videoId) {
