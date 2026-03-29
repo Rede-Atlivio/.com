@@ -51,15 +51,25 @@ async function carregarMissoes() {
         // 💰 BUSCA DE DADOS FINANCEIROS PARA O TOPO
         const totalPoderCompra = (window.userProfile?.wallet_balance || 0) + (window.userProfile?.wallet_bonus || 0);
 
-       // 🏗️ TOPO SOBERANO V2026: Globo em Destaque + Identidade Visual + Saldo Colorido
+       // 🏗️ TOPO SOBERANO + FAIXA PREMIUM V2026
+        const faixaB2B_HTML = `
+            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" 
+                    class="w-full bg-gradient-to-r from-blue-600/20 to-indigo-600/10 border-2 border-blue-500/30 p-6 rounded-[2.5rem] flex items-center gap-5 mb-6 shadow-[0_15px_30px_rgba(59,130,246,0.15)] transition-all active:scale-95 hover:border-blue-400 group relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-full bg-blue-500/5 skew-x-[-20deg] translate-x-10"></div>
+                <div class="w-14 h-14 bg-blue-600 rounded-[1.2rem] flex items-center justify-center text-3xl shadow-[0_8px_20px_rgba(37,99,235,0.4)] group-hover:rotate-6 transition-transform">🏢</div>
+                <div class="text-left z-10">
+                    <p class="text-[13px] font-black text-white uppercase leading-none tracking-tight mb-1">Sua Empresa no Radar Atlas?</p>
+                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest opacity-100 flex items-center gap-1">
+                        Contrate Micro Tarefas <span class="text-white animate-pulse">➜</span>
+                    </p>
+                </div>
+            </button>
+        `;
+
         let htmlTopo = `
             <div class="space-y-4 mb-8 animate-fadeIn">
-                <!-- CARD MESTRE ATLAS -->
                 <div class="bg-gradient-to-br from-slate-900 via-slate-950 to-black rounded-[2.5rem] p-7 border border-white/10 shadow-2xl relative overflow-hidden">
-                    
-                    <!-- Efeito de Radar ao fundo -->
                     <div class="absolute -top-4 -right-4 bg-blue-600/5 w-40 h-40 rounded-full blur-3xl animate-pulse"></div>
-
                     <div class="flex justify-between items-start mb-6">
                         <div class="flex items-center gap-4">
                             <span class="globo-atlas-destaque">🌍</span>
@@ -69,7 +79,6 @@ async function carregarMissoes() {
                             </div>
                         </div>
                     </div>
-
                     <div class="flex justify-between items-end mt-2">
                         <div>
                             <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-1">Seu Saldo Disponível</p>
@@ -79,8 +88,6 @@ async function carregarMissoes() {
                             </h2>
                         </div>
                     </div>
-                    
-                    <!-- TICKER SOCIAL INTEGRADO (Sem cortes) -->
                     <div class="mt-6 pt-4 border-t border-white/5 h-8 overflow-hidden">
                         <div id="mission-ticker" class="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
                              <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
@@ -89,7 +96,8 @@ async function carregarMissoes() {
                     </div>
                 </div>
 
-                <!-- FILTROS DE CATEGORIA -->
+                ${faixaB2B_HTML}
+
                 <div class="flex gap-2 overflow-x-auto py-2 no-scrollbar px-1">
                     <button onclick="window.filtrarRadar('all')" id="f-all" class="filter-active px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">🎯 Tudo</button>
                     <button onclick="window.filtrarRadar('physical')" id="f-physical" class="px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">📍 No Local</button>
@@ -99,33 +107,12 @@ async function carregarMissoes() {
             </div>
         `;
 
-    // 🏢 FAIXA DE MARKETING B2B PREMIUM (Branding Reforçado V2026)
-        const faixaB2B = `
-            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" 
-                    class="w-full bg-gradient-to-r from-blue-600/20 to-indigo-600/10 border-2 border-blue-500/30 p-6 rounded-[2.5rem] flex items-center gap-5 mb-6 shadow-[0_15px_30px_rgba(59,130,246,0.15)] transition-all active:scale-95 hover:border-blue-400 group relative overflow-hidden">
-                
-                <div class="absolute top-0 right-0 w-32 h-full bg-blue-500/5 skew-x-[-20deg] translate-x-10"></div>
-
-                <div class="w-14 h-14 bg-blue-600 rounded-[1.2rem] flex items-center justify-center text-3xl shadow-[0_8px_20px_rgba(37,99,235,0.4)] group-hover:rotate-6 transition-transform">🏢</div>
-                
-                <div class="text-left z-10">
-                    <p class="text-[13px] font-black text-white uppercase leading-none tracking-tight mb-1">Sua Empresa no Radar Atlas?</p>
-                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest opacity-100 flex items-center gap-1">
-                        Contrate Micro Tarefas <span class="text-white animate-pulse">➜</span>
-                    </p>
-                </div>
-            </button>
-        `;
-        // Verifica se o radar está vazio
         if (snap.empty) {
-            container.innerHTML = htmlTopo + faixaB2B + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30 tracking-widest">Aguardando novas transmissões...</p>`;
+            container.innerHTML = htmlTopo + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30 tracking-widest">Aguardando novas transmissões...</p>`;
             return;
         }
 
-        // Inicializa a variável que vai acumular os cards, já começando com a Faixa B2B
-        // Inicializa os cards sem repetir a faixa B2B que já está no topo fixo
-        // 🚀 INJETANDO O BOTÃO PREMIUM: Ele aparece agora como o primeiro item antes das missões
-        let cardsHtml = faixaB2B;        
+        let cardsHtml = ""; // Começa vazio porque a faixa já está no htmlTopo
         const missoesOrdenadas = [];
 
         snap.forEach(doc => {
