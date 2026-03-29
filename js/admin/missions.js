@@ -475,13 +475,13 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                     <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Recompensa (AX)</label>
                     <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-3 rounded-xl bg-slate-900 text-emerald-400 font-black text-lg border border-slate-700 outline-none" placeholder="0.00">
                 </div>
-                <div>
-                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Moeda</label>
-                    <div class="p-3 rounded-xl bg-slate-800 text-amber-500 font-black flex items-center gap-2 border border-slate-700">
-                        <span>🪙</span> ATLIX
-                        <input type="hidden" id="mis-pay-type" value="atlix">
-                    </div>
-                </div>
+               <div>
+    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Tipo de Pagamento</label>
+    <select id="mis-pay-type" class="w-full p-3 rounded-xl bg-slate-900 text-white font-bold border border-slate-700 outline-none">
+        <option value="real">💰 DINHEIRO REAL (Balance)</option>
+        <option value="atlix">🪙 CRÉDITO ATLIX (Bônus)</option>
+    </select>
+</div>
             </div>
 
             <button onclick="window.salvarMissao()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black uppercase shadow-xl transition-all active:scale-95 border-b-4 border-blue-800">
