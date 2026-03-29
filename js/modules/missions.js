@@ -89,15 +89,6 @@ async function carregarMissoes() {
                     </div>
                 </div>
 
-                <!-- 🏢 FAIXA DE MARKETING B2B -->
-                <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-600/10 border border-blue-500/20 p-5 rounded-[2rem] flex items-center gap-4 mb-2 transition-all active:scale-95 group">
-                    <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-900/40 group-hover:rotate-12 transition-transform">🏢</div>
-                    <div class="text-left">
-                        <p class="text-[11px] font-black text-white uppercase leading-tight">Sua empresa no Atlas?</p>
-                        <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wide opacity-80">Micro Tarefas Corporativas ➜</p>
-                    </div>
-                </button>
-
                 <!-- FILTROS DE CATEGORIA -->
                 <div class="flex gap-2 overflow-x-auto py-2 no-scrollbar px-1">
                     <button onclick="window.filtrarRadar('all')" id="f-all" class="filter-active px-6 py-3 rounded-2xl bg-slate-900 text-slate-500 text-[10px] font-black uppercase whitespace-nowrap border border-white/5 shadow-lg">🎯 Tudo</button>
@@ -108,17 +99,23 @@ async function carregarMissoes() {
             </div>
         `;
 
-     // 🏢 FAIXA DE MARKETING B2B (O convite para empresas)
+    // 🏢 FAIXA DE MARKETING B2B PREMIUM (Branding Reforçado V2026)
         const faixaB2B = `
-            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-600/10 border border-blue-500/20 p-5 rounded-[2rem] flex items-center gap-4 mb-6 transition-all active:scale-95 group">
-                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-900/40 group-hover:rotate-12 transition-transform">🏢</div>
-                <div class="text-left">
-                    <p class="text-[11px] font-black text-white uppercase leading-tight">Sua empresa no Atlas?</p>
-                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wide opacity-80">Contrate Micro Tarefas Geográficas ➜</p>
+            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" 
+                    class="w-full bg-gradient-to-r from-blue-600/20 to-indigo-600/10 border-2 border-blue-500/30 p-6 rounded-[2.5rem] flex items-center gap-5 mb-6 shadow-[0_15px_30px_rgba(59,130,246,0.15)] transition-all active:scale-95 hover:border-blue-400 group relative overflow-hidden">
+                
+                <div class="absolute top-0 right-0 w-32 h-full bg-blue-500/5 skew-x-[-20deg] translate-x-10"></div>
+
+                <div class="w-14 h-14 bg-blue-600 rounded-[1.2rem] flex items-center justify-center text-3xl shadow-[0_8px_20px_rgba(37,99,235,0.4)] group-hover:rotate-6 transition-transform">🏢</div>
+                
+                <div class="text-left z-10">
+                    <p class="text-[13px] font-black text-white uppercase leading-none tracking-tight mb-1">Sua Empresa no Radar Atlas?</p>
+                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest opacity-100 flex items-center gap-1">
+                        Contrate Micro Tarefas <span class="text-white animate-pulse">➜</span>
+                    </p>
                 </div>
             </button>
         `;
-
         // Verifica se o radar está vazio
         if (snap.empty) {
             container.innerHTML = htmlTopo + faixaB2B + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30 tracking-widest">Aguardando novas transmissões...</p>`;
