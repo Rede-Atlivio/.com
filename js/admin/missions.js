@@ -427,7 +427,10 @@ async function abrirCriadorMissaoAtlas(dados = null) {
                     </select>
                 </div>
             </div>
-
+            <div>
+    <label class="text-[9px] text-cyan-500 font-black uppercase ml-1">Quantidade de Vagas</label>
+    <input type="number" id="mis-slots" value="${dados?.slots_totais || 10}" class="w-full p-3 rounded-xl bg-slate-900 text-cyan-400 font-black border border-slate-700 outline-none" placeholder="Ex: 50">
+</div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Categoria</label>
