@@ -185,22 +185,35 @@ window.filtrarRadar = (cat) => {
     carregarMissoes();
 };
 
-// 🎭 Ticker de Prova Social Inteligente
+// 🎭 MOTOR SOCIAL V2026: Simula atividade em tempo real com base geográfica
 window.iniciarRotativoSocial = () => {
-    const msgs = [
-        "Felipe de Feira acabou de ganhar 5.00 AX",
-        "32 pessoas estão verificando fachadas agora",
-        "Rede Atlas: +R$ 12.400 distribuídos este mês",
-        "Nova missão disponível a 200m de você",
-        "Seu Nível: Iniciante (Complete 3 missões para subir)"
+    const nomes = ["Ricardo", "Ana", "Marcos", "Julia", "Bruno", "Carla", "Diego", "Fernanda", "Gabriel", "Leticia", "Sandro", "Patrícia"];
+    const cidades = ["São Paulo", "Feira de Santana", "Salvador", "Rio de Janeiro", "Curitiba", "Belo Horizonte", "Fortaleza", "Recife", "Goiânia", "Manaus"];
+    const acoes = [
+        "acabou de validar uma fachada",
+        "recebeu 5,00 AX por auditoria",
+        "completou uma missão rápida",
+        "subiu para o Nível 2",
+        "acabou de ganhar bônus de consistência",
+        "validou um ponto de interesse"
     ];
-    let i = 0;
+
     const el = document.getElementById('mission-ticker');
     if(!el) return;
+
     setInterval(() => {
-        i = (i + 1) % msgs.length;
-        el.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> <span class="ticker-item">${msgs[i]}</span>`;
-    }, 4000);
+        const n = nomes[Math.floor(Math.random() * nomes.length)];
+        const c = cidades[Math.floor(Math.random() * cidades.length)];
+        const a = acoes[Math.floor(Math.random() * acoes.length)];
+        
+        // Frase montada dinamicamente: "Ricardo de Salvador acabou de validar..."
+        const frase = `<span class="text-white">${n}</span> de <span class="text-blue-400">${c}</span> ${a}`;
+        
+        el.innerHTML = `
+            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]"></span> 
+            <span class="ticker-item text-emerald-400">${frase}</span>
+        `;
+    }, 5000); // Troca a cada 5 segundos para dar tempo de leitura
 };
 
 // 📽️ MOTOR DE VÍDEO VEO 3: Experiência Ultra-Limpa (Sem poluição de canais)
