@@ -583,11 +583,21 @@ window.verModeloMissao = (url) => {
     const modal = document.getElementById('modal-video-maestro');
     const container = modal?.querySelector('div.bg-black');
     if (!modal || !container) return alert("Erro visual: Modal não carregado.");
+
+    // Injeta a imagem e um botão X que usa a nova função soberana
     container.innerHTML = `
-        <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden')" class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-bold">×</button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4">
-        <div class="absolute bottom-6 left-0 right-0 text-center"><span class="bg-black/80 text-white text-[9px] font-black px-5 py-2 rounded-full uppercase">Siga este modelo exatamente</span></div>
+        <button onclick="window.fecharModalMaestro()" 
+                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/20 active:scale-90 transition-all">
+            ×
+        </button>
+        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
+        <div class="absolute bottom-10 left-0 right-0 text-center">
+            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10">
+                Modelo de Execução
+            </span>
+        </div>
     `;
+    
     modal.classList.remove('hidden');
     modal.style.setProperty('display', 'flex', 'important');
 };
