@@ -120,12 +120,23 @@ getRedirectResult(auth).then(async (result) => {
                     });
 
                     // 2. Tenta disparar o Alerta Visual se o Padrinho estiver online agora
+                    // 🚀 [V2026] CONTADOR ATÔMICO: Atualiza o ranking do Padrinho sem erro de concorrência
+                    const { increment } = window.firebaseModules;
+                    try {
+                        await updateDoc(doc(db, "usuarios", refLink), {
+                            referral_count: increment(1), // Cria ou sobe o contador +1
+                            ultima_indicacao_em: serverTimestamp() // Data da última vitória
+                        });
+                        console.log("📈 [Contador] Padrinho atualizado com sucesso.");
+                    } catch(err) { console.warn("⚠️ Não foi possível subir o contador do padrinho:", err); }
+
+                    // 2. Tenta disparar o Alerta Visual (Dopamina)
                     if (window.maestroUniversal) {
                         window.maestroUniversal("indicacao_sucesso", {
                             id: `ref_${user.uid}`,
                             type: 'gift',
                             message: msgSucesso,
-                            action: 'ganhar' // Sugere que ele vá ver o saldo/missões
+                            action: 'ganhar'
                         });
                     }
                     console.log("🔔 [Maestro] Notificação de indicação enviada ao Padrinho.");
