@@ -193,7 +193,7 @@ ${m.example_image ? `
                         <div class="flex-1 bg-black/40 rounded-2xl px-4 py-3 border border-white/5">
                             <div class="flex items-center gap-2">
                                 <span class="w-1.5 h-1.5 rounded-full ${m.slots_disponiveis > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}"></span>
-                                <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
+                                <p id="vagas-count-${m.id}" class="text-[9px] font-black text-gray-400 uppercase mission-vagas-label">${m.slots_disponiveis} Vagas</p>
                             </div>
                         </div>
                         <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
