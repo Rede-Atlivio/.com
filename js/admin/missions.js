@@ -526,7 +526,7 @@ async function salvarMissao() {
         latitude: lat ? parseFloat(lat) : null,
         longitude: lng ? parseFloat(lng) : null,
         radius: radius ? Number(radius) : 500,
-        pay_type: 'atlix',
+        pay_type: payType, // Agora ele salva 'real' ou 'atlix' dependendo da sua escolha no modal
         owner_id: window.auth.currentUser.uid,
         b2b_owner_uid: window.auth.currentUser.uid,
         updated_at: serverTimestamp(),
