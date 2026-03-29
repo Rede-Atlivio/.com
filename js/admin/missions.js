@@ -404,88 +404,91 @@ async function abrirCriadorMissaoAtlas(dados = null) {
     const content = document.getElementById('modal-content');
     modal.classList.remove('hidden');
     
-    // Configura botão X (com a vacina do core.js isso já deve funcionar, mas reforçamos)
     const btnClose = document.getElementById('btn-close-modal');
     if(btnClose) btnClose.onclick = () => modal.classList.add('hidden');
 
+    // Gil, injetamos aqui a inteligência de Checklist e Nível de Usuário
     content.innerHTML = `
-        <div class="space-y-4">
-            <h3 class="text-xl font-bold text-white mb-4">${dados ? 'Editar Missão' : 'Nova Micro Tarefa'}</h3>
+        <div class="space-y-4 pb-10">
+            <h3 class="text-xl font-black text-white mb-4 italic uppercase tracking-tighter">${dados ? '🔧 Editar Estratégia' : '🚀 Nova Missão Atlas'}</h3>
             <input type="hidden" id="mis-id" value="${dados?.id || ''}">
             
-           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Título da Missão</label>
-                    <input id="mis-title" value="${dados?.title || ''}" class="w-full p-2 rounded bg-white text-black font-bold border border-slate-700" placeholder="Ex: Verificar Fachada">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="md:col-span-2">
+                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Título da Ordem</label>
+                    <input id="mis-title" value="${dados?.title || ''}" class="w-full p-3 rounded-xl bg-slate-900 text-white font-bold border border-slate-700 focus:border-blue-500 outline-none" placeholder="Ex: Fachada Comercial">
                 </div>
                 <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">ID Vídeo Tutorial (Veo 3)</label>
-                    <input id="mis-video-id" value="${dados?.video_id || ''}" class="w-full p-2 rounded bg-white text-black font-mono text-xs border border-slate-700" placeholder="ID do YouTube">
+                    <label class="text-[9px] text-amber-500 font-black uppercase ml-1">Nível Mínimo</label>
+                    <select id="mis-level" class="w-full p-3 rounded-xl bg-slate-900 text-amber-400 font-bold border border-slate-700 outline-none">
+                        <option value="1" ${dados?.level == 1 ? 'selected' : ''}>Nível 1 (Iniciante)</option>
+                        <option value="2" ${dados?.level == 2 ? 'selected' : ''}>Nível 2 (Intermediário)</option>
+                        <option value="3" ${dados?.level == 3 ? 'selected' : ''}>Nível 3 (Avançado/PRO)</option>
+                    </select>
                 </div>
             </div>
-            
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Categoria</label>
+                    <select id="mis-category" class="w-full p-3 rounded-xl bg-slate-900 text-white font-bold border border-slate-700 outline-none">
+                        <option value="physical" ${dados?.category === 'physical' ? 'selected' : ''}>📍 No Local (Foto/GPS)</option>
+                        <option value="fast" ${dados?.category === 'fast' ? 'selected' : ''}>⚡ Rápida (Online/Pesquisa)</option>
+                        <option value="growth" ${dados?.category === 'growth' ? 'selected' : ''}>🚀 Crescimento (Indicação)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">URL Foto Exemplo (Instrução)</label>
+                    <input id="mis-example-image" value="${dados?.example_image || ''}" class="w-full p-3 rounded-xl bg-slate-900 text-blue-400 text-xs border border-slate-700 outline-none" placeholder="https://imagem.com/exemplo.jpg">
+                </div>
+            </div>
+
             <div>
-                <label class="text-[10px] text-gray-400 font-bold uppercase">Instruções para o Usuário</label>
-                <textarea id="mis-desc" class="w-full p-2 rounded bg-white text-black text-sm" rows="2" placeholder="Explique o passo a passo...">${dados?.description || ''}</textarea>
+                <label class="text-[9px] text-emerald-500 font-black uppercase ml-1">📋 Checklist Inteligente (Separe por vírgula)</label>
+                <input id="mis-questions" value="${dados?.questions?.join(',') || ''}" class="w-full p-3 rounded-xl bg-slate-900 text-emerald-400 font-medium border border-emerald-900/30 outline-none" placeholder="Ex: Loja Aberta?, Tem Estacionamento?, Preço Visível?">
+                <p class="text-[7px] text-gray-500 mt-1">* Deixe vazio se não quiser perguntas extras.</p>
             </div>
-            
-           <div class="p-4 bg-slate-800 rounded-2xl border border-blue-500/20 space-y-3">
+
+            <div>
+                <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Instruções Técnicas</label>
+                <textarea id="mis-desc" class="w-full p-3 rounded-xl bg-slate-900 text-gray-300 text-sm border border-slate-700 outline-none" rows="2" placeholder="O que o prestador deve fazer exatamente?">${dados?.description || ''}</textarea>
+            </div>
+
+            <div class="p-4 bg-slate-950 rounded-2xl border border-blue-500/10 space-y-3">
                 <div class="flex justify-between items-center">
-                    <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">📍 Localização Atlas Vivo</p>
-                    <button onclick="window.obterLocalizacaoAutomatica()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-lg text-[9px] font-black uppercase transition flex items-center gap-1 shadow-lg">
-                        <span class="text-xs">🎯</span> Pegar GPS Atual
-                    </button>
+                    <p class="text-[9px] font-black text-blue-400 uppercase tracking-widest italic">📍 Geolocalização Blindada</p>
+                    <button onclick="window.obterLocalizacaoAutomatica()" class="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-1 rounded-lg text-[8px] font-black uppercase transition hover:bg-blue-600 hover:text-white">🎯 Sincronizar GPS</button>
                 </div>
-
-                <div class="relative group">
-                    <input type="text" id="mis-address-search" placeholder="Ou digite o endereço (Rua, Número, Cidade)..." class="w-full p-2.5 pl-9 rounded-xl bg-slate-900 text-white text-xs border border-slate-700 focus:border-blue-500 outline-none transition">
-                    <span class="absolute left-3 top-2.5 text-gray-500">🔍</span>
-                    <button onclick="window.converterEnderecoEmGps()" class="absolute right-2 top-1.5 bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded-lg text-[8px] font-bold uppercase transition">Converter</button>
-                </div>
-
+                <input type="text" id="mis-address-search" placeholder="Buscar endereço no Google Maps..." class="w-full p-2 rounded-lg bg-black text-white text-xs border border-slate-800 outline-none focus:border-cyan-500">
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="space-y-1">
-                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Latitude</label>
-                        <input id="mis-lat" value="${dados?.latitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="text-[8px] text-gray-500 font-bold uppercase ml-1">Longitude</label>
-                        <input id="mis-lng" value="${dados?.longitude || ''}" class="w-full p-2 rounded-lg bg-slate-950 text-emerald-400 text-[10px] font-mono border border-slate-800" placeholder="0.0000">
-                    </div>
-                   <div class="space-y-1">
-                        <label class="text-[8px] text-blue-400 font-bold uppercase ml-1">Distância Máxima (Ex: 5000 para 5km)</label>
-                        <input id="mis-radius" value="${dados?.radius || 500}" type="number" class="w-full p-2 rounded-lg bg-slate-950 text-white text-[10px] font-mono border border-slate-800" placeholder="Ex: 1000">
-                    </div>
+                    <input id="mis-lat" value="${dados?.latitude || ''}" class="p-2 rounded bg-slate-900 text-emerald-500 text-[10px] font-mono border border-slate-800" placeholder="Lat">
+                    <input id="mis-lng" value="${dados?.longitude || ''}" class="p-2 rounded bg-slate-900 text-emerald-500 text-[10px] font-mono border border-slate-800" placeholder="Lng">
+                    <input id="mis-radius" value="${dados?.radius || 500}" type="number" class="p-2 rounded bg-slate-900 text-white text-[10px] font-mono border border-slate-800" placeholder="Raio(m)">
                 </div>
-                <p class="text-[8px] text-gray-500 italic">* Se for missão online (sem local fixo), deixe Latitude e Longitude vazios.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Valor da Recompensa</label>
-                    <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-2 rounded bg-white text-black font-black text-green-700" placeholder="0.00">
+                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Recompensa (AX)</label>
+                    <input type="number" id="mis-reward" value="${dados?.reward || ''}" class="w-full p-3 rounded-xl bg-slate-900 text-emerald-400 font-black text-lg border border-slate-700 outline-none" placeholder="0.00">
                 </div>
-               <div>
-                    <label class="text-[10px] text-gray-400 font-bold uppercase">Tipo de Pagamento</label>
-                    <div class="w-full p-2 rounded bg-slate-100 text-black font-black flex items-center gap-2">
-                        <span>🪙</span> ATLIX (Moeda Interna)
+                <div>
+                    <label class="text-[9px] text-gray-500 font-black uppercase ml-1">Moeda</label>
+                    <div class="p-3 rounded-xl bg-slate-800 text-amber-500 font-black flex items-center gap-2 border border-slate-700">
+                        <span>🪙</span> ATLIX
                         <input type="hidden" id="mis-pay-type" value="atlix">
                     </div>
                 </div>
             </div>
-            
-            <button onclick="window.salvarMissao()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-bold uppercase shadow-lg transition transform active:scale-95">
-                ${dados ? '💾 SALVAR ALTERAÇÕES' : '🚀 CRIAR MISSÃO'}
+
+            <button onclick="window.salvarMissao()" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black uppercase shadow-xl transition-all active:scale-95 border-b-4 border-blue-800">
+                ${dados ? '💾 ATUALIZAR ESTRATÉGIA' : '🚀 LANÇAR NO RADAR'}
             </button>
-       </div>
+        </div>
     `;
 
-    // 🛰️ DESPERTADOR GOOGLE V2026: Liga o sensor 200ms após o modal abrir para garantir que o HTML exista
-    setTimeout(() => {
-        if (window.iniciarAutocompleteMissions) window.iniciarAutocompleteMissions();
-    }, 200);
+    setTimeout(() => { if (window.iniciarAutocompleteMissions) window.iniciarAutocompleteMissions(); }, 200);
 }
-
 async function salvarMissao() {
     // Captura de IDs e Valores do Novo Formulário
     const id = document.getElementById('mis-id').value;
