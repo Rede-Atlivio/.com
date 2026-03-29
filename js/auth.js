@@ -119,21 +119,20 @@ getRedirectResult(auth).then(async (result) => {
                         created_at: serverTimestamp()
                     });
 
-                    // 2. Tenta disparar o Alerta Visual se o Padrinho estiver online agora
-                    // 🚀 [V2026] CONTADOR ATÔMICO: Atualiza o ranking do Padrinho sem erro de concorrência
-                   // 🛰️ [V2026] EVENTO DE INDICAÇÃO: Cria um registro que o Admin/Robô consegue processar
+                    // 🛰️ [V2026] RASTRO DE AUDITORIA: Cria o evento para o Gil processar no Admin
+                    // O Convidado não tem força para mudar o perfil do Padrinho, então ele apenas deixa o rastro aqui.
                     try {
                         await addDoc(collection(db, "referral_events"), {
                             padrinho_uid: refLink,
                             indicado_uid: user.uid,
                             indicado_nome: user.displayName || "Novo Usuário",
-                            status: "pendente", // O Admin valida depois
+                            processado: false, // Indica que o ponto ainda não subiu no contador
                             created_at: serverTimestamp()
                         });
-                        console.log("📨 [Referral] Evento de indicação registrado para auditoria.");
-                    } catch(e) { console.warn("⚠️ Falha ao registrar evento de indicação:", e); }
+                        console.log("📨 [Referral] Rastro de indicação gravado com sucesso.");
+                    } catch(e) { console.error("❌ Falha ao gravar rastro:", e); }
 
-                    // 2. Tenta disparar o Alerta Visual (Dopamina)
+                    // 2. Alerta Visual (Dopamina): O Padrinho recebe o balão azul se estiver online
                     if (window.maestroUniversal) {
                         window.maestroUniversal("indicacao_sucesso", {
                             id: `ref_${user.uid}`,
