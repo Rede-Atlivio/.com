@@ -433,13 +433,6 @@ function calcularDistancia(lat1, lon1, lat2, lon2) {
     return R * c; 
 }
 
-// 🔐 SOLDAGEM GLOBAL ATLAS V2026.PRO (FINAL)
-// Gil, aqui entregamos todas as funções para o navegador reconhecer os cliques nos botões
-window.carregarMissoes = carregarMissoes;
-window.renderizarMissaoCards = carregarMissoes; 
-window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
-window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
-
 // 📜 MOTOR DE HISTÓRICO DE MISSÕES (V2026)
 // Gil, esta função busca tudo o que o usuário já fez e mostra se foi aprovado ou pago.
 async function carregarMissoesRealizadas() {
@@ -570,4 +563,13 @@ window.abrirModalChecklist = (perguntas, callback) => {
     document.body.appendChild(overlay);
     renderPergunta();
 };
+
+// 🔐 SOLDAGEM GLOBAL ATLAS V2026.PRO (FINAL)
+// Gil, aqui entregamos todas as funções para o navegador reconhecer os cliques nos botões
+window.carregarMissoes = carregarMissoes;
+window.renderizarMissaoCards = carregarMissoes; 
+window.abrirProvaMissao = abrirProvaMissao; // ✅ Resolve o erro de 'undefined' ao clicar
+window.abrirComprovantePIX = abrirComprovantePIX; // 🚀 Liberado para o App
+window.initMissions = initMissions; // 🔗 Solda a função na janela global para os robôs
+
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
