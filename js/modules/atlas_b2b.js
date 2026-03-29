@@ -326,24 +326,52 @@ window.abrirWizardB2B = () => {
         </style>
 
         <div class="max-w-[450px] mx-auto animate-fadeIn pb-6">
-            <div class="text-center mb-8">
-                <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight" style="text-shadow: 0 2px 10px rgba(251, 146, 60, 0.3);">
-                    Passo 1: Briefing
-                </h3>
-                <p class="text-[10px] text-cyan-400 font-black uppercase tracking-[0.15em] mt-1">
-                    Configuração de Missão Atlas
-                </p>
+            <div class="text-center mb-6">
+                <h3 class="text-[28px] font-black text-orange-400 uppercase italic tracking-tighter leading-tight">Passo 1: Briefing</h3>
+                <p class="text-[9px] text-cyan-400 font-black uppercase tracking-widest">Inteligência Estratégica</p>
             </div>
             
-            <div class="flex flex-col">
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-3 mb-2">Título da Ordem</label>
-                <input type="text" id="b2b-title" placeholder="Ex: Auditoria de Estoque - Loja Centro" class="input-b2b-lapidado font-bold">
-                
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-3 mb-2">Instruções de Coleta</label>
-                <textarea id="b2b-desc" rows="4" placeholder="Descreva exatamente o que o prestador deve fotografar..." class="input-b2b-lapidado text-sm"></textarea>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Título da Missão</label>
+                    <input type="text" id="b2b-title" placeholder="Ex: Auditoria de Fachada" class="input-b2b-lapidado font-bold !mb-0">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Categoria</label>
+                        <select id="b2b-category" class="input-b2b-lapidado !mb-0">
+                            <option value="physical">📍 No Local</option>
+                            <option value="fast">⚡ Rápida</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Nível Mínimo</label>
+                        <select id="b2b-level" class="input-b2b-lapidado !mb-0">
+                            <option value="1">Nível 1</option>
+                            <option value="2">Nível 2</option>
+                            <option value="3">Nível 3</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[9px] font-black text-emerald-500 uppercase ml-2 mb-1 block">📋 Checklist (Perguntas separadas por vírgula)</label>
+                    <input type="text" id="b2b-questions" placeholder="Ex: Loja aberta?, Tem fila?, Fachada limpa?" class="input-b2b-lapidado !mb-0 text-emerald-400">
+                </div>
+
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">URL Foto de Exemplo (Opcional)</label>
+                    <input type="text" id="b2b-example-image" placeholder="Link da imagem de instrução" class="input-b2b-lapidado !mb-0 text-blue-400">
+                </div>
+
+                <div>
+                    <label class="text-[9px] font-black text-slate-500 uppercase ml-2 mb-1 block">Instruções de Coleta</label>
+                    <textarea id="b2b-desc" rows="3" placeholder="Descreva o que deve ser fotografado..." class="input-b2b-lapidado !mb-0 text-xs"></textarea>
+                </div>
             </div>
 
-            <button onclick="window.proximoPassoWizard(2)" class="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-black text-[11px] uppercase shadow-[0_10px_25px_-5px_rgba(37,99,235,0.4)] active:scale-95 transition-all">
+            <button onclick="window.proximoPassoWizard(2)" class="w-full mt-6 py-4 bg-blue-600 text-white rounded-2xl font-black text-[11px] uppercase shadow-lg active:scale-95 transition-all">
                 Continuar para Localização ➜
             </button>
         </div>
