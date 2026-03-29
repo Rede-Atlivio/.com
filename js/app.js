@@ -1,7 +1,15 @@
 // 🛰️ IDENTIDADE ATLIVIO V60
 // Garante que o navegador saiba exatamente qual versão do motor está rodando.
 localStorage.setItem('atlivio_version', '2026_V60');
-
+// 🔗 [V2026] RECEPTOR DE INDICAÇÃO: Captura o padrinho antes do boot
+(function capturarPadrinhoURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const refID = urlParams.get('ref');
+    if (refID) {
+        sessionStorage.setItem('atlivio_ref', refID);
+        console.log("%c🔗 [Indicação] Padrinho detectado e salvo: " + refID, "color: #8b5cf6; font-weight: bold;");
+    }
+})();
 // ============================================================================
 
 // ============================================================================
