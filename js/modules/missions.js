@@ -137,20 +137,26 @@ async function carregarMissoes() {
             const distLabel = m.distancia < 50000 ? `📍 a ${m.distancia < 1000 ? Math.round(m.distancia) + 'm' : (m.distancia/1000).toFixed(1) + 'km'}` : '🌍 Online';
 
             cardsHtml += `
-                <div class="card-mission bg-slate-900 border border-white/5 p-5 rounded-[2rem] mb-4 shadow-xl relative overflow-hidden">
+                <div class="card-mission bg-slate-900 border border-white/5 p-5 rounded-[2.2rem] mb-4 shadow-xl relative overflow-hidden active:scale-[0.98] transition-all">
+                    <!-- Detalhe de Brilho Lateral conforme o tipo -->
+                    <div class="absolute left-0 top-1/4 bottom-1/4 w-[2px] ${corTema.replace('text', 'bg')} opacity-50"></div>
+
                     <div class="flex justify-between items-start mb-4">
-                        <div class="${bgBadge} px-3 py-1 rounded-full border border-white/5">
-                            <p class="text-[7px] font-black ${corTema} uppercase tracking-widest">${moedaLabel} ATLIX</p>
+                        <div class="${bgBadge} px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
+                            <p class="text-[7px] font-black ${corTema} uppercase tracking-[0.1em]">${moedaLabel} ATLIX</p>
                         </div>
                         <div class="text-right">
-                            <h3 class="text-xl font-black text-white leading-none">${m.reward.toFixed(2)} AX</h3>
-                            <p class="text-[8px] font-bold text-gray-500 mt-1 uppercase">${distLabel}</p>
+                            <h3 class="text-xl font-black leading-none tracking-tighter">
+                                <span class="text-emerald-500">${m.reward.toFixed(2)}</span>
+                                <span class="text-amber-500 text-xs ml-0.5">AX</span>
+                            </h3>
+                            <p class="text-[8px] font-black text-slate-500 mt-1 uppercase tracking-widest">${distLabel}</p>
                         </div>
                     </div>
 
-                    <div class="space-y-1 mb-4">
-                        <h4 class="text-sm font-black text-white uppercase tracking-tighter">${m.title}</h4>
-                        <p class="text-[10px] text-gray-500 leading-tight line-clamp-2">${m.description}</p>
+                    <div class="space-y-1.5 mb-5 px-1">
+                        <h4 class="text-[13px] font-black text-white uppercase tracking-tight leading-tight">${m.title}</h4>
+                        <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium">${m.description}</p>
                     </div>
 
                     <div class="flex items-center gap-3">
