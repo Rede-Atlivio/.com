@@ -439,7 +439,8 @@ async function carregarMissoesRealizadas() {
     const container = document.getElementById('lista-missoes-realizadas');
     if (!container) return;
 
-    container.innerHTML = `<div class="py-10 text-center"><div class="loader mx-auto border-blue-500"></div></div>`;
+   // Apenas limpa para evitar sobreposição antes de montar o novo Topo Soberano
+container.innerHTML = "";
 
     try {
         const { collection, query, where, orderBy, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
