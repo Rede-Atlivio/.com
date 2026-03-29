@@ -4,15 +4,17 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp, orderBy } f
 const styleAtlas = document.createElement('style');
 styleAtlas.innerHTML = `
     @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .globo-atlas { animation: spin-slow 8s linear infinite; display: inline-block; }  
-    .card-atlas-premium h3 { color: #ffffff !important; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    .card-atlas-premium { 
-        background: linear-gradient(145deg, #0f172a, #1e293b);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
+    @keyframes slide-ticker { 0% { transform: translateY(100%); opacity: 0; } 10% { transform: translateY(0); opacity: 1; } 90% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-100%); opacity: 0; } }
+    .globo-atlas-mini { animation: spin-slow 12s linear infinite; font-size: 14px; opacity: 0.8; }
+    .ticker-item { animation: slide-ticker 4s infinite; }
+    .card-mission { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .card-mission:active { scale: 0.98; opacity: 0.9; }
+    .filter-active { background: #3b82f6 !important; color: white !important; shadow: 0 4px 12px rgba(59,130,246,0.4); }
 `;
 document.head.appendChild(styleAtlas);
+
+// Memória de Filtro Local
+window.filtroMissaoAtual = 'all';
 
 // 🚀 INICIALIZADOR ÚNICO V2026
 // Gil, esta função agora apenas prepara o terreno, as exportações ficam fixas no final do arquivo
