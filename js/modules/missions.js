@@ -157,16 +157,9 @@ async function carregarMissoes() {
             
             const distLabel = m.distancia < 50000 ? `📍 a ${m.distancia < 1000 ? Math.round(m.distancia) + 'm' : (m.distancia/1000).toFixed(1) + 'km'}` : '🌍 Online';
 
-           cardsHtml += `
+            cardsHtml += `
                 <div class="card-mission bg-slate-900 border border-white/5 p-5 rounded-[2.2rem] mb-4 shadow-xl relative overflow-hidden active:scale-[0.98] transition-all">
-                    
-                    ${m.example_url ? `
-                        <button onclick="window.verModeloMissao('${m.example_url}')" 
-                                class="absolute top-4 right-4 z-20 bg-blue-600/20 hover:bg-blue-600 border border-blue-500/30 text-blue-400 hover:text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase transition-all shadow-lg backdrop-blur-md">
-                            🖼️ Ver Modelo
-                        </button>
-                    ` : ''}
-
+                    <!-- Detalhe de Brilho Lateral conforme o tipo -->
                     <div class="absolute left-0 top-1/4 bottom-1/4 w-[2px] ${corTema.replace('text', 'bg')} opacity-50"></div>
 
                     <div class="flex justify-between items-start mb-4">
@@ -576,26 +569,5 @@ window.abrirModalChecklist = (perguntas, callback) => {
     document.body.appendChild(overlay);
     renderPergunta();
 };
-// 🖼️ MOTOR DE VISUALIZAÇÃO DE MODELO V2026 (MAESTRO)
-window.verModeloMissao = (url) => {
-    if (!url) return alert("Esta missão não possui foto de modelo.");
-    
-    // Reaproveita o modal de vídeo do Maestro para não criar código lixo
-    const modal = document.getElementById('modal-video-maestro');
-    const container = modal?.querySelector('div.bg-black');
-    
-    if (!modal || !container) return alert("Erro: Estrutura visual não encontrada.");
 
-    container.innerHTML = `
-        <button onclick="document.getElementById('modal-video-maestro').classList.add('hidden')" 
-                class="absolute top-6 right-6 z-[250] bg-red-600/80 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-xl border border-white/10 font-bold">×</button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4">
-        <div class="absolute bottom-6 left-0 right-0 text-center px-4">
-            <span class="bg-black/80 backdrop-blur-md text-white text-[9px] font-black px-5 py-2.5 rounded-full uppercase border border-white/10 tracking-widest shadow-2xl">Sua foto deve ficar igual a esta</span>
-        </div>
-    `;
-    
-    modal.classList.remove('hidden');
-    modal.style.setProperty('display', 'flex', 'important');
-};
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
