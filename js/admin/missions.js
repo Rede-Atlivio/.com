@@ -644,7 +644,7 @@ async function loadSubmissions() {
     } catch(e) { console.error(e); }
 }
 
-// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN V2026 (REORDENADO - ANTI-CONFLITO)
+// 💎 MOTOR DE LIQUIDAÇÃO MESTRE V2026 (ADMIN & B2B)
 window.aprovarMissao = async (submissionId) => {
     try {
         const subRef = doc(window.db, "mission_submissions", submissionId);
@@ -657,71 +657,83 @@ window.aprovarMissao = async (submissionId) => {
         if (!missionSnap.exists()) throw "Missão original não localizada.";
         const mData = missionSnap.data();
 
-        // 🛡️ IDENTIFICAÇÃO DE ORIGEM
-        const isB2B = data.b2b_owner_uid && data.b2b_owner_uid !== "atlivio_master";
-        
-        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar pagamento de R$ ${data.reward} AX para ${data.user_name}?`)) return;
+        // 🧬 DNA DA MISSÃO
+        // Se o owner for o Admin Master ou o sistema, é uma Missão de Casa
+        const isAdminMission = mData.owner_id === "atlivio_master" || mData.b2b_owner_uid === window.auth.currentUser.uid;
+        const payType = data.pay_type; // 'real' ou 'atlix'
+        const valorReward = Number(data.reward);
+
+        if (!confirm(`⚖️ LIQUIDAÇÃO ATLIVIO: Confirmar pagamento de R$ ${valorReward} (${payType.toUpperCase()}) para ${data.user_name}?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
-            // --- 📍 FASE 1: TODAS AS LEITURAS (Obrigatório vir antes das escritas) ---
             const userRef = doc(window.db, "usuarios", data.user_id);
-            const b2bRef = isB2B ? doc(window.db, "usuarios", data.b2b_owner_uid) : null;
-            
-            // Realiza os "gets" dentro da transação para travar os documentos
-            await transaction.get(userRef); 
-            let b2bExists = false;
-            if (b2bRef) {
-                const b2bSnap = await transaction.get(b2bRef);
-                b2bExists = b2bSnap.exists();
-            }
+            const caixaRef = doc(window.db, "sys_finance", "receita_total");
+            const b2bRef = !isAdminMission ? doc(window.db, "usuarios", data.b2b_owner_uid) : null;
 
-            // --- 📍 FASE 2: TODAS AS ESCRITAS (Updates e Sets) ---
-            
-            // 1. Crédito ao Prestador
-            transaction.update(userRef, { 
-                wallet_balance: increment(Number(data.reward)),
-                updated_at: serverTimestamp()
-            });
+            // 1. LEITURAS OBRIGATÓRIAS
+            await transaction.get(userRef);
+            await transaction.get(caixaRef);
+            if (b2bRef) await transaction.get(b2bRef);
 
-            // 2. Regras para B2B (Débito e Taxas)
-            if (isB2B && b2bExists) {
-                const valorRealB2B = Number(mData.unit_total_with_fee || data.reward);
+            // ---------------------------------------------------------
+            // 🚀 LÓGICA A: MISSÃO DO ADMIN (CUSTO DA PLATAFORMA)
+            // ---------------------------------------------------------
+            if (isAdminMission) {
+                if (payType === 'real') {
+                    // Tira do CAIXA GERAL (Dinheiro que entrou por PIX)
+                    transaction.update(caixaRef, { total_acumulado: increment(-valorReward) });
+                    // Adiciona no SALDO REAL do usuário
+                    transaction.update(userRef, { wallet_balance: increment(valorReward) });
+                } else {
+                    // MODO ATLIX/BÔNUS: Não tira de lugar nenhum (Investimento/Inflação)
+                    transaction.update(userRef, { wallet_bonus: increment(valorReward) });
+                }
+            } 
+            // ---------------------------------------------------------
+            // 🏢 LÓGICA B: MISSÃO B2B (MERCADO EXTERNO)
+            // ---------------------------------------------------------
+            else {
+                const valorTotalComTaxa = Number(mData.unit_total_with_fee || valorReward);
                 
-                transaction.update(b2bRef, { 
-                    wallet_reserved: increment(-valorRealB2B),
-                    updated_at: serverTimestamp()
-                });
+                // Tira da RESERVA da empresa
+                transaction.update(b2bRef, { wallet_reserved: increment(-valorTotalComTaxa) });
                 
-                const lucroReal = Number((valorRealB2B - data.reward).toFixed(2));
-                if (lucroReal > 0) {
+                // Paga o USUÁRIO (Sempre no Balance em B2B)
+                transaction.update(userRef, { wallet_balance: increment(valorReward) });
+
+                // Captura o LUCRO (Taxa) para o Revenue
+                const lucroTaxa = Number((valorTotalComTaxa - valorReward).toFixed(2));
+                if (lucroTaxa > 0) {
                     const statsRef = doc(window.db, "sys_finance", "stats");
-                    transaction.update(statsRef, { total_revenue: increment(lucroReal) });
+                    transaction.update(statsRef, { total_revenue: increment(lucroTaxa) });
                 }
             }
 
-            // 3. Finalização do Status
+            // ---------------------------------------------------------
+            // ✅ FINALIZAÇÃO COMUM (PARA AMBOS OS CASOS)
+            // ---------------------------------------------------------
             transaction.update(subRef, { 
                 status: 'paid_atlix', 
                 paid_at: serverTimestamp(),
-                autorizado_por: 'ADMIN_CENTRAL'
+                liquidado_como: isAdminMission ? "ADMIN_COST" : "B2B_SETTLEMENT"
             });
 
-            // 4. Registro no Extrato
+            // Registro no Extrato
             const extratoRef = doc(collection(window.db, "extrato_financeiro"));
             transaction.set(extratoRef, {
-                uid: data.user_id, 
-                valor: data.reward, 
-                tipo: "🎯 MISSÃO_APROVADA",
-                descricao: `Recebido: ${data.mission_title}`, 
-                moeda: "ATLIX", 
+                uid: data.user_id,
+                valor: valorReward,
+                tipo: payType === 'real' ? "🎯 MISSÃO_PAGAMENTO" : "🎁 MISSÃO_BONUS",
+                descricao: `Missão: ${data.mission_title}`,
+                moeda: payType === 'real' ? "BRL" : "ATLIX",
                 timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ OPERAÇÃO CONCLUÍDA!\nO fluxo financeiro foi liquidado sem erros.");
+        alert("✅ LIQUIDAÇÃO CONCLUÍDA!\nO motor processou as regras de " + (isAdminMission ? "Custo Admin." : "Fluxo B2B."));
         loadSubmissions();
     } catch (err) {
-        console.error("Erro na liquidação:", err);
+        console.error("Erro na liquidação master:", err);
         alert("❌ FALHA NO MOTOR: " + err);
     }
 };
