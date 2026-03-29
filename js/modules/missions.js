@@ -188,10 +188,18 @@ async function carregarMissoes() {
                                 <p class="text-[9px] font-black text-gray-400 uppercase">${m.slots_disponiveis} Vagas</p>
                             </div>
                         </div>
-                        <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
-                                class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20">
-                            Iniciar Missão ➜
-                        </button>
+                        <div class="flex-[2] flex gap-2">
+    ${m.example_url ? `
+        <button onclick="window.verModeloMissao('${m.example_url}')" 
+                class="flex-1 py-4 bg-slate-800 text-blue-400 border border-blue-500/20 rounded-2xl font-black text-[9px] uppercase transition-all active:scale-95">
+            🖼️ Modelo
+        </button>
+    ` : ''}
+    <button onclick="window.abrirProvaMissao('${m.id}', '${m.title}', ${m.reward}, '${m.pay_type}', '${m.owner_id}', ${JSON.stringify(m.questions || []).replace(/"/g, '&quot;')})" 
+            class="${m.example_url ? 'flex-[2]' : 'w-full'} py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg shadow-blue-900/20 transition-all active:scale-95">
+        Iniciar ➜
+    </button>
+</div>
                     </div>
                 </div>
             `;
