@@ -422,6 +422,7 @@ window.proximoPassoWizard = (passo) => {
         const level = parseInt(document.getElementById('b2b-level').value);
         const questionsRaw = document.getElementById('b2b-questions').value;
         const exampleImg = document.getElementById('b2b-example-image').value;
+        const slotsTotais = parseInt(document.getElementById('b2b-slots-input').value) || 1;
 
         if (!title || !desc) return alert("Preencha o título e as instruções!");
 
