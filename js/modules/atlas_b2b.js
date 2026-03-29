@@ -562,7 +562,15 @@ window.iniciarAutocompleteB2B = () => {
     });
 };
 
-window.validarRaioB2B = (input) => { if(input.value < 0) input.value = 0; window.liberarBotaoInvestimento(); };
+window.validarRaioB2B = (input) => { 
+    if(input.value < 0) input.value = 0; 
+    // 🛡️ TRAVA V2026: Impede que o cliente crie raios que estragam a precisão do GPS
+    if(input.value > 1000) {
+        input.value = 1000;
+        console.warn("🛡️ Sistema: Raio limitado a 1000m para garantir qualidade na auditoria.");
+    }
+    window.liberarBotaoInvestimento(); 
+};
 
 window.liberarBotaoInvestimento = () => {
     const btn = document.getElementById('btn-next-3');
