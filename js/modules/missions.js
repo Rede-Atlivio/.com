@@ -178,15 +178,15 @@ async function carregarMissoes() {
 
                    <div class="space-y-1.5 mb-5 px-1">
                         <h4 class="text-[13px] font-black text-white uppercase tracking-tight leading-tight">${m.title}</h4>
-                        <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
-                        
-                        <!-- 🖼️ MODELO B: Linha exclusiva de instrução visual -->
-                        ${m.example_url ? `
-                            <button onclick="window.verModeloMissao('${m.example_url}')" 
-                                    class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
-                                🖼️ Ver Modelo de Execução
-                            </button>
-                        ` : ''}
+<p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
+
+<!-- 🖼️ MODELO B: Conectado ao campo 'example_image' que vimos no seu banco -->
+${m.example_image ? `
+    <button onclick="window.verModeloMissao('${m.example_image}')" 
+            class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
+        🖼️ Ver Modelo de Execução
+    </button>
+` : ''}
                     </div>
 
                     <div class="flex items-center gap-3">
