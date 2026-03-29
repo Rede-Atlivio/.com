@@ -441,4 +441,49 @@ window.iniciarCronometroDesistencia = (missionId) => {
     }, 20 * 60 * 1000); 
 };
 
+// 📋 MOTOR DE INTERFACE: Checklist Sim/Não
+window.abrirModalChecklist = (perguntas, callback) => {
+    // Cria o overlay do modal
+    const overlay = document.createElement('div');
+    overlay.className = "fixed inset-0 z-[999] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-6 animate-fadeIn";
+    
+    let respostas = {};
+    let perguntaAtual = 0;
+
+    const renderPergunta = () => {
+        const p = perguntas[perguntaAtual];
+        overlay.innerHTML = `
+            <div class="w-full max-w-sm bg-slate-900 border border-white/10 rounded-[2.5rem] p-8 shadow-2xl text-center space-y-6">
+                <div class="space-y-2">
+                    <p class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">Checklist Atlas (${perguntaAtual + 1}/${perguntas.length})</p>
+                    <h3 class="text-xl font-black text-white leading-tight">${p}</h3>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-4">
+                    <button id="btn-nao" class="py-5 bg-slate-800 text-white rounded-3xl font-black uppercase text-xs border border-white/5 active:scale-95 transition-all">Não ❌</button>
+                    <button id="btn-sim" class="py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs shadow-lg shadow-blue-900/40 active:scale-95 transition-all">Sim ✅</button>
+                </div>
+            </div>
+        `;
+
+        overlay.querySelector('#btn-sim').onclick = () => prosseguir('Sim');
+        overlay.querySelector('#btn-nao').onclick = () => prosseguir('Não');
+    };
+
+    const prosseguir = (valor) => {
+        respostas[perguntas[perguntaAtual]] = valor;
+        perguntaAtual++;
+
+        if (perguntaAtual < perguntas.length) {
+            renderPergunta();
+        } else {
+            overlay.remove();
+            callback(respostas);
+        }
+    };
+
+    document.body.appendChild(overlay);
+    renderPergunta();
+};
+
 console.log("🚀 [Missions] Sistema de Vagas e Escassez Sincronizado!");
