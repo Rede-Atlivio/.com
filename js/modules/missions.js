@@ -87,24 +87,10 @@ async function carregarMissoes() {
             </div>
         `;
 
-       // 🏢 FAIXA DE MARKETING B2B (O convite para empresas)
-        const faixaB2B = `
-            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="w-full bg-blue-600/10 border border-blue-500/20 p-5 rounded-[2rem] flex items-center gap-4 mb-6 transition-all active:scale-95 group">
-                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-900/40 group-hover:rotate-12 transition-transform">🏢</div>
-                <div class="text-left">
-                    <p class="text-[11px] font-black text-white uppercase leading-tight">Sua empresa no Atlas?</p>
-                    <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wide opacity-80">Contrate Micro Tarefas Geográficas ➜</p>
-                </div>
-            </button>
-        `;
-
-        if (snap.empty) {
-            container.innerHTML = htmlTopo + faixaB2B + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30 tracking-widest">Aguardando novas transmissões...</p>`;
-            return;
-        }
-
-        // Se houver missões, injeta o topo e a faixa antes dos cards
-        let cardsHtml = faixaB2B;
+      if (snap.empty) {
+            container.innerHTML = htmlTopo + `<p class="text-center text-gray-500 text-xs py-10 italic uppercase font-black opacity-30">Céu limpo no seu radar.</p>`;
+            return;
+        }
 
         let cardsHtml = "";
         const missoesOrdenadas = [];
