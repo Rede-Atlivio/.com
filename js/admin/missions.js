@@ -490,57 +490,66 @@ async function abrirCriadorMissaoAtlas(dados = null) {
     setTimeout(() => { if (window.iniciarAutocompleteMissions) window.iniciarAutocompleteMissions(); }, 200);
 }
 async function salvarMissao() {
-    // Captura de IDs e Valores do Novo Formulário
+    // Captura de IDs e Valores (Campos Clássicos e Novos)
     const id = document.getElementById('mis-id').value;
     const title = document.getElementById('mis-title').value;
+    const level = parseInt(document.getElementById('mis-level').value);
+    const category = document.getElementById('mis-category').value;
+    const exampleImage = document.getElementById('mis-example-image').value;
+    const questionsRaw = document.getElementById('mis-questions').value;
     const desc = document.getElementById('mis-desc').value;
     const reward = document.getElementById('mis-reward').value;
-    const videoId = document.getElementById('mis-video-id').value;
     
-    // Captura Atlas Vivo
+    // Geolocalização
     const lat = document.getElementById('mis-lat').value;
     const lng = document.getElementById('mis-lng').value;
     const radius = document.getElementById('mis-radius').value;
-    
-    // Captura Moeda
-    const payType = document.getElementById('mis-pay-type').value;
 
-    if(!title || !reward) return alert("Erro: Título e Valor são obrigatórios.");
+    if(!title || !reward) return alert("⚠️ Título e Recompensa são obrigatórios.");
 
-   // 🏗️ PAYLOAD V2026: Estrutura com DNA de Mestre Injetado
+    // Tratamento do Checklist: Transforma string separada por vírgula em Array limpo
+    const questionsArray = questionsRaw ? questionsRaw.split(',').map(q => q.trim()).filter(q => q !== "") : [];
+
+    // 🏗️ PAYLOAD V2026 PRO: Objeto blindado para o Firestore
     const payload = {
-        title, 
-        description: desc, 
-        reward: parseFloat(reward), 
-        video_id: videoId || null,
+        title: title,
+        level: level || 1,
+        category: category || 'physical',
+        example_image: exampleImage || null,
+        questions: questionsArray, // 📋 O novo ouro da Atlivio
+        description: desc,
+        reward: parseFloat(reward),
         latitude: lat ? parseFloat(lat) : null,
         longitude: lng ? parseFloat(lng) : null,
-        radius: radius ? Number(radius) : 50,
-        pay_type: 'atlix', // 🪙 Padronização Master: Admin só cria missões em ATLIX
-        owner_id: window.auth.currentUser.uid, // 🔑 Garante que o Admin seja o dono da verba
-        b2b_owner_uid: window.auth.currentUser.uid, // 🔑 Sincronia para o motor de Auditoria
-        updated_at: serverTimestamp(), 
-        active: true,
-        slots_totais: 100, // Define um estoque inicial para missões do Admin
-        slots_disponiveis: 100,
-        pessoas_realizando: 0
+        radius: radius ? Number(radius) : 500,
+        pay_type: 'atlix',
+        owner_id: window.auth.currentUser.uid,
+        b2b_owner_uid: window.auth.currentUser.uid,
+        updated_at: serverTimestamp(),
+        active: true
     };
 
     try {
         if (id) {
-            // EDITAR
+            // MODO EDIÇÃO: Não reseta o estoque de vagas
             await updateDoc(doc(window.db, "missions", id), payload);
-            alert("✅ Missão atualizada!");
+            alert("✨ Estratégia atualizada com sucesso!");
         } else {
-            // CRIAR
+            // MODO CRIAÇÃO: Adiciona campos de controle de estoque iniciais
             payload.created_at = serverTimestamp();
+            payload.slots_totais = 100; // Padrão Admin
+            payload.slots_disponiveis = 100;
+            payload.pessoas_realizando = 0;
             await addDoc(collection(window.db, "missions"), payload);
-            alert("✅ Missão criada!");
+            alert("🚀 Missão lançada no Radar!");
         }
         
         document.getElementById('modal-editor').classList.add('hidden');
-        loadMissionsManagement();
-    } catch(e) { alert(e.message); }
+        loadMissionsManagement(); // Recarrega a tabela do Admin
+    } catch(e) { 
+        console.error("Erro ao salvar DNA:", e);
+        alert("🚨 Erro ao salvar: " + e.message); 
+    }
 }
 
 async function excluirMissao(id) {
