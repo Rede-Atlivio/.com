@@ -7,11 +7,14 @@ const { collection, query, where, onSnapshot, orderBy, doc, updateDoc, getDoc } 
    // 🛰️ INICIALIZADOR MAESTRO V35: Inicia as notificações reais e o fluxo automático (JSON)
 window.iniciarSistemaNotificacoes = () => {
     auth.onAuthStateChanged(async user => {
-        if (user) {
+       if (user) {
             console.log("🔔 Maestro: Iniciando escuta de notificações e processamento de fluxo...");
             
-            // 1. Inicia a escuta de alertas comuns (Chat, Pedidos)
+            // 1. Inicia a escuta de alertas comuns (Chat, Pedidos - Pasta do Usuário)
             window.escutarNotificacoes(user.uid);
+
+            // 🚀 [V2026] RÁDIO GLOBAL: Ouve notificações de Indicação e Sistema (Coleção Raiz)
+            window.escutarNotificacoesGlobais(user.uid);
 
             // 2. Inicia o Radar Maestro (Comandos do Admin/Robô)
             window.escutarComandosMaestro(user.uid);
