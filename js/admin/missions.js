@@ -645,6 +645,7 @@ async function loadSubmissions() {
 
 // 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN: Transfere o valor reservado para o executor
 // Gil, esta é a mesma função soberana usada no B2B, agora sob comando do Admin Central.
+// 💎 MOTOR DE LIQUIDAÇÃO CENTRAL ADMIN V2026 (HÍBRIDO)
 window.aprovarMissao = async (submissionId) => {
     try {
         const subRef = doc(window.db, "mission_submissions", submissionId);
@@ -652,72 +653,72 @@ window.aprovarMissao = async (submissionId) => {
         if (!subSnap.exists()) throw "Submissão não encontrada.";
         const data = subSnap.data();
 
-        // 🛰️ BUSCA DE VALOR BRUTO: Vamos na missão original buscar o valor real pago (Prêmio + Taxa)
         const missionRef = doc(window.db, "missions", data.mission_id);
         const missionSnap = await getDoc(missionRef);
-        const valorRealB2B = missionSnap.exists() ? Number(missionSnap.data().unit_total_with_fee) : Number(data.reward);
+        if (!missionSnap.exists()) throw "Missão original não localizada.";
+        const mData = missionSnap.data();
 
-        if (!data.b2b_owner_uid || !data.reward) throw "Dados financeiros incompletos na submissão.";
-        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar liquidação de R$ ${data.reward} AX?`)) return;
+        // 🛡️ IDENTIFICAÇÃO DE ORIGEM: É B2B ou é Admin?
+        // Gil, se o dono da missão for o sistema ou o admin, não tem taxa nem reserva de empresa.
+        const isB2B = data.b2b_owner_uid && data.b2b_owner_uid !== "atlivio_master";
+        
+        if (!confirm(`🚀 JUSTIÇA ATLIVIO: Confirmar pagamento de R$ ${data.reward} AX para ${data.user_name}?`)) return;
 
         await runTransaction(window.db, async (transaction) => {
-            const userRef = doc(window.db, "usuarios", data.user_id); // Executor (Recebe prêmio)
-            const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid); // Empresa (Sai da reserva)
-            const statsRef = doc(window.db, "sys_finance", "stats");
-
-            // 1. REGRA DO ABATE REAL: Remove o valor TOTAL (Prêmio + Taxa) da reserva do B2B
-            const valorParaAbater = Number(valorRealB2B);
-            transaction.update(b2bRef, { 
-                wallet_reserved: increment(-valorParaAbater),
-                updated_at: serverTimestamp()
-            });
-
-            // 2. REGRA DO CRÉDITO LÍQUIDO: O prestador recebe o prêmio (Ex: R$ 5,00)
+            const userRef = doc(window.db, "usuarios", data.user_id);
+            
+            // 1. REGRA DO CRÉDITO: O prestador sempre recebe o prêmio
             transaction.update(userRef, { 
                 wallet_balance: increment(Number(data.reward)),
                 updated_at: serverTimestamp()
             });
-            
-            // 3. REGRA DA TAXA (COFRE ATLIVIO): Captura a comissão da plataforma
-            const valorBrutoB2B = Number(valorRealB2B); 
-            const premioUsuario = Number(data.reward);
-            const lucroRealValidado = Number((valorBrutoB2B - premioUsuario).toFixed(2));
-            
-            if (lucroRealValidado > 0 && lucroRealValidado < valorBrutoB2B) {
-                transaction.update(statsRef, { 
-                    total_revenue: increment(lucroRealValidado),
-                    ultima_atualizacao: serverTimestamp()
-                });
-                console.log(`✅ [COFRE ADMIN] Taxa de R$ ${lucroRealValidado} capturada.`);
+
+            // 2. REGRA DO DÉBITO (APENAS SE FOR B2B)
+            if (isB2B) {
+                const b2bRef = doc(window.db, "usuarios", data.b2b_owner_uid);
+                const valorRealB2B = Number(mData.unit_total_with_fee || data.reward);
+                
+                // Tenta validar se a conta B2B existe antes de atualizar
+                const b2bSnap = await transaction.get(b2bRef);
+                if (b2bSnap.exists()) {
+                    transaction.update(b2bRef, { 
+                        wallet_reserved: increment(-valorRealB2B),
+                        updated_at: serverTimestamp()
+                    });
+                    
+                    // Coleta de Taxa para o Cofre (Revenue)
+                    const lucroReal = Number((valorRealB2B - data.reward).toFixed(2));
+                    if (lucroReal > 0) {
+                        const statsRef = doc(window.db, "sys_finance", "stats");
+                        transaction.update(statsRef, { total_revenue: increment(lucroReal) });
+                    }
+                }
             }
 
-            // 4. FINALIZAÇÃO: Encerra a submissão e registra quem autorizou
+            // 3. FINALIZAÇÃO DA SUBMISSÃO
             transaction.update(subRef, { 
                 status: 'paid_atlix', 
                 paid_at: serverTimestamp(),
-                taxa_atlivio_liquidada: (lucroRealValidado > 0) ? lucroRealValidado : 0,
-                autorizado_por: 'ADMIN_CENTRAL_JUSTIÇA'
+                autorizado_por: 'ADMIN_CENTRAL'
             });
 
-            // 5. REGISTRO NO LIVRO RAZÃO (Extratos)
-            const extratoRefUser = doc(collection(window.db, "extrato_financeiro"));
-            transaction.set(extratoRefUser, {
-                uid: data.user_id, valor: data.reward, tipo: "🎯 MISSÃO_APROVADA",
-                descricao: `Recebido por: ${data.mission_title}`, moeda: "ATLIX", timestamp: serverTimestamp()
-            });
-
-            const extratoRefB2B = doc(collection(window.db, "extrato_financeiro"));
-            transaction.set(extratoRefB2B, {
-                uid: data.b2b_owner_uid, valor: -valorParaAbater, tipo: "💸 DÉBITO_MISSÃO",
-                descricao: `Liquidado: ${data.mission_title}`, moeda: "BRL", timestamp: serverTimestamp()
+            // 4. REGISTRO NO EXTRATO DO USUÁRIO
+            const extratoRef = doc(collection(window.db, "extrato_financeiro"));
+            transaction.set(extratoRef, {
+                uid: data.user_id, 
+                valor: data.reward, 
+                tipo: "🎯 MISSÃO_APROVADA",
+                descricao: `Recebido: ${data.mission_title}`, 
+                moeda: "ATLIX", 
+                timestamp: serverTimestamp()
             });
         });
 
-        alert("✅ OPERAÇÃO LIQUIDADA: O saldo foi transferido e as taxas foram coletadas.");
-        loadSubmissions(); // Recarrega a lista
+        alert("✅ PAGAMENTO REALIZADO!\nO usuário recebeu o saldo com sucesso.");
+        loadSubmissions(); // Recarrega a tabela
     } catch (err) {
-        console.error("Erro na liquidação Admin:", err);
-        alert("❌ ERRO NO MOTOR: " + err);
+        console.error("Erro na liquidação:", err);
+        alert("❌ FALHA NO MOTOR: " + err);
     }
 };
 
