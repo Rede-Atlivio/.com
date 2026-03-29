@@ -124,7 +124,8 @@ async function carregarMissoes() {
 
         // Inicializa a variável que vai acumular os cards, já começando com a Faixa B2B
         // Inicializa os cards sem repetir a faixa B2B que já está no topo fixo
-        let cardsHtml = "";
+        // 🚀 INJETANDO O BOTÃO PREMIUM: Ele aparece agora como o primeiro item antes das missões
+        let cardsHtml = faixaB2B;        
         const missoesOrdenadas = [];
 
         snap.forEach(doc => {
