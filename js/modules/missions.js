@@ -177,10 +177,10 @@ async function carregarMissoes() {
                     </div>
 
                    <div class="space-y-1.5 mb-5 px-1">
-                        <div class="space-y-1.5 mb-5 px-1">
                         <h4 class="text-[13px] font-black text-white uppercase tracking-tight leading-tight">${m.title}</h4>
                         <p class="text-[10px] text-slate-500 leading-snug line-clamp-2 font-medium mb-3">${m.description}</p>
 
+                        <!-- 🖼️ Botão de Modelo Maestro: Só aparece se houver imagem no banco -->
                         ${m.example_image ? `
                             <button onclick="window.verModeloMissao('${m.example_image}')" 
                                     class="w-full py-2.5 bg-blue-600/10 border border-dashed border-blue-500/40 rounded-xl text-blue-400 text-[9px] font-black uppercase tracking-widest hover:bg-blue-600/20 transition-all active:scale-95 flex items-center justify-center gap-2">
