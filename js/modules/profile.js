@@ -49,9 +49,17 @@ export async function carregarDadosPerfil() {
         if(document.getElementById('xp-bar')) document.getElementById('xp-bar').style.width = `${progressoXp}%`;
         
         // Exibe Badges Conquistadas (Ex: Pioneiro Atlas)
+       // Exibe Badges Conquistadas (Ex: Pioneiro Atlas)
         const badgeContainer = document.getElementById('user-badges');
         if(badgeContainer && data.badges) {
             badgeContainer.innerHTML = data.badges.map(b => `<span class="badge-icon" title="${b.label}">${b.icon}</span>`).join('');
+        }
+
+        // 🔗 [V2026] CONTADOR DE INDICADOS: Exibe o troféu de amizades no perfil
+        const elIndicados = document.getElementById('user-referrals');
+        if(elIndicados) {
+            // Se o campo não existir no banco (usuário antigo), mostra 0
+            elIndicados.innerText = data.referral_count || 0;
         }
 
         // Capa
