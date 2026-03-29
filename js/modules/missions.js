@@ -52,18 +52,32 @@ async function carregarMissoes() {
         const totalPoderCompra = (window.userProfile?.wallet_balance || 0) + (window.userProfile?.wallet_bonus || 0);
 
        // 🏗️ TOPO SOBERANO + FAIXA PREMIUM V2026
+       // 🏢 ROBÔ SÓLIDO B2B PREMIUM: Forçando fundo Dark sólido e brilho neon para contraste absoluto
         const faixaB2B_HTML = `
-            <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" 
-                    class="w-full bg-gradient-to-r from-blue-600/20 to-indigo-600/10 border-2 border-blue-500/30 p-6 rounded-[2.5rem] flex items-center gap-5 mb-6 shadow-[0_15px_30px_rgba(59,130,246,0.15)] transition-all active:scale-95 hover:border-blue-400 group relative overflow-hidden">
-                <div class="absolute top-0 right-0 w-32 h-full bg-blue-500/5 skew-x-[-20deg] translate-x-10"></div>
-                <div class="w-14 h-14 bg-blue-600 rounded-[1.2rem] flex items-center justify-center text-3xl shadow-[0_8px_20px_rgba(37,99,235,0.4)] group-hover:rotate-6 transition-transform">🏢</div>
-                <div class="text-left z-10">
-                    <p class="text-[13px] font-black text-white uppercase leading-none tracking-tight mb-1">Sua Empresa no Radar Atlas?</p>
-                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest opacity-100 flex items-center gap-1">
-                        Contrate Micro Tarefas <span class="text-white animate-pulse">➜</span>
-                    </p>
-                </div>
-            </button>
+            <div class="px-1">
+                <button onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" 
+                        class="w-full bg-[#0f172a] border-2 border-blue-500/50 p-5 rounded-[2.5rem] flex items-center gap-5 mb-6 shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-all active:scale-95 group relative overflow-hidden text-left">
+                    
+                    
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 shadow-[0_0_15px_#3b82f6]"></div>
+
+                    
+<div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-3xl shadow-[0_10px_20px_rgba(37,99,235,0.4)] group-hover:scale-110 transition-transform z-10 shrink-0">🏢</div>
+                    
+                    <div class="z-10">
+                        <h3 class="text-[14px] font-black text-white uppercase leading-none tracking-tighter mb-1.5">Sua Empresa no Radar?</h3>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-black text-blue-400 uppercase tracking-widest leading-none">Contrate Micro Tarefas</span>
+                            <span class="text-white text-xs animate-bounce-subtle">➜</span>
+                        </div>
+                    </div>
+
+                    
+<div class="absolute top-3 right-6 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                        <span class="text-[7px] font-black text-blue-500 uppercase">Atlas B2B</span>
+                    </div>
+                </button>
+            </div>
         `;
 
         let htmlTopo = `
