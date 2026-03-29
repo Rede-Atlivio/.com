@@ -502,6 +502,7 @@ async function salvarMissao() {
     const questionsRaw = document.getElementById('mis-questions').value;
     const desc = document.getElementById('mis-desc').value;
     const reward = document.getElementById('mis-reward').value;
+    const payType = document.getElementById('mis-pay-type').value;
     
     // Geolocalização
     const lat = document.getElementById('mis-lat').value;
