@@ -62,10 +62,16 @@ export async function carregarDadosPerfil() {
             elIndicados.innerText = data.referral_count || 0;
         }
 
-        // Capa
+       // Capa
         const bannerPreview = document.getElementById('banner-preview');
         if(bannerPreview && data.cover_image) {
             bannerPreview.src = data.cover_image;
+        }
+
+        // 🔗 [V2026] CONTADOR DE INDICADOS: Atualiza o card visual
+        const elIndicados = document.getElementById('user-referrals');
+        if(elIndicados) {
+            elIndicados.innerText = data.referral_count || 0;
         }
     }
 }
