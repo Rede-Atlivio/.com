@@ -152,22 +152,54 @@ window.carregarAuditoriaB2B = async () => {
         }
 
         container.innerHTML = `<div class="grid gap-4" id="lista-auditoria-cards"></div>`;
-        snap.forEach(d => {
+       snap.forEach(d => {
             const m = d.data();
-            // 🛡️ Trava de Segurança: Ignora se a submissão não pertencer a este B2B (Double Check)
             if (m.b2b_owner_uid !== auth.currentUser.uid) return;
+
+            // 📝 Constrói o HTML das respostas do Checklist (se existirem)
+            let checklistHtml = '';
+            if (m.responses && Object.keys(m.responses).length > 0) {
+                checklistHtml = `<div class="bg-slate-50 p-3 rounded-2xl space-y-1.5 border border-gray-100">
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">📋 Respostas do Checklist</p>`;
+                for (const [pergunta, resposta] of Object.entries(m.responses)) {
+                    const isSim = resposta === 'Sim';
+                    checklistHtml += `
+                        <div class="flex justify-between items-center text-[10px]">
+                            <span class="text-gray-600 font-medium">${pergunta}</span>
+                            <span class="font-black ${isSim ? 'text-emerald-600' : 'text-red-500'}">${resposta}</span>
+                        </div>`;
+                }
+                checklistHtml += `</div>`;
+            }
+
+            // 📍 Lógica de precisão de distância (se disponível)
+            const precisaoGps = m.distance_meters !== undefined ? 
+                `<span class="text-[7px] font-bold text-blue-500">📍 ${Math.round(m.distance_meters)}m do local</span>` : '';
+
             document.getElementById('lista-auditoria-cards').innerHTML += `
-                <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4">
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-blue-900 font-black text-xs uppercase">${m.mission_title}</h4>
+                <div class="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4 animate-fadeIn">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="text-blue-900 font-black text-xs uppercase leading-none">${m.mission_title}</h4>
+                            ${precisaoGps}
+                        </div>
                         <span class="text-[7px] font-black uppercase px-2 py-1 rounded-full ${m.gps_status === 'match' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
-                            ${m.gps_status === 'match' ? 'GPS OK' : 'GPS SUSPEITO'}
+                            ${m.gps_status === 'match' ? '● GPS OK' : '● LOCAL SUSPEITO'}
                         </span>
                     </div>
-                    <img src="${m.proof_url}" class="w-full h-48 object-cover rounded-[2rem] border border-gray-100">
+
+                    <div class="relative group cursor-pointer" onclick="window.abrirProvaNovaAba('${m.proof_url}')">
+                        <img src="${m.proof_url}" class="w-full h-48 object-cover rounded-[2rem] border border-gray-100 shadow-inner">
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem] flex items-center justify-center">
+                            <span class="bg-white/90 text-black text-[9px] font-black px-3 py-1 rounded-full uppercase">🔍 Ampliar Foto</span>
+                        </div>
+                    </div>
+
+                    ${checklistHtml}
+
                     <div class="flex gap-2">
-                        <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase">Reprovar</button>
-                        <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200">Aprovar e Pagar</button>
+                        <button onclick="window.vereditoB2B('${d.id}', 'rejected')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-2xl font-black text-[9px] uppercase transition-colors hover:bg-red-100">Reprovar</button>
+                        <button onclick="window.vereditoB2B('${d.id}', 'approved')" class="flex-[2] py-3 bg-blue-600 text-white rounded-2xl font-black text-[9px] uppercase shadow-lg shadow-blue-200 transition-transform active:scale-95">Aprovar e Pagar</button>
                     </div>
                 </div>
             `;
