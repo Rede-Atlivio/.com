@@ -868,3 +868,33 @@ window.fecharModalMaestro = () => {
 document.getElementById('modal-video-maestro')?.addEventListener('click', (e) => {
     if (e.target.id === 'modal-video-maestro') window.fecharModalMaestro();
 });
+
+// 🖼️ VISUALIZADOR UNIVERSAL DE IMAGENS MAESTRO (V2026)
+// Gil, agora você pode usar isso em qualquer lugar do site!
+window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
+    const modal = document.getElementById('modal-video-maestro');
+    const container = modal?.querySelector('div.bg-black');
+    
+    if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
+
+    // Limpa o que tinha antes (vídeo ou outra foto) e injeta o novo
+    container.innerHTML = `
+        <button onclick="window.fecharModalMaestro()" 
+                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
+            ×
+        </button>
+        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
+        <div class="absolute bottom-10 left-0 right-0 text-center px-4">
+            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10 shadow-2xl">
+                ${legenda}
+            </span>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display', 'flex', 'important');
+};
+
+// 🔗 PONTE DE COMPATIBILIDADE
+// Mantemos este nome para o arquivo Missions não dar erro.
+window.verModeloMissao = (url) => window.exibirImagemModal(url, "Modelo de Execução");
