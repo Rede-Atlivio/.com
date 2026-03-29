@@ -72,14 +72,21 @@ window.confirmarCodigoLogin = async function() {
         if(!snap.exists()) {
             // 🛡️ CRIAÇÃO DE CONTA BLINDADA (SMS): Adiciona o campo oficial de carteira
             // Isso garante que usuários de SMS também entrem no novo ecossistema financeiro.
+           // 🛡️ [V2026] CADASTRO SMS COM RASTRO: Captura indicação via sessionStorage
+            const refLink = sessionStorage.getItem("atlivio_ref");
+            const trafficSource = localStorage.getItem("traffic_source") || "direto";
+
             await setDoc(userRef, {
                 uid: result.user.uid,
                 phone: result.user.phoneNumber,
                 created_at: serverTimestamp(),
                 is_provider: false,
                 perfil_completo: false,
-                wallet_balance: 0.00, // Novo campo padrão V11
-                status: 'ativo'
+                wallet_balance: 0.00,
+                wallet_bonus: 0.00,
+                status: 'ativo',
+                traffic_source: refLink ? 'afiliado' : trafficSource,
+                invited_by: (refLink && refLink !== result.user.uid) ? refLink : null // Grava o padrinho aqui!
             });
             
             // 🔥 V129: Só dispara o bônus se o Admin não tiver desligado a chave global
