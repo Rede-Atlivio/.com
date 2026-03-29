@@ -735,8 +735,9 @@ window.processarReservaB2B = async () => {
                 slots_totais: slotsVal,
                 slots_disponiveis: slotsVal,
                 pessoas_realizando: 0,
-               address: enderecoFormatado,
-               pay_type: 'atlix', // 🛡️ RIGIDEZ ATLIVIO: Garante liquidação em crédito interno
+                address: enderecoFormatado,
+                pay_type: 'atlix', // 🛡️ RIGIDEZ ATLIVIO: Garante liquidação em crédito interno
+                execution_time_limit: window.wizardB2BData.category === 'fast' ? 5 : 20, // ⏱️ Sincronizado com a Faxina do Admin
                 // 🚀 STATUS DINÂMICO: Se Radar Auto estiver ON, nasce 'active'. Se não, 'pending_b2b'
                 status: radarAutomatico ? 'active' : 'pending_b2b',
                 active: radarAutomatico ? true : false,
