@@ -135,8 +135,9 @@ window.carregarAuditoriaB2B = async () => {
         const q = query(
             collection(db, "mission_submissions"),
             where("b2b_owner_uid", "==", auth.currentUser.uid), // ──▶ Usando b2b_owner_uid para match com a liquidação
-            where("status", "==", "pending"), // ──▶ Somente o que ainda não foi auditado
-            orderBy("created_at", "desc") // ──▶ Exibe as submissões mais recentes primeiro
+            where("status", "==", "pending"),
+            orderBy("created_at", "desc"),
+            limit(10) // 🚀 Carrega apenas as 10 mais recentes por vez (Leve e rápido)
         );
         const snap = await getDocs(q);
 
