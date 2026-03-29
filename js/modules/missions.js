@@ -166,10 +166,11 @@ async function carregarMissoes() {
                         <div class="${bgBadge} px-3 py-1.5 rounded-xl border border-white/5 shadow-inner">
                             <p class="text-[7px] font-black ${corTema} uppercase tracking-[0.1em]">${moedaLabel} ATLIX</p>
                         </div>
-                        <div class="text-right">
+                       <!-- 💰 Valor com Verde Ganho e Amarelo Ouro (Alinhamento Reforçado) -->
+                        <div class="text-right flex flex-col items-end">
                             <h3 class="text-xl font-black leading-none tracking-tighter">
                                 <span class="text-emerald-500">${m.reward.toFixed(2)}</span>
-                                <span class="text-amber-500 text-xs ml-0.5">AX</span>
+                                <span class="text-amber-500 text-xs ml-0.5 font-black uppercase tracking-tighter">AX</span>
                             </h3>
                             <p class="text-[8px] font-black text-slate-500 mt-1 uppercase tracking-widest">${distLabel}</p>
                         </div>
