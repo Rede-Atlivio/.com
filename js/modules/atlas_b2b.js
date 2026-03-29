@@ -382,12 +382,26 @@ window.proximoPassoWizard = (passo) => {
     if (passo === 2) {
         const title = document.getElementById('b2b-title').value;
         const desc = document.getElementById('b2b-desc').value;
-        if (!title || !desc) return alert("Preencha o título e a descrição!");
+        const category = document.getElementById('b2b-category').value;
+        const level = parseInt(document.getElementById('b2b-level').value);
+        const questionsRaw = document.getElementById('b2b-questions').value;
+        const exampleImg = document.getElementById('b2b-example-image').value;
 
-       window.wizardB2BData.title = title;
-        window.wizardB2BData.description = desc;
-        // 🆔 DNA UNIFICADO: Salvando como owner_id para compatibilidade com o motor de estorno
-        window.wizardB2BData.owner_id = auth.currentUser.uid;
+        if (!title || !desc) return alert("Preencha o título e as instruções!");
+
+        // Processa Checklist
+        const questionsArray = questionsRaw ? questionsRaw.split(',').map(q => q.trim()).filter(q => q !== "") : [];
+
+        window.wizardB2BData = {
+            ...window.wizardB2BData,
+            title: title,
+            description: desc,
+            category: category,
+            level: level,
+            questions: questionsArray,
+            example_image: exampleImg || null,
+            owner_id: auth.currentUser.uid
+        };
 
       // PASSO 2: LOCALIZAÇÃO - Sincronizado com a nova identidade Premium e Fundo Radial
         document.getElementById('modal-content').innerHTML = `
