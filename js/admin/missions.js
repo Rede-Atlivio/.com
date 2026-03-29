@@ -580,44 +580,54 @@ async function loadSubmissions() {
 
         snap.forEach(d => {
             const data = d.data();
-           // 🚥 MOTOR DE STATUS ATLIVIO: Identifica disputas iniciadas pelo B2B
-            let statusBadge = `<span class="bg-yellow-900 text-yellow-400 px-2 py-1 rounded text-[9px] uppercase border border-yellow-700">⏳ PENDENTE</span>`;
             
-            if(data.status === 'approved' || data.status === 'paid_atlix') {
-                statusBadge = `<span class="bg-green-900 text-green-400 px-2 py-1 rounded text-[9px] uppercase border border-green-700">✅ PAGO</span>`;
-            } else if(data.status === 'rejected') {
-                statusBadge = `<span class="bg-red-900 text-red-400 px-2 py-1 rounded text-[9px] uppercase border border-red-700">❌ RECUSADO</span>`;
-            } else if(data.status === 'b2b_rejected') {
-                // Alerta visual de disputa para o Admin intervir
-                statusBadge = `<span class="bg-orange-600 text-white px-2 py-1 rounded text-[9px] font-black uppercase animate-pulse shadow-lg">⚖️ DISPUTA B2B</span>`;
+            // 🚥 STATUS BADGES EVOLUÍDAS
+            let statusBadge = `<span class="bg-yellow-900/50 text-yellow-500 px-2 py-1 rounded text-[8px] font-black uppercase border border-yellow-700/30">⏳ Pendente</span>`;
+            if(data.status === 'paid_atlix') statusBadge = `<span class="bg-emerald-900/50 text-emerald-500 px-2 py-1 rounded text-[8px] font-black uppercase border border-emerald-700/30">✅ Pago AX</span>`;
+            else if(data.status === 'rejected') statusBadge = `<span class="bg-red-900/50 text-red-500 px-2 py-1 rounded text-[8px] font-black uppercase border border-red-700/30">❌ Recusado</span>`;
+            else if(data.status === 'b2b_rejected') statusBadge = `<span class="bg-orange-600 text-white px-2 py-1 rounded text-[8px] font-black uppercase animate-pulse shadow-lg">⚖️ Disputa B2B</span>`;
+
+            // 📍 DISTÂNCIA REAL (Cálculo de Precisão)
+            const distLabel = data.distance_meters !== undefined ? 
+                `<p class="text-[8px] font-bold text-cyan-500 mt-1">📍 Local: ${Math.round(data.distance_meters)}m de precisão</p>` : '';
+
+            // 📋 CHECKLIST (Mini visualização rápida)
+            let miniCheck = '';
+            if(data.responses) {
+                miniCheck = `<div class="mt-1 flex flex-wrap gap-1">`;
+                for(const [p, r] of Object.entries(data.responses)) {
+                    miniCheck += `<span class="text-[7px] px-1 rounded ${r === 'Sim' ? 'bg-emerald-900/30 text-emerald-400' : 'bg-red-900/30 text-red-400'}">${r}</span>`;
+                }
+                miniCheck += `</div>`;
             }
 
-          // 🚀 ULTRA-PERFORMANCE ATLIVIO: Abre a prova em nova aba para não travar o Admin
-            let provaLink = '<span class="text-gray-600 text-[9px] font-bold uppercase">Sem Foto</span>';
-            
-            if(data.proof_url) {
-                provaLink = `
-                    <button onclick="window.abrirProvaNovaAba('${data.proof_url}')" class="bg-slate-800 hover:bg-blue-600 text-blue-400 hover:text-white px-3 py-2 rounded-xl border border-white/5 transition-all flex items-center gap-2 group shadow-lg">
-                        <span class="text-[10px] font-black uppercase tracking-widest">Ver Evidência ↗</span>
-                    </button>
-                `;
-            }
             tbody.innerHTML += `
-                <tr class="border-b border-slate-800 hover:bg-slate-800/50">
-                    <td class="p-3 text-white font-bold text-sm">${data.mission_title || 'Missão'}</td>
-                    <td class="p-3 text-gray-400 text-xs">${data.user_name || data.user_email || 'Usuário'}</td>
-                    <td class="p-3">${provaLink}</td>
+                <tr class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                    <td class="p-3">
+                        <p class="text-white font-black text-xs uppercase leading-tight">${data.mission_title || 'Missão'}</p>
+                        ${distLabel}
+                    </td>
+                    <td class="p-3">
+                        <p class="text-gray-300 font-bold text-[10px]">${data.user_name || 'Usuário'}</p>
+                        <p class="text-[8px] text-gray-500 font-mono">${data.user_id.slice(0,8)}</p>
+                    </td>
+                    <td class="p-3">
+                        <button onclick="window.abrirProvaNovaAba('${data.proof_url}')" class="bg-slate-700 hover:bg-blue-600 text-white p-2 rounded-lg transition shadow-md">📸 PROVA</button>
+                        ${miniCheck}
+                    </td>
                     <td class="p-3">${statusBadge}</td>
-                   <td class="p-3 text-right">
-                        ${data.status === 'pending' ? `
-                            <button onclick="window.aprovarMissao('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded text-[10px] font-black mr-2 shadow uppercase tracking-tighter">LIBERAR ${data.reward} AX</button>
-                            <button onclick="window.rejeitarMissao('${d.id}')" class="bg-slate-700 hover:bg-red-600 text-white px-3 py-1 rounded text-[10px] font-black shadow uppercase tracking-tighter">RECUSAR</button>
-                        ` : data.status === 'b2b_rejected' ? `
-                            <div class="flex flex-col gap-1">
-                                <button onclick="window.anularRecusaB2B('${d.id}', '${data.user_id}', ${data.reward || 0})" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase">🔓 FORÇAR PAGAMENTO</button>
-                                <button onclick="window.confirmarRecusaB2B('${d.id}')" class="bg-slate-700 hover:bg-red-600 text-gray-300 px-2 py-1 rounded text-[8px] font-black uppercase">🔨 VALIDAR RECUSA</button>
+                    <td class="p-3 text-right">
+                        ${data.status === 'pending' ? `
+                            <div class="flex justify-end gap-1">
+                                <button onclick="window.aprovarMissao('${d.id}')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase transition shadow-lg">LIBERAR</button>
+                                <button onclick="window.rejeitarMissao('${d.id}')" class="bg-slate-800 hover:bg-red-600 text-red-400 px-2 py-1 rounded text-[8px] font-black uppercase transition border border-red-900/30">REJEITAR</button>
                             </div>
-                        ` : '<span class="text-gray-600 text-[10px]">Processado</span>'}
+                        ` : data.status === 'b2b_rejected' ? `
+                            <div class="flex flex-col gap-1 items-end">
+                                <button onclick="window.anularRecusaB2B('${d.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-2 py-1 rounded text-[8px] font-black uppercase w-full">🔓 FORÇAR PGTO</button>
+                                <button onclick="window.confirmarRecusaB2B('${d.id}')" class="bg-slate-800 hover:bg-red-900 text-gray-400 px-2 py-1 rounded text-[8px] font-black uppercase w-full">🔨 VALIDAR RECUSA</button>
+                            </div>
+                        ` : '<span class="text-gray-600 text-[9px] font-black uppercase italic">Finalizado</span>'}
                     </td>
                 </tr>
             `;
