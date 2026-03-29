@@ -198,89 +198,69 @@ function verTutorialMissao(videoId) {
 }
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
-async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId) {
-    const { collection, getDocs, query, where, doc, getDoc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId, perguntas = []) {
+    const { collection, getDocs, query, where, doc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
-    const btn = document.querySelector(`button[onclick*="${id}"]`);
+    const btn = event.currentTarget;
     if(!btn) return;
     const originalText = btn.innerText;
     btn.disabled = true;
-    btn.innerText = "🔍 RESERVANDO VAGA...";
+    btn.innerText = "🔍 RESERVANDO...";
 
     try {
-        // 🛡️ TRANSAÇÃO DE VAGA: Verifica se tem vaga e reserva em 1 milésimo de segundo
         const missionRef = doc(window.db, "missions", id);
         
         await runTransaction(window.db, async (transaction) => {
             const mSnap = await transaction.get(missionRef);
             const m = mSnap.data();
-
-            if (m.slots_disponiveis <= 0) throw "Desculpe, esta missão acabou de esgotar!";
+            if (m.slots_disponiveis <= 0) throw "Missão esgotada!";
             
-            // 🔍 Check de duplicidade: Usuário já fez?
+            // Verifica se o usuário já enviou esta missão
             const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
             const sCheck = await getDocs(qCheck);
             if (!sCheck.empty) throw "Você já realizou esta missão!";
 
-            // ✅ TUDO OK: Reserva a vaga diminuindo o disponível e aumentando o 'realizando'
             transaction.update(missionRef, {
                 slots_disponiveis: increment(-1),
                 pessoas_realizando: increment(1)
             });
-       });
+        });
 
-        // 🛰️ Vaga garantida. O sistema agora prepara a interface de captura.
         localStorage.setItem(`fazendo_${id}`, "true");
         window.iniciarCronometroDesistencia(id);
 
-       // 🛰️ Marcador de Execução: Impede que a vaga fique presa se o app fechar
-        localStorage.setItem(`fazendo_${id}`, "true");
-        window.iniciarCronometroDesistencia(id);
-
-        // Se passar na trava, segue o fluxo normal
-        // Gil, pedimos o OK primeiro para garantir que o sistema não "atropele" a câmera
-        if (!confirm(`Deseja iniciar a missão: ${titulo}?\n\nO sistema abrirá sua câmera agora.`)) {
-            btn.disabled = false;
-            btn.innerText = originalText;
-            return;
+        if (!confirm(`🚀 Iniciar Missão: ${titulo}?\n\nO sistema abrirá a câmera para a prova oficial.`)) {
+            btn.disabled = false; btn.innerText = originalText; return;
         }
 
         const inputCamera = document.getElementById('camera-input');
-        // Limpa o valor anterior para garantir que a troca de arquivos funcione sempre
         inputCamera.value = "";
-    navigator.geolocation.getCurrentPosition(async (pos) => {
-        window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    }, null, { enableHighAccuracy: true });
+        
+        // Pega localização no momento da foto
+        navigator.geolocation.getCurrentPosition((pos) => {
+            window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        }, null, { enableHighAccuracy: true });
 
-   inputCamera.onchange = async (e) => {
+        inputCamera.onchange = async (e) => {
             const file = e.target.files[0];
+            if (!file) { btn.disabled = false; btn.innerText = originalText; return; }
             
-            // Reseta o valor do input imediatamente para permitir novas capturas sem erro
-            const currentInput = e.target;
-            
-            if (!file) {
-                btn.disabled = false;
-                btn.innerText = originalText;
-                currentInput.value = ""; // Limpa o cache do evento
-                return;
+            // 📝 Se houver perguntas, abre o Modal de Checklist antes de enviar
+            if (perguntas && perguntas.length > 0) {
+                window.abrirModalChecklist(perguntas, async (respostas) => {
+                    await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId, respostas);
+                });
+            } else {
+                await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId, {});
             }
-            
-          // Passa o ID do dono da empresa para o motor de processamento
-           await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId);
-            currentInput.value = ""; // Limpa após o processamento
         };
 
-     // 🚀 DNA BLINDADO V2026: Salvamos o ID do dono no elemento e na memória
-        // Isso garante que mesmo que o navegador resetar a função, o ID está fisicamente no input
         inputCamera.setAttribute('data-owner', b2bOwnerId);
-        window.ultimoDonoLogado = b2bOwnerId; 
-        
         inputCamera.click();
         
     } catch (err) {
-        console.error("Erro na trava:", err);
-        btn.disabled = false;
-        btn.innerText = originalText;
+        alert(err);
+        btn.disabled = false; btn.innerText = originalText;
     }
 }
 // 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
