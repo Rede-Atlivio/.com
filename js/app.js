@@ -929,14 +929,34 @@ window.processarMinhasIndicacoes = async (uid) => {
     } catch (e) { console.warn("⚠️ Falha na autofaxina:", e); }
 };
 
-// ⚡ GATILHO DE IGNIÇÃO V2: Só dispara quando o sistema está 100% pronto
-window.addEventListener('load', () => {
-    window.auth.onAuthStateChanged(user => {
-        if(user && window.firebaseModules) {
-            // Gil, o delay de 4 segundos garante que o perfil carregou antes da faxina
-            setTimeout(() => window.processarMinhasIndicacoes(user.uid), 4000);
-        }
-    });
+// 🛰️ [V2026] VIGILANTE REAL-TIME: Ouve a pasta de amigos sem precisar de F5
+let unsubscribeReferral = null;
+
+window.auth.onAuthStateChanged(user => {
+    if (user) {
+        if (unsubscribeReferral) unsubscribeReferral();
+
+        // 🛠️ Aguarda módulos estarem prontos e liga o radar de indicações
+        const checkRef = setInterval(() => {
+            if (window.firebaseModules && window.db) {
+                clearInterval(checkRef);
+                const { collection, query, where, onSnapshot } = window.firebaseModules;
+                
+                const q = query(collection(window.db, "referral_events"), 
+                                where("padrinho_uid", "==", user.uid), 
+                                where("processado", "==", false));
+
+                unsubscribeReferral = onSnapshot(q, (snap) => {
+                    if (!snap.empty) {
+                        console.log(`🎁 [Maestro] ${snap.size} novas indicações detectadas ao vivo!`);
+                        window.processarMinhasIndicacoes(user.uid);
+                    }
+                });
+            }
+        }, 1000);
+    } else {
+        if (unsubscribeReferral) unsubscribeReferral();
+    }
 });
 
 // ============================================================================
