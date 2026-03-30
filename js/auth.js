@@ -93,7 +93,8 @@ getRedirectResult(auth).then(async (result) => {
        // 🆕 [V2026] CADASTRO BLINDADO: Captura o padrinho real do link de indicação
         if (!docSnap.exists()) {
             // Tenta pegar do robô de teste ou do link direto
-            const refLink = sessionStorage.getItem("atlivio_ref");
+            // Busca o rastro no depósito principal ou no backup de segurança
+            const refLink = sessionStorage.getItem("atlivio_ref") || localStorage.getItem("atlivio_ref_backup");
             const trafficSource = localStorage.getItem("traffic_source") || "direto";
             
             let dadosIndicacao = { 
