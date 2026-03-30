@@ -929,12 +929,14 @@ window.processarMinhasIndicacoes = async (uid) => {
     } catch (e) { console.warn("⚠️ Falha na autofaxina:", e); }
 };
 
-// ⚡ GATILHO DE IGNIÇÃO: Ativa a faxina toda vez que o Gil logar
-window.auth.onAuthStateChanged(user => {
-    if(user) {
-        // Aguarda 3 segundos para o sistema estabilizar e limpa os rastros
-        setTimeout(() => window.processarMinhasIndicacoes(user.uid), 3000);
-    }
+// ⚡ GATILHO DE IGNIÇÃO V2: Só dispara quando o sistema está 100% pronto
+window.addEventListener('load', () => {
+    window.auth.onAuthStateChanged(user => {
+        if(user && window.firebaseModules) {
+            // Gil, o delay de 4 segundos garante que o perfil carregou antes da faxina
+            setTimeout(() => window.processarMinhasIndicacoes(user.uid), 4000);
+        }
+    });
 });
 
 // ============================================================================
