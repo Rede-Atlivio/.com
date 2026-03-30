@@ -2,13 +2,14 @@
 // Garante que o navegador saiba exatamente qual versão do motor está rodando.
 localStorage.setItem('atlivio_version', '2026_V60');
 // 🔗 [V2026] RECEPTOR DE INDICAÇÃO BLINDADO
+// 🔗 [V2026] RECEPTOR DE INDICAÇÃO BLINDADO (SOLDA DUPLA)
 (function capturarPadrinhoURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const refID = urlParams.get('ref');
     if (refID) {
-        // Gil, salvamos nos dois para garantir que o Robô e o Auth achem!
+        // Gil, salvamos nos dois para garantir que o Auth ache mesmo após recarregar
         sessionStorage.setItem('atlivio_ref', refID);
-        localStorage.setItem('atlivio_ref_backup', refID);
+        localStorage.setItem('atlivio_ref_backup', refID); 
         console.log("%c🔗 [Indicação] Padrinho soldado com sucesso: " + refID, "color: #8b5cf6; font-weight: bold;");
     }
 })();
