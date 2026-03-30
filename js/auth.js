@@ -121,32 +121,27 @@ getRedirectResult(auth).then(async (result) => {
                     });
 
                    // 🛰️ [V2026] RASTRO DE AUDITORIA: Versão Blindada com ferramentas Globais
-                    try {
-                        // Gil, aqui usamos as ferramentas que já estão carregadas na memória do site (window)
-                        const fRef = window.firebaseModules;
-                        const dbRef = window.db;
-                        
-                        if (fRef && dbRef) {
-                            await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
-                                padrinho_uid: refLink,
-                                indicado_uid: user.uid,
-                                indicado_nome: user.displayName || "Novo Usuário",
-                                processado: false,
-                                created_at: fRef.serverTimestamp()
-                            });
-                            console.log("📨 [Referral] Rastro gravado com sucesso via Global Modules.");
-                        } else {
-                            // Se os módulos globais falharem, tentamos via imports locais (Plano B)
-                            await addDoc(collection(db, "referral_events"), {
-                                padrinho_uid: refLink,
-                                indicado_uid: user.uid,
-                                indicado_nome: user.displayName || "Novo Usuário",
-                                processado: false,
-                                created_at: serverTimestamp()
-                            });
-                            console.log("📨 [Referral] Rastro gravado via Local Imports.");
-                        }
-                    } catch(e) { console.error("❌ [FATAL] Falha total na gravação do rastro:", e); }
+try {
+    const fRef = window.firebaseModules;
+    const dbRef = window.db;
+    
+    if (refLink && refLink !== user.uid && fRef && dbRef) {
+        // 🚀 Tenta gravar usando o Motor Global que já está pronto na Window
+        await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
+            padrinho_uid: refLink,
+            indicado_uid: user.uid,
+            indicado_nome: user.displayName || "Novo Usuário",
+            processado: false,
+            created_at: fRef.serverTimestamp()
+        });
+        console.log("✅ [Referral] Rastro gravado com sucesso via Global Modules.");
+        
+        // Limpa o backup após o sucesso para não sujar futuros cadastros
+        localStorage.removeItem("atlivio_ref_backup");
+    }
+} catch(e) { 
+    console.error("❌ [FATAL] Falha total na gravação do rastro:", e); 
+}
 
                     // 2. Alerta Visual (Dopamina): O Padrinho recebe o balão azul se estiver online
                     if (window.maestroUniversal) {
