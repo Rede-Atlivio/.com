@@ -894,6 +894,49 @@ window.abrirTrocaPerfilB2B = () => {
     }
 };
 
+// 🛰️ [V2026] MOTOR DE AUTO-CONTABILIZAÇÃO (AUTORIDADE MESTRE)
+// Gil, esse código faz o SEU celular processar as indicações que o Firebase barrou nos outros.
+window.processarMinhasIndicacoes = async (uid) => {
+    const { collection, query, where, getDocs, doc, updateDoc, increment } = window.firebaseModules;
+    
+    try {
+        // 1. Procura na "Caixa de Correio" se tem rastro seu que ainda não foi contado
+        const q = query(collection(window.db, "referral_events"), 
+                        where("padrinho_uid", "==", uid), 
+                        where("processado", "==", false));
+        
+        const snap = await getDocs(q);
+        if (snap.empty) return; // Nada novo? Sai fora.
+
+        console.log(`🎁 [Maestro] Encontrei ${snap.size} indicações novas. Contabilizando...`);
+
+        for (const eventoDoc of snap.docs) {
+            // 2. VOCÊ (Dono) dá o +1 no seu próprio contador (O Firebase deixa!)
+            await updateDoc(doc(window.db, "usuarios", uid), {
+                referral_count: increment(1)
+            });
+
+            // 3. Marca o "bilhete" como lido para não contar duas vezes
+            await updateDoc(doc(window.db, "referral_events", eventoDoc.id), {
+                processado: true
+            });
+        }
+        
+        console.log("✅ [Sucesso] Contador atualizado com sua autoridade!");
+        // Dá um toque no Perfil para ele ler o número novo na tela
+        if(window.carregarDadosPerfil) window.carregarDadosPerfil();
+
+    } catch (e) { console.warn("⚠️ Falha na autofaxina:", e); }
+};
+
+// ⚡ GATILHO DE IGNIÇÃO: Ativa a faxina toda vez que o Gil logar
+window.auth.onAuthStateChanged(user => {
+    if(user) {
+        // Aguarda 3 segundos para o sistema estabilizar e limpa os rastros
+        setTimeout(() => window.processarMinhasIndicacoes(user.uid), 3000);
+    }
+});
+
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
