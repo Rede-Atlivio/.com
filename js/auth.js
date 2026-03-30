@@ -120,18 +120,33 @@ getRedirectResult(auth).then(async (result) => {
                         created_at: serverTimestamp()
                     });
 
-                    // 🛰️ [V2026] RASTRO DE AUDITORIA: Cria o evento para o Gil processar no Admin
-                    // O Convidado não tem força para mudar o perfil do Padrinho, então ele apenas deixa o rastro aqui.
+                   // 🛰️ [V2026] RASTRO DE AUDITORIA: Versão Blindada com ferramentas Globais
                     try {
-                        await addDoc(collection(db, "referral_events"), {
-                            padrinho_uid: refLink,
-                            indicado_uid: user.uid,
-                            indicado_nome: user.displayName || "Novo Usuário",
-                            processado: false, // Indica que o ponto ainda não subiu no contador
-                            created_at: serverTimestamp()
-                        });
-                        console.log("📨 [Referral] Rastro de indicação gravado com sucesso.");
-                    } catch(e) { console.error("❌ Falha ao gravar rastro:", e); }
+                        // Gil, aqui usamos as ferramentas que já estão carregadas na memória do site (window)
+                        const fRef = window.firebaseModules;
+                        const dbRef = window.db;
+                        
+                        if (fRef && dbRef) {
+                            await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
+                                padrinho_uid: refLink,
+                                indicado_uid: user.uid,
+                                indicado_nome: user.displayName || "Novo Usuário",
+                                processado: false,
+                                created_at: fRef.serverTimestamp()
+                            });
+                            console.log("📨 [Referral] Rastro gravado com sucesso via Global Modules.");
+                        } else {
+                            // Se os módulos globais falharem, tentamos via imports locais (Plano B)
+                            await addDoc(collection(db, "referral_events"), {
+                                padrinho_uid: refLink,
+                                indicado_uid: user.uid,
+                                indicado_nome: user.displayName || "Novo Usuário",
+                                processado: false,
+                                created_at: serverTimestamp()
+                            });
+                            console.log("📨 [Referral] Rastro gravado via Local Imports.");
+                        }
+                    } catch(e) { console.error("❌ [FATAL] Falha total na gravação do rastro:", e); }
 
                     // 2. Alerta Visual (Dopamina): O Padrinho recebe o balão azul se estiver online
                     if (window.maestroUniversal) {
