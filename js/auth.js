@@ -72,27 +72,17 @@ const CATEGORIAS_SERVICOS = [
 // 1. LOGIN & RASTREAMENTO (ATUALIZADO)
 // ============================================================================
 
-window.loginGoogle = async () => { 
-    console.log("🔄 Login Iniciado..."); 
-    // Salva a origem no Session Storage para sobreviver ao Redirect
-    const origem = localStorage.getItem("traffic_source");
-    if(origem) sessionStorage.setItem("pending_ref", origem);
-    signInWithRedirect(auth, provider); 
-};
+auth.onAuthStateChanged(async (user) => {
+    if (user) {
+        console.log("🔐 [Auth] Usuário detectado via:", user.providerData[0]?.providerId || "Celular");
 
-window.logout = () => signOut(auth).then(() => location.reload());
-
-// PROCESSAMENTO PÓS-LOGIN (Afiliados + Criação de Conta)
-getRedirectResult(auth).then(async (result) => { 
-    if (result) {
-        console.log("✅ Login Google OK.");
-        const user = result.user;
         const userRef = doc(db, "usuarios", user.uid);
         const docSnap = await getDoc(userRef);
 
-       // 🆕 [V2026] CADASTRO BLINDADO: Captura o padrinho real do link de indicação
+        // 🆕 [V2026] GATILHO DE CADASTRO HÍBRIDO (Celular + Google)
         if (!docSnap.exists()) {
-            // Tenta pegar do robô de teste ou do link direto
+            console.log("✨ [Primeiro Acesso] Criando perfil e checando indicação...");
+            
             // Busca o rastro no depósito principal ou no backup de segurança
             const refLink = sessionStorage.getItem("atlivio_ref") || localStorage.getItem("atlivio_ref_backup");
             const trafficSource = localStorage.getItem("traffic_source") || "direto";
@@ -101,73 +91,64 @@ getRedirectResult(auth).then(async (result) => {
                 traffic_source: refLink ? 'afiliado' : trafficSource 
             };
 
-            // 🛡️ TRAVA ANTI-AUTO-INDICAÇÃO: Só grava se o ref não for o próprio usuário
+            // 🛡️ Se houver indicação, preparamos o rastro
             if (refLink && refLink !== user.uid) {
-                console.log("🔗 [Indicação] Padrinho detectado:", refLink);
-                dadosIndicacao.invited_by = refLink; // Campo oficial para sua auditoria manual
+                console.log("🔗 [Indicação] Padrinho identificado:", refLink);
+                dadosIndicacao.invited_by = refLink;
                 
-                // 🔔 AVISO AO PADRINHO: O sistema avisa ele na hora que o indicado entrou
-                // 🛰️ [V2026] GATILHO MAESTRO: Notifica o Padrinho no Banco e na Tela (Ao Vivo)
                 try {
+                    const fRef = window.firebaseModules;
+                    const dbRef = window.db;
                     const msgSucesso = `🚀 Seu link funcionou! ${user.displayName || 'Um amigo'} acabou de se cadastrar.`;
-                    
-                    // 1. Grava no Histórico do Padrinho (Para ele ler depois no sininho)
-                    await addDoc(collection(db, "notifications"), {
-                        uid: refLink,
-                        message: msgSucesso,
-                        read: false, 
-                        type: 'success', 
-                        created_at: serverTimestamp()
-                    });
 
-                   // 🛰️ [V2026] RASTRO DE AUDITORIA: Versão Blindada com ferramentas Globais
-try {
-    const fRef = window.firebaseModules;
-    const dbRef = window.db;
-    
-    if (refLink && refLink !== user.uid && fRef && dbRef) {
-        // 🚀 Tenta gravar usando o Motor Global que já está pronto na Window
-        await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
-            padrinho_uid: refLink,
-            indicado_uid: user.uid,
-            indicado_nome: user.displayName || "Novo Usuário",
-            processado: false,
-            created_at: fRef.serverTimestamp()
-        });
-        console.log("✅ [Referral] Rastro gravado com sucesso via Global Modules.");
-        
-        // Limpa o backup após o sucesso para não sujar futuros cadastros
-        localStorage.removeItem("atlivio_ref_backup");
-    }
-} catch(e) { 
-    console.error("❌ [FATAL] Falha total na gravação do rastro:", e); 
-}
-
-                    // 2. Alerta Visual (Dopamina): O Padrinho recebe o balão azul se estiver online
-                    if (window.maestroUniversal) {
-                        window.maestroUniversal("indicacao_sucesso", {
-                            id: `ref_${user.uid}`,
-                            type: 'gift',
-                            message: msgSucesso,
-                            action: 'ganhar'
+                    if (fRef && dbRef) {
+                        // 1️⃣ Grava o Bilhete na pasta externa (O que o app.js vai ler)
+                        await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
+                            padrinho_uid: refLink,
+                            indicado_uid: user.uid,
+                            indicado_nome: user.displayName || user.phoneNumber || "Novo Usuário",
+                            processado: false,
+                            created_at: fRef.serverTimestamp()
                         });
+
+                        // 2️⃣ Grava a Notificação para o Padrinho ver no sininho
+                        await fRef.addDoc(fRef.collection(dbRef, "notifications"), {
+                            uid: refLink,
+                            message: msgSucesso,
+                            read: false,
+                            type: 'success',
+                            created_at: fRef.serverTimestamp()
+                        });
+
+                        console.log("✅ [Sistema] Rastro e Notificação cravados com sucesso!");
+                        localStorage.removeItem("atlivio_ref_backup"); // Limpa backup após sucesso
                     }
-                    console.log("🔔 [Maestro] Notificação de indicação enviada ao Padrinho.");
-                } catch(e) { console.warn("⚠️ Falha ao alertar padrinho:", e); }
+                } catch(e) { console.error("❌ Erro ao processar indicação:", e); }
             }
 
+            // 📝 Cria o perfil oficial do usuário no banco
             await setDoc(userRef, {
-                uid: user.uid, 
-                email: user.email, 
-                created_at: serverTimestamp(), 
-                wallet_balance: 0.00,
-                wallet_bonus: 0.00,
+                uid: user.uid,
+                email: user.email || "",
+                phone: user.phoneNumber || "",
+                displayName: user.displayName || "Usuário Atlivio",
+                created_at: serverTimestamp(),
+                wallet_balance: 0,
+                wallet_bonus: 0,
+                status: "ativo",
                 ...dadosIndicacao
             }, { merge: true });
         }
-        sessionStorage.removeItem("pending_ref");
+        
+        // 🚀 Chama o carregamento da interface (App.js) após o login
+        if (window.carregarInterface) window.carregarInterface(user);
+        
+    } else {
+        // Se deslogar, limpa a tela e mostra o login
+        document.getElementById('auth-container')?.classList.remove('hidden');
+        document.getElementById('app-container')?.classList.add('hidden');
     }
-}).catch((error) => console.error("❌ Erro Login:", error));
+});
 
 // ============================================================================
 // 2. PERFIL & CORE (FUNCIONALIDADES MANTIDAS)
