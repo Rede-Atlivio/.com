@@ -234,48 +234,62 @@ async function carregarRecentes() {
         }
 
        snap.forEach(docSnap => {
-            const d = docSnap.data();
-            const docId = docSnap.id;
-            
-            let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
-            if(d.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
-            if(d.status === 'completed') statusBadge = `<span class="bg-green-900 text-green-300 text-[9px] px-1.5 py-0.5 rounded font-bold">PAGO</span>`;
-            if(d.status === 'cancelled') statusBadge = `<span class="bg-red-900 text-red-300 text-[9px] px-1.5 py-0.5 rounded font-bold">CANCELADO</span>`;
+            const docId = docSnap.id;
+            const dataDoc = docSnap.data(); // Mudamos para 'dataDoc' para evitar conflitos
+
+            // 🤝 LAYOUT EXCLUSIVO PARA AFILIADOS
+            if (auditViewMode === 'afiliados') {
+                const statusRef = dataDoc.processado ? '🟢 PAGO' : '⏳ PENDENTE';
+                container.innerHTML += `
+                    <div class="flex items-center hover:bg-emerald-900/10 transition border-l-2 border-transparent hover:border-emerald-500 pl-4 py-3 border-b border-slate-800/50">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs font-bold text-white uppercase tracking-tighter">
+                                    🤝 ${dataDoc.indicado_nome || 'Novo Amigo'} ──▶ Padrinho: ${dataDoc.padrinho_uid?.substring(0,8)}...
+                                </p>
+                                <span class="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">${statusRef}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-[9px] text-gray-500 font-mono italic">Rastro ID: ${docId}</p>
+                                <button onclick="alert('AUDITANDO: Verificando rastro ${docId}')" class="bg-slate-700 hover:bg-indigo-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase transition">Investigar 🕵️</button>
+                            </div>
+                        </div>
+                    </div>`;
+                return; // 🛡️ Trava para não rodar o código de pedidos abaixo
+            }
+
+            // 📦 LAYOUT PARA PEDIDOS / LIXEIRA
+            let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
+            if(dataDoc.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
+            if(dataDoc.status === 'completed') statusBadge = `<span class="bg-green-900 text-green-300 text-[9px] px-1.5 py-0.5 rounded font-bold">PAGO</span>`;
+            if(dataDoc.status === 'cancelled') statusBadge = `<span class="bg-red-900 text-red-300 text-[9px] px-1.5 py-0.5 rounded font-bold">CANCELADO</span>`;
 
             const dateDisplay = auditViewMode === 'inbox' 
-                ? (d.created_at?.toDate().toLocaleDateString() || 'Data N/A')
-                : `🗑️ ${d.deleted_at?.toDate().toLocaleDateString() || 'N/A'}`;
+                ? (dataDoc.created_at?.toDate().toLocaleDateString() || 'Data N/A')
+                : `🗑️ ${dataDoc.deleted_at?.toDate().toLocaleDateString() || 'N/A'}`;
 
             container.innerHTML += `
                 <div class="flex items-center hover:bg-slate-800/50 transition border-l-2 border-transparent hover:border-indigo-500 pl-4 py-3">
                     <div class="mr-4">
                         <input type="checkbox" value="${docId}" onchange="window.audit_toggleSelecao(this)" class="chk-audit-item chk-custom rounded border-gray-600 bg-slate-900">
                     </div>
-                    
-                    <div class="flex-1 cursor-pointer" onclick="window.buscarPedidoAuditoria('${d.original_id || docId}')">
+                    <div class="flex-1 cursor-pointer" onclick="window.buscarPedidoAuditoria('${dataDoc.original_id || docId}')">
                         <div class="flex justify-between items-center mb-1">
                             <p class="text-xs font-bold text-white hover:text-indigo-400 transition flex items-center gap-2">
-                                ${d.client_name || 'Cliente'} ➝ ${d.provider_name || 'Prestador'}
+                                ${dataDoc.client_name || 'Cliente'} ➝ ${dataDoc.provider_name || 'Prestador'}
                             </p>
-                            <p class="text-[10px] text-gray-500 font-mono bg-black/20 px-1 rounded">${d.original_id || docId}</p>
+                            <p class="text-[10px] text-gray-500 font-mono bg-black/20 px-1 rounded">${dataDoc.original_id || docId}</p>
                         </div>
                         <div class="flex justify-between items-center">
                             <p class="text-[10px] text-gray-400">${dateDisplay}</p>
                             <div class="flex items-center gap-2">
-                                <span class="text-xs font-mono text-white font-bold">R$ ${d.offer_value || '0.00'}</span>
+                                <span class="text-xs font-mono text-white font-bold">R$ ${dataDoc.offer_value || '0.00'}</span>
                                 ${statusBadge}
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
-    } catch(e) {
-        console.error(e);
-        container.innerHTML = `<p class="p-4 text-red-500 text-xs text-center">Erro ao carregar lista: ${e.message}</p>`;
-    }
-}
-
 // ============================================================================
 // FUNÇÕES DE BUSCA
 // ============================================================================
