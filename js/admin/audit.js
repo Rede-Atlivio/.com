@@ -20,8 +20,9 @@ function renderizarInterface() {
                     <p class="text-sm text-gray-400">Investigue pedidos, verifique o status financeiro (Hold) e leia históricos de chat.</p>
                 </div>
                 
-                <div class="flex gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
-                    <button onclick="window.audit_alternarModo('inbox')" id="btn-audit-inbox" class="px-4 py-2 rounded text-xs font-bold bg-indigo-600 text-white transition shadow-lg">📋 LISTA</button>
+               <div class="flex gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+                    <button onclick="window.audit_alternarModo('inbox')" id="btn-audit-inbox" class="px-4 py-2 rounded text-xs font-bold bg-indigo-600 text-white transition shadow-lg">📋 PEDIDOS</button>
+                    <button onclick="window.audit_alternarModo('afiliados')" id="btn-audit-afiliados" class="px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition">🤝 AFILIADOS</button>
                     <button onclick="window.audit_alternarModo('trash')" id="btn-audit-trash" class="px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition">🗑️ LIXEIRA</button>
                 </div>
             </div>
