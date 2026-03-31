@@ -213,8 +213,10 @@ async function carregarRecentes() {
         const db = window.db;
              let q;
 
-        if (auditViewMode === 'inbox') {
+       if (auditViewMode === 'inbox') {
             q = query(collection(db, "orders"), orderBy("created_at", "desc"), limit(20));
+        } else if (auditViewMode === 'afiliados') {
+            q = query(collection(db, "referral_events"), orderBy("created_at", "desc"), limit(20));
         } else {
             q = query(collection(db, "recycle_bin"), where("origin_collection", "==", "orders"), orderBy("deleted_at", "desc"), limit(20));
         }
