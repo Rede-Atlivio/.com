@@ -211,9 +211,9 @@ async function carregarRecentes() {
     
     try {
         const db = window.db;
-             let q;
+        let q;
 
-       if (auditViewMode === 'inbox') {
+        if (auditViewMode === 'inbox') {
             q = query(collection(db, "orders"), orderBy("created_at", "desc"), limit(20));
         } else if (auditViewMode === 'afiliados') {
             q = query(collection(db, "referral_events"), orderBy("created_at", "desc"), limit(20));
@@ -222,20 +222,17 @@ async function carregarRecentes() {
         }
 
         const snap = await getDocs(q);
-        
         container.innerHTML = "";
         
         if(snap.empty) { 
-            container.innerHTML = `
-                <div class="p-8 text-center opacity-50">
-                    <p class="text-sm font-bold text-gray-500">${auditViewMode === 'inbox' ? 'Nenhum pedido recente.' : 'Lixeira vazia.'}</p>
-                </div>`; 
+            const msg = auditViewMode === 'inbox' ? 'Nenhum pedido recente.' : (auditViewMode === 'afiliados' ? 'Nenhuma indicação encontrada.' : 'Lixeira vazia.');
+            container.innerHTML = `<div class="p-8 text-center opacity-50"><p class="text-sm font-bold text-gray-500">${msg}</p></div>`; 
             return; 
         }
 
-       snap.forEach(docSnap => {
+        snap.forEach(docSnap => {
             const docId = docSnap.id;
-            const dataDoc = docSnap.data(); // Mudamos para 'dataDoc' para evitar conflitos
+            const dataDoc = docSnap.data();
 
             // 🤝 LAYOUT EXCLUSIVO PARA AFILIADOS
             if (auditViewMode === 'afiliados') {
@@ -255,7 +252,7 @@ async function carregarRecentes() {
                             </div>
                         </div>
                     </div>`;
-                return; // 🛡️ Trava para não rodar o código de pedidos abaixo
+                return; 
             }
 
             // 📦 LAYOUT PARA PEDIDOS / LIXEIRA
@@ -289,7 +286,13 @@ async function carregarRecentes() {
                         </div>
                     </div>
                 </div>`;
-        });
+        }); // <--- FECHA O FOREACH
+    } catch(e) {
+        console.error(e);
+        container.innerHTML = `<p class="p-4 text-red-500 text-xs text-center">Erro ao carregar lista: ${e.message}</p>`;
+    }
+} // <--- FECHA A FUNÇÃO CARREGAR RECENTES
+
 // ============================================================================
 // FUNÇÕES DE BUSCA
 // ============================================================================
@@ -332,7 +335,7 @@ export async function buscarPedidoAuditoria(idOpcional = null) {
         console.error(e);
         alert("Erro: " + e.message);
     }
-};
+}
 
 function renderizarInfoPedido(data, id) {
     const card = document.getElementById('audit-info-card');
@@ -343,27 +346,27 @@ function renderizarInfoPedido(data, id) {
     if(data.status === 'completed') { statusColor = "text-green-400"; statusText = "✅ PAGO"; }
     
     card.innerHTML = `
-        <div class="mb-4 border-b border-slate-700 pb-4 flex justify-between items-center">
-            <div>
-                <p class="text-[10px] text-gray-500 uppercase font-bold">ID do Pedido</p>
-                <p class="font-mono text-xs text-white select-all bg-black/20 p-1 rounded">${id}</p>
-            </div>
-            <button onclick="window.exportarChatPDF('${id}')" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg title="Exportar Log">📥</button>
-        </div>
-        <div class="mb-4">
-            <p class="text-[10px] text-gray-500 uppercase font-bold">Status</p>
-            <p class="font-black ${statusColor} text-lg">${statusText}</p>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mb-4">
-            <div class="bg-slate-900/50 p-2 rounded">
-                <p class="text-[9px] text-indigo-400 font-bold">VALOR</p>
-                <p class="text-white font-bold">R$ ${data.offer_value}</p>
-            </div>
-            <div class="bg-slate-900/50 p-2 rounded">
-                <p class="text-[9px] text-emerald-400 font-bold">LUCRO ATLIVIO</p>
-                <p class="text-emerald-300 font-bold">R$ ${((data.lucro_atlivio_prestador || 0) + (data.lucro_atlivio_cliente || 0)).toFixed(2)}</p>
-            </div>
-        </div>
+        <div class="mb-4 border-b border-slate-700 pb-4 flex justify-between items-center">
+            <div>
+                <p class="text-[10px] text-gray-500 uppercase font-bold">ID do Pedido</p>
+                <p class="font-mono text-xs text-white select-all bg-black/20 p-1 rounded">${id}</p>
+            </div>
+            <button onclick="window.exportarChatPDF('${id}')" class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg" title="Exportar Log">📥</button>
+        </div>
+        <div class="mb-4">
+            <p class="text-[10px] text-gray-500 uppercase font-bold">Status</p>
+            <p class="font-black ${statusColor} text-lg">${statusText}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="bg-slate-900/50 p-2 rounded">
+                <p class="text-[9px] text-indigo-400 font-bold">VALOR</p>
+                <p class="text-white font-bold">R$ ${data.offer_value}</p>
+            </div>
+            <div class="bg-slate-900/50 p-2 rounded">
+                <p class="text-[9px] text-emerald-400 font-bold">LUCRO ATLIVIO</p>
+                <p class="text-emerald-300 font-bold">R$ ${((data.lucro_atlivio_prestador || 0) + (data.lucro_atlivio_cliente || 0)).toFixed(2)}</p>
+            </div>
+        </div>
         <div class="space-y-3 text-xs">
             <div>
                 <span class="block text-[9px] text-gray-500 uppercase">Cliente</span>
@@ -390,32 +393,33 @@ async function renderizarChatBackup(orderId, clientId, providerId, clientName, p
     }
 
     snap.forEach(docSnap => {
-        const msg = docSnap.data();
-        const isSystem = msg.sender_id === 'system';
-        const isClient = msg.sender_id === clientId;
-        let align = isClient ? "items-start" : "items-end";
-        let bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
-        let label = isClient ? (clientName || 'CLIENTE') : (providerName || 'PRESTADOR');
+        const msg = docSnap.data();
+        const isSystem = msg.sender_id === 'system';
+        const isClient = msg.sender_id === clientId;
+        let align = isClient ? "items-start" : "items-end";
+        let bubbleColor = isClient ? "bg-slate-700 text-gray-200" : "bg-indigo-900/50 text-indigo-100 border border-indigo-500/30";
+        let label = isClient ? (clientName || 'CLIENTE') : (providerName || 'PRESTADOR');
 
-        if (isSystem) {
-            align = "items-center";
-            bubbleColor = "bg-amber-900/20 text-amber-200 border border-amber-500/20";
-            label = "SISTEMA";
-        }
+        if (isSystem) {
+            align = "items-center";
+            bubbleColor = "bg-amber-900/20 text-amber-200 border border-amber-500/20";
+            label = "SISTEMA";
+        }
         
         const hora = msg.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '--:--';
-        list.innerHTML += `
-            <div class="flex flex-col ${align} w-full animate-fadeIn mb-2">
-                <div class="flex gap-2 items-center px-1">
-                    <span class="text-[8px] font-bold text-gray-500 uppercase">${label}</span>
-                    <span class="text-[8px] text-gray-600">${hora}</span>
-                </div>
-                <div class="${bubbleColor} px-3 py-2 rounded-lg max-w-[90%] text-xs shadow-sm">
-                    <p class="leading-relaxed">${msg.text}</p>
-                </div>
-            </div>`;
+        list.innerHTML += `
+            <div class="flex flex-col ${align} w-full animate-fadeIn mb-2">
+                <div class="flex gap-2 items-center px-1">
+                    <span class="text-[8px] font-bold text-gray-500 uppercase">${label}</span>
+                    <span class="text-[8px] text-gray-600">${hora}</span>
+                </div>
+                <div class="${bubbleColor} px-3 py-2 rounded-lg max-w-[90%] text-xs shadow-sm">
+                    <p class="leading-relaxed">${msg.text}</p>
+                </div>
+            </div>`;
     });
 }
+
 window.exportarChatPDF = async (orderId) => {
     const chatArea = document.getElementById('audit-chat-list');
     if (!chatArea || chatArea.innerText.includes("Nenhuma mensagem")) return alert("Sem mensagens para exportar.");
@@ -448,6 +452,7 @@ window.exportarChatPDF = async (orderId) => {
     printWindow.document.close();
     printWindow.print();
 };
+
 // MAPEAMENTO GLOBAL PARA O PAINEL ADMIN
 window.buscarPedidoAuditoria = buscarPedidoAuditoria;
 window.audit_alternarModo = audit_alternarModo;
