@@ -102,14 +102,16 @@ auth.onAuthStateChanged(async (user) => {
                     const msgSucesso = `🚀 Seu link funcionou! ${user.displayName || 'Um amigo'} acabou de se cadastrar.`;
 
                     if (fRef && dbRef) {
-                        // 1️⃣ Grava o Bilhete na pasta externa (O que o app.js vai ler)
-                        await fRef.addDoc(fRef.collection(dbRef, "referral_events"), {
-                            padrinho_uid: refLink,
-                            indicado_uid: user.uid,
-                            indicado_nome: user.displayName || user.phoneNumber || "Novo Usuário",
-                            processado: false,
-                            created_at: fRef.serverTimestamp()
-                        });
+                        // 1️⃣ Grava o Bilhete com ID FIXO (Impede duplicidade no contador)
+// Gil, usando 'setDoc' com o UID do indicado, ele nunca grava dois bilhetes pro mesmo amigo!
+const { setDoc, doc } = fRef; 
+await setDoc(doc(dbRef, "referral_events", user.uid), {
+    padrinho_uid: refLink,
+    indicado_uid: user.uid,
+    indicado_nome: user.displayName || user.phoneNumber || "Novo Usuário",
+    processado: false, // O app.js só vai conseguir processar esse UID uma vez
+    created_at: fRef.serverTimestamp()
+}, { merge: true });
 
                         // 2️⃣ Grava a Notificação para o Padrinho ver no sininho
                         await fRef.addDoc(fRef.collection(dbRef, "notifications"), {
