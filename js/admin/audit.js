@@ -211,27 +211,49 @@ async function carregarRecentes() {
     
     try {
         const db = window.db;
-        let q;
-
+       let q;
         if (auditViewMode === 'inbox') {
             q = query(collection(db, "orders"), orderBy("created_at", "desc"), limit(20));
+        } else if (auditViewMode === 'afiliados') {
+            // 🤝 Busca os rastros de indicação para auditoria
+            q = query(collection(db, "referral_events"), orderBy("created_at", "desc"), limit(20));
         } else {
             q = query(collection(db, "recycle_bin"), where("origin_collection", "==", "orders"), orderBy("deleted_at", "desc"), limit(20));
         }
 
         const snap = await getDocs(q);
-        
-        container.innerHTML = "";
+        container.innerHTML = "";
         
         if(snap.empty) { 
-            container.innerHTML = `
-                <div class="p-8 text-center opacity-50">
-                    <p class="text-sm font-bold text-gray-500">${auditViewMode === 'inbox' ? 'Nenhum pedido recente.' : 'Lixeira vazia.'}</p>
-                </div>`; 
+            let msgVazio = auditViewMode === 'inbox' ? 'Nenhum pedido recente.' : (auditViewMode === 'afiliados' ? 'Nenhuma indicação encontrada.' : 'Lixeira vazia.');
+            container.innerHTML = `<div class="p-8 text-center opacity-50"><p class="text-sm font-bold text-gray-500">${msgVazio}</p></div>`; 
             return; 
         }
 
-       snap.forEach(docSnap => {
+        snap.forEach(docSnap => {
+            const d = docSnap.data();
+            const docId = docSnap.id;
+
+            // 🛰️ [V2026] RENDERIZADOR EXCLUSIVO PARA AFILIADOS
+            if (auditViewMode === 'afiliados') {
+                const statusRef = d.processado ? '🟢 PAGO' : '⏳ PENDENTE';
+                container.innerHTML += `
+                    <div class="flex items-center hover:bg-emerald-900/10 transition border-l-2 border-transparent hover:border-emerald-500 pl-4 py-3 border-b border-slate-800/50">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center mb-1">
+                                <p class="text-xs font-bold text-white uppercase tracking-tighter">
+                                    🤝 ${d.indicado_nome} ──▶ Convidado por ${d.padrinho_uid.substring(0,8)}...
+                                </p>
+                                <span class="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">${statusRef}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <p class="text-[9px] text-gray-500 font-mono italic">Rastro ID: ${docId}</p>
+                                <button onclick="alert('AUDITANDO: Verificando rastro ${docId} no DNA do banco...')" class="bg-slate-700 hover:bg-indigo-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase transition">Investigar 🕵️</button>
+                            </div>
+                        </div>
+                    </div>`;
+                return; // 🛡️ Trava: impede que o código abaixo (de pedidos) rode neste modo
+            }
             const d = docSnap.data();
             const docId = docSnap.id;
             
