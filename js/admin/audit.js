@@ -211,49 +211,65 @@ async function carregarRecentes() {
     
     try {
         const db = window.db;
-       let q;
-        if (auditViewMode === 'inbox') {
-            q = query(collection(db, "orders"), orderBy("created_at", "desc"), limit(20));
-        } else if (auditViewMode === 'afiliados') {
-            // 🤝 Busca os rastros de indicação para auditoria
-            q = query(collection(db, "referral_events"), orderBy("created_at", "desc"), limit(20));
-        } else {
-            q = query(collection(db, "recycle_bin"), where("origin_collection", "==", "orders"), orderBy("deleted_at", "desc"), limit(20));
-        }
-
-        const snap = await getDocs(q);
-        container.innerHTML = "";
-        
-        if(snap.empty) { 
-            let msgVazio = auditViewMode === 'inbox' ? 'Nenhum pedido recente.' : (auditViewMode === 'afiliados' ? 'Nenhuma indicação encontrada.' : 'Lixeira vazia.');
-            container.innerHTML = `<div class="p-8 text-center opacity-50"><p class="text-sm font-bold text-gray-500">${msgVazio}</p></div>`; 
-            return; 
-        }
-
-        snap.forEach(docSnap => {
-            const d = docSnap.data();
+      snap.forEach(docSnap => {
             const docId = docSnap.id;
 
-            // 🛰️ [V2026] RENDERIZADOR EXCLUSIVO PARA AFILIADOS
+            // 🛰️ [V2026] MODO AFILIADOS: Variável 'dataRef' para evitar conflito com 'd'
             if (auditViewMode === 'afiliados') {
-                const statusRef = d.processado ? '🟢 PAGO' : '⏳ PENDENTE';
+                const dataRef = docSnap.data();
+                const statusRef = dataRef.processado ? '🟢 PAGO' : '⏳ PENDENTE';
                 container.innerHTML += `
                     <div class="flex items-center hover:bg-emerald-900/10 transition border-l-2 border-transparent hover:border-emerald-500 pl-4 py-3 border-b border-slate-800/50">
                         <div class="flex-1">
                             <div class="flex justify-between items-center mb-1">
                                 <p class="text-xs font-bold text-white uppercase tracking-tighter">
-                                    🤝 ${d.indicado_nome} ──▶ Convidado por ${d.padrinho_uid.substring(0,8)}...
+                                    🤝 ${dataRef.indicado_nome || 'Novo Amigo'} ──▶ Padrinho: ${dataRef.padrinho_uid?.substring(0,8)}...
                                 </p>
                                 <span class="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">${statusRef}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <p class="text-[9px] text-gray-500 font-mono italic">Rastro ID: ${docId}</p>
-                                <button onclick="alert('AUDITANDO: Verificando rastro ${docId} no DNA do banco...')" class="bg-slate-700 hover:bg-indigo-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase transition">Investigar 🕵️</button>
+                                <button onclick="alert('AUDITANDO: Verificando rastro ${docId}')" class="bg-slate-700 hover:bg-indigo-600 text-white text-[8px] font-black px-3 py-1 rounded-full uppercase transition">Investigar 🕵️</button>
                             </div>
                         </div>
                     </div>`;
-                return; // 🛡️ Trava: impede que o código abaixo (de pedidos) rode neste modo
+                return; // 🛡️ Trava para não executar o código de pedidos abaixo
             }
+
+            // 📦 [ORIGINAL] MODO PEDIDOS / LIXEIRA
+            const d = docSnap.data(); // <--- O 'd' original que estava dando conflito
+            
+            let statusBadge = `<span class="bg-gray-700 text-gray-300 text-[9px] px-1.5 py-0.5 rounded">PENDENTE</span>`;
+            if(d.status === 'confirmed_hold') statusBadge = `<span class="bg-blue-900 text-blue-300 text-[9px] px-1.5 py-0.5 rounded font-bold">RESERVADO</span>`;
+            if(d.status === 'completed') statusBadge = `<span class="bg-green-900 text-green-300 text-[9px] px-1.5 py-0.5 rounded font-bold">PAGO</span>`;
+            if(d.status === 'cancelled') statusBadge = `<span class="bg-red-900 text-red-300 text-[9px] px-1.5 py-0.5 rounded font-bold">CANCELADO</span>`;
+
+            const dateDisplay = auditViewMode === 'inbox' 
+                ? (d.created_at?.toDate().toLocaleDateString() || 'Data N/A')
+                : `🗑️ ${d.deleted_at?.toDate().toLocaleDateString() || 'N/A'}`;
+
+            container.innerHTML += `
+                <div class="flex items-center hover:bg-slate-800/50 transition border-l-2 border-transparent hover:border-indigo-500 pl-4 py-3">
+                    <div class="mr-4">
+                        <input type="checkbox" value="${docId}" onchange="window.audit_toggleSelecao(this)" class="chk-audit-item chk-custom rounded border-gray-600 bg-slate-900">
+                    </div>
+                    <div class="flex-1 cursor-pointer" onclick="window.buscarPedidoAuditoria('${d.original_id || docId}')">
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="text-xs font-bold text-white hover:text-indigo-400 transition flex items-center gap-2">
+                                ${d.client_name || 'Cliente'} ➝ ${d.provider_name || 'Prestador'}
+                            </p>
+                            <p class="text-[10px] text-gray-500 font-mono bg-black/20 px-1 rounded">${d.original_id || docId}</p>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-[10px] text-gray-400">${dateDisplay}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-white font-bold">R$ ${d.offer_value || '0.00'}</span>
+                                ${statusBadge}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        });
             const d = docSnap.data();
             const docId = docSnap.id;
             
