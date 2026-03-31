@@ -1,5 +1,5 @@
 import { db, auth } from '../config.js';
-import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, getDoc, doc, query, where, addDoc, serverTimestamp, orderBy, runTransaction, increment, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // 🏢 MOTOR DE INTERFACE EXCLUSIVA B2B - ATLIVIO V2026
 // Este motor gerencia a criação e auditoria de ordens estratégicas.
