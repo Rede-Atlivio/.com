@@ -81,14 +81,14 @@ window.audit_alternarModo = (mode) => {
     
     const btnIn = document.getElementById('btn-audit-inbox');
     const btnTr = document.getElementById('btn-audit-trash');
+    const btnAf = document.getElementById('btn-audit-afiliados');
     
-    if(mode === 'inbox') {
-        btnIn.className = "px-4 py-2 rounded text-xs font-bold bg-indigo-600 text-white transition shadow-lg";
-        btnTr.className = "px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition";
-    } else {
-        btnIn.className = "px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition";
-        btnTr.className = "px-4 py-2 rounded text-xs font-bold bg-red-600 text-white transition shadow-lg";
-    }
+    // 🎨 Reseta cores e destaca o ativo
+    [btnIn, btnTr, btnAf].forEach(b => b.className = "px-4 py-2 rounded text-xs font-bold text-gray-400 hover:text-white transition");
+    
+    if(mode === 'inbox') btnIn.className = "px-4 py-2 rounded text-xs font-bold bg-indigo-600 text-white transition shadow-lg";
+    else if(mode === 'trash') btnTr.className = "px-4 py-2 rounded text-xs font-bold bg-red-600 text-white transition shadow-lg";
+    else if(mode === 'afiliados') btnAf.className = "px-4 py-2 rounded text-xs font-bold bg-emerald-600 text-white transition shadow-lg";
     
     carregarRecentes();
 };
