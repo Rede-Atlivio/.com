@@ -184,7 +184,7 @@ window.switchView = async function(viewName) {
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
     else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
     else if (viewName === 'opportunities') { moduleFile = './opportunities.js'; containerId = 'view-list'; }
-    else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-list'; } // <--- LINHA NOVA AQUI!
+    else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-products'; } // <--- LINHA NOVA AQUI!
     else if (viewName === 'automation') { 
         moduleFile = './automation.js'; 
         containerId = 'view-automation';
