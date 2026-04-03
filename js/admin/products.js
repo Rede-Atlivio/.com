@@ -8,9 +8,9 @@ export async function init() {
     const header = document.getElementById('list-header');
     if(header) {
         header.innerHTML = `
-            <th class="p-3 text-left">PRODUTO</th>
-            <th class="p-3 text-left">PREÇIFICAÇÃO (DE / POR)</th>
-            <th class="p-3 text-center">TIPO</th>
+            <th class="p-3 text-left italic font-black text-blue-400">PRODUTO</th>
+            <th class="p-3 text-left italic font-black text-purple-400">VALOR (ATLIX)</th>
+            <th class="p-3 text-center italic font-black text-gray-400">ESTILO</th>
             <th class="p-3 text-right">AÇÕES</th>
         `;
     }
