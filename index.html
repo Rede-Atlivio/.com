@@ -1602,7 +1602,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         <div class="mt-16 p-8 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-[3rem] border border-white/5 text-center shadow-inner">
             <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl">💬</div>
             <p class="text-[10px] text-blue-400 font-black uppercase mb-2 tracking-widest">Dúvidas sobre este conteúdo?</p>
-            <button onclick="window.abrirChatSuporte()" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
+            <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src=''; window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
         </div>
     </div>
 </div>
