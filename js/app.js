@@ -100,6 +100,7 @@ import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
 import { checkOnboarding } from './modules/onboarding.js';
 import { abrirConfiguracoes } from './modules/profile.js';
 import './modules/user_notifications.js';
+import './modules/products.js'; // 🚀 SOLDA V2026: Importando o motor da loja
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
