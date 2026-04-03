@@ -2,9 +2,6 @@ import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy,
 
 let editId = null;
 
-/**
- * 🛒 INICIALIZAÇÃO DO MÓDULO
- */
 export async function init() {
     console.log("🛒 Admin Loja: Iniciando Sistema V2026...");
     
@@ -25,13 +22,10 @@ export async function init() {
         btnAdd.onclick = () => abrirModalProduto();
     }
 
-    renderizarModalProduto(); // Garante que o modal exista no HTML
+    renderizarModalProduto(); 
     await carregarLista();
 }
 
-/**
- * 📋 CARREGA A LISTA DE PRODUTOS
- */
 async function carregarLista() {
     const tbody = document.getElementById('list-body');
     const count = document.getElementById('list-count');
@@ -91,9 +85,6 @@ async function carregarLista() {
     } catch (e) { console.error("Erro lista:", e); }
 }
 
-/**
- * 🛠️ ABRE O MODAL (CRIAÇÃO OU EDIÇÃO)
- */
 function abrirModalProduto(id = null, dataString = null) {
     const modal = document.getElementById('modal-admin-prod');
     const form = document.getElementById('form-prod');
@@ -106,7 +97,6 @@ function abrirModalProduto(id = null, dataString = null) {
 
     if(id && dataString) {
         const data = JSON.parse(decodeURIComponent(dataString));
-        // Campos Padrão
         document.getElementById('prod-headline').value = data.headline || "";
         document.getElementById('prod-nome').value = data.nome || "";
         document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
@@ -114,10 +104,9 @@ function abrirModalProduto(id = null, dataString = null) {
         document.getElementById('prod-img').value = data.img || "";
         document.getElementById('prod-video').value = data.url_video || "";
         document.getElementById('prod-entrega').value = data.texto_entrega || "";
-        document.getElementById('prod-tipo').value = data.tipo || "virtual";
         document.getElementById('prod-tag').value = data.tag || "";
         
-        // 💎 NOVOS CAMPOS DE CONVERSÃO V2026
+        // 💎 NOVOS CAMPOS V2026
         document.getElementById('prod-resultado').value = data.resultado_principal || "";
         document.getElementById('prod-tempo').value = data.tempo_consumo || "";
         document.getElementById('prod-nivel').value = data.nivel_produto || "1";
@@ -129,9 +118,6 @@ function abrirModalProduto(id = null, dataString = null) {
     modal.classList.add('flex');
 }
 
-/**
- * 💾 SALVA OS DADOS NO FIREBASE
- */
 async function salvarProduto(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-save-prod');
@@ -143,21 +129,19 @@ async function salvarProduto(e) {
             nome: document.getElementById('prod-nome').value,
             preco_atlix: parseInt(document.getElementById('prod-preco-atlix').value) || 0,
             preco: parseFloat(document.getElementById('prod-preco').value) || 0,
-            tipo: document.getElementById('prod-tipo').value,
+            tipo: "virtual",
             tag: document.getElementById('prod-tag').value,
             img: document.getElementById('prod-img').value,
             url_video: document.getElementById('prod-video').value,
             texto_entrega: document.getElementById('prod-entrega').value,
-            
-            // 🛰️ INJEÇÃO DE DADOS MESTRE (MILHÕES DE USUÁRIOS)
             resultado_principal: document.getElementById('prod-resultado').value || "",
             tempo_consumo: document.getElementById('prod-tempo').value || "2 min",
             nivel_produto: parseInt(document.getElementById('prod-nivel').value) || 1,
             categoria: document.getElementById('prod-categoria').value || "vantagens",
             vendas_fake: parseInt(document.getElementById('prod-vendas').value) || 0,
-            
             updated_at: serverTimestamp()
         };
+
         if (editId) {
             await updateDoc(doc(window.db, "products", editId), payload);
             alert("✅ Atualizado com sucesso!");
@@ -172,9 +156,6 @@ async function salvarProduto(e) {
     finally { btn.innerText = "SALVAR E PUBLICAR"; btn.disabled = false; }
 }
 
-/**
- * 🗑️ EXCLUI PRODUTO
- */
 async function excluirProd(id) {
     if(!confirm("Deseja realmente excluir este item da loja?")) return;
     try {
@@ -183,9 +164,6 @@ async function excluirProd(id) {
     } catch(e) { alert("Erro ao excluir"); }
 }
 
-/**
- * ❌ FECHA O MODAL
- */
 function fecharModalProd() {
     const modal = document.getElementById('modal-admin-prod');
     if(modal) {
@@ -194,10 +172,22 @@ function fecharModalProd() {
     }
 }
 
-/**
- * 🎨 RENDERIZA A ESTRUTURA DO MODAL NO BODY
- */
-<form id="form-prod" onsubmit="window.salvarProduto(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-slate-800">
+function renderizarModalProduto() {
+    if(document.getElementById('modal-admin-prod')) return;
+
+    const div = document.createElement('div');
+    div.id = 'modal-admin-prod';
+    div.className = "fixed inset-0 z-[100] bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm";
+    div.innerHTML = `
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600 animate-fade">
+            <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
+                <div>
+                    <h3 id="modal-title-prod" class="font-black text-sm uppercase italic">GESTÃO DE PRODUTO</h3>
+                    <p class="text-[9px] text-gray-400 uppercase tracking-widest">Configuração de Venda Interna</p>
+                </div>
+                <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
+            <form id="form-prod" onsubmit="window.salvarProduto(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-slate-800">
                 
                 <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100">
                     <label class="block text-[10px] font-black text-purple-400 uppercase mb-1">Headline (Promessa Forte)</label>
@@ -255,7 +245,7 @@ function fecharModalProd() {
                 </div>
 
                 <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">URL do Vídeo (YouTube/Vimeo)</label>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">URL do Vídeo</label>
                     <input type="url" id="prod-video" class="w-full border-2 border-gray-100 rounded-xl p-3 text-xs font-mono text-blue-600 bg-gray-50">
                 </div>
 
@@ -275,12 +265,13 @@ function fecharModalProd() {
                     </div>
                 </div>
                 
-                <input type="hidden" id="prod-tipo" value="virtual">
-                
                 <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-5 rounded-2xl shadow-xl transition uppercase tracking-widest text-xs">Salvar e Publicar Desbloqueio 🚀</button>
             </form>
+        </div>
+    `;
+    document.body.appendChild(div);
+}
 
-// 🌍 EXPOSIÇÃO GLOBAL PARA O HTML
 window.editarProd = abrirModalProduto;
 window.excluirProd = excluirProd;
 window.salvarProduto = salvarProduto;
