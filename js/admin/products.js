@@ -86,35 +86,72 @@ async function carregarLista() {
     } catch (e) { console.error(e); }
 }
 
-function abrirModalProduto(id = null, dataString = null) {
-    const modal = document.getElementById('modal-admin-prod');
-    const form = document.getElementById('form-prod');
-    const titulo = document.getElementById('modal-title-prod');
-    
-    form.reset();
-    editId = null;
-    titulo.innerText = "CADASTRAR PRODUTO";
+div.innerHTML = `
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600">
+            <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
+                <div>
+                    <h3 id="modal-title-prod" class="font-black text-sm uppercase italic">GESTÃO DE PRODUTO</h3>
+                    <p class="text-[9px] text-gray-400 uppercase tracking-widest">Configuração de Venda Interna</p>
+                </div>
+                <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
+            <form id="form-prod" onsubmit="window.salvarProduto(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+                
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Headline (A Promessa que Vende)</label>
+                    <input type="text" id="prod-headline" placeholder="Ex: Aprenda o segredo das Missões Black" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-purple-600 bg-gray-50 focus:border-purple-300 outline-none transition">
+                </div>
 
-    if(id && dataString) {
-        editId = id;
-        titulo.innerText = "EDITAR PRODUTO";
-        const data = JSON.parse(decodeURIComponent(dataString));
-        
-       document.getElementById('prod-headline').value = data.headline || "";
-        document.getElementById('prod-nome').value = data.nome || "";
-        document.getElementById('prod-desc').value = data.desc || "";
-        document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
-        document.getElementById('prod-preco').value = data.preco || ""; // Preço em R$ mantido como referência
-        document.getElementById('prod-img').value = data.img || "";
-        document.getElementById('prod-video').value = data.url_video || "";
-        document.getElementById('prod-entrega').value = data.texto_entrega || "";
-        document.getElementById('prod-tipo').value = data.tipo || "virtual";
-        document.getElementById('prod-tag').value = data.tag || "";
-    }
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-1">
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome do Item</label>
+                        <input type="text" id="prod-nome" required class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold text-gray-800 bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Preço (ATLIX)</label>
+                        <input type="number" id="prod-preco-atlix" required placeholder="Ex: 50" class="w-full border-2 border-purple-100 rounded-xl p-3 text-sm font-black text-purple-700 bg-purple-50">
+                    </div>
+                </div>
 
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-}
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Referência R$ (Opceional)</label>
+                        <input type="number" step="0.01" id="prod-preco" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Tipo</label>
+                        <select id="prod-tipo" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm bg-gray-50">
+                            <option value="virtual">☁️ Virtual (Conteúdo)</option>
+                            <option value="fisico">📦 Físico (Em breve)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">URL do Vídeo (YouTube/Vimeo)</label>
+                    <input type="url" id="prod-video" placeholder="https://youtube.com/embed/..." class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-mono text-blue-600 bg-gray-50">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Conteúdo do Guia (Texto/HTML)</label>
+                    <textarea id="prod-entrega" rows="4" placeholder="Instruções que o usuário verá após a compra..." class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm text-gray-700 bg-gray-50 outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Imagem (URL)</label>
+                        <input type="url" id="prod-img" placeholder="https://..." class="w-full border-2 border-gray-100 rounded-xl p-3 text-[10px] text-gray-500 bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Etiqueta</label>
+                        <input type="text" id="prod-tag" placeholder="Ex: 🔥 POPULAR" class="w-full border-2 border-gray-100 rounded-xl p-3 text-xs font-black text-gray-800 bg-gray-50">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-2xl shadow-xl transition uppercase tracking-widest text-xs">Salvar e Publicar na Loja 🚀</button>
+            </form>
+        </div>
+    `;
 
 async function salvarProduto(e) {
     e.preventDefault();
