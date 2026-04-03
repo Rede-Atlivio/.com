@@ -24,7 +24,8 @@ export async function carregarProdutos() {
             const prod = d.data();
             const id = d.id;
             // 🛡️ Checa posse (Garantido pela blindagem do app.js)
-            const jaTem = window.userProfile?.my_vault?.includes(id);
+            // 🛡️ Blindagem: Se o my_vault não existir, o JS entende como lista vazia e não trava
+            const jaTem = (window.userProfile?.my_vault || []).includes(id);
 
             grid.innerHTML += `
                 <div class="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group">
