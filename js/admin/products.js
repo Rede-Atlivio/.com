@@ -122,15 +122,17 @@ async function salvarProduto(e) {
     btn.innerText = "SALVANDO..."; btn.disabled = true;
 
     try {
-        const payload = {
+       const payload = {
+            headline: document.getElementById('prod-headline').value,
             nome: document.getElementById('prod-nome').value,
             desc: document.getElementById('prod-desc').value,
-            preco: parseFloat(document.getElementById('prod-preco').value),
-            preco_promo: parseFloat(document.getElementById('prod-promo').value) || 0,
+            preco_atlix: parseInt(document.getElementById('prod-preco-atlix').value) || 0,
+            preco: parseFloat(document.getElementById('prod-preco').value) || 0, // Referência R$
             tipo: document.getElementById('prod-tipo').value,
             tag: document.getElementById('prod-tag').value,
             img: document.getElementById('prod-img').value,
-            link: document.getElementById('prod-link').value,
+            url_video: document.getElementById('prod-video').value,
+            texto_entrega: document.getElementById('prod-entrega').value,
             updated_at: serverTimestamp()
         };
 
