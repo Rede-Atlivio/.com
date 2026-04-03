@@ -187,91 +187,49 @@ function renderizarModalProduto() {
                 </div>
                 <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
             </div>
+            
+  function renderizarModalProduto() {
+    if(document.getElementById('modal-admin-prod')) return;
+
+    const div = document.createElement('div');
+    div.id = 'modal-admin-prod';
+    div.className = "fixed inset-0 z-[100] bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm";
+    div.innerHTML = `
+        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600">
+            <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
+                <div>
+                    <h3 id="modal-title-prod" class="font-black text-sm uppercase italic">GESTÃO DE PRODUTO</h3>
+                    <p class="text-[9px] text-gray-400 uppercase tracking-widest">Configuração V2026</p>
+                </div>
+                <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
+            </div>
             <form id="form-prod" onsubmit="window.salvarProduto(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-slate-800">
-                
-                <div class="bg-purple-50 p-4 rounded-2xl border border-purple-100">
-                    <label class="block text-[10px] font-black text-purple-400 uppercase mb-1">Headline (Promessa Forte)</label>
-                    <input type="text" id="prod-headline" placeholder="Ex: Ganhe mais ATLIX com menos esforço" class="w-full border-2 border-white rounded-xl p-3 text-sm font-bold text-purple-600 outline-none transition shadow-sm">
+                <input type="text" id="prod-headline" placeholder="Headline" class="w-full border-2 p-3 rounded-xl">
+                <input type="text" id="prod-nome" placeholder="Nome" class="w-full border-2 p-3 rounded-xl" required>
+                <input type="text" id="prod-resultado" placeholder="Resultado/Benefício" class="w-full border-2 p-3 rounded-xl bg-emerald-50">
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="number" id="prod-preco-atlix" placeholder="Preço ATLIX" class="border-2 p-3 rounded-xl" required>
+                    <input type="text" id="prod-tempo" placeholder="Tempo (Ex: 2 min)" class="border-2 p-3 rounded-xl">
+                    <select id="prod-nivel" class="border-2 p-3 rounded-xl"><option value="1">Nível 1</option><option value="2">Nível 2</option><option value="3">Nível 3</option></select>
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="col-span-1">
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Nome do Item</label>
-                        <input type="text" id="prod-nome" required class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Categoria</label>
-                        <select id="prod-categoria" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold bg-gray-50">
-                            <option value="vantagens">🚀 Vantagens</option>
-                            <option value="utilidades">💡 Utilidades</option>
-                            <option value="curiosidades">🔍 Curiosidades</option>
-                        </select>
-                    </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="prod-categoria" class="border-2 p-3 rounded-xl"><option value="vantagens">🚀 Vantagens</option><option value="utilidades">💡 Utilidades</option><option value="curiosidades">🔍 Curiosidades</option></select>
+                    <input type="number" id="prod-vendas" placeholder="Vendas Fake" class="border-2 p-3 rounded-xl">
                 </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-emerald-500 uppercase mb-1">Resultado Principal (O que ele ganha?)</label>
-                    <input type="text" id="prod-resultado" placeholder="Ex: Aumente suas chances de ser chamado em 24h" class="w-full border-2 border-emerald-50 border-emerald-500/20 rounded-xl p-3 text-sm font-bold bg-emerald-50/30">
-                </div>
-
-                <div class="grid grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Preço (ATLIX)</label>
-                        <input type="number" id="prod-preco-atlix" required class="w-full border-2 border-purple-100 rounded-xl p-3 text-sm font-black text-purple-700 bg-purple-50">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Tempo (Consumo)</label>
-                        <input type="text" id="prod-tempo" placeholder="2 min" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Nível</label>
-                        <select id="prod-nivel" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold bg-gray-50">
-                            <option value="1">⭐ Nível 1</option>
-                            <option value="2">⭐⭐ Nível 2</option>
-                            <option value="3">⭐⭐⭐ Nível 3</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Vendas (Prova Social)</label>
-                        <input type="number" id="prod-vendas" placeholder="Ex: 120" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm font-bold bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Etiqueta</label>
-                        <input type="text" id="prod-tag" placeholder="🔥 POPULAR" class="w-full border-2 border-gray-100 rounded-xl p-3 text-xs font-black bg-gray-50">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">URL do Vídeo</label>
-                    <input type="url" id="prod-video" class="w-full border-2 border-gray-100 rounded-xl p-3 text-xs font-mono text-blue-600 bg-gray-50">
-                </div>
-
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Conteúdo (Texto/HTML)</label>
-                    <textarea id="prod-entrega" rows="4" class="w-full border-2 border-gray-100 rounded-xl p-3 text-xs text-gray-700 bg-gray-50 outline-none"></textarea>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Imagem (URL)</label>
-                        <input type="url" id="prod-img" class="w-full border-2 border-gray-100 rounded-xl p-3 text-[10px] text-gray-400 bg-gray-50">
-                    </div>
-                    <div>
-                        <label class="block text-[10px] font-black text-gray-400 uppercase mb-1">Ref. R$</label>
-                        <input type="number" step="0.01" id="prod-preco" class="w-full border-2 border-gray-100 rounded-xl p-3 text-sm bg-gray-50">
-                    </div>
-                </div>
-                
-                <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-5 rounded-2xl shadow-xl transition uppercase tracking-widest text-xs">Salvar e Publicar Desbloqueio 🚀</button>
+                <input type="text" id="prod-tag" placeholder="Etiqueta (Opcional)" class="w-full border-2 p-3 rounded-xl">
+                <input type="url" id="prod-video" placeholder="URL Vídeo (YouTube)" class="w-full border-2 p-3 rounded-xl">
+                <textarea id="prod-entrega" placeholder="Conteúdo do Cofre (Texto/HTML)" class="w-full border-2 p-3 rounded-xl" rows="4"></textarea>
+                <input type="url" id="prod-img" placeholder="URL Imagem" class="w-full border-2 p-3 rounded-xl">
+                <input type="number" step="0.01" id="prod-preco" placeholder="Referência R$" class="w-full border-2 p-3 rounded-xl">
+                <input type="hidden" id="prod-tipo" value="virtual">
+                <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 text-white font-black py-4 rounded-2xl shadow-xl uppercase">Salvar e Publicar 🚀</button>
             </form>
         </div>
     `;
     document.body.appendChild(div);
 }
 
+// 🌍 EXPOSIÇÃO GLOBAL
 window.editarProd = abrirModalProduto;
 window.excluirProd = excluirProd;
 window.salvarProduto = salvarProduto;
