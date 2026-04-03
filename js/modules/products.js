@@ -1,28 +1,7 @@
 import { db, auth } from '../config.js';
 import { collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-export async function carregarProdutos() {
-    console.log("🛒 Loja Virtual Iniciada...");
-    const container = document.getElementById('sec-produtos');
-    if(!container) return;
-
-    container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto"></div></div>`;
-
-    try {
-        const q = query(collection(db, "products"), orderBy("created_at", "desc"));
-        const snap = await getDocs(q);
-
-        container.innerHTML = "";
-        
-        if (snap.empty) {
-            container.innerHTML = `<div class="text-center py-10 opacity-50"><span class="text-4xl">📦</span><p class="text-xs text-gray-400 mt-2">Em breve novidades.</p></div>`;
-            return;
-        }
-
-        const grid = document.createElement('div');
-        grid.className = "grid grid-cols-2 gap-3 px-2 pb-20";
-
-        snap.forEach(doc => {
+snap.forEach(doc => {
             const prod = doc.data();
             
             // Lógica de Preço
@@ -61,14 +40,6 @@ export async function carregarProdutos() {
                 </div>
             `;
         });
-
-        container.appendChild(grid);
-
-    } catch (e) {
-        console.error("Erro loja:", e);
-        container.innerHTML = `<p class="text-center text-red-400 text-xs">Erro ao carregar loja.</p>`;
-    }
-}
 
 window.carregarProdutos = carregarProdutos;
 const tabBtn = document.getElementById('tab-produtos');
