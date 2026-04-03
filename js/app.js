@@ -963,6 +963,101 @@ window.auth.onAuthStateChanged(user => {
 });
 
 // ============================================================================
+// 🛍️ MOTOR DE VENDAS E COFRE ATLIVIO (V2026)
+// ============================================================================
+
+/**
+ * 💰 PROCESSAR COMPRA COM ATLIX
+ * Conecta a vitrine à função pagarComAtlix do wallet.js
+ */
+window.comprarComAtlix = async (prodId, preco, tipo) => {
+    const uid = window.auth?.currentUser?.uid;
+    if (!uid) return alert("Faça login para comprar.");
+
+    // 1. Pergunta se o usuário tem certeza
+    if (!confirm(`Confirmar desbloqueio por ${preco} ATLIX?`)) return;
+
+    try {
+        // 2. Chama o Motor Financeiro (wallet.js)
+        // Gil, essa função pagarComAtlix já cuida de saldo real e bônus sozinha!
+        const res = await window.pagarComAtlix(preco, "🛍️ COMPRA_LOJA", `Desbloqueio: ${prodId}`);
+
+        if (res.success) {
+            const { doc, updateDoc, arrayUnion, getDoc } = window.firebaseModules;
+            
+            // 3. Adiciona o ID do produto ao "Cofre" (my_vault) do usuário no Firebase
+            await updateDoc(doc(window.db, "usuarios", uid), {
+                my_vault: arrayUnion(prodId)
+            });
+
+            // 4. Atualiza o perfil local para refletir a posse na hora
+            if(!window.userProfile.my_vault) window.userProfile.my_vault = [];
+            window.userProfile.my_vault.push(prodId);
+
+            alert("✅ Sucesso! Conteúdo liberado no seu Cofre.");
+            
+            // 5. Se for virtual, já abre o conteúdo direto para o usuário
+            if (tipo === 'virtual') window.abrirCofreConteudo(prodId);
+            else window.carregarProdutos(); // Recarrega a vitrine para mudar o botão
+
+        } else {
+            alert("❌ Falha: " + (res.error || "Saldo insuficiente ou erro no banco."));
+        }
+    } catch (e) {
+        console.error("Erro na compra:", e);
+        alert("Ocorreu um erro ao processar sua compra.");
+    }
+};
+
+/**
+ * 🔐 ABRIR COFRE DE CONTEÚDO
+ * Renderiza o conteúdo exclusivo dentro da DIV que criamos no index.html
+ */
+window.abrirCofreConteudo = async (prodId) => {
+    const modal = document.getElementById('modal-vault-content');
+    const title = document.getElementById('vault-product-title');
+    const videoCont = document.getElementById('vault-video-container');
+    const iframe = document.getElementById('vault-iframe');
+    const headline = document.getElementById('vault-main-headline');
+    const bodyText = document.getElementById('vault-body-text');
+
+    if (!modal) return;
+
+    // 1. Mostra o modal e coloca o estado de "Carregando"
+    modal.classList.remove('hidden');
+    title.innerText = "Sincronizando Acesso...";
+    headline.innerText = "Aguarde...";
+    bodyText.innerHTML = "";
+    videoCont.classList.add('hidden');
+
+    try {
+        const { doc, getDoc } = window.firebaseModules;
+        
+        // 2. Busca os detalhes do produto no banco
+        const prodSnap = await getDoc(doc(window.db, "products", prodId));
+        if (!prodSnap.exists()) throw "Produto não localizado.";
+
+        const data = prodSnap.data();
+
+        // 3. Alimenta o Cofre com os dados reais
+        title.innerText = data.nome || "Conteúdo Exclusivo";
+        headline.innerText = data.headline || data.nome;
+        bodyText.innerHTML = data.texto_entrega || "Aproveite seu conteúdo!";
+
+        // 4. Se tiver vídeo, liga o player
+        if (data.url_video) {
+            iframe.src = data.url_video; // Ex: https://www.youtube.com/embed/XXXX
+            videoCont.classList.remove('hidden');
+        }
+
+    } catch (e) {
+        console.error("Erro ao abrir cofre:", e);
+        alert("Erro ao carregar conteúdo.");
+        modal.classList.add('hidden');
+    }
+};
+
+// ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
 window.switchTab = switchTab;
