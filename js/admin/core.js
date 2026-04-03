@@ -140,21 +140,14 @@ window.switchView = async function(viewName) {
     console.log(`🚀 Navegando para: ${viewName}`);
     
     // Lista de todas as salas (views) registradas no sistema de escala
-    const allViews = [
-        'view-dashboard', 'view-list', 'view-finance', 'view-automation', 
-        'view-settings', 'view-support', 'view-audit', 'view-tutorials',
-        'view-missions', 'view-opportunities', 'view-maestro', 'view-products',
-        'view-canal_atlivio' // Rota para o conteúdo do app do cliente
-    ];
-
-    // 🧹 FAXINA SELETIVA: Esconde apenas as views internas. 
-    // A Assistant agora é soberana e fica fora deste loop de limpeza.
-    const viewsNoDOM = document.querySelectorAll('[id^="view-"]');
-    viewsNoDOM.forEach(v => {
+   // 🧹 FAXINA MESTRE V2026 (PROTEÇÃO TOTAL)
+    // Limpa qualquer ID que comece com 'view-' (Automático) 
+    // + Garante o 'display: none !important' para evitar sobreposição.
+    document.querySelectorAll('[id^="view-"]').forEach(v => {
         v.classList.add('hidden');
-        v.style.setProperty('display', 'none', 'important'); 
+        v.style.setProperty('display', 'none', 'important');
     });
-
+    
    // 🛡️ PROTEÇÃO: Ativação Automática da Assistant e Vigilância no Dashboard
     if (viewName === 'dashboard') {
         setTimeout(() => {
