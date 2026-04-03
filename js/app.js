@@ -138,6 +138,10 @@ window.abaAtual = 'home';
 // 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
 window.addEventListener('userProfileLoaded', (e) => {
     window.userProfile = e.detail;
+    // 🛡️ [V2026] Blindagem de Posse: Garante que o sistema não trave se o cofre estiver vazio
+    if (window.userProfile && !window.userProfile.my_vault) {
+        window.userProfile.my_vault = [];
+    }
     if (window.userProfile) {
         Object.defineProperty(window.userProfile, 'saldo', {
             get: function() { return this.wallet_balance || 0; },
