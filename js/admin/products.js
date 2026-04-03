@@ -252,7 +252,8 @@ function renderizarModalProduto() {
                     </div>
                 </div>
                 
-                <input type="hidden" id="prod-desc"> <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-2xl shadow-xl transition uppercase tracking-widest text-xs">Salvar e Publicar na Loja 🚀</button>
+                <input type="hidden" id="prod-desc"> 
+<button type="button" onclick="window.salvarProduto(event)" id="btn-save-prod" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 rounded-2xl shadow-xl transition uppercase tracking-widest text-xs">Salvar e Publicar na Loja 🚀</button>
             </form>
         </div>
     `;
