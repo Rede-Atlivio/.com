@@ -179,22 +179,6 @@ function renderizarModalProduto() {
     div.id = 'modal-admin-prod';
     div.className = "fixed inset-0 z-[100] bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm";
     div.innerHTML = `
-        <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600 animate-fade">
-            <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
-                <div>
-                    <h3 id="modal-title-prod" class="font-black text-sm uppercase italic">GESTÃO DE PRODUTO</h3>
-                    <p class="text-[9px] text-gray-400 uppercase tracking-widest">Configuração de Venda Interna</p>
-                </div>
-                <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
-            </div>
-            
-  function renderizarModalProduto() {
-    if(document.getElementById('modal-admin-prod')) return;
-
-    const div = document.createElement('div');
-    div.id = 'modal-admin-prod';
-    div.className = "fixed inset-0 z-[100] bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm";
-    div.innerHTML = `
         <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600">
             <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
                 <div>
