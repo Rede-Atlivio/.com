@@ -47,15 +47,12 @@ async function carregarLista() {
             const data = d.data();
             let thumb = data.img ? `<img src="${data.img}" class="w-12 h-12 object-cover rounded border bg-white">` : '📦';
             
-            // Lógica de Preço (Promoção)
-            let precoDisplay = `<span class="font-bold text-gray-600">R$ ${parseFloat(data.preco).toFixed(2)}</span>`;
-            if (data.preco_promo && parseFloat(data.preco_promo) > 0) {
-                precoDisplay = `
-                    <div class="flex flex-col">
-                        <span class="text-[10px] text-red-400 line-through">R$ ${parseFloat(data.preco).toFixed(2)}</span>
-                        <span class="font-black text-green-600">R$ ${parseFloat(data.preco_promo).toFixed(2)}</span>
-                    </div>`;
-            }
+            // 💰 Lógica de Preço em ATLIX (V2026)
+            let precoDisplay = `
+                <div class="flex flex-col">
+                    <span class="font-black text-purple-600 text-sm">${data.preco_atlix || 0} ATLIX</span>
+                    <span class="text-[9px] text-gray-400 uppercase font-bold">Reserva: R$ ${parseFloat(data.preco || 0).toFixed(2)}</span>
+                </div>`;
 
             let badge = data.tag ? `<span class="bg-purple-100 text-purple-700 text-[9px] px-2 py-1 rounded font-bold uppercase">${data.tag}</span>` : '';
 
