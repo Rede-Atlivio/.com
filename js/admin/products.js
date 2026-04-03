@@ -138,10 +138,9 @@ async function salvarProduto(e) {
     btn.innerText = "SALVANDO..."; btn.disabled = true;
 
     try {
-        const payload = {
+       const payload = {
             headline: document.getElementById('prod-headline').value,
             nome: document.getElementById('prod-nome').value,
-            desc: document.getElementById('prod-desc').value,
             preco_atlix: parseInt(document.getElementById('prod-preco-atlix').value) || 0,
             preco: parseFloat(document.getElementById('prod-preco').value) || 0,
             tipo: document.getElementById('prod-tipo').value,
@@ -149,9 +148,16 @@ async function salvarProduto(e) {
             img: document.getElementById('prod-img').value,
             url_video: document.getElementById('prod-video').value,
             texto_entrega: document.getElementById('prod-entrega').value,
+            
+            // 🛰️ INJEÇÃO DE DADOS MESTRE (MILHÕES DE USUÁRIOS)
+            resultado_principal: document.getElementById('prod-resultado').value || "",
+            tempo_consumo: document.getElementById('prod-tempo').value || "2 min",
+            nivel_produto: parseInt(document.getElementById('prod-nivel').value) || 1,
+            categoria: document.getElementById('prod-categoria').value || "vantagens",
+            vendas_fake: parseInt(document.getElementById('prod-vendas').value) || 0,
+            
             updated_at: serverTimestamp()
         };
-
         if (editId) {
             await updateDoc(doc(window.db, "products", editId), payload);
             alert("✅ Atualizado com sucesso!");
