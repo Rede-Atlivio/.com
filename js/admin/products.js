@@ -100,13 +100,15 @@ function abrirModalProduto(id = null, dataString = null) {
         titulo.innerText = "EDITAR PRODUTO";
         const data = JSON.parse(decodeURIComponent(dataString));
         
+       document.getElementById('prod-headline').value = data.headline || "";
         document.getElementById('prod-nome').value = data.nome || "";
         document.getElementById('prod-desc').value = data.desc || "";
-        document.getElementById('prod-preco').value = data.preco || "";
-        document.getElementById('prod-promo').value = data.preco_promo || "";
+        document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
+        document.getElementById('prod-preco').value = data.preco || ""; // Preço em R$ mantido como referência
         document.getElementById('prod-img').value = data.img || "";
-        document.getElementById('prod-link').value = data.link || "";
-        document.getElementById('prod-tipo').value = data.tipo || "fisico";
+        document.getElementById('prod-video').value = data.url_video || "";
+        document.getElementById('prod-entrega').value = data.texto_entrega || "";
+        document.getElementById('prod-tipo').value = data.tipo || "virtual";
         document.getElementById('prod-tag').value = data.tag || "";
     }
 
