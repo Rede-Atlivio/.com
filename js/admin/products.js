@@ -104,20 +104,19 @@ function abrirModalProduto(id = null, dataString = null) {
     editId = id;
     titulo.innerText = id ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO";
 
-    if(id && dataString) {
-        const data = JSON.parse(decodeURIComponent(dataString));
-        document.getElementById('prod-headline').value = data.headline || "";
-        document.getElementById('prod-nome').value = data.nome || "";
-        document.getElementById('prod-desc').value = data.desc || "";
-        document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
-        document.getElementById('prod-preco').value = data.preco || "";
-        document.getElementById('prod-img').value = data.img || "";
-        document.getElementById('prod-video').value = data.url_video || "";
-        document.getElementById('prod-entrega').value = data.texto_entrega || "";
-        document.getElementById('prod-tipo').value = data.tipo || "virtual";
-        document.getElementById('prod-tag').value = data.tag || "";
-    }
-
+    const payload = {
+            headline: document.getElementById('prod-headline').value,
+            nome: document.getElementById('prod-nome').value,
+            desc: document.getElementById('prod-desc').value,
+            preco_atlix: parseInt(document.getElementById('prod-preco-atlix').value) || 0,
+            preco: parseFloat(document.getElementById('prod-preco').value) || 0,
+            tipo: document.getElementById('prod-tipo').value,
+            tag: document.getElementById('prod-tag').value,
+            img: document.getElementById('prod-img').value,
+            url_video: document.getElementById('prod-video').value,
+            texto_entrega: document.getElementById('prod-entrega').value,
+            updated_at: serverTimestamp()
+        };
     modal.classList.remove('hidden');
     modal.classList.add('flex');
 }
