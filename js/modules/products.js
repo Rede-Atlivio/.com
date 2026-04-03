@@ -42,5 +42,5 @@ snap.forEach(doc => {
         });
 
 window.carregarProdutos = carregarProdutos;
-const tabBtn = document.getElementById('tab-produtos');
-if(tabBtn) tabBtn.addEventListener('click', carregarProdutos);
+// Gatilho soldado ao ID real do botão no index.html
+document.getElementById('tab-loja')?.addEventListener('click', carregarProdutos);
