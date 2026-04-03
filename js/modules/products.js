@@ -52,3 +52,5 @@ export async function carregarProdutos() {
 }
 // 🔗 Soldagem Global
 window.carregarProdutos = carregarProdutos;
+
+console.log("🚀 Módulo de Produtos carregado com sucesso no Navegador!");
