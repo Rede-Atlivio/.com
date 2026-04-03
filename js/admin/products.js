@@ -93,7 +93,11 @@ function abrirModalProduto(id = null, dataString = null) {
     if(!modal || !form) return;
     form.reset();
     editId = id;
+   if (titulo) {
     titulo.innerText = id ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO";
+} else {
+    console.warn("⚠️ O elemento de título ainda não foi renderizado.");
+}
 
     if(id && dataString) {
         const data = JSON.parse(decodeURIComponent(dataString));
