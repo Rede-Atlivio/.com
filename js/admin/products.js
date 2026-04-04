@@ -185,6 +185,7 @@ function renderizarModalProduto() {
     div.className = "fixed inset-0 z-[100] bg-black/90 hidden items-center justify-center p-4 backdrop-blur-sm";
     div.innerHTML = `
         <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600">
+            <div class="bg-white w-full max-w-lg rounded-[2rem] shadow-2xl overflow-hidden border-t-8 border-purple-600 animate-fade">
             <div class="bg-slate-900 p-5 flex justify-between items-center text-white">
                 <div>
                     <h3 id="modal-title-prod" class="font-black text-sm uppercase italic">GESTÃO DE PRODUTO</h3>
@@ -193,24 +194,61 @@ function renderizarModalProduto() {
                 <button onclick="window.fecharModalProd()" class="text-gray-400 hover:text-white font-bold text-2xl">&times;</button>
             </div>
             <form id="form-prod" onsubmit="window.salvarProduto(event)" class="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-slate-800">
-                <input type="text" id="prod-headline" placeholder="Headline" class="w-full border-2 p-3 rounded-xl">
-                <input type="text" id="prod-nome" placeholder="Nome" class="w-full border-2 p-3 rounded-xl" required>
-                <input type="text" id="prod-resultado" placeholder="Resultado/Benefício" class="w-full border-2 p-3 rounded-xl bg-emerald-50">
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="prod-headline" placeholder="Headline Impacto" class="border-2 p-3 rounded-xl">
+                    <input type="text" id="prod-nome" placeholder="Nome do Produto" class="border-2 p-3 rounded-xl" required>
+                </div>
+
+                <input type="text" id="prod-resultado" placeholder="Benefício Principal (O que ele ganha?)" class="w-full border-2 p-3 rounded-xl bg-emerald-50 font-bold">
+                
                 <div class="grid grid-cols-3 gap-2">
                     <input type="number" id="prod-preco-atlix" placeholder="Preço ATLIX" class="border-2 p-3 rounded-xl" required>
-                    <input type="text" id="prod-tempo" placeholder="Tempo (Ex: 2 min)" class="border-2 p-3 rounded-xl">
-                    <select id="prod-nivel" class="border-2 p-3 rounded-xl"><option value="1">Nível 1</option><option value="2">Nível 2</option><option value="3">Nível 3</option></select>
+                    <input type="text" id="prod-tempo" placeholder="Tempo Consumo" class="border-2 p-3 rounded-xl">
+                    <select id="prod-nivel" class="border-2 p-3 rounded-xl">
+                        <option value="1">⭐ Nível 1</option>
+                        <option value="2">⭐⭐ Nível 2</option>
+                        <option value="3">⭐⭐⭐ Nível 3</option>
+                    </select>
                 </div>
+
                 <div class="grid grid-cols-2 gap-2">
-                    <select id="prod-categoria" class="border-2 p-3 rounded-xl"><option value="vantagens">🚀 Vantagens</option><option value="utilidades">💡 Utilidades</option><option value="curiosidades">🔍 Curiosidades</option></select>
+                    <select id="prod-categoria" class="border-2 p-3 rounded-xl">
+                        <option value="vantagens">🚀 Vantagens</option>
+                        <option value="utilidades">💡 Utilidades</option>
+                        <option value="curiosidades">🔍 Curiosidades</option>
+                    </select>
                     <input type="number" id="prod-vendas" placeholder="Vendas Fake" class="border-2 p-3 rounded-xl">
                 </div>
-                <input type="text" id="prod-tag" placeholder="Etiqueta (Opcional)" class="w-full border-2 p-3 rounded-xl">
-                <input type="url" id="prod-video" placeholder="URL Vídeo (YouTube)" class="w-full border-2 p-3 rounded-xl">
-                <textarea id="prod-entrega" placeholder="Conteúdo do Cofre (Texto/HTML)" class="w-full border-2 p-3 rounded-xl" rows="4"></textarea>
-                <input type="url" id="prod-img" placeholder="URL Imagem" class="w-full border-2 p-3 rounded-xl">
-                <input type="number" step="0.01" id="prod-preco" placeholder="Referência R$" class="w-full border-2 p-3 rounded-xl">
-                <input type="hidden" id="prod-tipo" value="virtual">
+
+                <div class="border-t-2 border-dashed border-gray-100 pt-2">
+                    <p class="text-[9px] font-black text-purple-600 uppercase mb-2">📦 Entrega Estruturada (Sem HTML)</p>
+                    <textarea id="prod-passo1" placeholder="Passo 01: O que fazer primeiro?" class="w-full border-2 p-3 rounded-xl mb-2 text-xs" rows="2"></textarea>
+                    <textarea id="prod-passo2" placeholder="Passo 02: O segredo técnico" class="w-full border-2 p-3 rounded-xl mb-2 text-xs" rows="2"></textarea>
+                    <textarea id="prod-passo3" placeholder="Passo 03: Como lucrar agora" class="w-full border-2 p-3 rounded-xl mb-2 text-xs" rows="2"></textarea>
+                </div>
+
+                <div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-100 space-y-3">
+                    <p class="text-[9px] font-black text-blue-600 uppercase mb-1">🔥 AJUSTE DE OURO (Ação Pós-Compra)</p>
+                    <input type="text" id="prod-cta-texto" placeholder="Texto do Botão (Ex: Começar Missão!)" class="w-full border-2 p-2 rounded-lg text-xs">
+                    <select id="prod-cta-destino" class="w-full border-2 p-2 rounded-lg text-xs font-bold">
+                        <option value="">🚫 Nenhum (Apenas fechar)</option>
+                        <option value="missoes">🎯 Aba: Micro Tarefas</option>
+                        <option value="servicos">🛠️ Aba: Serviços (Radar)</option>
+                        <option value="ganhar">💰 Aba: Carteira (Saldo)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="url" id="prod-video" placeholder="Link YouTube (Preview)" class="border-2 p-3 rounded-xl text-xs">
+                    <input type="url" id="prod-video-real" placeholder="Link YouTube (Conteúdo Real)" class="border-2 p-3 rounded-xl text-xs">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="url" id="prod-img" placeholder="URL Capa" class="border-2 p-3 rounded-xl text-xs">
+                    <input type="number" step="0.01" id="prod-preco" placeholder="Ref. R$" class="border-2 p-3 rounded-xl text-xs">
+                </div>
+
                 <button type="submit" id="btn-save-prod" class="w-full bg-purple-600 text-white font-black py-4 rounded-2xl shadow-xl uppercase">Salvar e Publicar 🚀</button>
             </form>
         </div>
