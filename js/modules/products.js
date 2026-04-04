@@ -106,6 +106,31 @@ export async function carregarProdutos() {
         container.appendChild(grid);
     } catch (e) { console.error("Erro Vitrine:", e); }
 }
+
+// 🌍 FUNÇÃO DE FILTRAGEM (Lógica Interna)
+window.filtrarProdutos = (cat) => {
+    // 1. Estilo nos botões
+    document.querySelectorAll('.filter-pill').forEach(btn => {
+        btn.classList.remove('active', 'bg-purple-600', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-500');
+    });
+
+    const btnAtivo = Array.from(document.querySelectorAll('.filter-pill')).find(b => b.innerText.toLowerCase().includes(cat.toLowerCase()));
+    if(btnAtivo) {
+        btnAtivo.classList.add('active', 'bg-purple-600', 'text-white');
+        btnAtivo.classList.remove('bg-gray-100', 'text-gray-500');
+    }
+
+    // 2. Filtra os cards
+    document.querySelectorAll('.product-card').forEach(card => {
+        if(cat === 'todos' || card.getAttribute('data-cat') === cat) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+};
+
 // 🔗 Soldagem Global
 window.carregarProdutos = carregarProdutos;
 
