@@ -137,7 +137,8 @@ async function salvarProduto(e) {
             tag: document.getElementById('prod-tag').value,
             img: document.getElementById('prod-img').value,
             url_video: document.getElementById('prod-video').value,
-            texto_entrega: document.getElementById('prod-entrega').value,
+            // 🤖 MOTOR DE LIMPEZA: Se o Gil colar o link inteiro, o sistema extrai apenas o ID ou mantém o texto limpo
+            texto_entrega: document.getElementById('prod-entrega').value.trim(),
             resultado_principal: document.getElementById('prod-resultado').value || "",
             tempo_consumo: document.getElementById('prod-tempo').value || "2 min",
             nivel_produto: parseInt(document.getElementById('prod-nivel').value) || 1,
