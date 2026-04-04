@@ -108,20 +108,23 @@ window.filtrarProdutos = (cat) => {
 window.abrirPreviewProduto = async (id) => {
     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const snap = await getDoc(doc(window.db, "products", id));
-    if(!snap.exists()) return;
     const p = snap.data();
 
-    // 🎥 Lógica de Mídia: Se tiver vídeo, cria o player, senão usa a imagem
+    // 🤖 RECONHECEDOR: Converte link comum do YouTube em link de Player (embed) automaticamente
+    let linkVideo = p.url_video || "";
+    if (linkVideo.includes('watch?v=')) linkVideo = linkVideo.replace('watch?v=', 'embed/');
+    else if (linkVideo.includes('youtu.be/')) linkVideo = linkVideo.replace('youtu.be/', 'youtube.com/embed/');
+
     const mediaHTML = p.url_video 
         ? `<div class="relative h-56 bg-black overflow-hidden border-b-4 border-purple-600">
-             <iframe src="${p.url_video}" class="w-full h-full pointer-events-auto" frameborder="0" allow="autoplay; encrypted-media"></iframe>
+             <iframe src="${linkVideo}" class="w-full h-full" frameborder="0" allow="autoplay; encrypted-media"></iframe>
              <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold z-50">×</button>
            </div>`
         : `<div class="relative h-48 bg-slate-100">
              <img src="${p.img}" class="w-full h-full object-cover">
              <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold z-50">×</button>
            </div>`;
-
+    
     const modal = document.createElement('div');
     modal.id = 'modal-preview-venda';
     modal.className = "fixed inset-0 z-[10005] bg-black/95 flex flex-col items-center justify-center p-4 animate-fadeIn";
