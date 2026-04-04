@@ -162,6 +162,30 @@ window.abrirPreviewProduto = async (id) => {
     document.body.appendChild(modal);
 };
 
+// 🔐 MOTOR DE ENTREGA DO COFRE (Reconhecedor de Link Automático)
+window.abrirCofreConteudo = async (id) => {
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const snap = await getDoc(doc(window.db, "products", id));
+    const p = snap.data();
+
+    let textoFinal = p.texto_entrega || "";
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = textoFinal.match(youtubeRegex);
+
+    if (match && match[1]) {
+        textoFinal = `
+            <div class="mb-6 rounded-2xl overflow-hidden shadow-2xl aspect-video bg-black">
+                <iframe src="https://www.youtube.com/embed/${match[1]}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+            </div>
+            <div class="text-slate-300 font-medium">${textoFinal.replace(youtubeRegex, '')}</div>`;
+    }
+
+    document.getElementById('vault-product-title').innerText = p.nome;
+    document.getElementById('vault-main-headline').innerText = p.headline || "Conteúdo Desbloqueado";
+    document.getElementById('vault-body-text').innerHTML = textoFinal;
+    document.getElementById('modal-vault-content').classList.remove('hidden');
+};
+
 // 🔗 Soldagem Global
 window.carregarProdutos = carregarProdutos;
 
