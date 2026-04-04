@@ -109,7 +109,12 @@ function abrirModalProduto(id = null, dataString = null) {
         document.getElementById('prod-video').value = data.url_video || "";
         document.getElementById('prod-entrega').value = data.texto_entrega || "";
         document.getElementById('prod-tag').value = data.tag || "";
-        
+        document.getElementById('prod-passo1').value = data.passo1 || "";
+        document.getElementById('prod-passo2').value = data.passo2 || "";
+        document.getElementById('prod-passo3').value = data.passo3 || "";
+        document.getElementById('prod-cta-texto').value = data.cta_texto || "";
+        document.getElementById('prod-cta-destino').value = data.cta_destino || "";
+        document.getElementById('prod-video-real').value = data.url_video_real || "";
         // 💎 NOVOS CAMPOS V2026
         document.getElementById('prod-resultado').value = data.resultado_principal || "";
         document.getElementById('prod-tempo').value = data.tempo_consumo || "";
