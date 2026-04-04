@@ -44,8 +44,30 @@
          letter-spacing: 0.5px;
         }
         .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
-        .filter-pill { white-space: nowrap; transition: all 0.2s; }
-        .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        /* 💊 ESTILO POLISHOP: Pílulas de Filtro da Loja */
+        .filter-pill { 
+            padding: 8px 16px; 
+            border-radius: 99px; 
+            font-size: 9px; 
+            font-weight: 900; 
+            white-space: nowrap; 
+            transition: all 0.2s; 
+            background-color: #f1f5f9; /* Slate-100 */
+            color: #64748b; /* Slate-500 */
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .filter-pill.active { 
+            background-color: #7c3aed !important; /* Roxo Atlivio */
+            color: white !important; 
+            border-color: #7c3aed !important;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); 
+        }
+        /* 🚫 Esconde a barra de rolagem horizontal dos filtros sem perder a função */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { background-color: #2563eb !important; color: white !important; font-weight: 900; border-radius: 99px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .nav-tab-atlivio { transition: all 0.2s ease; border: 1px solid transparent; }
