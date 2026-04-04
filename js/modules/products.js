@@ -65,7 +65,7 @@ export async function carregarProdutos() {
                             <span class="text-[7px] text-gray-400 uppercase font-black tracking-tighter">Investimento</span>
                             <span class="font-black text-purple-600 text-xs tracking-tighter">${prod.preco_atlix || 0} ATLIX</span>
                         </div>
-                        <button onclick="${jaTem ? `window.abrirCofreConteudo('${id}')` : `window.abrirPreviewProduto('${id}')`}"
+                        <button onclick="event.stopPropagation(); ${jaTem ? `window.abrirCofreConteudo('${id}')` : `window.abrirPreviewProduto('${id}')`}"
                                 class="${jaTem ? 'bg-emerald-500' : 'bg-purple-600'} text-white px-2 py-2 rounded-lg text-[9px] font-black uppercase shadow-md transition-all active:scale-95">
                             ${jaTem ? 'ACESSAR' : 'LIBERAR'}
                         </button>
