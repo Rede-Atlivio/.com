@@ -65,7 +65,7 @@ export async function carregarProdutos() {
                             <span class="text-[7px] text-gray-400 uppercase font-black tracking-tighter">Investimento</span>
                             <span class="font-black text-purple-600 text-xs tracking-tighter">${prod.preco_atlix || 0} ATLIX</span>
                         </div>
-                        <button onclick="${jaTem ? `window.abrirCofreConteudo('${id}')` : `window.comprarComAtlix('${id}', ${prod.preco_atlix}, '${prod.tipo}')`}" 
+                        <button onclick="${jaTem ? `window.abrirCofreConteudo('${id}')` : `window.abrirPreviewProduto('${id}')`}"
                                 class="${jaTem ? 'bg-emerald-500' : 'bg-purple-600'} text-white px-2 py-2 rounded-lg text-[9px] font-black uppercase shadow-md transition-all active:scale-95">
                             ${jaTem ? 'ACESSAR' : 'LIBERAR'}
                         </button>
@@ -129,6 +129,53 @@ window.filtrarProdutos = (cat) => {
             card.style.display = 'none';
         }
     });
+};
+
+// 👁️ MOTOR DE DESEJO: ABRE PREVIEW ANTES DE COMPRAR
+window.abrirPreviewProduto = async (id) => {
+    const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const snap = await getDoc(doc(window.db, "products", id));
+    if(!snap.exists()) return;
+    const p = snap.data();
+
+    // Cria o Modal de Venda (Estilo Landing Page Rápida)
+    const modal = document.createElement('div');
+    modal.id = 'modal-preview-venda';
+    modal.className = "fixed inset-0 z-[10005] bg-black/95 flex flex-col items-center justify-center p-4 animate-fadeIn";
+    modal.innerHTML = `
+        <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-slideUp">
+            <div class="relative h-48 bg-slate-100">
+                <img src="${p.img}" class="w-full h-full object-cover">
+                <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold">×</button>
+            </div>
+            <div class="p-6 text-center">
+                <p class="text-[9px] font-black text-purple-600 uppercase tracking-widest mb-1">${p.headline || ''}</p>
+                <h3 class="text-xl font-black text-slate-800 leading-tight mb-3">${p.nome}</h3>
+                
+                <div class="bg-emerald-50 p-3 rounded-2xl mb-4">
+                    <p class="text-[10px] text-emerald-700 font-bold italic">"O que você vai ganhar: ${p.resultado_principal || 'Acesso imediato à vantagem'}"</p>
+                </div>
+
+                <div class="flex justify-center gap-4 mb-6">
+                    <div class="text-center">
+                        <p class="text-[8px] text-gray-400 font-black uppercase">Consumo</p>
+                        <p class="text-xs font-bold text-slate-600">⏱️ ${p.tempo_consumo || '2 min'}</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-[8px] text-gray-400 font-black uppercase">Dificuldade</p>
+                        <p class="text-xs font-bold text-slate-600">${p.nivel_produto === 3 ? '⭐⭐⭐' : p.nivel_produto === 2 ? '⭐⭐' : '⭐'}</p>
+                    </div>
+                </div>
+
+                <button onclick="window.comprarComAtlix('${id}', ${p.preco_atlix}, '${p.tipo}'); this.closest('#modal-preview-venda').remove();" 
+                        class="w-full bg-purple-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg shadow-purple-200 active:scale-95 transition">
+                    DESBLOQUEAR POR ${p.preco_atlix} ATLIX 🪙
+                </button>
+                <p class="text-[8px] text-gray-400 mt-3 uppercase font-bold">O valor será descontado do seu saldo de bônus ou recarga.</p>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 };
 
 // 🔗 Soldagem Global
