@@ -97,13 +97,11 @@ async function abrirModalProduto(id = null) {
     if (titulo) titulo.innerText = id ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO";
 
     if(id) {
-        // 🛰️ BUSCA DIRETA: Pega o dado fresco do banco para editar sem erros de string
-        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        // 🛰️ BUSCA DIRETA V2026: Pega o dado original para evitar erro de aspas/sintaxe
         const snap = await getDoc(doc(window.db, "products", id));
         if(!snap.exists()) return;
         const data = snap.data();
 
-        // Preenchimento dos campos
         document.getElementById('prod-headline').value = data.headline || "";
         document.getElementById('prod-nome').value = data.nome || "";
         document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
