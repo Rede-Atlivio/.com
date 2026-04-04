@@ -34,7 +34,7 @@ async function carregarLista() {
     tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center"><div class="loader mx-auto border-blue-500"></div></td></tr>`;
 
     try {
-        const q = query(collection(window.db, "products"), orderBy("created_at", "desc"));
+        const q = query(collection(db, "products"), orderBy("created_at", "desc"));
         const snap = await getDocs(q);
 
         tbody.innerHTML = "";
