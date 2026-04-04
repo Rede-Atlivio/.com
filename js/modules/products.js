@@ -138,16 +138,24 @@ window.abrirPreviewProduto = async (id) => {
     if(!snap.exists()) return;
     const p = snap.data();
 
-    // Cria o Modal de Venda (Estilo Landing Page Rápida)
+    // 🎥 Lógica de Mídia: Se tiver vídeo, cria o player, senão usa a imagem
+    const mediaHTML = p.url_video 
+        ? `<div class="relative h-56 bg-black overflow-hidden border-b-4 border-purple-600">
+             <iframe src="${p.url_video}" class="w-full h-full pointer-events-auto" frameborder="0" allow="autoplay; encrypted-media"></iframe>
+             <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold z-50">×</button>
+           </div>`
+        : `<div class="relative h-48 bg-slate-100">
+             <img src="${p.img}" class="w-full h-full object-cover">
+             <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold z-50">×</button>
+           </div>`;
+
     const modal = document.createElement('div');
     modal.id = 'modal-preview-venda';
     modal.className = "fixed inset-0 z-[10005] bg-black/95 flex flex-col items-center justify-center p-4 animate-fadeIn";
     modal.innerHTML = `
         <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col animate-slideUp">
-            <div class="relative h-48 bg-slate-100">
-                <img src="${p.img}" class="w-full h-full object-cover">
-                <button onclick="this.closest('#modal-preview-venda').remove()" class="absolute top-4 right-4 bg-black/50 text-white w-8 h-8 rounded-full font-bold">×</button>
-            </div>
+            ${mediaHTML}
+            <div class="p-6 text-center">
             <div class="p-6 text-center">
                 <p class="text-[9px] font-black text-purple-600 uppercase tracking-widest mb-1">${p.headline || ''}</p>
                 <h3 class="text-xl font-black text-slate-800 leading-tight mb-3">${p.nome}</h3>
