@@ -5,7 +5,7 @@ let editId = null;
 export async function init() {
     console.log("🛒 Admin Loja: Iniciando Sistema V2026...");
     
-    const header = document.getElementById('list-header');
+    const header = document.getElementById('list-header-products');
     if(header) {
         header.innerHTML = `
             <th class="p-3 text-left italic font-black text-blue-400">PRODUTO</th>
