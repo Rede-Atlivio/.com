@@ -27,8 +27,8 @@ export async function init() {
 }
 
 async function carregarLista() {
-    const tbody = document.getElementById('list-body');
-    const count = document.getElementById('list-count');
+   const tbody = document.getElementById('list-body-products');
+   const count = document.getElementById('list-count-products');
     if(!tbody) return;
 
     tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center"><div class="loader mx-auto border-blue-500"></div></td></tr>`;
