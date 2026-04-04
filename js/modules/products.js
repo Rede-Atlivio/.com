@@ -163,26 +163,76 @@ window.abrirPreviewProduto = async (id) => {
 };
 
 // 🔐 MOTOR DE ENTREGA DO COFRE (Reconhecedor de Link Automático)
+// 🔐 MOTOR DE ENTREGA DO COFRE (Sincronia Total V2026)
 window.abrirCofreConteudo = async (id) => {
     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     const snap = await getDoc(doc(window.db, "products", id));
+    if (!snap.exists()) return;
     const p = snap.data();
 
-    let textoFinal = p.texto_entrega || "";
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = textoFinal.match(youtubeRegex);
+    // 🎥 01: SOLDAGEM AGRESSIVA DO RECONHECEDOR DE VÍDEO
+    // Gil, aqui o sistema busca o vídeo real (p.url_video_real) ou o fallback (p.url_video)
+    let videoURL = p.url_video_real || p.url_video || "";
+    let videoEmbed = "";
 
-    if (match && match[1]) {
-        textoFinal = `
-            <div class="mb-6 rounded-2xl overflow-hidden shadow-2xl aspect-video bg-black">
-                <iframe src="https://www.youtube.com/embed/${match[1]}" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+    if (videoURL) {
+        const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = videoURL.match(youtubeRegex);
+        if (match && match[1]) {
+            videoEmbed = `
+                <div class="mb-6 rounded-2xl overflow-hidden shadow-2xl aspect-video bg-black border border-white/10">
+                    <iframe src="https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1" class="w-full h-full" frameborder="0" allowfullscreen></iframe>
+                </div>`;
+        }
+    }
+
+    // 🏗️ 02: ESTRUTURA DE MÓDULOS (PASSOS)
+    // Gil, isso substitui a "tripa" de texto por caixinhas organizadas
+    let passosHTML = "";
+    const renderPasso = (num, icon, titulo, texto) => {
+        if (!texto) return "";
+        return `
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-3 animate-fade">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-blue-400 text-xs">${icon}</span>
+                    <h4 class="text-blue-400 font-black text-[10px] uppercase tracking-tighter">PASSO 0${num}: ${titulo}</h4>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed font-medium">${texto}</p>
+            </div>`;
+    };
+
+    passosHTML += renderPasso(1, "🚀", "O INÍCIO", p.passo1);
+    passosHTML += renderPasso(2, "🛰️", "A ESTRATÉGIA", p.passo2);
+    passosHTML += renderPasso(3, "💰", "O LUCRO", p.passo3);
+
+    // 🔥 03: INJEÇÃO DO AJUSTE DE OURO (CTA DINÂMICO)
+    let ctaHTML = "";
+    if (p.cta_texto && p.cta_destino) {
+        ctaHTML = `
+            <div class="mt-8 pt-6 border-t border-white/10">
+                <button onclick="window.navegarAba('${p.cta_destino}'); document.getElementById('modal-vault-content').classList.add('hidden');" 
+                        class="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-lg shadow-emerald-500/20 active:scale-95 transition-all animate-bounce">
+                    ${p.cta_texto}
+                </button>
+                <p class="text-[8px] text-gray-500 text-center mt-3 uppercase font-bold italic">Ação imediata recomendada pelo Maestro</p>
+            </div>`;
+    }
+
+    // 🖼️ 04: MONTAGEM FINAL DO MODAL
+    const modalBody = document.getElementById('vault-body-text');
+    if (modalBody) {
+        modalBody.innerHTML = `
+            ${videoEmbed}
+            <div class="space-y-1">
+                ${passosHTML}
+                ${p.texto_entrega ? `<div class="text-slate-400 text-xs mt-4 p-4 border-l-2 border-purple-500 bg-white/5">${p.texto_entrega}</div>` : ""}
             </div>
-            <div class="text-slate-300 font-medium">${textoFinal.replace(youtubeRegex, '')}</div>`;
+            ${ctaHTML}
+        `;
     }
 
     document.getElementById('vault-product-title').innerText = p.nome;
-    document.getElementById('vault-main-headline').innerText = p.headline || "Conteúdo Desbloqueado";
-    document.getElementById('vault-body-text').innerHTML = textoFinal;
+    document.getElementById('vault-main-headline').innerText = p.headline || "CONTEÚDO LIBERADO";
     document.getElementById('modal-vault-content').classList.remove('hidden');
 };
 
