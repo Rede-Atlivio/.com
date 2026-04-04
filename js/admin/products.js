@@ -85,7 +85,7 @@ async function carregarLista() {
     } catch (e) { console.error("Erro lista:", e); }
 }
 
-function abrirModalProduto(id = null, dataString = null) {
+async function abrirModalProduto(id = null) {
     const modal = document.getElementById('modal-admin-prod');
     const form = document.getElementById('form-prod');
     const titulo = document.getElementById('modal-title-prod');
@@ -93,34 +93,29 @@ function abrirModalProduto(id = null, dataString = null) {
     if(!modal || !form) return;
     form.reset();
     editId = id;
-   if (titulo) {
-    titulo.innerText = id ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO";
-} else {
-    console.warn("⚠️ O elemento de título ainda não foi renderizado.");
-}
 
-    if(id && dataString) {
-        const data = JSON.parse(decodeURIComponent(dataString));
-        
-        // Campos Básicos
+    if (titulo) titulo.innerText = id ? "EDITAR PRODUTO" : "CADASTRAR PRODUTO";
+
+    if(id) {
+        // 🛰️ BUSCA DIRETA: Pega o dado fresco do banco para editar sem erros de string
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const snap = await getDoc(doc(window.db, "products", id));
+        if(!snap.exists()) return;
+        const data = snap.data();
+
+        // Preenchimento dos campos
         document.getElementById('prod-headline').value = data.headline || "";
         document.getElementById('prod-nome').value = data.nome || "";
         document.getElementById('prod-preco-atlix').value = data.preco_atlix || "";
         document.getElementById('prod-preco').value = data.preco || "";
         document.getElementById('prod-img').value = data.img || "";
         document.getElementById('prod-video').value = data.url_video || "";
-        
-        // 📦 Entrega Estruturada V2026
+        document.getElementById('prod-video-real').value = data.url_video_real || "";
         document.getElementById('prod-passo1').value = data.passo1 || "";
         document.getElementById('prod-passo2').value = data.passo2 || "";
         document.getElementById('prod-passo3').value = data.passo3 || "";
-        document.getElementById('prod-video-real').value = data.url_video_real || "";
-
-        // 🔥 Ajuste de Ouro (CTA)
         document.getElementById('prod-cta-texto').value = data.cta_texto || "";
         document.getElementById('prod-cta-destino').value = data.cta_destino || "";
-        
-        // 💎 Atributos de Conversão
         document.getElementById('prod-resultado').value = data.resultado_principal || "";
         document.getElementById('prod-tempo').value = data.tempo_consumo || "";
         document.getElementById('prod-nivel').value = data.nivel_produto || "1";
