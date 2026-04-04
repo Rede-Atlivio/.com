@@ -1116,12 +1116,14 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
 </script>          
           
 <script type="module">
-    const VERSAO = "20260305_V28"; // Atualizado para forçar o carregamento do Wallet novo
-    const caminhos = [
-        "./js/app.js", 
-        "./js/auth.js", 
-        "./js/modules/request_v2.js"
-    ];
+    // 🔥 V30: FORÇA TOTAL PARA ATUALIZAR O DNA DOS PRODUTOS
+const VERSAO = "20260404_V30_GOLD"; 
+const caminhos = [
+    "./js/app.js", 
+    "./js/auth.js", 
+    "./js/modules/request_v2.js",
+    "./js/modules/products.js" // Injetamos aqui para garantir a versão
+];
     
     caminhos.forEach(src => {
         const s = document.createElement('script');
