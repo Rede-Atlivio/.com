@@ -1,5 +1,5 @@
-import { collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+import { collection, getDocs, addDoc, deleteDoc, doc, getDoc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+const db = window.db; // Solda a conexão global
 let editId = null;
 
 export async function init() {
