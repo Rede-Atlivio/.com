@@ -56,7 +56,7 @@ async function carregarLista() {
                 </div>`;
 
             let badge = data.tag ? `<span class="bg-purple-100 text-purple-700 text-[9px] px-2 py-1 rounded font-bold uppercase">${data.tag}</span>` : '';
-            const safeData = encodeURIComponent(JSON.stringify({id: d.id, ...data}));
+
 
             tbody.innerHTML += `
                 <tr class="border-b border-slate-800/50 hover:bg-slate-900/50 transition">
@@ -77,7 +77,7 @@ async function carregarLista() {
                         </span>
                     </td>
                     <td class="p-3 text-right">
-                        <button onclick="window.editarProd('${d.id}', '${safeData}')" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white p-2 rounded mr-1 transition">✏️</button>
+                        <button onclick="window.editarProd('${d.id}')" class="bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white p-2 rounded mr-1 transition">✏️</button>
                         <button onclick="window.excluirProd('${d.id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white p-2 rounded transition">🗑️</button>
                     </td>
                 </tr>`;
