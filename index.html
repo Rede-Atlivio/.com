@@ -44,30 +44,8 @@
          letter-spacing: 0.5px;
         }
         .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
-        /* 💊 ESTILO POLISHOP: Pílulas de Filtro da Loja */
-        .filter-pill { 
-            padding: 8px 16px; 
-            border-radius: 99px; 
-            font-size: 9px; 
-            font-weight: 900; 
-            white-space: nowrap; 
-            transition: all 0.2s; 
-            background-color: #f1f5f9; /* Slate-100 */
-            color: #64748b; /* Slate-500 */
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .filter-pill.active { 
-            background-color: #7c3aed !important; /* Roxo Atlivio */
-            color: white !important; 
-            border-color: #7c3aed !important;
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); 
-        }
-        /* 🚫 Esconde a barra de rolagem horizontal dos filtros sem perder a função */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .filter-pill { white-space: nowrap; transition: all 0.2s; }
+        .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
         .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
         .subtab-btn.active { background-color: #2563eb !important; color: white !important; font-weight: 900; border-radius: 99px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
         .nav-tab-atlivio { transition: all 0.2s ease; border: 1px solid transparent; }
@@ -449,7 +427,7 @@
     <button onclick="switchTab('empregos')" id="tab-empregos" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Empregos 💼</button>
     <button onclick="switchTab('missoes')" id="tab-missoes" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Micro Tarefas 📷</button>
     <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Oportunidades ⚡</button>
-    <button onclick="switchTab('loja'); window.carregarProdutos();" id="tab-loja" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Produtos 🛒</button>
+    <button onclick="switchTab('loja')" id="tab-loja" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Produtos 🛒</button>
     <button onclick="switchTab('ganhar')" id="tab-ganhar" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-green-600 uppercase italic">Carteira 💰</button>
     <button onclick="switchTab('canal')" id="tab-canal" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Canal ATLIVIO 📺</button>
     <button onclick="switchTab('notificacoes')" id="tab-notificacoes" class="hidden"></button>
@@ -887,12 +865,7 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
     </div>
 </section>
 
-<section id="sec-support" class="hidden space-y-4 animate-fadeIn fixed inset-0 z-[20000] bg-white overflow-y-auto">
-    <div class="sticky top-0 bg-white/80 backdrop-blur-md p-4 flex justify-between items-center border-b z-[20001]">
-        <button onclick="switchTab('loja')" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">⬅️ Voltar</button>
-        <h3 class="text-slate-800 font-black uppercase italic text-xs">Suporte Oficial</h3>
-        <div class="w-10"></div>
-    </div>
+<section id="sec-support" class="hidden space-y-4 animate-fadeIn">
     <div class="flex flex-col items-center justify-center py-10 text-center">
         <div class="w-16 h-16 bg-emerald-600/10 rounded-full flex items-center justify-center text-3xl mb-4">💬</div>
         <h2 class="text-xl font-black text-slate-800 uppercase italic">Suporte Atlivio</h2>
@@ -1602,32 +1575,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         </div>
     </div>
 </div>
-<div id="modal-vault-content" class="hidden fixed inset-0 z-[10002] bg-slate-950 overflow-y-auto custom-scrollbar animate-fadeIn">
-    <div class="sticky top-0 bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/10 z-[10003]">
-        <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src='';" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">
-            ⬅️ Voltar para Loja
-        </button>
-        <h3 id="vault-product-title" class="text-white font-black uppercase italic text-xs tracking-tighter truncate px-4 text-center flex-1">Conteúdo Exclusivo</h3>
-        <div class="w-20"></div> </div>
 
-    <div class="p-6 max-w-2xl mx-auto pb-32">
-        <div id="vault-video-container" class="hidden mb-8 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 aspect-video bg-black relative">
-            <iframe id="vault-iframe" class="w-full h-full" src="" frameborder="0" allow="autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        </div>
-
-        <div id="vault-text-content" class="animate-fadeIn">
-            <h1 id="vault-main-headline" class="text-2xl font-black text-white italic mb-6 leading-tight decoration-purple-500 underline underline-offset-8"></h1>
-            <div id="vault-body-text" class="text-slate-300 text-sm leading-relaxed space-y-4 font-medium">
-                </div>
-        </div>
-
-        <div class="mt-16 p-8 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-[3rem] border border-white/5 text-center shadow-inner">
-            <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl">💬</div>
-            <p class="text-[10px] text-blue-400 font-black uppercase mb-2 tracking-widest">Dúvidas sobre este conteúdo?</p>
-            <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src=''; window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
-        </div>
-    </div>
-</div>
 </body>
 </html>
         
