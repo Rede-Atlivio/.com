@@ -860,27 +860,32 @@ document.getElementById('modal-video-maestro')?.addEventListener('click', (e) =>
 });
 
 // 🖼️ 3. VISUALIZADOR UNIVERSAL DE IMAGENS (O Projetor)
+// 🖼️ [V2026] O PROJETOR UNIFICADO (Usa o Cofre para Fotos)
 window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
-    const modal = document.getElementById('modal-video-maestro');
-    const container = modal?.querySelector('div.bg-black');
+    const modal = document.getElementById('modal-vault-content');
+    const bodyText = document.getElementById('vault-body-text');
+    const videoCont = document.getElementById('vault-video-container');
     
-    if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
+    if (!modal || !bodyText) return console.error("❌ Erro: Estrutura do Cofre não encontrada.");
 
-    container.innerHTML = `
-        <button onclick="window.fecharModalMaestro()" 
-                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
-            ×
-        </button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
-        <div class="absolute bottom-10 left-0 right-0 text-center px-4">
-            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10 shadow-2xl">
-                ${legenda}
-            </span>
+    // 1. Esconde o vídeo (já que é uma foto)
+    if (videoCont) videoCont.classList.add('hidden');
+
+    // 2. Injeta a imagem no corpo do texto do cofre
+    bodyText.innerHTML = `
+        <div class="flex flex-col items-center gap-4 animate-fadeIn">
+            <img src="${url}" class="w-full rounded-2xl shadow-2xl border border-white/10 object-contain max-h-[60vh]">
+            <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">${legenda}</p>
         </div>
     `;
-    
+
+    // 3. Ajusta os títulos
+    document.getElementById('vault-product-title').innerText = "GALERIA MAESTRO";
+    document.getElementById('vault-main-headline').innerText = legenda;
+
+    // 4. Abre o modal
     modal.classList.remove('hidden');
-    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.display = 'block';
 };
 
 // 🔗 4. PONTES DE COMPATIBILIDADE
