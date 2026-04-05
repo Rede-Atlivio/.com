@@ -1063,6 +1063,54 @@ window.abrirCofreConteudo = async (prodId) => {
 };
 
 // ============================================================================
+// 🛰️ MOTOR DE NAVEGAÇÃO E LIMPEZA V2026
+// Resolve o erro do Botão de Ação e libera as Micro Tarefas
+// ============================================================================
+
+// 1. Faz o botão verde (Ação) funcionar e fechar o modal
+window.navegarAba = (abaAlvo) => {
+    console.log(`🚀 [Maestro] Navegando para: ${abaAlvo}`);
+    
+    // Fecha o modal antes de trocar a aba para não bugar a tela
+    const modal = document.getElementById('modal-vault-content');
+    if (modal) {
+        modal.classList.add('hidden');
+        const iframe = document.getElementById('vault-iframe');
+        if (iframe) iframe.src = ''; // Cala o vídeo
+    }
+
+    if (typeof window.switchTab === 'function') {
+        window.switchTab(abaAlvo);
+    }
+};
+
+// 2. O "Limpa Trilhos" (Evita o ReferenceError quando você clica em Realizar Missão)
+window.fecharModalMaestro = () => {
+    const modal = document.getElementById('modal-vault-content');
+    if (modal) {
+        modal.classList.add('hidden');
+        const iframe = document.getElementById('vault-iframe');
+        if (iframe) iframe.src = '';
+    }
+    console.log("🌊 [Maestro] Tela liberada para novas tarefas.");
+};
+
+// 3. Ponte para abrir imagens usando o design do Cofre
+window.exibirImagemModal = (url, legenda = "Visualização") => {
+    const modal = document.getElementById('modal-vault-content');
+    const body = document.getElementById('vault-body-text');
+    const video = document.getElementById('vault-video-container');
+    
+    if (modal && body) {
+        if (video) video.classList.add('hidden');
+        body.innerHTML = `<img src="${url}" class="w-full rounded-2xl border border-white/10 shadow-2xl">`;
+        document.getElementById('vault-product-title').innerText = "GALERIA";
+        document.getElementById('vault-main-headline').innerText = legenda;
+        modal.classList.remove('hidden');
+    }
+};
+
+// ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
 window.switchTab = switchTab;
