@@ -1,1075 +1,1581 @@
-// 🛰️ IDENTIDADE ATLIVIO V60
-// Garante que o navegador saiba exatamente qual versão do motor está rodando.
-localStorage.setItem('atlivio_version', '2026_V60');
-// 🔗 [V2026] RECEPTOR DE INDICAÇÃO BLINDADO
-// 🔗 [V2026] RECEPTOR DE INDICAÇÃO BLINDADO (SOLDA DUPLA)
-(function capturarPadrinhoURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const refID = urlParams.get('ref');
-    if (refID) {
-        // Gil, salvamos nos dois para garantir que o Auth ache mesmo após recarregar
-        sessionStorage.setItem('atlivio_ref', refID);
-        localStorage.setItem('atlivio_ref_backup', refID); 
-        console.log("%c🔗 [Indicação] Padrinho soldado com sucesso: " + refID, "color: #8b5cf6; font-weight: bold;");
-    }
-})();
-// ============================================================================
-
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO PWA (AUTO-UPDATE)
-// ============================================================================
-// 🛰️ MOTOR DE SINCRONIZAÇÃO DUPLO (PWA + NOTIFICAÇÕES)
-// Essencial para escala de milhões: registra o cache e a antena separadamente.
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', async () => {
-        try {
-            // 1. Registro do Escudo (Cache e Offline)
-            const regSw = await navigator.serviceWorker.register('./sw.js');
-            console.log("🛡️ Escudo de Cache: Ativo");
-
-            // 2. Registro da Antena (O rádio que ouve o Google FCM)
-            // Sem esta linha, o Google dá o erro "Requested entity was not found"
-            const regMsg = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
-            console.log("📡 Antena de Notificações: Sintonizada");
-
-            // ✨ SISTEMA ANTI-LOOP V26: Atualiza o App em segundo plano
-            regSw.onupdatefound = () => {
-                const worker = regSw.installing;
-                worker.onstatechange = () => {
-                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
-                        console.log("📥 Atlívio Atualizada: O novo motor será ativado no próximo login.");
-                    }
-                };
-            };
-        } catch (err) {
-            console.error('❌ Falha Crítica no Motor PWA:', err);
-        }
-    });
-}
-// ============================================================================
-import { app, auth, db, storage, provider } from './config.js';
-import { doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-/**
- * 🛰️ MONITOR DE DEPLOY V26 (Blindado)
- * Esta função vigia ordens de limpeza global enviadas pelo Admin.
- * Encapsulada para evitar erros de permissão antes do login.
- */
-window.iniciarMonitorDeploy = function() {
-    onSnapshot(doc(db, "settings", "deploy"), (snap) => {
-        if (snap.exists()) {
-            const data = snap.data();
-            const ultimaOrdem = data.force_reset_timestamp?.toMillis() || 0;
-            const ordemLocal = localStorage.getItem('last_force_reset') || 0;
-
-            if (ultimaOrdem > ordemLocal) {
-                console.log("🧹 ORDEM DO ADMIN: Executando limpeza de cache...");
-                localStorage.setItem('last_force_reset', ultimaOrdem);
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(regs => {
-                        for(let reg of regs) reg.unregister();
-                    });
-                }
-                caches.keys().then(names => {
-                    for (let name of names) caches.delete(name);
-                }).then(() => {
-                    location.reload(true);
-                });
-            }
-        }
-    }, (err) => console.warn("🛰️ Radar Deploy: Aguardando sinal do Admin..."));
-};
-
-// ============================================================================
-
-// ============================================================================
-// 4. CARREGAMENTO DOS MÓDULOS (Agora é seguro importar)
-// ============================================================================
-import './auth.js';
-import './modules/auth_sms.js';
-import './modules/services.js';
-import './modules/jobs.js';
-import './modules/missions.js'; // 🚀 NOVO: Suporte ao motor de Micro Tarefas e Atlas Vivo
-import './modules/opportunities.js';
-import './modules/chat.js';
-import './modules/reviews.js';
-import './modules/atlas_b2b.js'; // 🛰️ IMPORTANTE: Adiciona o Gerente da Inteligência Atlas
-// Importa a carteira e extrai a função de monitoramento
-import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
-
-import { checkOnboarding } from './modules/onboarding.js';
-import { abrirConfiguracoes } from './modules/profile.js';
-import './modules/user_notifications.js';
-import './modules/products.js'; // 🚀 SOLDA V2026: Importando o motor da loja
-
-window.abrirConfiguracoes = abrirConfiguracoes;
-
-// 🛡️ MAESTRO V127: Flag de controle e Motor Universal de Engajamento
-window.atlivioBootConcluido = false;
-
-/**
- * 🛰️ MOTOR MAESTRO UNIVERSAL (V127)
- * Esta é a Torre de Controle que fala com o usuário baseado em quem ele é.
- * @param {string} origem - De onde vem o alerta (chat, jobs, missions, etc)
- * @param {object} dados - { id, type, msgPrestador, msgCliente, linkPrestador, linkCliente }
- */
-window.maestroUniversal = function(origem, dados) {
-    // 🛡️ Verifica se a função visual de balão existe para não quebrar o código
-    if (!window.mostrarBarraNotificacao) return;
-
-    // 🕵️ Identifica se o usuário atual é um Prestador (quem trabalha)
-    const isP = window.userProfile?.is_provider === true;
-
-    // 🏗️ Monta a configuração baseada na Identidade (Bipolaridade do Maestro)
-    const configMaestro = {
-        type: dados.type || 'marketing', // Ícone do balão (chat, alert, gift, etc)
-        // Escolhe a mensagem certa para o público certo
-        message: isP ? (dados.msgPrestador || dados.message) : (dados.msgCliente || dados.message),
-        // Escolhe o destino certo baseado na aba que o usuário deve ir
-        action: isP ? (dados.linkPrestador || dados.action) : (dados.linkCliente || dados.action)
-    };
-
-    // 🚀 Dispara o balão na tela com o ID único para evitar duplicação
-    window.mostrarBarraNotificacao(dados.id || `maestro_${origem}_${Date.now()}`, configMaestro);
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlivio - Marketplace Híbrido</title>
     
-    console.log(`📡 [Maestro Universal] Disparo efetuado via: ${origem} | Alvo: ${isP ? 'Prestador' : 'Cliente'}`);
-};
-window.abaAtual = 'home';
-
-// 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
-window.addEventListener('userProfileLoaded', (e) => {
-    window.userProfile = e.detail;
-    // 🛡️ [V2026] Blindagem de Posse: Garante que o sistema não trave se o cofre estiver vazio
-    if (window.userProfile && !window.userProfile.my_vault) {
-        window.userProfile.my_vault = [];
-    }
-    if (window.userProfile) {
-        Object.defineProperty(window.userProfile, 'saldo', {
-            get: function() { return this.wallet_balance || 0; },
-            configurable: true
-        });
-        console.log("✅ Polyfill de Saldo injetado via Evento.");
-    }
-});
-// ============================================================================
-// 5. SISTEMA DE NAVEGAÇÃO (TAB SYSTEM V10.0 - COM CONSCIÊNCIA CONTEXTUAL)
-// ============================================================================
-function switchTab(tabName, isAutoBoot = false) {
- // ✨ V153: Sincronia de Histórico - Abre o Sininho sem apagar as mensagens
-    if (tabName === 'notificacoes') {
-        // 🛰️ V157: Avisa ao banco e ao navegador que o usuário limpou o Sininho AGORA
-    const badge = document.getElementById('badge-notificacao') || document.getElementById('notif-badge');
-    if (badge) badge.classList.add('hidden');
-
-    // Grava a hora da limpeza no Navegador e no Banco
-    const agora = Date.now();
-    localStorage.setItem('maestro_last_sync', agora);
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#1e3a8a">
     
-    // Atualiza o perfil do usuário no Firestore para o Maestro saber que ele está "em dia"
-    const { doc, updateDoc } = window.firebaseModules;
-    updateDoc(doc(window.db, "usuarios", auth.currentUser.uid), {
-        last_notif_read: agora // Nova trava de segurança no banco
-    }).catch(e => console.warn("Erro ao atualizar trava de leitura."));
-        // 2. Carrega as mensagens do histórico para o usuário ver
-        if (typeof window.carregarHistoricoNotificacoes === 'function') {
-            window.carregarHistoricoNotificacoes();
-        } else {
-            console.warn("⚠️ Motor de Histórico não carregado.");
-        }
-    }
-
-    // 🛡️ TRAVA DE SEGURANÇA: Impede que processos automáticos (AutoBoot) atropelem o sistema.
-    if (isAutoBoot && window.atlivioBootConcluido) return;
-
-    // 🗺️ MAPA MAESTRO V30: Sincronia Total (Novo + Legado Admin)
-    const mapa = { 
-        'home': 'home',
-        'servicos': 'servicos', 'services': 'servicos', 'contratar': 'servicos',
-        'empregos': 'empregos', 'jobs': 'empregos', 'vaga': 'empregos',
-        'extra': 'missoes', 'missoes': 'missoes', 'tarefas': 'missoes', // 🎯 Rota unificada para Atlas Vivo
-        'oportunidades': 'oportunidades',
-        'produtos': 'loja', 'loja': 'loja', 'marketing': 'loja',
-        'chat': 'servicos', // 💬 Redireciona o chat para Serviços para evitar a tela branca da sec-chat
-        'canal': 'canal', 'tutorials': 'canal',
-        'wallet_balance': 'ganhar', 'wallet': 'ganhar', 'ganhar': 'ganhar'
-    };
-
-    const nomeLimpo = mapa[tabName] || tabName;
-    const perfil = window.userProfile;
-    const isPrestador = perfil?.is_provider || false;
-
-    // 🛡️ TRAVA DE SEGURANÇA POR PERFIL (Baseado no seu novo mapa)
-    const requerPrestador = ['servicos', 'empregos', 'missoes', 'extra'].includes(tabName) && !['contratar', 'vaga'].includes(tabName);
-    // 🛍️ EXPLORAÇÃO LIVRE: 'loja' e 'produtos' foram removidos da trava para acesso universal
-    const requerCliente = ['contratar', 'vaga'].includes(tabName);
-
-   // 🛡️ NAVEGAÇÃO LIVRE: O Maestro agora permite a transição entre abas sem forçar troca de perfil.
-    if ((requerPrestador && !isPrestador) || (requerCliente && isPrestador)) {
-        console.log("ℹ️ [Maestro] Navegação cross-profile permitida.");
-    }
-
-    console.log("👉 [Navegação] Solicitada:", tabName, "──▶ Ativando:", nomeLimpo);
-    // 📍 REGISTRO CONTEXTUAL FINAL: Memoriza a aba ativa saneada para o sistema de notificações
-    window.abaAtual = nomeLimpo;
-
-    // 🧹 LIMPEZA TOTAL
-    document.querySelectorAll('main > section').forEach(el => {
-        el.classList.add('hidden');
-        el.style.display = 'none';
-    });
-
-    const alvo = document.getElementById(`sec-${nomeLimpo}`);
-    if(alvo) {
-        alvo.classList.remove('hidden');
-        alvo.style.display = 'block';
-    } else {
-        console.warn("⚠️ [Maestro] Seção não localizada: sec-" + nomeLimpo);
-    }
-
-    document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
-    const activeBtn = document.getElementById(`tab-${tabName}`) || document.getElementById(`tab-${nomeLimpo}`);
-    if(activeBtn) activeBtn.classList.add('active');
-
-    window.registrarEventoMaestro({ tipo: "navegacao", aba: tabName });
-
-    // ⚡ CARREGAMENTO DE MÓDULOS (Sincronizado com nomeLimpo)
-    if(nomeLimpo === 'home') {
-        const homeContent = document.getElementById('home-content');
-        if(homeContent && homeContent.innerHTML.includes('Sincronizando')) {
-            if(window.renderizarTourBoasVindas) window.renderizarTourBoasVindas();
-        }
-    }
-    if(nomeLimpo === 'servicos') {
-        if(window.carregarServicos) window.carregarServicos();
-        if(tabName === 'contratar') setTimeout(() => { if(window.switchServiceSubTab) window.switchServiceSubTab('contratar'); }, 100);
-    }
-    if(nomeLimpo === 'empregos') {
-        if(window.carregarInterfaceEmpregos) window.carregarInterfaceEmpregos();
-    }
-    if(nomeLimpo === 'loja' && window.carregarProdutos) window.carregarProdutos();
-    if(nomeLimpo === 'ganhar') {
-        if(window.carregarCarteira) window.carregarCarteira();
-    }
-    // 🌍 GATILHO ATLAS VIVO: Se o usuário entrar em Missões, ligamos o radar e o histórico
-    if(nomeLimpo === 'missoes') {
-        if(window.carregarMissoes) window.carregarMissoes(); 
-        if(window.carregarMissoesRealizadas) window.carregarMissoesRealizadas(); // 🚀 Carrega os comprovantes
-        console.log("🛰️ Atlas Vivo: Radar e Histórico sincronizados.");
-    }
-    if(nomeLimpo === 'oportunidades' && window.carregarOportunidades) window.carregarOportunidades();
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    // 💼 GATILHO B2B: Se o destino for Gestão Atlas, ligamos o motor executivo
-    if(nomeLimpo === 'b2b_gestao') {
-        if(window.initB2B) {
-            window.initB2B();
-        } else {
-            console.warn("⚠️ Motor B2B não carregado. Verifique o import no topo do app.js");
+    <style> 
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        .login-card-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .bg-gradient-atlivio { background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #7c3aed 100%); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .chat-bubble-me { background-color: #3b82f6; color: white; border-radius: 12px 12px 0 12px; margin-left: auto; }
+        .chat-bubble-them { background-color: #f3f4f6; color: #1f2937; border-radius: 12px 12px 12px 0; margin-right: auto; }
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .rate-star { cursor: pointer; color: #e5e7eb; transition: color 0.2s; }
+        .rate-star.active { color: #fbbf24; }
+         /* 🛡️ BLINDAGEM DE CONTRASTE DO PERFIL */
+        .perfil-cliente-tag { 
+            color: #ffffff !important; /* Texto Branco para legibilidade máxima */
+            background: #15803d; /* Fundo Verde sólido */
+            padding: 2px 8px;
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
         }
-    }
+        .perfil-prestador-tag { 
+         color: #ffffff !important; 
+         background: #0f172a; /* Slate-900 (Preto Profissional) */
+         padding: 4px 10px;
+         border: 1px solid rgba(255,255,255,0.2);
+         border-radius: 8px;
+         box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+         letter-spacing: 0.5px;
+        }
+        .tag-select.selected { background-color: #dbeafe; border-color: #3b82f6; color: #1e3a8a; font-weight: bold; }
+        .filter-pill { white-space: nowrap; transition: all 0.2s; }
+        .filter-pill.active { background-color: #2563eb; color: white; border-color: #2563eb; }
+        .subtab-btn { border-bottom: 2px solid transparent; color: #9ca3af; transition: all 0.3s; cursor: pointer; }
+        .subtab-btn.active { background-color: #2563eb !important; color: white !important; font-weight: 900; border-radius: 99px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .nav-tab-atlivio { transition: all 0.2s ease; border: 1px solid transparent; }
+        .nav-tab-atlivio:not(.active) { background-color: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.05); }
 
-    if(nomeLimpo === 'canal') {
-        // Apenas esconde o modal, sem disparar switchTab novamente
-        const modal = document.getElementById('modal-trava-perfil');
-        if (modal) modal.classList.add('hidden'); 
+        /* 1. Linha Separadora de Fila */
+        .radar-divider { display: flex; align-items: center; gap: 10px; margin: 15px 0; opacity: 0.6; }
+        .radar-divider::before, .radar-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); }
+        .radar-divider span { font-size: 8px; font-weight: 900; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* 2. Pílula de Conversão (Layout Grid Estável) */
+        .atlivio-pill { 
+            display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+            padding: 12px 16px; background: #1e293b; border-left: 4px solid #3b82f6; 
+            border-radius: 14px; margin-bottom: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.2s ease;
+        }
+        .atlivio-pill.is-red { border-left-color: #ef4444; background: #2d0606; }
+        .btn-ver-pill { background: #2563eb; color: white; font-weight: 900; font-size: 9px; padding: 8px 16px; border-radius: 8px; text-transform: uppercase; cursor: pointer; }
+        .btn-ver-pill:active { transform: scale(0.95); }
         
-        import('./modules/canal.js?v=' + Date.now())
-            .then(m => { if(m.init) m.init(); })
-            .catch(e => console.error("Erro ao carregar módulo canal:", e));
-         }
-       }
-
-function switchServiceSubTab(subTab) {
-    console.log("🔍 Sub-aba Cliente:", subTab);
-    
-    // 🛡️ LISTA DE SEGURANÇA: Esconde tudo antes de mostrar a nova
-    const views = ['contratar', 'andamento', 'historico'];
-    const subContainers = ['meus-pedidos-andamento', 'meus-pedidos-historico'];
-
-    views.forEach(t => {
-        const el = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`subtab-${t}-btn`);
-        if(el) el.classList.add('hidden');
-        if(btn) btn.classList.remove('active');
-    });
-
-    // Mostra apenas o alvo
-    const target = document.getElementById(`view-${subTab}`);
-    const targetBtn = document.getElementById(`subtab-${subTab}-btn`);
-    if(target) target.classList.remove('hidden');
-    if(targetBtn) targetBtn.classList.add('active');
-    
-    // 🧹 LIMPEZA DE VAZAMENTO: Se não for a aba dela, garante que o container interno suma
-    subContainers.forEach(id => {
-        const container = document.getElementById(id);
-        if(container) {
-            // Se a aba atual NÃO for a dona do container, esconde o conteúdo interno
-            const dono = id.includes(subTab);
-            container.style.display = dono ? 'block' : 'none';
+        /* 3. Skin de Alerta V24 (Impacto Visual Máximo) */
+        div.request-card.is-red-alert { 
+            background-color: #450a0a !important; 
+            border: 2px solid #ef4444 !important; 
+            box-shadow: 0 0 60px rgba(220, 38, 38, 0.6) !important;
         }
-    });
+        .is-red-alert h2 { color: #fee2e2 !important; text-shadow: 0 0 20px rgba(239, 68, 68, 0.9); }
+        .is-red-alert .bg-blue-600 { background-color: #dc2626 !important; } /* Ajusta badge de oportunidade */
 
-    if(subTab === 'andamento' && window.carregarPedidosAtivos) window.carregarPedidosAtivos();
-    if(subTab === 'historico' && window.carregarHistorico) window.carregarHistorico();
-}
-
-function switchProviderSubTab(subTab) {
-    console.log("🔍 Sub-aba Prestador:", subTab);
-    ['radar', 'ativos', 'historico'].forEach(t => {
-        const el = document.getElementById(`pview-${t}`);
-        const btn = document.getElementById(`ptab-${t}-btn`);
-        if(el && t !== subTab) el.classList.add('hidden');
-        if(btn) btn.classList.toggle('active', t === subTab);
-    });
-    const target = document.getElementById(`pview-${subTab}`);
-    if(target) target.classList.remove('hidden');
-
-    if(subTab === 'ativos' && window.carregarPedidosPrestador) window.carregarPedidosPrestador();
-    if(subTab === 'historico' && window.carregarHistoricoPrestador) window.carregarHistoricoPrestador();
-}
-console.log("✅ App Carregado: Sistema Híbrido Online.");
-
-// ============================================================================
-// 6. MONITORAMENTO DE LOGIN E CONTROLE DO RADAR (CORREÇÃO VITAL)
-// ============================================================================
-
-async function carregarInterface(user) {
-    // 🔥 Bloqueia se o Maestro já deu o sinal verde (Garante carga única e evita loops)
-    if (window.atlivioBootConcluido) return;
-    window.atlivioBootConcluido = true;
-
-   console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
-
-    // 🛰️ V180: IGNIÇÃO FINAL DO RÁDIO (FCM)
-    // Usamos o motor original com um delay estratégico para evitar conflitos de permissão.
-    // A trava 'radioSoldado' impede que o sistema tente soldar o token várias vezes.
-    if (!window.radioSoldadoNestaSessao) {
-        window.radioSoldadoNestaSessao = true;
-        setTimeout(() => {
-            if (typeof window.capturarEnderecoNotificacao === 'function') {
-                console.log("🛰️ [Antena] Solicitando endereço digital (FCM) via App Flow...");
-                window.capturarEnderecoNotificacao(user.uid);
-            }
-        }, 7000); // 7 segundos garante que até celulares lentos já processaram o login
-    }
-    // Identifica perfil para o Guia Inteligente
-    if (window.userProfile) window.userProfile.is_provider = !!document.getElementById('online-toggle');
-    
-    // 🚀 [Maestro] DESTRAVAMENTO VISUAL: Mata o loader e libera o container
-    const loader = document.getElementById('loading-screen') || document.getElementById('sync-loader');
-    if(loader) {
-        loader.classList.add('hidden');
-        loader.style.display = 'none';
-    }
-
-    document.getElementById('auth-container')?.classList.add('hidden');
-    const mainApp = document.getElementById('app-container');
-    if(mainApp) {
-        mainApp.classList.remove('hidden');
-        mainApp.style.display = 'block';
-    }
-
-    // --- 🛑 AQUI ESTAVA FALTANDO O LISTENER DO BOTÃO! ---
-    const toggle = document.getElementById('online-toggle');
-    if (toggle) {
-        // Remove clones anteriores para evitar duplicação de eventos
-        const novoToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(novoToggle, toggle);
-
-        novoToggle.addEventListener('change', (e) => {
-         if (e.target.checked) {
-                console.log("🟢 [UI] Botão ativado manualmente. Iniciando Radar...");
-                window.radarIniciado = false; 
-                if (window.iniciarRadarPrestador) window.iniciarRadarPrestador(user.uid);
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            } else {
-                console.log("🔴 [UI] Botão desativado manualmente. Parando Radar...");
-                if (window.pararRadarFisico) window.pararRadarFisico();
-                if (window.garantirContainerRadar) window.garantirContainerRadar();
-            }   
-        });
-
-       // 🚀 INICIALIZAÇÃO INTELIGENTE V23: Sem timeouts que atropelam o services.js
-        if (novoToggle.checked && window.iniciarRadarPrestador) {
-             window.iniciarRadarPrestador(user.uid);
-        } else if (!novoToggle.checked && window.pararRadarFisico) {
-            window.pararRadarFisico();
+        /* ✅ CORREÇÃO GERAL: INPUTS COM LETRA ESCURA */
+        input, textarea, select {
+            color: #1f2937 !important; /* Cinza Escuro */
+            background-color: #f9fafb !important; /* Fundo Claro */
         }
-    }
 
-    // 🎨 MAESTRO GRID V62: Corrige o vazamento horizontal e organiza em cards (Mobile e PC)
-    const styleFix = document.createElement('style');
-    styleFix.innerHTML = `
-        /* 📱 Mobile: Força uma única coluna e impede o transbordamento horizontal */
-        #notif-list-container {
+        /* ✅ EXCEÇÃO: ONBOARDING (LETRA BRANCA) */
+        #modal-onboarding input { 
+            color: white !important; 
+            background-color: #0f172a !important; /* Fundo Escuro */
+        }
+
+        /* AJUSTE DO AUTO-PREENCHIMENTO (CHROME) */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 30px #f9fafb inset !important;
+            -webkit-text-fill-color: #1f2937 !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
+       /* AUTO-PREENCHIMENTO NO ONBOARDING */
+        #modal-onboarding input:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+            -webkit-text-fill-color: white !important;
+        }
+
+        /* 🛰️ DESIGN DE SUGESTÕES ATLIVIO (V3 - ESTÁVEL) */
+        .pac-container {
+            z-index: 999999 !important;
+            background-color: #0f172a !important;
+            border: 1px solid rgba(34, 211, 238, 0.3) !important;
+            border-radius: 16px !important;
+            margin-top: 8px !important;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+            font-family: inherit !important;
+            overflow: hidden !important;
+        }
+        .pac-item {
+            padding: 12px 16px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+            cursor: pointer !important;
+            color: #94a3b8 !important;
+            transition: all 0.2s ease;
+        }
+        .pac-item:hover { background-color: rgba(34, 211, 238, 0.1) !important; }
+        .pac-item-query { color: #f8fafc !important; font-size: 15px !important; }
+        .pac-matched { color: #22d3ee !important; font-weight: 900 !important; }
+
+        /* 🚫 CAMUFLAGEM DO LOGO (Engana o Google para a lista não sumir) */
+        .pac-logo { background-image: none !important; padding: 0 !important; }
+        .pac-logo:after { content: "" !important; display: none !important; }
+        .pac-icon { display: none !important; }
+
+        /* 🛡️ PROTEÇÃO DO INPUT DE VALOR: Impede linhas fantasmas no Passo 3 */
+        #b2b-reward, #b2b-reward:focus, #b2b-reward:active {
+            outline: none !important;
+            box-shadow: none !important;
+            -webkit-appearance: none !important;
+            border: 2px solid rgba(16, 185, 129, 0.2) !important;
+        }
+
+        /* ✨ ANIMAÇÃO DA FAIXA DE BÔNUS */
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 2s infinite;
+        }
+
+   /* ============================================================
+      RADAR VISUAL V2026 - SISTEMA ATLAS VIVO 🌍
+      ============================================================ */
+
+        /* Gil, este é o motor que faz o globo girar suavemente */
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Classe que aplicamos na div do emoji */
+        .animate-spin-slow { 
+            display: inline-block; /* Necessário para o navegador permitir a rotação */
+            animation: spin-slow 12s linear infinite; 
+        }
+
+        /* 📱 FEED SOCIAL: Container rolável estilo rede social para Missões */
+        #lista-missoes {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
+            padding-bottom: 100px;
+        }
+
+        /* 1. CONTAINER FLUIDO DO RADAR DE SERVIÇOS */
+        #radar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             width: 100%;
-            max-width: 100%;
-            overflow-x: hidden !important; /* Mata o carrossel quebrado */
+            max-width: 400px;
+            max-height: 80vh; /* Limita a altura para não vazar da tela */
+            overflow-y: auto; /* Scroll interno se houver muitos cards */
+            margin: 0 auto;
+            z-index: 8000;
             padding: 10px 5px;
         }
 
-        /* 💻 Desktop (PC): Transforma em Grid de 2 colunas para aproveitar espaço */
-        @media (min-width: 1024px) {
-            #notif-list-container {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 20px;
-            }
+        /* 2. O CARD PADRÃO (DARK BLUE) */
+        .request-card {
+            pointer-events: auto;
+            background-color: #0f172a !important; /* Azul Noturno */
+            border: 1px solid #1e3a8a;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: slideInDown 0.4s ease-out;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
         }
 
-        /* ⚓ Scrollbar Industrial para a seção de notificações */
-        #sec-notificacoes {
-            max-height: 85vh;
-            overflow-y: auto !important;
-            overflow-x: hidden !important;
-            padding-bottom: 50px;
-            scrollbar-width: thin;
-            scrollbar-color: #3b82f6 #0f172a;
+        /* 3. O CARD MINIMIZADO (MODO LISTA) */
+        .request-card.minimized {
+            min-height: 65px;
+            background-color: #1e293b !important;
+            border-left: 4px solid #f59e0b !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 16px !important;
+            opacity: 0.95;
+            transform: scale(0.98);
+            cursor: pointer;
         }
-        #sec-notificacoes::-webkit-scrollbar { width: 6px; }
-        #sec-notificacoes::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+
+        /* Esconde detalhes quando minimizado */
+        .request-card.minimized [id^="detalhes-"], 
+        .request-card.minimized .card-details { 
+            display: none !important; 
+        }
+
+        /* ANIMAÇÕES E PROFUNDIDADE V12 FINAL */
+        @keyframes slideInDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideOutRight { to { transform: translateX(100%); opacity: 0; } }
+        .request-card.removing { animation: slideOutRight 0.4s ease-in forwards; }
         
-        /* Ajuste fino nos cards para não esticarem o layout */
-       #notif-list-container > div {
-            width: 100% !important;
-            box-sizing: border-box;
-        }
+        /* Sistema de Fila Vertical Limpa */
+        #radar-container > div { position: relative; transition: all 0.5s ease; }
 
-        /* 💡 EQUALIZAÇÃO NEON ATLIVIO V2026 */
-        /* Gil, aqui acendemos as bordas neon sem mudar a cor do botão */
-        #btn-contratar-home { filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3)); border-color: #60a5fa !important; }
-        #btn-atlas-home { filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.4)); border-color: #22d3ee !important; }
-        #btn-renda-home { filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.3)); border-color: #34d399 !important; }
-        #btn-emprego-home { filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.3)); border-color: #fb923c !important; }
-    `;
-    document.head.appendChild(styleFix);
+        /* Estilo da Barra de Rolagem do Radar */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.4); border-radius: 10px; }
+        #radar-container { scrollbar-gutter: stable; }
 
-    // ============================================================================
-    // 🎯 GATILHO MAESTRO V28: Inteligência de Boas-Vindas (CORRIGIDO)
-    // ============================================================================
-    if (window.switchTab) {
-        console.log("🎯 [Maestro] Analisando intenção do usuário...");
+        /* Garante que o modal de termos sempre fique por cima de tudo */
+        #modal-terms { z-index: 999999 !important; }
+        /* 🛡️ TRAVA DE SOBERANIA: Impede que Antena e Offline apareçam juntos */
+        #radar-offline-state:not(.hidden) ~ #radar-empty-state,
+        #radar-offline-state:not(.hidden) ~ #radar-container { display: none !important; }
+        .z-maestro { z-index: 9999999 !important; } /* Garante que o alerta fique no topo absoluto da tela */
+    </style>
+
+    <script>
+        window.toggleTag = (btn) => { btn.classList.toggle('selected'); };
+    </script>
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCXX6zD4m2Yr8k9WcoRgIkbUWui11-zUpg&libraries=places&loading=async" async defer></script>
+</head>
+<body class="bg-slate-900 text-white font-sans selection:bg-blue-500 selection:text-white">
+
+    <audio id="notification-sound" src="https://actions.google.com/sounds/v1/cartoon/magic_chime.ogg" preload="auto"></audio>
+    <audio id="online-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
+
+    <input type="file" id="profile-upload" accept="image/*" class="hidden" onchange="uploadFotoPerfil(this)">
+    <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
+    <div id="auth-container" class="hidden min-h-screen bg-slate-900 flex flex-col">
         
-        // ⏳ Aguarda o esqueleto da página e os dados do perfil estabilizarem
-        setTimeout(() => {
-            // 🛡️ PROTEÇÃO V26: Força o reset visual antes de qualquer redirecionamento
-            window.switchTab('home', true); 
+        <div class="h-[30vh] md:h-[35vh] bg-gradient-atlivio relative flex flex-col items-center justify-center p-4 text-center">
+            <div class="absolute top-4 right-4">
+                <span class="bg-white/10 backdrop-blur-md text-white text-[10px] font-black px-3 py-1 rounded-full border border-white/20">BRA 🇧🇷</span>
+            </div>
+            
+            <div class="w-20 h-20 bg-white/10 backdrop-blur-2xl rounded-[2rem] mb-4 flex items-center justify-center border border-white/20 shadow-2xl relative shrink-0">
+                <svg class="w-12 h-12 text-white opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+                <div class="absolute -bottom-1 -right-1 bg-green-500 w-6 h-6 rounded-full border-4 border-slate-900 flex items-center justify-center text-[10px]">✔</div>
+            </div>
 
-            const isToggling = sessionStorage.getItem('is_toggling_profile') === 'true';
-            let userIntent = window.userProfile?.user_intent || "";
-            if (userIntent === "home" || isToggling) userIntent = ""; 
-            if (isToggling) sessionStorage.removeItem('is_toggling_profile');
+            <h1 class="text-4xl font-black text-white italic uppercase tracking-tighter mb-1">Atlivio</h1>
+            <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">O Primeiro Marketplace Híbrido do Mundo</p>
+        </div>
 
-            if (userIntent && userIntent !== "") {
-                console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
+        <div class="flex-1 bg-slate-900 rounded-t-[3rem] -mt-6 p-8 pt-10 relative z-10 login-card-up shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/5">
+            
+            <div id="login-step-phone" class="max-w-md mx-auto space-y-6">
+                <div class="text-left mb-8">
+                    <h2 class="text-2xl font-black text-white italic">Um jeito inteligente de trabalhar.</h2>
+                    <p class="text-slate-400 text-xs font-medium mt-1">Digite seu WhatsApp para acessar sua conta e gerenciar seus lucros.</p>
+                </div>
+
+                <div class="relative group">
+                    <span class="absolute left-4 top-5 text-slate-500 font-black text-sm tracking-tighter">BR +55</span>
+                    <input type="tel" 
+                           id="login-phone" 
+                           oninput="window.mascaraTelefone(this)" 
+                           placeholder="(00) 00000-0000" 
+                           class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 pl-20 text-white text-lg font-black focus:border-blue-500 outline-none transition-all shadow-inner group-hover:border-slate-600">
+                </div>
                 
-               // ⏱️ DELAY DE SANEAMENTO (V61): Filtro de Identidade Atlivio
-                setTimeout(() => {
-                    const mapaFiel = {
-                        'ganhar': 'missoes', 
-                        'loja': 'loja',      
-                        'produtos': 'loja', 
-                        'servicos': 'servicos'
-                    };
+                <button onclick="window.enviarSMSLogin()" id="btn-login-send" class="w-full bg-blue-600 text-white font-black uppercase py-5 rounded-2xl hover:bg-blue-500 transition-all shadow-[0_10px_30px_rgba(37,99,235,0.3)] transform active:scale-95 text-sm tracking-widest">
+                    Receber Código SMS 📲
+                </button>
+
+                <div class="relative py-2">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-white/5"></div></div>
+                    <div class="relative flex justify-center text-[9px] uppercase"><span class="bg-slate-900 px-4 text-slate-500 font-black tracking-widest">ou acesso rápido</span></div>
+                </div>
+
+                <button onclick="alert('🚀 SEGURANÇA MÁXIMA\n\nEstamos homologando o Login Google para garantir total proteção à sua carteira.\n\nPor enquanto, use o Login via SMS: é rápido, seguro e dispensa senhas!')" 
+                        class="w-full bg-slate-800 border-2 border-slate-700 text-slate-300 font-black py-4 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-700 transition active:scale-95">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" class="w-5 h-5">
+                    ENTRAR COM GOOGLE
+                </button>
+
+                <div class="pt-4 flex flex-col items-center gap-1">
+                    <p class="text-[10px] text-slate-500">Ao continuar, você concorda com as nossas</p>
+                    <div class="flex gap-2 mt-1">
+                        <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('termos');" class="text-blue-500 text-[10px] font-black underline decoration-2">Regras de Uso</a>
+                        <span class="text-slate-600 text-[10px]">e</span>
+                        <a href="javascript:void(0)" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('privacidade');" class="text-blue-500 text-[10px] font-black underline decoration-2">Privacidade</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="login-step-code" class="hidden max-w-md mx-auto space-y-6 animate-fadeIn">
+                <div class="text-center bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20">
+                    <p class="text-xs text-blue-400 font-bold">Enviamos o SMS para <span id="lbl-login-phone" class="text-white">...</span></p>
+                </div>
+                <input type="tel" id="login-code" placeholder="000000" maxlength="6" class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-5 text-white text-3xl tracking-[0.6em] text-center font-black focus:border-green-500 outline-none transition">
+                
+                <button onclick="window.confirmarCodigoLogin()" id="btn-login-verify" class="w-full bg-green-600 text-white font-black uppercase py-5 rounded-2xl shadow-lg transform active:scale-95">
+                    Entrar Agora 🚀
+                </button>
+                <button onclick="location.reload()" class="w-full text-[10px] text-slate-500 font-black uppercase tracking-widest hover:text-white transition">← Corrigir Número</button>
+            </div>
+
+            <div id="recaptcha-container" class="mt-4 flex justify-center"></div>
+        </div>
+    </div>
+
+    <script>
+        // MÁSCARA GLOBAL PARA O LOGIN
+        window.mascaraTelefone = (i) => {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d{5})(\d)/, "$1-$2");
+            i.value = v.substring(0, 15);
+        };
+    </script>
+
+    <div id="role-selection" class="hidden min-h-screen flex items-center justify-center bg-slate-900 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-lg text-gray-800 text-center">
+            <h2 class="text-2xl font-black text-blue-900 uppercase mb-2 italic">Identidade</h2>
+            <p class="text-gray-400 text-xs mb-6">Como você quer usar a plataforma?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                <button onclick="definirPerfil('cliente')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">💎</div>
+                    <div class="font-black text-blue-900 uppercase italic">Cliente</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero contratar serviços e comprar.</div>
+                </button>
+                <button onclick="definirPerfil('prestador')" class="p-6 border-2 border-gray-100 rounded-2xl hover:border-blue-600 hover:bg-blue-50 transition">
+                    <div class="text-4xl mb-3">🛠️</div>
+                    <div class="font-black text-blue-900 uppercase italic">Prestador</div>
+                    <div class="text-[10px] text-gray-500 mt-1">Quero trabalhar e cumprir missões.</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="transition-overlay" class="fixed inset-0 bg-slate-900 z-[200] flex flex-col items-center justify-center text-white">
+    <div class="relative flex h-24 w-24 items-center justify-center mb-6">
+        <div class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-20"></div>
+        <span class="relative inline-flex rounded-full h-16 w-16 bg-blue-600 items-center justify-center text-3xl shadow-xl">🔄</span>
+    </div>
+    <h2 class="text-xl font-black uppercase italic tracking-tighter animate-pulse">Carregando...</h2>
+    <p class="text-[10px] text-gray-400 font-bold uppercase mt-2">Aguarde, estamos preparando tudo.</p>
+</div>
+
+    <div id="app-container" class="hidden min-h-screen bg-gray-50 text-gray-800 flex flex-col">
+        
+        <header class="bg-gradient-atlivio p-5 z-30 sticky top-0 shadow-[0_10px_30px_rgba(0,0,0,0.3)]" id="header-main">
+        <div id="container-sininho" class="absolute top-4 right-4 z-[101] flex items-center gap-3">
+            <button onclick="switchTab('notificacoes')" class="relative p-2 bg-white/10 backdrop-blur-md rounded-full border border-white/20 hover:bg-white/20 transition transform active:scale-90">
+                <span class="text-lg">🔔</span>
+                <span id="badge-notificacao" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-[#1e3a8a] rounded-full animate-bounce shadow-lg"></span>
+            </button>
+        </div>
+
+        <div id="global-alert-banner" class="hidden bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-3 mb-3 rounded shadow-sm flex justify-between items-center">
+        <p id="global-alert-text" class="text-xs font-bold"></p>
+        <button onclick="this.parentElement.style.display='none'" class="text-amber-700 font-bold">&times;</button>
+    </div>
+    <div class="flex justify-between items-center">
+                <div class="flex flex-col">
+                    <div class="flex flex-col md:flex-row md:items-baseline gap-1">
+                        <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter shadow-sm">Atlivio</h1>
+                        <span class="text-[8px] md:text-[10px] text-blue-100 font-bold uppercase tracking-widest border-l-0 md:border-l md:pl-2 border-white/20">
+                            O Primeiro Marketplace Híbrido do Mundo
+                        </span>
+                    </div>
                     
-                    let destinoOficial = mapaFiel[userIntent] || userIntent;
-                    const isCliente = window.userProfile?.perfil === 'cliente';
-
-                    // 🛡️ TRAVA DE DNA: Se for Cliente e o banco pedir 'missoes' ou 'extra', força a Home.
-                    // Isso evita o vazamento visual e prepara para o Card de Gestão B2B na Home.
-                    if (isCliente && (destinoOficial === 'missoes' || destinoOficial === 'extra')) {
-                        console.log("🛡️ [Maestro] Cliente detectado em rota de prestador. Redirecionando para Home Segura.");
-                        destinoOficial = 'home';
-                    }
-
-                    window.switchTab(destinoOficial);
-                }, 800);
-            } else {
-                console.log("🆕 [Maestro] Iniciando fluxo de Onboarding.");
-                window.switchTab('home');
-                window.renderizarTourBoasVindas(); 
-            }
-        }, 600); // Fecha o setTimeout principal de 600ms
-    }
-} // ✅ CORREÇÃO VITAL: Fecha a "async function carregarInterface(user) {"
-// 🎨 INTERFACE DO TOUR (Deve estar acessível globalmente)
-// 🎨 INTERFACE HOME V50: Intenção (Topo) + Exploração (Base)
-window.renderizarTourBoasVindas = function() {
-    const container = document.getElementById('home-content');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="animate-fadeIn p-6 space-y-8 w-full max-w-sm mx-auto pb-20">
-            <div class="space-y-2 text-center">
-                <h2 class="text-4xl font-black text-blue-900 italic tracking-tighter uppercase">Atlívio</h2>
-                <div class="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
-                <p class="text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] pt-2">O que você busca agora?</p>
-            </div>
-
-          <div class="grid gap-3">
-                <button id="btn-contratar-home" onclick="window.finalizarTourMusculado('servicos', ['contratante'])" class="bg-white border-2 border-blue-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl">🛠️</div>
-                    <div>
-                        <p class="font-black text-blue-900 uppercase text-[11px]">Preciso Contratar</p>
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Encontre profissionais agora</p>
-                    </div>
-                </button>
-
-               <button id="btn-atlas-home" onclick="document.getElementById('modal-marketing-b2b').classList.remove('hidden')" class="bg-white border-2 border-cyan-400 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left transition-all hover:border-cyan-600">
-                    <div class="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-blue-100">
-                        <span class="animate-spin-slow">🌍</span>
-                    </div>
-                    <div>
-                        <p class="font-black text-black uppercase text-[11px]">Gestão Atlas</p> 
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Crie missões para sua empresa</p> 
-                    </div>
-                </button>
-
-                <button id="btn-renda-home" onclick="window.finalizarTourMusculado('missoes', ['prestador'])" class="bg-white border-2 border-emerald-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
-                    <div>
-                        <p class="font-black text-emerald-700 uppercase text-[11px]">Renda Extra</p>
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Ganhe dinheiro com tarefas</p>
-                    </div>
-                </button>
-
-                <button id="btn-emprego-home" onclick="window.finalizarTourMusculado('empregos', ['clt'])" class="bg-white border-2 border-orange-100 p-4 rounded-3xl flex items-center gap-4 shadow-md active:scale-95 group text-left">
-                    <div class="w-12 h-12 bg-orange-50 rounded-2xl flex items-center justify-center text-2xl">💼</div>
-                    <div>
-                        <p class="font-black text-orange-700 uppercase text-[11px]">Buscar Emprego</p>
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Vagas locais e oportunidades</p>
-                    </div>
-                </button>
-            </div>
-
-            <div class="space-y-4 pt-4 border-t border-gray-100">
-                <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest pl-1">🔎 Quer conhecer mais?</p>
+                   <button onclick="alternarPerfil()" id="btn-trocar-perfil" class="text-[9px] font-black text-white uppercase italic flex items-center gap-2 bg-white/20 backdrop-blur-md px-4 py-2 rounded-full mt-3 border border-white/30 w-fit hover:bg-white/30 transition shadow-sm">
+                        🔄 Carregando...
+                    </button>
+                </div>
                 
-                <div class="grid gap-2">
-                    <button onclick="window.switchTab('canal')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">📺 Conheça a ATLIVIO</span>
-                        <span class="text-blue-600 font-black">→</span>
-                    </button>
+                <div class="flex items-center gap-2">
+                    <div id="status-toggle-container" class="hidden bg-gray-100 p-2 rounded-lg flex items-center border border-gray-200">
+                        <span id="status-label" class="text-[8px] font-bold text-gray-500 uppercase mr-2">OFFLINE</span>
+                        
+                        <div class="relative inline-block w-8 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="online-toggle" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-gray-300 left-0 transition-all duration-300"/>
+                            <label for="online-toggle" class="toggle-label block overflow-hidden h-4 rounded-full bg-gray-300 cursor-pointer"></label>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end gap-1">
+    <button onclick="window.abrirConfiguracoes()" class="text-gray-400 hover:text-blue-600 mb-1 transition transform hover:scale-110" title="Minha Conta">
+        <span class="text-xl">⚙️</span>
+    </button>
+    
+    <button id="btn-install-app" class="hidden bg-[#0f172a] text-white font-black text-[10px] uppercase px-5 py-2.5 rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.3)] border border-white/10 hover:bg-slate-900 transition-all animate-pulse whitespace-nowrap transform active:scale-95">
+    📲 SALVE SEU ACESSO
+</button>
+    
+</div>
+                </div>
+            </div>
+        </header>
 
-                    <button onclick="window.switchTab('loja')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🛍️ Ver Produtos e Benefícios</span>
-                        <span class="text-emerald-600 font-black">→</span>
-                    </button>
+        <nav class="flex bg-gray-50/50 border-b border-gray-100 z-20 overflow-x-auto no-scrollbar shadow-sm p-2 gap-2">
+    <button onclick="switchTab('home')" id="tab-home" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Início 🏠</button>
+    <button onclick="switchTab('servicos')" id="tab-servicos" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Serviços 🛠️</button>
+    <button onclick="switchTab('empregos')" id="tab-empregos" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Empregos 💼</button>
+    <button onclick="switchTab('missoes')" id="tab-missoes" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Micro Tarefas 📷</button>
+    <button onclick="switchTab('oportunidades')" id="tab-oportunidades" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Oportunidades ⚡</button>
+    <button onclick="switchTab('loja')" id="tab-loja" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Produtos 🛒</button>
+    <button onclick="switchTab('ganhar')" id="tab-ganhar" class="subtab-btn nav-tab-atlivio hidden flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-green-600 uppercase italic">Carteira 💰</button>
+    <button onclick="switchTab('canal')" id="tab-canal" class="subtab-btn nav-tab-atlivio flex-shrink-0 py-2.5 px-5 text-[10px] font-black text-gray-400 uppercase italic">Canal ATLIVIO 📺</button>
+    <button onclick="switchTab('notificacoes')" id="tab-notificacoes" class="hidden"></button>
+</nav>
 
-                    <button onclick="window.switchTab('oportunidades')" class="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition group text-left">
-                        <span class="text-[11px] font-bold text-gray-600 uppercase">🎯 Oportunidades em Alta</span>
-                        <span class="text-orange-600 font-black">→</span>
-                    </button>
+        <main class="flex-1 overflow-y-auto p-4 max-w-2xl mx-auto w-full pb-24">
+            
+            <section id="sec-home" class="hidden animate-fadeIn">
+                <div id="home-content" class="w-full flex flex-col items-center">
+                    <div class="py-20 flex flex-col items-center">
+                        <div class="loader border-blue-600 mb-4"></div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest animate-pulse">Sincronizando Ecossistema...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-oportunidades" class="hidden space-y-4 animate-fadeIn">
+                <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Descontos exclusivos, Cashback e Apps que pagam por indicação</p>
+                <div id="lista-oportunidades" class="grid gap-3"></div>
+            </section>
+            
+           <section id="sec-missoes" class="hidden space-y-6 animate-fadeIn">
+                <!-- O Topo Soberano será injetado dinamicamente pelo missions.js -->
+                <div class="pt-2"></div>
+
+                <div id="lista-missoes">
+                    <div class="py-10 text-center">
+                        <div class="loader border-blue-600 mx-auto mb-2"></div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase animate-pulse">Sintonizando Satélites...</p>
+                    </div>
+                </div>
+
+                <div class="mt-10 border-t border-gray-100 pt-6">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">✅ Missões Concluídas</p>
+                    <div id="lista-missoes-realizadas" class="space-y-3">
+                        <p class="text-center text-gray-400 text-[9px] py-4 italic">Buscando seu histórico...</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sec-b2b_gestao" class="hidden animate-fadeIn space-y-4">
+                <div id="b2b-content-area" class="py-10 text-center">
+                    <div class="loader mx-auto border-blue-500"></div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase mt-4 tracking-widest">Iniciando Inteligência Atlas...</p>
+                </div>
+            </section>
+
+            <section id="sec-servicos" class="hidden space-y-4 animate-fadeIn">
+
+    <div id="category-filters" class="hidden"></div>
+
+    <div id="servicos-cliente" class="hidden">
+        <div id="user-header-services" class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-gray-100 flex justify-between items-center hidden animate-fadeIn">
+            <div class="flex items-center gap-3">
+                <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                    <img id="header-user-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                    <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                </div>
+                <div>
+                    <h3 class="font-black text-xs text-gray-800 uppercase" id="header-user-name">Carregando...</h3>
+                    <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
                 </div>
             </div>
         </div>
-    `;
-};
 
-// ⚡ FUNÇÃO DE FINALIZAÇÃO (Ponte entre UI e Ad-Engine)
-window.finalizarTourMusculado = (escolha, tags) => {
-    console.log("🎯 Finalizando Tour Musculado para:", escolha);
-    window.registrarEventoMaestro({ 
-        tipo: "tour_final", 
-        escolha: escolha, 
-        tags: tags 
-    });
-    window.switchTab(escolha);
-};
+        <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+            <button onclick="switchServiceSubTab('contratar')" id="subtab-contratar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Contratar 🔍</button>
+            <button onclick="switchServiceSubTab('andamento')" id="subtab-andamento-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Em Andamento ⏳</button>
+            <button onclick="switchServiceSubTab('historico')" id="subtab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico 📜</button>
+        </div>
 
-// 🛰️ DISPATCHER AD-ENGINE V35 (CONTROLE DE ESCALA)
-let lastEventTime = 0;
-window.registrarEventoMaestro = async function(dadosEvento) {
-    const agora = Date.now();
-    if (agora - lastEventTime < 2000 && dadosEvento.tipo !== 'tour_final') return; 
-    lastEventTime = agora;
+        <div id="view-contratar">
+            <div id="lista-prestadores-realtime" class="grid grid-cols-2 gap-3 pb-24"></div>
+        </div>
 
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return;
+        <div id="view-andamento" class="hidden space-y-2">
+            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Acompanhe seus pedidos em tempo real</p>
+            <div id="meus-pedidos-andamento" class="space-y-3"></div>
+        </div>
+        <div id="view-historico" class="hidden space-y-2">
+            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus serviços anteriores</p>
+            <div id="meus-pedidos-historico" class="space-y-3"></div>
+        </div>
+    </div>
 
-    try {
-        const { doc, updateDoc, addDoc, collection, increment, arrayUnion } = window.firebaseModules;
-        const userRef = doc(window.db, "usuarios", uid);
-        let payload = { "updated_at": new Date() };
+    <div id="servicos-prestador" class="hidden">
+        
+        <div class="mb-4 animate-fadeIn">
+            <div class="bg-[#0f172a] rounded-2xl p-5 shadow-xl border border-white/5 flex justify-between items-center relative overflow-hidden">
+                <div class="absolute right-[-10px] top-[-10px] w-20 h-20 bg-blue-600/10 rounded-full blur-2xl"></div>
+                
+                <div class="relative z-10 flex items-center gap-6">
+                    <div class="flex flex-col cursor-pointer" onclick="window.definirMetaDiaria()">
+                        <p id="label-ganhos-home" class="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-0.5">Ganhos</p>
+                        <h2 id="user-earnings-home" class="text-xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
+                        <div class="w-full bg-white/10 h-1 rounded-full overflow-hidden mt-1.5 border border-white/5">
+                            <div id="meta-progress-bar" class="bg-blue-500 h-full transition-all duration-700 shadow-[0_0_8px_rgba(59,130,246,0.5)]" style="width: 0%;"></div>
+                        </div>
+                        <p id="meta-text-home" class="text-[7px] text-gray-500 font-bold uppercase mt-1 tracking-tighter">Meta: R$ 0,00</p>
+                    </div>
 
-       if (dadosEvento.tipo === "navegacao") {
-            payload[`behavior.${dadosEvento.aba}.visitas`] = increment(1);
-            if (dadosEvento.aba !== "home") payload.user_intent = dadosEvento.aba;
-        }
+                    <div class="h-8 w-[1px] bg-white/10"></div>
 
-        if (dadosEvento.tipo === "tour_final") {
-            payload.user_intent = dadosEvento.escolha;
-            payload.tour_complete = true;
-            payload.tags_interesse = arrayUnion(...dadosEvento.tags);
-            // Inicializa scores básicos para o robô 47 não ver zeros
-            payload[`behavior.${dadosEvento.escolha}.score`] = 10; 
-            payload[`behavior.tags_count`] = dadosEvento.tags.length;
-        }
+                    <div>
+                        <p class="text-[8px] font-black text-emerald-400 uppercase tracking-widest mb-0.5">Saldo</p>
+                        <h2 id="user-balance-home" class="text-xl font-black text-white italic tracking-tighter" data-hidden="false">R$ 0,00</h2>
+                    </div>
 
-        await updateDoc(userRef, payload);
+                    <button onclick="window.togglePrivacyHome()" class="text-gray-500 hover:text-white transition-all transform active:scale-110 ml-2">
+                        <span id="eye-icon-home" class="flex items-center justify-center w-4 h-4 opacity-60 transition-all">
+                            <svg id="svg-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-white">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
+                            </svg>
+                        </span>
+                    </button>
+                </div>
 
-        // LOG DE AUDITORIA (ROBÔ 47)
-        await addDoc(collection(window.db, "events"), { 
-            uid, 
-            tipo: dadosEvento.tipo, 
-            aba: dadosEvento.aba || dadosEvento.escolha, 
-            timestamp: new Date() 
-        });
+                <button onclick="window.switchTab('ganhar')" class="relative z-10 bg-blue-600/10 text-blue-400 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all">
+                    DETALHES
+                </button>
+            </div>
+        </div>
 
-    } catch (e) {
-        console.warn("⚠️ Telemetria: Criando estrutura behavior...", e.message);
-        // Se falhar o updateDoc por falta do campo behavior, o Ad-Engine cria via transação ou setDoc se necessário, 
-        // mas o Firebase costuma aceitar Dot Notation para criar sub-campos.
-    }
-};
+        <div class="bg-white p-4 rounded-xl shadow-sm mb-4 border border-blue-100 flex justify-between items-center animate-fadeIn">
+            <div class="flex items-center gap-3">
+                <div class="relative cursor-pointer group" onclick="document.getElementById('profile-upload').click()">
+                    <img id="provider-header-pic" src="" class="w-10 h-10 rounded-full border-2 border-blue-200 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                    <div class="absolute inset-0 bg-black/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-[8px] text-white">📷</span></div>
+                </div>
+                <div>
+                    <h3 class="font-black text-xs text-blue-900 uppercase" id="provider-header-name">Carregando...</h3>
+                    <p class="text-[8px] text-blue-400 italic mt-1 cursor-pointer hover:text-blue-600" onclick="document.getElementById('profile-upload').click()">(Toque na foto para alterar)</p>
+                </div>
+            </div>
+            <button onclick="abrirConfiguracaoServicos()" class="text-[10px] text-blue-600 font-bold border border-blue-100 px-3 py-1 rounded-lg hover:bg-blue-50">✎ MEUS SERVIÇOS</button>
+        </div>
 
-// Válvula de compatibilidade para o Tour
-window.salvarIntencaoMaestro = (escolha) => {
-    window.registrarEventoMaestro({ tipo: "tour_final", escolha });
-    window.switchTab(escolha);
-};
-auth.onAuthStateChanged(async (user) => {
-   if (user) {
-        console.log("🔐 Autenticado com Sucesso V12");
+        <div class="flex border-b border-gray-200 mb-4 justify-between bg-white rounded-xl shadow-sm p-1">
+            <button onclick="switchProviderSubTab('radar')" id="ptab-radar-btn" class="subtab-btn active flex-1 py-2 text-[10px] uppercase text-center">Radar 📡</button>
+            <button onclick="switchProviderSubTab('ativos')" id="ptab-ativos-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Pedidos Ativos 🔔</button>
+            <button onclick="switchProviderSubTab('historico')" id="ptab-historico-btn" class="subtab-btn flex-1 py-2 text-[10px] uppercase text-center">Histórico ✅</button>
+        </div>
 
-        // 📢 SINCRONIA SEGURA: O app só lê as configurações globais após o login.
-        // Isso resolve o erro de 'Missing Permissions' que aparecia no console.
-        // 🎼 MAESTRO V27 (Sincronia Harmônica): 
-        // Aguarda 2 segundos para o Firebase validar os tokens de segurança.
-        // Isso silencia os erros de permissão no console e estabiliza o boot.
-        setTimeout(() => {
-            console.log("🎼 Maestro: Tokens validados. Iniciando motores de fundo...");
-            if (window.carregarConfiguracoesIniciais) window.carregarConfiguracoesIniciais();
-            if (window.IniciarAvisoGlobal) window.IniciarAvisoGlobal();
-            if (window.iniciarMonitorDeploy) window.iniciarMonitorDeploy();
-            if (window.ativarDespertadorLazarus) window.ativarDespertadorLazarus();
-        }, 2000);
-        /* 🛰️ OUVINTE MAESTRO: MARKETING EM MASSA ATIVADO V25 */
-        /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 */
-        // Este bloco vigia o usuário e decide as ofertas sozinho, sem o Admin intervir.
-       /* 🤖 MOTOR DE AUTOMAÇÃO REATIVA ATLIVIO V25 (AUTO-PILOTO) */
-        const { doc, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+       <div id="pview-radar" class="flex flex-col items-center py-4 min-h-[400px] relative">
+            <div id="radar-offline-state" class="flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div class="relative flex h-24 w-24 items-center justify-center mb-4 opacity-50 grayscale">
+                    <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-gray-300 text-4xl">💤</div>
+                </div>
+                <p class="text-xs font-black text-gray-500 uppercase tracking-widest">Você está Offline</p>
+            </div>
 
-        // A. VIGIA DE REGRAS GLOBAIS (Configura uma vez, roda por meses)
-        onSnapshot(doc(window.db, "settings", "financeiro"), (snap) => {
-            if (snap.exists()) {
-                const config = snap.data();
-                // Se você ativar o aviso no Admin, o App mostra para todos automaticamente
-                if (config.aviso_marketing_ativo) {
-                    window.mostrarBarraNotificacao("campanha_mensal", {
-                        type: 'gift',
-                        action: config.aba_destino || 'ganhar',
-                        message: config.texto_marketing || "Confira as novidades da Atlivio!"
-                    });
+            <div id="radar-empty-state" class="hidden flex flex-col items-center justify-center py-20 animate-fadeIn">
+                <div class="relative flex h-24 w-24 items-center justify-center mb-4">
+                    <div class="animate-ping absolute h-full w-full rounded-full bg-blue-500 opacity-20"></div>
+                    <div class="relative bg-white rounded-full p-6 shadow-xl border-4 border-blue-600 text-4xl">📡</div>
+                </div>
+                <p class="text-xs font-black text-blue-900 uppercase tracking-widest animate-pulse text-center">Procurando clientes ao seu redor...</p>
+            </div>
+
+           <div id="radar-container" class="hidden w-full max-w-[400px] max-h-[65vh] overflow-y-auto space-y-3 z-10 custom-scroll pr-1 pb-4"></div>
+        </div>
+        <div id="pview-ativos" class="hidden space-y-3">
+            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Serviços que precisam da sua atenção</p>
+            <div id="lista-chamados-ativos">
+                <p class="text-center text-gray-400 text-xs py-4">Aguardando pedidos...</p>
+            </div>
+        </div>
+
+        <div id="pview-historico" class="hidden space-y-3">
+            <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seus trabalhos concluídos</p>
+            <div id="lista-chamados-historico">
+                <p class="text-center text-gray-400 text-xs py-4">Histórico vazio.</p>
+            </div>
+        </div>
+    </div>
+    <div id="painel-chat-individual" class="hidden"></div>
+</section>
+
+<section id="sec-empregos" class="hidden space-y-4 animate-fadeIn">
+    <div id="lista-vagas" class="grid gap-3"></div>
+
+    <div id="painel-empresa" class="hidden">
+        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center mb-4">
+            <h3 class="font-black text-blue-900 text-sm uppercase italic">Precisa Contratar?</h3>
+            <p class="text-[10px] text-gray-500 mb-3">Encontre talentos locais rápido.</p>
+            <button onclick="abrirModalVaga()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold text-xs uppercase shadow-md hover:bg-blue-700">
+                + Anunciar Vaga Grátis
+            </button>
+        </div>
+        <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Suas Vagas Ativas</p>
+        <div id="lista-minhas-vagas" class="space-y-2"></div>
+    </div>
+</section>
+
+<section id="sec-canal" class="hidden space-y-4 animate-fadeIn">
+    <div id="canal-content" class="grid gap-6 pb-24">
+        <div class="py-20 text-center"><div class="loader border-blue-500 mx-auto"></div></div>
+    </div>
+</section>
+
+<section id="sec-loja" class="hidden space-y-4 animate-fadeIn">
+    <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Produtos recomendados para aumentar sua produtividade</p>
+    <div id="sec-produtos"></div>
+</section>
+
+<section id="sec-chat" class="hidden space-y-4 animate-fadeIn">
+    <div id="lista-chats" class="space-y-2"></div>
+</section>
+
+<section id="sec-ganhar" class="hidden space-y-4 animate-fadeIn">
+    <p class="text-[9px] text-gray-400 uppercase font-bold text-center mb-2 tracking-widest border-b pb-2">Seu saldo atual e histórico de ganhos</p>
+
+    <div class="space-y-4">
+        <div class="bg-[#0f172a] p-6 rounded-[24px] text-white shadow-2xl relative overflow-hidden border border-blue-500/20">
+            <div class="absolute right-[-20px] top-[-20px] w-32 h-32 bg-blue-600/10 rounded-full blur-3xl"></div>
+            
+            <div class="flex justify-between items-start mb-6">
+              <div>
+                    <p class="text-[9px] font-black uppercase tracking-[0.2em] text-blue-400 mb-1">Créditos de Acesso Total</p>
+                    <div class="flex items-baseline gap-2">
+                        <h2 class="text-5xl font-black tracking-tighter" id="user-balance">0,00</h2>
+                        <span class="text-lg icon-coin animate-pulse">🪙</span>
+                    </div>
+                </div>
+                <div class="bg-blue-600/20 p-2 rounded-lg border border-blue-500/30">
+                    <span class="text-xl">💳</span>
+                </div>
+            </div>
+
+            <button onclick="window.abrirGuiaCarteira()" class="w-full py-2 mb-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest text-blue-400 hover:bg-white/10 transition-all">
+                ❓ Entender Minha Carteira
+            </button>
+
+           <div class="grid grid-cols-3 gap-2 border-t border-white/5 pt-6 text-center">
+                <div>
+                    <p class="text-[7px] font-black text-gray-400 uppercase mb-1">Saldo Atlix Recargas</p>
+                    <p class="text-xs font-black text-white"><span id="user-balance-real">0,00</span> 🪙</p>
+                    <p id="txt-equivalencia-real" class="text-[8px] font-bold text-emerald-400 uppercase italic mt-1 leading-none animate-pulse">Calculando...</p>
+                </div>
+
+                <div class="border-x border-white/5">
+                    <p class="text-[7px] font-black text-amber-400 uppercase mb-1">Saldo Atlix Bonus</p>
+                    <p class="text-xs font-black text-amber-400"><span id="user-balance-bonus">0,00</span> 🪙</p>
+                </div>
+
+                <div class="cursor-pointer" onclick="alert('❄️ SALDO CONGELADO:\n\nEste é o seu saldo proveniente de recargas que expirou.\n\nPara resgatá-lo, basta realizar qualquer nova recarga na plataforma!')">
+                    <p class="text-[7px] font-black text-blue-400 uppercase mb-1">Saldo Atlix Congelado</p>
+                    <p class="text-xs font-black text-blue-400"><span id="user-balance-frozen">0,00</span> 🪙</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 relative">
+                <button onclick="alert('🔒 SALDO EM CUSTÓDIA:\n\nValor reservado para garantir a segurança de serviços em andamento.')" class="absolute top-4 right-4 text-gray-300 text-[10px] font-bold border border-gray-50 w-5 h-5 rounded-full flex items-center justify-center">?</button>
+                <span class="text-blue-600 text-lg">🔒</span>
+                <div>
+                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-tighter">Em Custódia</p>
+                    <p class="text-sm font-black text-slate-800"><span id="user-reserved">0,00</span> 🪙</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between h-24 relative group">
+                <div class="absolute top-3 right-3 z-[50]">
+                    <select id="filtro-ganhos" onchange="window.filtrarGanhos(this.value)" class="bg-blue-50 border-none text-[9px] font-black text-blue-600 uppercase outline-none p-1 rounded-lg cursor-pointer">
+                        <option value="hoje">Hoje</option>
+                        <option value="7">7 Dias</option>
+                        <option value="30">30 Dias</option>
+                        <option value="total">Total</option>
+                    </select>
+                </div>
+                <span id="ganho-icon" class="text-emerald-500 text-lg">📈</span>
+                <div>
+                    <p id="label-ganhos" class="text-[8px] font-black text-gray-400 uppercase tracking-wider">Ganhos de Hoje</p>
+                    <div id="user-earnings" class="text-[11px] font-black text-slate-800 mt-1">
+                        ...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+      <button id="btn-solicitar-saque" onclick="window.processarSolicitacaoSaque()" disabled class="w-full bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 py-4 rounded-2xl font-black text-[10px] uppercase transition-all grayscale opacity-50 flex items-center justify-center gap-2 mb-3">
+            <span>🔒 Mínimo 50 ATLIX para Saque</span>
+        </button>
+
+        <button onclick="switchTab('servicos')" class="w-full bg-[#0f172a] text-blue-400 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-white/5 flex justify-center items-center gap-2 transform active:scale-[0.98] transition">
+            Explorar Serviços e Missões <span id="user-balance-earn" class="hidden">0,00</span> 🪙 ➜
+        </button>
+    </div>
+
+    <div class="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+        <label class="text-[10px] font-bold text-gray-500 uppercase mb-2 block">Valor da Recarga</label>
+
+        <div class="relative mb-4">
+           <select id="select-recarga" onchange="atualizarBotaoRecarga()" class="w-full appearance-none bg-slate-50 border border-slate-200 text-slate-900 py-3 px-4 pr-8 rounded-xl font-bold focus:outline-none focus:border-blue-500 text-sm">
+                <optgroup label="🚀 INICIAL">
+                    <option value="20">R$ 20,00 (Mínima)</option>
+                    <option value="50" selected>R$ 50,00 (Padrão)</option>
+                </optgroup>
+
+                <optgroup label="⚡ CATEGORIA PRÓ">
+                    <option value="100">R$ 100,00 (Pró 01)</option>
+                    <option value="200">R$ 200,00 (Pró 02)</option>
+                    <option value="300">R$ 300,00 (Pró 03)</option>
+                    <option value="500">R$ 500,00 (Pró 04)</option>
+                </optgroup>
+
+                <optgroup label="🏴 CATEGORIA BLACK">
+                    <option value="1000">R$ 1.000,00 (Black 01)</option>
+                    <option value="2000">R$ 2.000,00 (Black 02)</option>
+                    <option value="3000">R$ 3.000,00 (Black 03)</option>
+                    <option value="4000">R$ 4.000,00 (Black 04)</option>
+                    <option value="5000">R$ 5.000,00 (Black 05)</option>
+                </optgroup>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
+            </div>
+        </div>
+
+        <div id="box-aviso-recarga" class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded-r-lg transition-colors duration-300">
+            <p id="recarga-copy" class="text-[10px] text-blue-800 font-medium italic">
+                O valor recarregado cai na hora como créditos ATLIX 🪙 para seu uso.
+            </p>
+        </div>
+
+        <button id="btn-fazer-recarga" onclick="processarRecarga()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl shadow-lg transform transition active:scale-95 flex justify-center items-center gap-2 group">
+            <span class="font-black uppercase tracking-wide">GERAR PIX AGORA</span>
+            <span class="bg-white/20 px-2 py-0.5 rounded text-xs font-bold group-hover:bg-white/30 transition">⚡</span>
+        </button>
+    </div>
+
+    <div class="mt-6">
+        <p class="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest mb-3">Últimas Transações</p>
+        <div id="lista-transacoes-carteira" class="space-y-2">
+            <p class="text-center text-[10px] text-gray-400 py-4 italic">Nenhuma movimentação recente.</p>
+        </div>
+    </div>
+
+    <script>
+        // 🔒 CONFIGURAÇÃO DE SEGURANÇA (TRAVA INVISÍVEL)
+        const USUARIO_VERIFICADO = false;
+
+        window.atualizarBotaoRecarga = function() {
+            const select = document.getElementById('select-recarga');
+            if (!select) return;
+
+            const valor = parseInt(select.value);
+            const avisoBox = document.getElementById('box-aviso-recarga');
+            const copyText = document.getElementById('recarga-copy');
+
+            // Lógica das frases educativas e cores
+            if (valor <= 50) {
+                avisoBox.className = "bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 rounded-r-lg";
+                copyText.className = "text-[10px] text-blue-800 font-medium italic";
+                copyText.innerText = "Ideal para começar e testar a plataforma.";
+            } else if (valor <= (window.CONFIG_FINANCEIRA?.limite_recarga_v1 || 500)) {
+                avisoBox.className = "bg-green-50 border-l-4 border-green-500 p-3 mb-4 rounded-r-lg";
+                copyText.className = "text-[10px] text-green-800 font-medium italic";
+                copyText.innerText = "Garanta saldo para pegar vários serviços seguidos.";
+            } else {
+                // Valores Altos
+                if (!USUARIO_VERIFICADO) {
+                    avisoBox.className = "bg-amber-50 border-l-4 border-amber-500 p-3 mb-4 rounded-r-lg";
+                    copyText.className = "text-[10px] text-amber-800 font-bold";
+                    copyText.innerText = "🔒 Necessário conta verificada para este valor.";
+                } else {
+                    avisoBox.className = "bg-purple-50 border-l-4 border-purple-500 p-3 mb-4 rounded-r-lg";
+                    copyText.className = "text-[10px] text-purple-800 font-medium italic";
+                    copyText.innerText = "Alta performance: Fature alto sem interrupções.";
                 }
             }
-        });
-
-        // B. VIGIA DE COMPORTAMENTO (Sugere Missões se o usuário estiver parado na Home)
-        setTimeout(() => {
-            if (window.abaAtual === 'home' && window.mostrarBarraNotificacao) {
-                window.mostrarBarraNotificacao("auto_ajuda", {
-                    type: 'marketing',
-                    action: 'missoes',
-                    message: "Dica: Você sabia que pode começar a lucrar agora mesmo cumprindo micro-tarefas? ⚡"
-                });
-            }
-        }, 300000); // Aparece após 5 minutos de inatividade na Home
-        /* ---------------------------------------------------- */
-
-        // 🛡️ Trava de Segurança Antecipada
-        if (window.verificarSentenca) {
-            const banido = await window.verificarSentenca(user.uid);
-            if (banido) return; 
         }
 
-       // 🔔 CRM DE NOTIFICAÇÕES V61: Inicia o sistema com trava de memória.
-        if (typeof window.iniciarSistemaNotificacoes === 'function') {
-            // Só ativa o motor se o boot ainda não foi concluído para evitar re-injeção de alertas antigos
-            if (!window.atlivioBootConcluido) {
-                window.iniciarSistemaNotificacoes();
-            }
-        }
+window.processarRecarga = async function() { // 🚀 Adicionado "async" para permitir a consulta ao banco em tempo real
+            const select = document.getElementById('select-recarga');
+            if (!select) return;
 
-        // 🎁 Fluxos de Boas-vindas
-        if (typeof checkOnboarding === 'function') {
-            checkOnboarding(user); 
-        }
-        
-        // 💰 PRIORIDADE FINANCEIRA: Ativa o rastreador de PIX antes de montar a tela
-        if (typeof iniciarMonitoramentoCarteira === 'function') {
-            console.log("💰 [Maestro] Motor Financeiro: Ativando radar de saldo real-time...");
-            iniciarMonitoramentoCarteira(); // Liga a escuta do banco de dados para o saldo
-        }
+            const valor = parseInt(select.value);
+            const db = window.db; // 🛰️ Pega a conexão com o banco de dados já aberta
 
-        // 🖥️ BOOT DA INTERFACE: Chama a montagem visual apenas se o sistema ainda não subiu
-        if (!window.atlivioBootConcluido) {
-            window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
-        }
+            // 🔍 CONSULTA DE SEGURANÇA: Vai ao Firebase checar se você ligou o Botão Black no Admin
+            let isLiberadoGeral = false;
+            try {
+                // Importa as ferramentas de leitura apenas se necessário (otimiza memória)
+                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const confSnap = await getDoc(doc(db, "configuracoes", "global"));
+                if (confSnap.exists()) {
+                    // Se o campo lá no seu Firebase estiver "true", a trava cai aqui
+                    isLiberadoGeral = confSnap.data().liberar_black_geral_v1 === true;
+                }
+            } catch (e) { console.error("Falha ao ler trava global:", e); }
 
-    } else { // 🚪 Caso o usuário saia da conta ou não esteja logado:
-        console.log("🚪 Usuário Desconectado.");
-        document.getElementById('auth-container')?.classList.remove('hidden');
-        document.getElementById('app-container')?.classList.add('hidden');
-        
-        // Desliga o Radar fisicamente
-        if (window.pararRadarFisico) window.pararRadarFisico();
-    }
-});
-// 🩹 Saneamento V2026: Exportações movidas para o final do arquivo para evitar conflitos.
+            const limiteAtual = 500; // Limite padrão de segurança
+            // 👤 Verifica se este usuário específico já é VIP (Verificado)
+            const isVipUser = window.userProfile?.is_verified === "true" || window.userProfile?.is_verified === true; 
 
-// 🧭 NOVAS FUNÇÕES DO TOUR
-if (typeof renderizarTourBoasVindas === 'function') {
-    window.renderizarTourBoasVindas = renderizarTourBoasVindas;
-}
-// 🔒 PRIVACIDADE DE GANHOS (ESTILO BANCÁRIO)
-window.togglePrivacyHome = () => {
-    const elEarnings = document.getElementById('user-earnings-home');
-    const elBalance = document.getElementById('user-balance-home');
-    const eye = document.getElementById('eye-icon-home');
-    const svg = document.getElementById('svg-eye');
-    
-    if (!elEarnings || !elBalance) return;
-    const isHidden = elEarnings.getAttribute('data-hidden') === 'true';
-
-    if (isHidden) {
-        // ✨ Sincronia V63: Exibe os valores com a nova identidade ATLIX ao clicar no "olhinho"
-        const ganhos = (window.userProfile?.wallet_earnings || 0).toFixed(2).replace('.', ',');
-        const saldo = (window.userProfile?.wallet_total_power || 0).toFixed(2).replace('.', ',');
-        
-        // ✨ Sincronia V72: Ganhos em R$ e Saldo em Moeda Dourada ao revelar
-        elEarnings.innerText = `R$ ${ganhos}`;
-        elBalance.innerHTML = `${saldo} 🪙`;
-        
-        elEarnings.setAttribute('data-hidden', 'false');
-        svg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-        eye.classList.remove('opacity-60');
-    } else {
-        // OCULTAR VALORES
-        // 🔒 Mantém o padrão de segurança visual
-        elEarnings.innerText = 'R$ ••••';
-        elBalance.innerText = '🪙 ••••';
-        
-        elEarnings.setAttribute('data-hidden', 'true');
-        svg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
-        eye.classList.add('opacity-60');
-    }
-};
-// --- FIM DO MAESTRO ---
-// 🛡️ VIGILANTE DE CLIQUES ATLIVIO V3.0 TURBO (Escala Global)
-let disjuntorVigilante = false; 
-
-// Usamos window para garantir que a proteção seja soberana
-window.addEventListener('click', (e) => {
-    // ⚡ FILTRO ATÔMICO: Se o disjuntor estiver ativo, mata o clique na hora
-    if (disjuntorVigilante) {
-        e.stopImmediatePropagation(); // 🛑 Comando mais forte do JS: impede que qualquer outro script ouça o clique
-        e.preventDefault();
-        return;
-    }
-
-    // ⚡ LOCALIZADOR: Acha o botão de switchTab
-    // 🕵️ O Vigilante agora vigia os dois tipos de botões de navegação do sistema
-    const btn = e.target.closest('button[onclick*="switchTab"], button[onclick*="finalizarTourMusculado"]');
-    if (!btn) return;
-
-    // ⚡ ANALISADOR: Extrai a aba alvo
-    const match = btn.getAttribute('onclick').match(/'([^']+)'/);
-    if (!match) return;
-    const abaAlvo = match[1];
-
-    // ⚡ IDENTIFICADOR: Quem é o usuário?
-    const isPrestador = window.userProfile?.is_provider === true;
-    
-    // Suas regras de negócio exatas:
-    // 🏷️ Áreas exclusivas para quem quer TRABALHAR (Barra o Cliente nas Missões)
-    const exclusivasPrestador = ['missoes', 'radar', 'ativos', 'extra', 'tarefas'];
-    
-    // 🏷️ Áreas exclusivas para quem quer CONTRATAR/COMPRAR (Barra o Prestador)
-    // 🛡️ O Vigilante agora permite o clique em 'b2b_gestao' para que a Ponte B2B decida o acesso.
-    const exclusivasCliente = ['loja', 'contratar', 'produtos', 'marketing'];
-    // 🔍 Captura o texto do botão e o comando HTML para saber a intenção real
-    const textoBotao = btn.innerText.toUpperCase();
-    const comandoHtml = btn.getAttribute('onclick') || "";
-
-    // 🧠 Lógica de Sentinela V3.1 (Alta Precisão):
-    
-    // 1. Bloqueia Cliente se tentar entrar em abas de trabalho (missoes, radar, ativos)
-    const bloqueioCliente = (!isPrestador && exclusivasPrestador.includes(abaAlvo));
-    
-    // 2. Bloqueia Prestador se:
-    // - A aba for Loja ou Contratar
-    // - OU se o texto do botão contiver "CONTRATAR"
-    // - OU se o botão disparar o Tour de 'contratante'
-    const bloqueioPrestador = (isPrestador && (
-        exclusivasCliente.includes(abaAlvo) || 
-        textoBotao.includes("CONTRATAR") || 
-        comandoHtml.includes("'contratante'")
-    ));
-
-    if (bloqueioCliente || bloqueioPrestador) {
-        // ⛔ INTERCEPTAÇÃO SOBERANA
-        e.stopImmediatePropagation(); // Garante que o Maestro nem saiba que houve um clique
-        e.preventDefault();
-
-        // 🏗️ DISPARO DO MODAL
-        const modal = document.getElementById('modal-troca-identidade');
-        const txt = document.getElementById('txt-perfil-atual');
-        
-        if (modal && txt) {
-            // Só mexe no texto se o modal estiver fechado
-            if (modal.classList.contains('hidden')) {
-                txt.innerText = isPrestador ? "PRESTADOR para CLIENTE" : "CLIENTE para PRESTADOR";
-                modal.classList.remove('hidden');
-            }
-        }
-
-        // 🛡️ TRAVA ANTI-SPAM (400ms)
-        disjuntorVigilante = true;
-        setTimeout(() => { disjuntorVigilante = false; }, 400);
-        
-        console.warn(`[🛡️ Vigilante V3] Clique em ${abaAlvo} bloqueado com sucesso.`);
-    }
-}, { capture: true }); // O segredo da velocidade está no 'capture: true'
-
-// ============================================================================
-// 🛰️ MOTOR UNIVERSAL DE MÍDIA MAESTRO (V2026)
-// ============================================================================
-
-// 🌊 1. FUNÇÃO DE FECHAMENTO (O Faxineiro)
-window.fecharModalMaestro = () => {
-    const modal = document.getElementById('modal-video-maestro');
-    const frame = document.getElementById('player-maestro-frame');
-    
-    if (frame) frame.src = ''; // Mata o vídeo
-    
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.setProperty('display', 'none', 'important');
-    }
-    console.log("🌊 [Maestro] Modal limpo e recolhido.");
-};
-
-// 🎯 2. CLIQUE NO FUNDO (Experiência Premium)
-document.getElementById('modal-video-maestro')?.addEventListener('click', (e) => {
-    if (e.target.id === 'modal-video-maestro') window.fecharModalMaestro();
-});
-
-// 🖼️ 3. VISUALIZADOR UNIVERSAL DE IMAGENS (O Projetor)
-window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
-    const modal = document.getElementById('modal-video-maestro');
-    const container = modal?.querySelector('div.bg-black');
-    
-    if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
-
-    container.innerHTML = `
-        <button onclick="window.fecharModalMaestro()" 
-                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
-            ×
-        </button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
-        <div class="absolute bottom-10 left-0 right-0 text-center px-4">
-            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10 shadow-2xl">
-                ${legenda}
-            </span>
-        </div>
-    `;
-    
-    modal.classList.remove('hidden');
-    modal.style.setProperty('display', 'flex', 'important');
-};
-
-// 🔗 4. PONTES DE COMPATIBILIDADE
-window.verModeloMissao = (url) => window.exibirImagemModal(url, "Modelo de Execução");
-
-// 🛰️ 5. PONTE ATLAS B2B: Sincronizada com o DNA is_provider (V70)
-window.abrirTrocaPerfilB2B = () => {
-    document.getElementById('modal-marketing-b2b')?.classList.add('hidden');
-    const isClienteReal = window.userProfile?.is_provider === false;
-
-    if (isClienteReal) {
-        window.switchTab('b2b_gestao');
-        if (window.initB2B) window.initB2B(); 
-    } else {
-        const modalTroca = document.getElementById('modal-troca-identidade');
-        const txtTroca = document.getElementById('txt-perfil-atual');
-        if (modalTroca && txtTroca) {
-            txtTroca.innerText = "PRESTADOR para CLIENTE";
-            modalTroca.classList.remove('hidden');
-        }
-    }
-};
-
-// 🛰️ [V2026] MOTOR DE AUTO-CONTABILIZAÇÃO (AUTORIDADE MESTRE)
-// Gil, esse código faz o SEU celular processar as indicações que o Firebase barrou nos outros.
-window.processarMinhasIndicacoes = async (uid) => {
-    const { collection, query, where, getDocs, doc, updateDoc, increment } = window.firebaseModules;
-    
-    try {
-        // 1. Procura na "Caixa de Correio" se tem rastro seu que ainda não foi contado
-        const q = query(collection(window.db, "referral_events"), 
-                        where("padrinho_uid", "==", uid), 
-                        where("processado", "==", false));
-        
-        const snap = await getDocs(q);
-        if (snap.empty) return; // Nada novo? Sai fora.
-
-        console.log(`🎁 [Maestro] Encontrei ${snap.size} indicações novas. Contabilizando...`);
-
-        for (const eventoDoc of snap.docs) {
-            // 2. VOCÊ (Dono) dá o +1 no seu próprio contador (O Firebase deixa!)
-            await updateDoc(doc(window.db, "usuarios", uid), {
-                referral_count: increment(1)
-            });
-
-            // 3. Marca o "bilhete" como lido para não contar duas vezes
-            await updateDoc(doc(window.db, "referral_events", eventoDoc.id), {
-                processado: true
-            });
-        }
-        
-        console.log("✅ [Sucesso] Contador atualizado com sua autoridade!");
-        // Dá um toque no Perfil para ele ler o número novo na tela
-        if(window.carregarDadosPerfil) window.carregarDadosPerfil();
-
-    } catch (e) { console.warn("⚠️ Falha na autofaxina:", e); }
-};
-
-// 🛰️ [V2026] VIGILANTE REAL-TIME: Ouve a pasta de amigos sem precisar de F5
-let unsubscribeReferral = null;
-
-window.auth.onAuthStateChanged(user => {
-    if (user) {
-        if (unsubscribeReferral) unsubscribeReferral();
-
-        // 🛠️ Aguarda módulos estarem prontos e liga o radar de indicações
-        const checkRef = setInterval(() => {
-            if (window.firebaseModules && window.db) {
-                clearInterval(checkRef);
-                const { collection, query, where, onSnapshot } = window.firebaseModules;
+            // 🔒 BLOQUEIO OU LIBERAÇÃO: Se o Admin liberou geral OU o cliente for VIP, ele pula o erro
+            if (valor > limiteAtual && !isLiberadoGeral && !isVipUser) {
+                const confirmar = confirm(`🔒 LIMITE DE SEGURANÇA:\n\nRecargas acima de R$ ${limiteAtual.toFixed(2)} exigem verificação de conta.\n\nDeseja falar com um consultor agora para liberar seu acesso VIP?`);
                 
-                const q = query(collection(window.db, "referral_events"), 
-                                where("padrinho_uid", "==", user.uid), 
-                                where("processado", "==", false));
-
-                unsubscribeReferral = onSnapshot(q, (snap) => {
-                    if (!snap.empty) {
-                        console.log(`🎁 [Maestro] ${snap.size} novas indicações detectadas ao vivo!`);
-                        window.processarMinhasIndicacoes(user.uid);
+              if (confirmar) {
+                    // 🚀 COMANDO MESTRE: Tenta a função global primeiro (mais rápido) e o clique como backup
+                    if (window.abrirChatSuporte) {
+                        window.abrirChatSuporte(); // Abre o motor do chat direto
+                    } else {
+                        const btnSuporte = document.querySelector('.fixed.bottom-4.right-4');
+                        if (btnSuporte) btnSuporte.click(); // Backup: Tenta o clique físico
                     }
-                });
+                }
+                return; 
+            }
+            // 🚀 DISPARO DO MOTOR DINÂMICO: Chama a função blindada do seu wallet.js
+            if (window.abrirCheckoutPix) {
+                window.abrirCheckoutPix(valor);
+            } else {
+                alert("⚠️ Erro: O Motor Financeiro ainda não carregou. Tente novamente em 2 segundos.");
             }
-        }, 1000);
-    } else {
-        if (unsubscribeReferral) unsubscribeReferral();
-    }
-});
-
-// ============================================================================
-// 🛍️ MOTOR DE VENDAS E COFRE ATLIVIO (V2026)
-// ============================================================================
-
-/**
- * 💰 PROCESSAR COMPRA COM ATLIX
- * Conecta a vitrine à função pagarComAtlix do wallet.js
- */
-window.comprarComAtlix = async (prodId, preco, tipo) => {
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return alert("Faça login para comprar.");
-
-    // 1. Pergunta se o usuário tem certeza
-    if (!confirm(`Confirmar desbloqueio por ${preco} ATLIX?`)) return;
-
-    try {
-        // 2. Chama o Motor Financeiro (wallet.js)
-        // Gil, essa função pagarComAtlix já cuida de saldo real e bônus sozinha!
-        const res = await window.pagarComAtlix(preco, "🛍️ COMPRA_LOJA", `Desbloqueio: ${prodId}`);
-
-        if (res.success) {
-            const { doc, updateDoc, arrayUnion, getDoc } = window.firebaseModules;
-            
-            // 3. Adiciona o ID do produto ao "Cofre" (my_vault) do usuário no Firebase
-            await updateDoc(doc(window.db, "usuarios", uid), {
-                my_vault: arrayUnion(prodId)
-            });
-
-            // 4. Atualiza o perfil local para refletir a posse na hora
-            if(!window.userProfile.my_vault) window.userProfile.my_vault = [];
-            window.userProfile.my_vault.push(prodId);
-
-            alert("✅ Sucesso! Conteúdo liberado no seu Cofre.");
-            
-            // 5. Se for virtual, já abre o conteúdo direto para o usuário
-            if (tipo === 'virtual') window.abrirCofreConteudo(prodId);
-            else window.carregarProdutos(); // Recarrega a vitrine para mudar o botão
-
-        } else {
-            alert("❌ Falha: " + (res.error || "Saldo insuficiente ou erro no banco."));
         }
-    } catch (e) {
-        console.error("Erro na compra:", e);
-        alert("Ocorreu um erro ao processar sua compra.");
+    </script>
+</section>
+
+<section id="sec-notificacoes" class="hidden space-y-4 animate-fadeIn">
+    <div class="flex flex-col items-center justify-center py-10 text-center">
+        <div class="w-16 h-16 bg-blue-600/10 rounded-full flex items-center justify-center text-3xl mb-4">🔔</div>
+        <h2 class="text-xl font-black text-blue-900 uppercase italic">Suas Mensagens</h2>
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Histórico de alertas e bônus do Maestro</p>
+    </div>
+
+    <div id="lista-historico-notificacoes" class="space-y-3 pb-24">
+        <p class="text-center text-gray-400 text-xs italic py-10">Você não tem mensagens arquivadas.</p>
+    </div>
+</section>
+
+<section id="sec-support" class="hidden space-y-4 animate-fadeIn">
+    <div class="flex flex-col items-center justify-center py-10 text-center">
+        <div class="w-16 h-16 bg-emerald-600/10 rounded-full flex items-center justify-center text-3xl mb-4">💬</div>
+        <h2 class="text-xl font-black text-slate-800 uppercase italic">Suporte Atlivio</h2>
+        <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Fale conosco em tempo real</p>
+    </div>
+
+    <div id="lista-mensagens-suporte" class="space-y-3 pb-24 p-4 min-h-[300px] bg-white rounded-3xl border border-gray-100 shadow-inner">
+        <p class="text-center text-gray-400 text-xs italic py-10">Iniciando conexão segura...</p>
+    </div>
+</section>
+
+<div id="request-modal" class="hidden fixed inset-0 bg-black/90 z-[9999] flex flex-col items-center justify-end md:justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        <input type="hidden" id="target-provider-id">
+        <input type="hidden" id="service-base-price">
+
+        <div class="bg-blue-900 p-4 text-white flex-shrink-0 rounded-t-2xl md:rounded-t-2xl flex justify-between items-start">
+            <div>
+                <h3 class="font-black text-lg uppercase italic">Fazer Proposta</h3>
+                <p class="text-xs opacity-75">Negocie o valor com segurança.</p>
+            </div>
+            <button onclick="document.getElementById('request-modal').classList.add('hidden')" class="text-white text-xl font-bold px-2">&times;</button>
+        </div>
+
+        <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
+            <div id="service-selection-container" class="mb-4 w-full"></div>
+
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Data</label>
+                    <input type="date" id="req-date" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Hora</label>
+                    <input type="time" id="req-time" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="text-[10px] font-bold text-gray-500 uppercase">Local</label>
+                <input type="text" id="req-local" placeholder="Endereço ou Ponto de Encontro" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-sm font-bold outline-none focus:border-blue-500">
+            </div>
+
+            <div class="border-t border-gray-100 pt-2 mb-3"></div>
+
+            <div>
+                <p class="text-[10px] font-bold text-blue-900 uppercase mb-3">Quanto você quer ofertar?</p>
+
+                <div class="mb-4">
+                    <p class="text-[9px] text-gray-400 mb-2">⚡ Oferta Rápida (Recomendado)</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="window.selecionarDesconto(-0.05)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-5%</button>
+                        <button onclick="window.selecionarDesconto(-0.10)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-10%</button>
+                        <button onclick="window.selecionarDesconto(-0.15)" class="border border-green-200 bg-green-50 text-green-700 py-2 rounded-lg font-bold text-xs hover:bg-green-100 transition">-15%</button>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="price-type" id="radio-custom" class="accent-blue-600" onchange="window.ativarInputPersonalizado()">
+                            <span class="text-xs font-bold text-gray-700">✏️ Outro Valor</span>
+                        </label>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2 text-gray-500 font-bold text-sm">R$</span>
+                        <input type="number" id="req-value" placeholder="0,00" disabled class="w-full border p-2 pl-9 rounded-lg text-lg font-black text-gray-800 bg-white outline-none transition" oninput="window.validarOferta(this.value)">
+                    </div>
+                    <p id="calc-total-reserva" class="hidden text-xs font-bold text-blue-600 mt-1 text-center">R$ 0.00</p>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-confirm-req" class="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-xl shadow-lg transform transition active:scale-95 text-sm uppercase">
+            ENVIAR PROPOSTA
+        </button>
+    </div>
+</div>
+
+<div id="review-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center">
+        <h3 id="review-modal-title" class="font-black text-xl text-blue-900 uppercase italic mb-1">Como foi?</h3>
+        <p class="text-xs text-gray-400 mb-6">Sua avaliação ajuda a comunidade.</p>
+        <div class="flex justify-center gap-2 mb-6 text-4xl" id="star-container">
+            <span class="rate-star" data-val="1">★</span><span class="rate-star" data-val="2">★</span><span class="rate-star" data-val="3">★</span><span class="rate-star" data-val="4">★</span><span class="rate-star" data-val="5">★</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-6">
+            <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Pontual</button>
+            <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Educado</button>
+            <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Profissional</button>
+            <button onclick="toggleTag(this)" class="tag-select border border-gray-200 rounded-lg py-2 text-[10px] font-bold text-gray-500 uppercase">Simpático</button>
+        </div>
+        <div class="flex items-center justify-center gap-4 mb-6">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="yes" class="accent-blue-600" checked><span class="text-xs font-bold text-gray-700">👍 Recomendo</span></label>
+            <label class="flex items-center gap-2 cursor-pointer"><input type="radio" name="recommend" value="no" class="accent-red-600"><span class="text-xs font-bold text-gray-700">👎 Não Indico</span></label>
+        </div>
+        <textarea id="review-comment" class="w-full border border-gray-200 rounded-xl p-3 text-xs bg-gray-50 focus:outline-none focus:border-blue-500 mb-4 text-gray-900" rows="3" placeholder="Deixe um comentário (opcional)..."></textarea>
+        <button onclick="enviarAvaliacao()" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-md hover:bg-blue-700">Enviar Avaliação</button>
+        <button onclick="document.getElementById('review-modal').classList.add('hidden')" class="w-full mt-2 text-gray-400 text-xs underline">Pular</button>
+    </div>
+</div>
+
+<div id="job-post-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+        <button onclick="document.getElementById('job-post-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        <h3 class="font-black text-xl text-blue-900 uppercase italic mb-4">Nova Vaga</h3>
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">Título da Vaga</label>
+        <input type="text" id="job-title" placeholder="Ex: Atendente de Loja" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">Salário (Opcional)</label>
+        <input type="text" id="job-salary" placeholder="Ex: 1.800,00" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">Descrição</label>
+        <textarea id="job-desc" rows="4" class="w-full border p-2 rounded-lg mb-4 text-sm bg-gray-50" placeholder="Requisitos e atividades..."></textarea>
+
+        <button onclick="publicarVaga()" id="btn-pub-job" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-blue-700">PUBLICAR AGORA</button>
+    </div>
+</div>
+
+<div id="modal-apply" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/80 backdrop-blur-sm" style="display: none;">
+    <div class="bg-white w-full max-w-md mx-4 rounded-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
+
+        <div class="p-6 border-b border-gray-100 flex justify-between items-start">
+            <div>
+                <h3 class="text-xl font-black text-blue-900 uppercase italic">Nova Candidatura</h3>
+                <p class="text-sm text-gray-500 mt-1">Vaga: <span id="apply-job-title" class="font-bold text-blue-600">...</span></p>
+            </div>
+            <button onclick="window.fecharModalCandidatura()" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
+        </div>
+
+        <div class="p-6 space-y-5 overflow-y-auto">
+            <input type="hidden" id="apply-job-id">
+
+            <div>
+                <label class="block text-xs font-black text-gray-500 mb-2 uppercase">MENSAGEM AO RECRUTADOR</label>
+                <textarea id="apply-message" rows="3" class="w-full border border-gray-300 rounded-xl p-3 text-sm text-black bg-white focus:border-blue-500 outline-none transition shadow-sm" style="color: black !important;" placeholder="Olá, gostaria de me candidatar..."></textarea>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-gray-500 mb-2 uppercase">ANEXAR CURRÍCULO (PDF)</label>
+                <div class="relative">
+                    <input type="file" id="apply-file" accept="application/pdf" class="block w-full text-xs text-gray-500 file:mr-4 file:py-3 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-200 rounded-xl cursor-pointer bg-white">
+                </div>
+                <p class="text-[9px] text-red-500 font-bold mt-2 flex items-center gap-1">
+                    <span>⚠️</span> Obrigatório: Arquivo PDF
+                </p>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <button id="btn-submit-proposal" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl transition shadow-lg uppercase tracking-wide transform active:scale-95">
+                ENVIAR PROPOSTA 🚀
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="cv-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative">
+        <button onclick="document.getElementById('cv-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        <h3 class="font-black text-xl text-green-600 uppercase italic mb-1">Seu Currículo</h3>
+        <p class="text-xs text-gray-400 mb-4">Preencha uma vez, aplique para sempre.</p>
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">Nome Completo</label>
+        <input type="text" id="cv-nome" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50">
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">WhatsApp</label>
+        <input type="tel" id="cv-telefone" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="(75) 9...">
+
+        <label class="text-[9px] font-bold text-gray-500 uppercase">Habilidades / Resumo</label>
+        <textarea id="cv-habilidades" rows="2" class="w-full border p-2 rounded-lg mb-3 text-sm bg-gray-50" placeholder="Ex: Tenho moto, experiência..."></textarea>
+
+        <label class="text-[9px] font-bold text-blue-600 uppercase">📎 Anexar Currículo (PDF)</label>
+        <input type="file" id="cv-arquivo" accept="application/pdf" class="w-full border p-2 rounded-lg mb-4 text-xs bg-blue-50 text-blue-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200">
+
+        <button onclick="salvarCurriculo()" id="btn-save-cv" class="w-full bg-green-600 text-white py-3 rounded-xl font-bold uppercase shadow-lg hover:bg-green-700">SALVAR E CONTINUAR</button>
+    </div>
+</div>
+
+<script>
+    // 🛰️ REGISTRO DO GENERAL UNIFICADO (V61)
+    // Usamos apenas um arquivo para Cache e Push para evitar conflitos de escopo no navegador.
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./firebase-messaging-sw.js')
+                .then(reg => console.log("✅ Motor Híbrido Ativo (Escopo):", reg.scope))
+                .catch(err => console.warn("🚩 Falha ao subir rádio mestre:", err));
+        });
     }
-};
 
-/**
- * 🔐 ABRIR COFRE DE CONTEÚDO
- * Renderiza o conteúdo exclusivo dentro da DIV que criamos no index.html
- */
-window.abrirCofreConteudo = async (prodId) => {
-    const modal = document.getElementById('modal-vault-content');
-    const title = document.getElementById('vault-product-title');
-    const videoCont = document.getElementById('vault-video-container');
-    const iframe = document.getElementById('vault-iframe');
-    const headline = document.getElementById('vault-main-headline');
-    const bodyText = document.getElementById('vault-body-text');
+    // 📲 GERENCIADOR DE INSTALAÇÃO (PWA)
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.getElementById('btn-install-app');
+        if (btn) {
+            btn.classList.remove('hidden');
+            btn.onclick = async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt = null;
+                    btn.classList.add('hidden');
+                }
+            };
+        }
+    });
+</script>
 
-    if (!modal) return;
+<script>
+    // 🔊 CONFIGURAÇÃO DE SOM
+    document.addEventListener("DOMContentLoaded", () => {
+        const audio = document.getElementById('online-sound');
+        if (audio) {
+            audio.src = "https://actions.google.com/sounds/v1/cartoon/pop.ogg";
+            audio.load();
+            console.log("🔊 Som de sistema configurado com sucesso.");
+        }
+    });
+</script>          
+          
+<script type="module">
+    const VERSAO = "20260305_V28"; // Atualizado para forçar o carregamento do Wallet novo
+    const caminhos = [
+        "./js/app.js", 
+        "./js/auth.js", 
+        "./js/modules/request_v2.js"
+    ];
+    
+    caminhos.forEach(src => {
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.src = `${src}?v=${VERSAO}`;
+        document.head.appendChild(s);
+    });
 
-    // 1. Mostra o modal e coloca o estado de "Carregando"
-    modal.classList.remove('hidden');
-    title.innerText = "Sincronizando Acesso...";
-    headline.innerText = "Aguarde...";
-    bodyText.innerHTML = "";
-    videoCont.classList.add('hidden');
+    /* 🏗️ V94: Força o Chat a entrar no Container do Index e respeitar as travas visuais */
+    setInterval(() => {
+        const chatFugitivo = document.querySelector('body > #painel-chat-individual');
+        const containerMestre = document.getElementById('sec-servicos'); // Coloca ele dentro da aba de serviços
+        if (chatFugitivo && containerMestre) containerMestre.appendChild(chatFugitivo);
+    }, 1000);
+    console.log("🛰️ Interface V28: Sistema Financeiro Sincronizado.");
+</script>
 
-    try {
-        const { doc, getDoc } = window.firebaseModules;
+<script type="module">
+    import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { db, app } from './js/config.js'; 
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const auth = getAuth(app);
+    auth.languageCode = 'pt-br';
+
+    window.enviarSMSLogin = async () => {
+        let rawPhone = document.getElementById('login-phone').value;
+        let cleanPhone = rawPhone.replace(/\D/g, ''); 
+        if(cleanPhone.length < 10) return alert("Digite o número completo!");
+        const btn = document.getElementById('btn-login-send');
+        btn.disabled = true; btn.innerText = "ENVIANDO...";
+        if(!window.recaptchaVerifier) window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {'size': 'invisible'});
+        try {
+            const confirmationResult = await signInWithPhoneNumber(auth, '+55' + cleanPhone, window.recaptchaVerifier);
+            window.confirmationResult = confirmationResult;
+            document.getElementById('lbl-login-phone').innerText = '+55' + cleanPhone;
+            document.getElementById('login-step-phone').classList.add('hidden');
+            document.getElementById('login-step-code').classList.remove('hidden');
+        } catch (error) { alert("Erro: " + error.message); btn.disabled = false; btn.innerText = "RECEBER CÓDIGO SMS 📲"; }
+    };
+
+    window.confirmarCodigoLogin = async () => {
+        const code = document.getElementById('login-code').value;
+        try { await window.confirmationResult.confirm(code); console.log("Sucesso no login!"); } catch (error) { alert("Código inválido!"); }
+    };
+
+    // Sincronia de Alerta V12 - Corrigindo a rota para a nova coleção saneada
+    window.carregarConfiguracoesIniciais = async () => {
+        try {
+            const docSnap = await getDoc(doc(db, "configuracoes", "global"));
+            if (docSnap.exists() && docSnap.data().top_message && docSnap.data().show_msg) {
+                const msgDiv = document.getElementById('global-alert-banner');
+                const msgText = document.getElementById('global-alert-text');
+                if(msgDiv && msgText) {
+                    msgText.innerText = "📢 " + docSnap.data().top_message;
+                    msgDiv.classList.remove('hidden');
+                }
+            }
+        } catch (e) { console.log("Aviso Global offline."); }
+    };
+
+   
+</script>
+    
+    <div id="modal-onboarding" class="fixed inset-0 z-[150] bg-slate-900 hidden flex-col overflow-y-auto custom-scrollbar">
         
-        // 2. Busca os detalhes do produto no banco
-        const prodSnap = await getDoc(doc(window.db, "products", prodId));
-        if (!prodSnap.exists()) throw "Produto não localizado.";
+        <div class="min-h-[38vh] bg-gradient-atlivio relative flex flex-col items-center justify-center p-6 text-center shrink-0">
+            <div class="absolute top-4 right-4">
+                <span class="bg-white/10 backdrop-blur-md text-white text-[9px] font-black px-4 py-1.5 rounded-full border border-white/20 uppercase tracking-[0.2em]">Acesso Exclusivo</span>
+            </div>
+            
+            <div class="w-16 h-16 bg-white/10 backdrop-blur-2xl rounded-2xl mb-3 flex items-center justify-center border border-white/20 shadow-2xl relative shrink-0">
+                <svg class="w-8 h-8 text-white opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+                <div class="absolute -bottom-1 -right-1 bg-green-500 w-5 h-5 rounded-full border-2 border-slate-900 flex items-center justify-center text-[8px]">✔</div>
+            </div>
 
-        const data = prodSnap.data();
+            <h1 class="text-2xl font-black text-white italic uppercase tracking-tighter mb-0.5">Crie sua Conta</h1>
+            <p class="text-blue-100 text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">Você está a um passo do futuro</p>
+        </div>
 
-        // 3. Alimenta o Cofre com os dados reais
-        title.innerText = data.nome || "Conteúdo Exclusivo";
-        headline.innerText = data.headline || data.nome;
-        bodyText.innerHTML = data.texto_entrega || "Aproveite seu conteúdo!";
+        <div class="flex-1 bg-slate-900 rounded-t-[3rem] -mt-12 p-8 pt-10 relative z-10 login-card-up shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border-t border-white/5">
+            
+            <div class="max-w-md mx-auto">
+                <div class="text-left mb-8">
+                    <h2 class="text-2xl font-black text-white italic leading-tight">Bem-vindo(a) à ATLIVIO.</h2>
+                    <p class="text-slate-400 text-xs font-medium mt-1">Complete seus dados para liberar seu acesso e receber seu bônus de entrada.</p>
+                </div>
 
-        // 4. Se tiver vídeo, liga o player
-        if (data.url_video) {
-            iframe.src = data.url_video; // Ex: https://www.youtube.com/embed/XXXX
-            videoCont.classList.remove('hidden');
-        }
+                <form id="form-onboarding" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-slate-500 ml-1 tracking-widest">Nome Completo</label>
+                        <input type="text" id="inp-onboard-name" 
+                               class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-white font-bold focus:border-blue-500 outline-none transition-all shadow-inner" 
+                               placeholder="Ex: João Silva" required minlength="3">
+                    </div>
 
-    } catch (e) {
-        console.error("Erro ao abrir cofre:", e);
-        alert("Erro ao carregar conteúdo.");
-        modal.classList.add('hidden');
-    }
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-slate-500 ml-1 tracking-widest">Seu WhatsApp</label>
+                        <input type="tel" id="inp-onboard-phone" 
+                               class="w-full bg-slate-800 border-2 border-slate-700 rounded-2xl p-4 text-white font-mono font-bold focus:border-green-500 outline-none transition-all shadow-inner" 
+                               placeholder="(00) 00000-0000" required>
+                    </div>
+
+                    <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex items-start gap-4 transition-colors hover:bg-slate-800">
+                        <input type="checkbox" id="chk-terms" class="mt-1 w-5 h-5 accent-blue-600 shrink-0" required>
+                        <label for="chk-terms" class="text-[11px] text-slate-400 leading-relaxed">
+                            Declaro que li e aceito as 
+                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('termos');" class="text-blue-500 font-black underline decoration-2">Regras de Uso</button> e 
+                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openTerms('privacidade');" class="text-blue-500 font-black underline decoration-2">Privacidade</button>.
+                        </label>
+                    </div>
+
+                    <button type="submit" id="btn-onboard-submit" class="w-full bg-blue-600 text-white font-black uppercase py-5 rounded-2xl hover:bg-blue-500 transition-all shadow-[0_10px_30px_rgba(37,99,235,0.3)] transform active:scale-95 text-sm tracking-widest">
+                        Entrar Gratuitamente 🚀
+                    </button>
+                </form>
+
+                <p class="text-center text-slate-600 text-[10px] mt-8 font-bold uppercase tracking-tighter">
+                    🛡️ Ambiente Seguro & Dados Criptografados
+                </p>
+            </div>
+        </div>
+    </div>
+
+<script type="module">
+    import { db, auth } from './js/config.js';
+    import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // --- 📜 TEXTOS JURÍDICOS ÍNTEGROS (V12 - Atualizado 05/02/2026) ---
+const TEXTOS = {
+    termos: `📜 TERMOS DE USO — ATLIVIO
+Última atualização: 05 de Fevereiro de 2026
+
+1. ACEITAÇÃO DOS TERMOS
+Ao acessar ou utilizar a plataforma ATLIVIO, o usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso.
+
+2. NATUREZA DO SERVIÇO
+A ATLIVIO é uma plataforma digital de intermediação, que conecta Clientes e Prestadores de Serviços. A ATLIVIO não executa serviços, não emprega prestadores e não possui vínculo trabalhista, societário ou contratual com nenhuma das partes.
+
+3. CADASTRO E RESPONSABILIDADE
+O usuário é responsável por: fornecer informações verdadeiras; manter a confidencialidade de seu acesso; utilizar a plataforma de forma ética. A ATLIVIO pode suspender ou encerrar contas em caso de uso indevido, fraude ou tentativa de burlar o sistema.
+
+4. SALDO, CRÉDITOS E PAGAMENTOS (CLÁUSULA DE NÃO REEMBOLSO)
+Os valores e bônus na carteira ATLIVIO são CRÉDITOS VIRTUAIS para uso EXCLUSIVO dentro do ecossistema da plataforma. Estes créditos NÃO POSSUEM VALOR MONETÁRIO FORA DA ATLIVIO, não configuram conta bancária e NÃO PODEM SER SACADOS, convertidos em dinheiro vivo ou transferidos para contas externas em nenhuma hipótese. Ao realizar uma recarga ou receber bônus, o usuário declara estar ciente de que está adquirindo 'Poder de Compra' interno para contratação de serviços, produtos e taxas de intermediação.
+
+5. SOLICITAÇÕES, ACEITE E DESISTÊNCIA
+Ao aceitar uma solicitação, o Prestador concorda com as regras. A ATLIVIO registra eventos digitais, mas não controla interações fora da plataforma. Acordos externos realizados após a troca de informações são de responsabilidade exclusiva das partes.
+
+6. LIMITAÇÃO DE RESPONSABILIDADE
+A ATLIVIO não garante a conclusão de serviços; não se responsabiliza por qualidade, prazos ou resultados; não responde por prejuízos causados por acordos externos.
+
+7. CONDUTA E PENALIDADES
+É proibido: tentar burlar taxas e saldo; utilizar dados falsos; praticar assédio ou golpes. Usuários que violarem estas regras poderão ser banidos sem aviso prévio, com perda total de acesso.
+
+8. ALTERAÇÕES
+A ATLIVIO pode atualizar estes Termos a qualquer momento. O uso contínuo implica aceitação das alterações.`,
+
+    privacidade: `🔐 POLÍTICA DE PRIVACIDADE — ATLIVIO
+1. COLETA DE DADOS
+Coletamos dados essenciais: Nome, WhatsApp, Email e informações de uso da plataforma.
+
+2. USO DAS INFORMAÇÕES
+Dados usados para: Identificar usuários; Conectar Clientes/Prestadores; Garantir segurança e prevenir fraudes.
+
+3. COMPARTILHAMENTO
+A ATLIVIO não vende dados pessoais. Dados são compartilhados apenas entre as partes envolvidas em uma solicitação ativa.
+
+4. SEGURANÇA
+Utilizamos SSL e infraestrutura Google Firebase. Embora sigamos padrões rigorosos, nenhum sistema é 100% inviolável.
+
+5. DIREITOS DO USUÁRIO
+O usuário pode solicitar correção, exclusão de conta ou informações sobre seus dados a qualquer momento.
+
+6. ALTERAÇÕES
+Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 };
 
-// ============================================================================
-// 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
-// ============================================================================
-window.switchTab = switchTab;
-window.switchServiceSubTab = switchServiceSubTab;
-window.switchProviderSubTab = switchProviderSubTab;
-window.maestroUniversal = maestroUniversal;
-window.registrarEventoMaestro = registrarEventoMaestro;
-window.carregarInterface = carregarInterface;
+    // --- 🛠️ FUNÇÕES DE INTERFACE ---
+    window.openTerms = (type) => {
+        const modal = document.getElementById('modal-terms');
+        const title = document.getElementById('term-title');
+        const content = document.getElementById('term-content');
+        if(!modal) return console.error("Modal de termos não encontrado!");
 
-console.log("🚀 [App.js] Sistema Nervoso Central Sincronizado e Online!");
+        // Injeta o conteúdo
+        if(title) title.innerText = type === 'termos' ? "Termos de Uso ATLIVIO" : "Política de Privacidade";
+        if(content) content.innerText = TEXTOS[type] || "Conteúdo não disponível.";
+
+        // Força a exibição e move para o topo da hierarquia do corpo
+        modal.classList.remove('hidden');
+        modal.style.setProperty('display', 'flex', 'important');
+        document.body.appendChild(modal); 
+        
+        console.log("🔓 Abrindo documento:", type);
+    };
+
+    // 🛰️ V150: MOTOR DE CADASTRO E BÔNUS DINÂMICO (SEM VALOR FIXO)
+    document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-onboard-submit');
+        const nome = document.getElementById('inp-onboard-name').value;
+        const fone = document.getElementById('inp-onboard-phone').value;
+        const uid = auth.currentUser?.uid;
+
+        if (!uid) return alert("Erro: Faça login antes!");
+        btn.disabled = true;
+        btn.innerText = "ATIVANDO ACESSO...";
+
+        try {
+            const userRef = doc(db, "usuarios", uid);
+            const origem = localStorage.getItem("traffic_source") || "direto";
+            
+            let valorBonusFinal = 0;
+            let msgBoasVindas = `Parabéns ${nome}! Cadastro concluído.`;
+
+            // 🔍 CONSULTA REAL AO ADMIN (Garante que a faixa diga a verdade)
+            try {
+                const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+                const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+                
+                if (configSnap.exists()) {
+                    const cfg = configSnap.data();
+                    if (cfg.bonus_boas_vindas_ativo === true) {
+                        valorBonusFinal = Number(cfg.valor_bonus_promocional || 0);
+                        if (valorBonusFinal > 0) {
+                            msgBoasVindas = `Parabéns ${nome}! Cadastro concluído e R$ ${valorBonusFinal.toFixed(2).replace('.',',')} de bônus liberados! 🎁`;
+                            
+                            // 🚀 INJETOR DA FAIXA VERDE (Respeitando o Admin)
+                            if (window.mostrarBarraNotificacao) {
+                                window.mostrarBarraNotificacao('bonus_boas_vindas', {
+                                    type: 'gift',
+                                    message: `VOCÊ GANHOU R$ ${valorBonusFinal.toFixed(2).replace('.',',')} PARA USAR AGORA! 💰`,
+                                    action: 'ganhar'
+                                });
+                            }
+                        }
+                    }
+                }
+            } catch (e) { console.warn("Erro na leitura do bônus visual."); }
+
+            // 🛠️ GRAVAÇÃO FINAL NO FIRESTORE
+            await setDoc(userRef, {
+                uid: uid,
+                nome: nome,
+                telefone: fone,
+                whatsapp: fone,
+                wallet_bonus: valorBonusFinal,
+                traffic_source: origem,
+                onboarding_completed: true,
+                perfil_completo: false, 
+                created_at: serverTimestamp(),
+                updated_at: serverTimestamp()
+            }, { merge: true });
+
+            alert(msgBoasVindas);
+            document.getElementById('modal-onboarding').classList.add('hidden');
+        } catch (err) { alert("Erro ao salvar."); btn.disabled = false; }
+    });
+
+    // --- 🔗 RASTREADOR (Item 39) ---
+    const p = new URLSearchParams(window.location.search);
+    const ref = p.get('ref') || p.get('utm_source') || p.get('utm');
+    if(ref) localStorage.setItem("traffic_source", ref);
+</script>
+    
+<div id="modal-settings" class="fixed inset-0 z-[60] bg-black/90 hidden items-end md:items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
+        
+        <div class="bg-gradient-atlivio p-5 rounded-t-2xl flex justify-between items-center shrink-0 shadow-md">
+            <h3 class="text-white font-black uppercase italic flex items-center gap-2">
+                ⚙️ Minha Conta
+            </h3>
+            <button onclick="document.getElementById('modal-settings').classList.add('hidden')" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+        </div>
+
+        <div class="p-6 overflow-y-auto custom-scrollbar space-y-6">
+            
+            <div class="space-y-3">
+                <p class="text-[10px] font-black text-[#0f172a] uppercase tracking-widest border-b-2 border-slate-100 pb-1">Identidade</p>
+                
+                <div class="flex flex-col items-center mb-4">
+                    <div class="relative group cursor-pointer" onclick="document.getElementById('profile-upload').click()">
+                        <img id="settings-pic" src="" class="w-20 h-20 rounded-full border-4 border-slate-100 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
+                        <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                            <span class="text-xs text-white font-bold">ALTERAR</span>
+                        </div>
+                    </div>
+                    <p class="text-[9px] text-blue-500 mt-1 cursor-pointer hover:underline" onclick="document.getElementById('profile-upload').click()">Trocar Foto</p>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">Nome Completo</label>
+                    <input type="text" id="set-nome" class="w-full border p-3 rounded-xl text-sm font-bold text-gray-800 bg-gray-50 focus:bg-white transition">
+                </div>
+                
+                <div>
+                    <label class="text-[10px] font-bold text-gray-500 uppercase">WhatsApp</label>
+                    <input type="tel" id="set-phone" class="w-full border p-3 rounded-xl text-sm font-mono text-gray-600 bg-gray-100 cursor-not-allowed" disabled title="Fale com o suporte para alterar">
+                </div>
+            </div>
+
+            <div class="bg-green-50 p-4 rounded-xl border border-green-200 space-y-3">
+                <div class="flex justify-between items-center border-b border-green-200 pb-2">
+                    <p class="text-[10px] font-bold text-green-800 uppercase tracking-widest">Dados de Recebimento</p>
+                    <span class="text-lg">🤑</span>
+                </div>
+                
+                <div class="space-y-3">
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold">Chave PIX</label>
+                        <input type="text" id="set-pix-chave" placeholder="CPF, Email ou Aleatória" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm font-bold text-gray-700 outline-none focus:border-green-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-bold">Banco</label>
+                            <input type="text" id="set-pix-banco" placeholder="Ex: Nubank" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-500 font-bold">CPF Titular</label>
+                            <input type="text" id="set-pix-cpf" placeholder="000..." class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[10px] text-gray-500 font-bold">Nome do Titular</label>
+                        <input type="text" id="set-pix-nome" placeholder="Nome igual no banco" class="w-full bg-white border border-green-200 rounded-lg p-2 text-sm text-gray-700 outline-none">
+                    </div>
+                    
+                    <p class="text-[9px] text-red-600 font-bold mt-1 bg-red-50 p-2 rounded border border-red-100">
+                        ⚠️ Atenção: A conta bancária deve ser do mesmo titular do perfil.
+                    </p>
+                </div>
+            </div>
+
+           <!-- 🔗 [V2026] CARD DE INDICAÇÕES: Engajamento e Rastreio -->
+            <div class="space-y-4 pt-2">
+                <div class="bg-gradient-to-br from-blue-600 to-blue-800 p-5 rounded-[2rem] shadow-xl border border-blue-400/20 relative overflow-hidden">
+                    <div class="absolute right-[-10px] top-[-10px] w-16 h-16 bg-white/10 rounded-full blur-xl"></div>
+                    
+                    <div class="flex justify-between items-center relative z-10">
+                        <div>
+                            <p class="text-[9px] font-black text-blue-200 uppercase tracking-widest mb-1">Amigos Indicados</p>
+                            <div class="flex items-baseline gap-2">
+                                <h3 id="user-referrals" class="text-4xl font-black text-white italic tracking-tighter">0</h3>
+                                <span class="text-blue-300 text-[10px] font-bold uppercase">Cadastros</span>
+                            </div>
+                        </div>
+                        <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-white/20">
+                            👥
+                        </div>
+                    </div>
+
+                    <button onclick="window.copiarLinkAfiliado()" class="w-full mt-4 bg-white text-blue-800 font-black text-[10px] uppercase py-3.5 rounded-xl shadow-lg active:scale-95 transition-all tracking-tight">
+                        🔗 Copiar Meu Link de Indicação
+                    </button>
+                </div>
+
+                <button onclick="logout()" class="w-full bg-red-50 text-red-600 py-4 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-2 hover:bg-red-100 transition shadow-sm border border-red-100">
+                    🚪 Encerrar Sessão (Sair)
+                </button>
+            </div>
+
+        </div>
+
+        <div class="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-between items-center shrink-0">
+            <span class="text-[10px] text-gray-400">ID: <span id="set-uid" class="font-mono">...</span></span>
+            <button onclick="window.salvarConfiguracoes()" id="btn-save-settings" class="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold text-xs shadow-lg hover:bg-slate-800 transition transform active:scale-95">
+                SALVAR ALTERAÇÕES
+            </button>
+        </div>
+  </div>
+</div>
+
+<div id="modal-video-maestro" class="fixed inset-0 z-[200] bg-black/98 backdrop-blur-xl hidden items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-black w-full max-w-2xl aspect-video rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
+        
+        <button onclick="document.getElementById('player-maestro-frame').src=''; document.getElementById('modal-video-maestro').style.setProperty('display', 'none', 'important'); document.getElementById('modal-video-maestro').classList.add('hidden');" 
+                class="absolute top-6 right-6 z-[250] bg-red-600/80 hover:bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-xl border border-white/10">
+            <span class="text-2xl">×</span>
+        </button>
+
+        <div class="absolute inset-0 w-full h-full overflow-hidden bg-black rounded-[2.5rem]">
+            <iframe id="player-maestro-frame" 
+                    class="absolute w-[120%] h-[160%] top-[-30%] left-[-10%] pointer-events-auto" 
+                    src="" frameborder="0" allow="autoplay; encrypted-media">
+            </iframe>
+        </div>
+    </div>
+</div>
+
+<div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        <div id="provider-setup-content">
+            <p class="text-center text-gray-400">Carregando editor...</p>
+        </div>
+    </div>
+</div>
+            <div id="modal-terms" class="hidden fixed inset-0 bg-black/95 items-center justify-center p-4 animate-fadeIn" style="display: none; z-index: 999999 !important;">
+        <div class="w-full max-w-lg bg-slate-800 rounded-[2.5rem] border border-slate-700 shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900">
+                <h3 class="text-white font-black uppercase italic tracking-widest text-xs" id="term-title">Documentos Legais</h3>
+                <button onclick="document.getElementById('modal-terms').style.setProperty('display', 'none', 'important');" class="text-slate-400 hover:text-white text-3xl font-bold transition">&times;</button>
+            </div>
+            
+            <div class="p-8 overflow-y-auto text-slate-300 text-[11px] space-y-4 leading-relaxed custom-scrollbar" id="term-content" style="white-space: pre-wrap;">
+                </div>
+
+            <div class="p-6 border-t border-slate-700 bg-slate-900">
+                <button onclick="document.getElementById('modal-terms').style.setProperty('display', 'none', 'important');" 
+                        class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg transition transform active:scale-95">
+                    CONCORDO E VOLTAR
+                </button>
+            </div>
+        </div>
+    </div>
+            <div id="modal-troca-identidade" class="hidden fixed inset-0 z-[10000] bg-slate-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-[2.5rem] p-8 text-center shadow-2xl border-t-8 border-blue-600 animate-fadeIn">
+        <div class="text-4xl mb-4">🔄</div>
+        <h3 class="text-xl font-black text-blue-900 uppercase italic mb-2">Alternar Perfil?</h3>
+        <p class="text-gray-500 text-[10px] font-bold uppercase mb-6 leading-relaxed">
+            Para acessar esta área, você precisa mudar sua identidade de <br>
+            <span id="txt-perfil-atual" class="text-blue-600 bg-blue-50 px-2 py-1 rounded">...</span>
+        </p>
+        
+        <div class="grid gap-3">
+            <button onclick="alternarPerfil()" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition text-xs uppercase tracking-widest">
+                Sim, Alternar Agora 🚀
+            </button>
+            <button onclick="document.getElementById('modal-troca-identidade').classList.add('hidden')" class="w-full text-gray-400 font-black text-[10px] uppercase underline tracking-tighter">
+                Agora não, voltar
+            </button>
+        </div>
+    </div>
+</div>
+            <div id="modal-marketing-b2b" class="hidden fixed inset-0 z-[10000] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl animate-fadeIn">
+        <div class="bg-gradient-atlivio p-8 text-center relative">
+            <div class="w-20 h-20 bg-white/10 rounded-3xl mx-auto mb-4 flex items-center justify-center text-4xl shadow-inner border border-white/20">🌍</div>
+            <h3 class="text-white font-black text-xl uppercase italic leading-tight">Sua Empresa em<br>Todo o Brasil</h3>
+        </div>
+        
+        <div class="p-8 space-y-4">
+            <p class="text-gray-500 text-[11px] leading-relaxed text-center font-medium">
+                Com o <span class="text-blue-600 font-black">Atlas Vivo</span>, você contrata milhares de pessoas comuns para realizar tarefas reais (fotos, pesquisas, auditorias) via GPS em tempo real.
+            </p>
+            
+            <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                <p class="text-[9px] text-blue-800 font-bold uppercase mb-2">📍 Como acessar:</p>
+                <p class="text-[10px] text-blue-600 leading-tight">Vá na sua <span class="font-black">HOME</span> e clique no botão preto <span class="font-black">GESTÃO ATLAS</span>. Lá você cria sua operação.</p>
+            </div>
+
+            <div class="grid gap-3 pt-2">
+                <button onclick="window.abrirTrocaPerfilB2B()" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg active:scale-95 transition text-[11px] uppercase tracking-widest">
+                    Ir para Gestão Atlas 🛰️
+                </button>
+                <button onclick="document.getElementById('modal-marketing-b2b').classList.add('hidden')" class="w-full text-gray-400 font-black text-[10px] uppercase underline tracking-tighter">
+                    Entendi, voltar
+                </button>
+            </div>
+        </div>
+   </div>
+</div>
+
+<div id="modal-editor" class="hidden fixed inset-0 z-[10001] bg-slate-900/98 backdrop-blur-xl flex flex-col overflow-y-auto custom-scrollbar">
+    <div class="p-6 flex justify-between items-center sticky top-0 bg-slate-900/50 z-10">
+        <h3 class="text-white font-black uppercase italic tracking-tighter">Nova Operação Atlas</h3>
+        <button onclick="document.getElementById('modal-editor').classList.add('hidden')" class="text-white bg-red-600/20 w-10 h-10 rounded-full font-bold">×</button>
+    </div>
+    
+    <div id="modal-content" class="flex-1 p-6">
+        <div class="py-20 text-center">
+            <div class="loader mx-auto border-blue-500"></div>
+            <p class="text-[10px] text-gray-400 mt-4">Construindo Formulário de Inteligência...</p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+        
