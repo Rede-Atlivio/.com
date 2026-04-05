@@ -1014,13 +1014,28 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
     }
 };
 
-// 🔥 SOLDA DE NAVEGAÇÃO UNIVERSAL (Resolve o erro do Botão do Cofre)
-window.navegarAba = (aba) => {
+/**
+ * 🛰️ NAVEGAÇÃO UNIVERSAL V2026
+ * Permite que botões dentro de modais (como o Cofre) troquem a aba do app.
+ * Resolve o erro: window.navegarAba is not a function
+ */
+window.navegarAba = (abaAlvo) => {
+    console.log(`🚀 [Maestro] Comando de navegação recebido: ${abaAlvo}`);
+    
+    // 1. Fecha o modal do cofre antes de trocar a aba para não travar a tela
+    const modalCofre = document.getElementById('modal-vault-content');
+    if (modalCofre) {
+        modalCofre.classList.add('hidden');
+        // Limpa o iframe para o vídeo parar de tocar no fundo
+        const iframe = document.getElementById('vault-iframe');
+        if (iframe) iframe.src = ''; 
+    }
+
+    // 2. Executa a troca de aba usando o motor central do App
     if (typeof window.switchTab === 'function') {
-        window.switchTab(aba);
-        console.log(`🚀 [Navegação Universal] Trocando para aba: ${aba}`);
+        window.switchTab(abaAlvo);
     } else {
-        console.error("❌ Erro: Motor de abas (switchTab) não localizado.");
+        console.error("❌ Falha Crítica: Função switchTab não encontrada no App.js");
     }
 };
 // ============================================================================
