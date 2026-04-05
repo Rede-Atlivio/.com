@@ -839,17 +839,19 @@ window.addEventListener('click', (e) => {
 // ============================================================================
 
 // 🌊 1. FUNÇÃO DE FECHAMENTO (O Faxineiro)
+// 🌊 [V2026] O FAXINEIRO UNIFICADO
 window.fecharModalMaestro = () => {
-    const modal = document.getElementById('modal-video-maestro');
-    const frame = document.getElementById('player-maestro-frame');
+    // Agora ele limpa o Cofre, que é o único modal soberano
+    const modal = document.getElementById('modal-vault-content');
+    const iframe = document.getElementById('vault-iframe');
     
-    if (frame) frame.src = ''; // Mata o vídeo
+    if (iframe) iframe.src = ''; // Mata o vídeo na hora
     
     if (modal) {
         modal.classList.add('hidden');
-        modal.style.setProperty('display', 'none', 'important');
+        modal.style.display = 'none';
     }
-    console.log("🌊 [Maestro] Modal limpo e recolhido.");
+    console.log("🌊 [Maestro] Palco Soberano limpo e recolhido.");
 };
 
 // 🎯 2. CLIQUE NO FUNDO (Experiência Premium)
