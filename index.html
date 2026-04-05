@@ -1116,14 +1116,12 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
 </script>          
           
 <script type="module">
-    // 🔥 V30: FORÇA TOTAL PARA ATUALIZAR O DNA DOS PRODUTOS
-const VERSAO = "20260404_V30_GOLD"; 
-const caminhos = [
-    "./js/app.js", 
-    "./js/auth.js", 
-    "./js/modules/request_v2.js",
-    "./js/modules/products.js" // Injetamos aqui para garantir a versão
-];
+    const VERSAO = "20260305_V28"; // Atualizado para forçar o carregamento do Wallet novo
+    const caminhos = [
+        "./js/app.js", 
+        "./js/auth.js", 
+        "./js/modules/request_v2.js"
+    ];
     
     caminhos.forEach(src => {
         const s = document.createElement('script');
@@ -1500,6 +1498,23 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
   </div>
 </div>
 
+<div id="modal-video-maestro" class="fixed inset-0 z-[200] bg-black/98 backdrop-blur-xl hidden items-center justify-center p-4 animate-fadeIn">
+    <div class="bg-black w-full max-w-2xl aspect-video rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
+        
+        <button onclick="document.getElementById('player-maestro-frame').src=''; document.getElementById('modal-video-maestro').style.setProperty('display', 'none', 'important'); document.getElementById('modal-video-maestro').classList.add('hidden');" 
+                class="absolute top-6 right-6 z-[250] bg-red-600/80 hover:bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-xl border border-white/10">
+            <span class="text-2xl">×</span>
+        </button>
+
+        <div class="absolute inset-0 w-full h-full overflow-hidden bg-black rounded-[2.5rem]">
+            <iframe id="player-maestro-frame" 
+                    class="absolute w-[120%] h-[160%] top-[-30%] left-[-10%] pointer-events-auto" 
+                    src="" frameborder="0" allow="autoplay; encrypted-media">
+            </iframe>
+        </div>
+    </div>
+</div>
+
 <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
         <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
@@ -1589,9 +1604,9 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 </div>
 <div id="modal-vault-content" class="hidden fixed inset-0 z-[10002] bg-slate-950 overflow-y-auto custom-scrollbar animate-fadeIn">
     <div class="sticky top-0 bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/10 z-[10003]">
-       <button onclick="window.fecharModalMaestro()" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">
-    ⬅️ Voltar para Loja
-</button>
+        <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src='';" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">
+            ⬅️ Voltar para Loja
+        </button>
         <h3 id="vault-product-title" class="text-white font-black uppercase italic text-xs tracking-tighter truncate px-4 text-center flex-1">Conteúdo Exclusivo</h3>
         <div class="w-20"></div> </div>
 
@@ -1609,7 +1624,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         <div class="mt-16 p-8 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-[3rem] border border-white/5 text-center shadow-inner">
             <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl">💬</div>
             <p class="text-[10px] text-blue-400 font-black uppercase mb-2 tracking-widest">Dúvidas sobre este conteúdo?</p>
-            <button onclick="window.fecharModalMaestro(); window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
+            <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src=''; window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
         </div>
     </div>
 </div>
