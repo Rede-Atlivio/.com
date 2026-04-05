@@ -838,220 +838,31 @@ window.addEventListener('click', (e) => {
 // 🛰️ MOTOR UNIVERSAL DE MÍDIA MAESTRO (V2026)
 // ============================================================================
 
-// 🌊 1. FUNÇÃO DE FECHAMENTO (O Faxineiro)
+// 🌊 O COMANDO QUE RESPEITA O SEU HTML
 window.fecharModalMaestro = () => {
-    const modal = document.getElementById('modal-video-maestro');
-    const frame = document.getElementById('player-maestro-frame');
-    
-    if (frame) frame.src = ''; // Mata o vídeo
-    
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.setProperty('display', 'none', 'important');
-    }
-    console.log("🌊 [Maestro] Modal limpo e recolhido.");
-};
-
-// 🎯 2. CLIQUE NO FUNDO (Experiência Premium)
-document.getElementById('modal-video-maestro')?.addEventListener('click', (e) => {
-    if (e.target.id === 'modal-video-maestro') window.fecharModalMaestro();
-});
-
-// 🖼️ 3. VISUALIZADOR UNIVERSAL DE IMAGENS (O Projetor)
-window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
-    const modal = document.getElementById('modal-video-maestro');
-    const container = modal?.querySelector('div.bg-black');
-    
-    if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
-
-    container.innerHTML = `
-        <button onclick="window.fecharModalMaestro()" 
-                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
-            ×
-        </button>
-        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
-        <div class="absolute bottom-10 left-0 right-0 text-center px-4">
-            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10 shadow-2xl">
-                ${legenda}
-            </span>
-        </div>
-    `;
-    
-    modal.classList.remove('hidden');
-    modal.style.setProperty('display', 'flex', 'important');
-};
-
-// 🔗 4. PONTES DE COMPATIBILIDADE
-window.verModeloMissao = (url) => window.exibirImagemModal(url, "Modelo de Execução");
-
-// 🛰️ 5. PONTE ATLAS B2B: Sincronizada com o DNA is_provider (V70)
-window.abrirTrocaPerfilB2B = () => {
-    document.getElementById('modal-marketing-b2b')?.classList.add('hidden');
-    const isClienteReal = window.userProfile?.is_provider === false;
-
-    if (isClienteReal) {
-        window.switchTab('b2b_gestao');
-        if (window.initB2B) window.initB2B(); 
-    } else {
-        const modalTroca = document.getElementById('modal-troca-identidade');
-        const txtTroca = document.getElementById('txt-perfil-atual');
-        if (modalTroca && txtTroca) {
-            txtTroca.innerText = "PRESTADOR para CLIENTE";
-            modalTroca.classList.remove('hidden');
-        }
-    }
-};
-
-// 🛰️ [V2026] MOTOR DE AUTO-CONTABILIZAÇÃO (AUTORIDADE MESTRE)
-// Gil, esse código faz o SEU celular processar as indicações que o Firebase barrou nos outros.
-window.processarMinhasIndicacoes = async (uid) => {
-    const { collection, query, where, getDocs, doc, updateDoc, increment } = window.firebaseModules;
-    
-    try {
-        // 1. Procura na "Caixa de Correio" se tem rastro seu que ainda não foi contado
-        const q = query(collection(window.db, "referral_events"), 
-                        where("padrinho_uid", "==", uid), 
-                        where("processado", "==", false));
+    // Em vez de eu tentar adivinhar o ID, eu mando o sistema esconder o modal
+    const modalCofre = document.getElementById('modal-vault-content');
+    if (modalCofre) {
+        modalCofre.classList.add('hidden'); // Usa a classe que você já usa
+        modalCofre.style.display = 'none';   // Garante o sumiço
         
-        const snap = await getDocs(q);
-        if (snap.empty) return; // Nada novo? Sai fora.
-
-        console.log(`🎁 [Maestro] Encontrei ${snap.size} indicações novas. Contabilizando...`);
-
-        for (const eventoDoc of snap.docs) {
-            // 2. VOCÊ (Dono) dá o +1 no seu próprio contador (O Firebase deixa!)
-            await updateDoc(doc(window.db, "usuarios", uid), {
-                referral_count: increment(1)
-            });
-
-            // 3. Marca o "bilhete" como lido para não contar duas vezes
-            await updateDoc(doc(window.db, "referral_events", eventoDoc.id), {
-                processado: true
-            });
-        }
-        
-        console.log("✅ [Sucesso] Contador atualizado com sua autoridade!");
-        // Dá um toque no Perfil para ele ler o número novo na tela
-        if(window.carregarDadosPerfil) window.carregarDadosPerfil();
-
-    } catch (e) { console.warn("⚠️ Falha na autofaxina:", e); }
+        // Mata o vídeo para não ficar tocando áudio no fundo
+        const iframe = document.getElementById('vault-iframe');
+        if (iframe) iframe.src = ''; 
+    }
+    console.log("✅ [Maestro] Modal fechado usando a estrutura original.");
 };
 
-// 🛰️ [V2026] VIGILANTE REAL-TIME: Ouve a pasta de amigos sem precisar de F5
-let unsubscribeReferral = null;
-
-window.auth.onAuthStateChanged(user => {
-    if (user) {
-        if (unsubscribeReferral) unsubscribeReferral();
-
-        // 🛠️ Aguarda módulos estarem prontos e liga o radar de indicações
-        const checkRef = setInterval(() => {
-            if (window.firebaseModules && window.db) {
-                clearInterval(checkRef);
-                const { collection, query, where, onSnapshot } = window.firebaseModules;
-                
-                const q = query(collection(window.db, "referral_events"), 
-                                where("padrinho_uid", "==", user.uid), 
-                                where("processado", "==", false));
-
-                unsubscribeReferral = onSnapshot(q, (snap) => {
-                    if (!snap.empty) {
-                        console.log(`🎁 [Maestro] ${snap.size} novas indicações detectadas ao vivo!`);
-                        window.processarMinhasIndicacoes(user.uid);
-                    }
-                });
-            }
-        }, 1000);
-    } else {
-        if (unsubscribeReferral) unsubscribeReferral();
-    }
-});
-
-// ============================================================================
-// 🛍️ MOTOR DE VENDAS E COFRE ATLIVIO (V2026)
-// ============================================================================
-
-/**
- * 💰 PROCESSAR COMPRA COM ATLIX
- * Conecta a vitrine à função pagarComAtlix do wallet.js
- */
-window.comprarComAtlix = async (prodId, preco, tipo) => {
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return alert("Faça login para comprar.");
-
-    // 1. Pergunta se o usuário tem certeza
-    if (!confirm(`Confirmar desbloqueio por ${preco} ATLIX?`)) return;
-
-    try {
-        // 2. Chama o Motor Financeiro (wallet.js)
-        // Gil, essa função pagarComAtlix já cuida de saldo real e bônus sozinha!
-        const res = await window.pagarComAtlix(preco, "🛍️ COMPRA_LOJA", `Desbloqueio: ${prodId}`);
-
-        if (res.success) {
-            const { doc, updateDoc, arrayUnion, getDoc } = window.firebaseModules;
-            
-            // 3. Adiciona o ID do produto ao "Cofre" (my_vault) do usuário no Firebase
-            await updateDoc(doc(window.db, "usuarios", uid), {
-                my_vault: arrayUnion(prodId)
-            });
-
-            // 4. Atualiza o perfil local para refletir a posse na hora
-            if(!window.userProfile.my_vault) window.userProfile.my_vault = [];
-            window.userProfile.my_vault.push(prodId);
-
-            alert("✅ Sucesso! Conteúdo liberado no seu Cofre.");
-            
-            // 5. Se for virtual, já abre o conteúdo direto para o usuário
-            if (tipo === 'virtual') window.abrirCofreConteudo(prodId);
-            else window.carregarProdutos(); // Recarrega a vitrine para mudar o botão
-
-        } else {
-            alert("❌ Falha: " + (res.error || "Saldo insuficiente ou erro no banco."));
-        }
-    } catch (e) {
-        console.error("Erro na compra:", e);
-        alert("Ocorreu um erro ao processar sua compra.");
-    }
-};
-
-// ============================================================================
-// 🛰️ RELÉ DE COMANDO MAESTRO (Religa os botões do Index)
-// ============================================================================
-
-// 1. Resolve: IR PARA MINHA CARTEIRA 💰 (Botão de Ação)
-window.navegarAba = (abaAlvo) => {
-    console.log(`🚀 [Maestro] Navegando para: ${abaAlvo}`);
-    window.fecharModalMaestro(); // Fecha o cofre para mostrar a aba nova
+// 🛰️ RELÉ DE SUPORTE
+window.abrirChatSuporte = () => {
+    // Fecha o modal primeiro para não bugar a visão
+    window.fecharModalMaestro();
+    // Abre a aba de suporte (ajuste o nome da aba se for diferente)
     if (typeof window.switchTab === 'function') {
-        window.switchTab(abaAlvo);
+        window.switchTab('loja'); // Redireciona ou abre o motor de chat
+        // Se você tiver uma função específica 'abrirChat', chame aqui
     }
 };
-
-// 2. Resolve: ⬅️ Voltar para Loja (Botão de Saída)
-window.fecharModalMaestro = () => {
-    const modal = document.getElementById('modal-vault-content');
-    const iframe = document.getElementById('vault-iframe');
-    
-    if (iframe) iframe.src = ''; // Mata o áudio do vídeo na hora
-    
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
-    console.log("🌊 [Maestro] Tela liberada.");
-};
-
-// 3. Resolve: Falar com o Suporte
-// (Garante que a função global de suporte seja chamada após fechar o modal)
-if (!window.abrirChatSuporte) {
-    window.abrirChatSuporte = () => {
-        if (typeof window.switchTab === 'function') {
-            window.switchTab('support'); // Ou a aba de suporte que você usa
-        } else {
-            alert("Suporte: (75) 9...."); // Backup leigo
-        }
-    };
-}
 
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
