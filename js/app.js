@@ -1014,54 +1014,6 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
     }
 };
 
-/**
- * 🔐 ABRIR COFRE DE CONTEÚDO
- * Renderiza o conteúdo exclusivo dentro da DIV que criamos no index.html
- */
-window.abrirCofreConteudo = async (prodId) => {
-    const modal = document.getElementById('modal-vault-content');
-    const title = document.getElementById('vault-product-title');
-    const videoCont = document.getElementById('vault-video-container');
-    const iframe = document.getElementById('vault-iframe');
-    const headline = document.getElementById('vault-main-headline');
-    const bodyText = document.getElementById('vault-body-text');
-
-    if (!modal) return;
-
-    // 1. Mostra o modal e coloca o estado de "Carregando"
-    modal.classList.remove('hidden');
-    title.innerText = "Sincronizando Acesso...";
-    headline.innerText = "Aguarde...";
-    bodyText.innerHTML = "";
-    videoCont.classList.add('hidden');
-
-    try {
-        const { doc, getDoc } = window.firebaseModules;
-        
-        // 2. Busca os detalhes do produto no banco
-        const prodSnap = await getDoc(doc(window.db, "products", prodId));
-        if (!prodSnap.exists()) throw "Produto não localizado.";
-
-        const data = prodSnap.data();
-
-        // 3. Alimenta o Cofre com os dados reais
-        title.innerText = data.nome || "Conteúdo Exclusivo";
-        headline.innerText = data.headline || data.nome;
-        bodyText.innerHTML = data.texto_entrega || "Aproveite seu conteúdo!";
-
-        // 4. Se tiver vídeo, liga o player
-        if (data.url_video) {
-            iframe.src = data.url_video; // Ex: https://www.youtube.com/embed/XXXX
-            videoCont.classList.remove('hidden');
-        }
-
-    } catch (e) {
-        console.error("Erro ao abrir cofre:", e);
-        alert("Erro ao carregar conteúdo.");
-        modal.classList.add('hidden');
-    }
-};
-
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
