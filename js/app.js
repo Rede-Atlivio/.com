@@ -839,19 +839,17 @@ window.addEventListener('click', (e) => {
 // ============================================================================
 
 // 🌊 1. FUNÇÃO DE FECHAMENTO (O Faxineiro)
-// 🌊 [V2026] O FAXINEIRO UNIFICADO
 window.fecharModalMaestro = () => {
-    // Agora ele limpa o Cofre, que é o único modal soberano
-    const modal = document.getElementById('modal-vault-content');
-    const iframe = document.getElementById('vault-iframe');
+    const modal = document.getElementById('modal-video-maestro');
+    const frame = document.getElementById('player-maestro-frame');
     
-    if (iframe) iframe.src = ''; // Mata o vídeo na hora
+    if (frame) frame.src = ''; // Mata o vídeo
     
     if (modal) {
         modal.classList.add('hidden');
-        modal.style.display = 'none';
+        modal.style.setProperty('display', 'none', 'important');
     }
-    console.log("🌊 [Maestro] Palco Soberano limpo e recolhido.");
+    console.log("🌊 [Maestro] Modal limpo e recolhido.");
 };
 
 // 🎯 2. CLIQUE NO FUNDO (Experiência Premium)
@@ -860,32 +858,27 @@ document.getElementById('modal-video-maestro')?.addEventListener('click', (e) =>
 });
 
 // 🖼️ 3. VISUALIZADOR UNIVERSAL DE IMAGENS (O Projetor)
-// 🖼️ [V2026] O PROJETOR UNIFICADO (Usa o Cofre para Fotos)
 window.exibirImagemModal = (url, legenda = "Visualização Atlas") => {
-    const modal = document.getElementById('modal-vault-content');
-    const bodyText = document.getElementById('vault-body-text');
-    const videoCont = document.getElementById('vault-video-container');
+    const modal = document.getElementById('modal-video-maestro');
+    const container = modal?.querySelector('div.bg-black');
     
-    if (!modal || !bodyText) return console.error("❌ Erro: Estrutura do Cofre não encontrada.");
+    if (!modal || !container) return console.error("❌ Modal Maestro não localizado.");
 
-    // 1. Esconde o vídeo (já que é uma foto)
-    if (videoCont) videoCont.classList.add('hidden');
-
-    // 2. Injeta a imagem no corpo do texto do cofre
-    bodyText.innerHTML = `
-        <div class="flex flex-col items-center gap-4 animate-fadeIn">
-            <img src="${url}" class="w-full rounded-2xl shadow-2xl border border-white/10 object-contain max-h-[60vh]">
-            <p class="text-[10px] text-gray-500 uppercase font-black tracking-widest">${legenda}</p>
+    container.innerHTML = `
+        <button onclick="window.fecharModalMaestro()" 
+                class="absolute top-6 right-6 z-[250] bg-red-600 text-white w-10 h-10 rounded-full font-black text-lg shadow-2xl border border-white/10 active:scale-90 transition-all">
+            ×
+        </button>
+        <img src="${url}" class="w-full h-full object-contain rounded-[2.5rem] p-4 animate-fadeIn">
+        <div class="absolute bottom-10 left-0 right-0 text-center px-4">
+            <span class="bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-6 py-3 rounded-full uppercase tracking-widest border border-white/10 shadow-2xl">
+                ${legenda}
+            </span>
         </div>
     `;
-
-    // 3. Ajusta os títulos
-    document.getElementById('vault-product-title').innerText = "GALERIA MAESTRO";
-    document.getElementById('vault-main-headline').innerText = legenda;
-
-    // 4. Abre o modal
+    
     modal.classList.remove('hidden');
-    modal.style.display = 'block';
+    modal.style.setProperty('display', 'flex', 'important');
 };
 
 // 🔗 4. PONTES DE COMPATIBILIDADE
@@ -1022,29 +1015,53 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
 };
 
 /**
- * 🛰️ NAVEGAÇÃO UNIVERSAL V2026
- * Permite que botões dentro de modais (como o Cofre) troquem a aba do app.
- * Resolve o erro: window.navegarAba is not a function
+ * 🔐 ABRIR COFRE DE CONTEÚDO
+ * Renderiza o conteúdo exclusivo dentro da DIV que criamos no index.html
  */
-window.navegarAba = (abaAlvo) => {
-    console.log(`🚀 [Maestro] Comando de navegação recebido: ${abaAlvo}`);
-    
-    // 1. Fecha o modal do cofre antes de trocar a aba para não travar a tela
-    const modalCofre = document.getElementById('modal-vault-content');
-    if (modalCofre) {
-        modalCofre.classList.add('hidden');
-        // Limpa o iframe para o vídeo parar de tocar no fundo
-        const iframe = document.getElementById('vault-iframe');
-        if (iframe) iframe.src = ''; 
-    }
+window.abrirCofreConteudo = async (prodId) => {
+    const modal = document.getElementById('modal-vault-content');
+    const title = document.getElementById('vault-product-title');
+    const videoCont = document.getElementById('vault-video-container');
+    const iframe = document.getElementById('vault-iframe');
+    const headline = document.getElementById('vault-main-headline');
+    const bodyText = document.getElementById('vault-body-text');
 
-    // 2. Executa a troca de aba usando o motor central do App
-    if (typeof window.switchTab === 'function') {
-        window.switchTab(abaAlvo);
-    } else {
-        console.error("❌ Falha Crítica: Função switchTab não encontrada no App.js");
+    if (!modal) return;
+
+    // 1. Mostra o modal e coloca o estado de "Carregando"
+    modal.classList.remove('hidden');
+    title.innerText = "Sincronizando Acesso...";
+    headline.innerText = "Aguarde...";
+    bodyText.innerHTML = "";
+    videoCont.classList.add('hidden');
+
+    try {
+        const { doc, getDoc } = window.firebaseModules;
+        
+        // 2. Busca os detalhes do produto no banco
+        const prodSnap = await getDoc(doc(window.db, "products", prodId));
+        if (!prodSnap.exists()) throw "Produto não localizado.";
+
+        const data = prodSnap.data();
+
+        // 3. Alimenta o Cofre com os dados reais
+        title.innerText = data.nome || "Conteúdo Exclusivo";
+        headline.innerText = data.headline || data.nome;
+        bodyText.innerHTML = data.texto_entrega || "Aproveite seu conteúdo!";
+
+        // 4. Se tiver vídeo, liga o player
+        if (data.url_video) {
+            iframe.src = data.url_video; // Ex: https://www.youtube.com/embed/XXXX
+            videoCont.classList.remove('hidden');
+        }
+
+    } catch (e) {
+        console.error("Erro ao abrir cofre:", e);
+        alert("Erro ao carregar conteúdo.");
+        modal.classList.add('hidden');
     }
 };
+
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
