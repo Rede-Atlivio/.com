@@ -1015,6 +1015,45 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
 };
 
 // ============================================================================
+// 🛰️ RELÉ DE COMANDO MAESTRO (Religa os botões do Index)
+// ============================================================================
+
+// 1. Resolve: IR PARA MINHA CARTEIRA 💰 (Botão de Ação)
+window.navegarAba = (abaAlvo) => {
+    console.log(`🚀 [Maestro] Navegando para: ${abaAlvo}`);
+    window.fecharModalMaestro(); // Fecha o cofre para mostrar a aba nova
+    if (typeof window.switchTab === 'function') {
+        window.switchTab(abaAlvo);
+    }
+};
+
+// 2. Resolve: ⬅️ Voltar para Loja (Botão de Saída)
+window.fecharModalMaestro = () => {
+    const modal = document.getElementById('modal-vault-content');
+    const iframe = document.getElementById('vault-iframe');
+    
+    if (iframe) iframe.src = ''; // Mata o áudio do vídeo na hora
+    
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+    }
+    console.log("🌊 [Maestro] Tela liberada.");
+};
+
+// 3. Resolve: Falar com o Suporte
+// (Garante que a função global de suporte seja chamada após fechar o modal)
+if (!window.abrirChatSuporte) {
+    window.abrirChatSuporte = () => {
+        if (typeof window.switchTab === 'function') {
+            window.switchTab('support'); // Ou a aba de suporte que você usa
+        } else {
+            alert("Suporte: (75) 9...."); // Backup leigo
+        }
+    };
+}
+
+// ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
 window.switchTab = switchTab;
