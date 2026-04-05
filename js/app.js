@@ -1049,19 +1049,31 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 🛰️ MOTOR DE SUPORTE E FAXINA (V2026)
-window.abrirChatSuporte = () => {
-    console.log("💬 [Maestro] Acionando Suporte e limpando palco...");
+// 🌊 FAXINEIRO SOBERANO (Resolve: ⬅️ Voltar para Loja)
+window.fecharModalMaestro = () => {
+    console.log("🌊 [Maestro] Executando faxina no Cofre...");
+    const modal = document.getElementById('modal-vault-content');
+    const iframe = document.getElementById('vault-iframe');
     
-    // 1. CHAMA O FAXINEIRO (Fecha o modal e cala o vídeo na hora)
-    if (typeof window.fecharModalMaestro === 'function') {
-        window.fecharModalMaestro();
+    // 1. Limpa o vídeo para matar o áudio
+    if (iframe) iframe.src = ''; 
+    
+    // 2. Esconde o modal usando a estrutura que seu CSS reconhece
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
     }
+};
 
-    // 2. ABRE A ABA DE SUPORTE
-    // Se você usa o WhatsApp direto ou uma aba, o comando é este:
+// 💬 PONTE DE SUPORTE (Resolve: Falar com o Suporte)
+window.abrirChatSuporte = () => {
+    // 1. Primeiro limpa a tela para o chat aparecer livre
+    window.fecharModalMaestro();
+    
+    // 2. CHAMA O MOTOR ORIGINAL DO SEU APP
+    // Gil, essa é a função que já deve existir nos seus outros módulos (chat.js ou modules/support)
     if (typeof window.switchTab === 'function') {
-        window.switchTab('loja'); // Ou 'support' conforme sua configuração
+        window.switchTab('support'); // Força a aba de suporte oficial
     }
 };
 
