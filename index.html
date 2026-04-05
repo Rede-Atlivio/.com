@@ -1116,14 +1116,12 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
 </script>          
           
 <script type="module">
-    // 🔥 V30: FORÇA TOTAL PARA ATUALIZAR O DNA DOS PRODUTOS
-const VERSAO = "20260404_V30_GOLD"; 
-const caminhos = [
-    "./js/app.js", 
-    "./js/auth.js", 
-    "./js/modules/request_v2.js",
-    "./js/modules/products.js" // Injetamos aqui para garantir a versão
-];
+    const VERSAO = "20260305_V28"; // Atualizado para forçar o carregamento do Wallet novo
+    const caminhos = [
+        "./js/app.js", 
+        "./js/auth.js", 
+        "./js/modules/request_v2.js"
+    ];
     
     caminhos.forEach(src => {
         const s = document.createElement('script');
@@ -1606,12 +1604,11 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 </div>
 <div id="modal-vault-content" class="hidden fixed inset-0 z-[10002] bg-slate-950 overflow-y-auto custom-scrollbar animate-fadeIn">
     <div class="sticky top-0 bg-slate-900/80 backdrop-blur-md p-4 flex justify-between items-center border-b border-white/10 z-[10003]">
-        <button onclick="window.fecharModalMaestro()" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">
+        <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src='';" class="text-gray-400 font-black text-[10px] uppercase flex items-center gap-1">
             ⬅️ Voltar para Loja
         </button>
         <h3 id="vault-product-title" class="text-white font-black uppercase italic text-xs tracking-tighter truncate px-4 text-center flex-1">Conteúdo Exclusivo</h3>
-        <div class="w-20"></div> 
-    </div>
+        <div class="w-20"></div> </div>
 
     <div class="p-6 max-w-2xl mx-auto pb-32">
         <div id="vault-video-container" class="hidden mb-8 rounded-[2.5rem] overflow-hidden shadow-2xl border border-white/10 aspect-video bg-black relative">
@@ -1620,7 +1617,6 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
 
         <div id="vault-text-content" class="animate-fadeIn">
             <h1 id="vault-main-headline" class="text-2xl font-black text-white italic mb-6 leading-tight decoration-purple-500 underline underline-offset-8"></h1>
-            
             <div id="vault-body-text" class="text-slate-300 text-sm leading-relaxed space-y-4 font-medium">
                 </div>
         </div>
@@ -1628,7 +1624,7 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         <div class="mt-16 p-8 bg-gradient-to-br from-blue-900/20 to-purple-900/20 rounded-[3rem] border border-white/5 text-center shadow-inner">
             <div class="w-12 h-12 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl">💬</div>
             <p class="text-[10px] text-blue-400 font-black uppercase mb-2 tracking-widest">Dúvidas sobre este conteúdo?</p>
-            <button onclick="window.fecharModalMaestro(); window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
+            <button onclick="document.getElementById('modal-vault-content').classList.add('hidden'); document.getElementById('vault-iframe').src=''; window.abrirChatSuporte();" class="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase shadow-[0_0_20px_rgba(37,99,235,0.4)] hover:scale-105 transition">Falar com o Suporte</button>
         </div>
     </div>
 </div>
