@@ -1111,6 +1111,41 @@ window.exibirImagemModal = (url, legenda = "Visualização") => {
 };
 
 // ============================================================================
+// 🛰️ SOLDA DE COMPATIBILIDADE V2026 (REGRAS DE OURO)
+// Coloque isso na ÚLTIMA LINHA do seu app.js verdadeiro
+// ============================================================================
+
+window.navegarAba = (abaAlvo) => {
+    // 1. Fecha o Cofre para liberar a visão
+    window.fecharModalMaestro();
+    // 2. Troca a aba
+    if (typeof window.switchTab === 'function') {
+        window.switchTab(abaAlvo);
+    }
+};
+
+window.fecharModalMaestro = () => {
+    const modal = document.getElementById('modal-vault-content');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        const iframe = document.getElementById('vault-iframe');
+        if (iframe) iframe.src = ''; // Mata o som do vídeo
+    }
+    console.log("🌊 [Maestro] Tela liberada. Ocupação encerrada.");
+};
+
+window.exibirImagemModal = (url, legenda = "Visualização") => {
+    const body = document.getElementById('vault-body-text');
+    const modal = document.getElementById('modal-vault-content');
+    if (modal && body) {
+        body.innerHTML = `<img src="${url}" class="w-full rounded-2xl shadow-xl">`;
+        document.getElementById('vault-main-headline').innerText = legenda;
+        modal.classList.remove('hidden');
+    }
+};
+
+// ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
 window.switchTab = switchTab;
