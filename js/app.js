@@ -1048,6 +1048,23 @@ window.fecharModalMaestro = () => {
         if (iframe) iframe.src = '';
     }
 };
+
+// 🛰️ MOTOR DE SUPORTE E FAXINA (V2026)
+window.abrirChatSuporte = () => {
+    console.log("💬 [Maestro] Acionando Suporte e limpando palco...");
+    
+    // 1. CHAMA O FAXINEIRO (Fecha o modal e cala o vídeo na hora)
+    if (typeof window.fecharModalMaestro === 'function') {
+        window.fecharModalMaestro();
+    }
+
+    // 2. ABRE A ABA DE SUPORTE
+    // Se você usa o WhatsApp direto ou uma aba, o comando é este:
+    if (typeof window.switchTab === 'function') {
+        window.switchTab('loja'); // Ou 'support' conforme sua configuração
+    }
+};
+
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
