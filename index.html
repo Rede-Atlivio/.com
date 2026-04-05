@@ -1500,23 +1500,6 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
   </div>
 </div>
 
-<div id="modal-video-maestro" class="fixed inset-0 z-[200] bg-black/98 backdrop-blur-xl hidden items-center justify-center p-4 animate-fadeIn">
-    <div class="bg-black w-full max-w-2xl aspect-video rounded-[2.5rem] border border-white/5 shadow-2xl relative overflow-hidden">
-        
-        <button onclick="document.getElementById('player-maestro-frame').src=''; document.getElementById('modal-video-maestro').style.setProperty('display', 'none', 'important'); document.getElementById('modal-video-maestro').classList.add('hidden');" 
-                class="absolute top-6 right-6 z-[250] bg-red-600/80 hover:bg-red-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-xl border border-white/10">
-            <span class="text-2xl">×</span>
-        </button>
-
-        <div class="absolute inset-0 w-full h-full overflow-hidden bg-black rounded-[2.5rem]">
-            <iframe id="player-maestro-frame" 
-                    class="absolute w-[120%] h-[160%] top-[-30%] left-[-10%] pointer-events-auto" 
-                    src="" frameborder="0" allow="autoplay; encrypted-media">
-            </iframe>
-        </div>
-    </div>
-</div>
-
 <div id="provider-setup-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-4 animate-fadeIn">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
         <button onclick="document.getElementById('provider-setup-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
