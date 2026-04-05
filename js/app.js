@@ -1014,6 +1014,15 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
     }
 };
 
+// 🔥 SOLDA DE NAVEGAÇÃO UNIVERSAL (Resolve o erro do Botão do Cofre)
+window.navegarAba = (aba) => {
+    if (typeof window.switchTab === 'function') {
+        window.switchTab(aba);
+        console.log(`🚀 [Navegação Universal] Trocando para aba: ${aba}`);
+    } else {
+        console.error("❌ Erro: Motor de abas (switchTab) não localizado.");
+    }
+};
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
