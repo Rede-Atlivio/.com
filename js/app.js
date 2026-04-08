@@ -1049,27 +1049,30 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 GATILHO DE SUPORTE REAL (Versão com Delay de Segurança)
+// 💬 GATILHO DE SUPORTE (V2026 - MODO SOBREVIVÊNCIA)
 window.abrirChatSuporte = () => {
-    console.log("🚀 [Maestro] Iniciando protocolo de Suporte...");
+    console.log("🚀 [Maestro] Tentando abrir Suporte...");
 
-    // 1. DISPARA O SUPORTE PRIMEIRO (Para ele ganhar prioridade no DOM)
-    if (typeof window.abrirJanelaSuporteOficial === 'function') {
-        window.abrirJanelaSuporteOficial();
+    // 1. Força a faxina manual (Cofre e Vídeo)
+    const cofre = document.getElementById('modal-vault-content');
+    if(cofre) cofre.classList.add('hidden');
+    const vIframe = document.getElementById('vault-iframe');
+    if(vIframe) vIframe.src = '';
+
+    // 2. Tenta a rota oficial do Suporte que você colou no HTML
+    if (typeof window.switchTab === 'function') {
+        window.switchTab('support');
     } else {
-        // Se não achar a função, tenta o clique no botão que o chat.js vigia
-        const btnSuporteReal = document.querySelector('.fixed.bottom-4.right-4') || 
-                               document.querySelector('[onclick*="Suporte"]');
-        if (btnSuporteReal) btnSuporteReal.click();
+        // Se o switchTab falhou pelo erro 503, fazemos na marra:
+        document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+        const secSup = document.getElementById('sec-support');
+        if(secSup) {
+            secSup.classList.remove('hidden');
+            secSup.style.display = 'block';
+        }
     }
-
-    // 2. DELAY DE FAXINA (Dá 300ms para o chat abrir antes de esconder o cofre)
-    // Isso impede que o 'hidden' do cofre mate a inicialização do chat
-    setTimeout(() => {
-        console.log("🌊 [Maestro] Chat acionado. Limpando o palco de vídeo agora...");
-        window.fecharModalMaestro();
-    }, 300);
 };
+
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
