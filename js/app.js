@@ -1065,33 +1065,26 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 GATILHO DE SUPORTE REAL V2026 (O que o Admin recebe)
+// 💬 GATILHO DE SUPORTE REAL (Versão com Delay de Segurança)
 window.abrirChatSuporte = () => {
-    console.log("🚀 [Maestro] Abrindo Suporte Real para o Cliente...");
+    console.log("🚀 [Maestro] Iniciando protocolo de Suporte...");
 
-    // 1. Limpa o palco do vídeo (Obrigatório)
-    window.fecharModalMaestro();
-
-    // 2. Aciona o motor de chat que injeta mensagens na coleção 'support_tickets'
-    // Gil, o seu chat original geralmente é disparado por uma dessas funções:
+    // 1. DISPARA O SUPORTE PRIMEIRO (Para ele ganhar prioridade no DOM)
     if (typeof window.abrirJanelaSuporteOficial === 'function') {
         window.abrirJanelaSuporteOficial();
-    } else if (typeof window.iniciarChatSuporte === 'function') {
-        window.iniciarChatSuporte();
     } else {
-        // Se as funções sumiram do mundo global, nós forçamos o clique no ícone do chat
-        // que geralmente fica flutuando ou na barra de navegação
-        const btnChatFisico = document.querySelector('.fixed.bottom-4.right-4') || 
-                              document.querySelector('button[onclick*="Suporte"]');
-        
-        if (btnChatFisico) {
-            btnChatFisico.click();
-        } else {
-            // Caso extremo: leva para a aba onde o chat é renderizado
-            window.switchTab('servicos'); 
-            console.warn("⚠️ Motor de chat não encontrado. Verifique se o chat.js está carregado.");
-        }
+        // Se não achar a função, tenta o clique no botão que o chat.js vigia
+        const btnSuporteReal = document.querySelector('.fixed.bottom-4.right-4') || 
+                               document.querySelector('[onclick*="Suporte"]');
+        if (btnSuporteReal) btnSuporteReal.click();
     }
+
+    // 2. DELAY DE FAXINA (Dá 300ms para o chat abrir antes de esconder o cofre)
+    // Isso impede que o 'hidden' do cofre mate a inicialização do chat
+    setTimeout(() => {
+        console.log("🌊 [Maestro] Chat acionado. Limpando o palco de vídeo agora...");
+        window.fecharModalMaestro();
+    }, 300);
 };
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
