@@ -1015,6 +1015,40 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
 };
 
 // ============================================================================
+// 🛰️ EDIÇÃO 01: CONTROLE SOBERANO DO BOTÃO VOLTAR
+// ============================================================================
+
+/**
+ * 🌊 Esta função será o destino final do clique no "Voltar para Loja".
+ * Ela garante que o modal suma e o vídeo pare, ponto final.
+ */
+window.fecharCofreLimpo = () => {
+    console.log("🌊 [Cofre] Encerrando visualização e limpando palco...");
+    
+    const modalVault = document.getElementById('modal-vault-content');
+    const iframeVault = document.getElementById('vault-iframe');
+
+    // 1. Mata o som e o carregamento do vídeo imediatamente
+    if (iframeVault) {
+        iframeVault.src = ''; 
+    }
+
+    // 2. Esconde a tela do cofre
+    if (modalVault) {
+        modalVault.classList.add('hidden');
+        modalVault.style.display = 'none';
+    }
+};
+
+// ⚡ VIGILANTE DE CLIQUES: Redireciona o botão do Index para a nossa função limpa
+document.addEventListener('click', (e) => {
+    if (e.target.innerText && e.target.innerText.includes('Voltar para Loja')) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.fecharCofreLimpo();
+    }
+}, { capture: true });
+// ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
 window.switchTab = switchTab;
