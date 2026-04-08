@@ -1065,29 +1065,25 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 PONTE DE SUPORTE REAL (Recuperação de Motor)
+// 💬 PONTE DE SUPORTE REAL (Versão Simplificada V2026)
 window.abrirChatSuporte = () => {
-    console.log("🚀 [Maestro] Acionando Suporte Original...");
+    console.log("🚀 [Maestro] Limpando palco e chamando Suporte...");
     
-    // 1. Fecha o modal do cofre primeiro
+    // 1. Fecha o modal do cofre e cala o vídeo (Faxina obrigatória)
     window.fecharModalMaestro();
     
-    // 2. Tenta abrir o container de chat que já está no seu HTML
-    const chatContainer = document.getElementById('sec-chat');
-    const painelIndividual = document.getElementById('painel-chat-individual');
-
-    if (chatContainer) {
-        window.switchTab('servicos'); // O chat geralmente é injetado em Serviços
-        chatContainer.classList.remove('hidden');
-        if(painelIndividual) painelIndividual.classList.remove('hidden');
+    // 2. Leva o usuário para a aba onde o Suporte REAL atende
+    // Na Atlivio, o suporte geralmente mora na aba 'loja' ou na aba 'chat'
+    if (typeof window.switchTab === 'function') {
+        window.switchTab('loja'); 
         
-        // Simula o clique no botão que inicia a conversa de suporte
-        // Se o seu chat.js procura por um botão específico, este comando ativa:
-        const btnSuporte = document.querySelector('.chat-trigger') || document.querySelector('[onclick*="Suporte"]');
-        if(btnSuporte) btnSuporte.click();
-    } else {
-        // Se tudo falhar, abre a Loja que é onde o botão de suporte flutuante costuma estar
-        window.switchTab('loja');
+        // 3. Dá um "toque" no motor de chat para ele subir
+        setTimeout(() => {
+            // Tenta clicar no botão de suporte que fica no canto da tela ou na lista
+            const btnSuporteReal = document.querySelector('.fixed.bottom-4.right-4') || 
+                                   document.querySelector('[onclick*="abrirJanelaSuporte"]');
+            if(btnSuporteReal) btnSuporteReal.click();
+        }, 300);
     }
 };
 // ============================================================================
