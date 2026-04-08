@@ -100,7 +100,6 @@ import { iniciarMonitoramentoCarteira } from './modules/wallet.js';
 import { checkOnboarding } from './modules/onboarding.js';
 import { abrirConfiguracoes } from './modules/profile.js';
 import './modules/user_notifications.js';
-import './modules/products.js'; // 🚀 SOLDA V2026: Importando o motor da loja
 
 window.abrirConfiguracoes = abrirConfiguracoes;
 
@@ -139,10 +138,6 @@ window.abaAtual = 'home';
 // 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
 window.addEventListener('userProfileLoaded', (e) => {
     window.userProfile = e.detail;
-    // 🛡️ [V2026] Blindagem de Posse: Garante que o sistema não trave se o cofre estiver vazio
-    if (window.userProfile && !window.userProfile.my_vault) {
-        window.userProfile.my_vault = [];
-    }
     if (window.userProfile) {
         Object.defineProperty(window.userProfile, 'saldo', {
             get: function() { return this.wallet_balance || 0; },
@@ -966,112 +961,6 @@ window.auth.onAuthStateChanged(user => {
         if (unsubscribeReferral) unsubscribeReferral();
     }
 });
-
-// ============================================================================
-// 🛍️ MOTOR DE VENDAS E COFRE ATLIVIO (V2026)
-// ============================================================================
-
-/**
- * 💰 PROCESSAR COMPRA COM ATLIX
- * Conecta a vitrine à função pagarComAtlix do wallet.js
- */
-window.comprarComAtlix = async (prodId, preco, tipo) => {
-    const uid = window.auth?.currentUser?.uid;
-    if (!uid) return alert("Faça login para comprar.");
-
-    // 1. Pergunta se o usuário tem certeza
-    if (!confirm(`Confirmar desbloqueio por ${preco} ATLIX?`)) return;
-
-    try {
-        // 2. Chama o Motor Financeiro (wallet.js)
-        // Gil, essa função pagarComAtlix já cuida de saldo real e bônus sozinha!
-        const res = await window.pagarComAtlix(preco, "🛍️ COMPRA_LOJA", `Desbloqueio: ${prodId}`);
-
-        if (res.success) {
-            const { doc, updateDoc, arrayUnion, getDoc } = window.firebaseModules;
-            
-            // 3. Adiciona o ID do produto ao "Cofre" (my_vault) do usuário no Firebase
-            await updateDoc(doc(window.db, "usuarios", uid), {
-                my_vault: arrayUnion(prodId)
-            });
-
-            // 4. Atualiza o perfil local para refletir a posse na hora
-            if(!window.userProfile.my_vault) window.userProfile.my_vault = [];
-            window.userProfile.my_vault.push(prodId);
-
-            alert("✅ Sucesso! Conteúdo liberado no seu Cofre.");
-            
-            // 5. Se for virtual, já abre o conteúdo direto para o usuário
-            if (tipo === 'virtual') window.abrirCofreConteudo(prodId);
-            else window.carregarProdutos(); // Recarrega a vitrine para mudar o botão
-
-        } else {
-            alert("❌ Falha: " + (res.error || "Saldo insuficiente ou erro no banco."));
-        }
-    } catch (e) {
-        console.error("Erro na compra:", e);
-        alert("Ocorreu um erro ao processar sua compra.");
-    }
-};
-// ============================================================================
-// 🛰️ SOLDA DE COMANDO (Religa os Botões do Modal)
-// Resolve: Uncaught TypeError: window.navegarAba is not a function
-// ============================================================================
-
-window.navegarAba = (abaAlvo) => {
-    console.log(`🚀 [Maestro] Navegando para: ${abaAlvo}`);
-    
-    // 1. Limpa o Modal (Usa o ID que está no seu index.html)
-    const modalCofre = document.getElementById('modal-vault-content');
-    if (modalCofre) {
-        modalCofre.classList.add('hidden');
-        modalCofre.style.display = 'none';
-        
-        // 2. Cala o som do vídeo
-        const iframe = document.getElementById('vault-iframe');
-        if (iframe) iframe.src = ''; 
-    }
-
-    // 3. Troca a aba no motor principal
-    if (typeof window.switchTab === 'function') {
-        window.switchTab(abaAlvo);
-    }
-};
-
-// Solda o comando de fechar para os botões "X" e "Voltar"
-window.fecharModalMaestro = () => {
-    const modal = document.getElementById('modal-vault-content');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-        const iframe = document.getElementById('vault-iframe');
-        if (iframe) iframe.src = '';
-    }
-};
-
-// 💬 GATILHO DE SUPORTE (V2026 - MODO SOBREVIVÊNCIA)
-window.abrirChatSuporte = () => {
-    console.log("🚀 [Maestro] Tentando abrir Suporte...");
-
-    // 1. Força a faxina manual (Cofre e Vídeo)
-    const cofre = document.getElementById('modal-vault-content');
-    if(cofre) cofre.classList.add('hidden');
-    const vIframe = document.getElementById('vault-iframe');
-    if(vIframe) vIframe.src = '';
-
-    // 2. Tenta a rota oficial do Suporte que você colou no HTML
-    if (typeof window.switchTab === 'function') {
-        window.switchTab('support');
-    } else {
-        // Se o switchTab falhou pelo erro 503, fazemos na marra:
-        document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
-        const secSup = document.getElementById('sec-support');
-        if(secSup) {
-            secSup.classList.remove('hidden');
-            secSup.style.display = 'block';
-        }
-    }
-};
 
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
