@@ -1065,30 +1065,31 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 PONTE DE SUPORTE OFICIAL (V2026.PRO)
+// 💬 PONTE DE SUPORTE REAL (Recuperação de Motor)
 window.abrirChatSuporte = () => {
     console.log("🚀 [Maestro] Acionando Suporte Original...");
     
-    // 1. Limpa o palco (Fecha modal e para o vídeo)
+    // 1. Fecha o modal do cofre primeiro
     window.fecharModalMaestro();
     
-    // 2. Aciona o motor de suporte que já existe no seu sistema
-    // Gil, o seu chat oficial responde pelo comando 'abrirJanelaSuporteOficial'
-    // ou simplesmente clicando no botão que o seu index.html já tem escondido.
-    if (typeof window.abrirJanelaSuporteOficial === 'function') {
-        window.abrirJanelaSuporteOficial();
-    } else {
-        // Se a função acima falhar, fazemos o plano B (O gatilho de aba)
-        window.switchTab('loja');
+    // 2. Tenta abrir o container de chat que já está no seu HTML
+    const chatContainer = document.getElementById('sec-chat');
+    const painelIndividual = document.getElementById('painel-chat-individual');
+
+    if (chatContainer) {
+        window.switchTab('servicos'); // O chat geralmente é injetado em Serviços
+        chatContainer.classList.remove('hidden');
+        if(painelIndividual) painelIndividual.classList.remove('hidden');
         
-        // Dá um pequeno tempo para a aba carregar e tenta abrir o chat
-        setTimeout(() => {
-            const btnSuporteReal = document.querySelector('button[onclick*="abrirChatSuporte"]');
-            if(btnSuporteReal) btnSuporteReal.click();
-        }, 300);
+        // Simula o clique no botão que inicia a conversa de suporte
+        // Se o seu chat.js procura por um botão específico, este comando ativa:
+        const btnSuporte = document.querySelector('.chat-trigger') || document.querySelector('[onclick*="Suporte"]');
+        if(btnSuporte) btnSuporte.click();
+    } else {
+        // Se tudo falhar, abre a Loja que é onde o botão de suporte flutuante costuma estar
+        window.switchTab('loja');
     }
 };
-
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
