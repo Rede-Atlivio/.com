@@ -1065,15 +1065,19 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 PONTE DE SUPORTE (Resolve: Falar com o Suporte)
+// 💬 PONTE DE SUPORTE REAL (Versão Corrigida V2026)
 window.abrirChatSuporte = () => {
-    // 1. Primeiro limpa a tela para o chat aparecer livre
+    console.log("🚀 [Maestro] Direcionando para o Suporte Original...");
+    
+    // 1. Fecha o modal do cofre para liberar o chat
     window.fecharModalMaestro();
     
-    // 2. CHAMA O MOTOR ORIGINAL DO SEU APP
-    // Gil, essa é a função que já deve existir nos seus outros módulos (chat.js ou modules/support)
+    // 2. Abre a aba onde seu chat REAL mora (Pelo seu histórico é a aba 'loja')
     if (typeof window.switchTab === 'function') {
-        window.switchTab('support'); // Força a aba de suporte oficial
+        window.switchTab('loja'); 
+        
+        // Se o seu chat original precisa de um clique extra para abrir, 
+        // o motor da Atlivio já fará isso dentro da aba loja.
     }
 };
 
