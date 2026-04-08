@@ -1014,40 +1014,30 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
     }
 };
 
-// ============================================================================
-// 🛰️ EDIÇÃO 01: CONTROLE SOBERANO DO BOTÃO VOLTAR
-// ============================================================================
-
 /**
- * 🌊 Esta função será o destino final do clique no "Voltar para Loja".
- * Ela garante que o modal suma e o vídeo pare, ponto final.
+ * 💳 BOTÃO DE AÇÃO ATLIVIO V2026
+ * Fecha o modal, limpa o vídeo e abre a aba da carteira.
  */
-window.fecharCofreLimpo = () => {
-    console.log("🌊 [Cofre] Encerrando visualização e limpando palco...");
+window.irParaMinhaCarteira = () => {
+    console.log("🚀 [Cofre] Encerrando visualização e indo para Carteira...");
     
     const modalVault = document.getElementById('modal-vault-content');
     const iframeVault = document.getElementById('vault-iframe');
 
-    // 1. Mata o som e o carregamento do vídeo imediatamente
-    if (iframeVault) {
-        iframeVault.src = ''; 
-    }
+    // 1. Mata o vídeo (Higiene Sonora)
+    if (iframeVault) iframeVault.src = ''; 
 
-    // 2. Esconde a tela do cofre
+    // 2. Fecha a tela preta (O Modal)
     if (modalVault) {
         modalVault.classList.add('hidden');
         modalVault.style.display = 'none';
     }
-};
 
-// ⚡ VIGILANTE DE CLIQUES: Redireciona o botão do Index para a nossa função limpa
-document.addEventListener('click', (e) => {
-    if (e.target.innerText && e.target.innerText.includes('Voltar para Loja')) {
-        e.preventDefault();
-        e.stopPropagation();
-        window.fecharCofreLimpo();
+    // 3. Muda a aba para Carteira
+    if (typeof window.switchTab === 'function') {
+        window.switchTab('ganhar');
     }
-}, { capture: true });
+};
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
