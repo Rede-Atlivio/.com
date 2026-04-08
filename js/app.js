@@ -1038,6 +1038,20 @@ window.irParaMinhaCarteira = () => {
         window.switchTab('ganhar');
     }
 };
+
+/**
+ * 🔗 PONTE DE COMPATIBILIDADE (O PULO DO GATO)
+ * Gil, isso faz o botão "satanás" que o Admin envia entender 
+ * que deve executar a nossa função nova e limpa.
+ */
+window.navegarAba = (aba) => {
+    if (aba === 'ganhar') {
+        window.irParaMinhaCarteira();
+    } else {
+        window.switchTab(aba);
+    }
+};
+
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
 // ============================================================================
