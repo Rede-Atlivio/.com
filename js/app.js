@@ -1065,19 +1065,27 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 💬 PONTE DE SUPORTE REAL (Versão Corrigida V2026)
+// 💬 PONTE DE SUPORTE OFICIAL (V2026.PRO)
 window.abrirChatSuporte = () => {
-    console.log("🚀 [Maestro] Direcionando para o Suporte Original...");
+    console.log("🚀 [Maestro] Acionando Suporte Original...");
     
-    // 1. Fecha o modal do cofre para liberar o chat
+    // 1. Limpa o palco (Fecha modal e para o vídeo)
     window.fecharModalMaestro();
     
-    // 2. Abre a aba onde seu chat REAL mora (Pelo seu histórico é a aba 'loja')
-    if (typeof window.switchTab === 'function') {
-        window.switchTab('loja'); 
+    // 2. Aciona o motor de suporte que já existe no seu sistema
+    // Gil, o seu chat oficial responde pelo comando 'abrirJanelaSuporteOficial'
+    // ou simplesmente clicando no botão que o seu index.html já tem escondido.
+    if (typeof window.abrirJanelaSuporteOficial === 'function') {
+        window.abrirJanelaSuporteOficial();
+    } else {
+        // Se a função acima falhar, fazemos o plano B (O gatilho de aba)
+        window.switchTab('loja');
         
-        // Se o seu chat original precisa de um clique extra para abrir, 
-        // o motor da Atlivio já fará isso dentro da aba loja.
+        // Dá um pequeno tempo para a aba carregar e tenta abrir o chat
+        setTimeout(() => {
+            const btnSuporteReal = document.querySelector('button[onclick*="abrirChatSuporte"]');
+            if(btnSuporteReal) btnSuporteReal.click();
+        }, 300);
     }
 };
 
