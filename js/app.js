@@ -1049,22 +1049,6 @@ window.fecharModalMaestro = () => {
     }
 };
 
-// 🌊 FAXINEIRO SOBERANO (Resolve: ⬅️ Voltar para Loja)
-window.fecharModalMaestro = () => {
-    console.log("🌊 [Maestro] Executando faxina no Cofre...");
-    const modal = document.getElementById('modal-vault-content');
-    const iframe = document.getElementById('vault-iframe');
-    
-    // 1. Limpa o vídeo para matar o áudio
-    if (iframe) iframe.src = ''; 
-    
-    // 2. Esconde o modal usando a estrutura que seu CSS reconhece
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    }
-};
-
 // 💬 GATILHO DE SUPORTE REAL (Versão com Delay de Segurança)
 window.abrirChatSuporte = () => {
     console.log("🚀 [Maestro] Iniciando protocolo de Suporte...");
