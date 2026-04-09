@@ -210,13 +210,13 @@ window.abrirCofreConteudo = async (id) => {
     passosHTML += renderPasso(2, "🛰️", "A ESTRATÉGIA", p.passo2);
     passosHTML += renderPasso(3, "💰", "O LUCRO", p.passo3);
 
-    // 🔥 3. O BOTÃO SOBERANO (Ponte Maestro)
+   // 🔥 3. O BOTÃO SOBERANO (Conexão com o Maestro Universal)
     let ctaHTML = "";
     if (p.cta_texto && p.cta_destino) {
         ctaHTML = `
             <div class="mt-8 pt-6 border-t border-white/10">
-                <button onclick="window.executarAcaoPosCompra('${p.cta_destino}')" 
-                        class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-95 transition-all">
+                <button onclick="window.executarAcaoUniversal('${p.cta_destino}')" 
+                        class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-[10px] shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-95 transition-all">
                     ${p.cta_texto}
                 </button>
                 <p class="text-[8px] text-gray-500 text-center mt-3 uppercase font-bold italic">Ação imediata recomendada pelo Maestro</p>
