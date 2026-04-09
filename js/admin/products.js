@@ -237,12 +237,19 @@ function renderizarModalProduto() {
                 <div class="bg-blue-50 p-4 rounded-xl border-2 border-blue-100 space-y-3">
                     <p class="text-[9px] font-black text-blue-600 uppercase mb-1">🔥 AJUSTE DE OURO (Ação Pós-Compra)</p>
                     <input type="text" id="prod-cta-texto" placeholder="Texto do Botão (Ex: Começar Missão!)" class="w-full border-2 p-2 rounded-lg text-xs">
-                    <select id="prod-cta-destino" class="w-full border-2 p-2 rounded-lg text-xs font-bold">
-                        <option value="">🚫 Nenhum (Apenas fechar)</option>
-                        <option value="missoes">🎯 Aba: Micro Tarefas</option>
-                        <option value="servicos">🛠️ Aba: Serviços (Radar)</option>
-                        <option value="ganhar">💰 Aba: Carteira (Saldo)</option>
-                    </select>
+                    <select id="prod-cta-destino" class="w-full border-2 p-2 rounded-lg text-xs font-bold bg-white">
+    <option value="">🚫 Nenhum (Apenas fechar)</option>
+    <option value="home">🏠 Início (Tour Principal)</option>
+    <option value="servicos">🛠️ Serviços (Radar/Vitrine)</option>
+    <option value="missoes">📷 Micro Tarefas (Atlas Vivo)</option>
+    <option value="b2b_gestao">🌍 Gestão Atlas (Trava B2B)</option>
+    <option value="empregos">💼 Empregos (Vagas/Painel)</option>
+    <option value="oportunidades">⚡ Oportunidades (Cashback)</option>
+    <option value="loja">🛒 Produtos (Vitrine Loja)</option>
+    <option value="ganhar">💰 Carteira (Saldo/Histórico)</option>
+    <option value="canal">📺 Canal ATLIVIO (Tutoriais)</option>
+    <option value="chat">💬 Mensagens (Chats Ativos)</option>
+</select>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
