@@ -58,7 +58,7 @@ export async function carregarProdutos() {
                     
                     <h4 class="font-black text-[10px] text-slate-800 leading-tight h-7 line-clamp-2">${prod.nome}</h4>
                     
-                    ${prod.preco > 0 ? `<p class="text-[8px] text-slate-500 line-through font-black mt-1 uppercase italic tracking-tighter">De: R$ ${parseFloat(prod.preco).toFixed(2)}</p>` : ""}
+                    ${prod.preco > 0 ? `<p class="text-[8px] text-red-600 line-through font-black mt-1 uppercase italic tracking-tighter">De: R$ ${parseFloat(prod.preco).toFixed(2)}</p>` : ""}
 
                     <div class="flex justify-between items-end mt-2 pt-2 border-t border-gray-50">
                         <div class="flex flex-col">
