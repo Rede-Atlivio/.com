@@ -76,7 +76,6 @@ export async function carregarProdutos() {
         // Atualiza ícones se o Lucide estiver presente
         if (typeof lucide !== 'undefined') lucide.createIcons();
 
-        container.appendChild(grid);
     } catch (e) { console.error("Erro Vitrine:", e); }
 }
 
