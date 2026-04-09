@@ -44,7 +44,7 @@ export async function carregarProdutos() {
                 <div class="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden group product-card" data-cat="${prod.categoria || 'vantagens'}">
                     
                     ${prod.tag ? `<div class="absolute top-2 left-2 bg-amber-400 text-[7px] font-black px-2 py-1 rounded-full z-10 uppercase shadow-sm">${prod.tag}</div>` : ""}
-                    ${prod.vendas_fake > 0 ? `<div class="absolute top-2 right-2 bg-white/90 backdrop-blur-sm text-[6px] font-bold px-2 py-1 rounded-full z-10 text-gray-500 border border-gray-100 flex items-center gap-1"><i data-lucide="users" class="w-2 h-2"></i> +${prod.vendas_fake}</div>` : ""}
+                    ${prod.vendas_fake > 0 ? `<div class="absolute top-2 right-2 bg-blue-600 text-white text-[7px] font-black px-3 py-1.5 rounded-full z-10 flex items-center gap-1 shadow-[0_0_12px_rgba(37,99,235,0.4)] animate-pulse">🔥 +${prod.vendas_fake}</div>` : ""}
 
                     <div class="h-24 mb-2 rounded-xl overflow-hidden bg-gray-50 relative">
                         <img src="${prod.img}" class="w-full h-full object-cover">
@@ -58,7 +58,7 @@ export async function carregarProdutos() {
                     
                     <h4 class="font-black text-[10px] text-slate-800 leading-tight h-7 line-clamp-2">${prod.nome}</h4>
                     
-                    ${prod.preco > 0 ? `<p class="text-[7px] text-gray-300 line-through font-bold mt-1 uppercase italic">Ref: R$ ${parseFloat(prod.preco).toFixed(2)}</p>` : ""}
+                    ${prod.preco > 0 ? `<p class="text-[8px] text-slate-500 line-through font-black mt-1 uppercase italic tracking-tighter">De: R$ ${parseFloat(prod.preco).toFixed(2)}</p>` : ""}
 
                     <div class="flex justify-between items-end mt-2 pt-2 border-t border-gray-50">
                         <div class="flex flex-col">
