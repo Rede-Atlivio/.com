@@ -174,7 +174,7 @@ window.abrirCofreConteudo = async (id) => {
     const videoContainer = document.getElementById('vault-video-container');
     const modalBody = document.getElementById('vault-body-text');
 
-    // 🎥 1. TRATAMENTO DE VÍDEO (Usando o Iframe original do Index)
+    // 🎥 1. PLAYER INTELIGENTE
     let videoURL = p.url_video_real || p.url_video || "";
     if (videoURL && videoFrame && videoContainer) {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -192,12 +192,12 @@ window.abrirCofreConteudo = async (id) => {
         videoContainer.classList.add('hidden');
     }
 
-    // 🏗️ 2. CONSTRUÇÃO DOS PASSOS (Módulos dinâmicos)
+    // 🏗️ 2. CONSTRUÇÃO DOS PASSOS DINÂMICOS (Vem do seu Admin)
     let passosHTML = "";
     const renderPasso = (num, icon, titulo, texto) => {
         if (!texto) return "";
         return `
-            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-3 animate-fadeIn">
+            <div class="bg-white/5 p-4 rounded-2xl border border-white/10 mb-3 animate-fadeIn shadow-inner">
                 <div class="flex items-center gap-2 mb-2">
                     <span class="text-blue-400 text-xs">${icon}</span>
                     <h4 class="text-blue-400 font-black text-[10px] uppercase tracking-tighter">PASSO 0${num}: ${titulo}</h4>
@@ -210,20 +210,20 @@ window.abrirCofreConteudo = async (id) => {
     passosHTML += renderPasso(2, "🛰️", "A ESTRATÉGIA", p.passo2);
     passosHTML += renderPasso(3, "💰", "O LUCRO", p.passo3);
 
-    // 🔥 3. INJEÇÃO DO AJUSTE DE OURO (CTA)
+    // 🔥 3. O BOTÃO SOBERANO (Ponte Maestro)
     let ctaHTML = "";
     if (p.cta_texto && p.cta_destino) {
         ctaHTML = `
             <div class="mt-8 pt-6 border-t border-white/10">
-                <button onclick="window.navegarAba('${p.cta_destino}'); document.getElementById('modal-vault-content').classList.add('hidden');" 
-                        class="w-full bg-emerald-500 text-white py-5 rounded-2xl font-black uppercase text-[10px] shadow-lg shadow-emerald-500/20 active:scale-95 transition-all animate-bounce">
+                <button onclick="window.executarAcaoPosCompra('${p.cta_destino}')" 
+                        class="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-[0_0_30px_rgba(16,185,129,0.3)] active:scale-95 transition-all">
                     ${p.cta_texto}
                 </button>
                 <p class="text-[8px] text-gray-500 text-center mt-3 uppercase font-bold italic">Ação imediata recomendada pelo Maestro</p>
             </div>`;
     }
 
-    // 🖼️ 4. MONTAGEM FINAL NO CORPO DO TEXTO
+    // 🖼️ 4. MONTAGEM FINAL
     if (modalBody) {
         modalBody.innerHTML = `
             <div class="space-y-1">
@@ -234,11 +234,8 @@ window.abrirCofreConteudo = async (id) => {
         `;
     }
 
-    // Preenche títulos
     document.getElementById('vault-product-title').innerText = p.nome;
     document.getElementById('vault-main-headline').innerText = p.headline || "CONTEÚDO LIBERADO";
-    
-    // Exibe o Modal
     document.getElementById('modal-vault-content').classList.remove('hidden');
     document.getElementById('modal-vault-content').style.display = 'block';
 };
