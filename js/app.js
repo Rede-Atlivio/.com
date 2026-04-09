@@ -1015,42 +1015,65 @@ window.comprarComAtlix = async (prodId, preco, tipo) => {
 };
 
 /**
- * 💳 BOTÃO DE AÇÃO ATLIVIO V2026
- * Fecha o modal, limpa o vídeo e abre a aba da carteira.
+ * 🛰️ NAVEGADOR UNIVERSAL ATLIVIO V2026 (PODER TOTAL)
+ * Gil, esta é a engrenagem que lê qualquer destino do Admin e executa
+ * com inteligência de perfil (DNA) e limpeza de player.
  */
-window.irParaMinhaCarteira = () => {
-    console.log("🚀 [Cofre] Encerrando visualização e indo para Carteira...");
+window.executarAcaoUniversal = (destino) => {
+    console.log(`🚀 [Maestro] Ordem recebida do Admin -> Destino: ${destino}`);
     
     const modalVault = document.getElementById('modal-vault-content');
     const iframeVault = document.getElementById('vault-iframe');
 
-    // 1. Mata o vídeo (Higiene Sonora)
+    // 1. HIGIENE SONORA: Mata o vídeo na hora
     if (iframeVault) iframeVault.src = ''; 
 
-    // 2. Fecha a tela preta (O Modal)
+    // 2. FAXINA VISUAL: Fecha a tela preta do cofre
     if (modalVault) {
         modalVault.classList.add('hidden');
         modalVault.style.display = 'none';
     }
 
-    // 3. Muda a aba para Carteira
+    // 3. DICIONÁRIO DE TRADUÇÃO (O Mapa de Poder Completo)
+    const mapaDestinos = {
+        'home': 'home',
+        'servicos': 'servicos',
+        'missoes': 'missoes',
+        'b2b_gestao': 'b2b_gestao',
+        'empregos': 'empregos',
+        'oportunidades': 'oportunidades',
+        'loja': 'loja',
+        'ganhar': 'ganhar',
+        'carteira': 'ganhar',
+        'canal': 'canal',
+        'chat': 'chat'
+    };
+
+    const destinoFinal = mapaDestinos[destino] || destino;
+
+    // 4. INTELIGÊNCIA DE DNA (Trava B2B Especial)
+    if (destinoFinal === 'b2b_gestao') {
+        if (window.abrirTrocaPerfilB2B) {
+            window.abrirTrocaPerfilB2B();
+        } else {
+            window.switchTab('b2b_gestao');
+        }
+        return;
+    }
+
+    // 5. NAVEGAÇÃO PADRÃO
     if (typeof window.switchTab === 'function') {
-        window.switchTab('ganhar');
+        window.switchTab(destinoFinal);
     }
 };
 
 /**
- * 🔗 PONTE DE COMPATIBILIDADE (O PULO DO GATO)
- * Gil, isso faz o botão "satanás" que o Admin envia entender 
- * que deve executar a nossa função nova e limpa.
+ * 🔗 PONTES DE COMPATIBILIDADE (O PULO DO GATO FINAL)
+ * Gil, mantemos os nomes antigos apontando para o motor novo 
+ * para nada do que você já cadastrou no banco de dados quebrar.
  */
-window.navegarAba = (aba) => {
-    if (aba === 'ganhar') {
-        window.irParaMinhaCarteira();
-    } else {
-        window.switchTab(aba);
-    }
-};
+window.navegarAba = (aba) => window.executarAcaoUniversal(aba);
+window.irParaMinhaCarteira = () => window.executarAcaoUniversal('ganhar');
 
 // ============================================================================
 // 🔐 SOLDAGEM GLOBAL FINAL V2026.PRO
