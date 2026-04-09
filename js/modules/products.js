@@ -150,31 +150,10 @@ window.abrirPreviewProduto = async (id) => {
                     </div>
                 </div>
 
-                ${(() => {
-                    // 💰 CHECAGEM DE PODER FINANCEIRO (MODO ELITE)
-                    const saldoUser = window.userProfile?.saldo || 0;
-                    const precoProd = p.preco_atlix || 0;
-                    const temSaldo = saldoUser >= precoProd;
-
-                    if (temSaldo) {
-                        // ✅ LIBERADO: Tem saldo para comprar
-                        return `
-                            <button onclick="window.comprarComAtlix('${id}', ${precoProd}, '${p.tipo}'); this.closest('#modal-preview-venda').remove();" 
-                                    class="w-full bg-purple-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg shadow-purple-200 active:scale-95 transition">
-                                DESBLOQUEAR POR ${precoProd} ATLIX 🪙
-                            </button>`;
-                    } else {
-                        // ❌ TRAVADO: Saldo insuficiente -> Empurra para o Trabalho
-                        return `
-                            <button onclick="window.switchTab('missoes'); this.closest('#modal-preview-venda').remove();" 
-                                    class="w-full bg-slate-100 text-slate-400 py-4 rounded-2xl font-black uppercase border-2 border-dashed border-slate-300">
-                                SALDO INSUFICIENTE (Faltam ${(precoProd - saldoUser).toFixed(0)} ATLIX)
-                            </button>
-                            <p class="text-[9px] text-blue-600 mt-2 font-black uppercase italic animate-pulse">
-                                👉 Clique acima para ganhar ATLIX agora!
-                            </p>`;
-                    }
-                })()}
+                <button onclick="window.comprarComAtlix('${id}', ${p.preco_atlix}, '${p.tipo}'); this.closest('#modal-preview-venda').remove();" 
+                        class="w-full bg-purple-600 text-white py-4 rounded-2xl font-black uppercase shadow-lg shadow-purple-200 active:scale-95 transition">
+                    DESBLOQUEAR POR ${p.preco_atlix} ATLIX 🪙
+                </button>
                 <p class="text-[8px] text-gray-400 mt-3 uppercase font-bold">O valor será descontado do seu saldo de bônus ou recarga.</p>
             </div>
         </div>
