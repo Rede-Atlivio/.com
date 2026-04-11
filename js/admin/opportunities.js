@@ -248,9 +248,15 @@ function renderizarModalAdmin() {
                     <label class="block text-xs font-bold text-gray-500 mb-1">DESCRIÇÃO</label>
                     <textarea id="opp-desc" rows="3" class="w-full border border-gray-300 rounded p-2 text-sm text-black bg-white"></textarea>
                 </div>
-                <div class="flex items-center gap-2 border p-3 rounded bg-yellow-50 border-yellow-100">
-                    <input type="checkbox" id="opp-demo" class="w-4 h-4">
-                    <label for="opp-demo" class="text-xs font-bold text-yellow-800 cursor-pointer">Marcar como DEMONSTRAÇÃO</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="flex items-center gap-2 border p-3 rounded bg-yellow-50 border-yellow-100">
+                        <input type="checkbox" id="opp-demo" class="w-4 h-4">
+                        <label for="opp-demo" class="text-[10px] font-black text-yellow-800 cursor-pointer uppercase">Exemplo</label>
+                    </div>
+                    <div class="flex items-center gap-2 border p-3 rounded bg-blue-50 border-blue-100">
+                        <input type="checkbox" id="opp-patrocinado" class="w-4 h-4">
+                        <label for="opp-patrocinado" class="text-[10px] font-black text-blue-800 cursor-pointer uppercase">💎 Patrocinado</label>
+                    </div>
                 </div>
                 <button type="submit" id="btn-save-opp" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow-lg">SALVAR DADOS</button>
             </form>
