@@ -160,6 +160,7 @@ async function salvarOpp(e) {
             img: document.getElementById('opp-img').value,
             valor: document.getElementById('opp-valor').value,
             is_demo: document.getElementById('opp-demo').checked,
+            is_patrocinado: document.getElementById('opp-patrocinado')?.checked || false, // 🚀 NOVA SOLDA
             updated_at: serverTimestamp()
         };
 
