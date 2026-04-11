@@ -47,20 +47,32 @@ export async function carregarOportunidades() {
                 `;
             }
 
+            // 💡 PEÇA DE ENGENHARIA: Card Lapidado com foco em Conversão
             container.innerHTML += `
-                <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 animate-fadeIn">
+                <div class="bg-white p-4 rounded-2xl border ${data.valor ? 'border-blue-200 bg-blue-50/20' : 'border-gray-100'} shadow-sm mb-3 animate-fadeIn relative">
                     <div class="flex items-start justify-between">
-                        <div class="flex-1 pr-2">
-                            <div class="flex items-center mb-1">
-                                <span class="${tipoClass} text-[8px] font-bold px-2 py-1 rounded uppercase mr-1">${icon} ${data.tipo}</span>
+                        <div class="flex-1 pr-3">
+                            <div class="flex items-center mb-1.5">
+                                <span class="${tipoClass} text-[7px] font-black px-2 py-1 rounded-full uppercase mr-1">${icon} ${data.tipo}</span>
                                 ${badgeDemo}
                             </div>
-                            <h4 class="font-black text-blue-900 text-xs uppercase leading-tight">${data.titulo}</h4>
-                            <p class="text-[10px] text-gray-500 mt-1 line-clamp-2">${data.descricao}</p>
+                            
+                            <h4 class="font-black text-slate-800 text-[11px] uppercase leading-tight tracking-tighter">${data.titulo}</h4>
+                            <p class="text-[9px] text-gray-500 mt-1 leading-snug line-clamp-2">${data.descricao}</p>
+                            
+                            ${data.valor ? `
+                                <div class="mt-2 flex items-center gap-1">
+                                    <span class="text-[10px] font-black text-blue-600 uppercase italic">Vantagem: ${data.valor}</span>
+                                </div>
+                            ` : ''}
                         </div>
-                        <a href="${data.link || '#'}" target="_blank" class="bg-slate-800 text-white text-[9px] font-bold px-4 py-2 rounded-lg hover:bg-slate-900 shadow-md whitespace-nowrap self-center">
-                            VER OFERTA
-                        </a>
+
+                        <div class="flex flex-col items-center">
+                            <a href="${data.link || '#'}" target="_blank" 
+                               class="bg-blue-600 text-white text-[9px] font-black px-4 py-3 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all uppercase whitespace-nowrap">
+                                RESGATAR AGORA 🚀
+                            </a>
+                        </div>
                     </div>
                     ${footerDemo}
                 </div>
