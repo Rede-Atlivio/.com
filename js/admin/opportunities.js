@@ -139,6 +139,7 @@ function abrirModalAdmin(id = null, dataString = null) {
             document.getElementById('opp-img').value = data.img || "";
             document.getElementById('opp-valor').value = data.valor || "";
             document.getElementById('opp-demo').checked = data.is_demo || false;
+            document.getElementById('opp-patrocinado').checked = data.is_patrocinado || false;
         } catch(e) { console.error("Erro ao ler dados:", e); }
     }
 
