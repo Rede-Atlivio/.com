@@ -49,7 +49,7 @@ export async function carregarOportunidades() {
 
             // 💡 PEÇA DE ENGENHARIA: Card Lapidado com foco em Conversão
             container.innerHTML += `
-                <div class="bg-white p-4 rounded-2xl border ${data.valor ? 'border-blue-200 bg-blue-50/20' : 'border-gray-100'} shadow-sm mb-3 animate-fadeIn relative">
+               <div class="bg-white p-4 rounded-2xl border-2 ${data.is_patrocinado ? 'border-blue-500 bg-blue-50/40 shadow-blue-100 ring-2 ring-blue-50' : (data.valor ? 'border-blue-200 bg-blue-50/10' : 'border-gray-100')} shadow-sm mb-3 animate-fadeIn relative transition-all">
                     <div class="flex items-start justify-between">
                         <div class="flex-1 pr-3">
                             <div class="flex items-center mb-1.5">
