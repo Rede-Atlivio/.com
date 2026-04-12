@@ -180,7 +180,15 @@ function abrirModalVaga(id = null) {
 }
 
 window.salvarVaga = async (id) => {
-    const data = { title: document.getElementById('job-title').value, titulo: document.getElementById('job-title').value, company: document.getElementById('job-company').value, salary: document.getElementById('job-salary').value, updated_at: serverTimestamp() };
+    const data = { 
+        title: document.getElementById('job-title').value, 
+        titulo: document.getElementById('job-title').value, 
+        company: document.getElementById('job-company').value, 
+        salary: document.getElementById('job-salary').value,
+        description: document.getElementById('job-description').value,
+        cost_atlix: parseInt(document.getElementById('job-cost').value) || 0,
+        updated_at: serverTimestamp() 
+    };
     if(!data.title) return alert("Título obrigatório");
     try {
         if(id) { await updateDoc(doc(window.db, "jobs", id), data); } 
