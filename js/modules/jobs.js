@@ -53,7 +53,8 @@ export async function carregarVagas() {
     container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div></div>`;
 
     try {
-        const q = query(collection(db, "jobs"), where("status", "==", "ativa"), orderBy("created_at", "desc"), limit(20));
+        // Busca vagas ativas ou ativos para não dar erro de digitação
+        const q = query(collection(db, "jobs"), where("status", "in", ["ativa", "ativo"]), orderBy("created_at", "desc"), limit(20));
         const snap = await getDocs(q);
         
         container.innerHTML = "";
