@@ -163,13 +163,18 @@ function abrirModalVaga(id = null) {
 
     content.innerHTML = `
         <div class="space-y-4">
-            <h3 class="text-lg font-bold text-white">${id ? 'EDITAR' : 'NOVA VAGA'}</h3>
-            <input id="job-title" value="${dados.title||''}" class="w-full p-3 rounded bg-white text-black font-bold" placeholder="Título">
+            <h3 class="text-lg font-bold text-white">${id ? 'EDITAR VAGA' : 'NOVA VAGA'}</h3>
+            <input id="job-title" value="${dados.title||''}" class="w-full p-3 rounded bg-white text-black font-bold" placeholder="Título da Vaga">
             <div class="grid grid-cols-2 gap-2">
                 <input id="job-company" value="${dados.company||''}" class="w-full p-3 rounded bg-white text-black" placeholder="Empresa">
-                <input id="job-salary" value="${dados.salary||''}" class="w-full p-3 rounded bg-white text-black" placeholder="Salário">
+                <input id="job-salary" value="${dados.salary||''}" class="w-full p-3 rounded bg-white text-black" placeholder="Salário (Ex: 1.500,00)">
             </div>
-            <button onclick="window.salvarVaga('${id||''}')" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-500">SALVAR</button>
+            <div>
+                <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase text-left">Custo para Candidato (ATLIX)</label>
+                <input id="job-cost" type="number" value="${allLoadedJobs.find(j => j.id === id)?.cost_atlix || 0}" class="w-full p-3 rounded bg-yellow-50 text-black font-black" placeholder="Ex: 5">
+            </div>
+            <textarea id="job-description" class="w-full p-3 rounded bg-white text-black text-xs" rows="4" placeholder="Descrição da vaga...">${allLoadedJobs.find(j => j.id === id)?.description || ''}</textarea>
+            <button onclick="window.salvarVaga('${id||''}')" class="w-full bg-blue-600 text-white py-3 rounded font-bold hover:bg-blue-500 shadow-lg">SALVAR VAGA 💼</button>
         </div>
     `;
 }
