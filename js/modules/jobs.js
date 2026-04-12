@@ -272,14 +272,32 @@ export function candidatarVaga(id, title, ownerId) {
         newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
 
         try {
-            // 🔥 PASSO 1: Busca o WhatsApp do perfil do usuário para salvar na candidatura
-            let userZap = "";
-            const userDoc = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
-            if (userDoc.exists()) {
-                userZap = userDoc.data().whatsapp || userDoc.data().phone || "";
+            // 🛡️ VERIFICAÇÃO DE SALDO E CUSTO
+            const userRef = doc(db, "usuarios", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data();
+            const userZap = userData?.whatsapp || userData?.phone || "";
+            const saldoAtual = userData?.balance_atlix || 0;
+            
+            // Busca o custo da vaga no banco (id que veio da função)
+            const jobSnap = await getDoc(doc(db, "jobs", id));
+            const custoVaga = jobSnap.data()?.cost_atlix || 0;
+
+            if (saldoAtual < custoVaga) {
+                alert(`❌ Saldo insuficiente! Você precisa de ${custoVaga} ATLIX para se candidatar a esta vaga. Seu saldo: ${saldoAtual}`);
+                newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false;
+                return;
             }
 
-            // PASSO 2: Upload PDF
+            // 🔥 PASSO 1: Cobrança do Pedágio (Debitar ATLIX)
+            if (custoVaga > 0) {
+                await updateDoc(userRef, {
+                    balance_atlix: saldoAtual - custoVaga
+                });
+                console.log(`💰 Debitado: ${custoVaga} ATLIX. Novo saldo: ${saldoAtual - custoVaga}`);
+            }
+
+            // PASSO 2: Upload PDF (O código segue normal daqui)
             const storageRef = ref(storage, `curriculos/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
