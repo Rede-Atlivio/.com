@@ -204,25 +204,28 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
 
         snap.forEach(d => {
             const cand = d.data();
-            const linkCv = cand.resume_url || cand.cv_url;
-            const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-bold">📄 Ver PDF</a>` : `<span class="text-gray-400 text-[10px]">Sem PDF</span>`;
+            // 🔥 FUNÇÃO DE PEDÁGIO DO EMPREGADOR
+window.comprarContato = async (applicationId, custo) => {
+    if (!confirm(`Deseja usar ${custo} ATLIX para liberar os dados deste candidato?`)) return;
+
+    try {
+        // 1. Tenta pagar com o Wallet
+        const pagamento = await window.pagarComAtlix(custo, "🔓 LIBERAÇÃO_CONTATO", `Candidato vaga Empregos`);
+        
+        if (pagamento.success) {
+            // 2. Se o saldo caiu, libera o acesso no documento da candidatura
+            const appRef = doc(db, "job_applications", applicationId);
+            await updateDoc(appRef, { contato_liberado: true });
             
-            // LÓGICA DO WHATSAPP
-            let btnZap = `<span class="text-gray-400 text-[10px]">Sem WhatsApp</span>`;
-            
-            if (cand.whatsapp) {
-                // Limpa o número (deixa só digitos)
-                const cleanPhone = cand.whatsapp.replace(/\D/g, '');
-                // Mensagem pronta
-                const msg = `Olá ${cand.nome}, vi seu currículo para a vaga de ${jobTitle} na Atlivio. Podemos conversar?`;
-                const zapLink = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`;
-                
-                btnZap = `
-                    <a href="${zapLink}" target="_blank" onclick="window.marcarContato('${d.id}')" class="bg-green-500 hover:bg-green-600 text-white w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition">
-                        <span>📱</span> CHAMAR NO WHATSAPP
-                    </a>
-                `;
-            }
+            alert("✅ Contato liberado com sucesso!");
+            // Recarrega o modal para mostrar os botões verdes
+            const appSnap = await getDoc(appRef);
+            window.verCandidatosEmpresa(appSnap.data().job_id, appSnap.data().vaga_titulo);
+        }
+    } catch (e) {
+        alert("❌ Erro ao processar: " + e.message);
+    }
+};
 
             lista.innerHTML += `
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-2">
