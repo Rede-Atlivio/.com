@@ -241,3 +241,28 @@ async function executeBulkDelete() {
 }
 window.alterarStatusVaga = async (id, st) => { await updateDoc(doc(window.db, "jobs", id), {status: st}); loadList(); };
 window.excluirVaga = async (id) => { if(confirm("Excluir?")) { await deleteDoc(doc(window.db, "jobs", id)); loadList(); } };
+
+// --- GESTÃO DE ECONOMIA GLOBAL ---
+async function carregarConfigGlobalJobs() {
+    try {
+        const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const docSnap = await getDoc(doc(window.db, "configuracoes", "global"));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('cfg-job-billing').value = data.billing_jobs_active !== undefined ? data.billing_jobs_active.toString() : "true";
+        }
+    } catch (e) { console.error("Erro ao carregar config global:", e); }
+}
+
+async function salvarConfigGlobalJobs() {
+    const val = document.getElementById('cfg-job-billing').value === "true";
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await updateDoc(doc(window.db, "configuracoes", "global"), {
+            billing_jobs_active: val,
+            updated_at: serverTimestamp()
+        });
+        console.log("✅ Configuração de cobrança atualizada: " + val);
+    } catch (e) { alert("Erro ao salvar config: " + e.message); }
+}
+window.atualizarPrecosPadrao = salvarConfigGlobalJobs;
