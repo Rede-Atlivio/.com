@@ -9,8 +9,41 @@ export async function init() {
     const headers = document.getElementById('list-header');
     const btnAdd = document.getElementById('btn-list-add');
     
-    // Configura UI
+   // ⚙️ Configura UI e Painel de Economia
     if(headers) headers.innerHTML = `<th class="p-3 w-10"><input type="checkbox" id="check-all-jobs" class="chk-custom"></th><th class="p-3">VAGA</th><th class="p-3">EMPRESA</th><th class="p-3">STATUS</th><th class="p-3 text-right">AÇÕES</th>`;
+
+    // Injeta a Chave Mestra de Cobrança acima da tabela
+    const containerLista = document.getElementById('list-body').parentElement.parentElement;
+    if (!document.getElementById('painel-economia-jobs')) {
+        const divEconomia = document.createElement('div');
+        divEconomia.id = 'painel-economia-jobs';
+        divEconomia.className = 'bg-slate-900 border border-slate-700 p-4 rounded-2xl mb-6 flex flex-wrap gap-4 items-center justify-between';
+        divEconomia.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-500/20 p-2 rounded-lg text-blue-400">💰</div>
+                <div>
+                    <h4 class="text-white text-xs font-black uppercase italic">Economia de Empregos</h4>
+                    <p class="text-[9px] text-gray-500 font-bold uppercase">Controle de cobrança de ATLIX</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
+                    <span class="text-[9px] font-black text-gray-400 uppercase">Cobrança:</span>
+                    <select id="cfg-job-billing" onchange="window.salvarConfigGlobalJobs()" class="bg-transparent text-white text-[10px] font-black outline-none cursor-pointer">
+                        <option value="true" class="bg-slate-900">LIGADA</option>
+                        <option value="false" class="bg-slate-900">DESLIGADA (GRÁTIS)</option>
+                    </select>
+                </div>
+                <button onclick="window.atualizarPrecosPadrao()" class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-lg hover:bg-blue-500 transition shadow-lg">SALVAR TUDO</button>
+            </div>
+        `;
+        containerLista.parentNode.insertBefore(divEconomia, containerLista);
+        carregarConfigGlobalJobs();
+    }
+
+    // Exporta Globais de Configuração
+    window.salvarConfigGlobalJobs = salvarConfigGlobalJobs;
+    window.carregarConfigGlobalJobs = carregarConfigGlobalJobs;
     
     if(btnAdd) { 
         btnAdd.style.display = 'block';
