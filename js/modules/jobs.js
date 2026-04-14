@@ -202,19 +202,49 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
         lista.innerHTML = "";
         if(snap.empty) { lista.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Ninguém se candidatou ainda.</p>`; return; }
 
-        snap.forEach(d => {
+       snap.forEach(d => {
             const cand = d.data();
             
+            // 🛡️ TRAVA DE COBRANÇA DA EMPRESA (ITEM 3 DO PLANO)
+            const jaPago = cand.contato_liberado === true; 
+            let areaContato = "";
+
+            if (jaPago) {
+                // Se já pagou, mostra PDF e WhatsApp liberados
+                const linkCv = cand.resume_url || cand.cv_url;
+                const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-black uppercase">📄 PDF LIBERADO</a>` : "";
+                
+                let zapLink = "#";
+                if (cand.whatsapp) {
+                    const cleanPhone = cand.whatsapp.replace(/\D/g, '');
+                    const msg = `Olá ${cand.nome}, vi seu currículo na Atlivio.`;
+                    zapLink = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`;
+                }
+
+                areaContato = `
+                    <div class="flex flex-col gap-2 mt-2">
+                        ${btnCv}
+                        <a href="${zapLink}" target="_blank" onclick="window.marcarContato('${d.id}')" class="bg-green-500 text-white w-full py-2 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-sm">📱 CHAMAR NO WHATSAPP</a>
+                    </div>
+                `;
+            } else {
+                // 💰 Se não pagou, mostra o botão de Pedágio
+                areaContato = `
+                    <button onclick="window.comprarContato('${d.id}', 5)" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
+                        🔓 LIBERAR CONTATO (5 ATLIX)
+                    </button>
+                `;
+            }
+
             lista.innerHTML += `
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-2">
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="flex justify-between items-start mb-1">
                         <div>
                             <p class="font-bold text-xs text-slate-800">${cand.nome || 'Candidato'}</p>
-                            <p class="text-[10px] text-slate-500 italic">"${cand.mensagem || ''}"</p>
+                            <p class="text-[9px] text-slate-500 italic">"${cand.mensagem || ''}"</p>
                         </div>
-                        ${btnCv}
                     </div>
-                    ${btnZap}
+                    ${areaContato}
                 </div>`;
         });
     } catch(e) { console.error(e); lista.innerHTML = "Erro ao carregar."; }
@@ -367,3 +397,4 @@ window.encerrarVaga = encerrarVaga;
 window.desistirVaga = desistirVaga;
 window.listarMinhasCandidaturas = listarMinhasCandidaturas;
 window.abrirModalVaga = () => document.getElementById('job-post-modal').classList.remove('hidden');
+window.comprarContato = comprarContato;
