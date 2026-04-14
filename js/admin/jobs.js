@@ -294,4 +294,42 @@ async function salvarConfigGlobalJobs() {
         console.log("✅ Configuração de cobrança atualizada: " + val);
     } catch (e) { alert("Erro ao salvar config: " + e.message); }
 }
-window.atualizarPrecosPadrao = salvarConfigGlobalJobs;
+
+// --- GESTÃO ESTRATÉGICA DE MERCADO ---
+async function carregarConfigEstrategicaJobs() {
+    try {
+        const docSnap = await getDoc(doc(window.db, "configuracoes", "global"));
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if(document.getElementById('cfg-billing-user')) {
+                document.getElementById('cfg-billing-user').value = data.billing_jobs_user !== false ? "true" : "false";
+                document.getElementById('cfg-price-user').value = data.price_jobs_user || 10;
+                document.getElementById('cfg-billing-empresa').value = data.billing_jobs_company !== false ? "true" : "false";
+                document.getElementById('cfg-price-empresa').value = data.price_jobs_company || 5;
+            }
+        }
+    } catch (e) { console.error("Erro leitura:", e); }
+}
+
+async function salvarConfigEstrategicaJobs() {
+    const userActive = document.getElementById('cfg-billing-user').value === "true";
+    const userPrice = parseInt(document.getElementById('cfg-price-user').value);
+    const companyActive = document.getElementById('cfg-billing-empresa').value === "true";
+    const companyPrice = parseInt(document.getElementById('cfg-price-empresa').value);
+
+    try {
+        await updateDoc(doc(window.db, "configuracoes", "global"), {
+            billing_jobs_user: userActive,
+            price_jobs_user: userPrice,
+            billing_jobs_company: companyActive,
+            price_jobs_company: companyPrice,
+            updated_at: serverTimestamp()
+        });
+        alert("✅ Mercado de Empregos atualizado!");
+    } catch (e) { alert("Erro ao salvar: " + e.message); }
+}
+
+// --- EXPORTAÇÕES GLOBAIS (Conecta o HTML ao JS) ---
+window.salvarConfigEstrategicaJobs = salvarConfigEstrategicaJobs;
+window.carregarConfigEstrategicaJobs = carregarConfigEstrategicaJobs;
+window.atualizarPrecosPadrao = salvarConfigEstrategicaJobs; // Redireciona o nome antigo para a função nova
