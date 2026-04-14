@@ -337,6 +337,23 @@ export function desistirVaga(appId) {
     deleteDoc(doc(db, "job_applications", appId)).then(() => listarMinhasCandidaturas());
 }
 
+// 🔥 FUNÇÃO DE PEDÁGIO DO EMPREGADOR
+async function comprarContato(applicationId, custo) {
+    if (!confirm(`Deseja usar ${custo} ATLIX para liberar os dados deste candidato?`)) return;
+
+    try {
+        const pagamento = await window.pagarComAtlix(custo, "🔓 LIBERAÇÃO_CONTATO", `Candidato vaga Empregos`);
+        
+        if (pagamento.success) {
+            const appRef = doc(db, "job_applications", applicationId);
+            await updateDoc(appRef, { contato_liberado: true });
+            alert("✅ Contato liberado com sucesso!");
+            const appSnap = await getDoc(appRef);
+            window.verCandidatosEmpresa(appSnap.data().job_id, appSnap.data().vaga_titulo);
+        }
+    } catch (e) { alert("❌ Erro: " + e.message); }
+}
+
 // EXPORTAÇÕES GLOBAIS
 window.carregarInterfaceEmpregos = carregarInterfaceEmpregos;
 window.carregarVagas = carregarVagas;
