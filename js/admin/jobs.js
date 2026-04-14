@@ -18,25 +18,54 @@ export async function init() {
         const divEconomia = document.createElement('div');
         divEconomia.id = 'painel-economia-jobs';
         divEconomia.className = 'bg-slate-900 border border-slate-700 p-4 rounded-2xl mb-6 flex flex-wrap gap-4 items-center justify-between';
+       
         divEconomia.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-500/20 p-2 rounded-lg text-blue-400">💰</div>
-                <div>
-                    <h4 class="text-white text-xs font-black uppercase italic">Economia de Empregos</h4>
-                    <p class="text-[9px] text-gray-500 font-bold uppercase">Controle de cobrança de ATLIX</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-lg">👤</span>
+                        <h4 class="text-white text-[10px] font-black uppercase italic">Lado do Candidato</h4>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center bg-slate-900 p-2 rounded-xl">
+                            <span class="text-[8px] font-black text-gray-400 uppercase">Cobrança:</span>
+                            <select id="cfg-billing-user" class="bg-transparent text-white text-[9px] font-black outline-none">
+                                <option value="true">LIGADA ✅</option>
+                                <option value="false">GRÁTIS 🎁</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 p-2 rounded-xl">
+                            <span class="text-[8px] font-black text-gray-400 uppercase">Preço (ATLIX):</span>
+                            <input type="number" id="cfg-price-user" class="bg-transparent text-white text-[9px] font-black w-10 text-right outline-none" value="10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                    <div class="flex items-center gap-2 mb-3">
+                        <span class="text-lg">🏢</span>
+                        <h4 class="text-white text-[10px] font-black uppercase italic">Lado da Empresa</h4>
+                    </div>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center bg-slate-900 p-2 rounded-xl">
+                            <span class="text-[8px] font-black text-gray-400 uppercase">Cobrança:</span>
+                            <select id="cfg-billing-empresa" class="bg-transparent text-white text-[9px] font-black outline-none">
+                                <option value="true">LIGADA ✅</option>
+                                <option value="false">GRÁTIS 🎁</option>
+                            </select>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 p-2 rounded-xl">
+                            <span class="text-[8px] font-black text-gray-400 uppercase">Preço (ATLIX):</span>
+                            <input type="number" id="cfg-price-empresa" class="bg-transparent text-white text-[9px] font-black w-10 text-right outline-none" value="5">
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-xl border border-slate-700">
-                    <span class="text-[9px] font-black text-gray-400 uppercase">Cobrança:</span>
-                    <select id="cfg-job-billing" onchange="window.salvarConfigGlobalJobs()" class="bg-transparent text-white text-[10px] font-black outline-none cursor-pointer">
-                        <option value="true" class="bg-slate-900">LIGADA</option>
-                        <option value="false" class="bg-slate-900">DESLIGADA (GRÁTIS)</option>
-                    </select>
-                </div>
-                <button onclick="window.atualizarPrecosPadrao()" class="bg-blue-600 text-white text-[9px] font-black px-4 py-2 rounded-lg hover:bg-blue-500 transition shadow-lg">SALVAR TUDO</button>
-            </div>
+            <button onclick="window.salvarConfigEstrategicaJobs()" class="w-full mt-4 bg-blue-600 text-white text-[10px] font-black py-3 rounded-xl hover:bg-blue-500 transition shadow-lg uppercase tracking-widest">
+                Salvar Configurações de Mercado 🚀
+            </button>
         `;
+        
         containerLista.parentNode.insertBefore(divEconomia, containerLista);
         carregarConfigGlobalJobs();
     }
