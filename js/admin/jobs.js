@@ -67,7 +67,8 @@ export async function init() {
         `;
         
         containerLista.parentNode.insertBefore(divEconomia, containerLista);
-        carregarConfigGlobalJobs();
+        // 🔄 SINCRONIA: Agora que o painel existe, puxamos os dados do banco
+        carregarConfigEstrategicaJobs();
     }
 
     // Exporta Globais de Configuração
