@@ -302,11 +302,15 @@ async function carregarConfigEstrategicaJobs() {
         const docSnap = await getDoc(doc(window.db, "configuracoes", "global"));
         if (docSnap.exists()) {
             const data = docSnap.data();
-            if(document.getElementById('cfg-billing-user')) {
-                document.getElementById('cfg-billing-user').value = data.billing_jobs_user !== false ? "true" : "false";
+            
+            // 🛡️ TRAVA DE SEGURANÇA: Só tenta preencher se o campo existir na tela
+            const campoUser = document.getElementById('cfg-billing-user');
+            if (campoUser) {
+                campoUser.value = data.billing_jobs_user !== false ? "true" : "false";
                 document.getElementById('cfg-price-user').value = data.price_jobs_user || 10;
                 document.getElementById('cfg-billing-empresa').value = data.billing_jobs_company !== false ? "true" : "false";
                 document.getElementById('cfg-price-empresa').value = data.price_jobs_company || 5;
+                console.log("✅ Configurações de mercado carregadas visualmente.");
             }
         }
     } catch (e) { console.error("Erro leitura:", e); }
