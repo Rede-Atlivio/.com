@@ -204,29 +204,7 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
 
         snap.forEach(d => {
             const cand = d.data();
-            // 🔥 FUNÇÃO DE PEDÁGIO DO EMPREGADOR
-window.comprarContato = async (applicationId, custo) => {
-    if (!confirm(`Deseja usar ${custo} ATLIX para liberar os dados deste candidato?`)) return;
-
-    try {
-        // 1. Tenta pagar com o Wallet
-        const pagamento = await window.pagarComAtlix(custo, "🔓 LIBERAÇÃO_CONTATO", `Candidato vaga Empregos`);
-        
-        if (pagamento.success) {
-            // 2. Se o saldo caiu, libera o acesso no documento da candidatura
-            const appRef = doc(db, "job_applications", applicationId);
-            await updateDoc(appRef, { contato_liberado: true });
             
-            alert("✅ Contato liberado com sucesso!");
-            // Recarrega o modal para mostrar os botões verdes
-            const appSnap = await getDoc(appRef);
-            window.verCandidatosEmpresa(appSnap.data().job_id, appSnap.data().vaga_titulo);
-        }
-    } catch (e) {
-        alert("❌ Erro ao processar: " + e.message);
-    }
-};
-
             lista.innerHTML += `
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-2">
                     <div class="flex justify-between items-start mb-2">
