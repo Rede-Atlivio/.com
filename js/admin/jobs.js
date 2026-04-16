@@ -1,5 +1,5 @@
-// ✅ ADICIONADO 'limit' NA IMPORTAÇÃO (CORREÇÃO DO ERRO)
-import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// ✅ TOPO REVISADO: Importações Completas para Economia e Vagas
+import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, serverTimestamp, writeBatch, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 let allLoadedJobs = [];
 let selectedJobs = new Set();
