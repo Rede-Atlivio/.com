@@ -369,7 +369,11 @@ async function comprarContato(applicationId, custo) {
     if (!confirm(`Deseja usar ${custo} ATLIX para liberar os dados deste candidato?`)) return;
 
     try {
-        const pagamento = await window.pagarComAtlix(custo, "🔓 LIBERAÇÃO_CONTATO", `Candidato vaga Empregos`);
+        // 🛡️ INTEGRAÇÃO FINANCEIRA ATLIVIO (EMPRESA)
+        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+        const custoEmpresa = configSnap.data()?.price_jobs_company || 5;
+        
+        const pagamento = await window.pagarComAtlix(custoEmpresa, "🔓 LIBERAÇÃO_CONTATO", `Candidato: ${applicationId}`);
         
         if (pagamento.success) {
             const appRef = doc(db, "job_applications", applicationId);
