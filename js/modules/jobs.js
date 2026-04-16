@@ -284,7 +284,7 @@ export function candidatarVaga(id, title, ownerId) {
         newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
 
         try {
-            // 🛡️ VERIFICAÇÃO DE SALDO E CUSTO
+           // 🛡️ VERIFICAÇÃO DE SALDO E CUSTO
             const userRef = doc(db, "usuarios", auth.currentUser.uid);
             const userSnap = await getDoc(userRef);
             const userData = userSnap.data();
