@@ -284,30 +284,27 @@ export function candidatarVaga(id, title, ownerId) {
         newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
 
         try {
-           // 🛡️ VERIFICAÇÃO DE SALDO E CUSTO
-            const userRef = doc(db, "usuarios", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            const userData = userSnap.data();
-            const userZap = userData?.whatsapp || userData?.phone || "";
-            const saldoAtual = userData?.balance_atlix || 0;
-            
-            // Busca o custo da vaga no banco (id que veio da função)
-            const jobSnap = await getDoc(doc(db, "jobs", id));
-            const custoVaga = jobSnap.data()?.cost_atlix || 0;
+          // 🛡️ MOTOR DE COBRANÇA ESTRATÉGICA (CANDIDATO)
+            const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+            const config = configSnap.data();
+            const cobrancaAtiva = config.billing_jobs_user === true;
+            const custoVaga = config.price_jobs_user || 10;
 
-            if (saldoAtual < custoVaga) {
-                alert(`❌ Saldo insuficiente! Você precisa de ${custoVaga} ATLIX para se candidatar a esta vaga. Seu saldo: ${saldoAtual}`);
-                newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false;
-                return;
+            if (cobrancaAtiva) {
+                newBtn.innerText = "VALIDANDO SALDO...";
+                const pagamento = await window.pagarComAtlix(custoVaga, "💼 CANDIDATURA_VAGA", `Vaga: ${title}`);
+                
+                if (!pagamento.success) {
+                    alert(`❌ SALDO INSUFICIENTE\n\nVocê precisa de ${custoVaga} ATLIX para se candidatar.\n\nSiga as instruções na aba GANHAR para obter créditos.`);
+                    newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false;
+                    return; 
+                }
+                console.log("✅ Pagamento de candidatura processado!");
             }
 
-            // 🔥 PASSO 1: Cobrança do Pedágio (Debitar ATLIX)
-            if (custoVaga > 0) {
-                await updateDoc(userRef, {
-                    balance_atlix: saldoAtual - custoVaga
-                });
-                console.log(`💰 Debitado: ${custoVaga} ATLIX. Novo saldo: ${saldoAtual - custoVaga}`);
-            }
+            // Pega o Zap para salvar na candidatura
+            const userSnap = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
+            const userZap = userSnap.data()?.whatsapp || userSnap.data()?.phone || "";
 
             // PASSO 2: Upload PDF (O código segue normal daqui)
             const storageRef = ref(storage, `curriculos/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
