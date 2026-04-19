@@ -228,10 +228,13 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
                     </div>
                 `;
             } else {
-                // 💰 Se não pagou, mostra o botão de Pedágio
+                // 🛡️ Sincronia de Preço: Busca o valor que está no banco para não mentir no visual
+                // Usamos window.configJobsGlobal ou buscamos direto se preferir
+                const precoEmpresa = window.price_jobs_company_cache || 5; 
+
                 areaContato = `
-                    <button onclick="window.comprarContato('${d.id}', 5)" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
-                        🔓 LIBERAR CONTATO (5 ATLIX)
+                    <button onclick="window.comprarContato('${d.id}')" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
+                        🔓 LIBERAR CONTATO (${precoEmpresa} ATLIX)
                     </button>
                 `;
             }
