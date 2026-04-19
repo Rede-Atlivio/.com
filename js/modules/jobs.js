@@ -196,6 +196,12 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
     modal.classList.remove('hidden'); modal.classList.add('flex');
 
     try {
+        // 🛰️ BUSCA O PREÇO ATUAL NO BANCO ANTES DE MONTAR A LISTA
+        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+        const precoAtualNoBanco = configSnap.data()?.price_jobs_company || 5;
+        // Guarda na memória para o botão usar logo abaixo
+        window.price_jobs_company_cache = precoAtualNoBanco;
+
         const q = query(collection(db, "job_applications"), where("job_id", "==", jobId));
         const snap = await getDocs(q);
 
