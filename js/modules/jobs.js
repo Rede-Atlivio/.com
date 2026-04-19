@@ -239,7 +239,7 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
                 const precoEmpresa = window.price_jobs_company_cache;
 
                 areaContato = `
-                    <button onclick="window.comprarContato('${d.id}')" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
+                    <button onclick="window.comprarContato('${d.id}', ${precoEmpresa})" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
                         🔓 LIBERAR CONTATO (${precoEmpresa} ATLIX)
                     </button>
                 `;
@@ -375,7 +375,10 @@ export function desistirVaga(appId) {
 
 // 🔥 FUNÇÃO DE PEDÁGIO DO EMPREGADOR
 async function comprarContato(applicationId, custo) {
-    if (!confirm(`Deseja usar ${custo} ATLIX para liberar os dados deste candidato?`)) return;
+    // 🛡️ Garante que o custo seja um número válido
+    const valorCobrado = custo || window.price_jobs_company_cache || 5;
+    
+    if (!confirm(`Deseja usar ${valorCobrado} ATLIX para liberar os dados deste candidato?`)) return;
 
     try {
         // 🛡️ INTEGRAÇÃO FINANCEIRA ATLIVIO (EMPRESA)
