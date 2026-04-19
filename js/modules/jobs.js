@@ -236,7 +236,7 @@ export async function verCandidatosEmpresa(jobId, jobTitle) {
             } else {
                 // 🛡️ Sincronia de Preço: Busca o valor que está no banco para não mentir no visual
                 // Usamos window.configJobsGlobal ou buscamos direto se preferir
-                const precoEmpresa = window.price_jobs_company_cache || 5; 
+                const precoEmpresa = window.price_jobs_company_cache;
 
                 areaContato = `
                     <button onclick="window.comprarContato('${d.id}')" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
