@@ -186,7 +186,29 @@ export async function listarMinhasVagasEmpresa() {
 }
 
 // 🔥 LISTA DE CANDIDATOS COM BOTÃO DE WHATSAPP 🔥
-snap.forEach(d => {
+export async function verCandidatosEmpresa(jobId, jobTitle) {
+    const modal = document.getElementById('modal-candidatos-empresa');
+    const lista = document.getElementById('lista-candidatos-ul');
+    const titulo = document.getElementById('modal-job-title');
+    
+    titulo.innerText = jobTitle;
+    lista.innerHTML = `<div class="text-center py-6"><div class="loader mx-auto"></div></div>`;
+    modal.classList.remove('hidden'); modal.classList.add('flex');
+
+    try {
+        // 🛰️ SINCRONIA TOTAL: Busca Preço e Status da Chave no Banco
+        const configGlobal = await getDoc(doc(db, "configuracoes", "global"));
+        const configData = configGlobal.data();
+        window.price_jobs_company_cache = configData?.price_jobs_company || 5;
+        window.billing_jobs_company_status = configData?.billing_jobs_company;
+
+        const q = query(collection(db, "job_applications"), where("job_id", "==", jobId));
+        const snap = await getDocs(q);
+
+        lista.innerHTML = "";
+        if(snap.empty) { lista.innerHTML = `<p class="text-center text-gray-400 text-xs py-4">Ninguém se candidatou ainda.</p>`; return; }
+
+        snap.forEach(d => {
             const cand = d.data();
             
             // 🛡️ MOTOR DE DECISÃO: COBRAR OU LIBERAR?
@@ -195,6 +217,7 @@ snap.forEach(d => {
             let areaContato = "";
 
             if (!cobrancaAtiva || jaPago) {
+                // MODO LIBERADO: Mostra os dados direto
                 const linkCv = cand.resume_url || cand.cv_url;
                 const btnCv = linkCv ? `<a href="${linkCv}" target="_blank" class="text-blue-500 underline text-[10px] font-black uppercase">📄 PDF LIBERADO</a>` : "";
                 
@@ -212,6 +235,7 @@ snap.forEach(d => {
                     </div>
                 `;
             } else {
+                // MODO PEDÁGIO: Mostra o botão de cobrança
                 const precoEmpresa = window.price_jobs_company_cache; 
                 areaContato = `
                     <button onclick="window.comprarContato('${d.id}', ${precoEmpresa})" class="mt-2 w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2">
@@ -231,7 +255,7 @@ snap.forEach(d => {
                     ${areaContato}
                 </div>`;
         });
-    } catch(e) { console.error(e); lista.innerHTML = "Erro ao carregar."; }
+    } catch(e) { console.error("Erro ao carregar candidatos:", e); lista.innerHTML = "Erro ao carregar."; }
 }
 
 // Atualiza status quando clica no Zap
