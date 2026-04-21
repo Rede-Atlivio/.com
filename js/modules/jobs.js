@@ -69,12 +69,16 @@ export async function carregarVagas() {
             const job = d.data();
             const titulo = job.title || job.titulo || "Vaga";
 
-            // 🏷️ ENVERNIZAMENTO PROFISSIONAL (Evita nomes feios na tela)
-            let nomeParaExibir = job.empresa || job.company || "Contratante";
-            if (nomeParaExibir.toUpperCase() === "ADMIN") {
+            // 🏷️ ENVERNIZAMENTO AGRESSIVO (Mata Usuário 0, Admin e Empresa)
+            let nomeOriginal = (job.empresa || job.company || "Contratante").toUpperCase();
+            let nomeParaExibir = "";
+
+            if (nomeOriginal === "ADMIN" || job.owner_id === "ID_DO_SEU_ADMIN") {
                 nomeParaExibir = "Equipe Atlivio 🛡️";
-            } else if (nomeParaExibir.toUpperCase() === "EMPRESA") {
+            } else if (nomeOriginal === "EMPRESA" || nomeOriginal === "USUÁRIO 0" || nomeOriginal === "USUARIO 0") {
                 nomeParaExibir = "Empresa Verificada ✅";
+            } else {
+                nomeParaExibir = job.empresa || job.company || "Contratante Verificado";
             }
             
             // 🧠 LÓGICA DE BOTÃO DINÂMICO
