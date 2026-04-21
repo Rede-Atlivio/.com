@@ -50,6 +50,10 @@ export function carregarInterfaceEmpregos() {
 export async function carregarVagas() {
     const container = document.getElementById('vagas-content');
     if(!container) return;
+
+    // 🛰️ BUSCA O PREÇO ATUAL DO CANDIDATO NO ADMIN
+    const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+    const precoCandidato = configSnap.data()?.price_jobs_user || 10;
     container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div></div>`;
 
     try {
@@ -75,9 +79,9 @@ export async function carregarVagas() {
                         <span class="text-[9px] bg-green-50 text-green-600 px-2 py-1 rounded font-bold uppercase">R$ ${job.salary || 'Combinar'}</span>
                     </div>
                     <p class="text-xs text-gray-600 mb-3 pl-2 line-clamp-2">${job.description}</p>
-                    <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-slate-900 text-white py-2 rounded-lg text-xs font-bold uppercase hover:bg-blue-600 transition shadow-lg">
-                        ENVIAR CURRÍCULO
-                    </button>
+                   <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2 shadow-lg hover:bg-slate-800 transition">
+    🔓 ENVIAR PROPOSTA (${precoCandidato} ATLIX)
+</button>
                 </div>
             `;
         });
