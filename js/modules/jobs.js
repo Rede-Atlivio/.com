@@ -69,6 +69,21 @@ export async function carregarVagas() {
             const job = d.data();
             const titulo = job.title || job.titulo || "Vaga";
             
+            // 🧠 LÓGICA DE BOTÃO DINÂMICO
+            let htmlBotao = "";
+            if (window.billing_jobs_user_status === true) {
+                htmlBotao = `
+                    <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2 shadow-lg hover:bg-slate-800 transition">
+                        🔓 ENVIAR PROPOSTA (${precoCandidato} ATLIX)
+                    </button>`;
+            } else {
+                htmlBotao = `
+                    <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-blue-700 transition">
+                        🚀 ENVIAR PROPOSTA (GRÁTIS)
+                    </button>`;
+            }
+
+            // Injeta o card completo no container
             container.innerHTML += `
                 <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-3 relative overflow-hidden">
                     <div class="absolute top-0 left-0 w-1 h-full bg-blue-600"></div>
@@ -80,26 +95,7 @@ export async function carregarVagas() {
                         <span class="text-[9px] bg-green-50 text-green-600 px-2 py-1 rounded font-bold uppercase">R$ ${job.salary || 'Combinar'}</span>
                     </div>
                     <p class="text-xs text-gray-600 mb-3 pl-2 line-clamp-2">${job.description}</p>
-                   // 🧠 LÓGICA DE BOTÃO DINÂMICO
-            // Usamos a variável 'cobrancaAtiva' que buscamos no início da função
-            let htmlBotao = "";
-            
-            if (window.billing_jobs_user_status === true) {
-                // MODO PAGO: Mostra o Cadeado e o Preço
-                htmlBotao = `
-                    <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-slate-900 text-amber-400 py-2 rounded-lg text-[10px] font-black uppercase border border-amber-400/30 flex items-center justify-center gap-2 shadow-lg hover:bg-slate-800 transition">
-                        🔓 ENVIAR PROPOSTA (${precoCandidato} ATLIX)
-                    </button>`;
-            } else {
-                // MODO GRÁTIS: Mostra o Botão Azul Normal
-                htmlBotao = `
-                    <button onclick="window.candidatarVaga('${d.id}', '${titulo}', '${job.owner_id}')" class="w-full bg-blue-600 text-white py-2 rounded-lg text-[10px] font-black uppercase flex items-center justify-center gap-2 shadow-lg hover:bg-blue-700 transition">
-                        🚀 ENVIAR PROPOSTA (GRÁTIS)
-                    </button>`;
-            }
-
-            // Agora injetamos o botão escolhido no HTML do card
-            vagaCard.innerHTML += htmlBotao;
+                    ${htmlBotao}
                 </div>
             `;
         });
