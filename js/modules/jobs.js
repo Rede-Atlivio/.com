@@ -299,24 +299,42 @@ export function candidatarVaga(id, title, ownerId) {
     
     modal.classList.remove('hidden'); modal.classList.add('flex'); 
 
-    newBtn.addEventListener('click', async () => {
+   newBtn.addEventListener('click', async () => {
         const msg = document.getElementById('apply-message').value;
         const fileInput = document.getElementById('apply-file');
 
-        // 🛰️ [SINCRONIA TOTAL] Busca as regras reais do Admin antes de prosseguir
+        // 🛰️ SINCRONIA DE SEGURANÇA: Lê o Admin no momento do clique
         const configSnap = await getDoc(doc(db, "configuracoes", "global"));
         const config = configSnap.data();
-        
-        // Criamos as variáveis mestre que o robô disse que estavam faltando
-        const cobrancaAtiva = config.billing_jobs_user === true;
-        const custoVaga = config.price_jobs_user || 10; // Preço dinâmico
+        const cobrancaAtiva = config?.billing_jobs_user === true;
+        const custoVaga = config?.price_jobs_user || 10;
 
-        // 🛡️ PERGUNTA DE SEGURANÇA (Agora com custoVaga definido)
+        // 🛡️ BLOCO DE DECISÃO FINANCEIRA
         if (cobrancaAtiva) {
+            // SÓ ABRE O CONFIRM SE TIVER QUE COBRAR
             if (!confirm(`Deseja usar ${custoVaga} ATLIX para enviar sua proposta para a vaga: ${title}?`)) {
-                return; // Se cancelar, o código para aqui
+                return; // Usuário desistiu
             }
+            newBtn.innerText = "COBRANDO TAXA... 🪙";
+        } else {
+            // MODO GRÁTIS: Pula a confirmação e vai direto pro envio
+            console.log("🚀 Enviando Candidatura Gratuita...");
+            newBtn.innerText = "ENVIANDO GRÁTIS... 🚀";
         }
+
+        newBtn.disabled = true;
+
+        try {
+            // Se cobrar for true, tenta debitar do cofre
+            if (cobrancaAtiva) {
+                const pagamento = await window.pagarComAtlix(custoVaga, "💼 CANDIDATURA_VAGA", `Vaga: ${title}`);
+                if (!pagamento.success) {
+                    alert(`❌ SALDO INSUFICIENTE\n\nVocê precisa de ${custoVaga} ATLIX.`);
+                    newBtn.innerText = "ENVIAR PROPOSTA 🚀"; 
+                    newBtn.disabled = false;
+                    return; 
+                }
+            }
 
         newBtn.innerText = "COBRANDO TAXA... 🪙"; newBtn.disabled = true;
 
