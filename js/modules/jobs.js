@@ -288,6 +288,25 @@ export function candidatarVaga(id, title, ownerId) {
     newBtn.addEventListener('click', async () => {
         const msg = document.getElementById('apply-message').value;
         const fileInput = document.getElementById('apply-file');
+
+        // 🛰️ [SINCRONIA TOTAL] Busca as regras reais do Admin antes de prosseguir
+        const configSnap = await getDoc(doc(db, "configuracoes", "global"));
+        const config = configSnap.data();
+        
+        // Criamos as variáveis mestre que o robô disse que estavam faltando
+        const cobrancaAtiva = config.billing_jobs_user === true;
+        const custoVaga = config.price_jobs_user || 10; // Preço dinâmico
+
+        // 🛡️ PERGUNTA DE SEGURANÇA (Agora com custoVaga definido)
+        if (cobrancaAtiva) {
+            if (!confirm(`Deseja usar ${custoVaga} ATLIX para enviar sua proposta para a vaga: ${title}?`)) {
+                return; // Se cancelar, o código para aqui
+            }
+        }
+
+        newBtn.innerText = "COBRANDO TAXA... 🪙"; newBtn.disabled = true;
+
+        // ... (resto do seu código de upload e addDoc normal daqui para baixo)
         
         if (fileInput.files.length === 0) return alert("⚠️ Anexe seu currículo em PDF.");
         const file = fileInput.files[0];
