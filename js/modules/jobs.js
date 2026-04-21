@@ -282,28 +282,34 @@ export async function marcarContato(appId) {
 }
 
 // ============================================================================
-// 4. CANDIDATURA (AGORA SALVA O ZAP)
+// 4. CANDIDATURA (VERSÃO FINAL BLINDADA - V42)
 // ============================================================================
 export function candidatarVaga(id, title, ownerId) {
     if(!auth.currentUser) return alert("Faça login.");
     const modal = document.getElementById('modal-apply');
     document.getElementById('apply-job-title').innerText = title;
     
-    // Limpa inputs
+    // Limpa os campos do modal para um novo uso
     document.getElementById('apply-message').value = "";
     document.getElementById('apply-file').value = "";
 
+    // Reset do botão para evitar múltiplos cliques
     const btnEnviar = document.getElementById('btn-submit-proposal');
     const newBtn = btnEnviar.cloneNode(true);
     btnEnviar.parentNode.replaceChild(newBtn, btnEnviar);
     
     modal.classList.remove('hidden'); modal.classList.add('flex'); 
 
-   newBtn.addEventListener('click', async () => {
+    newBtn.addEventListener('click', async () => {
         const msg = document.getElementById('apply-message').value;
         const fileInput = document.getElementById('apply-file');
+        
+        // Validação de arquivo básica
+        if (fileInput.files.length === 0) return alert("⚠️ Anexe seu currículo em PDF.");
+        const file = fileInput.files[0];
+        if (file.type !== "application/pdf") return alert("❌ Apenas arquivos .PDF são permitidos!");
 
-        // 🛰️ SINCRONIA DE SEGURANÇA: Lê o Admin no momento do clique
+        // 🛰️ SINCRONIA DE SEGURANÇA: Lê o Admin no momento exato do clique
         const configSnap = await getDoc(doc(db, "configuracoes", "global"));
         const config = configSnap.data();
         const cobrancaAtiva = config?.billing_jobs_user === true;
@@ -311,94 +317,59 @@ export function candidatarVaga(id, title, ownerId) {
 
         // 🛡️ BLOCO DE DECISÃO FINANCEIRA
         if (cobrancaAtiva) {
-            // SÓ ABRE O CONFIRM SE TIVER QUE COBRAR
             if (!confirm(`Deseja usar ${custoVaga} ATLIX para enviar sua proposta para a vaga: ${title}?`)) {
-                return; // Usuário desistiu
+                return; // Usuário cancelou
             }
             newBtn.innerText = "COBRANDO TAXA... 🪙";
         } else {
-            // MODO GRÁTIS: Pula a confirmação e vai direto pro envio
-            console.log("🚀 Enviando Candidatura Gratuita...");
             newBtn.innerText = "ENVIANDO GRÁTIS... 🚀";
         }
 
         newBtn.disabled = true;
 
         try {
-            // Se cobrar for true, tenta debitar do cofre
+            // 💰 EXECUTAR COBRANÇA (Se ativa)
             if (cobrancaAtiva) {
                 const pagamento = await window.pagarComAtlix(custoVaga, "💼 CANDIDATURA_VAGA", `Vaga: ${title}`);
                 if (!pagamento.success) {
-                    alert(`❌ SALDO INSUFICIENTE\n\nVocê precisa de ${custoVaga} ATLIX.`);
+                    alert(`❌ SALDO INSUFICIENTE\n\nVocê precisa de ${custoVaga} ATLIX para se candidatar.`);
                     newBtn.innerText = "ENVIAR PROPOSTA 🚀"; 
                     newBtn.disabled = false;
                     return; 
                 }
             }
 
-        newBtn.innerText = "COBRANDO TAXA... 🪙"; newBtn.disabled = true;
-
-        // ... (resto do seu código de upload e addDoc normal daqui para baixo)
-        
-        if (fileInput.files.length === 0) return alert("⚠️ Anexe seu currículo em PDF.");
-        const file = fileInput.files[0];
-        if (file.type !== "application/pdf") return alert("❌ Apenas arquivos .PDF são permitidos!");
-
-        // 🛡️ PERGUNTA DE SEGURANÇA (IGUAL AO MODO CLIENTE)
-            if (!confirm(`Deseja usar ${custoVaga} ATLIX para enviar sua proposta para a vaga: ${title}?`)) {
-                return; // Se cancelar, o código para aqui
-            }
-
-            newBtn.innerText = "COBRANDO TAXA... 🪙"; newBtn.disabled = true;
-
-        try {
-          // 🛡️ MOTOR DE COBRANÇA ESTRATÉGICA (CANDIDATO)
-            const configSnap = await getDoc(doc(db, "configuracoes", "global"));
-            const config = configSnap.data();
-            const cobrancaAtiva = config.billing_jobs_user === true;
-            const custoVaga = config.price_jobs_user || 10;
-
-            if (cobrancaAtiva) {
-                newBtn.innerText = "VALIDANDO SALDO...";
-                const pagamento = await window.pagarComAtlix(custoVaga, "💼 CANDIDATURA_VAGA", `Vaga: ${title}`);
-                
-                if (!pagamento.success) {
-                    alert(`❌ SALDO INSUFICIENTE\n\nVocê precisa de ${custoVaga} ATLIX para se candidatar.\n\nSiga as instruções na aba GANHAR para obter créditos.`);
-                    newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false;
-                    return; 
-                }
-                console.log("✅ Pagamento de candidatura processado!");
-            }
-
-            // Pega o Zap para salvar na candidatura
+            // 📂 BUSCAR DADOS DO USUÁRIO PARA O ZAP
             const userSnap = await getDoc(doc(db, "usuarios", auth.currentUser.uid));
             const userZap = userSnap.data()?.whatsapp || userSnap.data()?.phone || "";
 
-            // PASSO 2: Upload PDF (O código segue normal daqui)
+            // ☁️ UPLOAD DO PDF PARA O STORAGE
             const storageRef = ref(storage, `curriculos/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
-            // PASSO 3: Salva Candidatura COM O ZAP
+            // 📝 GRAVAR CANDIDATURA NO FIRESTORE
             await addDoc(collection(db, "job_applications"), {
-                job_id: id, vaga_titulo: title, owner_id: ownerId,
+                job_id: id, 
+                vaga_titulo: title, 
+                owner_id: ownerId,
                 user_id: auth.currentUser.uid, 
                 nome: auth.currentUser.displayName || "Candidato",
-                whatsapp: userZap, // <--- SALVANDO O ZAP AQUI
+                whatsapp: userZap,
                 message: msg, 
                 resume_url: downloadURL,
                 created_at: serverTimestamp(), 
                 status: 'novo'
             });
 
-            alert("✅ Candidatura enviada! A empresa entrará em contato.");
+            alert("✅ Candidatura enviada com sucesso!");
             fecharModalCandidatura();
 
-        } catch(e) { 
-            console.error(e);
-            alert("Erro: " + e.message); 
-        } finally { 
-            newBtn.innerText = "ENVIAR PROPOSTA 🚀"; newBtn.disabled = false; 
+        } catch (e) {
+            console.error("❌ Erro no fluxo de candidatura:", e);
+            alert("Erro ao processar candidatura. Tente novamente.");
+            newBtn.innerText = "ENVIAR PROPOSTA 🚀";
+            newBtn.disabled = false;
         }
     });
 }
