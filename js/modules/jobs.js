@@ -289,7 +289,12 @@ export function candidatarVaga(id, title, ownerId) {
         const file = fileInput.files[0];
         if (file.type !== "application/pdf") return alert("❌ Apenas arquivos .PDF são permitidos!");
 
-        newBtn.innerText = "ENVIANDO..."; newBtn.disabled = true;
+        // 🛡️ PERGUNTA DE SEGURANÇA (IGUAL AO MODO CLIENTE)
+            if (!confirm(`Deseja usar ${custoVaga} ATLIX para enviar sua proposta para a vaga: ${title}?`)) {
+                return; // Se cancelar, o código para aqui
+            }
+
+            newBtn.innerText = "COBRANDO TAXA... 🪙"; newBtn.disabled = true;
 
         try {
           // 🛡️ MOTOR DE COBRANÇA ESTRATÉGICA (CANDIDATO)
