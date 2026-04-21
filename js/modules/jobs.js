@@ -51,10 +51,11 @@ export async function carregarVagas() {
     const container = document.getElementById('vagas-content');
     if(!container) return;
 
-    // 🛰️ BUSCA O PREÇO ATUAL DO CANDIDATO NO ADMIN
+   // 🛰️ BUSCA REGRAS DO ADMIN (PREÇO E CHAVE)
     const configSnap = await getDoc(doc(db, "configuracoes", "global"));
-    const precoCandidato = configSnap.data()?.price_jobs_user || 10;
-    container.innerHTML = `<div class="text-center py-10"><div class="loader mx-auto mb-2"></div></div>`;
+    const configData = configSnap.data();
+    const precoCandidato = configData?.price_jobs_user || 10;
+    window.billing_jobs_user_status = configData?.billing_jobs_user; // SALVA STATUS GLOBAL
 
     try {
         // Busca vagas ativas ou ativos para não dar erro de digitação
