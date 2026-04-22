@@ -71,7 +71,7 @@ export async function init() {
 }
 
 async function loadTutorials() {
-    const grid = document.getElementById('tutorials-grid');
+    const grid = document.getElementById('canal-atlivio-grid');
     // 🛰️ SOLDA: Busca apenas os dados do Canal do Cliente
     const q = query(collection(window.db, "canal_atlivio"), orderBy("created_at", "desc"));
     const snap = await getDocs(q);
