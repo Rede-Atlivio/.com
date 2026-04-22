@@ -14,7 +14,7 @@ export async function init() {
                 <i data-lucide="video"></i> NOVO VÍDEO / ADS
             </button>
         </div>
-        <div id="tutorials-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div id="canal-atlivio-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <p class="text-gray-500">Carregando canal do cliente...</p>
         </div>
     `;
