@@ -1,7 +1,7 @@
 import { collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function init() {
-    const container = document.getElementById('view-tutorials'); // Mantenha o ID que está no seu admin.html
+    const container = document.getElementById('view-canal_atlivio'); // Mantenha o ID que está no seu admin.html
     if (!container) return;
 
     container.innerHTML = `
