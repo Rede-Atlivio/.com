@@ -55,11 +55,12 @@ async function loadCanalPosts(filtro = 'todos') {
             if (data.is_ads) corTag = "text-emerald-400";
             if (data.category === 'regras') corTag = "text-red-400";
 
-            // 🎁 MOTOR DE RECOMPENSA (DINÂMICO)
-            let textoBotao = "Aplicar Conhecimento Agora ➔";
-            let acaoBotao = `window.switchTab('${data.target_aba || 'missoes'}')`;
+           // 🎁 MOTOR DE AÇÃO E RECOMPENSA (PODER TOTAL DO ADMIN)
+            let textoBotao = data.button_text || "Ver Agora ➔";
+            let acaoBotao = `window.switchTab('${data.target_aba || 'home'}')`;
             let classeBotao = "bg-white/5 hover:bg-white/10 text-white";
 
+            // Se for ADS, o botão de recompensa é PRIORIDADE sobre o switchTab
             if (data.is_ads === true) {
                 textoBotao = `🎁 RESGATAR +${data.recompensa_atlix || 2} ATLIX`;
                 acaoBotao = `window.resgatarRecompensaCanal('${d.id}', ${data.recompensa_atlix || 2})`;
