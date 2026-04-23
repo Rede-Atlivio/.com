@@ -31,12 +31,12 @@ export async function init() {
         let abaDestino = "missoes";
         let categoria = "onboarding";
 
-        if (isAds) {
+       if (isAds) {
             recompensa = parseInt(prompt("Quanto ATLIX este vídeo vai pagar?", "2")) || 0;
             abaDestino = prompt("Após o vídeo, para onde o usuário vai? (home, loja, empregos, missoes)", "missoes");
             categoria = "ads";
         } else {
-            categoria = prompt("Categoria (onboarding, regras, estrategia):", "onboarding");
+            categoria = prompt("Escolha a Categoria:\n\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
         }
 
         let embedUrl = url;
