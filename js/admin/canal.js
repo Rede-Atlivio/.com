@@ -54,6 +54,7 @@ export async function init() {
                 category: categoria,
                 is_ads: isAds,
                 recompensa_atlix: recompensa,
+                button_text: btnText, // <-- NOVO CAMPO SALVO
                 target_aba: abaDestino,
                 created_at: serverTimestamp() 
             });
