@@ -85,9 +85,15 @@ async function loadTutorials() {
         
         grid.innerHTML += `
             <div class="bg-slate-900/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative group hover:border-emerald-500/30 transition-all duration-500">
-                <div class="relative pt-[56.25%]">
-                    <iframe class="absolute inset-0 w-full h-full pointer-events-none" src="${data.url}" frameborder="0"></iframe>
-                </div>
+               <div class="relative pt-[56.25%] bg-black">
+    <iframe 
+        class="absolute inset-0 w-full h-full" 
+        src="${data.url}?rel=0&modestbranding=1&iv_load_policy=3&controls=1" 
+        frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen>
+    </iframe>
+</div>
                 <div class="p-5 flex justify-between items-start">
                     <div>
                         <div class="flex items-center">
