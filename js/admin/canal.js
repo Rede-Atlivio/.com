@@ -31,13 +31,15 @@ export async function init() {
         let abaDestino = "missoes";
         let categoria = "onboarding";
 
-       if (isAds) {
+       // 🧠 Inteligência de Direcionamento e Texto
+        const categoria = isAds ? "ads" : prompt("Escolha a Categoria:\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
+        
+        if (isAds) {
             recompensa = parseInt(prompt("Quanto ATLIX este vídeo vai pagar?", "2")) || 0;
-            abaDestino = prompt("Após o vídeo, para onde o usuário vai? (home, loja, empregos, missoes)", "missoes");
-            categoria = "ads";
-        } else {
-            categoria = prompt("Escolha a Categoria:\n\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
         }
+
+        const btnText = prompt("Texto do Botão (Ex: APROVEITAR OFERTA, IR PARA CARTEIRA, COMEÇAR):", isAds ? "🎁 RESGATAR RECOMPENSA" : "VER AGORA ➔");
+        const abaDestino = prompt("ID da Aba de Destino (home, loja, empregos, missoes, servicos, finance):", "missoes");
 
         let embedUrl = url;
         if(url.includes("watch?v=")) embedUrl = url.replace("watch?v=", "embed/").split("&")[0];
