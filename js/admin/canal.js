@@ -31,11 +31,14 @@ export async function init() {
         let abaDestino = "missoes";
         let categoria = "onboarding";
 
-       // 🧠 Inteligência de Direcionamento e Texto
-        const categoria = isAds ? "ads" : prompt("Escolha a Categoria:\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
+       // 🧠 Inteligência de Direcionamento e Texto (Corrigida)
+        let categoria = "novidades"; 
         
         if (isAds) {
+            categoria = "ads";
             recompensa = parseInt(prompt("Quanto ATLIX este vídeo vai pagar?", "2")) || 0;
+        } else {
+            categoria = prompt("Escolha a Categoria:\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
         }
 
         const btnText = prompt("Texto do Botão (Ex: APROVEITAR OFERTA, IR PARA CARTEIRA, COMEÇAR):", isAds ? "🎁 RESGATAR RECOMPENSA" : "VER AGORA ➔");
