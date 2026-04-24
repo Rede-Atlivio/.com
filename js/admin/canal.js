@@ -31,9 +31,13 @@ export async function init() {
         let categoria = "novidades";
         let recompensa = 0;
 
+        let duracaoVideo = 0; // Inicializa a variável de tempo
+        
         if (isAds) {
             categoria = "ads";
             recompensa = parseInt(prompt("Quanto ATLIX este vídeo vai pagar?", "2")) || 0;
+            // Gil, aqui definimos quantos segundos o usuário precisa esperar
+            duracaoVideo = parseInt(prompt("Duração do vídeo em SEGUNDOS (Ex: 60):", "30")) || 30;
         } else {
             categoria = prompt("Escolha a Categoria exata:\n- comece_aqui\n- avisos\n- novidades\n- lucro", "novidades");
         }
