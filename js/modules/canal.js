@@ -92,29 +92,33 @@ async function loadCanalPosts(filtro = 'todos') {
 
 // 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
 function configurarRastreadorVideo(videoId, valor) {
-    // Gil, aqui usamos a API do YouTube para saber se o vídeo chegou ao fim
-    // Essa lógica impede o usuário de "pular" o vídeo.
-    setTimeout(() => {
+    let tempoDecorrido = 0;
+    
+    const checarAPI = setInterval(() => {
         const frame = document.getElementById(`video-${videoId}`);
-        if (!frame) return;
+        if (!frame) { clearInterval(checarAPI); return; }
 
-        // Avisa o usuário que estamos vigiando o tempo
-        console.log(`🛰️ Vigia de Retenção ativo para o vídeo: ${videoId}`);
+        // Envia um "ping" para a API do YouTube se certificar que está ouvindo
+        frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: videoId }), '*');
 
-        // Ouve mensagens do Iframe (API do YouTube)
         window.addEventListener('message', (event) => {
-            if (event.source !== frame.contentWindow) return;
-            const data = JSON.parse(event.data);
-            
-            // 'onStateChange' 0 significa vídeo finalizado
-            if (data.event === 'onStateChange' && data.info === 0) {
-                const btn = document.getElementById(`btn-resgate-${videoId}`);
-                btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-                btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce";
-                btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
-            }
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.id !== videoId && !frame.src.includes(videoId)) return;
+
+                // 🎯 Se o vídeo terminar (State 0)
+                if (msg.event === 'onStateChange' && msg.info === 0) {
+                    const btn = document.getElementById(`btn-resgate-${videoId}`);
+                    if(btn && !btn.innerText.includes("RESGATAR")) {
+                        btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+                        btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)]";
+                        btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+                        btn.style.cursor = "pointer";
+                    }
+                }
+            } catch (e) {}
         });
-    }, 2000);
+    }, 1000);
 }
 
 // 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (V2026 - BLINDADA)
