@@ -130,10 +130,10 @@ function configurarRastreadorVideo(videoId, valor) {
     }, 2000);
 }
 
-// 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (O CORAÇÃO DO ADS RECOMPENSADO)
+// 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (V2026 - BLINDADA)
 window.resgatarRecompensaCanal = async (postId, valor) => {
     const btn = document.getElementById(`btn-resgate-${postId}`);
-    if (btn.disabled || btn.innerText.includes("RESGATADO")) return;
+    if (!btn || btn.disabled || btn.innerText.includes("RESGATADO")) return;
 
     btn.innerText = "💰 CREDITANDO...";
     btn.disabled = true;
@@ -142,25 +142,34 @@ window.resgatarRecompensaCanal = async (postId, valor) => {
         const uid = window.auth.currentUser.uid;
         const { doc, updateDoc, arrayUnion, increment } = window.firebaseModules;
         
-        // 1. Credita o Saldo (Bônus)
-        // 2. Marca este post como resgatado no perfil do usuário (Para o botão não voltar a ficar verde)
+        // 1. Credita o Saldo (Bônus) e marca como resgatado para nunca mais ganhar este post
         await updateDoc(doc(window.db, "usuarios", uid), {
             wallet_bonus: increment(valor),
             resgates_canal: arrayUnion(postId)
         });
 
-        // 3. 📝 GERA O EXTRATO (Conectando ao Wallet.js)
+        // 2. 🛰️ TELEMETRIA: Avisa ao banco que houve uma conclusão de ADS
+        await updateDoc(doc(window.db, "canal_atlivio", postId), {
+            visualizacoes_completas: increment(1)
+        });
+
+        // 3. 📝 EXTRATO: Registra a linha visual na carteira do usuário
         if (window.registrarMovimentacao) {
-            await window.registrarMovimentacao(valor, "🎁 BÔNUS_CANAL", `Vídeo Premiado resgatado`);
+            await window.registrarMovimentacao(valor, "🎁 BÔNUS_CANAL", `Vídeo Premiado concluído`);
         }
 
         alert(`✅ Sucesso! +${valor} ATLIX creditados.`);
+        
+        // 4. MUTAÇÃO VISUAL FINAL (Impedir clique duplo)
         btn.innerText = "✅ RECOMPENSA RESGATADA";
+        btn.onclick = null;
         btn.className = "w-full bg-gray-800 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase opacity-50";
 
     } catch (e) {
-        alert("Erro no resgate.");
+        console.error("Erro no resgate:", e);
+        alert("Erro ao processar recompensa.");
         btn.disabled = false;
+        btn.innerText = "TENTAR NOVAMENTE";
     }
 };
 
