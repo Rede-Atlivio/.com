@@ -84,7 +84,9 @@ async function loadCanalPosts(filtro = 'todos') {
             `;
 
             if (data.is_ads && !jaResgatou) {
-                configurarRastreadorVideo(d.id, data.recompensa_atlix);
+                // Pega o tempo do banco ou assume 10s se estiver vazio
+                const tempo = data.duracao_segundos || 10;
+                window.configurarRastreadorVideo(d.id, data.recompensa_atlix, tempo);
             }
         });
     } catch (e) { console.error(e); }
