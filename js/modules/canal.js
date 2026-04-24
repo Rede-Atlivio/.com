@@ -132,34 +132,35 @@ function configurarRastreadorVideo(videoId, valor) {
 
 // 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (O CORAÇÃO DO ADS RECOMPENSADO)
 window.resgatarRecompensaCanal = async (postId, valor) => {
-    const btn = document.getElementById(`btn-canal-${postId}`);
-    if (btn.disabled) return;
+    const btn = document.getElementById(`btn-resgate-${postId}`);
+    if (btn.disabled || btn.innerText.includes("RESGATADO")) return;
 
-    btn.innerText = "PROCESSANDO...";
+    btn.innerText = "💰 CREDITANDO...";
     btn.disabled = true;
 
     try {
-        // Gil, aqui usamos o motor financeiro oficial da Atlivio
-        // Mas como é um GANHO, usamos uma lógica de depósito (crédito)
-        const { doc, updateDoc, increment } = window.firebaseModules;
-        const userRef = doc(window.db, "usuarios", window.auth.currentUser.uid);
-
-        // 🛡️ Segurança: No futuro você pode checar se ele já resgatou este post específico
-        await updateDoc(userRef, {
-            wallet_balance: increment(valor)
+        const uid = window.auth.currentUser.uid;
+        const { doc, updateDoc, arrayUnion, increment } = window.firebaseModules;
+        
+        // 1. Credita o Saldo (Bônus)
+        // 2. Marca este post como resgatado no perfil do usuário (Para o botão não voltar a ficar verde)
+        await updateDoc(doc(window.db, "usuarios", uid), {
+            wallet_bonus: increment(valor),
+            resgates_canal: arrayUnion(postId)
         });
 
-        alert(`✅ Parabéns! +${valor} ATLIX creditados na sua conta.`);
-        btn.innerText = "RESGATADO COM SUCESSO!";
-        btn.classList.replace('bg-emerald-500', 'bg-gray-800');
-        
-        // Atualiza a carteira se o usuário mudar de aba
-        if (window.carregarCarteira) window.carregarCarteira();
+        // 3. 📝 GERA O EXTRATO (Conectando ao Wallet.js)
+        if (window.registrarMovimentacao) {
+            await window.registrarMovimentacao(valor, "🎁 BÔNUS_CANAL", `Vídeo Premiado resgatado`);
+        }
+
+        alert(`✅ Sucesso! +${valor} ATLIX creditados.`);
+        btn.innerText = "✅ RECOMPENSA RESGATADA";
+        btn.className = "w-full bg-gray-800 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase opacity-50";
 
     } catch (e) {
-        alert("Erro ao resgatar recompensa.");
+        alert("Erro no resgate.");
         btn.disabled = false;
-        btn.innerText = `🎁 RESGATAR +${valor} ATLIX`;
     }
 };
 
