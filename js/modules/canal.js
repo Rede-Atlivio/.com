@@ -35,18 +35,13 @@ async function loadCanalPosts(filtro = 'todos') {
     const uid = window.auth.currentUser.uid;
     
     try {
-        // 🔍 Busca os posts e as recompensas já resgatadas pelo usuário
         const [snap, userSnap] = await Promise.all([
             getDocs(query(collection(db, "canal_atlivio"), orderBy("created_at", "desc"))),
             getDoc(doc(db, "usuarios", uid))
         ]);
         
         const resgatados = userSnap.data()?.resgates_canal || [];
-
-        if (snap.empty) {
-            grid.innerHTML = `<p class="text-center text-gray-500 py-10">O Canal está sendo atualizado.</p>`;
-            return;
-        }
+        if (snap.empty) { grid.innerHTML = `<p class="text-center text-gray-500 py-10">Atualizando portal...</p>`; return; }
 
         grid.innerHTML = "";
         snap.forEach(d => {
@@ -54,9 +49,7 @@ async function loadCanalPosts(filtro = 'todos') {
             if (filtro !== 'todos' && data.category !== filtro && !(filtro === 'ads' && data.is_ads)) return;
 
             const jaResgatou = resgatados.includes(d.id);
-            let corTag = data.is_ads ? "text-emerald-400" : "text-blue-400";
             
-            // 🛑 LÓGICA DE BOTÃO (SÓ LIBERA NO FINAL SE FOR ADS)
             let textoBotao = data.button_text || "Ver Agora ➔";
             let acaoBotao = `window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')`;
             let classeBotao = "bg-white/5 text-white";
@@ -65,12 +58,11 @@ async function loadCanalPosts(filtro = 'todos') {
                 if (jaResgatou) {
                     textoBotao = "✅ RECOMPENSA RESGATADA";
                     acaoBotao = "console.log('Já resgatado')";
-                    classeBotao = "bg-gray-800 text-gray-500 cursor-not-allowed opacity-50";
+                    classeBotao = "bg-gray-800 text-gray-500 opacity-50";
                 } else {
-                    // Botão começa desativado/escondido para Ads não resgatados
-                    textoBotao = `🎁 ASSISTA ATÉ O FIM PARA GANHAR`;
-                    acaoBotao = `alert('Assista o vídeo completo para liberar o bônus!')`;
-                    classeBotao = "bg-slate-800 text-emerald-500 border border-emerald-500/20";
+                    textoBotao = `🔒 ASSISTA TUDO PARA GANHAR`;
+                    acaoBotao = `alert('O bônus será liberado automaticamente ao fim do vídeo!')`;
+                    classeBotao = "bg-slate-800 text-emerald-500 border border-emerald-500/20 cursor-not-allowed";
                 }
             }
 
@@ -78,14 +70,11 @@ async function loadCanalPosts(filtro = 'todos') {
                 <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                     <div class="relative pt-[56.25%] bg-black">
                         <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
-                            src="${data.url}?rel=0&enablejsapi=1&modestbranding=1" 
-                            frameborder="0" allowfullscreen></iframe>
+                            src="${data.url}?rel=0&enablejsapi=1&modestbranding=1&controls=0&disablekb=1" 
+                            frameborder="0" allow="autoplay; encrypted-media"></iframe>
+                        <div class="absolute bottom-0 left-0 w-full h-12 z-10 cursor-not-allowed"></div>
                     </div>
                     <div class="p-5">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-[9px] font-black ${corTag} uppercase tracking-widest">${data.is_ads ? 'Oportunidade' : data.category}</span>
-                            <span class="text-[8px] text-gray-600 font-mono">${new Date(data.created_at?.toDate()).toLocaleDateString()}</span>
-                        </div>
                         <h3 class="font-black text-white text-lg leading-tight uppercase italic mb-3">${data.title}</h3>
                         <button id="btn-resgate-${d.id}" onclick="${acaoBotao}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase transition duration-300">
                             ${textoBotao}
@@ -94,12 +83,10 @@ async function loadCanalPosts(filtro = 'todos') {
                 </div>
             `;
 
-            // 🛰️ DISPARAR RASTREADOR DE CONCLUSÃO (Somente para ADS não resgatados)
             if (data.is_ads && !jaResgatou) {
                 configurarRastreadorVideo(d.id, data.recompensa_atlix);
             }
         });
-
     } catch (e) { console.error(e); }
 }
 
