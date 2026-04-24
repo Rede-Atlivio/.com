@@ -57,6 +57,7 @@ export async function init() {
                 category: categoria,
                 is_ads: isAds,
                 recompensa_atlix: recompensa,
+                duracao_segundos: duracaoVideo, // <-- AQUI A SOLDA DO TEMPO
                 button_text: btnText,
                 target_aba: abaDestino,
                 created_at: serverTimestamp() 
