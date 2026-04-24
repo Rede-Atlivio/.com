@@ -91,7 +91,7 @@ async function loadCanalPosts(filtro = 'todos') {
 }
 
 // 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
-function configurarRastreadorVideo(videoId, valor, segundosNecessarios) {
+window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
     const btn = document.getElementById(`btn-resgate-${videoId}`);
     if (!btn) return;
 
