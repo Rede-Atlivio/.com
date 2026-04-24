@@ -97,10 +97,21 @@ async function loadTutorials() {
                         ${badgeAds}
                     </div>
                     <h3 class="font-black text-white text-sm uppercase italic mb-4">${data.title}</h3>
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                            <p class="text-[7px] text-gray-500 uppercase font-black">Conclusões</p>
+                            <p class="text-xs text-emerald-400 font-black">${data.visualizacoes_completas || 0}</p>
+                        </div>
+                        <div class="bg-black/40 p-2 rounded-xl border border-white/5 text-center">
+                            <p class="text-[7px] text-gray-500 uppercase font-black">Cliques Ação</p>
+                            <p class="text-xs text-blue-400 font-black">${data.cliques_objetivo || 0}</p>
+                        </div>
+                    </div>
+
                     <div class="flex gap-2">
                         <div class="flex-1 bg-white/5 rounded-lg px-3 py-2 border border-white/5">
-                            <p class="text-[8px] text-gray-500 uppercase font-black">Botão:</p>
-                            <p class="text-[10px] text-white font-bold">${data.button_text}</p>
+                            <p class="text-[7px] text-gray-400 uppercase font-black italic">Destino: ${data.target_aba}</p>
+                            <p class="text-[9px] text-white font-bold truncate">${data.button_text}</p>
                         </div>
                         <button onclick="window.deleteTutorial('${d.id}')" class="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-4 rounded-xl transition-all">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
