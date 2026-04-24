@@ -94,27 +94,41 @@ async function loadCanalPosts(filtro = 'todos') {
 
 // 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
 window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
-    const btn = document.getElementById(`btn-resgate-${videoId}`);
-    if (!btn) return;
-
     let segundosContados = 0;
-    // Gil, o bônus só libera após o tempo que VOCÊ definiu no Admin
+    
+    console.log(`⏱️ Cronômetro iniciado para ${videoId}: ${segundosNecessarios}s`);
+
     const cronometro = setInterval(() => {
-        segundosContados++;
+        // RECAPTURAMOS O BOTÃO A CADA SEGUNDO (Para não perder a referência)
+        const btn = document.getElementById(`btn-resgate-${videoId}`);
         
-        // Atualiza o texto do botão para o usuário ver o progresso
+        if (!btn) {
+            console.warn(`⚠️ Tentando localizar botão btn-resgate-${videoId}...`);
+            return; // Espera o próximo segundo se o botão sumiu por um instante
+        }
+
+        segundosContados++;
         const falta = segundosNecessarios - segundosContados;
+
         if (falta > 0) {
             btn.innerText = `🔒 AGUARDE ${falta}s PARA LIBERAR`;
         } else {
-            // LIBERAÇÃO TOTAL
+            // HORA DO PAGAMENTO
             clearInterval(cronometro);
+            console.log(`✅ Tempo esgotado! Liberando recompensa para ${videoId}`);
+            
             btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer";
-            btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer scale-105 transition-all";
+            
+            // Garantimos que o clique vai funcionar
+            btn.onclick = () => {
+                if (typeof window.resgatarRecompensaCanal === 'function') {
+                    window.resgatarRecompensaCanal(videoId, valor);
+                }
+            };
         }
     }, 1000);
-}
+};
 
 // 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (V2026 - BLINDADA)
 window.resgatarRecompensaCanal = async (postId, valor) => {
