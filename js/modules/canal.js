@@ -91,33 +91,26 @@ async function loadCanalPosts(filtro = 'todos') {
 }
 
 // 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
-function configurarRastreadorVideo(videoId, valor) {
-    let tempoDecorrido = 0;
-    
-    const checarAPI = setInterval(() => {
-        const frame = document.getElementById(`video-${videoId}`);
-        if (!frame) { clearInterval(checarAPI); return; }
+function configurarRastreadorVideo(videoId, valor, segundosNecessarios) {
+    const btn = document.getElementById(`btn-resgate-${videoId}`);
+    if (!btn) return;
 
-        // Envia um "ping" para a API do YouTube se certificar que está ouvindo
-        frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: videoId }), '*');
-
-        window.addEventListener('message', (event) => {
-            try {
-                const msg = JSON.parse(event.data);
-                if (msg.id !== videoId && !frame.src.includes(videoId)) return;
-
-                // 🎯 Se o vídeo terminar (State 0)
-                if (msg.event === 'onStateChange' && msg.info === 0) {
-                    const btn = document.getElementById(`btn-resgate-${videoId}`);
-                    if(btn && !btn.innerText.includes("RESGATAR")) {
-                        btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-                        btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)]";
-                        btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
-                        btn.style.cursor = "pointer";
-                    }
-                }
-            } catch (e) {}
-        });
+    let segundosContados = 0;
+    // Gil, o bônus só libera após o tempo que VOCÊ definiu no Admin
+    const cronometro = setInterval(() => {
+        segundosContados++;
+        
+        // Atualiza o texto do botão para o usuário ver o progresso
+        const falta = segundosNecessarios - segundosContados;
+        if (falta > 0) {
+            btn.innerText = `🔒 AGUARDE ${falta}s PARA LIBERAR`;
+        } else {
+            // LIBERAÇÃO TOTAL
+            clearInterval(cronometro);
+            btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer";
+            btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+        }
     }, 1000);
 }
 
