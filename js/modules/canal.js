@@ -32,45 +32,54 @@ export async function init() {
 async function loadCanalPosts(filtro = 'todos') {
     const grid = document.getElementById('canal-content');
     const db = window.db;
+    const uid = window.auth.currentUser.uid;
     
     try {
-        // 🛰️ CONEXÃO OFICIAL: Busca na coleção exclusiva do cliente
-        const q = query(collection(db, "canal_atlivio"), orderBy("created_at", "desc"));
-        const snap = await getDocs(q);
+        // 🔍 Busca os posts e as recompensas já resgatadas pelo usuário
+        const [snap, userSnap] = await Promise.all([
+            getDocs(query(collection(db, "canal_atlivio"), orderBy("created_at", "desc"))),
+            getDoc(doc(db, "usuarios", uid))
+        ]);
         
+        const resgatados = userSnap.data()?.resgates_canal || [];
+
         if (snap.empty) {
-            grid.innerHTML = `<p class="text-center text-gray-500 py-10">O Canal está sendo atualizado. Volte em breve!</p>`;
+            grid.innerHTML = `<p class="text-center text-gray-500 py-10">O Canal está sendo atualizado.</p>`;
             return;
         }
 
         grid.innerHTML = "";
         snap.forEach(d => {
             const data = d.data();
-            
-            // Filtro simples (onboarding ou ads)
             if (filtro !== 'todos' && data.category !== filtro && !(filtro === 'ads' && data.is_ads)) return;
 
-            // 🏷️ LÓGICA DE CATEGORIA E CORES
-            let corTag = "text-blue-400";
-            if (data.is_ads) corTag = "text-emerald-400";
-            if (data.category === 'regras') corTag = "text-red-400";
-
-           // 🎁 MOTOR DE AÇÃO E RECOMPENSA (PODER TOTAL DO ADMIN)
+            const jaResgatou = resgatados.includes(d.id);
+            let corTag = data.is_ads ? "text-emerald-400" : "text-blue-400";
+            
+            // 🛑 LÓGICA DE BOTÃO (SÓ LIBERA NO FINAL SE FOR ADS)
             let textoBotao = data.button_text || "Ver Agora ➔";
             let acaoBotao = `window.switchTab('${data.target_aba || 'home'}')`;
-            let classeBotao = "bg-white/5 hover:bg-white/10 text-white";
+            let classeBotao = "bg-white/5 text-white";
 
-            // Se for ADS, o botão de recompensa é PRIORIDADE sobre o switchTab
-            if (data.is_ads === true) {
-                textoBotao = `🎁 RESGATAR +${data.recompensa_atlix || 2} ATLIX`;
-                acaoBotao = `window.resgatarRecompensaCanal('${d.id}', ${data.recompensa_atlix || 2})`;
-                classeBotao = "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 active:scale-95";
+            if (data.is_ads) {
+                if (jaResgatou) {
+                    textoBotao = "✅ RECOMPENSA RESGATADA";
+                    acaoBotao = "console.log('Já resgatado')";
+                    classeBotao = "bg-gray-800 text-gray-500 cursor-not-allowed opacity-50";
+                } else {
+                    // Botão começa desativado/escondido para Ads não resgatados
+                    textoBotao = `🎁 ASSISTA ATÉ O FIM PARA GANHAR`;
+                    acaoBotao = `alert('Assista o vídeo completo para liberar o bônus!')`;
+                    classeBotao = "bg-slate-800 text-emerald-500 border border-emerald-500/20";
+                }
             }
 
             grid.innerHTML += `
-                <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-fade">
+                <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
                     <div class="relative pt-[56.25%] bg-black">
-                        <iframe class="absolute inset-0 w-full h-full" src="${data.url}" frameborder="0" allowfullscreen></iframe>
+                        <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
+                            src="${data.url}?rel=0&enablejsapi=1&modestbranding=1" 
+                            frameborder="0" allowfullscreen></iframe>
                     </div>
                     <div class="p-5">
                         <div class="flex justify-between items-center mb-2">
@@ -78,21 +87,47 @@ async function loadCanalPosts(filtro = 'todos') {
                             <span class="text-[8px] text-gray-600 font-mono">${new Date(data.created_at?.toDate()).toLocaleDateString()}</span>
                         </div>
                         <h3 class="font-black text-white text-lg leading-tight uppercase italic mb-3">${data.title}</h3>
-                        
-                        <div class="pt-4 border-t border-white/5">
-                            <button id="btn-canal-${d.id}" onclick="${acaoBotao}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition duration-300">
-                                ${textoBotao}
-                            </button>
-                        </div>
+                        <button id="btn-resgate-${d.id}" onclick="${acaoBotao}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase transition duration-300">
+                            ${textoBotao}
+                        </button>
                     </div>
                 </div>
             `;
+
+            // 🛰️ DISPARAR RASTREADOR DE CONCLUSÃO (Somente para ADS não resgatados)
+            if (data.is_ads && !jaResgatou) {
+                configurarRastreadorVideo(d.id, data.recompensa_atlix);
+            }
         });
 
-    } catch (e) {
-        console.error("Erro Canal:", e);
-        grid.innerHTML = `<p class="text-red-500 text-center">Erro ao carregar o canal.</p>`;
-    }
+    } catch (e) { console.error(e); }
+}
+
+// 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
+function configurarRastreadorVideo(videoId, valor) {
+    // Gil, aqui usamos a API do YouTube para saber se o vídeo chegou ao fim
+    // Essa lógica impede o usuário de "pular" o vídeo.
+    setTimeout(() => {
+        const frame = document.getElementById(`video-${videoId}`);
+        if (!frame) return;
+
+        // Avisa o usuário que estamos vigiando o tempo
+        console.log(`🛰️ Vigia de Retenção ativo para o vídeo: ${videoId}`);
+
+        // Ouve mensagens do Iframe (API do YouTube)
+        window.addEventListener('message', (event) => {
+            if (event.source !== frame.contentWindow) return;
+            const data = JSON.parse(event.data);
+            
+            // 'onStateChange' 0 significa vídeo finalizado
+            if (data.event === 'onStateChange' && data.info === 0) {
+                const btn = document.getElementById(`btn-resgate-${videoId}`);
+                btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+                btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce";
+                btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+            }
+        });
+    }, 2000);
 }
 
 // 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (O CORAÇÃO DO ADS RECOMPENSADO)
