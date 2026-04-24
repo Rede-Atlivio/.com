@@ -58,7 +58,7 @@ async function loadCanalPosts(filtro = 'todos') {
             
             // 🛑 LÓGICA DE BOTÃO (SÓ LIBERA NO FINAL SE FOR ADS)
             let textoBotao = data.button_text || "Ver Agora ➔";
-            let acaoBotao = `window.switchTab('${data.target_aba || 'home'}')`;
+            let acaoBotao = window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}');
             let classeBotao = "bg-white/5 text-white";
 
             if (data.is_ads) {
