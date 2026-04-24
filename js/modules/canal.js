@@ -173,6 +173,20 @@ window.resgatarRecompensaCanal = async (postId, valor) => {
     }
 };
 
+// 🛰️ TELEMETRIA INFORMATIVA: Conta cliques no botão de ação de vídeos comuns
+window.registrarCliqueObjetivo = async (postId, abaDestino) => {
+    try {
+        const { doc, updateDoc, increment } = window.firebaseModules;
+        // Incrementa o contador de cliques para o relatório do Admin
+        await updateDoc(doc(window.db, "canal_atlivio", postId), {
+            cliques_objetivo: increment(1)
+        });
+    } catch (e) { console.warn("Falha telemetria clique:", e); }
+    
+    // Executa a navegação original
+    if (window.switchTab) window.switchTab(abaDestino);
+};
+
 window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
 };
