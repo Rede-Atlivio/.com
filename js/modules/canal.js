@@ -67,16 +67,25 @@ async function loadCanalPosts(filtro = 'todos') {
             }
 
             grid.innerHTML += `
-                <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-                    <div class="relative pt-[56.25%] bg-black">
+                <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
+                    <div class="relative pt-[56.25%] bg-black group">
                         <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
-                            src="${data.url}?rel=0&enablejsapi=1&modestbranding=1&controls=0&disablekb=1" 
+                            src="${data.url}?rel=0&autoplay=0&controls=0" 
                             frameborder="0" allow="autoplay; encrypted-media"></iframe>
-                        <div class="absolute bottom-0 left-0 w-full h-12 z-10 cursor-not-allowed"></div>
+                        
+                        ${(!jaResgatou && data.is_ads) ? `
+                            <div id="trigger-${d.id}" onclick="window.iniciarPlayerRecompensado('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
+                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/40 cursor-pointer group-hover:bg-black/20 transition-all">
+                                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 group-hover:scale-110 transition-transform">
+                                    <span class="text-white text-2xl ml-1">▶️</span>
+                                </div>
+                                <p class="absolute bottom-4 text-[9px] text-white/60 font-black uppercase tracking-tighter">Clique para iniciar e liberar bônus</p>
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="p-5">
                         <h3 class="font-black text-white text-lg leading-tight uppercase italic mb-3">${data.title}</h3>
-                        <button id="btn-resgate-${d.id}" onclick="${acaoBotao}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase transition duration-300">
+                        <button id="btn-resgate-${d.id}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase transition duration-300">
                             ${textoBotao}
                         </button>
                     </div>
@@ -189,4 +198,24 @@ window.registrarCliqueObjetivo = async (postId, abaDestino) => {
 
 window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
+};
+
+window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
+    const trigger = document.getElementById(`trigger-${videoId}`);
+    const frame = document.getElementById(`video-${videoId}`);
+    
+    if (trigger) {
+        // 1. Remove a película para o usuário acessar o YouTube real
+        trigger.style.display = 'none';
+        
+        // 2. Tenta dar play automático no YouTube (via recarga de SRC)
+        if (frame) {
+            const currentSrc = frame.src;
+            frame.src = currentSrc.replace("autoplay=0", "autoplay=1") + "&autoplay=1";
+        }
+
+        // 3. LIGA O CRONÔMETRO APENAS AGORA
+        console.log(`🚀 Play detectado! Iniciando contagem de ${tempo}s para ${videoId}`);
+        window.configurarRastreadorVideo(videoId, valor, tempo);
+    }
 };
