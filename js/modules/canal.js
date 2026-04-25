@@ -231,3 +231,29 @@ window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
         }
     }, 1000);
 };
+// 🚀 GATILHO DE PLAY: LIGA O VÍDEO E O CRONÔMETRO AO MESMO TEMPO
+window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
+    const trigger = document.getElementById(`trigger-${videoId}`);
+    const frame = document.getElementById(`video-${videoId}`);
+    const btn = document.getElementById(`btn-resgate-${videoId}`);
+    
+    if (trigger) {
+        // 1. Remove a película para liberar o YouTube
+        trigger.remove(); 
+        
+        // 2. Dá Play real no vídeo forçando o autoplay no SRC
+        if (frame) {
+            const currentSrc = frame.src;
+            frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
+        }
+
+        // 3. Atualiza o botão para estado de espera
+        if (btn) {
+            btn.innerText = `⏳ AGUARDE ${tempo}S PARA LIBERAR`;
+        }
+
+        // 4. LIGA O CRONÔMETRO
+        console.log(`🚀 Play detectado! Cronômetro de ${tempo}s iniciado.`);
+        window.configurarRastreadorVideo(videoId, valor, tempo);
+    }
+};
