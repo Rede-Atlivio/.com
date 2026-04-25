@@ -66,16 +66,9 @@ async function loadCanalPosts(filtro = 'todos') {
                 }
             }
 
-            // 🛑 LÓGICA DE BOTÕES (RECOMPENSA + AÇÃO)
+            // 🛑 LÓGICA DE INTERFACE UNIFICADA
             const jaResgatouCard = resgatados.includes(d.id);
             const isAdsCard = data.is_ads === true;
-            
-            // Botão de Ação (O que você configura no Admin para levar à aba)
-            let btnAcaoHTML = `
-                <button onclick="window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')" 
-                    class="w-full bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl text-[9px] font-black uppercase transition border border-white/5 mt-2">
-                    ${data.button_text || 'Acessar Oferta ➔'}
-                </button>`;
 
             grid.innerHTML += `
                 <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
@@ -86,7 +79,7 @@ async function loadCanalPosts(filtro = 'todos') {
                         
                         ${(isAdsCard && !jaResgatouCard) ? `
                             <div id="trigger-${d.id}" onclick="window.iniciarPlayerRecompensado('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
-                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 cursor-pointer group-hover:bg-black/40 transition-all">
+                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 cursor-pointer transition-all">
                                 <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                                     <span class="text-white text-2xl ml-1">▶️</span>
                                 </div>
@@ -96,16 +89,21 @@ async function loadCanalPosts(filtro = 'todos') {
                     <div class="p-5">
                         <h3 class="font-black text-white text-md leading-tight uppercase italic mb-3">${data.title}</h3>
                         
-                        <div id="container-botoes-${d.id}">
-                            ${isAdsCard ? (jaResgatouCard ? 
-                                `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
-                                `<button id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase cursor-not-allowed">
-                                    🔒 AGUARDE O PLAY
-                                </button>`
-                            ) : ''}
-                            
-                            ${btnAcaoHTML}
-                        </div>
+                        ${isAdsCard ? `
+                            <div id="area-bonus-${d.id}" class="mb-2">
+                                ${jaResgatouCard ? 
+                                    `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
+                                    `<button id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase cursor-not-allowed">
+                                        🔒 DÊ O PLAY PARA GANHAR
+                                    </button>`
+                                }
+                            </div>
+                        ` : ''}
+
+                        <button onclick="window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')" 
+                            class="w-full bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl text-[9px] font-black uppercase transition border border-white/5">
+                            ${data.button_text || 'Ver Agora ➔'}
+                        </button>
                     </div>
                 </div>
             `;
@@ -212,21 +210,24 @@ window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
 };
 
-window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
-    const trigger = document.getElementById(`trigger-${videoId}`);
-    const frame = document.getElementById(`video-${videoId}`);
+window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
+    let segundosContados = 0;
     
-    if (trigger) {
-        trigger.remove(); // Mata o gatilho para não clicar duas vezes
-        
-        // Dá play real no vídeo mudando o SRC
-        if (frame) {
-            const currentSrc = frame.src;
-            frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
-        }
+    const cronometro = setInterval(() => {
+        const btn = document.getElementById(`btn-resgate-${videoId}`);
+        if (!btn) return;
 
-        // 🚀 AGORA SIM: Liga o cronômetro
-        console.log(`⏱️ Iniciando contagem de ${tempo}s para o vídeo ${videoId}`);
-        window.configurarRastreadorVideo(videoId, valor, tempo);
-    }
+        segundosContados++;
+        const falta = segundosNecessarios - segundosContados;
+
+        if (falta > 0) {
+            btn.innerText = `⏳ AGUARDE ${falta}S PARA LIBERAR`;
+        } else {
+            // LIBEROU PARA RESGATE
+            clearInterval(cronometro);
+            btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer";
+            btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+        }
+    }, 1000);
 };
