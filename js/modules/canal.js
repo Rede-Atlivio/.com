@@ -66,37 +66,49 @@ async function loadCanalPosts(filtro = 'todos') {
                 }
             }
 
+            // 🛑 LÓGICA DE BOTÕES (RECOMPENSA + AÇÃO)
+            const jaResgatouCard = resgatados.includes(d.id);
+            const isAdsCard = data.is_ads === true;
+            
+            // Botão de Ação (O que você configura no Admin para levar à aba)
+            let btnAcaoHTML = `
+                <button onclick="window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')" 
+                    class="w-full bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl text-[9px] font-black uppercase transition border border-white/5 mt-2">
+                    ${data.button_text || 'Acessar Oferta ➔'}
+                </button>`;
+
             grid.innerHTML += `
                 <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
                     <div class="relative pt-[56.25%] bg-black group">
                         <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
-                            src="${data.url}?rel=0&autoplay=0&controls=0" 
-                            frameborder="0" allow="autoplay; encrypted-media"></iframe>
+                            src="${data.url}?rel=0&autoplay=0&controls=0&enablejsapi=1" 
+                            frameborder="0" allow="autoplay"></iframe>
                         
-                        ${(!jaResgatou && data.is_ads) ? `
+                        ${(isAdsCard && !jaResgatouCard) ? `
                             <div id="trigger-${d.id}" onclick="window.iniciarPlayerRecompensado('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
-                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/40 cursor-pointer group-hover:bg-black/20 transition-all">
-                                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/40 group-hover:scale-110 transition-transform">
+                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 cursor-pointer group-hover:bg-black/40 transition-all">
+                                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
                                     <span class="text-white text-2xl ml-1">▶️</span>
                                 </div>
-                                <p class="absolute bottom-4 text-[9px] text-white/60 font-black uppercase tracking-tighter">Clique para iniciar e liberar bônus</p>
                             </div>
                         ` : ''}
                     </div>
                     <div class="p-5">
-                        <h3 class="font-black text-white text-lg leading-tight uppercase italic mb-3">${data.title}</h3>
-                        <button id="btn-resgate-${d.id}" class="w-full ${classeBotao} py-3 rounded-2xl text-[10px] font-black uppercase transition duration-300">
-                            ${textoBotao}
-                        </button>
+                        <h3 class="font-black text-white text-md leading-tight uppercase italic mb-3">${data.title}</h3>
+                        
+                        <div id="container-botoes-${d.id}">
+                            ${isAdsCard ? (jaResgatouCard ? 
+                                `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
+                                `<button id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase cursor-not-allowed">
+                                    🔒 AGUARDE O PLAY
+                                </button>`
+                            ) : ''}
+                            
+                            ${btnAcaoHTML}
+                        </div>
                     </div>
                 </div>
             `;
-
-            if (data.is_ads && !jaResgatou) {
-                // Pega o tempo do banco ou assume 10s se estiver vazio
-                const tempo = data.duracao_segundos || 10;
-                window.configurarRastreadorVideo(d.id, data.recompensa_atlix, tempo);
-            }
         });
     } catch (e) { console.error(e); }
 }
@@ -205,17 +217,16 @@ window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
     const frame = document.getElementById(`video-${videoId}`);
     
     if (trigger) {
-        // 1. Remove a película para o usuário acessar o YouTube real
-        trigger.style.display = 'none';
+        trigger.remove(); // Mata o gatilho para não clicar duas vezes
         
-        // 2. Tenta dar play automático no YouTube (via recarga de SRC)
+        // Dá play real no vídeo mudando o SRC
         if (frame) {
             const currentSrc = frame.src;
-            frame.src = currentSrc.replace("autoplay=0", "autoplay=1") + "&autoplay=1";
+            frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
         }
 
-        // 3. LIGA O CRONÔMETRO APENAS AGORA
-        console.log(`🚀 Play detectado! Iniciando contagem de ${tempo}s para ${videoId}`);
+        // 🚀 AGORA SIM: Liga o cronômetro
+        console.log(`⏱️ Iniciando contagem de ${tempo}s para o vídeo ${videoId}`);
         window.configurarRastreadorVideo(videoId, valor, tempo);
     }
 };
