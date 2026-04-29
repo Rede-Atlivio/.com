@@ -77,14 +77,17 @@ async function loadCanalPosts(filtro = 'todos') {
                             src="${data.url}?rel=0&autoplay=0&controls=0&enablejsapi=1" 
                             frameborder="0" allow="autoplay"></iframe>
                         
-                        ${(isAdsCard && !jaResgatouCard) ? `
-                            <div id="trigger-${d.id}" onclick="window.iniciarPlayerRecompensado('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
-                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 cursor-pointer transition-all">
-                                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                                    <span class="text-white text-2xl ml-1">▶️</span>
-                                </div>
-                            </div>
-                        ` : ''}
+                        ${isAdsCard ? `
+    <div id="area-verify-${d.id}" class="mb-2">
+        ${jaResgatouCard ? 
+            `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
+            `<button onclick="window.iniciarValidacaoHibrida('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
+                id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase">
+                🛡️ VALIDAR ASSISTÊNCIA (GANHAR ATLIX)
+            </button>`
+        }
+    </div>
+` : ''}
                     </div>
                     <div class="p-5">
                         <h3 class="font-black text-white text-md leading-tight uppercase italic mb-3">${data.title}</h3>
@@ -243,3 +246,4 @@ window.iniciarValidacaoHibrida = (videoId, valor, tempoNecessario) => {
 window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
 };
+
