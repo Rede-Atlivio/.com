@@ -48,53 +48,26 @@ async function loadCanalPosts(filtro = 'todos') {
             const data = d.data();
             if (filtro !== 'todos' && data.category !== filtro && !(filtro === 'ads' && data.is_ads)) return;
 
-            const jaResgatou = resgatados.includes(d.id);
-            
-            let textoBotao = data.button_text || "Ver Agora ➔";
-            let acaoBotao = `window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')`;
-            let classeBotao = "bg-white/5 text-white";
-
-            if (data.is_ads) {
-                if (jaResgatou) {
-                    textoBotao = "✅ RECOMPENSA RESGATADA";
-                    acaoBotao = "console.log('Já resgatado')";
-                    classeBotao = "bg-gray-800 text-gray-500 opacity-50";
-                } else {
-                    textoBotao = `🔒 ASSISTA TUDO PARA GANHAR`;
-                    acaoBotao = `alert('O bônus será liberado automaticamente ao fim do vídeo!')`;
-                    classeBotao = "bg-slate-800 text-emerald-500 border border-emerald-500/20 cursor-not-allowed";
-                }
-            }
-
-            // 🛑 LÓGICA DE INTERFACE UNIFICADA
             const jaResgatouCard = resgatados.includes(d.id);
             const isAdsCard = data.is_ads === true;
 
             grid.innerHTML += `
                 <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
-                    <div class="relative pt-[56.25%] bg-black group">
+                    <div class="relative pt-[56.25%] bg-black">
+                        <!-- Vídeo Limpo para o YouTube funcionar de primeira -->
                         <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
-                            src="${data.url}?rel=0&autoplay=0&controls=0&enablejsapi=1" 
-                            frameborder="0" allow="autoplay"></iframe>
-                        
-                        ${(isAdsCard && !jaResgatouCard) ? `
-                            <div id="trigger-${d.id}" onclick="window.iniciarPlayerRecompensado('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
-                                 class="absolute inset-0 z-20 flex items-center justify-center bg-black/60 cursor-pointer transition-all">
-                                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                                    <span class="text-white text-2xl ml-1">▶️</span>
-                                </div>
-                            </div>
-                        ` : ''}
+                            src="${data.url}?rel=0" frameborder="0" allow="autoplay; encrypted-media"></iframe>
                     </div>
                     <div class="p-5">
                         <h3 class="font-black text-white text-md leading-tight uppercase italic mb-3">${data.title}</h3>
                         
                         ${isAdsCard ? `
-                            <div id="area-bonus-${d.id}" class="mb-2">
+                            <div id="area-verify-${d.id}" class="mb-2">
                                 ${jaResgatouCard ? 
                                     `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
-                                    `<button id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase cursor-not-allowed">
-                                        🔒 DÊ O PLAY PARA GANHAR
+                                    `<button onclick="window.iniciarValidacaoHibrida('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
+                                        id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase">
+                                        🛡️ VALIDAR ASSISTÊNCIA (GANHAR ATLIX)
                                     </button>`
                                 }
                             </div>
