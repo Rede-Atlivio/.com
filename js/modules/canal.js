@@ -210,50 +210,36 @@ window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
 };
 
-window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
-    let segundosContados = 0;
-    
-    const cronometro = setInterval(() => {
-        const btn = document.getElementById(`btn-resgate-${videoId}`);
-        if (!btn) return;
+// 🛡️ MOTOR DE VALIDAÇÃO: Monitora se o usuário está com o app aberto e ativo
+window.iniciarValidacaoHibrida = (videoId, valor, tempoNecessario) => {
+    const btn = document.getElementById(`btn-resgate-${videoId}`);
+    if (!btn) return;
 
-        segundosContados++;
-        const falta = segundosNecessarios - segundosContados;
+    let segundosRestantes = tempoNecessario;
+    btn.disabled = true; 
+    btn.className = "w-full bg-slate-700 text-yellow-500 py-3 rounded-2xl text-[10px] font-black uppercase transition-all";
 
-        if (falta > 0) {
-            btn.innerText = `⏳ AGUARDE ${falta}S PARA LIBERAR`;
+    const verificador = setInterval(() => {
+        // 🚨 SÓ CONTA SE O USUÁRIO ESTIVER COM A ABA ATIVA NA TELA
+        if (document.visibilityState === 'visible') {
+            segundosRestantes--;
+            btn.innerText = `⏳ VALIDANDO PRESENÇA: ${segundosRestantes}S`;
+            
+            if (segundosRestantes <= 0) {
+                clearInterval(verificador);
+                btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+                btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.4)]";
+                btn.disabled = false;
+                
+                // 💰 Aqui chamamos a função de pagamento que você salvou!
+                btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+            }
         } else {
-            // LIBEROU PARA RESGATE
-            clearInterval(cronometro);
-            btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer";
-            btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+            btn.innerText = `⚠️ VALIDAÇÃO PAUSADA (VOLTE AO APP)`;
         }
     }, 1000);
 };
-// 🚀 GATILHO DE PLAY: LIGA O VÍDEO E O CRONÔMETRO AO MESMO TEMPO
-window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
-    const trigger = document.getElementById(`trigger-${videoId}`);
-    const frame = document.getElementById(`video-${videoId}`);
-    const btn = document.getElementById(`btn-resgate-${videoId}`);
-    
-    if (trigger) {
-        // 1. Remove a película para liberar o YouTube
-        trigger.remove(); 
-        
-        // 2. Dá Play real no vídeo forçando o autoplay no SRC
-        if (frame) {
-            const currentSrc = frame.src;
-            frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
-        }
 
-        // 3. Atualiza o botão para estado de espera
-        if (btn) {
-            btn.innerText = `⏳ AGUARDE ${tempo}S PARA LIBERAR`;
-        }
-
-        // 4. LIGA O CRONÔMETRO
-        console.log(`🚀 Play detectado! Cronômetro de ${tempo}s iniciado.`);
-        window.configurarRastreadorVideo(videoId, valor, tempo);
-    }
+window.filtrarCanal = (cat) => {
+    loadCanalPosts(cat);
 };
