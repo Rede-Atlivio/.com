@@ -72,37 +72,30 @@ async function loadCanalPosts(filtro = 'todos') {
 
             grid.innerHTML += `
                 <div class="bg-slate-900/40 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
-                    <div class="relative pt-[56.25%] bg-black group">
+                    <!-- 📺 ÁREA DO VÍDEO -->
+                    <div class="relative pt-[56.25%] bg-black">
                         <iframe id="video-${d.id}" class="absolute inset-0 w-full h-full" 
-                            src="${data.url}?rel=0&autoplay=0&controls=0&enablejsapi=1" 
-                            frameborder="0" allow="autoplay"></iframe>
-                        
-                        ${isAdsCard ? `
-    <div id="area-verify-${d.id}" class="mb-2">
-        ${jaResgatouCard ? 
-            `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
-            `<button onclick="window.iniciarValidacaoHibrida('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
-                id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase">
-                🛡️ VALIDAR ASSISTÊNCIA (GANHAR ATLIX)
-            </button>`
-        }
-    </div>
-` : ''}
+                            src="${data.url}?rel=0" frameborder="0" allow="autoplay; encrypted-media"></iframe>
                     </div>
+
+                    <!-- 📝 CONTEÚDO E BOTÕES -->
                     <div class="p-5">
                         <h3 class="font-black text-white text-md leading-tight uppercase italic mb-3">${data.title}</h3>
                         
+                        <!-- 💰 ÚNICO BOTÃO DE RECOMPENSA -->
                         ${isAdsCard ? `
-                            <div id="area-bonus-${d.id}" class="mb-2">
+                            <div class="mb-3">
                                 ${jaResgatouCard ? 
                                     `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
-                                    `<button id="btn-resgate-${d.id}" class="w-full bg-slate-800 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase cursor-not-allowed">
-                                        🔒 DÊ O PLAY PARA GANHAR
+                                    `<button id="btn-resgate-${d.id}" onclick="window.iniciarValidacaoHibrida('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
+                                        class="w-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-500/20 transition-all">
+                                        🛡️ VALIDAR ASSISTÊNCIA (GANHAR ATLIX)
                                     </button>`
                                 }
                             </div>
                         ` : ''}
 
+                        <!-- 🔗 BOTÃO DE DESTINO -->
                         <button onclick="window.registrarCliqueObjetivo('${d.id}', '${data.target_aba || 'home'}')" 
                             class="w-full bg-white/5 hover:bg-white/10 text-white py-2 rounded-xl text-[9px] font-black uppercase transition border border-white/5">
                             ${data.button_text || 'Ver Agora ➔'}
