@@ -84,149 +84,34 @@ async function loadCanalPosts(filtro = 'todos') {
     } catch (e) { console.error(e); }
 }
 
-// 🧠 MOTOR DE RETENÇÃO (API YOUTUBE)
-window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
-    let segundosContados = 0;
-    
-    console.log(`⏱️ Cronômetro iniciado para ${videoId}: ${segundosNecessarios}s`);
+// 🛡️ MOTOR DE VALIDAÇÃO: Monitora se o usuário está com o app aberto
+window.iniciarValidacaoHibrida = (videoId, valor, tempoNecessario) => {
+    const btn = document.getElementById(`btn-resgate-${videoId}`);
+    if (!btn) return;
 
-    const cronometro = setInterval(() => {
-        // RECAPTURAMOS O BOTÃO A CADA SEGUNDO (Para não perder a referência)
-        const btn = document.getElementById(`btn-resgate-${videoId}`);
-        
-        if (!btn) {
-            console.warn(`⚠️ Tentando localizar botão btn-resgate-${videoId}...`);
-            return; // Espera o próximo segundo se o botão sumiu por um instante
-        }
+    let segundosRestantes = tempoNecessario;
+    btn.disabled = true; // Trava para evitar cliques múltiplos
+    btn.className = "w-full bg-slate-700 text-yellow-500 py-3 rounded-2xl text-[10px] font-black uppercase transition-all";
 
-        segundosContados++;
-        const falta = segundosNecessarios - segundosContados;
-
-        if (falta > 0) {
-            btn.innerText = `🔒 AGUARDE ${falta}s PARA LIBERAR`;
+    const verificador = setInterval(() => {
+        // 🚨 SÓ CONTA SE O USUÁRIO ESTIVER VENDO A PÁGINA
+        if (document.visibilityState === 'visible') {
+            segundosRestantes--;
+            btn.innerText = `⏳ VALIDANDO PRESENÇA: ${segundosRestantes}S`;
+            
+            if (segundosRestantes <= 0) {
+                clearInterval(verificador);
+                btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
+                btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce cursor-pointer";
+                btn.disabled = false;
+                btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
+            }
         } else {
-            // HORA DO PAGAMENTO
-            clearInterval(cronometro);
-            console.log(`✅ Tempo esgotado! Liberando recompensa para ${videoId}`);
-            
-            btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_15px_rgba(16,185,129,0.5)] cursor-pointer scale-105 transition-all";
-            
-            // Garantimos que o clique vai funcionar
-            btn.onclick = () => {
-                if (typeof window.resgatarRecompensaCanal === 'function') {
-                    window.resgatarRecompensaCanal(videoId, valor);
-                }
-            };
+            btn.innerText = `⚠️ VALIDAÇÃO PAUSADA (VOLTE AO APP)`;
         }
     }, 1000);
-};
-
-// 💰 FUNÇÃO DE PAGAMENTO AUTOMÁTICO (V2026 - BLINDADA)
-window.resgatarRecompensaCanal = async (postId, valor) => {
-    const btn = document.getElementById(`btn-resgate-${postId}`);
-    if (!btn || btn.disabled || btn.innerText.includes("RESGATADO")) return;
-
-    btn.innerText = "💰 CREDITANDO...";
-    btn.disabled = true;
-
-    try {
-        const uid = window.auth.currentUser.uid;
-        const { doc, updateDoc, arrayUnion, increment } = window.firebaseModules;
-        
-        // 1. Credita o Saldo (Bônus) e marca como resgatado para nunca mais ganhar este post
-        await updateDoc(doc(window.db, "usuarios", uid), {
-            wallet_bonus: increment(valor),
-            resgates_canal: arrayUnion(postId)
-        });
-
-        // 2. 🛰️ TELEMETRIA: Avisa ao banco que houve uma conclusão de ADS
-        await updateDoc(doc(window.db, "canal_atlivio", postId), {
-            visualizacoes_completas: increment(1)
-        });
-
-        // 3. 📝 EXTRATO: Registra a linha visual na carteira do usuário
-        if (window.registrarMovimentacao) {
-            await window.registrarMovimentacao(valor, "🎁 BÔNUS_CANAL", `Vídeo Premiado concluído`);
-        }
-
-        alert(`✅ Sucesso! +${valor} ATLIX creditados.`);
-        
-        // 4. MUTAÇÃO VISUAL FINAL (Impedir clique duplo)
-        btn.innerText = "✅ RECOMPENSA RESGATADA";
-        btn.onclick = null;
-        btn.className = "w-full bg-gray-800 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase opacity-50";
-
-    } catch (e) {
-        console.error("Erro no resgate:", e);
-        alert("Erro ao processar recompensa.");
-        btn.disabled = false;
-        btn.innerText = "TENTAR NOVAMENTE";
-    }
-};
-
-// 🛰️ TELEMETRIA INFORMATIVA: Conta cliques no botão de ação de vídeos comuns
-window.registrarCliqueObjetivo = async (postId, abaDestino) => {
-    try {
-        const { doc, updateDoc, increment } = window.firebaseModules;
-        // Incrementa o contador de cliques para o relatório do Admin
-        await updateDoc(doc(window.db, "canal_atlivio", postId), {
-            cliques_objetivo: increment(1)
-        });
-    } catch (e) { console.warn("Falha telemetria clique:", e); }
-    
-    // Executa a navegação original
-    if (window.switchTab) window.switchTab(abaDestino);
 };
 
 window.filtrarCanal = (cat) => {
     loadCanalPosts(cat);
-};
-
-window.configurarRastreadorVideo = (videoId, valor, segundosNecessarios) => {
-    let segundosContados = 0;
-    
-    const cronometro = setInterval(() => {
-        const btn = document.getElementById(`btn-resgate-${videoId}`);
-        if (!btn) return;
-
-        segundosContados++;
-        const falta = segundosNecessarios - segundosContados;
-
-        if (falta > 0) {
-            btn.innerText = `⏳ AGUARDE ${falta}S PARA LIBERAR`;
-        } else {
-            // LIBEROU PARA RESGATE
-            clearInterval(cronometro);
-            btn.innerHTML = `🎁 RESGATAR +${valor} ATLIX AGORA!`;
-            btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer";
-            btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
-        }
-    }, 1000);
-};
-// 🚀 GATILHO DE PLAY: LIGA O VÍDEO E O CRONÔMETRO AO MESMO TEMPO
-window.iniciarPlayerRecompensado = (videoId, valor, tempo) => {
-    const trigger = document.getElementById(`trigger-${videoId}`);
-    const frame = document.getElementById(`video-${videoId}`);
-    const btn = document.getElementById(`btn-resgate-${videoId}`);
-    
-    if (trigger) {
-        // 1. Remove a película para liberar o YouTube
-        trigger.remove(); 
-        
-        // 2. Dá Play real no vídeo forçando o autoplay no SRC
-        if (frame) {
-            const currentSrc = frame.src;
-            frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
-        }
-
-        // 3. Atualiza o botão para estado de espera
-        if (btn) {
-            btn.innerText = `⏳ AGUARDE ${tempo}S PARA LIBERAR`;
-        }
-
-        // 4. LIGA O CRONÔMETRO
-        console.log(`🚀 Play detectado! Cronômetro de ${tempo}s iniciado.`);
-        window.configurarRastreadorVideo(videoId, valor, tempo);
-    }
 };
