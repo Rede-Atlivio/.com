@@ -89,7 +89,7 @@ async function loadCanalPosts(filtro = 'todos') {
                                     `<div class="w-full bg-slate-800/50 text-gray-500 py-3 rounded-2xl text-[10px] font-black uppercase text-center opacity-50">✅ RECOMPENSA RESGATADA</div>` : 
                                     `<button id="btn-resgate-${d.id}" onclick="window.iniciarValidacaoHibrida('${d.id}', ${data.recompensa_atlix}, ${data.duracao_segundos || 10})" 
                                         class="w-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 py-3 rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-500/20 transition-all">
-                                        🛡️ VALIDAR ASSISTÊNCIA (GANHAR ATLIX)
+                                        ▶️ ASSISTIR E GANHAR +${data.recompensa_atlix} ATLIX
                                     </button>`
                                 }
                             </div>
