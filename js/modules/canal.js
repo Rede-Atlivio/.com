@@ -209,17 +209,26 @@ window.filtrarCanal = (cat) => {
 // 🛡️ MOTOR DE VALIDAÇÃO: Monitora se o usuário está com o app aberto e ativo
 window.iniciarValidacaoHibrida = (videoId, valor, tempoNecessario) => {
     const btn = document.getElementById(`btn-resgate-${videoId}`);
+    const frame = document.getElementById(`video-${videoId}`);
+    
     if (!btn) return;
 
+    // 🚀 GATILHO DE PLAY: Força o autoplay no YouTube
+    if (frame) {
+        const currentSrc = frame.src;
+        // Injeta o parâmetro de autoplay na URL do vídeo
+        frame.src = currentSrc.includes("?") ? `${currentSrc}&autoplay=1` : `${currentSrc}?autoplay=1`;
+    }
+
     let segundosRestantes = tempoNecessario;
-    btn.disabled = true; 
+    btn.disabled = true;
     btn.className = "w-full bg-slate-700 text-yellow-500 py-3 rounded-2xl text-[10px] font-black uppercase transition-all";
 
     const verificador = setInterval(() => {
-        // 🚨 SÓ CONTA SE O USUÁRIO ESTIVER COM A ABA ATIVA NA TELA
+        // 🚨 Validador de Presença: só conta se o usuário estiver na aba
         if (document.visibilityState === 'visible') {
             segundosRestantes--;
-            btn.innerText = `⏳ VALIDANDO PRESENÇA: ${segundosRestantes}S`;
+            btn.innerText = `⏳ ASSISTINDO: ${segundosRestantes}S`;
             
             if (segundosRestantes <= 0) {
                 clearInterval(verificador);
@@ -227,7 +236,7 @@ window.iniciarValidacaoHibrida = (videoId, valor, tempoNecessario) => {
                 btn.className = "w-full bg-emerald-500 text-white py-3 rounded-2xl text-[10px] font-black uppercase animate-bounce cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.4)]";
                 btn.disabled = false;
                 
-                // 💰 Aqui chamamos a função de pagamento que você salvou!
+                // Liga o botão ao seu motor financeiro
                 btn.onclick = () => window.resgatarRecompensaCanal(videoId, valor);
             }
         } else {
