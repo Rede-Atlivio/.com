@@ -254,22 +254,18 @@ window.iniciarRotativoSocial = () => {
 
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Reserva Temporária
 // 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Sensor Mobile
+// 📸 MOTOR DE EXECUÇÃO V2026: Escassez e Sensor Mobile
 async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerId, perguntas = []) {
-    // 🛡️ SENSOR DE DISPOSITIVO: Bloqueia execução em PC para garantir integridade B2B
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Captura o botão específico pelo ID da missão
     const btn = document.querySelector(`button[onclick*="${id}"]`);
     if(!btn) return;
 
-    // Se não for mobile, avisa e para a execução aqui mesmo
     if (!isMobile) {
         alert("⚠️ SEGURANÇA ATLAS: Esta missão exige captura de câmera e GPS em tempo real. Por favor, acesse pelo seu CELULAR.");
         return;
     }
 
-    // Se for mobile, segue o fluxo importando o Firebase
-    const { collection, getDocs, query, where, doc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+    const { collection, getDocs, query, where, doc, runTransaction, getDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     
     const originalText = btn.innerText;
     btn.disabled = true;
@@ -278,12 +274,15 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
     try {
         const missionRef = doc(window.db, "missions", id);
         
+        // 🟢 CORREÇÃO: Buscamos os dados ANTES da transação para 'm' existir
+        const mSnap = await getDoc(missionRef);
+        if (!mSnap.exists()) throw "Missão não encontrada.";
+        const m = mSnap.data(); 
+
         await runTransaction(window.db, async (transaction) => {
-            const mSnap = await transaction.get(missionRef);
-            const m = mSnap.data();
-            if (m.slots_disponiveis <= 0) throw "Missão esgotada!";
+            const mCurrent = await transaction.get(missionRef);
+            if (mCurrent.data().slots_disponiveis <= 0) throw "Missão esgotada!";
             
-            // Verifica se o usuário já enviou esta missão
             const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
             const sCheck = await getDocs(qCheck);
             if (!sCheck.empty) throw "Você já realizou esta missão!";
@@ -294,24 +293,23 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             });
         });
 
-       // ⏱️ CAPTURA O TEMPO REAL DO DNA DA MISSÃO (Ou usa 20min como fallback de segurança)
+        // ⏱️ Agora 'm' existe aqui e funciona perfeitamente!
         const tempoMissao = m.execution_time_limit || 20;
         
         localStorage.setItem(`fazendo_${id}`, "true");
-        // Passamos o tempo real para o cronômetro de fundo
         window.iniciarCronometroDesistencia(id, tempoMissao);
 
-        // 📢 AVISO EDUCATIVO: O usuário agora sabe que tem pressa!
-        const msgAviso = `🚀 Iniciar Missão: ${titulo}?\n\n⏳ VOCÊ TEM ${tempoMissao} MINUTOS para enviar a foto.\n\nApós esse tempo, sua vaga será liberada para outro usuário.`;
+        const msgAviso = `🚀 Iniciar Missão: ${titulo}?\n\n⏳ VOCÊ TEM ${tempoMissao} MINUTOS para enviar a prova.\n\nApós esse tempo, sua vaga será liberada.`;
 
         if (!confirm(msgAviso)) {
+            // Se cancelar, devolvemos a vaga (opcional, mas recomendável)
+            await updateDoc(missionRef, { slots_disponiveis: increment(1), pessoas_realizando: increment(-1) });
             btn.disabled = false; btn.innerText = originalText; return;
         }
 
         const inputCamera = document.getElementById('camera-input');
         inputCamera.value = "";
         
-        // Pega localização no momento da foto
         navigator.geolocation.getCurrentPosition((pos) => {
             window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         }, null, { enableHighAccuracy: true });
@@ -320,7 +318,6 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             const file = e.target.files[0];
             if (!file) { btn.disabled = false; btn.innerText = originalText; return; }
             
-            // 📝 Se houver perguntas, abre o Modal de Checklist antes de enviar
             if (perguntas && perguntas.length > 0) {
                 window.abrirModalChecklist(perguntas, async (respostas) => {
                     await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId, respostas);
