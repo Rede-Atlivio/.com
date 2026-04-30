@@ -261,63 +261,40 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
     if(!btn) return;
 
     if (!isMobile) {
-        alert("⚠️ SEGURANÇA ATLAS: Esta missão exige captura de câmera e GPS em tempo real. Por favor, acesse pelo seu CELULAR.");
+        alert("⚠️ ACESSE PELO CELULAR para usar a câmera.");
         return;
     }
 
-    const { collection, getDocs, query, where, doc, runTransaction, getDoc, updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    
+    const inputCamera = document.getElementById('camera-input');
+    if (!inputCamera) {
+        alert("❌ ERRO: O botão da câmera não foi encontrado.");
+        return;
+    }
+
     const originalText = btn.innerText;
-    btn.disabled = true;
-    btn.innerText = "🔍 RESERVANDO...";
 
-    try {
-        const missionRef = doc(window.db, "missions", id);
-        
-        // 🟢 CORREÇÃO: Buscamos os dados ANTES da transação para 'm' existir
-        const mSnap = await getDoc(missionRef);
-        if (!mSnap.exists()) throw "Missão não encontrada.";
-        const m = mSnap.data(); 
+    // 1. PREPARA O TERRENO (Bindamos a lógica ANTES do clique)
+    inputCamera.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
-        await runTransaction(window.db, async (transaction) => {
-            const mCurrent = await transaction.get(missionRef);
-            if (mCurrent.data().slots_disponiveis <= 0) throw "Missão esgotada!";
+        // Visual feedback
+        btn.disabled = true;
+        btn.innerText = "🔍 RESERVANDO E ENVIANDO...";
+
+        try {
+            // AQUI DENTRO, rodamos a transação e o envio
+            const { getDoc, doc, runTransaction, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+            const missionRef = doc(window.db, "missions", id);
             
-            const qCheck = query(collection(window.db, "mission_submissions"), where("user_id", "==", auth.currentUser.uid), where("mission_id", "==", id));
-            const sCheck = await getDocs(qCheck);
-            if (!sCheck.empty) throw "Você já realizou esta missão!";
-
-            transaction.update(missionRef, {
-                slots_disponiveis: increment(-1),
-                pessoas_realizando: increment(1)
+            // Verifica vaga e reserva na transação
+            await runTransaction(window.db, async (transaction) => {
+                const mSnap = await transaction.get(missionRef);
+                if (!mSnap.exists() || mSnap.data().slots_disponiveis <= 0) throw "Missão esgotada!";
+                transaction.update(missionRef, { slots_disponiveis: increment(-1), pessoas_realizando: increment(1) });
             });
-        });
 
-        // ⏱️ Agora 'm' existe aqui e funciona perfeitamente!
-        const tempoMissao = m.execution_time_limit || 20;
-        
-        localStorage.setItem(`fazendo_${id}`, "true");
-        window.iniciarCronometroDesistencia(id, tempoMissao);
-
-        const msgAviso = `🚀 Iniciar Missão: ${titulo}?\n\n⏳ VOCÊ TEM ${tempoMissao} MINUTOS para enviar a prova.\n\nApós esse tempo, sua vaga será liberada.`;
-
-        if (!confirm(msgAviso)) {
-            // Se cancelar, devolvemos a vaga (opcional, mas recomendável)
-            await updateDoc(missionRef, { slots_disponiveis: increment(1), pessoas_realizando: increment(-1) });
-            btn.disabled = false; btn.innerText = originalText; return;
-        }
-
-        const inputCamera = document.getElementById('camera-input');
-        inputCamera.value = "";
-        
-        navigator.geolocation.getCurrentPosition((pos) => {
-            window.currentMissionLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        }, null, { enableHighAccuracy: true });
-
-        inputCamera.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) { btn.disabled = false; btn.innerText = originalText; return; }
-            
+            // Checklist e Envio
             if (perguntas && perguntas.length > 0) {
                 window.abrirModalChecklist(perguntas, async (respostas) => {
                     await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId, respostas);
@@ -325,15 +302,15 @@ async function abrirProvaMissao(id, titulo, recompensa, tipoPagamento, b2bOwnerI
             } else {
                 await processarEnvioMissao(id, titulo, recompensa, tipoPagamento, file, b2bOwnerId, {});
             }
-        };
+        } catch (err) {
+            alert("Erro: " + err);
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    };
 
-        inputCamera.setAttribute('data-owner', b2bOwnerId);
-        inputCamera.click();
-        
-    } catch (err) {
-        alert(err);
-        btn.disabled = false; btn.innerText = originalText;
-    }
+    // 2. DISPARA A CÂMERA IMEDIATAMENTE (User Action)
+    inputCamera.click();
 }
 // 📦 MOTOR DE COMPRESSÃO E UPLOAD V2026 (MAESTRO)
 async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arquivo, b2bOwnerId, respostas = {}) {
