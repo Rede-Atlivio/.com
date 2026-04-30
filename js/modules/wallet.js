@@ -1229,7 +1229,7 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
         const valorUnitarioComTaxa = parseFloat(mData.unit_total_with_fee || 0);
         const valorTotalEstorno = parseFloat((valorUnitarioComTaxa * vagasRestantes).toFixed(2));
 
-        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível.\n\nConfirmar encerramento?`)) return;
+        if (!confirm(`⚠️ ENCERRAR OPERAÇÃO?\n\nExistem ${vagasRestantes} vagas não utilizadas.\nO valor de ${valorTotalEstorno.toFixed(2)} ATLIX voltará para seu saldo disponível com o abatimento da taxa de intermediação.\n\nConfirmar encerramento?`)) return;
 
        await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "usuarios", uid);
