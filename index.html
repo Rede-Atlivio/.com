@@ -1112,6 +1112,23 @@ window.processarRecarga = async function() { // 🚀 Adicionado "async" para per
         document.head.appendChild(s);
     });
 
+    // 🚪 SOLDAGEM DO BOTÃO SAIR (V2026)
+import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { app } from './js/config.js';
+
+window.logout = async () => {
+    if (confirm("🚀 Encerrar sessão no Atlivio?")) {
+        try {
+            const authMestre = getAuth(app);
+            await signOut(authMestre);
+            console.log("Sessão encerrada.");
+            location.reload(); // Recarrega para voltar à tela de login limpa
+        } catch (error) {
+            alert("Erro ao sair: " + error.message);
+        }
+    }
+};
+    
     /* 🏗️ V94: Força o Chat a entrar no Container do Index e respeitar as travas visuais */
     setInterval(() => {
         const chatFugitivo = document.querySelector('body > #painel-chat-individual');
