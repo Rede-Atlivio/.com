@@ -873,7 +873,8 @@ window.filtrarGanhos = async (periodo) => {
         // 🏠 Sincroniza o Card da Home (Se estiver visível)
         const elHome = document.getElementById('user-earnings-home');
         if (elHome && elHome.getAttribute('data-hidden') !== 'true') {
-            elHome.innerHTML = `R$ ${txtR} <span class="text-amber-400 text-[10px] font-black">| ${txtA} 🪙</span>`;
+            // COLA ESTA LINHA NOVA (Sincronizada com o seu Print)
+        elHome.innerHTML = `<span class="text-white">R$ ${txtR}</span> <span class="text-slate-500 mx-1">|</span> <span class="text-amber-500">${txtA} 🪙</span>`;
        }
     } catch (e) {
         console.error("Erro ao filtrar ganhos:", e);
