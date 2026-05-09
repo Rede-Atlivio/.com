@@ -854,12 +854,12 @@ window.filtrarGanhos = async (periodo) => {
 
         // 🏗️ Molde Visual Premium (Dupla de Ataque)
         const htmlMaster = `
-            <div class="flex items-center gap-1.5 justify-center font-black">
-                <span class="text-emerald-600">R$ ${txtR}</span>
-                <span class="text-slate-300 font-light mx-0.5">|</span>
-                <span class="text-amber-500">${txtA} 🪙</span>
-            </div>
-        `;
+    <div class="flex items-center gap-2 justify-center font-black">
+        <span class="${somaReal > 0 ? 'text-emerald-500' : 'text-gray-400'}">R$ ${txtR}</span>
+        <span class="text-slate-700">|</span>
+        <span class="${somaAX > 0 ? 'text-amber-500' : 'text-gray-400'}">${txtA} 🪙</span>
+    </div>
+`;
 
         // 🎯 Injeta no container da Carteira (ID unificado no index.html)
         if (elEarnings) elEarnings.innerHTML = htmlMaster;
