@@ -139,6 +139,19 @@ window.abaAtual = 'home';
 // 🩹 POLYFILL IMEDIATO: Protege o sistema ANTES de carregar os módulos
 window.addEventListener('userProfileLoaded', (e) => {
     window.userProfile = e.detail;
+
+    // ⚖️ ZELADOR DE SALDO V2026: Corrige a soma fantasma do banco
+    if (window.userProfile) {
+        const sReal = parseFloat(window.userProfile.wallet_balance || 0);
+        const sBonus = parseFloat(window.userProfile.wallet_bonus || 0);
+        
+        // Sobrescreve o valor errado do banco pelo cálculo real (Soma apenas Recarga + Bônus)
+        window.userProfile.wallet_total_power = sReal + sBonus;
+        
+        console.log("⚖️ [Zelador] wallet_total_power recalibrado com sucesso.");
+    }
+
+    // 🛡️ [V2026] Blindagem de Posse... (restante do código)
     // 🛡️ [V2026] Blindagem de Posse: Garante que o sistema não trave se o cofre estiver vazio
     if (window.userProfile && !window.userProfile.my_vault) {
         window.userProfile.my_vault = [];
