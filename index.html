@@ -1251,73 +1251,36 @@ window.logout = async () => {
     import { db, auth } from './js/config.js';
     import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- 📜 TEXTOS JURÍDICOS ÍNTEGROS (V12 - Atualizado 05/02/2026) ---
-const TEXTOS = {
-    termos: `📜 TERMOS DE USO — ATLIVIO
-Última atualização: 05 de Fevereiro de 2026
+    
+// --- ⚖️ MOTOR JURÍDICO DINÂMICO (Lê do Admin) ---
+window.openTerms = async (type) => {
+    const modal = document.getElementById('modal-terms');
+    const title = document.getElementById('term-title');
+    const content = document.getElementById('term-content');
 
-1. ACEITAÇÃO DOS TERMOS
-Ao acessar ou utilizar a plataforma ATLIVIO, o usuário declara que leu, compreendeu e concorda integralmente com estes Termos de Uso.
+    if(!modal) return;
 
-2. NATUREZA DO SERVIÇO
-A ATLIVIO é uma plataforma digital de intermediação, que conecta Clientes e Prestadores de Serviços. A ATLIVIO não executa serviços, não emprega prestadores e não possui vínculo trabalhista, societário ou contratual com nenhuma das partes.
+    // ⏳ Feedback visual enquanto carrega do banco
+    if(content) content.innerText = "Sincronizando com o departamento jurídico...";
+    modal.classList.remove('hidden');
+    modal.style.setProperty('display', 'flex', 'important');
 
-3. CADASTRO E RESPONSABILIDADE
-O usuário é responsável por: fornecer informações verdadeiras; manter a confidencialidade de seu acesso; utilizar a plataforma de forma ética. A ATLIVIO pode suspender ou encerrar contas em caso de uso indevido, fraude ou tentativa de burlar o sistema.
-
-4. SALDO, CRÉDITOS E PAGAMENTOS (CLÁUSULA DE NÃO REEMBOLSO)
-Os valores e bônus na carteira ATLIVIO são CRÉDITOS VIRTUAIS para uso EXCLUSIVO dentro do ecossistema da plataforma. Estes créditos NÃO POSSUEM VALOR MONETÁRIO FORA DA ATLIVIO, não configuram conta bancária e NÃO PODEM SER SACADOS, convertidos em dinheiro vivo ou transferidos para contas externas em nenhuma hipótese. Ao realizar uma recarga ou receber bônus, o usuário declara estar ciente de que está adquirindo 'Poder de Compra' interno para contratação de serviços, produtos e taxas de intermediação.
-
-5. SOLICITAÇÕES, ACEITE E DESISTÊNCIA
-Ao aceitar uma solicitação, o Prestador concorda com as regras. A ATLIVIO registra eventos digitais, mas não controla interações fora da plataforma. Acordos externos realizados após a troca de informações são de responsabilidade exclusiva das partes.
-
-6. LIMITAÇÃO DE RESPONSABILIDADE
-A ATLIVIO não garante a conclusão de serviços; não se responsabiliza por qualidade, prazos ou resultados; não responde por prejuízos causados por acordos externos.
-
-7. CONDUTA E PENALIDADES
-É proibido: tentar burlar taxas e saldo; utilizar dados falsos; praticar assédio ou golpes. Usuários que violarem estas regras poderão ser banidos sem aviso prévio, com perda total de acesso.
-
-8. ALTERAÇÕES
-A ATLIVIO pode atualizar estes Termos a qualquer momento. O uso contínuo implica aceitação das alterações.`,
-
-    privacidade: `🔐 POLÍTICA DE PRIVACIDADE — ATLIVIO
-1. COLETA DE DADOS
-Coletamos dados essenciais: Nome, WhatsApp, Email e informações de uso da plataforma.
-
-2. USO DAS INFORMAÇÕES
-Dados usados para: Identificar usuários; Conectar Clientes/Prestadores; Garantir segurança e prevenir fraudes.
-
-3. COMPARTILHAMENTO
-A ATLIVIO não vende dados pessoais. Dados são compartilhados apenas entre as partes envolvidas em uma solicitação ativa.
-
-4. SEGURANÇA
-Utilizamos SSL e infraestrutura Google Firebase. Embora sigamos padrões rigorosos, nenhum sistema é 100% inviolável.
-
-5. DIREITOS DO USUÁRIO
-O usuário pode solicitar correção, exclusão de conta ou informações sobre seus dados a qualquer momento.
-
-6. ALTERAÇÕES
-Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
-};
-
-    // --- 🛠️ FUNÇÕES DE INTERFACE ---
-    window.openTerms = (type) => {
-        const modal = document.getElementById('modal-terms');
-        const title = document.getElementById('term-title');
-        const content = document.getElementById('term-content');
-        if(!modal) return console.error("Modal de termos não encontrado!");
-
-        // Injeta o conteúdo
-        if(title) title.innerText = type === 'termos' ? "Termos de Uso ATLIVIO" : "Política de Privacidade";
-        if(content) content.innerText = TEXTOS[type] || "Conteúdo não disponível.";
-
-        // Força a exibição e move para o topo da hierarquia do corpo
-        modal.classList.remove('hidden');
-        modal.style.setProperty('display', 'flex', 'important');
-        document.body.appendChild(modal); 
+    try {
+        const { getDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const docSnap = await getDoc(doc(window.db, "configuracoes", "legal"));
         
-        console.log("🔓 Abrindo documento:", type);
-    };
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if(title) title.innerText = type === 'termos' ? "Termos de Uso Oficiais" : "Política de Privacidade";
+            if(content) content.innerText = type === 'termos' ? data.termos_uso_texto : data.politica_privacidade_texto;
+        } else {
+            if(content) content.innerText = "Documento ainda não publicado no Painel Admin.";
+        }
+    } catch (e) {
+        if(content) content.innerText = "Erro de conexão. Tente novamente.";
+        console.error("Erro Jurídico:", e);
+    }
+};
 
     // 🛰️ V150: MOTOR DE CADASTRO E BÔNUS DINÂMICO (SEM VALOR FIXO)
     document.getElementById('form-onboarding')?.addEventListener('submit', async (e) => {
