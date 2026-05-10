@@ -204,7 +204,8 @@ window.switchView = async function(viewName) {
     // 📺 Gestão de Conteúdo: Separação entre App do Cliente e Tutoriais Internos
     else if (viewName === 'canal_atlivio') { moduleFile = './canal.js'; containerId = 'view-canal_atlivio'; }
     else if (viewName === 'tutorials') { moduleFile = './tutorials_admin.js'; containerId = 'view-tutorials'; }
-
+    else if (viewName === 'governance') { moduleFile = './governance.js'; containerId = 'view-governance'; }
+    
     // 3. MOSTRAR CONTAINER
     if(containerId) {
         const el = document.getElementById(containerId);
