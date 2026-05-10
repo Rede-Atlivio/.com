@@ -1618,6 +1618,32 @@ Esta Política pode ser atualizada. O uso da plataforma indica concordância.`
         </div>
     </div>
 </div>
+<div id="modal-termos-obrigatorio" class="fixed inset-0 z-[10000] bg-slate-950 hidden flex-col items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-white w-full max-w-lg rounded-[2.5rem] flex flex-col shadow-2xl overflow-hidden animate-slideUp max-h-[90vh]">
+            <div class="bg-blue-900 p-6 text-white text-center">
+                <h3 class="font-black uppercase italic tracking-tighter text-xl">Atualização Importante</h3>
+                <p class="text-[10px] opacity-70 font-bold uppercase tracking-widest">Precisamos que você aceite as novas regras (v.<span id="display-versao-termo">0</span>)</p>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-gray-50">
+                <div>
+                    <p class="text-[10px] font-black text-blue-900 uppercase mb-2">📜 Termos de Uso</p>
+                    <div id="texto-termos-uso" class="text-xs text-gray-600 bg-white p-4 rounded-2xl border border-gray-200 leading-relaxed whitespace-pre-wrap"></div>
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-blue-900 uppercase mb-2">🔐 Política de Privacidade</p>
+                    <div id="texto-politica-privacidade" class="text-xs text-gray-600 bg-white p-4 rounded-2xl border border-gray-200 leading-relaxed whitespace-pre-wrap"></div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-white border-t border-gray-100">
+                <button id="btn-aceitar-termos" onclick="window.aceitarNovosTermos()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black uppercase text-sm shadow-xl transition transform active:scale-95">
+                    LI E ACEITO AS NOVAS REGRAS
+                </button>
+                <p class="text-[9px] text-center text-gray-400 mt-4 uppercase font-bold">Ao clicar, você confirma que leu e concorda com as políticas da Atlivio.</p>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
         
