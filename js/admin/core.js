@@ -205,6 +205,8 @@ window.switchView = async function(viewName) {
     else if (viewName === 'canal_atlivio') { moduleFile = './canal.js'; containerId = 'view-canal_atlivio'; }
     else if (viewName === 'tutorials') { moduleFile = './tutorials_admin.js'; containerId = 'view-tutorials'; }
     else if (viewName === 'governance') { moduleFile = './governance.js'; containerId = 'view-governance'; }
+// 💡 Se o arquivo governance.js estiver solto dentro da pasta /js/admin/, o código acima está certo.
+// 💡 Se você moveu ele para /js/admin/modules/, use: './modules/governance.js'
     
     // 3. MOSTRAR CONTAINER
     if(containerId) {
