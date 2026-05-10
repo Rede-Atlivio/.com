@@ -1,4 +1,5 @@
-import { db } from '../../config.js';
+import { db } from '../config.js'; 
+// 💡 Um ponto (.) é a pasta atual (admin), dois pontos (..) volta para a pasta pai (js).
 import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 export async function init() {
