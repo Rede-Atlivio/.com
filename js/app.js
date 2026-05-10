@@ -339,6 +339,11 @@ async function carregarInterface(user) {
 
    console.log("🚀 [Maestro] Inicialização Única para:", user.uid);
 
+    // ⚖️ FISCAL JURÍDICO: Verifica se o usuário precisa aceitar novos termos
+import('./modules/governance.js').then(m => {
+    m.verificarTermosJuridicos(user.uid);
+});
+    
     // 🛰️ V180: IGNIÇÃO FINAL DO RÁDIO (FCM)
     // Usamos o motor original com um delay estratégico para evitar conflitos de permissão.
     // A trava 'radioSoldado' impede que o sistema tente soldar o token várias vezes.
