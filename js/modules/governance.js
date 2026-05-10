@@ -8,25 +8,34 @@ export async function verificarTermosJuridicos(uid) {
         if (!configSnap.exists()) return;
         const config = configSnap.data();
 
-        // 2. Busca o Perfil do Usuário
+        // 2. Busca o Perfil do Usuário atualizado direto do banco (sem cache)
         const userSnap = await getDoc(doc(db, "usuarios", uid));
+        if (!userSnap.exists()) return;
         const user = userSnap.data();
 
-        const versaoAdmin = config.versao_atual;
-        const versaoUsuario = user.termo_aceito_versao || "0.0.0";
+        const versaoAdmin = String(config.versao_atual || "1.0.0").trim();
+        const versaoUsuario = String(user.termo_aceito_versao || "0.0.0").trim();
 
-        // 3. COMPARADOR DE ESCALA: Se a versão for diferente OU bloqueio crítico ativo
-        if (versaoAdmin !== versaoUsuario || config.bloqueio_critico) {
+        console.log(`⚖️ Governança: Admin(${versaoAdmin}) vs Usuário(${versaoUsuario})`);
+
+        // 3. TRAVA INTELIGENTE: Só abre se a versão for diferente E o bloqueio crítico estiver ON
+        // Se o bloqueio crítico for FALSE, e ele já tem a versão certa, não incomoda o usuário.
+        if (config.bloqueio_critico === true) {
+            if (versaoAdmin !== versaoUsuario) {
+                abrirModalAceiteTermos(config);
+            }
+        } else if (versaoAdmin !== versaoUsuario) {
+            // Se não é crítico, mas a versão mudou, também abre (Fluxo Normal)
             abrirModalAceiteTermos(config);
         }
-    } catch (e) { console.warn("⚖️ Governança: Aguardando estabilidade...", e); }
+
+    } catch (e) { console.warn("⚖️ Governança: Erro na verificação.", e); }
 }
 
 function abrirModalAceiteTermos(config) {
     const modal = document.getElementById('modal-termos-obrigatorio');
     if (!modal) return;
 
-    // Injeta os textos do Admin no Modal
     document.getElementById('texto-termos-uso').innerText = config.termos_uso_texto;
     document.getElementById('texto-politica-privacidade').innerText = config.politica_privacidade_texto;
     document.getElementById('display-versao-termo').innerText = config.versao_atual;
@@ -43,24 +52,28 @@ window.aceitarNovosTermos = async () => {
     const verAtiva = document.getElementById('display-versao-termo').innerText;
     
     btn.disabled = true;
-    btn.innerText = "⏳ PROCESSANDO...";
+    btn.innerText = "⏳ SALVANDO ACEITE...";
 
     try {
         const userRef = doc(db, "usuarios", user.uid);
         
-        // Atualiza os campos que o robô mapeou + os novos de controle
         await updateDoc(userRef, {
-            terms_accepted: true, // Mantém compatibilidade com seu campo antigo
             termo_aceito_versao: verAtiva,
             termo_aceito_em: serverTimestamp(),
-            historico_aceites: arrayUnion({ versao: verAtiva, data: new Date() })
+            terms_accepted: true,
+            historico_aceites: arrayUnion({ versao: verAtiva, data: new Date().toISOString() })
         });
 
+        // 🚀 ATUALIZAÇÃO LOCAL: Força o perfil local a saber que já aceitou
+        if(window.userProfile) window.userProfile.termo_aceito_versao = verAtiva;
+
         document.getElementById('modal-termos-obrigatorio').classList.add('hidden');
-        console.log("✅ Termos aceitos com sucesso!");
+        document.getElementById('modal-termos-obrigatorio').classList.remove('flex');
+        
+        console.log("✅ Termos aceitos e registrados!");
     } catch (e) {
-        alert("Erro ao salvar aceite: " + e.message);
+        alert("Erro ao salvar: " + e.message);
         btn.disabled = false;
-        btn.innerText = "LI E ACEITO OS TERMOS";
+        btn.innerText = "LI E ACEITO AS NOVAS REGRAS";
     }
 };
