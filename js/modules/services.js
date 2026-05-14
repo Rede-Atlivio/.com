@@ -693,9 +693,12 @@ window.removerServico = async (cat, price, title) => {
         const snap = await getDoc(ref);
         if(snap.exists()) {
             let services = snap.data().services || [];
+            // 🛡️ REMOÇÃO PRECISA: Filtra combinando título, categoria e preço para não apagar o serviço errado
             const newServices = services.filter(s => {
-                if (title && s.title) return s.title !== title;
-                return !(s.category === cat && parseFloat(s.price) === parseFloat(price));
+                const matchTitulo = s.title === title;
+                const matchCat = s.category === cat;
+                const matchPreco = parseFloat(s.price) === parseFloat(price);
+                return !(matchTitulo && matchCat && matchPreco);
             });
             await setDoc(ref, { services: newServices }, { merge: true });
             abrirConfiguracaoServicos(); 
