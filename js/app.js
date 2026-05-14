@@ -549,7 +549,7 @@ window.renderizarTourBoasVindas = function() {
                     <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-2xl">⚡</div>
                     <div>
                         <p class="font-black text-emerald-700 uppercase text-[11px]">Renda Extra</p>
-                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Ganhe dinheiro com tarefas</p>
+                        <p class="text-[8px] text-gray-500 font-bold uppercase tracking-tighter">Ganhe dinheiro com tarefas e serviços</p>
                     </div>
                 </button>
 
