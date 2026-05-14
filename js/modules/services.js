@@ -745,7 +745,19 @@ export async function salvarServicoPrestador() {
     const description = descInput.value.trim();
     const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
 
+    // 🛡️ PROTOCOLO ANTI-FRAUDE V2026
     if(!title) return alert("❌ Digite um título para o serviço.");
+    
+    // 🔍 Filtro de Contatos: Detecta padrões de WhatsApp/Telefone (Regex Industrial)
+    // Identifica números sequenciais que parecem telefones brasileiros
+    const regexFone = /(?:\(?\d{2}\)?\s?|\d{2}?\s?)\d{4,5}\s?-?\s?\d{4}/g;
+    const temContatoNoTitulo = regexFone.test(title);
+    const temContatoNaDesc = regexFone.test(description);
+
+    if (temContatoNoTitulo || temContatoNaDesc) {
+        return alert("⛔ SEGURANÇA ATLIVIO: Detectamos um número de contato nos detalhes. Por normas de segurança e proteção à sua conta, não é permitido divulgar WhatsApp ou links externos. Utilize o chat oficial para negociar e receber pagamentos com garantia.");
+    }
+
     if(isNaN(price) || price < minPrice) {
         return alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
     }
