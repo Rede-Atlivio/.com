@@ -67,12 +67,12 @@ export async function checkOnboarding(user) {
                     perfil_completo: true
                 });
 
-                modal.classList.add('hidden');
-                document.getElementById('auth-container').classList.add('hidden');
-                document.getElementById('role-selection').classList.remove('hidden');
+               modal.classList.add('hidden');
+                console.log("✅ Onboarding concluído. Liberando Maestro...");
                 
-                // Recarrega para aplicar nome
-                setTimeout(() => window.location.reload(), 500);
+                // Em vez de procurar o role-selection, nós apenas recarregamos
+                // O app.js vai abrir direto na HOME e o Maestro fará o resto.
+                setTimeout(() => window.location.reload(), 300);
 
             } catch (error) {
                 console.error(error);
