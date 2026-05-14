@@ -22,14 +22,11 @@ export async function checkOnboarding(user) {
         if (snap.exists()) {
             const data = snap.data();
             // Se já tem cadastro, libera
-            if (data.terms_accepted && data.nome && data.nome !== "User") {
+            if (data.onboarding_completed && data.nome && data.nome !== "User") {
                 modal.classList.add('hidden');
-                document.getElementById('auth-container').classList.add('hidden');
-                if(data.perfil_completo) {
-                    document.getElementById('app-container').classList.remove('hidden');
-                } else {
-                    document.getElementById('role-selection').classList.remove('hidden');
-                }
+                // Se já completou, apenas garante que o container principal apareça
+                const appMain = document.getElementById('app-container');
+                if(appMain) appMain.classList.remove('hidden');
                 return;
             }
         }
