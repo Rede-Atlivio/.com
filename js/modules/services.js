@@ -588,6 +588,8 @@ export async function abrirConfiguracaoServicos() {
             </div>
             <input type="file" id="input-banner" accept="image/*" class="hidden" onchange="window.salvarCapaPrestador(this)">
         </div>
+        <!-- 🛡️ AVISO ANTI-FRAUDE V2026 -->
+        <p class="text-[8px] text-red-500 font-bold uppercase text-center -mt-2 mb-4 animate-pulse">⚠️ Proibido contatos na imagem. Risco de banimento imediato.</p>
 
         ${currentHtml}
         
