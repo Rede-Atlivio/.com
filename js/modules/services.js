@@ -750,17 +750,23 @@ export async function salvarServicoPrestador() {
     const description = descInput.value.trim();
     const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
 
-    // 🛡️ PROTOCOLO ANTI-FRAUDE V2026
+    // 🛡️ FILTRO ANTI-FRAUDE TURBO V2026 (Telefones, Links e Arrobas)
     if(!title) return alert("❌ Digite um título para o serviço.");
-    
-    // 🔍 Filtro de Contatos: Detecta padrões de WhatsApp/Telefone (Regex Industrial)
-    // Identifica números sequenciais que parecem telefones brasileiros
-    const regexFone = /(?:\(?\d{2}\)?\s?|\d{2}?\s?)\d{4,5}\s?-?\s?\d{4}/g;
-    const temContatoNoTitulo = regexFone.test(title);
-    const temContatoNaDesc = regexFone.test(description);
 
-    if (temContatoNoTitulo || temContatoNaDesc) {
-        return alert("⛔ SEGURANÇA ATLIVIO: Detectamos um número de contato nos detalhes. Por normas de segurança e proteção à sua conta, não é permitido divulgar WhatsApp ou links externos. Utilize o chat oficial para negociar e receber pagamentos com garantia.");
+    // 1. Regex para Telefones (Padrão BR com DDD)
+    const regexFone = /(?:\(?\d{2}\)?\s?|\d{2}?\s?)\d{4,5}\s?-?\s?\d{4}/g;
+    // 2. Regex para Links e Arrobas (Instagram, Facebook e Sites)
+    const regexLinks = /(@[\w.]+)|(https?:\/\/)|(\w+\.(com|net|org|br|me|link|site))/gi;
+
+    // Gil, aqui o "Zelador" reseta o índice da Regex para garantir que a detecção não falhe em cliques seguidos
+    regexFone.lastIndex = 0;
+    regexLinks.lastIndex = 0;
+
+    const temFraudeTexto = regexFone.test(title) || regexFone.test(description) || 
+                           regexLinks.test(title) || regexLinks.test(description);
+
+    if (temFraudeTexto) {
+        return alert("⛔ SEGURANÇA ATLIVIO: Por políticas de proteção e garantia de pagamento, não é permitido incluir telefones, arrobas (@) ou links externos nos detalhes. Utilize nosso chat oficial para negociar com segurança.");
     }
 
     if(isNaN(price) || price < minPrice) {
