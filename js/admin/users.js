@@ -129,17 +129,15 @@ async function openEditor(collectionName, id) {
              html += `<div class="mb-4 bg-slate-800 p-4 rounded-xl border border-slate-700">
                         <h4 class="text-xs font-black text-blue-300 uppercase mb-3">🛡️ SERVIÇOS (${servicos.length})</h4>
                         <div class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">`;
+             // 🛡️ INFRAESTRUTURA ESCALÁVEL: Listagem direta sem necessidade de curadoria manual por item
              servicos.forEach((svc, idx) => {
-                 let badge = svc.status === 'aprovado' ? "✅" : "⏳";
                  html += `<div class="bg-slate-900 p-3 rounded-lg border border-slate-700 flex justify-between items-center">
                             <div>
-                                <p class="text-xs font-bold text-white flex items-center gap-2">${badge} ${svc.category}</p>
+                                <p class="text-xs font-bold text-white flex items-center gap-2">🔹 ${svc.title || svc.category}</p>
                                 <p class="text-[10px] text-gray-400 mt-1">R$ ${svc.price}</p>
+                                ${svc.description ? `<p class="text-[9px] text-gray-500 mt-0.5">${svc.description}</p>` : ''}
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="window.saveServiceAction('${id}', ${idx}, 'aprovado')" class="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded text-[10px] font-bold">APROVAR</button>
-                                <button onclick="window.saveServiceAction('${id}', ${idx}, 'suspenso')" class="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded text-[10px] font-bold">SUSPENDER</button>
-                            </div>
+                            <span class="text-[10px] bg-green-950 text-green-400 px-2 py-0.5 rounded border border-green-900 font-bold uppercase">Ativo</span>
                         </div>`;
              });
              html += `</div></div>`;
