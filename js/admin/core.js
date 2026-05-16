@@ -139,7 +139,7 @@ window.switchView = async function(viewName) {
     window.activeView = viewName;
     console.log(`🚀 Navegando para: ${viewName}`);
     
-   // Lista de todas as salas (views) registradas no sistema de escala
+  // Lista de todas as salas (views) registradas no sistema de escala
    // 🧹 FAXINA MESTRE V2026 (PROTEÇÃO TOTAL)
     // Limpa qualquer ID que comece com 'view-' (Automático) 
     // + Garante o 'display: none !important' para evitar sobreposição.
@@ -147,13 +147,6 @@ window.switchView = async function(viewName) {
         v.classList.add('hidden');
         v.style.setProperty('display', 'none', 'important');
     });
-
-    // 🧹 LIMPEZA DE VAZAMENTO DE VAGAS: Remove blocos específicos do painel de empregos para não vazar em Prestadores/Usuários
-    const painelMercadoVagas = document.querySelector('.view-section-jobs-meta') || document.getElementById('market-config-container') || document.querySelector('[id*="market"]');
-    if (painelMercadoVagas && viewName !== 'jobs' && viewName !== 'vagas') {
-        painelMercadoVagas.classList.add('hidden');
-        if (painelMercadoVagas.style) painelMercadoVagas.style.setProperty('display', 'none', 'important');
-    }
     
    // 🛡️ PROTEÇÃO: Ativação Automática da Assistant e Vigilância no Dashboard
     if (viewName === 'dashboard') {
