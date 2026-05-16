@@ -169,10 +169,20 @@ async function openEditor(collectionName, id) {
             } 
         
         }); // 🏁 Fecha o loop das chaves de edição (nome, email, status, is_verified)  
-        html += `</div><div class="border-t border-slate-700 pt-6 mt-6 flex gap-3">
-                    <button onclick="window.saveAction('${collectionName}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded text-xs font-bold">⛔ BANIR</button>
-                    <button onclick="window.saveAction('${collectionName}', '${id}', 'suspenso')" class="flex-1 bg-yellow-600 text-white py-3 rounded text-xs font-bold">⚠️ SUSPENDER</button>
-                    <button onclick="window.saveAction('${collectionName}', '${id}', 'aprovar')" class="flex-1 bg-green-600 text-white py-3 rounded text-xs font-bold">✅ APROVAR</button>
+        // 📸 CONTROLADOR DE MIDIA V2026: Injeta o botão de reset de capa se for a coleção de prestadores
+        let botaoCapa = "";
+        if (collectionName === 'active_providers' && id) {
+            botaoCapa = `<button onclick="window.reprovarCapaDireto('${id}')" class="w-full bg-amber-600/20 border border-amber-500/30 text-amber-500 hover:bg-amber-600 hover:text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all mb-4">🚨 REPROVAR IMAGEM DE CAPA (RESET)</button>`;
+        }
+
+        html += `</div>
+                 <div class="border-t border-slate-700 pt-6 mt-6">
+                    ${botaoCapa}
+                    <div class="flex gap-3">
+                        <button onclick="window.saveAction('${collectionName}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded text-xs font-bold">⛔ BANIR CONTA</button>
+                        <button onclick="window.saveAction('${collectionName}', '${id}', 'suspenso')" class="flex-1 bg-yellow-600 text-white py-3 rounded text-xs font-bold">⚠️ SUSPENDER</button>
+                        <button onclick="window.saveAction('${collectionName}', '${id}', 'aprovar')" class="flex-1 bg-green-600 text-white py-3 rounded text-xs font-bold">✅ APROVAR PERFIL</button>
+                    </div>
                  </div></div>`;
         content.innerHTML = html;
     } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
@@ -389,5 +399,35 @@ window.resetarTourDireto = async function(uid, nome) {
     } catch (e) {
         console.error("Erro no Reset Direto:", e);
         alert("❌ Erro técnico: " + e.message);
+    }
+};
+// 📸 MÓDULO EXECUTOR DE LIMPEZA DE MÍDIA V2026
+window.reprovarCapaDireto = async function(providerId) {
+    if (!confirm("🚨 REPROVAR BANNER: Deseja remover a imagem de capa deste prestador por violação das regras de contato?")) return;
+
+    try {
+        const ref = doc(window.db, "active_providers", providerId);
+        
+        // Substitui por uma string vazia ou nula. O app.js/services.js automaticamente usará o gradiente padrão bonito.
+        await updateDoc(ref, {
+            cover_image: "",
+            cover_status: "reprovado",
+            updated_at: serverTimestamp()
+        });
+
+        // Envia notificação automática para o app do usuário saber o motivo
+        await addDoc(collection(window.db, "notifications"), {
+            uid: providerId,
+            message: "⚠️ Alerta de Perfil: Sua imagem de capa foi removida pela moderação por conter dados de contato externo (WhatsApp/Redes Sociais). Por favor, envie uma nova foto focada apenas no seu trabalho.",
+            type: "alert",
+            read: false,
+            created_at: serverTimestamp()
+        });
+
+        alert("✅ SUCESSO: O banner foi exterminado! O prestador foi notificado no celular.");
+        document.getElementById('modal-editor').classList.add('hidden');
+        loadList();
+    } catch (e) {
+        alert("❌ Erro ao resetar capa: " + e.message);
     }
 };
