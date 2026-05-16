@@ -175,15 +175,25 @@ async function openEditor(collectionName, id) {
             botaoCapa = `<button onclick="window.reprovarCapaDireto('${id}')" class="w-full bg-amber-600/20 border border-amber-500/30 text-amber-500 hover:bg-amber-600 hover:text-white py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all mb-4">🚨 REPROVAR IMAGEM DE CAPA (RESET)</button>`;
         }
 
-        html += `</div>
-                 <div class="border-t border-slate-700 pt-6 mt-6">
-                    ${botaoCapa}
-                    <div class="flex gap-3">
-                        <button onclick="window.saveAction('${collectionName}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded text-xs font-bold">⛔ BANIR CONTA</button>
-                        <button onclick="window.saveAction('${collectionName}', '${id}', 'suspenso')" class="flex-1 bg-yellow-600 text-white py-3 rounded text-xs font-bold">⚠️ SUSPENDER</button>
-                        <button onclick="window.saveAction('${collectionName}', '${id}', 'aprovar')" class="flex-1 bg-green-600 text-white py-3 rounded text-xs font-bold">✅ APROVAR PERFIL</button>
-                    </div>
-                 </div></div>`;
+        // 🛡️ REMOÇÃO DE CÓDIGO MORTO: Rodapé purificado. Se for prestador, exibe apenas o gerenciador de capa. 
+        // Os botões de banir conta permanecem ativos exclusivamente na aba correta (Usuários).
+        if (collectionName === 'active_providers') {
+            html += `</div>
+                     <div class="border-t border-slate-700 pt-6 mt-6">
+                        ${botaoCapa}
+                        <button onclick="window.fecharModalUniversal()" class="w-full bg-slate-800 text-gray-400 hover:bg-slate-700 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all">Fechar Curadoria</button>
+                     </div></div>`;
+        } else {
+            // Mantém os botões originais que funcionam perfeitamente na aba de Usuários
+            html += `</div>
+                     <div class="border-t border-slate-700 pt-6 mt-6">
+                        <div class="flex gap-3">
+                            <button onclick="window.saveAction('${collectionName}', '${id}', 'banir')" class="flex-1 bg-red-600 text-white py-3 rounded text-xs font-bold">⛔ BANIR CONTA</button>
+                            <button onclick="window.saveAction('${collectionName}', '${id}', 'suspenso')" class="flex-1 bg-yellow-600 text-white py-3 rounded text-xs font-bold">⚠️ SUSPENDER</button>
+                            <button onclick="window.saveAction('${collectionName}', '${id}', 'aprovar')" class="flex-1 bg-green-600 text-white py-3 rounded text-xs font-bold">✅ APROVAR PERFIL</button>
+                        </div>
+                     </div></div>`;
+        }
         content.innerHTML = html;
     } catch (e) { content.innerHTML = `<p class="text-red-500">Erro: ${e.message}</p>`; }
 }
