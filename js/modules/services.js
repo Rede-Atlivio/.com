@@ -888,11 +888,32 @@ window.carregarHistoricoPrestador = carregarHistoricoPrestador;
 window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
 window.salvarCapaPrestador = salvarCapaPrestador;
-// 🎯 PONTE DE CONEXÃO: Garante que o link URL do Maestro funcione sem dar erro de definição no console
-if (!window.verPerfilCompleto) {
-    window.verPerfilCompleto = async function(providerId) {
-        alert(`🚧 PERFIL DO PRESTADOR ID: ${providerId}\n\nEsta funcionalidade completa de link direto está sendo sincronizada com o seu modal de serviços.`);
-    };
-}
+// 🎯 MOTOR DE ACESSO DIRETO V2026: Localiza o prestador pelo link da URL e abre a proposta na hora
+window.verPerfilCompleto = async function(providerId) {
+    if (!providerId) return;
+    
+    console.log("🔍 [Link Direto] Buscando card do prestador em tela: " + providerId);
+    
+    // Aguarda 300ms para garantir que a lista realtime do Firebase já desenhou os cards no DOM
+    setTimeout(() => {
+        // Encontra o card que tem o atributo do ID do prestador que veio na URL
+        const cardPrestador = document.querySelector(`[data-provider-id="${providerId}"]`);
+        
+        if (cardPrestador) {
+            // Acha o botão "VER E SOLICITAR" de dentro desse card específico
+            const btnSolicitar = cardPrestador.querySelector('button[onclick*="abrirModalSolicitacao"]');
+            
+            if (btnSolicitar) {
+                console.log("⚡ [Link Direto] Prestador localizado! Disparando modal de contratação...");
+                btnSolicitar.click(); // Simula o clique físico para abrir o modal oficial de proposta
+            } else {
+                console.warn("⚠️ Botão de solicitação não encontrado dentro do card.");
+            }
+        } else {
+            console.warn("⚠️ Prestador do link não está online ou visível nesta categoria.");
+            alert("🎯 Atlivio: Este profissional está offline no momento. Explore a lista para encontrar outros prestadores ativos!");
+        }
+    }, 500);
+};
 
 console.log("%c✅ SERVICES.JS: Funções expostas, Link Direto integrado e estabilização V24 ativa!", "color: #10b981; font-weight: bold;");
