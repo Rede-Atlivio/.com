@@ -740,11 +740,10 @@ function renderizarGridCapas(lista) {
     if (window.lucide) window.lucide.createIcons();
 }
 
-// ✅ EXTERMINADOR CORES BI: Blindado no escopo global definitivo para impedir reescrita de outros scripts
-Object.defineProperty(window, 'reprovarCapaDireto', {
-    value: async function(id) {
-        try {
-            const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+// ✅ EXTERMINADOR CORES BI: Grava 'exterminado' de verdade no documento Firestore do prestador
+window.reprovarCapaDireto = async function(id) {
+    try {
+        const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
         if (!confirm("🚨 Deseja REALMENTE exterminar esta capa e remover do aplicativo?")) return;
 
         await updateDoc(doc(window.db, "active_providers", id), {
