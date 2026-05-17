@@ -491,11 +491,17 @@ import('./modules/governance.js').then(m => {
             if (userIntent === "home" || isToggling) userIntent = ""; 
             if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
-         // 🎯 LINK DIRETO ATIVADO: Redireciona o usuário para a vitrine principal de serviços de forma estável
+        // 🎯 LINK DIRETO ATIVADO V2026: Busca o profissional no Firebase e abre o Modal Exclusivo
             const perfilDiretoID = sessionStorage.getItem('atlivio_perfil_direto');
             if (perfilDiretoID) {
                 sessionStorage.removeItem('atlivio_perfil_direto');
-                window.switchTab('servicos'); // Direciona o cliente para a Central de Atendimento
+                
+                // Gil, chamamos a nossa função blindada que vai ler o banco e criar o modal na hora
+                setTimeout(() => {
+                    if (window.abrirModalLinkProfissional) {
+                        window.abrirModalLinkProfissional(perfilDiretoID);
+                    }
+                }, 1500);
             }
             else if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
@@ -1099,6 +1105,91 @@ window.executarAcaoUniversal = (destino) => {
     // 5. NAVEGAÇÃO PADRÃO
     if (typeof window.switchTab === 'function') {
         window.switchTab(destinoFinal);
+    }
+};
+
+// 💼 GERADOR DE PORTFÓLIO DIRETO: Puxa o prestador do banco e monta a vitrine exclusiva dele na tela
+window.abrirModalLinkProfissional = async function(providerId) {
+    if (!providerId) return;
+    
+    try {
+        // Busca as ferramentas de leitura do Firebase Firestore
+        const { doc, getDoc } = window.firebaseModules || await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        const docSnap = await getDoc(doc(window.db, "active_providers", providerId));
+        
+        if (!docSnap.exists()) {
+            return alert("🎯 Atlivio: Este profissional não foi localizado ou está offline no momento.");
+        }
+        
+        const dados = docSnap.data();
+        const nomeProf = dados.nome_profissional || dados.nome || "Prestador";
+        const coverImg = dados.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+        const avatarImg = dados.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeProf)}&background=random`;
+        const bioText = dados.bio || "Disponível para a realização de serviços com garantia de pagamento.";
+        
+        // Pega a lista de serviços cadastrados dele
+        const listaServicos = dados.services || [];
+        const temServicos = listaServicos.length > 0;
+        const mainPrice = temServicos ? `R$ ${listaServicos[0].price}` : "A Combinar";
+        const mainTitle = temServicos ? listaServicos[0].title : "Serviços Gerais";
+
+        // Remove qualquer modal duplicado antes de criar o novo para não poluir o HTML
+        document.getElementById('modal-perfil-direto-gerado')?.remove();
+
+        // Monta a estrutura do modal injetando as variáveis do banco de dados
+        const modalHtml = `
+            <div id="modal-perfil-direto-gerado" class="fixed inset-0 z-[10005] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+                <div class="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl border border-gray-100 relative flex flex-col max-h-[85vh]">
+                    
+                    <button onclick="document.getElementById('modal-perfil-direto-gerado').remove()" 
+                            class="absolute top-4 right-4 z-50 bg-red-600 text-white w-8 h-8 rounded-full font-black text-sm flex items-center justify-center shadow-lg active:scale-90 transition-all">
+                        ×
+                    </button>
+
+                    <div class="h-28 bg-gray-200 relative shrink-0">
+                        <img src="${coverImg}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-[-20px] left-6">
+                            <img src="${avatarImg}" class="w-14 h-14 rounded-full border-4 border-white shadow-md object-cover bg-white">
+                        </div>
+                    </div>
+
+                    <div class="p-6 pt-8 overflow-y-auto flex-1 text-gray-800 space-y-4 custom-scrollbar">
+                        <div>
+                            <h2 class="text-xl font-black text-blue-900 uppercase italic tracking-tighter">${nomeProf}</h2>
+                            <p class="text-[10px] text-yellow-500 font-bold mt-0.5">⭐ ${dados.rating_avg || '5.0'} • Prestador Verificado</p>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Apresentação</p>
+                            <p class="text-xs text-gray-600 leading-relaxed">${bioText}</p>
+                        </div>
+
+                        <div class="bg-blue-50/60 p-4 rounded-2xl border border-blue-100/50 flex justify-between items-center">
+                            <div>
+                                <p class="text-[9px] font-black text-blue-800 uppercase tracking-widest">${mainTitle}</p>
+                                <p class="text-[8px] text-gray-400 font-bold uppercase mt-0.5">Serviço Principal</p>
+                            </div>
+                            <span class="font-black text-green-600 text-sm bg-white px-3 py-1 rounded-xl shadow-sm border border-green-100">${mainPrice}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-5 bg-gray-50 border-t border-gray-100 shrink-0">
+                        <button onclick="document.getElementById('modal-perfil-direto-gerado').remove(); window.abrirModalSolicitacao('${providerId}', '${nomeProf}', '${temServicos ? listaServicos[0].price : 0}');" 
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-2xl text-xs uppercase tracking-widest shadow-lg transition transform active:scale-95">
+                            Contratar Profissional 🛠️
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        `;
+
+        // Injeta o modal direto dentro do body do site
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        console.log("✅ [Link Direto] Modal do perfil exclusivo injetado na tela com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao carregar modal do link direto:", error);
     }
 };
 
