@@ -720,8 +720,11 @@ function renderizarGridCapas(lista) {
     
     lista.forEach(p => {
         const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
-        const statusCapa = p.cover_status || 'pendente';
-        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800";
+        
+        // 🛡️ CORREÇÃO DE STATUS V2026: Garante que se o campo no banco vier vazio ou não existir, ele marque como 'pendente' real
+        const statusCapa = (p.cover_status && p.cover_status.trim() !== "") ? p.cover_status : 'pendente';
+        
+        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo padrão para Pendente
         if (statusCapa === 'aprovado') badgeColor = "bg-green-950 text-green-400 border-green-900";
         if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
