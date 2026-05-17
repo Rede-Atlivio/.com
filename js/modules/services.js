@@ -752,6 +752,21 @@ window.reprovarCapaDireto = async function(id) {
 };
 
 // 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Puxa o arquivo de forma anônima e lê sem corromper o Canvas
+// 🔬 CONVERSOR DE SEGURANÇA V2026: Transforma o elemento visual da tela em texto Base64 bruto na RAM
+function converterImagemParaBase64(imgElement) {
+    try {
+        const canvas = document.createElement("canvas");
+        canvas.width = imgElement.naturalWidth || imgElement.width;
+        canvas.height = imgElement.naturalHeight || imgElement.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(imgElement, 0, 0);
+        return canvas.toDataURL("image/jpeg");
+    } catch (err) {
+        console.warn("⚠️ Falha na conversão direta do Canvas: ", err.message);
+        return imgElement.src; // Retorna a origem se falhar
+    }
+}
+
 window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
