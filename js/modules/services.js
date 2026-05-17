@@ -650,6 +650,9 @@ window.salvarCapaPrestador = async (input) => {
             });
         }
 
+        // 📢 PASSO 1: Alerta imediato de início da análise da inteligência artificial
+        alert("🔍 SUA CAPA ESTÁ EM ANÁLISE! Por favor, não feche ou saia desta tela até a conclusão do processo.");
+
         // Analisa o arquivo em estado de binário puro direto da memória do dispositivo do usuário
         const resultadoIA = await Tesseract.recognize(file, 'por+eng');
         const textoLimpo = resultadoIA.data.text.trim().toLowerCase();
@@ -663,8 +666,11 @@ window.salvarCapaPrestador = async (input) => {
             // Limpa o input do arquivo para obrigar o usuário a escolher outra foto limpa
             input.value = "";
             document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
-            return alert("FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
+            return alert("❌ ANÁLISE CONCLUÍDA: FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
         }
+
+        // 🎉 VEREDITO POSITIVO: Se o código passou pelas travas, avisa o sucesso antes de mandar pro banco
+        alert("✅ ANÁLISE CONCLUÍDA: Sua capa foi aprovada pela IA e está sendo carregada no sistema!");
 
         // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SÓ EXECUTA SE PASSAR NA IA)
         const storage = getStorage();
