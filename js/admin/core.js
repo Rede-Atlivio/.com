@@ -242,6 +242,10 @@ window.switchView = async function(viewName) {
                 }
                 if (window.carregarMaestro) await window.carregarMaestro();
             }
+            // 📸 DISPARADOR DE IMAGENS V2026: Se entrou na mesa de capas, força o carregamento imediato do grid
+            if (viewName === 'mesa_capas') {
+                if (typeof initMesaCapas === 'function') await initMesaCapas();
+            }
         } catch (e) {
             console.warn(`⚠️ Módulo ${viewName} falhou ou não existe: ${e.message}`);
         }
