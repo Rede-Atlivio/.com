@@ -337,5 +337,89 @@
             if (typeof lucide !== 'undefined') lucide.createIcons(); 
         }, 500);
     </script>
+
+    <script>
+        // Função para marcar ou desmarcar todas as caixas da galeria de fotos de uma vez só
+        window.toggleSelecioneTodasCapas = function(status) {
+            document.querySelectorAll('.target-massa-capa').forEach(cb => {
+                cb.checked = status;
+            });
+            window.updateBulkBar();
+        };
+
+        // Motor sensor que intercepta a barra preta de baixo para exibir o botão vermelho exclusivo de mídias
+        const originalUpdateBulkBar = window.updateBulkBar;
+        window.updateBulkBar = function() {
+            if (typeof originalUpdateBulkBar === 'function') originalUpdateBulkBar();
+            
+            const btnCapas = document.getElementById('btn-bulk-exterminar-capas');
+            const selecionados = document.querySelectorAll('.target-massa-capa:checked').length;
+            const bar = document.getElementById('bulk-actions');
+
+            if (btnCapas) {
+                if (window.activeView === 'mesa_capas') {
+                    btnCapas.classList.remove('hidden');
+                    // Força a barra de baixo a subir na mesa de capas baseado nas caixas marcadas
+                    if (selecionados > 0) {
+                        bar.classList.remove('invisible');
+                        bar.style.transform = "translate(-50%, 0)";
+                        document.getElementById('bulk-count').innerText = selecionados;
+                    } else {
+                        bar.classList.add('invisible');
+                        bar.style.transform = "translate(-50%, 200%)";
+                    }
+                } else {
+                    btnCapas.classList.add('hidden');
+                }
+            }
+        };
+
+        // 🔥 O EXTERMINADOR EM MASSA DEFINITIVO: Remove as imagens do Firebase e notifica os infratores no celular em lote
+        window.exterminarCapasEmMassaAction = async function() {
+            const selecionados = document.querySelectorAll('.target-massa-capa:checked');
+            if (selecionados.length === 0) return alert("Nenhuma capa selecionada.");
+            
+            if (!confirm(`🚨 COMANDO ALERTA MÁXIMO: Deseja EXTERMINAR de uma vez só a imagem de capa de ${selecionados.length} prestadores?`)) return;
+            
+            try {
+                const { doc, writeBatch, collection, serverTimestamp } = window.firebaseModules;
+                const batch = writeBatch(window.db);
+                
+                selecionados.forEach(cb => {
+                    const providerId = cb.value;
+                    const ref = doc(window.db, "active_providers", providerId);
+                    
+                    // Reseta o banner para vazio e bota em reprovado
+                    batch.update(ref, {
+                        cover_image: "",
+                        cover_status: "reprovado",
+                        updated_at: serverTimestamp()
+                    });
+                    
+                    // Injeta a notificação oficial na conta de cada um deles
+                    const refNotif = doc(collection(window.db, "notifications"));
+                    batch.set(refNotif, {
+                        uid: providerId,
+                        message: "⚠️ Alerta de Perfil: Sua imagem de capa foi removida pela moderação por conter dados de contato externo (WhatsApp/Redes Sociais). Por favor, envie uma nova foto focada apenas no seu trabalho.",
+                        type: "alert",
+                        read: false,
+                        created_at: serverTimestamp()
+                    });
+                });
+                
+                await batch.commit();
+                alert(`🔥 SUCESSO: ${selecionados.length} capas foram exterminadas com sucesso e os prestadores notificados!`);
+                
+                // Limpa o seletor do topo e atualiza a aba
+                const masterCheck = document.getElementById('check-capas-all');
+                if (masterCheck) masterCheck.checked = false;
+                
+                if (typeof window.initMesaCapas === 'function') window.initMesaCapas();
+                window.updateBulkBar();
+            } catch (e) {
+                alert("Falha crítica no extermínio em massa: " + e.message);
+            }
+        };
+    </script>
 </body>
 </html>
