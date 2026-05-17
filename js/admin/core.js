@@ -684,7 +684,8 @@ async function initMesaCapas() {
     grid.innerHTML = `<div class="col-span-full p-10 text-center"><div class="loader border-t-amber-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div><p class="text-xs text-gray-400 mt-2 font-bold uppercase">Carregando Galeria de Provas...</p></div>`;
     
     try {
-        const { collection, getDocs, query, where, limit } = window.FirebaseFirestore;
+        // 🛡️ CORREÇÃO DE PONTE V2026: Aponta para a exportação real do seu admin.html (firebaseModules)
+        const { collection, getDocs, query, where, limit } = window.firebaseModules;
         // Traz os primeiros 30 prestadores que enviaram imagem de capa
         const q = query(collection(window.db, "active_providers"), where("cover_image", "!=", ""), limit(30));
         const snap = await getDocs(q);
