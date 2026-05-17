@@ -712,28 +712,24 @@ async function initMesaCapas() {
     }
 }
 
-// 🎨 Renderizador de blocos individuais limpos e focado em alta visibilidade
-// 🎨 Renderizador de blocos individuais com Checkbox de massa integrado para escala de milhões
+// 🎨 Renderizador Sincronizado V2026: Separa e desenha a mesa em seções de pendências e histórico de fraudes
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
+    if (!grid) return;
     grid.innerHTML = "";
-    
-    lista.forEach(p => {
-        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
-        
-        // 🛡️ CORREÇÃO DE STATUS V2026: Garante que se o campo no banco vier vazio ou não existir, ele marque como 'pendente' real
-        const statusCapa = (p.cover_status && p.cover_status.trim() !== "") ? p.cover_status : 'pendente';
-        
-        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo padrão para Pendente
-        if (statusCapa === 'aprovado') badgeColor = "bg-green-950 text-green-400 border-green-900";
-        if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
-        grid.innerHTML += `
+    // Separa os dois grupos em lotes limpos na memória do computador
+    const pendentes = lista.filter(p => !p.cover_status || p.cover_status === 'pendente' || p.cover_status === 'aprovado');
+    const reprovadas = lista.filter(p => p.cover_status === 'reprovado');
+
+    // Função interna reaproveitável para desenhar o HTML de cada card de prova visual
+    const gerarCardHtml = (p, statusCapa, badgeColor) => {
+        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
+        return `
             <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
                 <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
                     <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
                 </div>
-                
                 <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
                     <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
                     <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
@@ -749,7 +745,51 @@ function renderizarGridCapas(lista) {
                     </div>
                 </div>
             </div>`;
-    });
+    };
+
+    let htmlFinal = "";
+
+    // 🌟 SEÇÃO 1: Fila de Análise (Pendentes de Curadoria)
+    htmlFinal += `
+        <div class="col-span-full mb-4 mt-2">
+            <h3 class="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2 bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/10">
+                ⏳ SEÇÃO 1: FILA DE ANÁLISE ATIVA (${pendentes.length})
+            </h3>
+        </div>
+        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    `;
+    if (pendentes.length === 0) {
+        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">📭 Nenhuma capa pendente de análise na fila.</div>`;
+    } else {
+        pendentes.forEach(p => {
+            htmlFinal += gerarCardHtml(p, 'pendente', 'bg-yellow-950 text-yellow-400 border-yellow-800');
+        });
+    }
+    htmlFinal += `</div>`;
+
+    // 🚨 SEÇÃO 2: Arquivo Morto e Auditoria (Histórico de Reprovações)
+    htmlFinal += `
+        <div class="col-span-full mb-4 mt-6">
+            <h3 class="text-xs font-black text-red-400 uppercase tracking-widest flex items-center gap-2 bg-red-500/5 p-3 rounded-xl border border-red-500/10">
+                🛡️ SEÇÃO 2: ARQUIVO MORTO / AUDITORIA DE GOLPES (${reprovadas.length})
+            </h3>
+        </div>
+        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
+    `;
+    if (reprovadas.length === 0) {
+        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">🍃 Nenhum registro de extermínio arquivado ainda.</div>`;
+    } else {
+        reprovadas.forEach(p => {
+            htmlFinal += gerarCardHtml(p, 'reprovado', 'bg-red-950 text-red-400 border-red-900');
+        });
+    }
+    htmlFinal += `</div>`;
+
+    // Descarrega o bloco inteiro estruturado dentro do Grid principal da tela
+    grid.innerHTML = htmlFinal;
+
+    if (window.lucide) window.lucide.createIcons();
+}
     
     // Inicializa os ícones do Lucide caso existam elementos novos na tela
     if (window.lucide) window.lucide.createIcons();
