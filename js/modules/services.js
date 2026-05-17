@@ -625,6 +625,7 @@ export async function abrirConfiguracaoServicos() {
 }
 
 // ✅ NOVA FUNÇÃO: UPLOAD DA CAPA (CORRIGIDA)
+// ✅ NOVA FUNÇÃO: TRIAGEM PREVENTIVA COM IA + UPLOAD SEGURO V2026
 window.salvarCapaPrestador = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -632,26 +633,57 @@ window.salvarCapaPrestador = async (input) => {
     const user = auth.currentUser;
     if (!user) return alert("Erro de autenticação.");
 
-    // Preview Imediato
+    // Preview Imediato para dar retorno visual instantâneo ao prestador
     const reader = new FileReader();
     reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
     reader.readAsDataURL(file);
 
+    // 📢 PASSO 1: Alerta imediato de início da análise da inteligência artificial
+    alert("🔍 SUA CAPA ESTÁ EM ANÁLISE! Por favor, não feche ou saia desta tela até a conclusão do processo.");
+
     try {
-        // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SEGURANÇA)
-        const storage = getStorage(); // Agora chama apenas no clique
-        
-        // Upload
+        // 🧠 INJEÇÃO DO CÉREBRO: Garante que a biblioteca do Tesseract esteja carregada no app
+        if (typeof Tesseract === 'undefined') {
+            await new Promise((resolve, reject) => {
+                const scriptIA = document.createElement('script');
+                scriptIA.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+                scriptIA.onload = resolve;
+                scriptIA.onerror = () => reject(new Error("Falha ao inicializar scanner de segurança"));
+                document.head.appendChild(scriptIA);
+            });
+        }
+
+        // Analisa os pixels brutos da foto direto na RAM do dispositivo do usuário (Zero chamadas de rede)
+        const resultadoIA = await Tesseract.recognize(file, 'por+eng');
+        const textoLimpo = resultadoIA.data.text.trim().toLowerCase();
+
+        // Filtros de varredura contra dados de contato externos
+        const temNumero = /\d{4,}/.test(textoLimpo);
+        const temGatilho = textoLimpo.includes('@') || textoLimpo.includes('whats') || textoLimpo.includes('contato') || textoLimpo.includes('insta') || textoLimpo.includes('call') || textoLimpo.includes('chama');
+
+        // 🚨 VEREDITO: REPROVADO (Barra o avanço e joga a advertência na tela)
+        if (temNumero || temGatilho) {
+            input.value = ""; // Reseta o campo de arquivo
+            document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500'; // Reseta o preview
+            return alert("❌ ANÁLISE CONCLUÍDA: FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
+        }
+
+        // 🎉 VEREDITO: APROVADO (Avisa o sucesso e inicia a transferência para o Storage)
+        alert("✅ ANÁLISE CONCLUÍDA: Sua capa foi aprovada pela IA e está sendo carregada no sistema!");
+
+        // 🔥 INICIALIZAÇÃO TARDIA E DISPARO PARA A NUVEM
+        const storage = getStorage();
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
-        // Atualiza
+        // Atualiza o documento no Firestore com o link verificado e limpo
         await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
-        alert("✅ Capa atualizada com sucesso!");
+        alert("✨ Sucesso! Sua nova capa foi publicada no aplicativo.");
+
     } catch (e) {
-        console.error(e);
-        alert("Erro ao enviar imagem. Tente novamente.");
+        console.error("Falha no processamento da mídia:", e);
+        alert("Erro técnico ao processar imagem: " + e.message);
     }
 };
 
