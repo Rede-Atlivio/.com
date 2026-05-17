@@ -378,7 +378,12 @@ window.executarAcaoMassa = async (acao) => {
             batch.delete(doc(window.db, "usuarios", uid));
             batch.delete(doc(window.db, "active_providers", uid));
         } else {
-            batch.update(doc(window.db, colecaoPrincipal, uid), { status: acao === 'aprovar' ? 'aprovado' : 'banido' });
+            // 🛡️ REQUISITO DE CAPAS V2026: Se a ação disparada for vinda da mesa de capas, altera cover_status para exterminado
+            if (window.activeView === 'mesa_capas' && acao === 'banir') {
+                batch.update(doc(window.db, "active_providers", uid), { cover_status: 'exterminado' });
+            } else {
+                batch.update(doc(window.db, colecaoPrincipal, uid), { status: acao === 'aprovar' ? 'aprovado' : 'banido' });
+            }
         }
     });
 
