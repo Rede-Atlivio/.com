@@ -682,7 +682,6 @@ async function initMesaCapas() {
             prestadores.push(data);
         });
         
-       // 🛡️ ENGENHARIA DE ESCALA V2026: Dados entram puros do banco para evitar classificações falsas no carregamento
         if (prestadores.length === 0) {
             grid.innerHTML = `<div class="col-span-full p-12 text-center text-gray-500 font-bold uppercase text-xs">📭 Nenhuma imagem de capa pendente no banco de dados.</div>`;
             return;
@@ -695,19 +694,20 @@ async function initMesaCapas() {
     }
 }
 
-// 🎨 Renderizador de blocos individuais: Proteção total para o campo cover_status
+// 🎨 Renderizador de blocos individuais: Proteção de status + Botão de visualização fixo
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
+    if (!grid) return;
     grid.innerHTML = "";
     
     lista.forEach(p => {
         const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
         
-        // 🛡️ REGRA REAL DO PASSO 1: Se o campo no banco for vazio, nulo ou inexistente, nasce rigidamente como 'pendente' (Amarelo)
-        const statusCapa = (p.cover_status && p.cover_status.trim() === 'reprovado') ? 'reprovado' : 'pendente';
+        // 🛡️ RECONHECE EXTERMINADO: Se o banco estiver marcado como 'exterminado', joga a tarja vermelha
+        const statusCapa = (p.cover_status && p.cover_status.trim() === 'exterminado') ? 'exterminado' : 'pendente';
         
         let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo Padrão de Fábrica
-        if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
+        if (statusCapa === 'exterminado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
         grid.innerHTML += `
             <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
@@ -725,7 +725,8 @@ function renderizarGridCapas(lista) {
                         <div id="ocr-res-${p.id}" class="hidden mt-2 p-2 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-bold text-purple-300 whitespace-pre-wrap"></div>
                     </div>
                     <div class="flex gap-2 border-t border-white/5 pt-3">
-                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="w-full bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
+                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
+                        <a href="${p.cover_image}" target="_blank" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1">👁️ VER CAPA REAL</a>
                     </div>
                 </div>
             </div>`;
@@ -733,6 +734,22 @@ function renderizarGridCapas(lista) {
     
     if (window.lucide) window.lucide.createIcons();
 }
+
+// ✅ EXTERMINADOR CORES BI: Grava 'exterminado' de verdade no documento Firestore do prestador
+window.reprovarCapaDireto = async function(id) {
+    try {
+        const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
+        if (!confirm("🚨 Deseja REALMENTE exterminar esta capa e remover do aplicativo?")) return;
+
+        await updateDoc(doc(window.db, "active_providers", id), {
+            cover_status: "exterminado",
+            updated_at: serverTimestamp()
+        });
+        
+        alert("🗑️ Capa exterminada com sucesso!");
+        if (typeof initMesaCapas === 'function') initMesaCapas();
+    } catch (e) { alert("Erro ao exterminar: " + e.message); }
+};
 
 // 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Puxa o arquivo de forma anônima e lê sem corromper o Canvas
 window.dispararScannerLocalIA = async function() {
@@ -742,7 +759,7 @@ window.dispararScannerLocalIA = async function() {
     if(!confirm(`🤖 ATIVAR AUTO-SCANNER: Deseja ligar a IA para analisar as ${imagens.length} capas? Ela apenas mudará a cor na tela.`)) return;
     
     try {
-        await garantirTesseract();
+        await garantizarTesseract();
         alert("🧠 Cérebro neural online. Iniciando processamento de mídias...");
         
         for (let img of imagens) {
@@ -756,13 +773,11 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ ENGENHARIA BINÁRIA: Puxa a resposta do link como dados Blob puros removendo a trava Tainted Canvas
                 const respostaRede = await fetch(img.src);
                 const arquivoBlob = await respostaRede.blob();
 
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
-                // Processamento direto da RAM do computador
                 const resultado = await Tesseract.recognize(arquivoBlob, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
@@ -773,7 +788,6 @@ window.dispararScannerLocalIA = async function() {
                         const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
                         
                         if (temNumero || temGatilho) {
-                            // 🚨 SENTENÇA VISUAL: A IA apenas acende o alerta vermelho na tela, sem alterar nada no Firebase
                             resBox.innerText = `🚨 ALERTA DE CONTATO PROIBIDO:\n"${resultado.data.text.trim()}"`;
                             resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
                         } else {
@@ -809,7 +823,6 @@ window.fecharModalUniversal = function() {
 // ============================================================================
 // 🌍 CENTRAL DE CONECTIVIDADE E EXPORTAÇÕES (ÚLTIMA LINHA ABSOLUTA DO ARQUIVO)
 // ============================================================================
-// Exportação limpa e unificada para garantir estabilidade no ecossistema da Assistant
 window.auth = auth;
 window.db = db;
 window.switchView = switchView; 
