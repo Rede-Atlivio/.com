@@ -764,7 +764,8 @@ window.dispararScannerLocalIA = async function() {
     if(!confirm(`🤖 ATIVAR AUTO-SCANNER: Deseja ligar a IA para analisar as ${imagens.length} capas? Ela apenas mudará a cor na tela.`)) return;
     
     try {
-        await garantizarTesseract();
+        // 🛡️ CORREÇÃO DE SINTAXE: Chama o nome exato da função que foi declarada no arquivo
+        await garantirTesseract();
         alert("🧠 Cérebro neural online. Iniciando processamento de mídias...");
         
         for (let img of imagens) {
