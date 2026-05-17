@@ -641,14 +641,19 @@ window.salvarCapaPrestador = async (input) => {
         // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SEGURANÇA)
         const storage = getStorage(); // Agora chama apenas no clique
         
-        // Upload
+       // Upload
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
-        // Atualiza
-        await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
-        alert("✅ Capa atualizada com sucesso!");
+        // 🛡️ ENGENHARIA ANTI-TRAVA V2026: Salva a nova imagem e reseta o status para 'pendente' 
+        // Isso remove a marcação de 'reprovado' antiga e faz a nova foto nascer amarela no Admin do Gil
+        await setDoc(doc(db, "active_providers", user.uid), { 
+            cover_image: url,
+            cover_status: "pendente" 
+        }, { merge: true });
+        
+        alert("✅ Capa enviada para análise do sistema!");
     } catch (e) {
         console.error(e);
         alert("Erro ao enviar imagem. Tente novamente.");
