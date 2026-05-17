@@ -756,73 +756,57 @@ window.reprovarCapaDireto = async function(id) {
     } catch (e) { alert("Erro ao exterminar: " + e.message); }
 };
 
-// 🔍 MOTOR DE IA DO ADMIN V2026: Filtro de Reforço com Aceleração de Layout e Proteção Anti-CORS
+// 🔍 PONTE DE AUDITORIA V2026: Desvia o peso do seu PC e manda o Robô do Cloud Run analisar sem travas de CORS
 window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
     
-    if(!confirm(`🤖 FILTRO DE REFORÇO MASTER: Deseja ativar a IA para analisar em lote as ${imagens.length} capas exibidas na tela?`)) return;
+    if(!confirm(`🤖 ATIVAR ROBÔ DA NUVEM: Deseja enviar as ${imagens.length} capas para o robô do Cloud Run auditar sem pesar seu PC?`)) return;
     
-    try {
-        // Garante a injeção do script principal na árvore DOM do painel
-        await garantirTesseract();
-        alert("🧠 Cérebro de auditoria online. Iniciando varredura em lote das mídias...");
+    // 🌍 COLOQUE AQUI A URL DO SEU ROBÔ QUE O GOOGLE GEROU NA TELA ANTERIOR
+    const urlRoboCloudRun = "https://auditar-capa-ia-779043447222.us-central1.run.app"; 
+
+    alert("🛰️ Conectando com a infraestrutura do Google Cloud... Varredura iniciada.");
+    
+    for (let img of imagens) {
+        const providerId = img.id.replace('img-target-', '');
+        const resBox = document.getElementById(`ocr-res-${providerId}`);
+        const urlImagemFirebase = img.src; // Pega o link bruto da foto salvo no Firebase Storage
         
-        for (let img of imagens) {
-            const providerId = img.id.replace('img-target-', '');
-            const resBox = document.getElementById(`ocr-res-${providerId}`);
+        if (resBox) {
+            resBox.classList.remove('hidden');
+            resBox.innerText = "⚡ Enviando link para o robô na nuvem...";
+            resBox.className = "mt-2 p-2 rounded bg-blue-900/20 border border-blue-500/20 text-[9px] font-bold text-blue-400 animate-pulse";
+        }
+        
+        try {
+            // Dispara o link direto para os servidores do Cloud Run processarem
+            const resposta = await fetch(`${urlRoboCloudRun}?url=${encodeURIComponent(urlImagemFirebase)}`);
+            const resultado = await resposta.json();
             
             if (resBox) {
-                resBox.classList.remove('hidden');
-                resBox.innerText = "🧠 Inicializando scanner dedicado...";
-                resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
-            }
-            
-            try {
-                if (resBox) resBox.innerText = "⏳ Analisando pixels da imagem na tela...";
-
-                // 🚀 ESTEIRA ULTRA ACELERADA NO ADMIN: Configura o Worker de forma síncrona
-                // O uso do modo '7' obriga o motor a pular análises secundárias, focando estritamente em cadeias de texto
-                const worker = await Tesseract.createWorker('por+eng', 1, {
-                    cacheMethod: 'write',
-                    workerOptions: {
-                        tessedit_pageseg_mode: '7'
-                    }
-                });
-
-                // Analisa o elemento de imagem diretamente da memória RAM gráfica do navegador
-                const { data: { text } } = await worker.recognize(img);
-                const textoLimpo = text.trim().toLowerCase();
-                await worker.terminate(); // Coleta e libera a memória RAM do computador imediatamente
+                resBox.classList.remove('animate-pulse');
                 
-                if (resBox) {
-                    resBox.classList.remove('animate-pulse');
-                    if (textoLimpo) {
-                        const temNumero = /\d{4,}/.test(textoLimpo);
-                        const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
-                        
-                        if (temNumero || temGatilho) {
-                            resBox.innerText = `🚨 FILTRO REFORÇO: CONTATO ENCONTRADO!\n"${text.trim()}"`;
-                            resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
-                        } else {
-                            resBox.innerText = `✅ FILTRO REFORÇO: TEXTO SEGURO\n"${text.trim().substring(0,50)}..."`;
-                            resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
-                        }
-                    } else {
-                        resBox.innerText = "🍃 Imagem Limpa (Nenhum contato detectado pelo reforço)";
-                        resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
-                    }
+                if (resultado.status === 'bloqueado') {
+                    resBox.innerText = `🚨 REFORÇO DETECTOU CONTATO:\n"${resultado.texto_encontrado}"`;
+                    resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
+                } else if (resultado.status === 'seguro') {
+                    resBox.innerText = "✅ FILTRO REFORÇO: IMAGEM LIMPA E SEGURA";
+                    resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
+                } else {
+                    resBox.innerText = "🍃 Sem textos identificados.";
+                    resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
                 }
-            } catch (err) {
-                if (resBox) {
-                    resBox.innerText = "⚠️ Bloqueio de rede ou CORS ao extrair mídias.";
-                    resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
-                }
-                console.error("Engasgo na leitura do card:", err);
             }
+        } catch (err) {
+            if (resBox) {
+                resBox.innerText = "❌ Falha ao obter resposta do servidor.";
+                resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
+            }
+            console.error("Erro na rota do Cloud Run:", err);
         }
-        alert("🏁 REFORÇO CONCLUÍDO! Todas as capas em tela foram auditadas pela inteligência secundária.");
-    } catch (e) { alert("Falha crítica no barramento da IA: " + e.message); }
+    }
+    alert("🏁 AUDITORIA EM NUVEM FINALIZADA! O robô analisou tudo com sucesso.");
 };
 
 function textoInstanciaWhatsApp(txt) {
