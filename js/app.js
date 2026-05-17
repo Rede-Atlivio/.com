@@ -13,6 +13,17 @@ localStorage.setItem('atlivio_version', '2026_V60');
         console.log("%c🔗 [Indicação] Padrinho soldado com sucesso: " + refID, "color: #8b5cf6; font-weight: bold;");
     }
 })();
+
+// 🎯 [V2026] RADAR DE ACESSO DIRETO: Captura se o cliente veio pelo link exclusivo do profissional
+(function capturarPerfilProfissionalURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const providerID = urlParams.get('p');
+    if (providerID) {
+        // Salva temporariamente na sessão para o Maestro saber que deve abrir o perfil direto após o login concluir
+        sessionStorage.setItem('atlivio_perfil_direto', providerID);
+        console.log("%c🎯 [Perfil Único] Link do profissional capturado na URL: " + providerID, "color: #06b6d4; font-weight: bold;");
+    }
+})();
 // ============================================================================
 
 // ============================================================================
