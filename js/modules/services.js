@@ -891,6 +891,42 @@ try {
     }
 }
 
+// ❤️ MOTOR DE CURTIDAS ATÔMICO: Grava e remove curtidas impedindo spam de votos falsos
+window.alternarCurtidaPrestador = async function(providerId) {
+    const eleMe = auth.currentUser;
+    if (!eleMe) return alert("🔒 ACESSO RESTRITO: Faça login para poder curtir os profissionais!");
+
+    try {
+        const provRef = doc(db, "active_providers", providerId);
+        const provSnap = await getDoc(provRef);
+        
+        if (provSnap.exists()) {
+            const data = provSnap.data();
+            const curtidores = data.liked_by || [];
+            
+            // Se o meu UID já estiver lá dentro, significa que estou clicando para "descurtir"
+            if (curtidores.includes(eleMe.uid)) {
+                await setDoc(provRef, {
+                    liked_by: arrayRemove(eleMe.uid),
+                    likes_count: increment(-1)
+                }, { merge: true });
+                console.log("❤️ [Curtida] Removida do prestador: " + providerId);
+            } else {
+                // Caso contrário, adiciona o meu UID no cofre de segurança e soma +1
+                await setDoc(provRef, {
+                    liked_by: arrayUnion(eleMe.uid),
+                    likes_count: increment(1)
+                }, { merge: true });
+                console.log("❤️ [Curtida] Registrada para o prestador: " + providerId);
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao computar curtida social:", error);
+    }
+};
+
+console.log("%c✅ SERVICES.JS: Funções expostas, IA Protetora mantida e Sistema de Curtidas Ativo!", "color: #10b981; font-weight: bold;");
+
 // 🌍 EXPOSIÇÃO GLOBAL V24.1 (ESTABILIZADA)
 window.carregarServicos = carregarServicos;
 window.filtrarServicos = (cat) => carregarServicos(cat);
