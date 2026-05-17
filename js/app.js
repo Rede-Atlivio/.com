@@ -491,21 +491,28 @@ import('./modules/governance.js').then(m => {
             if (userIntent === "home" || isToggling) userIntent = ""; 
             if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
-            // 🎯 PRIORIDADE ABSOLUTA: Verifica se existe uma ordem de carregamento de perfil profissional direto
+          // 🎯 PRIORIDADE ABSOLUTA V2026: Abre o formulário de contratação direto, pulando o aviso chato
             const perfilDiretoID = sessionStorage.getItem('atlivio_perfil_direto');
             
             if (perfilDiretoID) {
-                console.log("🚀 [Maestro] Link direto detectado. Forçando abertura da Vitrine do Profissional...");
-                sessionStorage.removeItem('atlivio_perfil_direto'); // Limpa a fila para não repetir em recargas
+                console.log("🚀 [Maestro] Link direto detectado. Forçando carregamento do formulário de proposta...");
+                sessionStorage.removeItem('atlivio_perfil_direto'); // Limpa a fila para não dar loop
                 window.switchTab('servicos'); // Move o cliente para a aba de serviços
                 
-                // Aguarda o services.js estabilizar os cards e joga o modal do prestador na tela de forma automática
+                // Gil, damos 1500ms para o Firebase carregar a lista e simulamos o clique direto no botão de Proposta
                 setTimeout(() => {
-                    if (window.verPerfilCompleto) {
-                        window.verPerfilCompleto(perfilDiretoID);
+                    const cardPrestador = document.querySelector(`[data-provider-id="${perfilDiretoID}"]`);
+                    if (cardPrestador) {
+                        const btnSolicitar = cardPrestador.querySelector('button[onclick*="abrirModalSolicitacao"]');
+                        if (btnSolicitar) {
+                            console.log("⚡ [Maestro] Prestador localizado! Acionando formulário na hora...");
+                            btnSolicitar.click(); // Salta o aviso e abre a proposta limpa
+                        }
+                    } else {
+                        console.warn("⚠️ Prestador do link não localizado em tela ou offline.");
                     }
-                }, 1200);
-            } 
+                }, 1500);
+            }
             else if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
                 
