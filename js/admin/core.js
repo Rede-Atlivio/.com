@@ -764,7 +764,7 @@ window.dispararScannerLocalIA = async function() {
     if(!confirm(`🤖 ATIVAR ROBÔ DA NUVEM: Deseja enviar as ${imagens.length} capas para o robô do Cloud Run auditar sem pesar seu PC?`)) return;
     
     // 🌍 COLOQUE AQUI A URL DO SEU ROBÔ QUE O GOOGLE GEROU NA TELA ANTERIOR
-    const urlRoboCloudRun = "https://auditar-capa-ia-779043447222.us-central1.a.run.app";
+    const urlRoboCloudRun = "https://us-central1-atlivio-oficial-a1a29.cloudfunctions.net/auditar-capa-ia";
 
     alert("🛰️ Conectando com a infraestrutura do Google Cloud... Varredura iniciada.");
     
