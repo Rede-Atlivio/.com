@@ -55,41 +55,20 @@ export async function checkOnboarding(user) {
                 // 🔥 GRAVA O NOME NO AUTH
                 await updateProfile(user, { displayName: nome });
 
-               // 🔥 SOLDA DE SEGURANÇA V2026: setDoc com merge garante a criação forçada das estruturas vitais
+              // ✅ ATUALIZAÇÃO LIMPA: Atualiza apenas os campos do formulário preenchidos pelo usuário
                 await setDoc(userRef, {
-                    uid: user.uid, // Registra o ID único do passaporte do usuário
                     displayName: nome, 
                     nome: nome,
                     nome_profissional: nome, 
                     whatsapp: phone,
                     telefone: phone,
                     terms_accepted: true,
-                    onboarding_completed: true, // Garante a liberação permanente do Onboarding
+                    onboarding_completed: true,
                     onboarded_at: serverTimestamp(),
                     updated_at: serverTimestamp(),
                     status: 'ativo',
-                    perfil_completo: true,
-                    role: 'user', // Perfil padrão inicial do ecossistema
-
-                    // 🛰️ INFRAESTRUTURA DE NOTIFICAÇÃO (Push Admin)
-                    fcm_token: window.last_fcm_token || sessionStorage.getItem('atlivio_fcm') || "",
-
-                    // 📊 LEDGER & BEHAVIOR: Sincroniza os históricos e contadores de auditoria para o Admin
-                    ledger: {
-                        registros: [],
-                        total_acoes: 0
-                    },
-                    behavior: {
-                        home: { visitas: 1 },
-                        cadastro_origem: "onboarding"
-                    },
-
-                    // 💰 INFRAESTRUTURA FINANCEIRA DE ESCALA (Evita iniciar como nulo)
-                    wallet_balance: 0,
-                    wallet_bonus: 0,
-                    wallet_reserved: 0,
-                    wallet_earnings: 0
-                }, { merge: true }); // O Merge protege dados pré-existentes de links de indicação externos
+                    perfil_completo: true
+                }, { merge: true });
 
                modal.classList.add('hidden');
                 console.log("✅ Onboarding concluído. Liberando Maestro...");
