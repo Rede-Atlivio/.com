@@ -779,12 +779,11 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                const respostaRede = await fetch(img.src);
-                const arquivoBlob = await respostaRede.blob();
+                if (resBox) resBox.innerText = "🧠 Analisando pixels da tela...";
 
-                if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
-
-                const resultado = await Tesseract.recognize(arquivoBlob, 'por+eng');
+                // 🛡️ EXTRAÇÃO LOCAL V2026: Entrega a própria tag <img> da tela para o Tesseract.
+                // Isso ignora o Firebase Storage e quebra as travas de CORS do Google instantaneamente!
+                const resultado = await Tesseract.recognize(img, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
                 if (resBox) {
