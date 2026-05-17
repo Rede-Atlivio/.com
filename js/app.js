@@ -491,7 +491,22 @@ import('./modules/governance.js').then(m => {
             if (userIntent === "home" || isToggling) userIntent = ""; 
             if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
-            if (userIntent && userIntent !== "") {
+            // 🎯 PRIORIDADE ABSOLUTA: Verifica se existe uma ordem de carregamento de perfil profissional direto
+            const perfilDiretoID = sessionStorage.getItem('atlivio_perfil_direto');
+            
+            if (perfilDiretoID) {
+                console.log("🚀 [Maestro] Link direto detectado. Forçando abertura da Vitrine do Profissional...");
+                sessionStorage.removeItem('atlivio_perfil_direto'); // Limpa a fila para não repetir em recargas
+                window.switchTab('servicos'); // Move o cliente para a aba de serviços
+                
+                // Aguarda o services.js estabilizar os cards e joga o modal do prestador na tela de forma automática
+                setTimeout(() => {
+                    if (window.verPerfilCompleto) {
+                        window.verPerfilCompleto(perfilDiretoID);
+                    }
+                }, 1200);
+            } 
+            else if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
                 
                // ⏱️ DELAY DE SANEAMENTO (V61): Filtro de Identidade Atlivio
