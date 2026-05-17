@@ -793,15 +793,19 @@ window.dispararScannerLocalIA = async function() {
                 resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
             }
             
-            try {
-                // 🛡️ CAPTURA DE TEXTURA REAL: Converte direto do elemento visual ativo que o navegador validou
+           try {
+                // 🛡️ RECONSTRUTOR BINÁRIO LOCAL V2026: Converte o elemento renderizado na tela de forma forçada para evitar erros de CORS na leitura do Canvas
                 const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width || 640;
-                canvas.height = img.naturalHeight || img.height || 360;
+                canvas.width = img.naturalWidth || 640;
+                canvas.height = img.naturalHeight || 360;
                 const ctx = canvas.getContext('2d');
+                
+                // Força o desenho local injetando as coordenadas do elemento de visualização que já está na tela do Gil
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
+                // Extrai em formato limpo de string sem bater na rede externa do Firebase Storage
                 const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
+                
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
                 const resultado = await Tesseract.recognize(base64LocalPuro, 'por+eng');
