@@ -773,14 +773,24 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ TRITURADOR DE CORS LOCAL: Desenha em canvas local gerando string Base64 limpa instantaneamente
+                // 🛡️ MOTOR AGUARDADOR ASSÍNCRONO V2026: Cria uma instância isolada na memória RAM e aguarda o carregamento total antes de ler
+                const imgVirtual = new Image();
+                imgVirtual.crossOrigin = "anonymous";
+                imgVirtual.src = img.src;
+
+                // Força o sistema a aguardar o download completo dos metadados da imagem
+                await new Promise((resolve, reject) => {
+                    imgVirtual.onload = resolve;
+                    imgVirtual.onerror = () => reject(new Error("Erro ao baixar pixels"));
+                });
+
                 const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || img.width || 640;
-                canvas.height = img.naturalHeight || img.height || 360;
+                canvas.width = imgVirtual.naturalWidth || 640;
+                canvas.height = imgVirtual.naturalHeight || 360;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(imgVirtual, 0, 0, canvas.width, canvas.height);
                 
-                // Converte em texto de dados Base64 direto na memória RAM do computador
+                // Converte em dados Base64 direto do arquivo carregado e limpo na memória
                 const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
                 
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
