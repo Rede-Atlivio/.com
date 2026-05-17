@@ -625,7 +625,7 @@ export async function abrirConfiguracaoServicos() {
 }
 
 // ✅ NOVA FUNÇÃO: UPLOAD DA CAPA (CORRIGIDA)
-// ✅ NOVA FUNÇÃO: TRIAGEM PREVENTIVA COM IA + UPLOAD SEGURO V2026
+// ✅ TRIAGEM COM VELOCIDADE MÁXIMA CACHEADA + CONTROLADOR DE ANSIEDADE V2026
 window.salvarCapaPrestador = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -633,56 +633,86 @@ window.salvarCapaPrestador = async (input) => {
     const user = auth.currentUser;
     if (!user) return alert("Erro de autenticação.");
 
-    // Preview Imediato para dar retorno visual instantâneo ao prestador
+    // Captura o elemento do formulário/botão para travar múltiplos cliques do usuário ansioso
+    const containerUpload = input.parentElement;
+    const originalContent = containerUpload.innerHTML;
+
+    // 🛑 BLOQUEIO DE ANSIEDADE: Desativa visualmente o contêiner e injeta o texto de aviso contínuo
+    containerUpload.style.pointerEvents = "none";
+    containerUpload.style.opacity = "0.7";
+    
+    // Procura o texto descritivo do botão e altera em tempo real
+    const labelSelo = containerUpload.querySelector("span");
+    if (labelSelo) labelSelo.innerText = "🔄 ANALISANDO, NÃO SAIA DESTA TELA...";
+
+    // Preview Visual Imediato
     const reader = new FileReader();
     reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
     reader.readAsDataURL(file);
 
-    // 📢 PASSO 1: Alerta imediato de início da análise da inteligência artificial
-    alert("🔍 SUA CAPA ESTÁ EM ANÁLISE! Por favor, não feche ou saia desta tela até a conclusão do processo.");
-
     try {
-        // 🧠 INJEÇÃO DO CÉREBRO: Garante que a biblioteca do Tesseract esteja carregada no app
+        // 🧠 CARGA DO MOTOR SCRIPT
         if (typeof Tesseract === 'undefined') {
             await new Promise((resolve, reject) => {
-                const scriptIA = document.createElement('script');
-                scriptIA.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-                scriptIA.onload = resolve;
-                scriptIA.onerror = () => reject(new Error("Falha ao inicializar scanner de segurança"));
-                document.head.appendChild(scriptIA);
+                const s = document.createElement('script');
+                s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+                s.onload = resolve;
+                s.onerror = () => reject(new Error("Erro no sensor de triagem"));
+                document.head.appendChild(s);
             });
         }
 
-        // Analisa os pixels brutos da foto direto na RAM do dispositivo do usuário (Zero chamadas de rede)
-        const resultadoIA = await Tesseract.recognize(file, 'por+eng');
-        const textoLimpo = resultadoIA.data.text.trim().toLowerCase();
+        // 🚀 ACELERADOR MESTRE V2026: Inicializa o trabalhador forçando o cache de dicionário na memória interna do celular
+        const worker = await Tesseract.createWorker('por+eng', 1, {
+            cacheMethod: 'write', // Força gravar o cérebro da IA permanentemente no aparelho do usuário
+        });
 
-        // Filtros de varredura contra dados de contato externos
+        // Executa a leitura direta do arquivo em cache local ultra rápido
+        const { data: { text } } = await worker.recognize(file);
+        const textoLimpo = text.trim().toLowerCase();
+        await worker.terminate(); // Desliga o trabalhador para liberar memória RAM do aparelho
+
+        // Filtros estruturados contra dados de contato externos
         const temNumero = /\d{4,}/.test(textoLimpo);
         const temGatilho = textoLimpo.includes('@') || textoLimpo.includes('whats') || textoLimpo.includes('contato') || textoLimpo.includes('insta') || textoLimpo.includes('call') || textoLimpo.includes('chama');
 
-        // 🚨 VEREDITO: REPROVADO (Barra o avanço e joga a advertência na tela)
+        // 🚨 VEREDITO: REPROVADO
         if (temNumero || temGatilho) {
-            input.value = ""; // Reseta o campo de arquivo
-            document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500'; // Reseta o preview
+            // Destrava a tela e restaura o botão original para ele escolher outra imagem limpa
+            containerUpload.style.pointerEvents = "auto";
+            containerUpload.style.opacity = "1";
+            if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
+            input.value = ""; 
+            document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+            
             return alert("❌ ANÁLISE CONCLUÍDA: FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
         }
 
-        // 🎉 VEREDITO: APROVADO (Avisa o sucesso e inicia a transferência para o Storage)
-        alert("✅ ANÁLISE CONCLUÍDA: Sua capa foi aprovada pela IA e está sendo carregada no sistema!");
+        // 🎉 VEREDITO: APROVADO (Modifica o texto para indicar progresso de envio)
+        if (labelSelo) labelSelo.innerText = "⚡ APROVADO! ENVIANDO PARA O BANCO...";
 
-        // 🔥 INICIALIZAÇÃO TARDIA E DISPARO PARA A NUVEM
+        // Dispara o arquivo limpo para o Storage do Google
         const storage = getStorage();
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
-        // Atualiza o documento no Firestore com o link verificado e limpo
+        // Atualiza no banco de dados Firestore
         await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
+        
+        // Destrava e restaura o botão para o estado padrão de fábrica
+        containerUpload.style.pointerEvents = "auto";
+        containerUpload.style.opacity = "1";
+        if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
+        
         alert("✨ Sucesso! Sua nova capa foi publicada no aplicativo.");
 
     } catch (e) {
-        console.error("Falha no processamento da mídia:", e);
+        console.error("Erro na esteira de triagem:", e);
+        // Restaura a interface em caso de falhas de rede para não congelar o app
+        containerUpload.style.pointerEvents = "auto";
+        containerUpload.style.opacity = "1";
+        if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
         alert("Erro técnico ao processar imagem: " + e.message);
     }
 };
