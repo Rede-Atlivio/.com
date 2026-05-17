@@ -784,11 +784,7 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ RECONSTRUTOR DE MÍDIA V2026: Alimenta a IA usando um bypass de proxy público para triturar o bloqueio CORS do Firebase
-                const urlSeguraCors = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(img.src);
-                
-                // O cérebro da IA recebe a imagem através do túnel público purificado e lê os pixels sem bloqueios
-                const resultado = await Tesseract.recognize(urlSeguraCors, 'por+eng');
+                const resultado = await Tesseract.recognize(img.src, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
                 if (resBox) {
