@@ -787,13 +787,16 @@ window.dispararScannerLocalIA = async function() {
                 resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
             }
             
-            try {
-                const respostaRede = await fetch(img.src);
-                const arquivoBlob = await respostaRede.blob();
+           try {
+                if (resBox) resBox.innerText = "🧠 Convertendo pixels em string de texto RAM...";
 
-                if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
+                // 🛡️ ENGENHARIA ANTI-CORS V2026: Transforma a foto em código de texto puro antes de entregar à IA
+                const imagemBase64 = converterImagemParaBase64(img);
+                
+                if (resBox) resBox.innerText = "🧠 Analisando tipografia local em Base64...";
 
-                const resultado = await Tesseract.recognize(arquivoBlob, 'por+eng');
+                // O Tesseract lê a string Base64 direto da memória sem disparar nenhuma chamada HTTP
+                const resultado = await Tesseract.recognize(imagemBase64, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
                 if (resBox) {
