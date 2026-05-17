@@ -682,8 +682,7 @@ async function initMesaCapas() {
             prestadores.push(data);
         });
         
-        prestadores.sort((a, b) => (a.cover_status === 'reprovado' ? 1 : -1));
-
+       // 🛡️ ENGENHARIA DE ESCALA V2026: Dados entram puros do banco para evitar classificações falsas no carregamento
         if (prestadores.length === 0) {
             grid.innerHTML = `<div class="col-span-full p-12 text-center text-gray-500 font-bold uppercase text-xs">📭 Nenhuma imagem de capa pendente no banco de dados.</div>`;
             return;
@@ -696,18 +695,18 @@ async function initMesaCapas() {
     }
 }
 
-// 🎨 Renderizador de blocos individuais: Força tudo a nascer amarelo PENDENTE e evita erros de cascata
+// 🎨 Renderizador de blocos individuais: Proteção total para o campo cover_status
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
-    if (!grid) return;
     grid.innerHTML = "";
     
     lista.forEach(p => {
         const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
         
-        // Força o status visual a se manter como 'pendente' se não for explicitamente alterado
-        const statusCapa = (p.cover_status === 'reprovado') ? 'reprovado' : 'pendente';
-        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo padrão de fábrica
+        // 🛡️ REGRA REAL DO PASSO 1: Se o campo no banco for vazio, nulo ou inexistente, nasce rigidamente como 'pendente' (Amarelo)
+        const statusCapa = (p.cover_status && p.cover_status.trim() === 'reprovado') ? 'reprovado' : 'pendente';
+        
+        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo Padrão de Fábrica
         if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
         grid.innerHTML += `
