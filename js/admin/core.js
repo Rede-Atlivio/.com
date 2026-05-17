@@ -752,12 +752,9 @@ window.reprovarCapaDireto = async function(id) {
         });
         
         alert("🗑️ Capa exterminada com sucesso!");
-        if (typeof initMesaCapas === 'function') initMesaCapas();
+       if (typeof initMesaCapas === 'function') initMesaCapas();
     } catch (e) { alert("Erro ao exterminar: " + e.message); }
-},
-    writable: false, // Impede rigidamente que o users.js ou qualquer script sobrescreva essa função
-    configurable: false
-});
+};
 
 // 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Puxa o arquivo de forma anônima e lê sem corromper o Canvas
 window.dispararScannerLocalIA = async function() {
