@@ -684,9 +684,7 @@ async function initMesaCapas() {
     grid.innerHTML = `<div class="col-span-full p-10 text-center"><div class="loader border-t-amber-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div><p class="text-xs text-gray-400 mt-2 font-bold uppercase">Carregando Galeria de Provas...</p></div>`;
     
     try {
-        // 🛡️ CORREÇÃO DE PONTE V2026: Aponta para a exportação real do seu admin.html (firebaseModules)
         const { collection, getDocs, query, where, limit } = window.firebaseModules;
-        // Traz os primeiros 30 prestadores que enviaram imagem de capa
         const q = query(collection(window.db, "active_providers"), where("cover_image", "!=", ""), limit(30));
         const snap = await getDocs(q);
         
@@ -697,7 +695,6 @@ async function initMesaCapas() {
             prestadores.push(data);
         });
         
-        // Filtra localmente para dar prioridade a quem ainda não foi aprovado pelo robô ou está em revisão
         prestadores.sort((a, b) => (a.cover_status === 'reprovado' ? 1 : -1));
 
         if (prestadores.length === 0) {
@@ -785,28 +782,9 @@ function renderizarGridCapas(lista) {
     }
     htmlFinal += `</div>`;
 
-    // Descarrega o bloco inteiro estruturado dentro do Grid principal da tela
     grid.innerHTML = htmlFinal;
 
     if (window.lucide) window.lucide.createIcons();
-}
-    
-    // Inicializa os ícones do Lucide caso existam elementos novos na tela
-    if (window.lucide) window.lucide.createIcons();
-}
-
-// ✅ Ação rápida de aprovação visual direta do painel de capas
-async function marcarCapaAprovada(id) {
-    try {
-        const { doc, updateDoc, serverTimestamp } = window.FirebaseFirestore;
-        await updateDoc(doc(window.db, "active_providers", id), {
-            cover_status: "aprovado",
-            updated_at: serverTimestamp()
-        });
-        const card = document.getElementById(`card-capa-${id}`);
-        if (card) card.style.opacity = "0.4";
-        alert("✅ Capa aprovada com sucesso!");
-    } catch (e) { alert("Erro ao aprovar: " + e.message); }
 }
 
 // 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Extrai a imagem direto da tela e ativa auto-checkbox nas fraudes
@@ -832,20 +810,71 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ ELEMENTO DE TELA DIRETO: Captura a imagem que já passou com sucesso pela segurança do seu navegador
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width || img.naturalWidth || 640;
                 canvas.height = img.height || img.naturalHeight || 360;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
-                // Transforma o desenho em Base64 purificado localmente
                 const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
                 
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
                 const resultado = await Tesseract.recognize(base64LocalPuro, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
+                
+                if (resBox) {
+                    resBox.classList.remove('animate-pulse');
+                    if (textoLimpo) {
+                        const temNumero = /\d{4,}/.test(textoLimpo);
+                        const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
+                        
+                        if (temNumero || temGatilho) {
+                            resBox.innerText = `🚨 ALERTA DE CONTATO PROIBIDO:\n"${resultado.data.text.trim()}"`;
+                            resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
+                            
+                            if (cardCheckbox) {
+                                cardCheckbox.checked = true;
+                                window.updateBulkBar();
+                            }
+                        } else {
+                            resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,50)}..."`;
+                            resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
+                        }
+                    } else {
+                        resBox.innerText = "🍃 Imagem Limpa (Nenhum contato externo detectado)";
+                        resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
+                    }
+                }
+            } catch (err) {
+                if (resBox) {
+                    resBox.innerText = "⚠️ Bloqueio de segurança local do arquivo.";
+                    resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
+                }
+                console.error(err);
+            }
+        }
+        alert("🏁 VARREDURA COMPLETA! Desmarque as exceções e mande o comando de massa.");
+    } catch (e) { alert("Falha crítica na IA: " + e.message); }
+};
+
+function textoInstanciaWhatsApp(txt) {
+    return txt.includes('whats') || txt.includes('contato') || txt.includes('insta') || txt.includes('call') || txt.includes('chama');
+}
+
+window.fecharModalUniversal = function() {
+    const modal = document.getElementById('modal-editor');
+    if (modal) modal.classList.add('hidden');
+};
+
+// ============================================================================
+// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
+// ============================================================================
+window.auth = auth;
+window.db = db;
+window.switchView = switchView; 
+
+console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
                 
                 if (resBox) {
                     resBox.classList.remove('animate-pulse');
