@@ -696,18 +696,21 @@ async function initMesaCapas() {
     }
 }
 
-// 🎨 Renderizador Sincronizado V2026: Separa e desenha a mesa em seções de pendências e histórico de fraudes
+// 🎨 Renderizador de blocos individuais: Força tudo a nascer amarelo PENDENTE e evita erros de cascata
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
     if (!grid) return;
     grid.innerHTML = "";
-
-    const pendentes = lista.filter(p => !p.cover_status || p.cover_status === 'pendente' || p.cover_status === 'aprovado');
-    const reprovadas = lista.filter(p => p.cover_status === 'reprovado');
-
-    const gerarCardHtml = (p, statusCapa, badgeColor) => {
+    
+    lista.forEach(p => {
         const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
-        return `
+        
+        // Força o status visual a se manter como 'pendente' se não for explicitamente alterado
+        const statusCapa = (p.cover_status === 'reprovado') ? 'reprovado' : 'pendente';
+        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo padrão de fábrica
+        if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
+
+        grid.innerHTML += `
             <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
                 <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
                     <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
@@ -727,47 +730,8 @@ function renderizarGridCapas(lista) {
                     </div>
                 </div>
             </div>`;
-    };
-
-    let htmlFinal = "";
-
-    // 🌟 SEÇÃO 1: Fila de Análise Active
-    htmlFinal += `
-        <div class="col-span-full mb-4 mt-2">
-            <h3 class="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2 bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/10">
-                ⏳ SEÇÃO 1: FILA DE ANÁLISE ATIVA (${pendentes.length})
-            </h3>
-        </div>
-        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-    `;
-    if (pendentes.length === 0) {
-        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">📭 Nenhuma capa pendente de análise na fila.</div>`;
-    } else {
-        pendentes.forEach(p => {
-            htmlFinal += gerarCardHtml(p, 'pendente', 'bg-yellow-950 text-yellow-400 border-yellow-800');
-        });
-    }
-    htmlFinal += `</div>`;
-
-    // 🚨 SEÇÃO 2: Arquivo Morto
-    htmlFinal += `
-        <div class="col-span-full mb-4 mt-6">
-            <h3 class="text-xs font-black text-red-400 uppercase tracking-widest flex items-center gap-2 bg-red-500/5 p-3 rounded-xl border border-red-500/10">
-                🛡️ SEÇÃO 2: ARQUIVO MORTO / AUDITORIA DE GOLPES (${reprovadas.length})
-            </h3>
-        </div>
-        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
-    `;
-    if (reprovadas.length === 0) {
-        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">🍃 Nenhum registro de extermínio arquivado ainda.</div>`;
-    } else {
-        reprovadas.forEach(p => {
-            htmlFinal += gerarCardHtml(p, 'reprovado', 'bg-red-950 text-red-400 border-red-900');
-        });
-    }
-    htmlFinal += `</div>`;
-
-    grid.innerHTML = htmlFinal;
+    });
+    
     if (window.lucide) window.lucide.createIcons();
 }
 
