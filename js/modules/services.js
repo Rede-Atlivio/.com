@@ -1,843 +1,824 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-// CONFIGURAÇÃO FIREBASE
-const firebaseConfig = { apiKey: "AIzaSyCj89AhXZ-cWQXUjO7jnQtwazKXInMOypg", authDomain: "atlivio-oficial-a1a29.firebaseapp.com", projectId: "atlivio-oficial-a1a29", storageBucket: "atlivio-oficial-a1a29.firebasestorage.app", messagingSenderId: "887430049204", appId: "1:887430049204:web:d205864a4b42d6799dd6e1" };
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-// 🚀 MOTOR DE LOGIN: Configurado para sempre perguntar a conta (Ideal para celular)
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: 'select_account' });
-// 🚀 AJUSTE CELULAR: Força o Google a sempre perguntar qual conta usar
-provider.setCustomParameters({ prompt: 'select_account' });
-const ADMIN_EMAIL = "contatogilborges@gmail.com";
-
-// 🌍 CONFIGURAÇÃO INICIAL DE DADOS
-// Estas variáveis não dependem de funções e podem ficar aqui no topo
-window.currentDataMode = 'real';
-window.activeView = 'dashboard';
-// ============================================================================
-// INICIALIZAÇÃO SEGURA
-// ============================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    const safeListener = (id, event, func) => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener(event, func);
+import { db, auth } from '../config.js';
+import { 
+    collection, query, where, getDocs, onSnapshot, doc, getDoc, 
+    updateDoc, setDoc, deleteDoc, addDoc, arrayUnion, arrayRemove, 
+    increment, limit, serverTimestamp, orderBy 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// 🌍 TRADUTOR GLOBAL ATLIVIO (INJEÇÃO IMEDIATA)
+window.traduzirStatus = (s) => {
+    if (!s) return '---';
+    const mapa = {
+        'pending': '⏳ Novo Pedido',
+        'accepted': '✅ Aceito / Em Chat',
+        'confirmed_hold': '🔒 Acordo Fechado',
+        'in_progress': '🛠️ Em Execução',
+        'completed': '✨ Concluído',
+        'cancelled': '❌ Cancelado',
+        'negotiation_closed': '🤝 Encerrado',
+        'expired': '⏲️ Expirado',
+        'ativo': 'Ativo',
+        'rascunho': 'Rascunho'
     };
+    const statusLimpo = s.toString().toLowerCase().trim();
+    return mapa[statusLimpo] || s;
+};
+// ✅ Importação do Storage (Mas sem inicializar aqui para não travar)
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-    safeListener('btn-login', 'click', loginAdmin);
-    // 🚪 LOGOUT COMPLETO: Limpa a sessão e recarrega a página para o Login Gate
-    safeListener('btn-logout', 'click', () => {
-    if(confirm("Deseja realmente sair do sistema?")) {
-        logoutAdmin();
-    }
-});
-    safeListener('mode-real', 'click', () => setDataMode('real'));
-    safeListener('mode-demo', 'click', () => setDataMode('demo'));
-    safeListener('btn-refresh', 'click', () => switchView(window.activeView));
+// 🔥 1. TABELA DE INTELIGÊNCIA DE MERCADO (Âncoras Premium Inclusas)
+export const SERVICOS_PADRAO = [
+    { category: 'eventos', title: 'Garçom', price: 120 },
+    { category: 'eventos', title: 'Barman', price: 150 },
+    { category: 'eventos', title: 'Copeira', price: 110 },
+    { category: 'eventos', title: 'Churrasqueiro', price: 200 },
+    { category: 'eventos', title: 'Segurança de evento', price: 180 },
+    { category: 'eventos', title: 'Pacote Completo (Bar + Garçons + Limpeza)', price: 1000, level: 'premium' },
+    { category: 'eventos', title: 'Produção e Organização de Evento', price: 1000, level: 'premium' },
+    { category: 'musica', title: 'Músico solo', price: 250 },
+    { category: 'musica', title: 'DJ Profissional com Estrutura', price: 500, level: 'premium' },
+    { category: 'musica', title: 'Banda para Casamento / Evento', price: 500, level: 'premium' },
+    { category: 'audiovisual', title: 'Fotógrafo', price: 250 },
+    { category: 'audiovisual', title: 'Filmagem e Aftermovie Corporativo', price: 1000, level: 'premium' },
+    { category: 'audiovisual', title: 'Gestão de Tráfego Mensal', price: 500, level: 'premium' },
+    { category: 'limpeza', title: 'Diarista', price: 130 },
+    { category: 'residenciais', title: 'Reforma Pequena (Pacote)', price: 1000, level: 'premium' },
+    { category: 'transporte', title: 'Transporte para Eventos (Van/Executivo)', price: 700, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Som e Iluminação Profissional', price: 1000, level: 'premium' },
+    { category: 'aluguel', title: 'Aluguel de Palco e Tendas', price: 1000, level: 'premium' },
+    { category: 'tecnologia', title: 'Desenvolvimento de Site / Landing Page', price: 500, level: 'premium' }
+];
 
-    // Navegação
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            e.currentTarget.classList.add('active');
-            switchView(e.currentTarget.getAttribute('data-view'));
-        });
-    });
+// ⚡ INJEÇÃO GLOBAL IMEDIATA PARA MATAR ERROS DE REFERÊNCIA NO REQUEST.JS
+window.SERVICOS_PADRAO = SERVICOS_PADRAO;
 
-    const fecharTudo = () => {
-        const modal = document.getElementById('modal-editor');
-        const content = document.getElementById('modal-content');
-        if (modal) modal.classList.add('hidden');
-        if (content) {
-            content.style.pointerEvents = 'auto';
-            content.style.opacity = '1';
-            content.innerHTML = '';
-        }
-    };
-    window.fecharModalUniversal = fecharTudo;
+// CATEGORIAS E VALORES MÍNIMOS (FONTE DE VERDADE FINANCEIRA)
+export const CATEGORIAS_ATIVAS = [
+    { id: 'eventos', label: '🍸 Eventos & Festas', icon: '🍸', minPrice: 120 },
+    { id: 'residenciais', label: '🏠 Serviços Residenciais', icon: '🏠', minPrice: 150 },
+    { id: 'limpeza', label: '🧹 Limpeza & Organização', icon: '🧹', minPrice: 130 },
+    { id: 'transporte', label: '🚗 Transporte (Viagens/Frete)', icon: '🚗', minPrice: 60 },
+    { id: 'musica', label: '🎵 Música & Entretenimento', icon: '🎵', minPrice: 250 },
+    { id: 'audiovisual', label: '📸 Audiovisual & Criação', icon: '📸', minPrice: 300 },
+    { id: 'tecnologia', label: '💻 Tecnologia & Digital', icon: '💻', minPrice: 150 },
+    { id: 'aulas', label: '🧑‍🏫 Aulas & Educação', icon: '🧑‍🏫', minPrice: 80 },
+    { id: 'beleza', label: '💆 Saúde & Beleza', icon: '💆', minPrice: 100 },
+    { id: 'pets', label: '🐶 Pets & Cuidados', icon: '🐶', minPrice: 50 },
+    { id: 'aluguel', label: '🏗 Aluguel de Itens', icon: '🏗', minPrice: 150 },
+    { id: 'gerais', label: '🤝 Serviços Gerais / Bicos', icon: '🤝', minPrice: 100 }
+];
 
-    document.addEventListener('click', (e) => {
-        if(e.target.closest('#btn-close-modal') || e.target.id === 'modal-editor') fecharTudo();
-    });
-    document.addEventListener('keydown', (e) => { if(e.key === "Escape") fecharTudo(); });
+// 🔥 INJEÇÃO GLOBAL: Garante que o Chat.js consiga ler as travas de preço
+window.CATEGORIAS_ATIVAS = CATEGORIAS_ATIVAS;
+let servicesUnsubscribe = null;
 
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.email.toLowerCase() === ADMIN_EMAIL) unlockAdmin();
-        else lockAdmin();
-    });
-});
+// ============================================================================
+// 1. VITRINE (CLIENTE)
+// ============================================================================
+export async function carregarServicos(filtroCategoria = null) {
+    // 🔍 1. TENTA ACHAR O LOCAL
+    let container = document.getElementById('lista-prestadores-realtime') || document.getElementById('lista-servicos');
+    let containerFiltros = document.getElementById('category-filters');
+    
+    // 🚑 2. AUTO-FIX: SE NÃO ACHAR, CRIA O HTML NA HORA
+    if (!container) {
+        console.warn("⚠️ Container de serviços ausente. Gerando estrutura visual...");
+        
+        // Tenta achar a aba pai onde os serviços devem ficar
+        const areaAlvo = document.getElementById('view-contratar') || document.getElementById('servicos-cliente');
+        
+        if (areaAlvo) {
+            // Cria a barra de filtros se não existir
+            if (!containerFiltros) {
+                containerFiltros = document.createElement('div');
+                containerFiltros.id = 'category-filters';
+                containerFiltros.className = "mb-4 hidden animate-fade"; // CSS padrão
+                areaAlvo.prepend(containerFiltros);
+            }
 
-function setDataMode(mode) {
-    window.currentDataMode = mode;
-    const btnReal = document.getElementById('mode-real');
-    const btnDemo = document.getElementById('mode-demo');
-    if (btnReal && btnDemo) {
-        if (mode === 'real') {
-            btnReal.className = "px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 text-white shadow-lg transition";
-            btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
+            // Cria o Container (Grid) dos Cards
+            container = document.createElement('div');
+            container.id = 'lista-servicos';
+            container.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pb-24 animate-fade";
+            areaAlvo.appendChild(container);
         } else {
-            btnReal.className = "px-3 py-1 rounded text-[10px] font-bold text-gray-400 hover:text-white transition";
-            btnDemo.className = "px-3 py-1 rounded text-[10px] font-bold bg-purple-600 text-white shadow-lg transition";
-        }
-    }
-    switchView(window.activeView);
-}
-
-// 🔑 LOGIN MESTRE: Exposto globalmente para o botão do HTML
-window.loginAdmin = async () => { 
-    try { 
-        await signInWithPopup(auth, provider); 
-    } catch (e) { 
-        console.error("Erro no login:", e.message); 
-    } 
-};
-function logoutAdmin() { signOut(auth).then(() => location.reload()); }
-
-function unlockAdmin() {
-    const ids = ['login-gate', 'admin-sidebar', 'admin-main'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            if (id === 'login-gate') el.classList.add('hidden');
-            else el.classList.remove('hidden');
-        }
-    });
-    // Direciona para o Dashboard assim que o Admin desbloqueia
-    switchView('dashboard');
-
-    // 📡 CARGA FORÇADA: Importa o arquivo de automação imediatamente no login para o radar funcionar
-    import('./automation.js?v=' + Date.now()).then(() => {
-        console.log("🛰️ Módulo de Automação injetado com sucesso.");
-        // Após carregar o arquivo, aguarda 1 segundo para ligar o radar automaticamente
-        setTimeout(() => {
-            if (typeof window.ativarGatilhoChatRealtime === 'function') {
-                window.ativarGatilhoChatRealtime();
-                console.log("🛡️ Sentinela: Vigilância iniciada.");
-            }
-        }, 1000);
-    }).catch(e => console.error("❌ Falha ao carregar motor de automação no login:", e));
-}
-
-function lockAdmin() {
-    const ids = ['login-gate', 'admin-sidebar', 'admin-main'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            if (id === 'login-gate') el.classList.remove('hidden');
-            else el.classList.add('hidden');
-        }
-    });
-}
-
-// ============================================================================
-// ROTEADOR MESTRE V2026 (ESTABILIDADE TOTAL)
-// ============================================================================
-window.switchView = async function(viewName) {
-    window.activeView = viewName;
-    console.log(`🚀 Navegando para: ${viewName}`);
-    
-  // Lista de todas as salas (views) registradas no sistema de escala
-   // 🧹 FAXINA MESTRE V2026 (PROTEÇÃO TOTAL)
-    // Limpa qualquer ID que comece com 'view-' (Automático) 
-    // + Garante o 'display: none !important' para evitar sobreposição.
-    document.querySelectorAll('[id^="view-"]').forEach(v => {
-        v.classList.add('hidden');
-        v.style.setProperty('display', 'none', 'important');
-    });
-    
-   // 🛡️ PROTEÇÃO: Ativação Automática da Assistant e Vigilância no Dashboard
-    if (viewName === 'dashboard') {
-        setTimeout(() => {
-            // Liga a inteligência da Assistant
-            if (typeof window.renderAssistant === 'function') {
-                window.renderAssistant('assistant-container');
-            }
-            // Liga o motor de busca de pendências
-            if (typeof window.executarVigilanciaAtiva === 'function') {
-                window.executarVigilanciaAtiva();
-            }
-        }, 300);
-    }
-    
-    const titleEl = document.getElementById('page-title');
-    if(titleEl) titleEl.innerText = viewName.toUpperCase();
-
-    let moduleFile, containerId;
-    
-    // 2. DEFINIR ROTA (SINCRONIA FINANCEIRA V2026)
-    // Gil, aqui o sistema decide qual arquivo carregar e qual DIV mostrar na tela.
-    if (viewName === 'dashboard') { 
-        moduleFile = './dashboard.js'; 
-        containerId = 'view-dashboard'; 
-    }
-    // 📸 NOVA ROTA MESA DE CAPAS V2026: Aponta para a div da Folha de Provas e usa a inteligência do users.js
-    else if (viewName === 'mesa_capas') { moduleFile = './users.js'; containerId = 'view-mesa_capas'; }
-    else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
-    else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
-    else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
-    else if (viewName === 'opportunities') { moduleFile = './opportunities.js'; containerId = 'view-list'; }
-    else if (viewName === 'products') { moduleFile = './products.js'; containerId = 'view-products'; } // <--- LINHA NOVA AQUI!
-    else if (viewName === 'automation') { 
-        moduleFile = './automation.js'; 
-        containerId = 'view-automation';
-    }
-    else if (viewName === 'maestro') { 
-        moduleFile = './automation.js'; 
-        containerId = 'view-maestro';
-        // 🚀 CARGA DE SENSORES: Garante que as funções de gatilho estejam no window
-        import('./automation.js?v=' + Date.now()).catch(e => console.warn("Erro ao carregar sensores:", e));
-    }
-    else if (viewName === 'finance') { moduleFile = './finance.js'; containerId = 'view-finance'; }
-    else if (viewName === 'settings') { 
-        moduleFile = './settings.js'; 
-        containerId = 'view-settings';
-        import('./automation.js?v=' + Date.now()).catch(e => console.warn("Erro ao pré-carregar automation:", e));
-    }
-    // 🏦 BANCO CENTRAL ATLIX: Motor de Economia Isolado
-    else if (viewName === 'economy') { 
-        moduleFile = './economy.js'; 
-        containerId = 'view-economy'; 
-    }
-    else if (viewName === 'support') { moduleFile = './support.js'; containerId = 'view-support'; }
-    else if (viewName === 'audit') { moduleFile = './audit.js'; containerId = 'view-audit'; }
-    // 📺 Gestão de Conteúdo: Separação entre App do Cliente e Tutoriais Internos
-    else if (viewName === 'canal_atlivio') { moduleFile = './canal.js'; containerId = 'view-canal_atlivio'; }
-    else if (viewName === 'tutorials') { moduleFile = './tutorials_admin.js'; containerId = 'view-tutorials'; }
-    else if (viewName === 'governance') { moduleFile = './governance.js'; containerId = 'view-governance'; }
-// 💡 Se o arquivo governance.js estiver solto dentro da pasta /js/admin/, o código acima está certo.
-// 💡 Se você moveu ele para /js/admin/modules/, use: './modules/governance.js'
-    
-    // 3. MOSTRAR CONTAINER
-    if(containerId) {
-        const el = document.getElementById(containerId);
-       if(el) {
-            el.classList.remove('hidden');
-            el.style.setProperty('display', 'block', 'important'); // Ativa APENAS a correta
-            console.log(`✅ Interface liberada: ${containerId}`);
-        } else {
-            console.error(`❌ ERRO FATAL: Container HTML '${containerId}' não encontrado! Verifique admin.html`);
-            const fallback = document.getElementById('view-list');
-            if(fallback) fallback.classList.remove('hidden');
-        }
-    }
-
-    // 4. CARREGAR INTELIGÊNCIA (JS)
-    if (moduleFile) {
-        try {
-            const module = await import(`${moduleFile}?v=${Date.now()}`);
-           if (module.init) await module.init(viewName);
-
-            // GATILHO MAESTRO V2.0: Sincroniza a interface visual
-            if (viewName === 'maestro') {
-                const led = document.getElementById('status-robo-led');
-                const txt = document.getElementById('status-robo-txt');
-                const isAtivo = !!window.unsubscribeGatilhoChat;
-
-                if (led && txt) {
-                    led.className = isAtivo ? "w-4 h-4 rounded-full bg-green-500 shadow-[0_0_15px_#22c55e]" : "w-4 h-4 rounded-full bg-red-600 animate-pulse";
-                    txt.innerText = isAtivo ? "Sistema Ativo" : "Offline";
-                }
-                if (window.carregarMaestro) await window.carregarMaestro();
-            }
-            // 📸 DISPARADOR DE IMAGENS V2026: Se entrou na mesa de capas, força o carregamento imediato do grid
-            if (viewName === 'mesa_capas') {
-                if (typeof initMesaCapas === 'function') await initMesaCapas();
-            }
-        } catch (e) {
-            console.warn(`⚠️ Módulo ${viewName} falhou ou não existe: ${e.message}`);
-        }
-    }
-};
-// --- CONTROLE DA BARRA DE AÇÕES EM MASSA ---
-window.updateBulkBar = () => { 
-    const checked = document.querySelectorAll('.row-checkbox:checked'); 
-    const count = checked.length; 
-    const bar = document.getElementById('bulk-actions'); 
-    const countEl = document.getElementById('bulk-count');
-
-    if(countEl) countEl.innerText = count; 
-
-    if(count > 0) {
-        bar.classList.add('visible');
-        bar.classList.remove('invisible');
-        bar.style.transform = "translate(-50%, 0)"; // Faz subir
-    } else {
-        bar.classList.remove('visible');
-        bar.classList.add('invisible');
-        bar.style.transform = "translate(-50%, 200%)"; // Faz sumir
-    }
-};
-// --- ABRE O MENU DE AÇÕES EM MASSA (EXCLUIR, BANIR, APROVAR) ---
-window.abrirMenuAcoesMassa = () => {
-    const selecionados = document.querySelectorAll('.row-checkbox:checked');
-    const count = selecionados.length;
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
-    
-    if (!modal || !content) return;
-
-    modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = `CONTROLE EM MASSA (${count})`;
-
-    // FINANCEIRO REMOVIDO DAQUI PARA EVITAR PONTAS SOLTAS
-    content.innerHTML = `
-        <div class="p-6 bg-slate-800/50 rounded-xl border border-slate-700">
-            <p class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-widest text-center">Gestão de Status e Banco</p>
-            <div class="grid grid-cols-1 gap-3">
-                <button onclick="window.executarAcaoMassa('aprovar')" class="bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">✅ Aprovar Todos</button>
-                <button onclick="window.executarAcaoMassa('banir')" class="bg-amber-600 hover:bg-amber-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">🚫 Banir / Suspender</button>
-                <div class="h-px bg-slate-700 my-2"></div>
-                <button onclick="window.executarAcaoMassa('excluir')" class="bg-red-600 hover:bg-red-500 text-white py-4 rounded-xl font-black text-xs uppercase shadow-lg transition">🗑️ EXCLUIR DEFINITIVAMENTE (DUPLO)</button>
-            </div>
-            <p class="text-[9px] text-gray-500 mt-4 text-center">A exclusão removerá dados de 'usuarios' e 'active_providers' simultaneamente.</p>
-        </div>
-    `;
-};
-
-// --- 🆕 LOGICA V2026 PARA O BOTÃO "+ NOVO" (CORE BRIDGE) ---
-// Gil, aqui o sistema decide qual formulário abrir baseado na aba que você está olhando.
-window.abrirModalCriarNovo = () => {
-    const view = window.activeView;
-    const modal = document.getElementById('modal-editor');
-    const content = document.getElementById('modal-content');
-    if (!modal || !content) return;
-
-    modal.classList.remove('hidden');
-    document.getElementById('modal-title').innerText = `NOVO REGISTRO: ${view.toUpperCase()}`;
-
-    // 🎯 SE ESTIVER NA ABA DE MISSÕES
-    if (view === 'missions') {
-        if (window.abrirCriadorMissaoAtlas) {
-            // Chama a função elegante que criamos no js/admin/missions.js
-            window.abrirCriadorMissaoAtlas();
-        } else {
-            content.innerHTML = `<p class="text-center text-red-400 py-10">Erro: Motor de Missões não carregado. Recarregue a página.</p>`;
-        }
-    } 
-    // 🛠️ SE ESTIVER NA ABA DE PRESTADORES
-    else if (view === 'services') {
-        content.innerHTML = `
-            <div class="space-y-4">
-                <p class="text-[10px] text-blue-400 font-bold uppercase mb-2">Cadastro Manual de Prestador</p>
-                <input type="text" id="new-prov-uid" placeholder="Cole o UID do Usuário" class="inp-editor">
-                <input type="text" id="new-prov-nome" placeholder="Nome Profissional" class="inp-editor">
-                <input type="text" id="new-prov-cat" placeholder="Categoria (Ex: Encanador)" class="inp-editor">
-                <button onclick="window.salvarNovoPrestador()" class="w-full bg-blue-600 py-3 rounded-xl font-bold uppercase text-xs shadow-lg">Criar Prestador</button>
-            </div>`;
-    } 
-    // 🚪 CASO CONTRÁRIO (FALLBACK)
-    else {
-        content.innerHTML = `
-            <div class="py-10 text-center">
-                <span class="text-4xl">🚧</span>
-                <p class="text-gray-400 mt-4 text-xs italic">A criação manual para '${view}' deve ser feita via Robô ou Firebase direto.</p>
-            </div>`;
-    }
-};
-
-window.salvarNovoPrestador = async () => {
-    const uid = document.getElementById('new-prov-uid').value.trim();
-    const nome = document.getElementById('new-prov-nome').value.trim();
-    const cat = document.getElementById('new-prov-cat').value.trim();
-    
-    if(!uid || !nome) return alert("UID e Nome são obrigatórios.");
-
-    const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    
-    try {
-        await setDoc(doc(window.db, "active_providers", uid), {
-            uid: uid,
-            nome_profissional: nome,
-            category: cat,
-            status: 'aprovado',
-            is_online: true,
-            created_at: serverTimestamp()
-        });
-        alert("✅ Prestador criado!");
-        window.fecharModalUniversal();
-        window.switchView('services');
-    } catch(e) { alert("Erro: " + e.message); }
-};
-
-// --- EXECUTOR REAL DAS AÇÕES ---
-window.executarAcaoMassa = async (acao) => {
-    const selecionados = document.querySelectorAll('.row-checkbox:checked');
-    if (selecionados.length === 0) return;
-    if (!confirm(`Confirmar [${acao.toUpperCase()}] em ${selecionados.length} registros?`)) return;
-
-    const { writeBatch, doc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    const batch = writeBatch(window.db);
-    const colecaoPrincipal = window.activeView === 'users' ? 'usuarios' : 'active_providers';
-
-    selecionados.forEach(cb => {
-        const uid = cb.value;
-        if (acao === 'excluir') {
-            batch.delete(doc(window.db, "usuarios", uid));
-            batch.delete(doc(window.db, "active_providers", uid));
-        } else {
-            batch.update(doc(window.db, colecaoPrincipal, uid), { status: acao === 'aprovar' ? 'aprovado' : 'banido' });
-        }
-    });
-
-    await batch.commit();
-    window.fecharModalUniversal();
-    window.switchView(window.activeView);
-};
-// --- SALVAMENTO AVANÇADO (COM TRATAMENTO NUMÉRICO PARA SALDO) ---
-window.saveModalData = async () => { 
-    try { 
-        const { updateDoc, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        
-        const id = window.currentEditId;
-        const col = window.currentEditColl;
-        const updates = { updated_at: serverTimestamp() };
-
-        // Pega todos os inputs que o editor criou dinamicamente
-        const inputs = document.querySelectorAll('#modal-content input');
-        
-        inputs.forEach(input => {
-            const key = input.id.replace('field-', '');
-            let val = input.value;
-
-            // 💎 REGRA DE OURO V2026: Filtro de Tipagem Automática
-            // Gil, isso impede que o banco de dados salve "texto" onde deveria ser "número".
-            const camposNumericos = [
-                'wallet_balance', 'wallet_reserved', 'wallet_bonus', 
-                'validade_pix_meses', 'validade_bonus_meses',
-                'latitude', 'longitude', 'radius', 'reward', 'offer_value'
-            ];
-            if (camposNumericos.includes(key)) {
-                // Força a conversão para número decimal puro para o GPS e Financeiro funcionar
-                updates[key] = val === "" ? null : parseFloat(val); 
-            } else {
-                updates[key] = val;
-            }
-
-            // 🔐 SEGURANÇA B2B: Trava de Perfil para Missões
-            // Gil, aqui marcamos missões novas como oficiais do sistema (Admin Master)
-            if (col === 'missions' && !id) { 
-                updates.owner_role = 'admin_master'; 
-                updates.b2b_verified = true;
-            }
-        });
-
-        await updateDoc(doc(window.db, col, id), updates);
-        
-        alert("✅ Dados e Créditos ATLIX atualizados com sucesso!");
-        window.fecharModalUniversal();
-        window.switchView(window.activeView); 
-    } catch(e) {
-        alert("❌ Erro ao salvar: " + e.message);
-    } 
-};
-
-// ============================================================================
-// ✅ PONTE ADMINISTRATIVA: LIQUIDAÇÃO VIA CHAT CORE (ATLIVIO V50)
-// ============================================================================
-// ✅ PONTE ADMINISTRATIVA OTIMIZADA PARA MASSA
-window.finalizarManualmente = async (orderId) => {
-    try {
-        // ✅ V79: Caminho corrigido para a estrutura [js/admin] -> [js/modules]
-        const chatModule = await import('../modules/chat.js?v=' + Date.now());
-        // Executa e aguarda a promessa. Lança erro para o loop de massa capturar se falhar.
-        await chatModule.finalizarServicoPassoFinalAction(orderId, true);
-        console.log(`✅ Ordem ${orderId} liquidada.`);
-        return true;
-    } catch (e) {
-        console.error(`❌ Falha na liquidação manual (${orderId}):`, e);
-        throw e; // Repassa o erro para o Motor de Massa decidir o que fazer
-    }
-};
-
-// ⚡ MOTOR DE LIQUIDAÇÃO EM MASSA (PASSO 0 - SEGURO)
-window.liquidarTodasExpiradas = async () => {
-    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-    if (!confirm("⚠️ AÇÃO EM MASSA: Deseja liquidar TODOS os serviços em ANDAMENTO com mais de 12h?")) return;
-
-    try {
-        // Filtra apenas o que está em andamento. Disputas são ignoradas por segurança.
-        const q = query(collection(window.db, "orders"), where("status", "==", "in_progress"), where("system_step", "==", 3));
-        const snap = await getDocs(q);
-        
-        let sucessos = 0, falhas = 0;
-        let listaFalhas = [];
-
-        for (const d of snap.docs) {
-            try {
-                const p = d.data();
-                const inicio = p.real_start?.toDate ? p.real_start.toDate() : new Date(p.real_start);
-                const decorridoH = (Date.now() - inicio.getTime()) / (1000 * 60 * 60);
-
-                if (decorridoH >= 12) {
-                    await window.finalizarManualmente(d.id);
-                    sucessos++;
-                }
-            } catch (innerError) {
-                falhas++;
-                listaFalhas.push(`ID ${d.id}: ${innerError}`);
-            }
-        }
-
-        alert(`PROCESSO FINALIZADO:\n✅ Sucessos: ${sucessos}\n❌ Falhas: ${falhas}`);
-        window.switchView('dashboard');
-    } catch (e) { alert("Erro no motor de massa: " + e.message); }
-};
-
-// ============================================================================
-// ♻️ AÇÃO MASTER REFUND: ESTORNO ADMINISTRATIVO (ATLIVIO V43)
-// ============================================================================
-window.reembolsarManualmente = async (orderId) => {
-    const motivoPrivado = prompt("📝 MOTIVO INTERNO (Para Auditoria):");
-    if (!motivoPrivado) return;
-
-    const motivoPublico = prompt("⚖️ RESUMO PARA OS USUÁRIOS (Ex: Descumprimento de regras):", "Decisão administrativa após análise de evidências.");
-    if (!motivoPublico) return;
-
-    if (!confirm("⚠️ MASTER REFUND: Deseja estornar o valor integral para o CLIENTE?")) return;
-
-    const { runTransaction, doc, collection, serverTimestamp, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-
-    try {
-        await runTransaction(window.db, async (transaction) => {
-            const orderRef = doc(window.db, "orders", orderId);
-            const orderSnap = await transaction.get(orderRef);
-            if (!orderSnap.exists()) throw "Ordem não encontrada.";
-            
-            const pedido = orderSnap.data();
-            const resCliente = parseFloat(pedido.value_reserved_client || 0);
-            const resProvider = parseFloat(pedido.value_reserved_provider || 0);
-
-            const clientRef = doc(window.db, "usuarios", pedido.client_id);
-            const providerRef = doc(window.db, "usuarios", pedido.provider_id);
-
-            const [cSnap, pSnap] = await Promise.all([
-                transaction.get(clientRef),
-                transaction.get(providerRef)
-            ]);
-
-            // 1. Estorna as Reservas para seus respectivos donos originais
-            transaction.update(clientRef, { 
-                wallet_reserved: Math.max(0, (cSnap.data().wallet_reserved || 0) - resCliente),
-                wallet_balance: increment(resCliente) // Devolve apenas o que era do cliente
-            });
-            transaction.update(providerRef, { 
-                wallet_reserved: Math.max(0, (pSnap.data().wallet_reserved || 0) - resProvider),
-                wallet_balance: increment(resProvider) // Devolve apenas o que era do prestador
-            });
-            
-            // 2. Cancela a Ordem com marcação de reembolso
-            transaction.update(orderRef, {
-                status: 'cancelled',
-                system_step: 4,
-                completed_at: serverTimestamp(),
-                finalizado_por: 'admin',
-                admin_decision_type: 'refund',
-                admin_decision_notes: motivoPrivado,
-                admin_public_reason: motivoPublico
-            });
-
-            // 3. Log de Arbitragem no Chat
-            transaction.set(doc(collection(window.db, `chats/${orderId}/messages`)), {
-                text: `⚖️ MEDIAÇÃO ATLIVIO: Serviço cancelado com estorno total ao cliente. \n\nVeredito: ${motivoPublico}`,
-                sender_id: 'system',
-                timestamp: serverTimestamp()
-            });
-        });
-
-        alert("♻️ REEMBOLSO PROCESSADO COM SUCESSO!");
-        if(window.activeView === 'dashboard') window.switchView('dashboard');
-    } catch (e) {
-        console.error(e);
-        alert("Erro no Refund: " + e);
-    }
-};
-
-// ☢️ COMANDO MASTER: DISPARAR LIMPEZA GLOBAL (FORCE UPDATE NOS USUÁRIOS)
-window.dispararLimpezaGlobal = async function() {
-    if (!confirm("⚠️ ATENÇÃO: Isso forçará TODOS os usuários logados no app a limparem o cache e recarregarem agora. Confirmar?")) return;
-    
-    try {
-        const { doc, setDoc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        await setDoc(doc(window.db, "settings", "deploy"), {
-            force_reset_timestamp: serverTimestamp(),
-            reason: "Limpeza de Sistema e Cache V22",
-            admin_by: "Gil Borges"
-        }, { merge: true });
-        
-        alert("🚀 COMANDO DE LIMPEZA ENVIADO! Os usuários serão resetados em tempo real.");
-    } catch (e) {
-        alert("Erro ao disparar limpeza: " + e.message);
-    }
-};
-
-// ============================================================================
-// 🎼 MOTOR DISPARADOR MAESTRO (MARKETING INTERNO V25)
-// ============================================================================
-
-// 🚀 MOTOR 1: DISPARO INTERNO (Aparece apenas com o App aberto)
-window.dispararMaestroInterno = async () => {
-    // 1. Busca o conteúdo que você digitou no campo de texto (JSON)
-    const scriptArea = document.getElementById('maestro-mass-msg'); 
-    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
-
-    try {
-        const confirmacao = confirm("🔥 Disparar comando interno para todos?");
-        if (!confirmacao) return;
-
-        const { collection, getDocs, writeBatch, doc, serverTimestamp } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const usuariosSnap = await getDocs(collection(window.db, "usuarios"));
-        let batch = writeBatch(window.db);
-
-        usuariosSnap.forEach((uDoc) => {
-            batch.set(doc(window.db, "maestro_commands", uDoc.id), {
-                msg: scriptArea.value,
-                aba: document.getElementById('maestro-mass-action').value,
-                timestamp: serverTimestamp()
-            });
-        });
-
-        await batch.commit();
-        alert("✅ Disparo Interno realizado!");
-    } catch (e) { alert("Erro: " + e.message); }
-}; // <-- AQUI FECHA A FUNÇÃO INTERNA CORRETAMENTE
-
-// 🔔 MOTOR 2: DISPARO EXTERNO (PADRÃO GOOGLE V1)
-// 🔔 NOVO MOTOR EXTERNO (CONECTADO AO DESPACHANTE GOOGLE V1)
-window.dispararMaestroExterno = async () => {
-    const scriptArea = document.getElementById('maestro-mass-msg');
-    if (!scriptArea || !scriptArea.value.trim()) return alert("❌ Digite uma mensagem!");
-
-    try {
-        if (!confirm("🔔 Enviar notificação oficial via Motor de Nuvem?")) return;
-
-        const { collection, getDocs, query, where } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        const { getFunctions, httpsCallable } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js");
-
-        const snap = await getDocs(query(collection(window.db, "usuarios"), where("push_enabled", "==", true)));
-        if (snap.empty) return alert("⚠️ Nenhum usuário com Push ativo no banco.");
-
-        // LIGAÇÃO COM O MOTOR QUE SUBIMOS NO TERMINAL
-        const functions = getFunctions(app);
-        const enviarNotificacaoV1 = httpsCallable(functions, 'enviarNotificacaoV1');
-
-        let totalEnviado = 0;
-        for (const uDoc of snap.docs) {
-            const user = uDoc.data();
-            if (user.fcm_token) {
-                // Chama o motor seguro passando os dados
-                await enviarNotificacaoV1({
-                    titulo: "Atlivio Oficial",
-                    mensagem: scriptArea.value,
-                    tokenDispositivo: user.fcm_token
-                });
-                totalEnviado++;
-            }
-        }
-        alert(`✅ SUCESSO!\nO motor disparou ${totalEnviado} notificações.`);
-   } catch (e) {
-        alert("❌ Erro no motor de notificações externas: " + e.message);
-    }
-};
-
-// 🛰️ LOG DE SEGURANÇA: Confirma que o motor mestre está pronto para escala de milhões
-console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado.");
-
-// ==========================================================================
-// 📸 MÓDULO MESA DE CURADORIA DE CAPAS V2026 + SCANNER IA LOCAL (TESSERACT)
-// ==========================================================================
-
-const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-let tesseractCarregado = false;
-
-function garantirTesseract() {
-    if (tesseractCarregado) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = TESSERACT_SCRIPT_URL;
-        script.onload = () => { tesseractCarregado = true; resolve(); };
-        script.onerror = () => reject(new Error("Falha ao carregar motor OCR Tesseract"));
-        document.head.appendChild(script);
-    });
-}
-
-// 🔋 Inicializador da Mesa de Capas: Busca os prestadores ativos do Firebase
-async function initMesaCapas() {
-    const grid = document.getElementById('grid-mesa-capas');
-    if (!grid) return;
-    
-    grid.innerHTML = `<div class="col-span-full p-10 text-center"><div class="loader border-t-amber-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div><p class="text-xs text-gray-400 mt-2 font-bold uppercase">Carregando Galeria de Provas...</p></div>`;
-    
-    try {
-        const { collection, getDocs, query, where, limit } = window.firebaseModules;
-        const q = query(collection(window.db, "active_providers"), where("cover_image", "!=", ""), limit(30));
-        const snap = await getDocs(q);
-        
-        let prestadores = [];
-        snap.forEach(doc => {
-            const data = doc.data();
-            data.id = doc.id;
-            prestadores.push(data);
-        });
-        
-        if (prestadores.length === 0) {
-            grid.innerHTML = `<div class="col-span-full p-12 text-center text-gray-500 font-bold uppercase text-xs">📭 Nenhuma imagem de capa pendente no banco de dados.</div>`;
+            // Se nem a aba existir, aí é erro fatal
+            console.error("❌ ERRO CRÍTICO: Não encontrei a aba 'view-contratar' para desenhar.");
             return;
         }
-        
-        renderizarGridCapas(prestadores);
-    } catch (e) {
-        console.error("Erro na Mesa de Capas:", e);
-        grid.innerHTML = `<div class="col-span-full p-10 text-center text-red-500 font-bold text-xs">❌ Erro técnico ao sincronizar fotos: ${e.message}</div>`;
     }
+
+    const isVitrineVisible = container.offsetParent !== null;
+    if(containerFiltros) {
+        if(isVitrineVisible) {
+            containerFiltros.classList.remove('hidden');
+            if(containerFiltros.innerHTML.trim() === "") {
+                containerFiltros.innerHTML = `
+                    <div class="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                        <button onclick="window.filtrarServicos('todos')" class="bg-slate-900 text-white px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap shadow-md">Todos</button>
+                        ${CATEGORIAS_ATIVAS.map(cat => `
+                            <button onclick="window.filtrarServicos('${cat.label}')" class="bg-white text-gray-600 border border-gray-200 px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap hover:bg-blue-50 transition">
+                                ${cat.icon} ${cat.label.split(' ')[1]}...
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        } else {
+            containerFiltros.classList.add('hidden');
+        }
+    }
+
+    container.innerHTML = `<div class="loader mx-auto border-blue-500 mt-10"></div>`;
+
+    let q = query(collection(db, "active_providers"), where("status", "==", "aprovado"));
+    if (servicesUnsubscribe) servicesUnsubscribe();
+
+servicesUnsubscribe = onSnapshot(q, (snapshot) => {
+        let servicos = [];
+        snapshot.forEach((doc) => {
+            let data = doc.data();
+            data.id = doc.id;
+            // 🔥 NOVO: Calcula a Pontuação de Relevância (Algoritmo do Feed)
+            data.score = calcularRelevancia(data); 
+            servicos.push(data);
+        });
+
+        // 🔥 NOVO: Ordenação por Score (Quem tem mais pontos aparece primeiro)
+        servicos.sort((a, b) => b.score - a.score);
+
+        if (filtroCategoria && filtroCategoria !== 'todos') {
+            servicos = servicos.filter(s => 
+                s.services && s.services.some(sub => sub.category.includes(filtroCategoria) || sub.category === filtroCategoria)
+            );
+        }
+        renderizarCards(servicos, container);
+    });
 }
 
-// 🎨 Renderizador de blocos individuais: Proteção de status + Botão de visualização fixo
-function renderizarGridCapas(lista) {
-    const grid = document.getElementById('grid-mesa-capas');
-    if (!grid) return;
-    grid.innerHTML = "";
-    
-    lista.forEach(p => {
-        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
-        
-        // 🛡️ RECONHECE EXTERMINADO: Se o banco estiver marcado como 'exterminado', joga a tarja vermelha
-        const statusCapa = (p.cover_status && p.cover_status.trim() === 'exterminado') ? 'exterminado' : 'pendente';
-        
-        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800"; // Amarelo Padrão de Fábrica
-        if (statusCapa === 'exterminado') badgeColor = "bg-red-950 text-red-400 border-red-900";
+// 🧠 NOVO: ALGORITMO DE RELEVÂNCIA (Calcula os pontos para o ranking)
+function calcularRelevancia(user) {
+    let score = 0;
 
-        grid.innerHTML += `
-            <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
-                <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
-                    <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
-                </div>
-               <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <img src="${p.cover_image}" crossorigin="anonymous" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
-                    <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
-                </div>
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                    <div class="mb-3">
-                        <h4 class="text-xs font-black text-white truncate uppercase">${nome}</h4>
-                        <p class="text-[9px] text-gray-500 font-mono truncate mt-0.5">ID: ${p.id}</p>
-                        <div id="ocr-res-${p.id}" class="hidden mt-2 p-2 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-bold text-purple-300 whitespace-pre-wrap"></div>
+    // 1. Simulados vão para o final da fila
+    if (user.is_demo) return -100;
+
+    // 2. Online ganha destaque máximo (prioridade)
+    if (user.is_online) score += 500;
+
+    // 3. Avaliação (Estrelas * 20 pontos)
+    score += (user.rating_avg || 5.0) * 20;
+
+    // 4. Nível de Serviço (Premium > Pro > Basic)
+    if (user.service_level === 'premium') score += 100;
+    else if (user.service_level === 'pro') score += 50;
+
+    // 5. Verificado ganha bônus
+    if (user.is_verified) score += 30;
+
+    return score;
+}
+
+function renderizarCards(servicos, container) {
+    container.innerHTML = "";
+    if (servicos.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-12 opacity-50"><p>Nenhum profissional encontrado.</p></div>`;
+        return;
+    }
+
+    servicos.forEach(user => {
+        try {
+            const servicosLista = user.services || [];
+            const temServicos = servicosLista.length > 0;
+            const mainService = temServicos ? servicosLista[0] : { category: 'Geral', price: 'A Combinar', title: 'Serviço' };
+            
+            // 🏷️ LOGICA MULTI-SERVIÇOS:
+            const totalOutros = servicosLista.length - 1;
+            const badgeMulti = totalOutros > 0 ? `<span class="bg-blue-100 text-blue-600 text-[7px] font-black px-1.5 py-0.5 rounded-md ml-1">+${totalOutros} OPÇÕES</span>` : "";
+            
+            const nomeProf = user.nome_profissional || user.nome || "Prestador";
+            const precoDisplay = mainService.price ? `R$ ${mainService.price}` : 'A Combinar';
+            const tituloServico = mainService.title || mainService.category;
+            
+            const isOnline = user.is_online === true;
+            const isDemo = user.is_demo === true;
+
+            // --- LÓGICA DE STATUS (BOLINHA ONLINE/OFFLINE) ---
+            let statusClass = isOnline ? "" : "grayscale opacity-75";
+            let statusText = isOnline ? "ONLINE" : "OFFLINE";
+            let statusDot = isOnline ? "bg-green-500 animate-pulse" : "bg-gray-400";
+            
+            if(isDemo) {
+                statusText = "SIMULADO";
+                statusDot = "bg-orange-400";
+                statusClass += " border-orange-200";
+            }
+
+            // --- 🔥 NOVO: LÓGICA DE NÍVEIS E SELOS ---
+            let seloNivel = "";
+            let bordaCard = "border-gray-100"; // Borda padrão
+            
+            if (user.service_level === 'premium') {
+                seloNivel = `<span class="bg-black text-yellow-400 text-[8px] font-black px-2 py-0.5 rounded border border-yellow-500 uppercase shadow-sm">💎 PREMIUM</span>`;
+                bordaCard = "border-yellow-400 shadow-md ring-1 ring-yellow-100"; // Destaque Dourado
+            } else if (user.service_level === 'pro') {
+                seloNivel = `<span class="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded uppercase shadow-sm">⚡ PRO</span>`;
+                bordaCard = "border-blue-200 shadow-sm"; // Destaque Azul
+            }
+
+            // --- IMAGENS ---
+            const coverImg = user.cover_image || 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+            const avatarImg = user.foto_perfil || `https://ui-avatars.com/api/?name=${encodeURIComponent(nomeProf)}&background=random`;
+
+            // --- AÇÕES DE CLIQUE ---
+            const clickActionPerfil = isDemo 
+                ? `alert('🚧 PERFIL SIMULADO\\nEste é um exemplo visual do MVP.')` 
+                : `window.verPerfilCompleto('${user.id}')`;
+
+            const clickActionSolicitar = isDemo 
+                ? `alert('🚧 AÇÃO BLOQUEADA\\nNão é possível contratar prestadores simulados.')` 
+                : `(async (btn) => { 
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = 'Aguarde...';
+                    btn.disabled = true;
+                    window.lastOpenedOrderId = null; 
+                    if(window.unsubscribeChat) { window.unsubscribeChat(); window.unsubscribeChat = null; }
+                    await window.abrirModalSolicitacao('${user.id}', '${nomeProf}', '${mainService.price}');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                })(this)`;
+
+            // --- HTML DO CARD ---
+            container.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-sm border ${bordaCard} overflow-hidden relative ${statusClass} transition hover:shadow-lg flex flex-col h-full animate-fadeIn group">
+                    
+                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer">
+                        <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                        
+                        <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
+                            ${seloNivel}
+                            ${user.is_verified ? '<span class="bg-green-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">✓ VERIFICADO</span>' : ''}
+                        </div>
+                        
+                        <div class="absolute bottom-[-16px] left-3 flex items-end">
+                            <img src="${avatarImg}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
+                        </div>
                     </div>
-                    <div class="flex gap-2 border-t border-white/5 pt-3">
-                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
-                        <a href="${p.cover_image}" target="_blank" class="flex-1 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all flex items-center justify-center gap-1">👁️ VER CAPA REAL</a>
+
+                    <div class="p-3 pt-5 flex-1 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="pr-1">
+                                <h3 class="text-gray-800 font-bold text-xs truncate max-w-[120px] leading-tight">${nomeProf}</h3>
+                                <div class="flex items-center gap-1 text-[9px] text-yellow-500">
+                                    <span>⭐ ${user.rating_avg || 5.0}</span>
+                                    <span class="text-gray-300">(${user.services_count || 0} Serviços)</span>
+                                </div>
+                            </div>
+                            <span class="font-black text-green-600 text-xs whitespace-nowrap bg-green-50 px-2 py-0.5 rounded">${precoDisplay}</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                             <p class="text-[10px] font-bold text-blue-900 uppercase truncate flex items-center">
+                                ${tituloServico} ${badgeMulti}
+                             </p>
+                             <p class="text-[9px] text-gray-400 line-clamp-1">${mainService.description || user.bio || 'Disponível para serviços.'}</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 pt-2 border-t border-gray-50 mt-auto">
+                            <div class="flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>
+                                <span class="text-[8px] font-bold text-gray-400 uppercase">${statusText}</span>
+                            </div>
+                            <button onclick="${clickActionSolicitar}" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[9px] font-black shadow hover:bg-slate-800 flex-1 transition transform active:scale-95 uppercase tracking-tighter">
+                                VER E SOLICITAR
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>`;
+            `;
+        } catch (err) {
+            console.warn("Erro ao renderizar card:", err);
+        }
+    });
+}
+
+export function switchServiceSubTab(tabName) {
+    ['contratar', 'andamento', 'historico'].forEach(t => {
+        const elView = document.getElementById(`view-${t}`);
+        const elBtn = document.getElementById(`subtab-${t}-btn`);
+        if(elView) elView.classList.add('hidden');
+        if(elBtn) {
+            elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
+            elBtn.classList.add('text-gray-400');
+        }
     });
     
-    if (window.lucide) window.lucide.createIcons();
-}
+    const targetView = document.getElementById(`view-${tabName}`);
+    const targetBtn = document.getElementById(`subtab-${tabName}-btn`);
+    
+    if(targetView) {
+        targetView.classList.remove('hidden');
+        targetView.style.setProperty('display', 'block', 'important');
+    }
+    if(targetBtn) {
+        targetBtn.classList.remove('text-gray-400');
+        targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
+    }
 
-// ✅ EXTERMINADOR CORES BI: Grava 'exterminado' de verdade no documento Firestore do prestador
-window.reprovarCapaDireto = async function(id) {
-    try {
-        const { doc, updateDoc, serverTimestamp } = window.firebaseModules;
-        if (!confirm("🚨 Deseja REALMENTE exterminar esta capa e remover do aplicativo?")) return;
-
-        await updateDoc(doc(window.db, "active_providers", id), {
-            cover_status: "exterminado",
-            updated_at: serverTimestamp()
-        });
-        
-        alert("🗑️ Capa exterminada com sucesso!");
-        if (typeof initMesaCapas === 'function') initMesaCapas();
-    } catch (e) { alert("Erro ao exterminar: " + e.message); }
-};
-
-// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Puxa o arquivo de forma anônima e lê sem corromper o Canvas
-// 🔬 CONVERSOR DE SEGURANÇA V2026: Transforma o elemento visual da tela em texto Base64 bruto na RAM
-function converterImagemParaBase64(imgElement) {
-    try {
-        const canvas = document.createElement("canvas");
-        canvas.width = imgElement.naturalWidth || imgElement.width;
-        canvas.height = imgElement.naturalHeight || imgElement.height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(imgElement, 0, 0);
-        return canvas.toDataURL("image/jpeg");
-    } catch (err) {
-        console.warn("⚠️ Falha na conversão direta do Canvas: ", err.message);
-        return imgElement.src; // Retorna a origem se falhar
+    // 🔥 GATILHO DE CARGA REALTIME V24 (PÓS-SANEAMENTO)
+    if (tabName === 'andamento') {
+        console.log("⏳ Iniciando escuta de pedidos ativos...");
+        window.carregarPedidosAtivos();
+    }
+    if (tabName === 'historico') {
+        console.log("📜 Recuperando histórico purificado...");
+        window.carregarHistorico();
     }
 }
 
-window.dispararScannerLocalIA = async function() {
-    const imagens = document.querySelectorAll('.target-ocr-img');
-    if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
-    
-    if(!confirm(`🤖 ATIVAR AUTO-SCANNER: Deseja ligar a IA para analisar as ${imagens.length} capas? Ela apenas mudará a cor na tela.`)) return;
-    
-    try {
-        await garantizarTesseract();
-        alert("🧠 Cérebro neural online. Iniciando processamento de mídias...");
-        
-        for (let img of imagens) {
-            const providerId = img.id.replace('img-target-', '');
-            const resBox = document.getElementById(`ocr-res-${providerId}`);
-            
-            if (resBox) {
-                resBox.classList.remove('hidden');
-                resBox.innerText = "⏳ Convertendo fluxo de mídias de rede...";
-                resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
-            }
-            
-           try {
-                if (resBox) resBox.innerText = "🧠 Analisando pixels liberados da tela...";
+// ============================================================================
+// 3. GESTÃO DO PRESTADOR (PAINEL + ANTI-GOLPE)
+// ============================================================================
 
-                // Com o crossorigin="anonymous" ativo na tag, o Tesseract lê o elemento img sem bloqueios
-                const resultado = await Tesseract.recognize(img, 'por+eng');
-                const textoLimpo = resultado.data.text.trim().toLowerCase();
-                
-                if (resBox) {
-                    resBox.classList.remove('animate-pulse');
-                    if (textoLimpo) {
-                        const temNumero = /\d{4,}/.test(textoLimpo);
-                        const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
-                        
-                        if (temNumero || temGatilho) {
-                            resBox.innerText = `🚨 ALERTA DE CONTATO PROIBIDO:\n"${resultado.data.text.trim()}"`;
-                            resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
-                        } else {
-                            resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,50)}..."`;
-                            resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
-                        }
-                    } else {
-                        resBox.innerText = "🍃 Imagem Limpa (Nenhum contato externo detectado)";
-                        resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
-                    }
-                }
-            } catch (err) {
-                if (resBox) {
-                    resBox.innerText = "⚠️ Bloqueio de segurança local do arquivo.";
-                    resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
-                }
-                console.error(err);
-            }
-        }
-        alert("🏁 VARREDURA COMPLETA! Analise os resultados e dê a sentença final.");
-    } catch (e) { alert("Falha crítica na IA: " + e.message); }
-};
+export function switchProviderSubTab(tabName) {
+    ['radar', 'ativos', 'historico'].forEach(t => {
+        const elView = document.getElementById(`pview-${t}`);
+        const elBtn = document.getElementById(`ptab-${t}-btn`);
+        if(elView) elView.classList.add('hidden');
+        if(elBtn) elBtn.classList.remove('active', 'text-blue-900', 'border-blue-600');
+    });
+    
+    const targetView = document.getElementById(`pview-${tabName}`);
+    const targetBtn = document.getElementById(`ptab-${tabName}-btn`);
 
-function textoInstanciaWhatsApp(txt) {
-    return txt.includes('whats') || txt.includes('contato') || txt.includes('insta') || txt.includes('call') || txt.includes('chama');
+    if(targetView) targetView.classList.remove('hidden');
+    if(targetBtn) targetBtn.classList.add('active', 'text-blue-900', 'border-blue-600');
+
+    // 🔥 GATILHO DE CARGA PRESTADOR V23.1
+    if (tabName === 'ativos') {
+        console.log("📡 Buscando Pedidos Ativos...");
+        window.carregarPedidosPrestador();
+    }
+    if (tabName === 'historico') {
+        console.log("📜 Buscando Histórico Profissional...");
+        window.carregarHistoricoPrestador();
+    }
 }
 
-window.fecharModalUniversal = function() {
-    const modal = document.getElementById('modal-editor');
-    if (modal) modal.classList.add('hidden');
+// ============================================================================
+// 2. PEDIDOS E HISTÓRICO (VERSÃO BLINDADA V13.0)
+// ============================================================================
+
+// --- VISÃO DO CLIENTE (QUEM CONTRATA) ---
+export async function carregarPedidosAtivos() {
+    const view = document.getElementById('view-andamento');
+    const container = document.getElementById('meus-pedidos-andamento');
+    if (!container || !view) return;
+    
+    view.style.setProperty('display', 'block', 'important');
+    view.classList.remove('hidden');
+    if (!auth.currentUser) { setTimeout(carregarPedidosAtivos, 500); return; }
+    
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusVivos = ['pending', 'accepted', 'confirmed_hold', 'in_progress', 'negotiation_closed', 'expired', 'completed'];
+        let ativos = [];
+        snap.forEach(d => { 
+            const p = d.data();
+            const sB = p.status ? p.status.toString().toLowerCase().trim() : '';
+            if(statusVivos.includes(sB)) {
+                ativos.push({id: d.id, ...p});
+                if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...p});
+            }
+        });
+        if (ativos.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">Nenhum pedido ativo.</p>`; return; }
+        ativos.forEach(p => {
+            const statusPT = window.traduzirStatus(p.status);
+            container.innerHTML += `<div onclick="window.abrirChatPedido('${p.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center animate-fadeIn">
+                <div><h3 class="font-bold text-gray-800 text-sm">${p.provider_name || 'Prestador'}</h3><p class="text-[10px] text-gray-500 uppercase">R$ ${p.offer_value} • ${statusPT}</p></div><span>💬</span></div>`;
+        });
+    });
+}
+
+// VISÃO CLIENTE: HISTÓRICO (V24 - ESTABILIZADO)
+export async function carregarHistorico() {
+    const container = document.getElementById('meus-pedidos-historico') || document.getElementById('view-historico');
+    if(!container) return;
+    
+    // 🛡️ SINAL DE NÃO PERTURBE: Aguarda a UI estabilizar antes de renderizar
+    if (container.offsetParent === null) { 
+        setTimeout(carregarHistorico, 50); 
+        return; 
+    }
+
+    if (!auth.currentUser) { setTimeout(carregarHistorico, 500); return; }
+
+    const q = query(collection(db, "orders"), where("client_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusHist = ['completed', 'archived', 'negotiation_closed', 'cancelled', 'expired'];
+        let cont = 0;
+        snap.forEach(d => {
+            const o = d.data();
+            const sB = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusHist.includes(sB)) {
+                cont++;
+                const dataObj = o.completed_at || o.created_at;
+                const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
+                container.innerHTML += `<div class="bg-white p-3 rounded-xl mb-2 border border-gray-100 flex justify-between items-center shadow-sm animate-fadeIn">
+                    <div><p class="font-bold text-xs text-gray-700">${(o.provider_name || 'Prestador').replace(/'/g, "")}</p><p class="text-[9px] text-gray-400 uppercase">${dataTxt} • ${o.status}</p></div>
+                    <div class="text-right"><span class="block font-black text-green-600 text-xs">R$ ${o.offer_value}</span><button onclick="window.abrirModalAvaliacao('${d.id}', '${o.provider_id}', '${(o.provider_name || 'Prestador').replace(/'/g, "")}')" class="text-[9px] text-blue-600 font-bold underline uppercase mt-1">Avaliar ⭐</button></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6 italic">Histórico limpo.</p>`;
+    });
+}
+
+// --- VISÃO DO PRESTADOR ---
+export async function carregarPedidosPrestador() {
+    const container = document.getElementById('lista-chamados-ativos');
+    if(!container) return;
+    if (!auth.currentUser) { setTimeout(carregarPedidosPrestador, 500); return; }
+
+    const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusAtivos = ["pending", "accepted", "confirmed_hold", "in_progress", "negotiation_closed"];
+        let cont = 0;
+       snap.forEach(d => {
+            const o = d.data();
+            const sB = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusAtivos.includes(sB)) {
+                cont++;
+                if (window.verificarVidaUtilChat) window.verificarVidaUtilChat({id: d.id, ...o});
+                const color = o.status === 'in_progress' ? "bg-blue-100 text-blue-700" : (o.status === 'pending' ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700");
+                const mapaStatusProv = { 'pending': 'Novo Pedido', 'accepted': 'Em Chat', 'confirmed_hold': 'Acordo Fechado', 'in_progress': 'Em Execução' };
+                const txt = mapaStatusProv[o.status] || 'Pendente';
+                container.innerHTML += `<div onclick="window.abrirChatPedido('${d.id}')" class="bg-white p-3 rounded-xl border border-blue-100 shadow-sm mb-2 cursor-pointer flex justify-between items-center hover:bg-gray-50 animate-fadeIn">
+                    <div><h3 class="font-bold text-xs text-gray-800">${o.client_name || 'Cliente'}</h3><p class="text-[10px] text-gray-500">${o.location || 'Local a combinar'}</p></div>
+                    <div class="text-right"><span class="block font-black text-green-600 text-xs">R$ ${o.offer_value}</span><span class="text-[8px] px-2 py-0.5 rounded-full ${color} uppercase font-bold">${txt}</span></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Sem pedidos ativos no radar.</p>`;
+    });
+}
+// VISÃO DO PRESTADOR HISTÓRICO (V24 - ESTABILIZADO)
+export async function carregarHistoricoPrestador() {
+    const container = document.getElementById('lista-chamados-historico');
+    if(!container) return;
+
+    // 🛡️ SINAL DE NÃO PERTURBE
+    if (container.offsetParent === null) { 
+        setTimeout(carregarHistoricoPrestador, 50); 
+        return; 
+    }
+
+    if (!auth.currentUser) { setTimeout(carregarHistoricoPrestador, 500); return; }
+
+    const q = query(collection(db, "orders"), where("provider_id", "==", auth.currentUser.uid), orderBy("created_at", "desc"));
+    onSnapshot(q, (snap) => {
+        container.innerHTML = "";
+        const statusFinal = ['completed', 'archived', 'negotiation_closed', 'cancelled'];
+        let cont = 0;
+        snap.forEach(d => {
+            const o = d.data();
+            const sB = o.status ? o.status.toString().toLowerCase().trim() : '';
+            if (statusFinal.includes(sB)) {
+                cont++;
+                const dataObj = o.completed_at || o.created_at;
+                const dataTxt = dataObj && typeof dataObj.toDate === 'function' ? dataObj.toDate().toLocaleDateString() : "---";
+                container.innerHTML += `<div class="bg-green-50 p-3 rounded-xl mb-2 border border-green-100 flex justify-between items-center animate-fadeIn">
+                    <div><h3 class="font-bold text-xs text-green-900">${(o.client_name || 'Cliente').replace(/['"]/g, "")}</h3><p class="text-[10px] text-green-700">Finalizado em ${dataTxt} • <span class="uppercase">CONCLUÍDO ✨</span></p></div>
+                    <div class="text-right"><span class="block font-black text-green-700 text-xs">+ R$ ${o.offer_value}</span><button onclick="window.abrirModalAvaliacao('${d.id}', '${o.client_id}', '${(o.client_name || 'Cliente').replace(/'/g, "")}')" class="text-[9px] text-blue-600 font-bold underline mt-1">Avaliar Cliente ⭐</button></div></div>`;
+            }
+        });
+        if(cont === 0) container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">Nenhum histórico de trabalho.</p>`;
+    });
+}
+
+// ============================================================================
+// 4. EDITOR DE SERVIÇOS (COM CAPA, TÍTULO E DESCRIÇÃO)
+// ============================================================================
+export async function abrirConfiguracaoServicos() {
+    const modal = document.getElementById('provider-setup-modal');
+    const content = document.getElementById('provider-setup-content');
+    if(!modal || !content) return;
+
+    modal.classList.remove('hidden');
+    
+    const uid = auth.currentUser.uid;
+    const docSnap = await getDoc(doc(db, "active_providers", uid));
+    let currentHtml = "";
+    
+    const currentCover = (docSnap.exists() && docSnap.data().cover_image) 
+        ? docSnap.data().cover_image 
+        : 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+
+    if(docSnap.exists() && docSnap.data().services) {
+        const servicos = docSnap.data().services;
+        if(servicos.length > 0) {
+            currentHtml = `<div class="bg-gray-50 p-3 rounded-xl mb-4 max-h-48 overflow-y-auto space-y-2 border border-gray-100 custom-scrollbar">
+                <p class="text-[9px] font-bold text-gray-400 uppercase sticky top-0 bg-gray-50 z-10">Seus Serviços</p>
+                ${servicos.map((s, index) => {
+                    const safeObj = JSON.stringify(s).replace(/"/g, '&quot;');
+                    return `
+                    <div class="flex flex-col bg-white p-2 rounded border border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-gray-800">${s.title || s.category}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-black text-green-600">R$ ${s.price}</span>
+                                <button onclick="window.prepararEdicao(${safeObj})" class="text-blue-500 font-bold text-xs hover:bg-blue-50 px-2 rounded">✏️</button>
+                                <button onclick="window.removerServico('${s.category}', ${s.price}, '${s.title || ''}')" class="text-red-500 font-bold text-xs hover:bg-red-50 px-2 rounded">🗑️</button>
+                            </div>
+                        </div>
+                        ${s.description ? `<p class="text-[10px] text-gray-500 mt-1 truncate">${s.description}</p>` : ''}
+                        ${s.title ? `<span class="text-[8px] text-blue-400 bg-blue-50 w-fit px-1 rounded mt-1">${s.category}</span>` : ''}
+                    </div>
+                `}).join('')}
+            </div>`;
+        }
+    }
+
+    // 🆕 GERAÇÃO INTELIGENTE DO MENU V2 (GARANTE TODAS AS CATEGORIAS)
+    let options = '<option value="" disabled selected>Selecione o serviço...</option>';
+    const grupos = {};
+    
+    // 1. Agrupa os serviços da memória (Seus R$ 3000+)
+    if (window.SERVICOS_PADRAO) {
+        window.SERVICOS_PADRAO.forEach(s => {
+            if(!grupos[s.category]) grupos[s.category] = [];
+            grupos[s.category].push(s);
+        });
+    }
+
+    // 2. Percorre a LISTA MESTRA (CATEGORIAS_ATIVAS) para garantir que NADA suma
+    CATEGORIAS_ATIVAS.forEach(cat => {
+        options += `<optgroup label="${cat.label}">`;
+        
+        // A. Se tiver serviços específicos (Premium/Padrão) definidos no código, lista eles
+        if (grupos[cat.id]) {
+            grupos[cat.id].forEach(item => {
+                const isPremium = item.level === 'premium';
+                const emoji = isPremium ? '💎' : '🔹';
+                
+                // Value = Categoria (para salvar compatível com o banco)
+                options += `<option value="${cat.label}" 
+                                    data-min="${item.price}" 
+                                    data-prefill="${item.title}">
+                                ${emoji} ${item.title} (Sugerido: R$ ${item.price})
+                            </option>`;
+            });
+        }
+
+        // B. SEMPRE adiciona uma opção genérica no final (Salva-vidas para categorias vazias)
+        // Isso garante que Pets, Aulas, Beleza e Gerais apareçam para seleção manual
+        options += `<option value="${cat.label}" data-min="${cat.minPrice}">
+                        📂 Outro em ${cat.label.split(' ')[1]}... (Min: R$ ${cat.minPrice})
+                    </option>`;
+        
+        options += `</optgroup>`;
+    });
+    content.innerHTML = `
+        <h3 class="text-lg font-black text-blue-900 uppercase mb-2 text-center">Gerenciar Serviços</h3>
+        
+        <div class="mb-4 relative h-32 rounded-xl bg-gray-200 overflow-hidden group cursor-pointer shadow-md" onclick="document.getElementById('input-banner').click()">
+            <img id="preview-banner" src="${currentCover}" class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                <span class="text-white font-bold text-xs border border-white px-3 py-1 rounded-full">📷 ALTERAR CAPA</span>
+            </div>
+            <input type="file" id="input-banner" accept="image/*" class="hidden" onchange="window.salvarCapaPrestador(this)">
+        </div>
+        <!-- 🛡️ AVISO ANTI-FRAUDE V2026 -->
+        <p class="text-[8px] text-red-500 font-bold uppercase text-center -mt-2 mb-4 animate-pulse">⚠️ Proibido contatos na imagem. Risco de banimento imediato.</p>
+
+        ${currentHtml}
+        
+        <div class="space-y-3 pt-2 border-t border-gray-100 relative">
+            <p id="form-mode-title" class="text-[10px] font-bold text-blue-600 uppercase">Adicionar Novo</p>
+            
+            <input type="hidden" id="prov-old-data" value="">
+
+            <div>
+                <input type="text" id="prov-title" class="w-full border p-2 rounded-lg text-sm bg-gray-50 focus:bg-white transition" placeholder="Título (ex: Faxina Completa)">
+            </div>
+            <div>
+                <select id="prov-cat" class="w-full border p-2 rounded-lg text-sm bg-white" onchange="window.atualizarMinimo(this)">${options}</select>
+            </div>
+            <div>
+                <textarea id="prov-desc" rows="2" class="w-full border p-2 rounded-lg text-sm bg-gray-50 focus:bg-white resize-none" placeholder="Detalhes (ex: Inclui vidros e varanda)"></textarea>
+            </div>
+            <div>
+                <input type="number" id="prov-price" class="w-full border p-2 rounded-lg text-sm font-bold text-green-600" placeholder="0.00">
+                <p id="msg-min-price" class="text-[9px] text-red-500 mt-1 font-bold hidden"></p>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="btn-cancel-edit" onclick="window.cancelarEdicao()" class="hidden w-1/3 bg-gray-200 text-gray-600 py-3 rounded-xl font-bold">CANCELAR</button>
+                <button id="btn-save-service" onclick="salvarServicoPrestador()" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg">ADICIONAR SERVIÇO</button>
+            </div>
+        </div>
+    `;
+    setTimeout(() => {
+        const select = document.getElementById('prov-cat');
+        if(select) window.atualizarMinimo(select);
+    }, 100);
+}
+
+// ✅ NOVA FUNÇÃO: UPLOAD DA CAPA (CORRIGIDA)
+window.salvarCapaPrestador = async (input) => {
+    const file = input.files[0];
+    if (!file) return;
+
+    const user = auth.currentUser;
+    if (!user) return alert("Erro de autenticação.");
+
+    // Preview Imediato
+    const reader = new FileReader();
+    reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
+    reader.readAsDataURL(file);
+
+    try {
+        // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SEGURANÇA)
+        const storage = getStorage(); // Agora chama apenas no clique
+        
+        // Upload
+        const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
+        await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(storageRef);
+
+        // Atualiza
+        await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
+        alert("✅ Capa atualizada com sucesso!");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao enviar imagem. Tente novamente.");
+    }
 };
 
-// ============================================================================
-// 🌍 CENTRAL DE CONECTIVIDADE E EXPORTAÇÕES (ÚLTIMA LINHA ABSOLUTA DO ARQUIVO)
-// ============================================================================
-window.auth = auth;
-window.db = db;
-window.switchView = switchView; 
+window.prepararEdicao = (obj) => {
+    document.getElementById('prov-title').value = obj.title || "";
+    document.getElementById('prov-desc').value = obj.description || "";
+    document.getElementById('prov-price').value = obj.price;
+    const select = document.getElementById('prov-cat');
+    for(let i=0; i<select.options.length; i++) {
+        if(select.options[i].value === obj.category) {
+            select.selectedIndex = i;
+            break;
+        }
+    }
+    document.getElementById('prov-old-data').value = JSON.stringify(obj);
+    document.getElementById('form-mode-title').innerText = "Editando Serviço";
+    document.getElementById('btn-save-service').innerText = "SALVAR ALTERAÇÕES";
+    document.getElementById('btn-save-service').classList.replace('bg-blue-600', 'bg-green-600');
+    document.getElementById('btn-cancel-edit').classList.remove('hidden');
+    document.getElementById('prov-title').focus();
+};
 
-console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
+window.cancelarEdicao = () => {
+    document.getElementById('prov-title').value = "";
+    document.getElementById('prov-desc').value = "";
+    document.getElementById('prov-price').value = "";
+    document.getElementById('prov-old-data').value = "";
+    document.getElementById('form-mode-title').innerText = "Adicionar Novo";
+    document.getElementById('btn-save-service').innerText = "ADICIONAR SERVIÇO";
+    document.getElementById('btn-save-service').classList.replace('bg-green-600', 'bg-blue-600');
+    document.getElementById('btn-cancel-edit').classList.add('hidden');
+};
+
+window.removerServico = async (cat, price, title) => {
+    if(!confirm(`Remover este serviço?`)) return;
+    const uid = auth.currentUser.uid;
+    const ref = doc(db, "active_providers", uid);
+    try {
+        const snap = await getDoc(ref);
+        if(snap.exists()) {
+            let services = snap.data().services || [];
+            // 🛡️ REMOÇÃO PRECISA: Filtra combinando título, categoria e preço para não apagar o serviço errado
+            const newServices = services.filter(s => {
+                const matchTitulo = s.title === title;
+                const matchCat = s.category === cat;
+                const matchPreco = parseFloat(s.price) === parseFloat(price);
+                return !(matchTitulo && matchCat && matchPreco);
+            });
+            await setDoc(ref, { services: newServices }, { merge: true });
+            abrirConfiguracaoServicos(); 
+        }
+    } catch(e) { alert("Erro ao remover: " + e.message); }
+};
+
+window.atualizarMinimo = (select) => {
+    const option = select.options[select.selectedIndex];
+    const min = option.dataset.min;
+    const prefillTitle = option.dataset.prefill; // Novo dado que injetamos
+    
+    // ⚡ AUTO-PREENCHIMENTO INTELIGENTE
+    // Se escolheu um serviço específico, já preenche o nome e o preço
+    if(prefillTitle) {
+        document.getElementById('prov-title').value = prefillTitle;
+        document.getElementById('prov-price').value = min; 
+    }
+
+    const msg = document.getElementById('msg-min-price');
+    const inputPreco = document.getElementById('prov-price');
+
+    // 🛡️ TRAVA ANTI-NAN: Garante que 'min' seja número e nunca vazio
+    const valorMinSeguro = parseFloat(min || 0); 
+
+    if (inputPreco) {
+        inputPreco.placeholder = `Mínimo: R$ ${valorMinSeguro.toFixed(2).replace('.', ',')}`;
+    }
+
+    if (msg) {
+        msg.innerText = `⚠️ Valor Mínimo: R$ ${valorMinSeguro.toFixed(2).replace('.', ',')}`;
+        msg.classList.remove('hidden');
+    }
+};
+
+export async function salvarServicoPrestador() {
+    const user = auth.currentUser;
+    const select = document.getElementById('prov-cat');
+    const priceInput = document.getElementById('prov-price');
+    const titleInput = document.getElementById('prov-title');
+    const descInput = document.getElementById('prov-desc');
+    const oldDataInput = document.getElementById('prov-old-data');
+    
+    if(!select || !priceInput) return;
+
+    const category = select.value;
+    const price = parseFloat(priceInput.value);
+    const title = titleInput.value.trim();
+    const description = descInput.value.trim();
+    const minPrice = parseFloat(select.options[select.selectedIndex].dataset.min);
+
+    // 🛡️ FILTRO ANTI-FRAUDE TURBO V2026 (Telefones, Links e Arrobas)
+    if(!title) return alert("❌ Digite um título para o serviço.");
+
+    // 1. Regex para Telefones (Padrão BR com DDD)
+    const regexFone = /(?:\(?\d{2}\)?\s?|\d{2}?\s?)\d{4,5}\s?-?\s?\d{4}/g;
+    // 2. Regex para Links e Arrobas (Instagram, Facebook e Sites)
+    const regexLinks = /(@[\w.]+)|(https?:\/\/)|(\w+\.(com|net|org|br|me|link|site))/gi;
+
+    // Gil, aqui o "Zelador" reseta o índice da Regex para garantir que a detecção não falhe em cliques seguidos
+    regexFone.lastIndex = 0;
+    regexLinks.lastIndex = 0;
+
+    const temFraudeTexto = regexFone.test(title) || regexFone.test(description) || 
+                           regexLinks.test(title) || regexLinks.test(description);
+
+    if (temFraudeTexto) {
+        return alert("⛔ SEGURANÇA ATLIVIO: Por políticas de proteção e garantia de pagamento, não é permitido incluir telefones, arrobas (@) ou links externos nos detalhes. Utilize nosso chat oficial para negociar com segurança.");
+    }
+
+    if(isNaN(price) || price < minPrice) {
+        return alert(`⛔ Preço muito baixo!\nO mínimo para ${category} é R$ ${minPrice},00.`);
+    }
+
+    const newService = { 
+        title: title,
+        category: category, 
+        price: price, 
+        description: description,
+        status: 'ativo' 
+    };
+
+try {
+        const ref = doc(db, "active_providers", user.uid);
+        
+        // Se estiver editando, remove o antigo antes (usando setDoc com merge para segurança)
+        if (oldDataInput.value) {
+            const oldService = JSON.parse(oldDataInput.value);
+            await setDoc(ref, { services: arrayRemove(oldService) }, { merge: true });
+        }
+        
+       // Salva o serviço garantindo que não existam campos financeiros obsoletos no objeto - PONTO CRÍTICO SOLUÇÃO BÔNUS
+        await setDoc(ref, { 
+            uid: user.uid,
+            nome_profissional: user.displayName || 'Prestador',
+            services: arrayUnion(newService), 
+            is_online: true,
+            status: 'aprovado',
+            updated_at: serverTimestamp()
+        }, { merge: true });
+
+        alert("✅ Serviço salvo com sucesso!");
+        abrirConfiguracaoServicos();
+    } catch(e) { 
+        console.error("Erro fatal no salvamento:", e);
+        alert("Erro ao salvar: " + e.message); 
+    }
+}
+
+// 🌍 EXPOSIÇÃO GLOBAL V24.1 (ESTABILIZADA)
+window.carregarServicos = carregarServicos;
+window.filtrarServicos = (cat) => carregarServicos(cat);
+window.switchServiceSubTab = switchServiceSubTab;
+window.switchProviderSubTab = switchProviderSubTab;
+window.carregarPedidosAtivos = carregarPedidosAtivos;
+window.carregarHistorico = carregarHistorico;
+window.carregarPedidosPrestador = carregarPedidosPrestador;
+window.carregarHistoricoPrestador = carregarHistoricoPrestador;
+window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
+window.salvarServicoPrestador = salvarServicoPrestador;
+window.salvarCapaPrestador = salvarCapaPrestador;
+
+console.log("%c✅ SERVICES.JS: Funções expostas e estabilização V24 ativa!", "color: #10b981; font-weight: bold;");
