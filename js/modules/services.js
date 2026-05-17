@@ -719,8 +719,7 @@ window.salvarCapaPrestador = async (input) => {
         console.error("Erro na esteira de triagem:", e);
         // Restaura a interface em caso de falhas de rede para não congelar o app
         containerUpload.style.pointerEvents = "auto";
-        containerUpload.style.opacity = "1";
-        if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
+        if (avisoFlutuante) avisoFlutuante.remove();
         alert("Erro técnico ao processar imagem: " + e.message);
     }
 };
