@@ -173,6 +173,8 @@ window.switchView = async function(viewName) {
         moduleFile = './dashboard.js'; 
         containerId = 'view-dashboard'; 
     }
+    // 📸 NOVA ROTA MESA DE CAPAS V2026: Aponta para a div da Folha de Provas e usa a inteligência do users.js
+    else if (viewName === 'mesa_capas') { moduleFile = './users.js'; containerId = 'view-mesa_capas'; }
     else if (['users', 'services'].includes(viewName)) { moduleFile = './users.js'; containerId = 'view-list'; }
     else if (['jobs', 'vagas'].includes(viewName)) { moduleFile = './jobs.js'; containerId = 'view-list'; }
     else if (viewName === 'missions') { moduleFile = './missions.js'; containerId = 'view-list'; }
