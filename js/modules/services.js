@@ -251,16 +251,28 @@ function renderizarCards(servicos, container) {
                 })(this)`;
 
             // --- HTML DO CARD ---
-            container.innerHTML += `
-                <div class="bg-white rounded-2xl shadow-sm border ${bordaCard} overflow-hidden relative ${statusClass} transition hover:shadow-lg flex flex-col h-full animate-fadeIn group">
-                    
-                    <div onclick="${clickActionPerfil}" class="h-24 bg-gray-200 relative cursor-pointer">
-                        <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
-                        
-                        <div class="absolute top-2 right-2 flex flex-col items-end gap-1">
-                            ${seloNivel}
-                            ${user.is_verified ? '<span class="bg-green-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">✓ VERIFICADO</span>' : ''}
-                        </div>
+            // Buscamos o ID do usuário logado para pintar o coração de vermelho caso ele já tenha curtido
+            const meuUidLogado = auth.currentUser ? auth.currentUser.uid : "";
+            const curtidoPorMim = user.liked_by && user.liked_by.includes(meuUidLogado);
+            const corCoracao = curtidoPorMim ? "text-red-500 scale-110" : "text-gray-400 hover:text-red-400";
+
+            container.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-sm border ${bordaCard} overflow-hidden relative ${statusClass} transition hover:shadow-lg flex flex-col h-full animate-fadeIn group" data-provider-id="${user.id}">
+                    
+                    <div class="h-24 bg-gray-200 relative">
+                                                <div onclick="${clickActionPerfil}" class="w-full h-full cursor-pointer">
+                            <img src="${coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition duration-700">
+                        </div>
+                        
+                                                <button onclick="window.alternarCurtidaPrestador('${user.id}')" 
+                                class="absolute top-2 left-2 bg-white/90 backdrop-blur-md w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all active:scale-75 z-20 border border-black/5 font-black text-xs ${corCoracao}">
+                            ❤️ <span class="text-[8px] text-gray-700 ml-0.5 font-sans font-bold">${user.likes_count || 0}</span>
+                        </button>
+                                    
+                        <div class="absolute top-2 right-2 flex flex-col items-end gap-1 z-10">
+                            ${seloNivel}
+                            ${user.is_verified ? '<span class="bg-green-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">✓ VERIFICADO</span>' : ''}
+                        </div>
                         
                         <div class="absolute bottom-[-16px] left-3 flex items-end">
                             <img src="${avatarImg}" class="w-10 h-10 rounded-full border-2 border-white shadow-md bg-white object-cover">
