@@ -632,14 +632,42 @@ window.salvarCapaPrestador = async (input) => {
     const user = auth.currentUser;
     if (!user) return alert("Erro de autenticação.");
 
-    // Preview Imediato
+    // Preview Imediato para dar retorno visual ao prestador
     const reader = new FileReader();
     reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
     reader.readAsDataURL(file);
 
     try {
-        // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SEGURANÇA)
-        const storage = getStorage(); // Agora chama apenas no clique
+        // 🧠 MOTOR DE TRIAGEM IA V2026: Carrega o motor OCR local para analisar o arquivo antes de gastar rede
+        if (typeof Tesseract === 'undefined') {
+            // Garante a injeção do script do Tesseract na aplicação do usuário caso não exista na árvore do HTML
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+                s.onload = resolve;
+                s.onerror = () => reject(new Error("Falha no sensor de segurança de mídia"));
+                document.head.appendChild(s);
+            });
+        }
+
+        // Analisa o arquivo em estado de binário puro direto da memória do dispositivo do usuário
+        const resultadoIA = await Tesseract.recognize(file, 'por+eng');
+        const textoLimpo = resultadoIA.data.text.trim().toLowerCase();
+
+        // Travas de detecção contra dados de contato externos
+        const temNumero = /\d{4,}/.test(textoLimpo);
+        const temGatilho = textoLimpo.includes('@') || textoLimpo.includes('whats') || textoLimpo.includes('contato') || textoLimpo.includes('insta') || textoLimpo.includes('call') || textoLimpo.includes('chama');
+
+        // 🚨 BLOQUEIO PREVENTIVO DE FRAUDE: Se a IA detectar dados proibidos, barra o upload na hora
+        if (temNumero || temGatilho) {
+            // Limpa o input do arquivo para obrigar o usuário a escolher outra foto limpa
+            input.value = "";
+            document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
+            return alert("FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
+        }
+
+        // 🔥 INICIALIZAÇÃO TARDIA DO STORAGE (SÓ EXECUTA SE PASSAR NA IA)
+        const storage = getStorage();
         
        // Upload
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
