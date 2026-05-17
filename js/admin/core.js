@@ -739,7 +739,7 @@ window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
     
-    if(!confirm(`🤖 ATIVAR VARREDURA EM MASSA: Deseja ler as ${imagens.length} fotos? Capas perigosas serão marcadas de forma automática.`)) return;
+    if(!confirm(`🤖 ATIVAR AUTO-SCANNER: Deseja ligar a IA para analisar as ${imagens.length} capas? Ela apenas mudará a cor na tela.`)) return;
     
     try {
         await garantirTesseract();
@@ -748,7 +748,6 @@ window.dispararScannerLocalIA = async function() {
         for (let img of imagens) {
             const providerId = img.id.replace('img-target-', '');
             const resBox = document.getElementById(`ocr-res-${providerId}`);
-            const cardCheckbox = document.querySelector(`#card-capa-${providerId} .target-massa-capa`);
             
             if (resBox) {
                 resBox.classList.remove('hidden');
@@ -757,13 +756,13 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ ENGENHARIA DE BULLET DEFINITIVA: Puxa a resposta do link como dados Blob puros (Remove a trava Tainted Canvas)
+                // 🛡️ ENGENHARIA BINÁRIA: Puxa a resposta do link como dados Blob puros removendo a trava Tainted Canvas
                 const respostaRede = await fetch(img.src);
                 const arquivoBlob = await respostaRede.blob();
 
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
-                // Entrega o arquivo em estado binário limpo direto da RAM para o Tesseract trabalhar na velocidade da luz
+                // Processamento direto da RAM do computador
                 const resultado = await Tesseract.recognize(arquivoBlob, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
@@ -774,13 +773,9 @@ window.dispararScannerLocalIA = async function() {
                         const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
                         
                         if (temNumero || temGatilho) {
+                            // 🚨 SENTENÇA VISUAL: A IA apenas acende o alerta vermelho na tela, sem alterar nada no Firebase
                             resBox.innerText = `🚨 ALERTA DE CONTATO PROIBIDO:\n"${resultado.data.text.trim()}"`;
                             resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
-                            
-                            if (cardCheckbox) {
-                                cardCheckbox.checked = true;
-                                window.updateBulkBar();
-                            }
                         } else {
                             resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,50)}..."`;
                             resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
@@ -798,7 +793,7 @@ window.dispararScannerLocalIA = async function() {
                 console.error(err);
             }
         }
-        alert("🏁 VARREDURA COMPLETA! Verifique as caixas marcadas e passe o rodo.");
+        alert("🏁 VARREDURA COMPLETA! Analise os resultados e dê a sentença final.");
     } catch (e) { alert("Falha crítica na IA: " + e.message); }
 };
 
@@ -812,22 +807,9 @@ window.fecharModalUniversal = function() {
 };
 
 // ============================================================================
-// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
+// 🌍 CENTRAL DE CONECTIVIDADE E EXPORTAÇÕES (ÚLTIMA LINHA ABSOLUTA DO ARQUIVO)
 // ============================================================================
-window.auth = auth;
-window.db = db;
-window.switchView = switchView; 
-
-console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
-
-// ============================================================================
-// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
-// ============================================================================
-// Somente exportamos aqui para garantir que todas as funções (como switchView)
-// já tenham sido processadas e existam na memória do navegador.
-
-// 🌍 CENTRAL DE CONECTIVIDADE (FINAL)
-// Gil, exportamos aqui para que a Assistant possa usar o comando 'switchView' nos botões.
+// Exportação limpa e unificada para garantir estabilidade no ecossistema da Assistant
 window.auth = auth;
 window.db = db;
 window.switchView = switchView; 
