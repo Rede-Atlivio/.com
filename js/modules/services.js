@@ -889,32 +889,4 @@ window.abrirConfiguracaoServicos = abrirConfiguracaoServicos;
 window.salvarServicoPrestador = salvarServicoPrestador;
 window.salvarCapaPrestador = salvarCapaPrestador;
 
-// 🎯 MOTOR DE ACESSO DIRETO V2026: Localiza o prestador pelo link da URL e abre a proposta na hora
-window.verPerfilCompleto = async function(providerId) {
-    if (!providerId) return;
-    
-    console.log("🔍 [Link Direto] Iniciando radar de busca para o ID: " + providerId);
-    
-    // Gil, damos um tempo de 1500ms para o Firebase descarregar os dados dos prestadores logados na tela
-    setTimeout(() => {
-        const cardPrestador = document.querySelector(`[data-provider-id="${providerId}"]`);
-        
-        if (cardPrestador) {
-            // Se localizou o container do card, vasculha o botão correto de proposta
-            const btnSolicitar = cardPrestador.querySelector('button[onclick*="abrirModalSolicitacao"]');
-            
-            if (btnSolicitar) {
-                console.log("⚡ [Link Direto] Prestador localizado! Abrindo modal de proposta oficial...");
-                btnSolicitar.click(); // Abre o formulário oficial com preço e detalhes na hora
-            } else {
-                console.warn("⚠️ Botão de solicitação ausente no elemento.");
-            }
-        } else {
-            // Se o prestador desligou o botão online ou não carregou, avisa amigavelmente sem travar o app
-            console.warn("⚠️ Prestador offline ou não renderizado.");
-            alert("🎯 Profissional Offline: Este prestador não está ativo no radar no momento. Fique à vontade para escolher outro profissional online na lista!");
-        }
-    }, 1500);
-};
-
-console.log("%c✅ SERVICES.JS: Funções expostas, Link Direto integrado e estabilização V24 ativa!", "color: #10b981; font-weight: bold;");
+console.log("%c✅ SERVICES.JS: Funções expostas e estabilização V24 ativa!", "color: #10b981; font-weight: bold;");
