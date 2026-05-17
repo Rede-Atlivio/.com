@@ -223,16 +223,6 @@ window.verPerfilCompleto = async (providerId) => {
     alert(`🚧 PERFIL DO PRESTADOR\n\nEsta funcionalidade completa será ativada na próxima atualização.\n\nPor enquanto, use o botão 'SOLICITAR' para ver detalhes e negociar.`);
 };
 
-// 🚨 EXPORTAÇÕES GLOBAIS OBRIGATÓRIAS
-window.uploadCapa = uploadCapa;
-window.uploadFotoPerfil = uploadFotoPerfil;
-window.carregarDadosPerfil = carregarDadosPerfil;
-window.abrirConfiguracoes = abrirConfiguracoes;
-window.salvarConfiguracoes = salvarConfiguracoes;
-window.copiarLinkAfiliado = copiarLinkAfiliado;
-window.verPerfilCompleto = window.verPerfilCompleto; 
-window.ganharExperiencia = ganharExperiencia; // Libera para o Missions usar
-
 // 💼 COPIADOR MESTRE: Gera a URL limpa do portfólio do prestador e joga na memória do celular
 window.copiarLinkProfissional = function() {
     const user = auth.currentUser;
@@ -245,3 +235,12 @@ window.copiarLinkProfissional = function() {
         .then(() => alert("✅ Link do seu Perfil Profissional copiado! Agora você pode colar na sua bio do Instagram ou enviar para seus clientes no WhatsApp."))
         .catch(() => prompt("Copie seu link profissional aqui:", linkProfissional));
 };
+
+// 🚨 EXPORTAÇÕES GLOBAIS OBRIGATÓRIAS
+window.uploadCapa = uploadCapa;
+window.uploadFotoPerfil = uploadFotoPerfil;
+window.carregarDadosPerfil = carregarDadosPerfil;
+window.abrirConfiguracoes = abrirConfiguracoes;
+window.salvarConfiguracoes = salvarConfiguracoes;
+window.copiarLinkAfiliado = copiarLinkAfiliado;
+window.ganharExperiencia = ganharExperiencia; // Libera para o Missions usar
