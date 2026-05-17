@@ -714,8 +714,8 @@ function renderizarGridCapas(lista) {
                 <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
                     <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
                 </div>
-                <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
+               <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
+                    <img src="${p.cover_image}" crossorigin="anonymous" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
                     <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
                 </div>
                 <div class="p-4 flex-1 flex flex-col justify-between">
