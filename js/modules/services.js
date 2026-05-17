@@ -637,15 +637,24 @@ window.salvarCapaPrestador = async (input) => {
     const containerUpload = input.parentElement;
     const originalContent = containerUpload.innerHTML;
 
-    // 🛑 BLOQUEIO DE ANSIEDADE: Desativa visualmente o contêiner e injeta o texto de aviso contínuo
+    // 🛑 BLOQUEIO DE ANSIEDADE: Congela os cliques para evitar reenvios
     containerUpload.style.pointerEvents = "none";
-    containerUpload.style.opacity = "0.7";
     
-    // Procura o texto descritivo do botão e altera em tempo real
-    const labelSelo = containerUpload.querySelector("span");
-    if (labelSelo) labelSelo.innerText = "🔄 ANALISANDO, NÃO SAIA DESTA TELA...";
+    // 🎨 INJEÇÃO VISUAL PREMIUM V2026: Cria uma tarja de aviso absoluta que fica por cima da imagem, com fundo preto e texto amarelo forte
+    let avisoFlutuante = document.getElementById("aviso-analise-ia");
+    if (!avisoFlutuante) {
+        avisoFlutuante = document.createElement("div");
+        avisoFlutuante.id = "aviso-analise-ia";
+        // Estilo robusto: Fundo preto fosco, texto amarelo fosforescente, centralizado e com prioridade máxima (z-index)
+        avisoFlutuante.className = "absolute inset-0 bg-black/90 flex flex-col items-center justify-center text-center p-4 z-50 animate-pulse";
+        avisoFlutuante.innerHTML = `
+            <span class="text-amber-400 font-black text-xs uppercase tracking-wider mb-1">⏳ ANALISANDO SUA CAPA...</span>
+            <span class="text-white font-bold text-[10px] uppercase">Por favor, não saia desta tela até a conclusão.</span>
+        `;
+        containerUpload.appendChild(avisoFlutuante);
+    }
 
-    // Preview Visual Imediato
+    // Preview Visual Imediato (a imagem vai carregar por baixo, mas a nossa tarja z-50 fica por cima)
     const reader = new FileReader();
     reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
     reader.readAsDataURL(file);
