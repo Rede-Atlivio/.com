@@ -735,7 +735,7 @@ function renderizarGridCapas(lista) {
     if (window.lucide) window.lucide.createIcons();
 }
 
-// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS EM SINCRO: Clona e varre direto os elementos renderizados da tela
+// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Puxa o arquivo de forma anônima e lê sem corromper o Canvas
 window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
@@ -744,7 +744,7 @@ window.dispararScannerLocalIA = async function() {
     
     try {
         await garantirTesseract();
-        alert("🧠 Cérebro neural online. Iniciando conversão de arquivos locais...");
+        alert("🧠 Cérebro neural online. Iniciando processamento de mídias...");
         
         for (let img of imagens) {
             const providerId = img.id.replace('img-target-', '');
@@ -753,26 +753,19 @@ window.dispararScannerLocalIA = async function() {
             
             if (resBox) {
                 resBox.classList.remove('hidden');
-                resBox.innerText = "⏳ Extraindo fluxo de pixels da tela...";
+                resBox.innerText = "⏳ Convertendo fluxo de mídias de rede...";
                 resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
             }
             
-           try {
-                // 🛡️ RECONSTRUTOR BINÁRIO LOCAL V2026: Converte o elemento renderizado na tela de forma forçada para evitar erros de CORS na leitura do Canvas
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth || 640;
-                canvas.height = img.naturalHeight || 360;
-                const ctx = canvas.getContext('2d');
-                
-                // Força o desenho local injetando as coordenadas do elemento de visualização que já está na tela do Gil
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                // Extrai em formato limpo de string sem bater na rede externa do Firebase Storage
-                const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
-                
+            try {
+                // 🛡️ ENGENHARIA DE BULLET DEFINITIVA: Puxa a resposta do link como dados Blob puros (Remove a trava Tainted Canvas)
+                const respostaRede = await fetch(img.src);
+                const arquivoBlob = await respostaRede.blob();
+
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
-                const resultado = await Tesseract.recognize(base64LocalPuro, 'por+eng');
+                // Entrega o arquivo em estado binário limpo direto da RAM para o Tesseract trabalhar na velocidade da luz
+                const resultado = await Tesseract.recognize(arquivoBlob, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
                 if (resBox) {
