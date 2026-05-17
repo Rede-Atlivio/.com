@@ -745,6 +745,24 @@ auth.onAuthStateChanged(async (user) => {
             iniciarMonitoramentoCarteira(); // Liga a escuta do banco de dados para o saldo
         }
 
+        // 🎁 RADAR DE INDICAÇÃO PROTEGIDO: Integrado ao fluxo central para impedir clonagem de memória
+        if (window.firebaseModules && window.db && !window.radarIndicacaoAtivoSessao) {
+            window.radarIndicacaoAtivoSessao = true; // Trava atômica que impede a criação de segundos snapshots
+            try {
+                const { collection, query, where, onSnapshot } = window.firebaseModules;
+                const qIndicados = query(collection(window.db, "referral_events"), 
+                                         where("padrinho_uid", "==", user.uid), 
+                                         where("processado", "==", false));
+
+                window.unsubscribeReferral = onSnapshot(qIndicados, (snap) => {
+                    if (!snap.empty) {
+                        console.log(`🎁 [Maestro Core] ${snap.size} novas indicações detectadas com segurança!`);
+                        if (window.processarMinhasIndicacoes) window.processarMinhasIndicacoes(user.uid);
+                    }
+                });
+            } catch(errRadar) { console.warn("Aguardando inicialização dos módulos para o radar."); window.radarIndicacaoAtivoSessao = false; }
+        }
+
         // 🖥️ BOOT DA INTERFACE: Chama a montagem visual apenas se o sistema ainda não subiu
         if (!window.atlivioBootConcluido) {
             window.carregarInterface(user); // Abre o App e fecha o Loader de carregamento
