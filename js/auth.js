@@ -94,9 +94,10 @@ auth.onAuthStateChanged(async (user) => {
                 traffic_source: refLink ? 'afiliado' : trafficSource 
             };
 
-            // 🛡️ Se houver indicação, preparamos o rastro
-            if (refLink && refLink !== user.uid) {
-                console.log("🔗 [Indicação] Padrinho identificado:", refLink);
+            // 🛡️ Se houver indicação, preparamos o rastro protegidos contra cliques ou loops duplos
+            if (refLink && refLink !== user.uid && !indicaçãoProcessadaNesteAcesso) {
+                indicaçãoProcessadaNesteAcesso = true; // Tranca a porta imediatamente!
+                console.log("🔗 [Indicação] Padrinho identificado e travado contra duplicidade:", refLink);
                 dadosIndicacao.invited_by = refLink;
                 
                 try {
