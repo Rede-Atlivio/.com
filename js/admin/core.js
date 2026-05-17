@@ -651,3 +651,171 @@ window.db = db;
 window.switchView = switchView; 
 
 console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
+// ==========================================================================
+// 📸 MÓDULO MESA DE CURADORIA DE CAPAS V2026 + SCANNER IA LOCAL (TESSERACT)
+// ==========================================================================
+
+// Importação dinâmica da biblioteca de IA Local (OCR) para não travar o carregamento inicial do sistema
+const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
+let tesseractCarregado = false;
+
+function garantirTesseract() {
+    if (tesseractCarregado) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = TESSERACT_SCRIPT_URL;
+        script.onload = () => { tesseractCarregado = true; resolve(); };
+        script.onerror = () => reject(new Error("Falha ao carregar motor OCR Tesseract"));
+        document.head.appendChild(script);
+    });
+}
+
+// 🔋 Inicializador da Mesa de Capas: Busca os prestadores ativos do Firebase
+async function initMesaCapas() {
+    const grid = document.getElementById('grid-mesa-capas');
+    if (!grid) return;
+    
+    grid.innerHTML = `<div class="col-span-full p-10 text-center"><div class="loader border-t-amber-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div><p class="text-xs text-gray-400 mt-2 font-bold uppercase">Carregando Galeria de Provas...</p></div>`;
+    
+    try {
+        const { collection, getDocs, query, where, limit } = window.FirebaseFirestore;
+        // Traz os primeiros 30 prestadores que enviaram imagem de capa
+        const q = query(collection(window.db, "active_providers"), where("cover_image", "!=", ""), limit(30));
+        const snap = await getDocs(q);
+        
+        let prestadores = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            data.id = doc.id;
+            prestadores.push(data);
+        });
+        
+        // Filtra localmente para dar prioridade a quem ainda não foi aprovado pelo robô ou está em revisão
+        prestadores.sort((a, b) => (a.cover_status === 'reprovado' ? 1 : -1));
+
+        if (prestadores.length === 0) {
+            grid.innerHTML = `<div class="col-span-full p-12 text-center text-gray-500 font-bold uppercase text-xs">📭 Nenhuma imagem de capa pendente no banco de dados.</div>`;
+            return;
+        }
+        
+        renderizarGridCapas(prestadores);
+    } catch (e) {
+        console.error("Erro na Mesa de Capas:", e);
+        grid.innerHTML = `<div class="col-span-full p-10 text-center text-red-500 font-bold text-xs">❌ Erro técnico ao sincronizar fotos: ${e.message}</div>`;
+    }
+}
+
+// 🎨 Renderizador de blocos individuais limpos e focado em alta visibilidade
+function renderizarGridCapas(lista) {
+    const grid = document.getElementById('grid-mesa-capas');
+    grid.innerHTML = "";
+    
+    lista.forEach(p => {
+        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
+        const statusCapa = p.cover_status || 'pendente';
+        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800";
+        if (statusCapa === 'aprovado') badgeColor = "bg-green-950 text-green-400 border-green-900";
+        if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
+
+        grid.innerHTML += `
+            <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl">
+                <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
+                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" crossOrigin="anonymous" id="img-target-${p.id}">
+                    <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
+                </div>
+                <div class="p-4 flex-1 flex flex-col justify-between">
+                    <div class="mb-3">
+                        <h4 class="text-xs font-black text-white truncate uppercase">${nome}</h4>
+                        <p class="text-[9px] text-gray-500 font-mono truncate mt-0.5">ID: ${p.id}</p>
+                        <div id="ocr-res-${p.id}" class="hidden mt-2 p-2 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-bold text-purple-300 whitespace-pre-wrap"></div>
+                    </div>
+                    <div class="flex gap-2 border-t border-white/5 pt-3">
+                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">Exterminar</button>
+                        <button onclick="marcarCapaAprovada('${p.id}')" class="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">Aprovar</button>
+                    </div>
+                </div>
+            </div>`;
+    });
+    
+    // Inicializa os ícones do Lucide caso existam elementos novos na tela
+    if (window.lucide) window.lucide.createIcons();
+}
+
+// ✅ Ação rápida de aprovação visual direta do painel de capas
+async function marcarCapaAprovada(id) {
+    try {
+        const { doc, updateDoc, serverTimestamp } = window.FirebaseFirestore;
+        await updateDoc(doc(window.db, "active_providers", id), {
+            cover_status: "aprovado",
+            updated_at: serverTimestamp()
+        });
+        const card = document.getElementById(`card-capa-${id}`);
+        if (card) card.style.opacity = "0.4";
+        alert("✅ Capa aprovada com sucesso!");
+    } catch (e) { alert("Erro ao aprovar: " + e.message); }
+}
+
+// 🔍 MOTOR DE IA LOCAL (OCR): Escaneia todas as fotos da tela em busca de fraudes
+window.dispararScannerLocalIA = async function() {
+    const imagens = document.querySelectorAll('.target-ocr-img');
+    if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
+    
+    if(!confirm(`🤖 INICIAR IA LOCAL: Deseja ativar o motor neural para ler as ${imagens.length} imagens abertas à procura de números de WhatsApp ou redes sociais?`)) return;
+    
+    try {
+        await garantirTesseract();
+        alert("🧠 Cérebro artificial carregado com sucesso! O processamento em massa vai começar. Aguarde as tarjas roxas nos cards.");
+        
+        for (let img of imagens) {
+            const providerId = img.id.replace('img-target-', '');
+            const resBox = document.getElementById(`ocr-res-${providerId}`);
+            
+            if (resBox) {
+                resBox.classList.remove('hidden');
+                resBox.innerText = "⏳ Escaneando pixels...";
+                resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
+            }
+            
+            try {
+                const resultado = await Tesseract.recognize(img.src, 'por+eng');
+                const textoLimpo = resultado.data.text.trim().toLowerCase();
+                
+                if (resBox) {
+                    resBox.classList.remove('animate-pulse');
+                    if (textoLimpo) {
+                        // Regra de segurança: Procura por padrões numéricos comuns ou gatilhos de redes sociais
+                        const temNumero = /\d{4,}/.test(textoLimpo);
+                        const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
+                        
+                        if (temNumero || temGatilho) {
+                            resBox.innerText = `🚨 ALERTA DE FRAUDE DETECTADO:\n"${resultado.data.text.trim()}"`;
+                            resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
+                        } else {
+                            resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,60)}..."`;
+                            resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
+                        }
+                    } else {
+                        resBox.innerText = "🍃 Imagem Limpa (Sem textos detectados)";
+                        resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
+                    }
+                }
+            } catch (err) {
+                if (resBox) {
+                    resBox.innerText = "❌ Bloqueio de Segurança CORS (Servidor Externo)";
+                    resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
+                }
+            }
+        }
+        alert("🏁 PROCESSO CONCLUÍDO! O robô analisou todas as capas disponíveis.");
+    } catch (e) { alert("Falha crítica no Scanner: " + e.message); }
+};
+
+function textoInstanciaWhatsApp(txt) {
+    return txt.includes('whats') || txt.includes('contato') || txt.includes('insta') || txt.includes('call') || txt.includes('chama');
+}
+
+// Exposição global para o botão de fechamento do modal unificado funcionar
+window.fecharModalUniversal = function() {
+    const modal = document.getElementById('modal-editor');
+    if (modal) modal.classList.add('hidden');
+};
