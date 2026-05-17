@@ -726,8 +726,8 @@ function renderizarGridCapas(lista) {
 
         grid.innerHTML += `
             <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl">
-               <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" crossOrigin="anonymous" id="img-target-${p.id}">
+                <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
+                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
                     <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
                 </div>
                 <div class="p-4 flex-1 flex flex-col justify-between">
@@ -773,7 +773,7 @@ window.dispararScannerLocalIA = async function() {
         await garantirTesseract();
         alert("🧠 Cérebro artificial carregado com sucesso! O processamento em massa vai começar. Aguarde as tarjas roxas nos cards.");
         
-       for (let img of imagens) {
+        for (let img of imagens) {
             const providerId = img.id.replace('img-target-', '');
             const resBox = document.getElementById(`ocr-res-${providerId}`);
             
@@ -784,18 +784,9 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ TÚNEL ANTI-CORS V2026: Converte a imagem em elementos de desenho locais para a IA ler livremente
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.naturalWidth || img.width || 640;
-                canvas.height = img.naturalHeight || img.height || 360;
-                
-                // Desenha a imagem dentro do motor oculto do navegador
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                
-                // Entrega o desenho local purificado para o cérebro da IA
-                const resultado = await Tesseract.recognize(canvas, 'por+eng');
+                const resultado = await Tesseract.recognize(img.src, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
+                
                 if (resBox) {
                     resBox.classList.remove('animate-pulse');
                     if (textoLimpo) {
