@@ -685,12 +685,11 @@ window.salvarCapaPrestador = async (input) => {
         const temNumero = /\d{4,}/.test(textoLimpo);
         const temGatilho = textoLimpo.includes('@') || textoLimpo.includes('whats') || textoLimpo.includes('contato') || textoLimpo.includes('insta') || textoLimpo.includes('call') || textoLimpo.includes('chama');
 
-        // 🚨 VEREDITO: REPROVADO
+       // 🚨 VEREDITO: REPROVADO
         if (temNumero || temGatilho) {
-            // Destrava a tela e restaura o botão original para ele escolher outra imagem limpa
+            // Destrava a tela e remove a tarja de aviso para nova tentativa
             containerUpload.style.pointerEvents = "auto";
-            containerUpload.style.opacity = "1";
-            if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
+            if (avisoFlutuante) avisoFlutuante.remove();
             input.value = ""; 
             document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
             
