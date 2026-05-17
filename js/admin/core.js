@@ -644,24 +644,11 @@ window.dispararMaestroExterno = async () => {
 
 // 🛰️ LOG DE SEGURANÇA: Confirma que o motor mestre está pronto para escala de milhões
 console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado.");
-// ============================================================================
-// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
-// ============================================================================
-// Somente exportamos aqui para garantir que todas as funções (como switchView)
-// já tenham sido processadas e existam na memória do navegador.
 
-// 🌍 CENTRAL DE CONECTIVIDADE (FINAL)
-// Gil, exportamos aqui para que a Assistant possa usar o comando 'switchView' nos botões.
-window.auth = auth;
-window.db = db;
-window.switchView = switchView; 
-
-console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
 // ==========================================================================
 // 📸 MÓDULO MESA DE CURADORIA DE CAPAS V2026 + SCANNER IA LOCAL (TESSERACT)
 // ==========================================================================
 
-// Importação dinâmica da biblioteca de IA Local (OCR) para não travar o carregamento inicial do sistema
 const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
 let tesseractCarregado = false;
 
@@ -684,9 +671,7 @@ async function initMesaCapas() {
     grid.innerHTML = `<div class="col-span-full p-10 text-center"><div class="loader border-t-amber-500 rounded-full border-4 border-gray-200 h-8 w-8 animate-spin mx-auto"></div><p class="text-xs text-gray-400 mt-2 font-bold uppercase">Carregando Galeria de Provas...</p></div>`;
     
     try {
-        // 🛡️ CORREÇÃO DE PONTE V2026: Aponta para a exportação real do seu admin.html (firebaseModules)
         const { collection, getDocs, query, where, limit } = window.firebaseModules;
-        // Traz os primeiros 30 prestadores que enviaram imagem de capa
         const q = query(collection(window.db, "active_providers"), where("cover_image", "!=", ""), limit(30));
         const snap = await getDocs(q);
         
@@ -697,7 +682,6 @@ async function initMesaCapas() {
             prestadores.push(data);
         });
         
-        // Filtra localmente para dar prioridade a quem ainda não foi aprovado pelo robô ou está em revisão
         prestadores.sort((a, b) => (a.cover_status === 'reprovado' ? 1 : -1));
 
         if (prestadores.length === 0) {
@@ -712,27 +696,24 @@ async function initMesaCapas() {
     }
 }
 
-// 🎨 Renderizador de blocos individuais limpos e focado em alta visibilidade
-// 🎨 Renderizador de blocos individuais com Checkbox de massa integrado para escala de milhões
+// 🎨 Renderizador Sincronizado V2026: Separa e desenha a mesa em seções de pendências e histórico de fraudes
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
+    if (!grid) return;
     grid.innerHTML = "";
-    
-    lista.forEach(p => {
-        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
-        const statusCapa = p.cover_status || 'pendente';
-        let badgeColor = "bg-yellow-950 text-yellow-400 border-yellow-800";
-        if (statusCapa === 'aprovado') badgeColor = "bg-green-950 text-green-400 border-green-900";
-        if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
-        grid.innerHTML += `
+    const pendentes = lista.filter(p => !p.cover_status || p.cover_status === 'pendente' || p.cover_status === 'aprovado');
+    const reprovadas = lista.filter(p => p.cover_status === 'reprovado');
+
+    const gerarCardHtml = (p, statusCapa, badgeColor) => {
+        const nome = p.nome_profissional || p.displayName || 'Prestador Desconhecido';
+        return `
             <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
                 <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
                     <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
                 </div>
-                
                 <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
-                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
+                    <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" crossOrigin="anonymous" id="img-target-${p.id}">
                     <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
                 </div>
                 <div class="p-4 flex-1 flex flex-col justify-between">
@@ -746,27 +727,51 @@ function renderizarGridCapas(lista) {
                     </div>
                 </div>
             </div>`;
-    });
-    
-    // Inicializa os ícones do Lucide caso existam elementos novos na tela
+    };
+
+    let htmlFinal = "";
+
+    // 🌟 SEÇÃO 1: Fila de Análise Active
+    htmlFinal += `
+        <div class="col-span-full mb-4 mt-2">
+            <h3 class="text-xs font-black text-yellow-400 uppercase tracking-widest flex items-center gap-2 bg-yellow-500/5 p-3 rounded-xl border border-yellow-500/10">
+                ⏳ SEÇÃO 1: FILA DE ANÁLISE ATIVA (${pendentes.length})
+            </h3>
+        </div>
+        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+    `;
+    if (pendentes.length === 0) {
+        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">📭 Nenhuma capa pendente de análise na fila.</div>`;
+    } else {
+        pendentes.forEach(p => {
+            htmlFinal += gerarCardHtml(p, 'pendente', 'bg-yellow-950 text-yellow-400 border-yellow-800');
+        });
+    }
+    htmlFinal += `</div>`;
+
+    // 🚨 SEÇÃO 2: Arquivo Morto
+    htmlFinal += `
+        <div class="col-span-full mb-4 mt-6">
+            <h3 class="text-xs font-black text-red-400 uppercase tracking-widest flex items-center gap-2 bg-red-500/5 p-3 rounded-xl border border-red-500/10">
+                🛡️ SEÇÃO 2: ARQUIVO MORTO / AUDITORIA DE GOLPES (${reprovadas.length})
+            </h3>
+        </div>
+        <div class="col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
+    `;
+    if (reprovadas.length === 0) {
+        htmlFinal += `<div class="col-span-full p-8 text-center text-gray-600 text-xs font-bold uppercase tracking-wider">🍃 Nenhum registro de extermínio arquivado ainda.</div>`;
+    } else {
+        reprovadas.forEach(p => {
+            htmlFinal += gerarCardHtml(p, 'reprovado', 'bg-red-950 text-red-400 border-red-900');
+        });
+    }
+    htmlFinal += `</div>`;
+
+    grid.innerHTML = htmlFinal;
     if (window.lucide) window.lucide.createIcons();
 }
 
-// ✅ Ação rápida de aprovação visual direta do painel de capas
-async function marcarCapaAprovada(id) {
-    try {
-        const { doc, updateDoc, serverTimestamp } = window.FirebaseFirestore;
-        await updateDoc(doc(window.db, "active_providers", id), {
-            cover_status: "aprovado",
-            updated_at: serverTimestamp()
-        });
-        const card = document.getElementById(`card-capa-${id}`);
-        if (card) card.style.opacity = "0.4";
-        alert("✅ Capa aprovada com sucesso!");
-    } catch (e) { alert("Erro ao aprovar: " + e.message); }
-}
-
-// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Extrai a imagem direto da tela e ativa auto-checkbox nas fraudes
+// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS EM SINCRO: Clona e varre direto os elementos renderizados da tela
 window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
@@ -789,16 +794,14 @@ window.dispararScannerLocalIA = async function() {
             }
             
             try {
-                // 🛡️ ELEMENTO DE TELA DIRETO: Captura a imagem que já passou com sucesso pela segurança do seu navegador
+                // 🛡️ CAPTURA DE TEXTURA REAL: Converte direto do elemento visual ativo que o navegador validou
                 const canvas = document.createElement('canvas');
-                canvas.width = img.width || img.naturalWidth || 640;
-                canvas.height = img.height || img.naturalHeight || 360;
+                canvas.width = img.naturalWidth || img.width || 640;
+                canvas.height = img.naturalHeight || img.height || 360;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
-                // Transforma o desenho em Base64 purificado localmente
                 const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
-                
                 if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
 
                 const resultado = await Tesseract.recognize(base64LocalPuro, 'por+eng');
@@ -807,39 +810,66 @@ window.dispararScannerLocalIA = async function() {
                 if (resBox) {
                     resBox.classList.remove('animate-pulse');
                     if (textoLimpo) {
-                        // Regra de segurança: Procura por padrões numéricos comuns ou gatilhos de redes sociais
                         const temNumero = /\d{4,}/.test(textoLimpo);
                         const temGatilho = textoLimpo.includes('@') || textoInstanciaWhatsApp(textoLimpo);
                         
                         if (temNumero || temGatilho) {
-                            resBox.innerText = `🚨 ALERTA DE FRAUDE DETECTADO:\n"${resultado.data.text.trim()}"`;
+                            resBox.innerText = `🚨 ALERTA DE CONTATO PROIBIDO:\n"${resultado.data.text.trim()}"`;
                             resBox.className = "mt-2 p-2 rounded bg-red-950/60 border border-red-500/40 text-[9px] font-black text-red-400 animate-bounce";
+                            
+                            if (cardCheckbox) {
+                                cardCheckbox.checked = true;
+                                window.updateBulkBar();
+                            }
                         } else {
-                            resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,60)}..."`;
+                            resBox.innerText = `✅ TEXTO SEGURO:\n"${resultado.data.text.trim().substring(0,50)}..."`;
                             resBox.className = "mt-2 p-2 rounded bg-green-950/40 border border-green-500/20 text-[9px] font-bold text-green-400";
                         }
                     } else {
-                        resBox.innerText = "🍃 Imagem Limpa (Sem textos detectados)";
+                        resBox.innerText = "🍃 Imagem Limpa (Nenhum contato externo detectado)";
                         resBox.className = "mt-2 p-2 rounded bg-slate-950/60 border border-white/5 text-[9px] font-medium text-gray-500";
                     }
                 }
             } catch (err) {
                 if (resBox) {
-                    resBox.innerText = "❌ Bloqueio de Segurança CORS (Servidor Externo)";
+                    resBox.innerText = "⚠️ Bloqueio de segurança local do arquivo.";
                     resBox.className = "mt-2 p-2 rounded bg-amber-950/30 border border-amber-500/20 text-[8px] text-amber-500";
                 }
+                console.error(err);
             }
         }
-        alert("🏁 PROCESSO CONCLUÍDO! O robô analisou todas as capas disponíveis.");
-    } catch (e) { alert("Falha crítica no Scanner: " + e.message); }
+        alert("🏁 VARREDURA COMPLETA! Verifique as caixas marcadas e passe o rodo.");
+    } catch (e) { alert("Falha crítica na IA: " + e.message); }
 };
 
 function textoInstanciaWhatsApp(txt) {
     return txt.includes('whats') || txt.includes('contato') || txt.includes('insta') || txt.includes('call') || txt.includes('chama');
 }
 
-// Exposição global para o botão de fechamento do modal unificado funcionar
 window.fecharModalUniversal = function() {
     const modal = document.getElementById('modal-editor');
     if (modal) modal.classList.add('hidden');
 };
+
+// ============================================================================
+// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
+// ============================================================================
+window.auth = auth;
+window.db = db;
+window.switchView = switchView; 
+
+console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
+
+// ============================================================================
+// 🌍 EXPORTAÇÕES GLOBAIS DE SEGURANÇA (FINAL DO ARQUIVO)
+// ============================================================================
+// Somente exportamos aqui para garantir que todas as funções (como switchView)
+// já tenham sido processadas e existam na memória do navegador.
+
+// 🌍 CENTRAL DE CONECTIVIDADE (FINAL)
+// Gil, exportamos aqui para que a Assistant possa usar o comando 'switchView' nos botões.
+window.auth = auth;
+window.db = db;
+window.switchView = switchView; 
+
+console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
