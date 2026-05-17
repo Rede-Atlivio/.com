@@ -256,17 +256,14 @@
             <div id="view-opportunities" class="absolute inset-0 overflow-auto p-6 custom-scrollbar hidden"></div>
         </div>
 
-        <div id="bulk-actions" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-500/50 flex items-center gap-6 z-50 transition-all duration-300 translate-y-[200%] invisible">
+       <div id="bulk-actions" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl border border-blue-500/50 flex items-center gap-6 z-50 transition-all duration-300 translate-y-[200%] invisible">
             <div class="flex flex-col">
                 <span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter">Selecionados</span>
                 <span id="bulk-count" class="text-xl font-black line-height-1">0</span>
             </div>
             <div class="h-8 w-px bg-slate-700"></div>
             <div class="flex gap-3">
-                <button id="btn-massa-general" onclick="window.abrirMenuAcoesMassa()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase transition">⚡ Ações em Massa</button>
-                <button id="btn-massa-delete" onclick="window.executarAcaoMassa('excluir')" class="bg-red-900/30 hover:bg-red-600 text-red-500 hover:text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase border border-red-900/50 transition">🗑️ Excluir</button>
-                
-                <button id="btn-bulk-exterminar-capas" onclick="window.exterminarCapasEmMassaAction()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase transition hidden">🗑️ EXTERMINAR SELECIONADOS</button>
+                <button id="btn-bulk-exterminar-capas" onclick="window.exterminarCapasEmMassaAction()" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase shadow-lg transition">🗑️ EXTERMINAR SELECIONADOS</button>
             </div>
         </div>
     </main>
