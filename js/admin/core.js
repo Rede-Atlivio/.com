@@ -713,6 +713,7 @@ async function initMesaCapas() {
 }
 
 // 🎨 Renderizador de blocos individuais limpos e focado em alta visibilidade
+// 🎨 Renderizador de blocos individuais com Checkbox de massa integrado para escala de milhões
 function renderizarGridCapas(lista) {
     const grid = document.getElementById('grid-mesa-capas');
     grid.innerHTML = "";
@@ -725,7 +726,11 @@ function renderizarGridCapas(lista) {
         if (statusCapa === 'reprovado') badgeColor = "bg-red-950 text-red-400 border-red-900";
 
         grid.innerHTML += `
-            <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl">
+            <div id="card-capa-${p.id}" class="bg-slate-900 rounded-2xl border border-white/5 overflow-hidden flex flex-col justify-between group hover:border-amber-500/30 transition-all shadow-xl relative">
+                <div class="absolute top-3 left-3 z-10 bg-slate-950/90 p-2 rounded-xl border border-white/10 backdrop-blur">
+                    <input type="checkbox" value="${p.id}" class="row-checkbox chk-custom target-massa-capa" onchange="window.updateBulkBar()">
+                </div>
+                
                 <div class="relative aspect-[16/9] bg-slate-950 flex items-center justify-center overflow-hidden">
                     <img src="${p.cover_image}" class="w-full h-full object-cover target-ocr-img select-none" id="img-target-${p.id}">
                     <span class="absolute top-3 right-3 text-[8px] font-black uppercase px-2 py-0.5 rounded border ${badgeColor}">${statusCapa}</span>
@@ -737,8 +742,8 @@ function renderizarGridCapas(lista) {
                         <div id="ocr-res-${p.id}" class="hidden mt-2 p-2 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-bold text-purple-300 whitespace-pre-wrap"></div>
                     </div>
                     <div class="flex gap-2 border-t border-white/5 pt-3">
-                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">Exterminar</button>
-                        <button onclick="marcarCapaAprovada('${p.id}')" class="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">Aprovar</button>
+                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
+                        <button onclick="marcarCapaAprovada('${p.id}')" class="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">APROVAR 1</button>
                     </div>
                 </div>
             </div>`;
