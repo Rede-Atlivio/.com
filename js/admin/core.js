@@ -742,8 +742,7 @@ function renderizarGridCapas(lista) {
                         <div id="ocr-res-${p.id}" class="hidden mt-2 p-2 rounded bg-purple-950/40 border border-purple-500/20 text-[9px] font-bold text-purple-300 whitespace-pre-wrap"></div>
                     </div>
                     <div class="flex gap-2 border-t border-white/5 pt-3">
-                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="flex-1 bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
-                        <button onclick="marcarCapaAprovada('${p.id}')" class="flex-1 bg-green-600/10 hover:bg-green-600 text-green-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">APROVAR 1</button>
+                        <button onclick="window.reprovarCapaDireto('${p.id}')" class="w-full bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white py-2 rounded-lg text-[10px] font-black uppercase transition-all">EXTERMINAR 1</button>
                     </div>
                 </div>
             </div>`;
