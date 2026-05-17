@@ -59,9 +59,6 @@ const LIMITE_CREDITO_NEGATIVO = -60.00;
 export let userProfile = null; 
 window.userProfile = null;
 
-// 🛡️ TRAVA ANTI-DUPLICAÇÃO DE INDICAÇÃO: Impede que as escutas paralelas rodem o rastro duas vezes
-let indicaçãoProcessadaNesteAcesso = false;
-
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
@@ -94,10 +91,9 @@ auth.onAuthStateChanged(async (user) => {
                 traffic_source: refLink ? 'afiliado' : trafficSource 
             };
 
-            // 🛡️ Se houver indicação, preparamos o rastro protegidos contra cliques ou loops duplos
-            if (refLink && refLink !== user.uid && !indicaçãoProcessadaNesteAcesso) {
-                indicaçãoProcessadaNesteAcesso = true; // Tranca a porta imediatamente!
-                console.log("🔗 [Indicação] Padrinho identificado e travado contra duplicidade:", refLink);
+            // 🛡️ Se houver indicação, preparamos o rastro
+            if (refLink && refLink !== user.uid) {
+                console.log("🔗 [Indicação] Padrinho identificado:", refLink);
                 dadosIndicacao.invited_by = refLink;
                 
                 try {
