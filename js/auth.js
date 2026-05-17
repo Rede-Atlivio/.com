@@ -59,6 +59,9 @@ const LIMITE_CREDITO_NEGATIVO = -60.00;
 export let userProfile = null; 
 window.userProfile = null;
 
+// 🛡️ TRAVA ANTI-DUPLICAÇÃO DE INDICAÇÃO: Impede que as escutas paralelas rodem o rastro duas vezes
+let indicaçãoProcessadaNesteAcesso = false;
+
 const CATEGORIAS_SERVICOS = [
     "🛠️ Montagem de Móveis", "🛠️ Reparos Elétricos", "🛠️ Instalação de Ventilador", 
     "🛠️ Pintura", "🛠️ Limpeza Residencial", "🛠️ Diarista", "🛠️ Jardinagem", 
