@@ -172,10 +172,13 @@ function calcularRelevancia(user) {
     if (user.service_level === 'premium') score += 100;
     else if (user.service_level === 'pro') score += 50;
 
-    // 5. Verificado ganha bônus
-    if (user.is_verified) score += 30;
+   // 5. Verificado ganha bônus
+    if (user.is_verified) score += 30;
 
-    return score;
+    // ❤️ GAMIFICAÇÃO SOCIAL: Cada curtida computada adiciona 5 pontos de relevância ao ranking
+    score += (user.likes_count || 0) * 5;
+
+    return score;
 }
 
 function renderizarCards(servicos, container) {
