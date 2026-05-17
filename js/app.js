@@ -491,27 +491,35 @@ import('./modules/governance.js').then(m => {
             if (userIntent === "home" || isToggling) userIntent = ""; 
             if (isToggling) sessionStorage.removeItem('is_toggling_profile');
 
-          // 🎯 PRIORIDADE ABSOLUTA V2026: Abre o formulário de contratação direto, pulando o aviso chato
+         // 🎯 PRIORIDADE ABSOLUTA V2026: Caçador reativo que martela o clique até o card nascer na tela
             const perfilDiretoID = sessionStorage.getItem('atlivio_perfil_direto');
             
             if (perfilDiretoID) {
-                console.log("🚀 [Maestro] Link direto detectado. Forçando carregamento do formulário de proposta...");
-                sessionStorage.removeItem('atlivio_perfil_direto'); // Limpa a fila para não dar loop
-                window.switchTab('servicos'); // Move o cliente para a aba de serviços
-                
-                // Gil, damos 1500ms para o Firebase carregar a lista e simulamos o clique direto no botão de Proposta
-                setTimeout(() => {
+                console.log("🚀 [Maestro] Link direto detectado. Iniciando batedor de tentativas...");
+                sessionStorage.removeItem('atlivio_perfil_direto'); // Protege contra loops
+                window.switchTab('servicos'); // Joga o cliente direto na aba de serviços
+
+                let tentativas = 0;
+                // Liga o cronômetro para tentar clicar a cada 300ms (Mais rápido que um piscar de olhos)
+                const checadorCerteiro = setInterval(() => {
+                    tentativas++;
                     const cardPrestador = document.querySelector(`[data-provider-id="${perfilDiretoID}"]`);
+                    
                     if (cardPrestador) {
                         const btnSolicitar = cardPrestador.querySelector('button[onclick*="abrirModalSolicitacao"]');
                         if (btnSolicitar) {
-                            console.log("⚡ [Maestro] Prestador localizado! Acionando formulário na hora...");
-                            btnSolicitar.click(); // Salta o aviso e abre a proposta limpa
+                            console.log(`⚡ [Maestro] Prestador achado na tentativa ${tentativas}! Forçando clique no modal...`);
+                            btnSolicitar.click(); // Força a abertura do formulário oficial na hora
+                            clearInterval(checadorCerteiro); // Desliga o robô imediatamente para economizar RAM
                         }
-                    } else {
-                        console.warn("⚠️ Prestador do link não localizado em tela ou offline.");
                     }
-                }, 1500);
+                    
+                    // Se o robô tentar por mais de 5 segundos (18 tentativas) e o cara não aparecer, ele desiste por segurança
+                    if (tentativas >= 18) {
+                        console.warn("⚠️ O prestador do link pode estar offline ou oculto.");
+                        clearInterval(checadorCerteiro);
+                    }
+                }, 300);
             }
             else if (userIntent && userIntent !== "") {
                 console.log(`🚀 [Maestro] Intenção detectada: ${userIntent}`);
