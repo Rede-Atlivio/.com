@@ -767,33 +767,42 @@ async function marcarCapaAprovada(id) {
     } catch (e) { alert("Erro ao aprovar: " + e.message); }
 }
 
-// 🔍 MOTOR DE IA LOCAL (OCR): Escaneia todas as fotos da tela em busca de fraudes
+// 🔍 MOTOR DE IA LOCAL CONVERTEDOR DE PIXELS V2026: Extrai a imagem direto da tela e ativa auto-checkbox nas fraudes
 window.dispararScannerLocalIA = async function() {
     const imagens = document.querySelectorAll('.target-ocr-img');
     if (imagens.length === 0) return alert("Nenhuma imagem em tela para escanear.");
     
-    if(!confirm(`🤖 INICIAR IA LOCAL: Deseja ativar o motor neural para ler as ${imagens.length} imagens abertas à procura de números de WhatsApp ou redes sociais?`)) return;
+    if(!confirm(`🤖 ATIVAR VARREDURA EM MASSA: Deseja ler as ${imagens.length} fotos? Capas perigosas serão marcadas de forma automática.`)) return;
     
     try {
         await garantirTesseract();
-        alert("🧠 Cérebro artificial carregado com sucesso! O processamento em massa vai começar. Aguarde as tarjas roxas nos cards.");
+        alert("🧠 Cérebro neural online. Iniciando conversão de arquivos locais...");
         
         for (let img of imagens) {
             const providerId = img.id.replace('img-target-', '');
             const resBox = document.getElementById(`ocr-res-${providerId}`);
+            const cardCheckbox = document.querySelector(`#card-capa-${providerId} .target-massa-capa`);
             
             if (resBox) {
                 resBox.classList.remove('hidden');
-                resBox.innerText = "⏳ Escaneando pixels...";
+                resBox.innerText = "⏳ Extraindo fluxo de pixels da tela...";
                 resBox.className = "mt-2 p-2 rounded bg-purple-900/20 border border-purple-500/20 text-[9px] font-bold text-purple-400 animate-pulse";
             }
             
-           try {
-                // 🛡️ RECONSTRUTOR DE MÍDIA V2026: Alimenta a IA usando um bypass de proxy público para triturar o bloqueio CORS do Firebase
-                const urlSeguraCors = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(img.src);
+            try {
+                // 🛡️ ELEMENTO DE TELA DIRETO: Captura a imagem que já passou com sucesso pela segurança do seu navegador
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width || img.naturalWidth || 640;
+                canvas.height = img.height || img.naturalHeight || 360;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
-                // O cérebro da IA recebe a imagem através do túnel público purificado e lê os pixels sem bloqueios
-                const resultado = await Tesseract.recognize(urlSeguraCors, 'por+eng');
+                // Transforma o desenho em Base64 purificado localmente
+                const base64LocalPuro = canvas.toDataURL('image/jpeg', 0.85);
+                
+                if (resBox) resBox.innerText = "🧠 Analisando tipografia e contatos...";
+
+                const resultado = await Tesseract.recognize(base64LocalPuro, 'por+eng');
                 const textoLimpo = resultado.data.text.trim().toLowerCase();
                 
                 if (resBox) {
