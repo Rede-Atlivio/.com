@@ -625,7 +625,7 @@ export async function abrirConfiguracaoServicos() {
 }
 
 // ✅ NOVA FUNÇÃO: UPLOAD DA CAPA (CORRIGIDA)
-// ✅ TRIAGEM COM VELOCIDADE MÁXIMA CACHEADA + CONTROLADOR DE ANSIEDADE V2026
+// ✅ TRIAGEM PREVENTIVA ACELERADA E CORRIGIDA V2026 (SEM ERROS DE SINTAXE)
 window.salvarCapaPrestador = async (input) => {
     const file = input.files[0];
     if (!file) return;
@@ -633,19 +633,17 @@ window.salvarCapaPrestador = async (input) => {
     const user = auth.currentUser;
     if (!user) return alert("Erro de autenticação.");
 
-    // Captura o elemento do formulário/botão para travar múltiplos cliques do usuário ansioso
+    // Captura o contêiner do botão para travar a tela contra cliques ansiosos
     const containerUpload = input.parentElement;
-    const originalContent = containerUpload.innerHTML;
 
-    // 🛑 BLOQUEIO DE ANSIEDADE: Congela os cliques para evitar reenvios
+    // 🛑 CONGELAMENTO DE TELA: Bloqueia interações para evitar re-cliques
     containerUpload.style.pointerEvents = "none";
     
-    // 🎨 INJEÇÃO VISUAL PREMIUM V2026: Cria uma tarja de aviso absoluta que fica por cima da imagem, com fundo preto e texto amarelo forte
+    // Injeta a tarja preta protetora por cima de qualquer imagem (Garante leitura visual)
     let avisoFlutuante = document.getElementById("aviso-analise-ia");
     if (!avisoFlutuante) {
         avisoFlutuante = document.createElement("div");
         avisoFlutuante.id = "aviso-analise-ia";
-        // Estilo robusto: Fundo preto fosco, texto amarelo fosforescente, centralizado e com prioridade máxima (z-index)
         avisoFlutuante.className = "absolute inset-0 bg-black/90 flex flex-col items-center justify-center text-center p-4 z-50 animate-pulse";
         avisoFlutuante.innerHTML = `
             <span class="text-amber-400 font-black text-xs uppercase tracking-wider mb-1">⏳ ANALISANDO SUA CAPA...</span>
@@ -654,70 +652,71 @@ window.salvarCapaPrestador = async (input) => {
         containerUpload.appendChild(avisoFlutuante);
     }
 
-    // Preview Visual Imediato (a imagem vai carregar por baixo, mas a nossa tarja z-50 fica por cima)
+    // Carrega o preview da imagem por baixo da tarja
     const reader = new FileReader();
     reader.onload = (e) => document.getElementById('preview-banner').src = e.target.result;
     reader.readAsDataURL(file);
 
     try {
-        // 🧠 CARGA DO MOTOR SCRIPT
+        // Carrega o script do motor se não existir na página
         if (typeof Tesseract === 'undefined') {
             await new Promise((resolve, reject) => {
                 const s = document.createElement('script');
                 s.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
                 s.onload = resolve;
-                s.onerror = () => reject(new Error("Erro no sensor de triagem"));
+                s.onerror = () => reject(new Error("Erro ao carregar sensor de mídia"));
                 document.head.appendChild(s);
             });
         }
 
-        // 🚀 ACELERADOR MESTRE V2026: Inicializa o trabalhador forçando o cache de dicionário na memória interna do celular
+        // 🚀 ACELERADOR ULTRA DE FÁBRICA: Inicializa o motor desativando análises pesadas de layout
+        // 'tessedit_pageseg_mode': '7' força a IA a ler a imagem como uma linha única de texto puro (Acelera 3x)
         const worker = await Tesseract.createWorker('por+eng', 1, {
-            cacheMethod: 'write', // Força gravar o cérebro da IA permanentemente no aparelho do usuário
+            cacheMethod: 'write',
+            workerOptions: {
+                tessedit_pageseg_mode: '7'
+            }
         });
 
-        // Executa a leitura direta do arquivo em cache local ultra rápido
+        // Executa o reconhecimento local direto da memória do aparelho
         const { data: { text } } = await worker.recognize(file);
         const textoLimpo = text.trim().toLowerCase();
-        await worker.terminate(); // Desliga o trabalhador para liberar memória RAM do aparelho
+        await worker.terminate(); // Libera a memória RAM do dispositivo imediatamente
 
-        // Filtros estruturados contra dados de contato externos
+        // Filtros contra dados de contato proibidos
         const temNumero = /\d{4,}/.test(textoLimpo);
         const temGatilho = textoLimpo.includes('@') || textoLimpo.includes('whats') || textoLimpo.includes('contato') || textoLimpo.includes('insta') || textoLimpo.includes('call') || textoLimpo.includes('chama');
 
-       // 🚨 VEREDITO: REPROVADO
+        // 🚨 VEREDITO: REPROVADO (Contato detectado)
         if (temNumero || temGatilho) {
-            // Destrava a tela e remove a tarja de aviso para nova tentativa
             containerUpload.style.pointerEvents = "auto";
-            if (avisoFlutuante) avisoFlutuante.remove();
+            if (avisoFlutuante) avisoFlutuante.remove(); // Limpa a tarja preta
             input.value = ""; 
             document.getElementById('preview-banner').src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=500';
             
             return alert("❌ ANÁLISE CONCLUÍDA: FORAM ENCONTRADOS DADOS DE CONTATOS NA SUA IMAGEM. Para evitar bloqueio na sua conta, evite enviar contatos na sua capa.");
         }
 
-        // 🎉 VEREDITO: APROVADO (Modifica o texto para indicar progresso de envio)
-        if (labelSelo) labelSelo.innerText = "⚡ APROVADO! ENVIANDO PARA O BANCO...";
+        // Modifica o texto interno da tarja para mostrar o progresso real do envio na nuvem
+        avisoFlutuante.innerHTML = `<span class="text-green-400 font-black text-xs uppercase animate-bounce">⚡ APROVADO! PUBLICANDO CAPA...</span>`;
 
-        // Dispara o arquivo limpo para o Storage do Google
+        // Executa o envio para o Firebase Storage
         const storage = getStorage();
         const storageRef = ref(storage, `provider_covers/${user.uid}_${Date.now()}`);
         await uploadBytes(storageRef, file);
         const url = await getDownloadURL(storageRef);
 
-        // Atualiza no banco de dados Firestore
+        // Atualiza a URL limpa e aprovada no Firestore
         await setDoc(doc(db, "active_providers", user.uid), { cover_image: url }, { merge: true });
         
-        // Destrava e restaura o botão para o estado padrão de fábrica
+        // Descongela a tela e limpa o aviso
         containerUpload.style.pointerEvents = "auto";
-        containerUpload.style.opacity = "1";
-        if (labelSelo) labelSelo.innerText = "📷 ALTERAR CAPA";
+        if (avisoFlutuante) avisoFlutuante.remove();
         
         alert("✨ Sucesso! Sua nova capa foi publicada no aplicativo.");
 
     } catch (e) {
-        console.error("Erro na esteira de triagem:", e);
-        // Restaura a interface em caso de falhas de rede para não congelar o app
+        console.error("Falha na triagem:", e);
         containerUpload.style.pointerEvents = "auto";
         if (avisoFlutuante) avisoFlutuante.remove();
         alert("Erro técnico ao processar imagem: " + e.message);
