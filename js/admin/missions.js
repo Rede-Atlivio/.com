@@ -393,6 +393,9 @@ window.rejeitarOrdemB2B = async (missionId) => {
             created_at: serverTimestamp()
         });
 
+        // 🛰️ DISPARO AUTOMÁTICO V2026: Alerta o bolso do empresário sobre a recusa do briefing e o estorno
+        if (window.dispararPushExterno) window.dispararPushExterno(b2bUid, "❌ ORDEM REJEITADA", `Sua missão "${m.title}" foi recusada pelo Admin. Saldo estornado!`, "wallet");
+
         alert("✅ Ordem cancelada e saldo estornado com sucesso!");
         loadB2BPendingMissions();
 
