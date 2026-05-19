@@ -600,7 +600,7 @@ window.ativarGatilhoChatRealtime = async () => {
                 const target = d.last_message_to;
 
                 if (target) {
-                   // 1. DISPARA NOTIFICAÇÃO PARA O CELULAR DO USUÁRIO
+                    // 1. DISPARA NOTIFICAÇÃO PARA O CELULAR DO USUÁRIO
                     await addDoc(collection(db, "user_notifications"), {
                         userId: target,
                         type: 'chat',
@@ -609,11 +609,6 @@ window.ativarGatilhoChatRealtime = async () => {
                         read: false,
                         created_at: serverTimestamp()
                     });
-
-                    // 🛰️ DISPARO AUTOMÁTICO V2026: Sentinela de órbita intercepta e faz o Cloud Run acordar o alvo comum do chat
-                    if (window.dispararPushExterno) {
-                        window.dispararPushExterno(target, "💬 NOVA MENSAGEM", "Você recebeu uma nova interação na sua proposta! Clique para responder.", "chat");
-                    }
 
                     // 2. ESCREVE NO LOG VISUAL DO ADMIN
                     contadorLocalAlertas++;
