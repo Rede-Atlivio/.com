@@ -318,6 +318,9 @@ async function publicarMissaoB2B(missionId) {
                 read: false,
                 created_at: serverTimestamp()
             });
+            
+            // 🛰️ DISPARO AUTOMÁTICO V2026: Acende o celular do empresário na rua avisando da ativação
+            if (window.dispararPushExterno) window.dispararPushExterno(m.b2b_owner_uid, "💼 OPERAÇÃO ATIVADA", `Sua ordem de coleta para "${m.title}" foi aprovada e já está ativa no radar!`, "wallet");
         }
 
         alert("✅ MISSÃO PUBLICADA COM SUCESSO!\nOs usuários já podem coletar os dados.");
