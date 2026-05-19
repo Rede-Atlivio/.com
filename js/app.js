@@ -1212,6 +1212,35 @@ window.abrirModalLinkProfissional = async function(providerId) {
 };
 
 /**
+ * 🚀 TRANSMISSOR DE PUSH GLOBAL V2026 (CAMINHO B LÓGICO)
+ * Intercepta os eventos do sistema e despacha ordens direto para o Cloud Run.
+ * Funciona em segundo plano sem travar o clique ou a navegação do usuário.
+ */
+window.dispararPushExterno = async function(uidAlvo, tituloNotif, mensagemNotif, acaoDestino) {
+    if (!uidAlvo || !mensagemNotif) return;
+    
+    const URL_ROBO_PROD = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
+    
+    try {
+        // Envia a ordem em background (Fire and Forget)
+        fetch(URL_ROBO_PROD, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                mode: "instant_target", // Mira laser do Robô Maestro V12
+                intencao: "todos",
+                target_uid: uidAlvo,    // Passaporte de quem vai receber o push
+                mensagem: `${tituloNotif}: ${mensagemNotif}`,
+                action: acaoDestino || 'home'
+            })
+        }).then(res => {
+            if(res.ok) console.log(`🛰️ [Canhão Externo] Push enviado com sucesso para: ${uidAlvo.slice(0,8)}...`);
+        }).catch(() => console.warn("⚠️ Rádio Externo: Servidor em espera ou sem resposta."));
+        
+    } catch(err) { console.warn("⚠️ Erro na transmissão externa do push."); }
+};
+
+/**
  * 🔗 PONTES DE COMPATIBILIDADE (O PULO DO GATO FINAL)
  * Gil, mantemos os nomes antigos apontando para o motor novo 
  * para nada do que você já cadastrou no banco de dados quebrar.
