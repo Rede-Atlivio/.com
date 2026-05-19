@@ -868,9 +868,6 @@ window.encerrarMissaoB2BComEstorno = async (missionId) => {
             });
         });
 
-        // 🛰️ DISPARO CIRÚRGICO: Confirma no celular da empresa que o saldo residual retornou ao caixa livres para reuso
-        if (window.dispararPushExterno) window.dispararPushExterno(auth.currentUser.uid, "🔓 REEMBOLSO CONCLUÍDO", `Sua missão foi encerrada! O saldo residual de R$ ${estornoClienteFinal.toFixed(2)} retornou à sua carteira.`, "wallet");
-
         alert(`✅ OPERAÇÃO ENCERRADA!\n\nReembolso: R$ ${estornoClienteFinal.toFixed(2)}\nTaxas retidas: R$ ${lucroPlataformaTotal.toFixed(2)}`);
         window.carregarOrdensB2B(); // Atualiza a lista na tela
 
