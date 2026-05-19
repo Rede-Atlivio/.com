@@ -245,6 +245,14 @@ window.vereditoB2B = async (docId, status) => {
                 status_history: 'Aguardando auditoria de disputa',
                 reviewed_at: serverTimestamp()
             });
+            
+            // 🛰️ DISPARO CIRÚRGICO: Alerta o executor na rua em background que a foto dele entrou em mediação
+            if (window.dispararPushExterno) {
+                getDoc(doc(db, "mission_submissions", docId)).then(sSnap => {
+                    if (sSnap.exists()) window.dispararPushExterno(sSnap.data().user_id, "⚖️ OPERAÇÃO EM ANÁLISE", `Sua prova para a missão ${sSnap.data().mission_title || 'Tarefa'} foi contestada e está em revisão pelo Admin!`, "missions");
+                }).catch(() => console.log("Erro push background"));
+            }
+
             alert("⚖️ DISPUTA ABERTA: O Admin analisará a evidência para dar o veredito final.");
         }
         
