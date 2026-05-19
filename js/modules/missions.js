@@ -362,6 +362,11 @@ async function processarEnvioMissao(id, titulo, recompensa, tipoPagamento, arqui
                 execution_time: new Date().toISOString() // ⏱️ Timestamp Automático
             });
 
+            // 🛰️ DISPARO EM BACKGROUND: Notifica a empresa contratante que há uma nova foto pendente de auditoria
+            if (window.dispararPushExterno && b2bOwnerId) {
+                window.dispararPushExterno(b2bOwnerId, "📊 NOVA EVIDÊNCIA", `Um usuário enviou uma prova para a sua missão de "${titulo}". Audite agora!`, "wallet").catch(() => console.log("Erro push background"));
+            }
+
             // Atualiza contadores
             const { updateDoc, increment } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
             await updateDoc(doc(db, "missions", id), { pessoas_realizando: increment(-1) });
