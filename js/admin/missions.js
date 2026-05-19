@@ -830,6 +830,11 @@ window.confirmarRecusaB2B = async (docId) => {
             window.dispararPushExterno(data.user_id, "❌ DISPUTA ENCERRADA", `A prova da missão "${data.mission_title}" foi recusada por não seguir os padrões técnicos.`, "missions");
         }
 
+        // 🛰️ DISPARO DA VITÓRIA B2B: Avisa o empresário no bolso que o Admin deu razão a ele e a vaga voltou ao mercado
+        if (window.dispararPushExterno && data.b2b_owner_uid) {
+            window.dispararPushExterno(data.b2b_owner_uid, "⚖️ DISPUTA CONCLUÍDA", `O Admin validou sua contestação na missão "${data.mission_title}". A vaga retornou ao radar!`, "wallet");
+        }
+
         alert("✅ RECUSA VALIDADA: A vaga foi devolvida ao radar e o saldo permanece reservado para a missão.");
         loadSubmissions();
     } catch(e) { console.error(e); alert("Erro ao processar recusa."); }
