@@ -313,6 +313,11 @@ export async function enviarPropostaAgora() {
             updated_at: serverTimestamp()
         });
 
+        // 🛰️ DISPARO AUTOMÁTICO V2026: Acende a tela do prestador no bolso com o valor real enviado
+        if (window.dispararPushExterno) {
+            window.dispararPushExterno(mem_ProviderId, "🛠️ NOVA OPORTUNIDADE", `Você recebeu uma solicitação de serviço no valor de R$ ${Number(mem_CurrentOffer).toFixed(2).replace('.', ',')}!`, "servicos");
+        }
+
         // 4. TELA DE SUCESSO (Visual V22)
         const modalContent = document.getElementById('request-modal').firstElementChild; 
         
