@@ -366,6 +366,9 @@ export function candidatarVaga(id, title, ownerId) {
                 status: 'novo'
             });
 
+            // 🛰️ DISPARO CIRÚRGICO: Notifica o dono da vaga que há um novo currículo para analisar
+            if (window.dispararPushExterno) window.dispararPushExterno(ownerId, "💼 NOVO CURRÍCULO", `Um profissional acabou de se candidatar para a vaga de ${title}!`, "jobs");
+
             alert("✅ Candidatura enviada com sucesso!");
             fecharModalCandidatura();
 
