@@ -825,6 +825,11 @@ window.confirmarRecusaB2B = async (docId) => {
             });
         });
 
+        // 🛰️ DISPARO AUTOMÁTICO V2026: Avisa em background o executor na rua que ele perdeu a disputa da tarefa
+        if (window.dispararPushExterno && data.user_id) {
+            window.dispararPushExterno(data.user_id, "❌ DISPUTA ENCERRADA", `A prova da missão "${data.mission_title}" foi recusada por não seguir os padrões técnicos.`, "missions");
+        }
+
         alert("✅ RECUSA VALIDADA: A vaga foi devolvida ao radar e o saldo permanece reservado para a missão.");
         loadSubmissions();
     } catch(e) { console.error(e); alert("Erro ao processar recusa."); }
