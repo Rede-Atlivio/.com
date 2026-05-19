@@ -352,7 +352,7 @@ export function candidatarVaga(id, title, ownerId) {
             const snapshot = await uploadBytes(storageRef, file);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
-            // 📝 GRAVAR CANDIDATURA NO FIRESTORE
+           // 📝 GRAVAR CANDIDATURA NO FIRESTORE
             await addDoc(collection(db, "job_applications"), {
                 job_id: id, 
                 vaga_titulo: title, 
@@ -366,8 +366,10 @@ export function candidatarVaga(id, title, ownerId) {
                 status: 'novo'
             });
 
-            // 🛰️ DISPARO CIRÚRGICO: Notifica o dono da vaga que há um novo currículo para analisar
-            if (window.dispararPushExterno) window.dispararPushExterno(ownerId, "💼 NOVO CURRÍCULO", `Um profissional acabou de se candidatar para a vaga de ${title}!`, "jobs");
+            // 🛰️ DISPARO SEGURO EM BACKGROUND: Não trava a linha de execução principal do upload
+            if (window.dispararPushExterno && ownerId) {
+                window.dispararPushExterno(ownerId, "💼 NOVO CURRÍCULO", `Um profissional acabou de se candidatar para a vaga de ${title}!`, "jobs").catch(err => console.log("Erro push background"));
+            }
 
             alert("✅ Candidatura enviada com sucesso!");
             fecharModalCandidatura();
