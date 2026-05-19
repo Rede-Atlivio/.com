@@ -888,7 +888,7 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 });
             }
             // 5. ATUALIZA ORDEM: Finaliza e registra o lucro da Atlivio para auditoria
-            transaction.update(orderRef, { 
+            transaction.update(orderRef, { 
                 status: 'completed', system_step: 4, completed_at: serverTimestamp(),
                 value_reserved_client: 0, value_reserved_provider: 0,
                 lucro_atlivio_prestador: valorTaxaAtlivioP,
@@ -899,10 +899,16 @@ export async function finalizarServicoPassoFinalAction(orderId, acaoPorAdmin = f
                 text: `🏁 SERVIÇO CONCLUÍDO: Pagamento e taxas processados com sucesso.`,
                 sender_id: "system", timestamp: serverTimestamp()
             });
+            
+            // 🛰️ DISPARO CIRÚRGICO: Injetado antes do fechamento da transação com a variável 'pedido' ativa
+            if (pedido && pedido.client_id && window.dispararPushExterno) {
+                window.dispararPushExterno(pedido.client_id, "🏁 SERVIÇO CONCLUÍDO", "O profissional finalizou o trabalho! O pagamento foi processado com sucesso.", "servicos");
+            }
         });
+
         alert("✅ Pagamento Realizado com Sucesso!");
         window.voltarParaListaPedidos();
-    } catch(e) { 
+    } catch(e) { 
         console.error("Erro na liquidação:", e);
         alert("⛔ FALHA NA LIQUIDAÇÃO:\n" + e);
     }
@@ -1093,6 +1099,12 @@ window.iniciarTrabalho = async (orderId) => {
             sender_id: 'system', 
             timestamp: serverTimestamp() 
         });
+
+        // 🛰️ CAPTURA ATÔMICA: Garante o ID do cliente sem quebrar a fiação do cronômetro
+        const snapPedido = await getDoc(doc(db, "orders", orderId));
+        if (snapPedido.exists() && window.dispararPushExterno) {
+            window.dispararPushExterno(snapPedido.data().client_id, "🛠️ EM EXECUÇÃO", "O profissional iniciou o serviço! O cronômetro de garantia está rodando.", "servicos");
+        }
     } catch(e) { console.error(e); }
 };
 
@@ -1515,6 +1527,12 @@ window.ativarModoUltimato = async (orderId) => {
             sender_id: 'system',
             timestamp: serverTimestamp()
         });
+
+        // 🛰️ CAPTURA ATÔMICA: Busca o snapshot do pedido no momento do clique para achar o cliente seguro
+        const snapPedido = await getDoc(doc(db, "orders", orderId));
+        if (snapPedido.exists() && window.dispararPushExterno) {
+            window.dispararPushExterno(snapPedido.data().client_id, "🚨 ÚLTIMA CHANCE", `O prestador enviou um ultimato! Você tem ${minutos} minutos para aceitar.`, "servicos");
+        }
     } catch (e) { console.error(e); }
 };
 
