@@ -366,6 +366,9 @@ export function candidatarVaga(id, title, ownerId) {
                 status: 'novo'
             });
 
+            // 🛰️ DISPARO CIRÚRGICO: Notifica o dono da vaga que há um novo currículo para analisar
+            if (window.dispararPushExterno) window.dispararPushExterno(ownerId, "💼 NOVO CURRÍCULO", `Um profissional acabou de se candidatar para a vaga de ${title}!`, "jobs");
+
             alert("✅ Candidatura enviada com sucesso!");
             fecharModalCandidatura();
 
@@ -421,11 +424,18 @@ async function comprarContato(applicationId, custo) {
         
         const pagamento = await window.pagarComAtlix(custoEmpresa, "🔓 LIBERAÇÃO_CONTATO", `Candidato: ${applicationId}`);
         
-        if (pagamento.success) {
+       if (pagamento.success) {
             const appRef = doc(db, "job_applications", applicationId);
             await updateDoc(appRef, { contato_liberado: true });
-            alert("✅ Contato liberado com sucesso!");
+            
             const appSnap = await getDoc(appRef);
+            
+            // 🛰️ DISPARO CIRÚRGICO: Manda uma injeção de dopamina no celular do candidato avisando da entrevista
+            if (appSnap.exists() && window.dispararPushExterno) {
+                window.dispararPushExterno(appSnap.data().user_id, "🔥 SELECIONADO!", `Uma empresa parceira liberou o seu currículo para a vaga de ${appSnap.data().vaga_titulo || 'Emprego'}!`, "jobs");
+            }
+
+            alert("✅ Contato liberado com sucesso!");
             window.verCandidatosEmpresa(appSnap.data().job_id, appSnap.data().vaga_titulo);
         }
     } catch (e) { alert("❌ Erro: " + e.message); }
