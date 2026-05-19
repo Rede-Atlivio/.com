@@ -778,27 +778,3 @@ window.db = db;
 window.switchView = switchView; 
 
 console.log("🏁 Core Atlivio V60: Conexão entre Assistant e Roteador Blindada.");
-
-/**
- * 🛰️ TRANSMISSOR DE PUSH GLOBAL ADMIN V2026 (CAMINHO B LÓGICO)
- * Dá superpoderes à mesa do Administrador para despachar ordens direto para o Cloud Run.
- */
-window.dispararPushExterno = async function(uidAlvo, tituloNotif, mensagemNotif, acaoDestino) {
-    if (!uidAlvo || !mensagemNotif) return;
-    const URL_ROBO_PROD = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
-    try {
-        fetch(URL_ROBO_PROD, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                mode: "instant_target",
-                intencao: "todos",
-                target_uid: uidAlvo,
-                mensagem: `${tituloNotif}: ${mensagemNotif}`,
-                action: acaoDestino || 'home'
-            })
-        }).then(res => {
-            if(res.ok) console.log(`🛰️ [Admin Canhão] Push despachado com sucesso para: ${uidAlvo.slice(0,8)}...`);
-        }).catch(() => console.warn("⚠️ Rádio Admin: Servidor em espera."));
-    } catch(err) { console.warn("⚠️ Erro na transmissão externa do Admin."); }
-};
