@@ -52,7 +52,10 @@ export async function renderAssistant(containerId) {
         const qProvToday = query(collection(db, "active_providers"), where("created_at", ">=", timestampHoje));
         const qAnalise = query(collection(db, "active_providers"), where("status", "==", "em_analise"));
         const qTickets = query(collection(db, "support_tickets"), where("read", "==", false), where("sender", "==", "user"));
-        const qNotificacoes = query(collection(db, "notifications"), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
+        
+        // 🛰️ FILTRO DO CHEFE: Garante que o Admin só veja notificações geradas para o seu próprio UID master
+        const adminUid = window.auth?.currentUser?.uid || "NÃO_LOGADO";
+        const qNotificacoes = query(collection(db, "notifications"), where("uid", "==", adminUid), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
         
         // 💰 Monitor de Pagamento em REAL (PIX Pendente)
         const qPixPendentes = query(collection(db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
