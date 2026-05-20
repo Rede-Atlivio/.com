@@ -326,8 +326,13 @@ window.enviarRespostaAdmin = async (e) => {
 };
 
 window.fecharChat = () => {
+    // 💀 DESLIGAMENTO FORÇADO: Desconecta o rádio receptor em tempo real para zerar o consumo de RAM e taxas do Firebase
+    if (typeof unsubscribeChat === 'function') {
+        unsubscribeChat();
+        unsubscribeChat = null;
+    }
+    
     currentChatUser = null;
-    if(unsubscribeChat) unsubscribeChat();
     document.getElementById('chat-header').classList.add('hidden');
     document.getElementById('chat-input-area').classList.add('hidden');
     document.getElementById('chat-messages').innerHTML = `<div class="absolute inset-0 flex flex-col items-center justify-center opacity-30 pointer-events-none"><span class="text-4xl mb-2">💬</span><p class="text-sm font-bold">Central de Suporte</p></div>`;
