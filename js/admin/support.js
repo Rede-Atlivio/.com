@@ -317,6 +317,11 @@ window.enviarRespostaAdmin = async (e) => {
             created_at: serverTimestamp(),
             read: true
         });
+
+        // 🛰️ DISPARO AUTOMÁTICO V2026: Notifica o usuário em background que o suporte respondeu o chamado dele
+        if (window.dispararPushExterno && currentChatUser) {
+            window.dispararPushExterno(currentChatUser, "💬 SUPORTE ATLIVIO", "Nossa equipe respondeu sua solicitação de atendimento! Toque para visualizar.", "home").catch(() => console.log("Erro push background"));
+        }
     } catch(err) { alert("Erro ao enviar."); }
 };
 
