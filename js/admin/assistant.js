@@ -151,6 +151,17 @@ export async function renderAssistant(containerId) {
             }
         }
 
+        // 🛰️ EFEITO INVERSO V2026: Se houver alertas críticos na mesa, a Assistente faz o celular do Gil apitar na rua na hora
+        if (window.dispararPushExterno && adminUid !== "NÃO_LOGADO") {
+            if (totalPix > 0) {
+                window.dispararPushExterno(adminUid, "💵 ALERTA FINANCEIRO", `Chefe, existem ${totalPix} saques em PIX aguardando sua liberação!`, "finance").catch(() => {});
+            } else if (totalDisputasB2B > 0) {
+                window.dispararPushExterno(adminUid, "⚖️ ALERTA DE DISPUTA", `Atenção: ${totalDisputasB2B} missões B2B entraram em conflito agora.`, "missions").catch(() => {});
+            } else if (pendingTickets > 0) {
+                window.dispararPushExterno(adminUid, "💬 SAC ATLIVIO", `Central de Ajuda: ${pendingTickets} novos tickets de suporte aguardam resposta.`, "support").catch(() => {});
+            }
+        }
+
         if (insights.length === 0) {
             insights = ["💤 Tudo tranquilo. Nenhum alerta pendente."];
             statusColor = "border-l-4 border-green-500";
