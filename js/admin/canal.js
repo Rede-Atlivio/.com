@@ -50,7 +50,7 @@ export async function init() {
         if(url.includes("youtu.be/")) embedUrl = url.replace("youtu.be/", "www.youtube.com/embed/");
         if(url.includes("shorts/")) embedUrl = url.replace("shorts/", "embed/");
 
-        try {
+       try {
             await addDoc(collection(window.db, "canal_atlivio"), { 
                 title, 
                 url: embedUrl, 
@@ -62,6 +62,15 @@ export async function init() {
                 target_aba: abaDestino,
                 created_at: serverTimestamp() 
             });
+            
+            // 🛰️ DISPARO AUTOMÁTICO V2026: Dispara o canhão massivo no Cloud Run adaptando a mensagem ao tipo de conteúdo
+            if (window.dispararPushExterno) {
+                const msgPush = isAds 
+                    ? `🎁 VÍDEO PREMIADO: Assista agora e resgate +${recompensa} ATLIX na sua carteira!` 
+                    : `⚠️ COMUNICADO: A Equipe Atlivio acabou de postar novidades no Canal. Assista!`;
+                window.dispararPushExterno("todos", isAds ? "🎁 RECOMPENSA LIBERADA" : "📺 NOVO CONTEÚDO", msgPush, "canal_atlivio");
+            }
+
             alert("✅ Publicado com sucesso!");
             loadTutorials();
         } catch (e) { alert("Erro ao salvar: " + e.message); }
