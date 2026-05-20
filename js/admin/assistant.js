@@ -231,9 +231,21 @@ export async function renderAssistant(containerId) {
                         ${pendingAnalise > 0 ? `<button onclick="document.querySelector('[data-view=\\'active_providers\\']').click()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-lg flex items-center gap-2">🔍 Aprovar (${pendingAnalise})</button>` : ''}
                         ${pendingTickets > 0 ? `<button onclick="document.querySelector('[data-view=\\'support\\']').click()" class="bg-red-600 hover:bg-red-500 text-white px-4 py-1.5 rounded text-xs font-bold transition shadow-lg flex items-center gap-2">💬 Tickets (${pendingTickets})</button>` : ''}
                     </div>
-                </div> 
+               </div> 
             </div>
         `;
+
+        // 📡 CONEXÃO DIRETA: Dispara alerta para o seu celular se houver pendências
+        if (window.dispararPushExterno && window.auth?.currentUser) {
+            if (totalPix > 0 || totalDisputasB2B > 0 || pendingTickets > 0) {
+                window.dispararPushExterno(
+                    window.auth.currentUser.uid, 
+                    "📊 ALERTA ADMIN ATLIVIO", 
+                    "Chefe, existem pendências críticas no painel!", 
+                    "dashboard"
+                ).catch(() => {});
+            }
+        }
 
     } catch (e) {
         console.error("Erro Assistente:", e);
