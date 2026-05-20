@@ -89,14 +89,34 @@ export async function renderAssistant(containerId) {
         const totalPix = snapPix.data().count;
         const totalMisAnalise = snapMisAnalise.data().count;
         
-        let notifTexts = [];
         snapNotif.forEach(doc => {
             const data = doc.data();
             let icon = "🔔";
+            
+            // 📝 MODO FAXINA: Tradutor de Inteligência para Admin
+            let msg = data.message || "";
+            
+            // Dicionário de Tradução (Adicione qualquer nova frase aqui no futuro)
+            const traducao = {
+                "Sua imagem de capa foi removida": "A imagem de capa de um usuário foi removida",
+                "Seu link funcionou!": "O link de um usuário funcionou!",
+                "Você ganhou um bônus": "Bônus concedido a usuário",
+                "Seu cadastro foi concluído": "Novo usuário cadastrado",
+                "Sua conta foi verificada": "Perfil de prestador verificado",
+                "Seu saque foi aprovado": "Resgate PIX aprovado"
+            };
+
+            // Aplica a tradução automaticamente se a frase existir no dicionário
+            Object.keys(traducao).forEach(origem => {
+                if(msg.includes(origem)) {
+                    msg = msg.replace(origem, traducao[origem]);
+                }
+            });
+
             if(data.type === 'success') icon = "🎉";
             if(data.type === 'warning') icon = "⚠️";
             if(data.type === 'error') icon = "⛔";
-            notifTexts.push(`${icon} ${data.message}`);
+            notifTexts.push(`${icon} ${msg}`);
         });
 
         // Lógica de Exibição
