@@ -52,10 +52,7 @@ export async function renderAssistant(containerId) {
         const qProvToday = query(collection(db, "active_providers"), where("created_at", ">=", timestampHoje));
         const qAnalise = query(collection(db, "active_providers"), where("status", "==", "em_analise"));
         const qTickets = query(collection(db, "support_tickets"), where("read", "==", false), where("sender", "==", "user"));
-        
-        // 🛰️ FILTRO DO CHEFE: Garante que o Admin só veja notificações geradas para o seu próprio UID master
-        const adminUid = window.auth?.currentUser?.uid || "NÃO_LOGADO";
-        const qNotificacoes = query(collection(db, "notifications"), where("uid", "==", adminUid), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
+        const qNotificacoes = query(collection(db, "notifications"), where("read", "==", false), orderBy("created_at", "desc"), limit(5));
         
         // 💰 Monitor de Pagamento em REAL (PIX Pendente)
         const qPixPendentes = query(collection(db, "mission_submissions"), where("status", "==", "approved_pending_pix"));
@@ -148,13 +145,6 @@ export async function renderAssistant(containerId) {
             if (totalAtrasados > 0) {
                 insights.push(`⏰ <b>ATRASO CRÍTICO:</b> ${totalAtrasados} serviços passaram de 12h.`);
                 if(!totalDisputas) statusColor = "border-l-4 border-amber-600"; 
-            }
-            // Alerta Crítico de Disputa B2B
-            const totalDisputasB2B = snapDisputasB2B.data().count;
-            if (totalDisputasB2B > 0) {
-                insights.push(`🚨 <b>DISPUTA B2B:</b> ${totalDisputasB2B} envios recusados pelo cliente. Dê o veredito!`);
-                statusColor = "border-l-4 border-orange-600";
-                icon = "⚖️";
             }
         }
 
