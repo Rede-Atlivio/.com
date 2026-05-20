@@ -88,7 +88,9 @@ export async function renderAssistant(containerId) {
         const totalAtrasados = snapAtrasados.data().count;
         const totalPix = snapPix.data().count;
         const totalMisAnalise = snapMisAnalise.data().count;
+        const totalDisputasB2B = snapDisputasB2B.data().count;
         
+        let notifTexts = []; // A variável nasce aqui, antes de qualquer uso
         snapNotif.forEach(doc => {
             const data = doc.data();
             let icon = "🔔";
