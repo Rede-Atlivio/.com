@@ -647,8 +647,30 @@ window.dispararMaestroExterno = async () => {
     }
 };
 
+// ============================================================================
+// 🛰️ TRANSMISSOR DE SINAL ATLAS V2026 (MESA ADMIN)
+// ============================================================================
+window.dispararPushExterno = async (uidAlvo, titulo, mensagem, acaoAba = "home") => {
+    const URL_ROBO_PROD = "https://enviar-notificacao-v1-887430049204.us-central1.run.app";
+    try {
+        await fetch(URL_ROBO_PROD, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                uid: uidAlvo,       // Pode ser um UID específico ou "todos"
+                title: titulo,
+                body: mensagem,
+                action: acaoAba
+            })
+        });
+        console.log(`🛰️ [Canhão Admin] Sinal enviado com sucesso para: ${uidAlvo}`);
+    } catch (err) {
+        console.warn("⚠️ [Canhão Admin] Falha ao despachar push externo:", err);
+    }
+};
+
 // 🛰️ LOG DE SEGURANÇA: Confirma que o motor mestre está pronto para escala de milhões
-console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado.");
+console.log("🏁 Core Atlivio V60: Sistema de Roteamento Estabilizado com Transmissor Ativo.");
 
 // ==========================================================================
 // 📸 MÓDULO MESA DE CURADORIA DE CAPAS V2026 + SCANNER IA LOCAL (TESSERACT)
