@@ -151,6 +151,9 @@ export async function renderAssistant(containerId) {
             }
         }
 
+        // 🛰️ CAPTURA SEGURA V2026: Extrai a contagem pura do snapshot antes do canhão de push ler o valor
+        const totalDisputasB2B = snapDisputasB2B?.data()?.count || 0;
+
         // 🛰️ EFEITO INVERSO V2026: Se houver alertas críticos na mesa, a Assistente faz o celular do Gil apitar na rua na hora
         if (window.dispararPushExterno && adminUid !== "NÃO_LOGADO") {
             if (totalPix > 0) {
