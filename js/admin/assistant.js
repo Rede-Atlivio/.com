@@ -149,19 +149,12 @@ export async function renderAssistant(containerId) {
                 insights.push(`⏰ <b>ATRASO CRÍTICO:</b> ${totalAtrasados} serviços passaram de 12h.`);
                 if(!totalDisputas) statusColor = "border-l-4 border-amber-600"; 
             }
-        }
-
-        // 🛰️ CAPTURA SEGURA V2026: Extrai a contagem pura do snapshot antes do canhão de push ler o valor
-        const totalDisputasB2B = snapDisputasB2B?.data()?.count || 0;
-
-        // 🛰️ EFEITO INVERSO V2026: Se houver alertas críticos na mesa, a Assistente faz o celular do Gil apitar na rua na hora
-        if (window.dispararPushExterno && adminUid !== "NÃO_LOGADO") {
-            if (totalPix > 0) {
-                window.dispararPushExterno(adminUid, "💵 ALERTA FINANCEIRO", `Chefe, existem ${totalPix} saques em PIX aguardando sua liberação!`, "finance").catch(() => {});
-            } else if (totalDisputasB2B > 0) {
-                window.dispararPushExterno(adminUid, "⚖️ ALERTA DE DISPUTA", `Atenção: ${totalDisputasB2B} missões B2B entraram em conflito agora.`, "missions").catch(() => {});
-            } else if (pendingTickets > 0) {
-                window.dispararPushExterno(adminUid, "💬 SAC ATLIVIO", `Central de Ajuda: ${pendingTickets} novos tickets de suporte aguardam resposta.`, "support").catch(() => {});
+            // Alerta Crítico de Disputa B2B
+            const totalDisputasB2B = snapDisputasB2B.data().count;
+            if (totalDisputasB2B > 0) {
+                insights.push(`🚨 <b>DISPUTA B2B:</b> ${totalDisputasB2B} envios recusados pelo cliente. Dê o veredito!`);
+                statusColor = "border-l-4 border-orange-600";
+                icon = "⚖️";
             }
         }
 
