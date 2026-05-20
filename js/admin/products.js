@@ -159,6 +159,12 @@ async function salvarProduto(e) {
         } else {
             payload.created_at = serverTimestamp();
             await addDoc(collection(window.db, "products"), payload);
+            
+            // 🛰️ DISPARO MASSIVO V2026: Dispara o canhão de desejo mandando o aviso da novidade direto no bolso da base inteira
+            if (window.dispararPushExterno) {
+                window.dispararPushExterno("todos", "🛒 NOVIDADE NA LOJA", `Desbloqueie agora a utilidade "${payload.nome}" por apenas ${payload.preco_atlix} ATLIX!`, "products").catch(() => console.log("Erro push background"));
+            }
+
             alert("✅ Criado com sucesso!");
         }
         fecharModalProd();
